@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 
+import java.util.List;
 import java.util.Optional;
 
 @OwnedBy(DX)
@@ -29,4 +30,5 @@ public interface InstanceSyncPerpetualTaskInfoService {
 
   InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier);
+  List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId);
 }

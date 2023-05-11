@@ -254,19 +254,23 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
     }
 
     for (ContainerRecommendation containerRecommendation : containerRecommendationMap.values()) {
-      BigDecimal containerCpu = getResourceValue(containerRecommendation.getCurrent(), CPU, BigDecimal.ZERO);
-      BigDecimal containerMemory = getResourceValue(containerRecommendation.getCurrent(), MEMORY, BigDecimal.ZERO);
+      if (containerRecommendationMap.size() == 1) {
+        containerRecommendation.setLastDayCost(lastDayCost);
+      } else {
+        BigDecimal containerCpu = getResourceValue(containerRecommendation.getCurrent(), CPU, BigDecimal.ZERO);
+        BigDecimal containerMemory = getResourceValue(containerRecommendation.getCurrent(), MEMORY, BigDecimal.ZERO);
 
-      BigDecimal fractionCpu = containerCpu.setScale(cpuScale, HALF_UP).divide(totalCpu, costScale, HALF_UP);
-      BigDecimal fractionMemory =
-          containerMemory.setScale(memoryScale, HALF_UP).divide(totalMemory, costScale, HALF_UP);
+        BigDecimal fractionCpu = containerCpu.setScale(cpuScale, HALF_UP).divide(totalCpu, costScale, HALF_UP);
+        BigDecimal fractionMemory =
+            containerMemory.setScale(memoryScale, HALF_UP).divide(totalMemory, costScale, HALF_UP);
 
-      Cost containerCost = Cost.builder()
-                               .cpu(lastDayCost.getCpu().multiply(fractionCpu))
-                               .memory(lastDayCost.getMemory().multiply(fractionMemory))
-                               .build();
+        Cost containerCost = Cost.builder()
+                                 .cpu(lastDayCost.getCpu().multiply(fractionCpu))
+                                 .memory(lastDayCost.getMemory().multiply(fractionMemory))
+                                 .build();
 
-      containerRecommendation.setLastDayCost(containerCost);
+        containerRecommendation.setLastDayCost(containerCost);
+      }
     }
   }
 

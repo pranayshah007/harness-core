@@ -40,6 +40,8 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
   @Singular List<String> errorMessages;
 
   List<String> preservedNodesInRollbackMode;
+  // Dependencies uuids to serviceAffinity map
+  Map<String, String> serviceAffinityMap;
 
   public void merge(PlanCreationResponse response) {
     // adding PlanNode to map of nodes
@@ -83,6 +85,7 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
     mergeLayoutNodeInfo(other.getGraphLayoutResponse());
     addYamlUpdates(other.getYamlUpdates());
     mergePreservedNodesInRollbackMode(other.getPreservedNodesInRollbackMode());
+    mergeServiceAffinityMap(other.getServiceAffinityMap());
   }
 
   public void updateYamlInDependencies(String updatedYaml) {
@@ -99,6 +102,15 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
     }
     for (Map.Entry<String, PlanCreationContextValue> entry : contextMap.entrySet()) {
       putContextValue(entry.getKey(), entry.getValue());
+    }
+  }
+
+  private void mergeServiceAffinityMap(Map<String, String> serviceAffinityMap) {
+    if (EmptyPredicate.isEmpty(serviceAffinityMap)) {
+      return;
+    }
+    for (Map.Entry<String, String> entry : serviceAffinityMap.entrySet()) {
+      mergeServiceAffinity(entry.getKey(), entry.getValue());
     }
   }
 
@@ -165,6 +177,19 @@ public class MergePlanCreationResponse implements AsyncCreatorResponse {
       return;
     }
     dependencies = dependencies.toBuilder().putDependencyMetadata(nodeId, value).build();
+  }
+
+  private void mergeServiceAffinity(String key, String serviceAffinity) {
+    if (serviceAffinityMap != null && serviceAffinityMap.containsKey(key)) {
+      return;
+    }
+
+    if (serviceAffinityMap == null) {
+      serviceAffinityMap = new HashMap<>();
+    } else if (!(serviceAffinityMap instanceof HashMap)) {
+      serviceAffinityMap = new HashMap<>(serviceAffinityMap);
+    }
+    serviceAffinityMap.put(key, serviceAffinity);
   }
 
   public void putContextValue(String key, PlanCreationContextValue value) {

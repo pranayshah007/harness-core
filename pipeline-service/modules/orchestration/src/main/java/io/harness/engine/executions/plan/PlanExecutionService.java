@@ -35,6 +35,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
       @NonNull String planExecutionId, @NonNull Status status, Consumer<Update> ops, boolean forced);
 
   PlanExecution get(String planExecutionId);
+  PlanExecution getWithFieldsIncluded(String planExecutionId, Set<String> fieldsToInclude);
 
   /**
    * @param planExecutionId planExecutionId
@@ -84,4 +85,6 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
    * @param planExecutionIds Ids of to be deleted planExecutions
    */
   void deleteAllPlanExecutionAndMetadata(Set<String> planExecutionIds);
+
+  void calculateAndUpdateRunningStatus(String planNodeId, String nodeId);
 }

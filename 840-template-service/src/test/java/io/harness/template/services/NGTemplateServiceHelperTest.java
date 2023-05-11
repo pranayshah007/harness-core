@@ -29,10 +29,10 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rule.Owner;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import java.util.Collections;
 import java.util.List;

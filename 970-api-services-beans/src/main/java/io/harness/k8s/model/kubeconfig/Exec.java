@@ -31,7 +31,7 @@ public class Exec {
   @JsonProperty(K8sConstants.KUBECFG_API_VERSION) private String apiVersion;
   @JsonProperty(K8sConstants.KUBECFG_ARGS) private List<String> args;
   @JsonProperty(K8sConstants.KUBECFG_COMMAND) private String command;
-  @JsonProperty(K8sConstants.KUBECFG_ENV) private List<EnvVariables> env;
+  @JsonProperty(K8sConstants.KUBECFG_ENV) private List<EnvVariable> env;
   @JsonProperty(K8sConstants.KUBECFG_INTERACTIVE_MODE) private InteractiveMode interactiveMode;
   @JsonProperty(K8sConstants.KUBECFG_CLUSTER_INFO) private boolean provideClusterInfo;
   @JsonProperty(K8sConstants.KUBECFG_INSTALL_HINT) private String installHint;

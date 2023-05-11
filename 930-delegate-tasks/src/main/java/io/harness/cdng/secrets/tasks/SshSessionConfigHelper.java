@@ -15,6 +15,7 @@ import static io.harness.utils.SecretUtils.validateDecryptedValue;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
+import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHKeyPathCredentialDTO;
 import io.harness.ng.core.dto.secrets.SSHKeyReferenceCredentialDTO;
@@ -33,8 +34,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class SshSessionConfigHelper {
-  public void generateKerberosBuilder(KerberosConfigDTO kerberosConfigDTO, SshSessionConfig.Builder builder,
-      List<EncryptedDataDetail> encryptionDetails, SecretDecryptionService secretDecryptionService) {
+  public void generateKerberosBuilder(SSHAuthDTO authDTO, KerberosConfigDTO kerberosConfigDTO,
+      SshSessionConfig.Builder builder, List<EncryptedDataDetail> encryptionDetails,
+      SecretDecryptionService secretDecryptionService) {
     KerberosConfigBuilder kerberosConfig = KerberosConfig.builder()
                                                .principal(kerberosConfigDTO.getPrincipal())
                                                .realm(kerberosConfigDTO.getRealm())
@@ -61,10 +63,12 @@ public class SshSessionConfigHelper {
     }
     builder.withAuthenticationScheme(KERBEROS)
         .withAccessType(AccessType.KERBEROS)
-        .withKerberosConfig(kerberosConfig.build());
+        .withKerberosConfig(kerberosConfig.build())
+        .withUseSshj(authDTO.isUseSshj())
+        .withUseSshClient(authDTO.isUseSshClient());
   }
 
-  public void generateSSHBuilder(SSHConfigDTO sshConfigDTO, SshSessionConfig.Builder builder,
+  public void generateSSHBuilder(SSHAuthDTO authDTO, SSHConfigDTO sshConfigDTO, SshSessionConfig.Builder builder,
       List<EncryptedDataDetail> encryptionDetails, SecretDecryptionService secretDecryptionService) {
     switch (sshConfigDTO.getCredentialType()) {
       case Password:
@@ -109,5 +113,7 @@ public class SshSessionConfigHelper {
         break;
     }
     builder.withAuthenticationScheme(SSH_KEY);
+    builder.withUseSshClient(authDTO.isUseSshClient());
+    builder.withUseSshj(authDTO.isUseSshj());
   }
 }

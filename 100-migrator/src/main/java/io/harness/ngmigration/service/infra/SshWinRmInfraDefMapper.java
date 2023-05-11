@@ -200,6 +200,7 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
       builder.credentialsRef(ParameterField.createValueField(
           MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getWinRmConnectionAttributes(), CONNECTOR)
               .toSecretRefStringValue()));
+      builder.hostFilter(HostFilter.builder().type(HostFilterType.ALL).spec(AllHostsFilter.builder().build()).build());
       if (isNotEmpty(pdcInfra.getHostNames())) {
         builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
       }
@@ -215,9 +216,9 @@ public class SshWinRmInfraDefMapper implements InfraDefMapper {
           builder.hosts(ParameterField.createValueField(pdcInfra.getHostNames()));
         }
       } else {
-        builder.hostObjectArray(
+        builder.hostArrayPath(
             getExpression(pdcInfra.getExpressions(), PhysicalInfra.hostArrayPath, null, provisionerId));
-        builder.dynamicallyProvisioned(ParameterField.createValueField(true));
+        builder.provisioner(ParameterField.createValueField(provisionerId));
         Map<String, String> hostAttrs = new HashMap<>();
         hostAttrs.put(PhysicalInfra.hostname,
             getValueFromExpression(pdcInfra.getExpressions(), PhysicalInfra.hostname, null, provisionerId));

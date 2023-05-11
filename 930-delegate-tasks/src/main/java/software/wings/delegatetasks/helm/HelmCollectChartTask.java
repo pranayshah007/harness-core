@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
-import static software.wings.delegatetasks.helm.ArtifactoryHelmTaskHelper.shouldFetchHelmChartsFromArtifactory;
+import static software.wings.helpers.ext.helm.request.ArtifactoryHelmTaskHelper.shouldFetchHelmChartsFromArtifactory;
 
 import static java.lang.String.format;
 

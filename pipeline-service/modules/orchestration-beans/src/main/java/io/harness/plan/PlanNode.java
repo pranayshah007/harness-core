@@ -30,6 +30,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import lombok.With;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
@@ -75,6 +76,8 @@ public class PlanNode implements Node {
   @Builder.Default @Deprecated boolean skipUnresolvedExpressionsCheck = true;
 
   @Builder.Default ExpressionMode expressionMode = ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
+
+  @With @Builder.Default Boolean preserveInRollbackMode = false;
 
   public static PlanNode fromPlanNodeProto(PlanNodeProto planNodeProto) {
     if (planNodeProto == null) {
@@ -125,5 +128,12 @@ public class PlanNode implements Node {
   @Override
   public String getStageFqn() {
     return this.stageFqn;
+  }
+
+  public boolean isPreserveInRollbackMode() {
+    if (preserveInRollbackMode == null) {
+      return false;
+    }
+    return preserveInRollbackMode;
   }
 }

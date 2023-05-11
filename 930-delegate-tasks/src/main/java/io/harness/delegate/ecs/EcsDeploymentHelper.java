@@ -108,7 +108,7 @@ public class EcsDeploymentHelper {
 
             .region(ecsInfraConfig.getRegion())
             .ecsTasks(ecsCommandTaskHelper.getRunningEcsTasks(ecsInfraConfig.getAwsConnectorDTO(),
-                ecsInfraConfig.getCluster(), createServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
+                ecsInfraConfig.getCluster(), finalCreateServiceRequest.serviceName(), ecsInfraConfig.getRegion()))
             .canaryServiceName(canaryServiceName)
             .build();
 

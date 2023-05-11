@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = SpotInfrastructureDetails.class, name = "Spot"),
       @JsonSubTypes.Type(value = AsgInfrastructureDetails.class, name = "Asg"),
       @JsonSubTypes.Type(value = GoogleFunctionInfrastructureDetails.class, name = "GoogleCloudFunction"),
-      @JsonSubTypes.Type(value = AwsLambdaInfrastructureDetails.class, name = "AwsLambda")
+      @JsonSubTypes.Type(value = AwsLambdaInfrastructureDetails.class, name = "AwsLambda"),
+      @JsonSubTypes.Type(value = AwsSamInfrastructureDetails.class, name = "AWS_SAM")
 })
 public abstract class InfrastructureDetails {}

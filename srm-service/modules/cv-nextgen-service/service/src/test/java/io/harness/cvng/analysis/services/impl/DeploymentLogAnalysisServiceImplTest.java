@@ -17,6 +17,7 @@ import static io.harness.cvng.beans.DataSourceType.SPLUNK;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.BGROVES;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -25,6 +26,8 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -48,9 +51,12 @@ import io.harness.cvng.analysis.beans.LogAnalysisRadarChartListWithCountDTO;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
+import io.harness.cvng.core.beans.LogFeedback;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentLogAnalysisFilter;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.ticket.beans.TicketResponseDto;
+import io.harness.cvng.ticket.services.TicketService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.data.structure.CollectionUtils;
@@ -75,14 +81,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+  @Mock TicketService ticketService;
 
   private String accountId;
   private String cvConfigId;
@@ -93,7 +102,7 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
   private String verificationTaskId;
 
   @Before
-  public void setUp() throws IOException {
+  public void setUp() throws IOException, IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
     accountId = builderFactory.getContext().getAccountId();
     VerificationJobInstance verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
@@ -106,6 +115,9 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance radarChartVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
     radarChartVerificationJobInstanceId = verificationJobInstanceService.create(radarChartVerificationJobInstance);
     setUpDummyDeploymentLogAnalysis();
+    FieldUtils.writeField(deploymentLogAnalysisService, "ticketService", ticketService, true);
+    when(ticketService.getTicketForFeedbackId(any()))
+        .thenReturn(TicketResponseDto.builder().id("id").url("url").externalId("externalId").build());
   }
 
   @Test
@@ -1181,6 +1193,65 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(3);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageSize()).isEqualTo(20);
     assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().size()).isEqualTo(3);
+
+    LogAnalysisRadarChartListDTO content1 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(0);
+    assertThat(content1.getFeedback()).isNotNull();
+    assertThat(content1.getFeedback().getTicket().getExternalId()).isEqualTo("externalId");
+    assertThat(content1.getFeedback().getTicket().getId()).isEqualTo("id");
+    assertThat(content1.getFeedback().getTicket().getUrl()).isEqualTo("url");
+    assertThat(content1.getFeedbackApplied()).isNotNull();
+
+    LogAnalysisRadarChartListDTO content2 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(1);
+    assertThat(content2.getFeedback()).isNotNull();
+    assertThat(content2.getFeedbackApplied()).isNotNull();
+
+    LogAnalysisRadarChartListDTO content3 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(2);
+    assertThat(content3.getFeedback()).isNotNull();
+    assertThat(content3.getFeedbackApplied()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetRadarChartAnalysisResult_withoutFeedback() {
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfigId, verificationJobInstanceId, APP_DYNAMICS);
+    DeploymentLogAnalysis deploymentLogAnalysis = createDeploymentLogAnalysis(verificationTaskId);
+    List<ClusterSummary> testClusterSummaries = deploymentLogAnalysis.getResultSummary().getTestClusterSummaries();
+    testClusterSummaries.set(0, testClusterSummaries.get(0).toBuilder().feedback(null).feedbackApplied(null).build());
+    testClusterSummaries.set(1, testClusterSummaries.get(1).toBuilder().feedback(null).feedbackApplied(null).build());
+    testClusterSummaries.set(2, testClusterSummaries.get(2).toBuilder().feedback(null).feedbackApplied(null).build());
+    deploymentLogAnalysis.setResultSummary(
+        deploymentLogAnalysis.getResultSummary().toBuilder().testClusterSummaries(testClusterSummaries).build());
+    deploymentLogAnalysisService.save(deploymentLogAnalysis);
+    LogAnalysisRadarChartListWithCountDTO logAnalysisRadarChartListWithCountDTO =
+        deploymentLogAnalysisService.getRadarChartLogAnalysisResult(accountId, verificationJobInstanceId,
+            DeploymentLogAnalysisFilter.builder().build(), PageParams.builder().page(0).size(20).build());
+
+    assertThat(logAnalysisRadarChartListWithCountDTO.getTotalClusters()).isEqualTo(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getEventCounts().size()).isEqualTo(4);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalPages()).isEqualTo(1);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getTotalItems()).isEqualTo(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageItemCount()).isEqualTo(3);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getPageSize()).isEqualTo(20);
+    assertThat(logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().size()).isEqualTo(3);
+
+    LogAnalysisRadarChartListDTO content1 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(0);
+    assertThat(content1.getFeedback()).isNull();
+    assertThat(content1.getFeedbackApplied()).isNull();
+
+    LogAnalysisRadarChartListDTO content2 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(1);
+    assertThat(content2.getFeedback()).isNull();
+    assertThat(content2.getFeedbackApplied()).isNull();
+    LogAnalysisRadarChartListDTO content3 =
+        logAnalysisRadarChartListWithCountDTO.getLogAnalysisRadarCharts().getContent().get(2);
+    assertThat(content3.getFeedback()).isNull();
+    assertThat(content3.getFeedbackApplied()).isNull();
   }
 
   @Test
@@ -1588,6 +1659,10 @@ public class DeploymentLogAnalysisServiceImplTest extends CvNextGenTestBase {
         .count(count)
         .label(label)
         .testFrequencyData(testFrequencyData)
+        .feedback(LogFeedback.builder()
+                      .ticket(TicketResponseDto.builder().externalId("externalId").id("id").url("url").build())
+                      .build())
+        .feedbackApplied(LogFeedback.builder().build())
         .frequencyData(Collections.singletonList(
             DeploymentLogAnalysisDTO.HostFrequencyData.builder()
                 .frequencies(CollectionUtils.emptyIfNull(testFrequencyData)

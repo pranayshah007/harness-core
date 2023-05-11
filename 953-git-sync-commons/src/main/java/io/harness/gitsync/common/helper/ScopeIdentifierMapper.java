@@ -7,6 +7,8 @@
 
 package io.harness.gitsync.common.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,5 +34,15 @@ public class ScopeIdentifierMapper {
         .setOrgIdentifier(Strings.nullToEmpty(scope.getOrgIdentifier()))
         .setProjectIdentifier(Strings.nullToEmpty(scope.getProjectIdentifier()))
         .build();
+  }
+
+  public io.harness.encryption.Scope getEncryptionScopeFromScopeIdentifiers(ScopeIdentifiers scopeIdentifiers) {
+    if (isNotEmpty(scopeIdentifiers.getProjectIdentifier())) {
+      return io.harness.encryption.Scope.PROJECT;
+    } else if (isNotEmpty(scopeIdentifiers.getOrgIdentifier())) {
+      return io.harness.encryption.Scope.ORG;
+    } else {
+      return io.harness.encryption.Scope.ACCOUNT;
+    }
   }
 }

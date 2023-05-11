@@ -13,7 +13,7 @@ import static software.wings.graphql.datafetcher.secretManager.CreateSecretManag
 import static software.wings.graphql.datafetcher.secretManager.CreateSecretManagerDataFetcherTest.VAULT_ID;
 import static software.wings.graphql.datafetcher.secretManager.CreateSecretManagerDataFetcherTest.VAULT_NAME;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;

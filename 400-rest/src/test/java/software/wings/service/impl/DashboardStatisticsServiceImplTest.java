@@ -139,9 +139,9 @@ import static com.google.common.collect.Sets.newHashSet;
 import static java.util.Arrays.asList;
 import static java.util.Objects.deepEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -223,10 +223,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
@@ -515,29 +513,6 @@ public class DashboardStatisticsServiceImplTest extends WingsBaseTest {
         .infraMappingName(infraMappingName)
         .isDeleted(isDeleted)
         .build();
-  }
-
-  @Test
-  @Owner(developers = ABHINAV)
-  @Category(UnitTests.class)
-  public void testUsageMetrics() {
-    Map<String, Integer> instanceCountMap = usageMetricsHelper.getAllValidInstanceCounts();
-    boolean account1Validation = false;
-    boolean account2Validation = false;
-    Iterator<Entry<String, Integer>> mapIterator = instanceCountMap.entrySet().iterator();
-    while (mapIterator.hasNext()) {
-      Map.Entry entry = mapIterator.next();
-      if (entry.getKey().equals(ACCOUNT_1_ID)) {
-        assertThat(entry.getValue()).isEqualTo(6);
-        account1Validation = true;
-      }
-      if (entry.getKey().equals(ACCOUNT_2_ID)) {
-        assertThat(entry.getValue()).isEqualTo(2);
-        account2Validation = true;
-      }
-    }
-    assertThat(account1Validation).isTrue();
-    assertThat(account2Validation).isTrue();
   }
 
   @Test

@@ -63,6 +63,7 @@ public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, 
   @Schema(description = "storeType") RuleStoreType storeType;
   @Schema(description = "isOOTB") Boolean isOOTB;
   @Schema(description = "deleted") Boolean deleted;
+  @Schema(description = "forRecommendation") Boolean forRecommendation;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
   @CreatedBy @Schema private EmbeddedUser createdBy;
@@ -107,6 +108,7 @@ public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, 
         .tags(getTags())
         .deleted(getDeleted())
         .orgIdentifier(getOrgIdentifier())
+        .forRecommendation(getForRecommendation())
         .projectIdentifier(getProjectIdentifier())
         .createdAt(getCreatedAt())
         .lastUpdatedAt(getLastUpdatedAt())

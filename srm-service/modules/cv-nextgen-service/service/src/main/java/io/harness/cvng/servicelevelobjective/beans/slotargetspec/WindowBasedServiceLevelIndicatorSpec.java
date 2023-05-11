@@ -12,6 +12,7 @@ import static io.harness.cvng.CVConstants.SLI_METRIC_TYPE;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.SLIMetricSpec;
 
@@ -43,5 +44,14 @@ public class WindowBasedServiceLevelIndicatorSpec extends ServiceLevelIndicatorS
 
   public SLIEvaluationType getType() {
     return SLIEvaluationType.WINDOW;
+  }
+
+  @Override
+  public void generateNameAndIdentifier(
+      String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
+    serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_"
+        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
+    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_"
+        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
   }
 }

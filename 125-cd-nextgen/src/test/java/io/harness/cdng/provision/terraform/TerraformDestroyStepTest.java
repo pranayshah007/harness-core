@@ -16,8 +16,8 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
@@ -543,7 +543,7 @@ public class TerraformDestroyStepTest extends CategoryTest {
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(null).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
-    doReturn(fileStoreFetchFilesConfig).when(terraformStepHelper).getFileStoreFetchFilesConfig(any(), any(), any());
+    doReturn(fileStoreFetchFilesConfig).when(terraformStepHelper).prepareTerraformConfigFileInfo(any(), any());
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
 
     Mockito.mockStatic(TaskRequestsUtils.class);

@@ -52,7 +52,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseDataList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier());
+        infrastructureMappingDTO.getOrgIdentifier(), infrastructureMappingDTO.getProjectIdentifier(),
+        infrastructureMappingDTO.getAccountIdentifier());
   }
 
   private List<AwsLambdaDeploymentReleaseData> populateDeploymentReleaseList(
@@ -112,20 +113,25 @@ public class AwsLambdaInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpe
       String accountIdentifier, List<AwsLambdaDeploymentReleaseData> deploymentReleaseData) {
     return AwsLambdaInstanceSyncPerpetualTaskParamsNg.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllAwsLambdaDeploymentReleaseList(toAwsLambdaDeploymentReleaseList(deploymentReleaseData))
+        .addAllAwsLambdaDeploymentReleaseList(
+            toAwsLambdaDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
         .build();
   }
 
   private List<AwsLambdaDeploymentRelease> toAwsLambdaDeploymentReleaseList(
-      List<AwsLambdaDeploymentReleaseData> deploymentReleaseData) {
-    return deploymentReleaseData.stream().map(this::toAwsLambdaDeploymentRelease).collect(Collectors.toList());
+      List<AwsLambdaDeploymentReleaseData> deploymentReleaseData, String accountId) {
+    return deploymentReleaseData.stream()
+        .map(data -> toAwsLambdaDeploymentRelease(data, accountId))
+        .collect(Collectors.toList());
   }
 
-  private AwsLambdaDeploymentRelease toAwsLambdaDeploymentRelease(AwsLambdaDeploymentReleaseData releaseData) {
+  private AwsLambdaDeploymentRelease toAwsLambdaDeploymentRelease(
+      AwsLambdaDeploymentReleaseData releaseData, String accountIdentifier) {
     return AwsLambdaDeploymentRelease.newBuilder()
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
-        .setAwsLambdaInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getAwsLambdaInfraConfig())))
+        .setAwsLambdaInfraConfig(
+            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getAwsLambdaInfraConfig())))
         .build();
   }
 

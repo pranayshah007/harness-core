@@ -46,11 +46,11 @@ public class SshSessionConfigMapper {
     switch (authDTO.getAuthScheme()) {
       case SSH:
         SSHConfigDTO sshConfigDTO = (SSHConfigDTO) authDTO.getSpec();
-        generateSSHBuilder(sshConfigDTO, builder, encryptionDetails);
+        generateSSHBuilder(authDTO, sshConfigDTO, builder, encryptionDetails);
         break;
       case Kerberos:
         KerberosConfigDTO kerberosConfigDTO = (KerberosConfigDTO) authDTO.getSpec();
-        generateKerberosBuilder(kerberosConfigDTO, builder, encryptionDetails);
+        generateKerberosBuilder(authDTO, kerberosConfigDTO, builder, encryptionDetails);
         break;
       default:
         break;
@@ -58,8 +58,8 @@ public class SshSessionConfigMapper {
     return builder.build();
   }
 
-  private void generateSSHBuilder(
-      SSHConfigDTO sshConfigDTO, SshSessionConfig.Builder builder, List<EncryptedDataDetail> encryptionDetails) {
+  private void generateSSHBuilder(SSHAuthDTO authDTO, SSHConfigDTO sshConfigDTO, SshSessionConfig.Builder builder,
+      List<EncryptedDataDetail> encryptionDetails) {
     switch (sshConfigDTO.getCredentialType()) {
       case Password:
         SSHPasswordCredentialDTO sshPasswordCredentialDTO = (SSHPasswordCredentialDTO) sshConfigDTO.getSpec();
@@ -102,10 +102,12 @@ public class SshSessionConfigMapper {
         break;
     }
     builder.withAuthenticationScheme(SSH_KEY);
+    builder.withUseSshj(authDTO.isUseSshj());
+    builder.withUseSshClient(authDTO.isUseSshClient());
   }
 
-  private void generateKerberosBuilder(KerberosConfigDTO kerberosConfigDTO, SshSessionConfig.Builder builder,
-      List<EncryptedDataDetail> encryptionDetails) {
+  private void generateKerberosBuilder(SSHAuthDTO authDTO, KerberosConfigDTO kerberosConfigDTO,
+      SshSessionConfig.Builder builder, List<EncryptedDataDetail> encryptionDetails) {
     KerberosConfigBuilder kerberosConfigBuilder = KerberosConfig.builder()
                                                       .principal(kerberosConfigDTO.getPrincipal())
                                                       .realm(kerberosConfigDTO.getRealm())
@@ -133,6 +135,8 @@ public class SshSessionConfigMapper {
     }
     builder.withAuthenticationScheme(KERBEROS)
         .withAccessType(AccessType.KERBEROS)
-        .withKerberosConfig(kerberosConfigBuilder.build());
+        .withKerberosConfig(kerberosConfigBuilder.build())
+        .withUseSshClient(authDTO.isUseSshClient())
+        .withUseSshj(authDTO.isUseSshj());
   }
 }

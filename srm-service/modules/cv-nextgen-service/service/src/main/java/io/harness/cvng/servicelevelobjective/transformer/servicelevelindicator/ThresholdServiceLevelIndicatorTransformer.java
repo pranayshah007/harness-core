@@ -29,8 +29,7 @@ public class ThresholdServiceLevelIndicatorTransformer
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
         .name(serviceLevelIndicatorDTO.getName())
-        .sliMissingDataType(
-            ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSliMissingDataType())
+        .sliMissingDataType(serviceLevelIndicatorDTO.getSLIMissingDataType())
         .metric1(thresholdSLIMetricSpec.getMetric1())
         .considerConsecutiveMinutes(thresholdSLIMetricSpec.getConsiderConsecutiveMinutes())
         .considerAllConsecutiveMinutesFromStartAsBad(

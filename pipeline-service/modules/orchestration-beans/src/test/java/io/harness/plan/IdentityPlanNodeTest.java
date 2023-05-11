@@ -11,16 +11,20 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -39,18 +43,25 @@ public class IdentityPlanNodeTest {
             .uuid("uuid")
             .identifier("test")
             .stepType(TEST_STEP_TYPE)
+            .advisorObtainmentsForExecutionMode(Map.of(ExecutionMode.PIPELINE_ROLLBACK,
+                Collections.singletonList(AdviserObtainment.newBuilder().setType(NextStepAdviser.ADVISER_TYPE).build()),
+                ExecutionMode.POST_EXECUTION_ROLLBACK,
+                Collections.singletonList(
+                    AdviserObtainment.newBuilder().setType(NextStepAdviser.ADVISER_TYPE).build())))
             .adviserObtainment(
                 AdviserObtainment.newBuilder().setType(AdviserType.newBuilder().setType("NEXT_STEP").build()).build())
             .skipGraphType(SkipType.NOOP)
             .build();
-    IdentityPlanNode identityPlanNodeExpected = IdentityPlanNode.builder()
-                                                    .uuid("uuid")
-                                                    .originalNodeExecutionId("originalNodeExecutionId")
-                                                    .identifier("test")
-                                                    .name("Test Node")
-                                                    .stepType(PMS_IDENTITY)
-                                                    .skipGraphType(SkipType.NOOP)
-                                                    .build();
+    IdentityPlanNode identityPlanNodeExpected =
+        IdentityPlanNode.builder()
+            .uuid("uuid")
+            .originalNodeExecutionId("originalNodeExecutionId")
+            .identifier("test")
+            .name("Test Node")
+            .stepType(PMS_IDENTITY)
+            .advisorObtainmentsForExecutionMode(planNode.getAdvisorObtainmentsForExecutionMode())
+            .skipGraphType(SkipType.NOOP)
+            .build();
     IdentityPlanNode identityPlanNodeActual =
         IdentityPlanNode.mapPlanNodeToIdentityNode(planNode, PMS_IDENTITY, "originalNodeExecutionId");
     assertThat(identityPlanNodeExpected).isEqualTo(identityPlanNodeActual);
@@ -63,6 +74,7 @@ public class IdentityPlanNodeTest {
                                    .identifier("test")
                                    .name("Test Node")
                                    .stepType(PMS_IDENTITY)
+                                   .advisorObtainmentsForExecutionMode(planNode.getAdvisorObtainmentsForExecutionMode())
                                    .skipGraphType(SkipType.SKIP_NODE)
                                    .build();
     assertThat(identityPlanNodeExpected).isEqualTo(identityPlanNodeWithAlwaysSkipGraph);

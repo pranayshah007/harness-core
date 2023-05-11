@@ -16,6 +16,7 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -28,20 +29,31 @@ public class PollingResponsePublisher {
   private final DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Inject
-  public PollingResponsePublisher(KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer,
+  public PollingResponsePublisher(KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
       DelegateAgentManagerClient delegateAgentManagerClient) {
     this.kryoSerializer = kryoSerializer;
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateAgentManagerClient = delegateAgentManagerClient;
   }
 
-  public boolean publishToManger(String taskId, PollingDelegateResponse pollingDelegateResponse) {
+  public boolean publishToManger(
+      String taskId, PollingDelegateResponse pollingDelegateResponse, boolean useReferenceFalseKryoSerializer) {
     try {
-      byte[] responseSerialized = referenceFalseKryoSerializer.asBytes(pollingDelegateResponse);
+      if (useReferenceFalseKryoSerializer) {
+        byte[] referenceFalseResponseSerialized = referenceFalseKryoSerializer.asBytes(pollingDelegateResponse);
 
-      executeWithExceptions(
-          delegateAgentManagerClient.publishPollingResultV2(taskId, pollingDelegateResponse.getAccountId(),
-              RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
+        executeWithExceptions(
+            delegateAgentManagerClient.publishPollingResultV2(taskId, pollingDelegateResponse.getAccountId(),
+                RequestBody.create(MediaType.parse("application/octet-stream"), referenceFalseResponseSerialized)));
+      } else {
+        byte[] responseSerialized = kryoSerializer.asBytes(pollingDelegateResponse);
+
+        executeWithExceptions(
+            delegateAgentManagerClient.publishPollingResult(taskId, pollingDelegateResponse.getAccountId(),
+                RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
+      }
+
       return true;
     } catch (Exception ex) {
       log.error("Failed to publish polling response with status: {}",

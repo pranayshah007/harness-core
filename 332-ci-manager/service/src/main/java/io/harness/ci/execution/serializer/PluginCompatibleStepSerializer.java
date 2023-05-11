@@ -54,7 +54,7 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
 
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
     Map<String, String> envVarMap = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        pluginCompatibleStep, identifier, timeout, ambiance, Type.K8, true);
+        pluginCompatibleStep, identifier, timeout, ambiance, Type.K8, true, true);
     PluginStep pluginStep = PluginStep.newBuilder()
                                 .setContainerPort(port)
                                 .setImage(CIStepInfoUtils.getPluginCustomStepImage(

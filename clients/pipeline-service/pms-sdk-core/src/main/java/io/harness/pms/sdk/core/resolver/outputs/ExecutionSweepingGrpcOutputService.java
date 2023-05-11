@@ -29,6 +29,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -71,6 +73,17 @@ public class ExecutionSweepingGrpcOutputService implements ExecutionSweepingOutp
         .output(RecastOrchestrationUtils.fromJson(resolve.getStepTransput(), ExecutionSweepingOutput.class))
         .found(resolve.getFound())
         .build();
+  }
+
+  @Override
+  public Optional<Map<String, Object>> resolveFromJsonAsMap(Ambiance ambiance, RefObject refObject) {
+    OptionalSweepingOutputResolveBlobResponse resolve =
+        PmsGrpcClientUtils.retryAndProcessException(sweepingOutputServiceBlockingStub::resolveOptional,
+            SweepingOutputResolveBlobRequest.newBuilder().setAmbiance(ambiance).setRefObject(refObject).build());
+    if (!resolve.getFound()) {
+      return Optional.empty();
+    }
+    return Optional.of(RecastOrchestrationUtils.fromJson(resolve.getStepTransput()));
   }
 
   @Override

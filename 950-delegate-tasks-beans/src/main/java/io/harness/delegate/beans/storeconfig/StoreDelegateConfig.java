@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.storeconfig;
 
-public interface StoreDelegateConfig {
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
+
+public interface StoreDelegateConfig extends NestedAnnotationResolver {
   StoreDelegateConfigType getType();
 }

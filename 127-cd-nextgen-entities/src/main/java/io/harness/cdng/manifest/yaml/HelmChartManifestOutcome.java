@@ -43,7 +43,7 @@ public class HelmChartManifestOutcome implements ManifestOutcome {
   HelmVersion helmVersion;
   List<HelmManifestCommandFlag> commandFlags;
   ParameterField<List<String>> valuesPaths;
-  ParameterField<String> subChartName;
+  ParameterField<String> subChartPath;
 
   public ParameterField<List<String>> getValuesPaths() {
     if (!(getParameterFieldValue(this.valuesPaths) instanceof List)) {

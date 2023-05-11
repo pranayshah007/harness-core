@@ -37,8 +37,6 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExecutionDetailDTOBuilder;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
-import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
-import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO.PipelineExecutionDetailDTOBuilder;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.ParameterField;
@@ -180,21 +178,20 @@ public class PipelineStageHelper {
     return inputSetYaml;
   }
 
-  public PipelineExecutionDetailDTO getResponseDTOWithChildGraph(String accountId, String childStageNodeId,
-      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
-      NodeExecution nodeExecution, String stageNodeExecutionId) {
+  public ChildExecutionDetailDTO getChildGraph(String accountId, String childStageNodeId,
+      EntityGitDetails entityGitDetails, NodeExecution nodeExecution, String stageNodeExecutionId) {
     String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
     PmsStepParameters parameters = nodeExecution.getResolvedParams();
 
     String orgId = parameters.get(PipelineStageStepParametersKeys.org).toString();
     String projectId = parameters.get(PipelineStageStepParametersKeys.project).toString();
-    return getExecutionDetailDTO(accountId, childStageNodeId, executionSummaryEntity, entityGitDetails,
-        childExecutionId, orgId, projectId, stageNodeExecutionId);
+    return getChildGraph(
+        accountId, childStageNodeId, entityGitDetails, childExecutionId, orgId, projectId, stageNodeExecutionId);
   }
 
-  private PipelineExecutionDetailDTO getExecutionDetailDTO(String accountId, String childStageNodeId,
-      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childExecutionId,
-      String orgId, String projectId, String stageNodeExecutionId) {
+  private ChildExecutionDetailDTO getChildGraph(String accountId, String childStageNodeId,
+      EntityGitDetails entityGitDetails, String childExecutionId, String orgId, String projectId,
+      String stageNodeExecutionId) {
     PipelineExecutionSummaryEntity executionSummaryEntityForChild =
         pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
 
@@ -204,21 +201,15 @@ public class PipelineStageHelper {
         PipelineRbacPermissions.PIPELINE_VIEW);
 
     EntityGitDetails entityGitDetailsForChild;
-    if (executionSummaryEntity.getEntityGitDetails() == null) {
+    if (entityGitDetails == null) {
       entityGitDetailsForChild =
           pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntityForChild.getGitSyncBranchContext());
     } else {
       entityGitDetailsForChild = executionSummaryEntityForChild.getEntityGitDetails();
     }
 
-    // Top graph of parent execution
-    PipelineExecutionDetailDTOBuilder pipelineStageGraphBuilder =
-        PipelineExecutionDetailDTO.builder().pipelineExecutionSummary(
-            PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails));
-
-    ChildExecutionDetailDTO childGraph = getChildGraph(childStageNodeId, childExecutionId,
-        executionSummaryEntityForChild, entityGitDetailsForChild, stageNodeExecutionId);
-    return pipelineStageGraphBuilder.childGraph(childGraph).build();
+    return getChildGraph(childStageNodeId, childExecutionId, executionSummaryEntityForChild, entityGitDetailsForChild,
+        stageNodeExecutionId);
   }
 
   private ChildExecutionDetailDTO getChildGraph(String childStageNodeId, String childExecutionId,

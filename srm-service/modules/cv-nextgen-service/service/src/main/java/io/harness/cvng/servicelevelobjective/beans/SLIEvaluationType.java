@@ -7,11 +7,12 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum SLIEvaluationType {
-  @JsonProperty("Window") WINDOW,
+  @JsonEnumDefaultValue @JsonProperty("Window") WINDOW,
   @JsonProperty("Request") REQUEST;
 }

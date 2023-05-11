@@ -28,16 +28,20 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PL)
 public class AzureKeyVaultConfigMapper {
   public static AzureVaultConfig fromDTO(AzureKeyVaultConfigDTO azureKeyVaultConfigDTO) {
-    AzureVaultConfig azureVaultConfig = AzureVaultConfig.builder()
-                                            .name(azureKeyVaultConfigDTO.getName())
-                                            .clientId(azureKeyVaultConfigDTO.getClientId())
-                                            .secretKey(azureKeyVaultConfigDTO.getSecretKey())
-                                            .subscription(azureKeyVaultConfigDTO.getSubscription())
-                                            .tenantId(azureKeyVaultConfigDTO.getTenantId())
-                                            .azureEnvironmentType(azureKeyVaultConfigDTO.getAzureEnvironmentType())
-                                            .vaultName(azureKeyVaultConfigDTO.getVaultName())
-                                            .delegateSelectors(azureKeyVaultConfigDTO.getDelegateSelectors())
-                                            .build();
+    AzureVaultConfig azureVaultConfig =
+        AzureVaultConfig.builder()
+            .name(azureKeyVaultConfigDTO.getName())
+            .clientId(azureKeyVaultConfigDTO.getClientId())
+            .secretKey(azureKeyVaultConfigDTO.getSecretKey())
+            .subscription(azureKeyVaultConfigDTO.getSubscription())
+            .tenantId(azureKeyVaultConfigDTO.getTenantId())
+            .azureEnvironmentType(azureKeyVaultConfigDTO.getAzureEnvironmentType())
+            .vaultName(azureKeyVaultConfigDTO.getVaultName())
+            .delegateSelectors(azureKeyVaultConfigDTO.getDelegateSelectors())
+            .useManagedIdentity(azureKeyVaultConfigDTO.getUseManagedIdentity())
+            .azureManagedIdentityType(azureKeyVaultConfigDTO.getAzureManagedIdentityType())
+            .managedClientId(azureKeyVaultConfigDTO.getManagedClientId())
+            .build();
     azureVaultConfig.setNgMetadata(ngMetaDataFromDto(azureKeyVaultConfigDTO));
     azureVaultConfig.setAccountId(azureKeyVaultConfigDTO.getAccountIdentifier());
     azureVaultConfig.setEncryptionType(azureKeyVaultConfigDTO.getEncryptionType());

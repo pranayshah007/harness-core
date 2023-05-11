@@ -35,10 +35,8 @@ import io.harness.perpetualtask.instancesync.AzureWebAppDeploymentRelease;
 import io.harness.perpetualtask.instancesync.AzureWebAppNGInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,10 +47,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class AzureWebAppInstanceSyncPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private AzureAppServiceService azureAppServiceService;
   @Inject private AzureConnectorMapper azureConnectorMapper;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -64,12 +62,13 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTa
     AzureWebAppNGInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AzureWebAppNGInstanceSyncPerpetualTaskParams.class);
 
-    return executeAzureWebAppInstanceSyncTask(taskId, taskParams);
+    return executeAzureWebAppInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
-  private PerpetualTaskResponse executeAzureWebAppInstanceSyncTask(
-      PerpetualTaskId taskId, AzureWebAppNGInstanceSyncPerpetualTaskParams taskParams) {
-    List<AzureWebAppDeploymentReleaseData> deploymentReleaseDataList = getAzureWebAppDeploymentReleaseData(taskParams);
+  private PerpetualTaskResponse executeAzureWebAppInstanceSyncTask(PerpetualTaskId taskId,
+      AzureWebAppNGInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+    List<AzureWebAppDeploymentReleaseData> deploymentReleaseDataList =
+        getAzureWebAppDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfoList = deploymentReleaseDataList.stream()
                                                           .map(this::getServerInstanceInfoList)
@@ -85,22 +84,23 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutor implements PerpetualTa
   }
 
   private List<AzureWebAppDeploymentReleaseData> getAzureWebAppDeploymentReleaseData(
-      AzureWebAppNGInstanceSyncPerpetualTaskParams taskParams) {
+      AzureWebAppNGInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     return taskParams.getAzureWebAppDeploymentReleaseListList()
         .stream()
-        .map(this::toAzureWebAppDeploymentReleaseData)
+        .map(data -> toAzureWebAppDeploymentReleaseData(data, referenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
   private AzureWebAppDeploymentReleaseData toAzureWebAppDeploymentReleaseData(
-      AzureWebAppDeploymentRelease azureWebAppDeploymentRelease) {
+      AzureWebAppDeploymentRelease azureWebAppDeploymentRelease, boolean referenceFalseKryoSerializer) {
     return AzureWebAppDeploymentReleaseData.builder()
         .appName(azureWebAppDeploymentRelease.getAppName())
         .subscriptionId(azureWebAppDeploymentRelease.getSubscriptionId())
         .resourceGroupName(azureWebAppDeploymentRelease.getResourceGroupName())
         .slotName(azureWebAppDeploymentRelease.getSlotName())
-        .azureWebAppInfraDelegateConfig((AzureWebAppInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
-            azureWebAppDeploymentRelease.getAzureWebAppInfraDelegateConfig().toByteArray()))
+        .azureWebAppInfraDelegateConfig(
+            (AzureWebAppInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializer)
+                .asObject(azureWebAppDeploymentRelease.getAzureWebAppInfraDelegateConfig().toByteArray()))
         .build();
   }
 

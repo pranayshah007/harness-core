@@ -10,7 +10,7 @@ package io.harness.batch.processing.service.impl;
 import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mock;
@@ -27,6 +27,7 @@ import io.harness.rule.Owner;
 
 import software.wings.dl.WingsPersistence;
 import software.wings.security.authentication.BatchQueryConfig;
+import software.wings.security.authentication.BulkOperationBatchQueryConfig;
 
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Timestamp;
@@ -37,7 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InstanceDataBulkWriteServiceImplTest extends BatchProcessingTestBase {
@@ -57,6 +58,8 @@ public class InstanceDataBulkWriteServiceImplTest extends BatchProcessingTestBas
   @Before
   public void setUp() throws Exception {
     when(config.getBatchQueryConfig()).thenReturn(BatchQueryConfig.builder().queryBatchSize(10).build());
+    when(config.getBulkOperationBatchQueryConfig())
+        .thenReturn(BulkOperationBatchQueryConfig.builder().queryBatchSize(10).build());
     when(wingsPersistence.getCollection(any()).initializeUnorderedBulkOperation().execute().isAcknowledged())
         .thenReturn(true);
   }

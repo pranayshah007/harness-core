@@ -7,8 +7,11 @@
 
 package io.harness.accesscontrol.roleassignments.persistence;
 
+import static io.harness.accesscontrol.scopes.core.ScopeHelper.getAccountFromScopeIdentifier;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
+
+import static java.util.Optional.ofNullable;
 
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.accesscontrol.principals.PrincipalType;
@@ -23,6 +26,7 @@ import io.harness.persistence.PersistentEntity;
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import java.util.List;
+import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -148,5 +152,10 @@ public class RoleAssignmentDBO implements PersistentEntity, AccessControlEntity 
                  .field(RoleAssignmentDBOKeys.scopeIdentifier)
                  .build())
         .build();
+  }
+
+  @Override
+  public Optional<String> getAccountId() {
+    return ofNullable(getAccountFromScopeIdentifier(scopeIdentifier));
   }
 }

@@ -27,11 +27,17 @@ import io.harness.cdng.azure.webapp.steps.NgAppSettingsSweepingOutput;
 import io.harness.cdng.azure.webapp.steps.NgConnectionStringsSweepingOutput;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.steps.NgConfigFilesMetadataSweepingOutput;
+import io.harness.cdng.hooks.ServiceHook;
+import io.harness.cdng.hooks.ServiceHookWrapper;
+import io.harness.cdng.hooks.steps.ServiceHooksMetadataSweepingOutput;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.output.NgManifestsMetadataSweepingOutput;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.WebAppSpec;
+import io.harness.cdng.service.beans.KubernetesServiceSpec;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
@@ -63,12 +69,14 @@ import org.jetbrains.annotations.NotNull;
 public class ServiceStepOverrideHelper {
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
 
+  private static final String SERVICE_CONFIGURATION_NOT_FOUND = "No service configuration found in the service";
+
   public void prepareAndSaveFinalManifestMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String manifestsSweepingOutputName) {
     NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
     if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException("No service configuration found in the service");
+      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
     }
 
     Map<String, List<ManifestConfigWrapper>> finalLocationManifestsMap = new HashMap<>();
@@ -213,7 +221,7 @@ public class ServiceStepOverrideHelper {
       String configFilesSweepingOutputName) {
     NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
     if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException("No service configuration found in the service");
+      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
     }
     List<ConfigFileWrapper> finalConfigFiles;
     // Processing envGroups. EnvironmentConfig and serviceOverrideConfig is null for envGroup. GitOps Flow
@@ -241,12 +249,30 @@ public class ServiceStepOverrideHelper {
         ambiance, configFilesSweepingOutputName, configFileSweepingOutput, StepCategory.STAGE.name());
   }
 
+  public void prepareAndSaveFinalServiceHooksMetadataToSweepingOutput(
+      @NonNull NGServiceConfig serviceV2Config, Ambiance ambiance, String serviceHooksSweepingOutputName) {
+    NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
+    if (ngServiceV2InfoConfig == null) {
+      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
+    }
+    List<ServiceHookWrapper> finalServiceHooks;
+    // No overrides for service Hooks
+    ServiceSpec serviceSpec = serviceV2Config.getNgServiceV2InfoConfig().getServiceDefinition().getServiceSpec();
+    final Map<String, ServiceHookWrapper> serviceHooks = getServiceHooks(serviceSpec);
+    finalServiceHooks = new ArrayList<>(serviceHooks.values());
+
+    final ServiceHooksMetadataSweepingOutput serviceHooksSweepingOutput =
+        ServiceHooksMetadataSweepingOutput.builder().finalServiceHooks(finalServiceHooks).build();
+    sweepingOutputService.consume(
+        ambiance, serviceHooksSweepingOutputName, serviceHooksSweepingOutput, StepCategory.STAGE.name());
+  }
+
   public void prepareAndSaveFinalConnectionStringsMetadataToSweepingOutput(@NonNull NGServiceConfig serviceV2Config,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentConfig ngEnvironmentConfig, Ambiance ambiance,
       String configFilesSweepingOutputName) {
     NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
     if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException("No service configuration found in the service");
+      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
     }
     final List<ConnectionStringsConfiguration> svcConnectionStrings =
         prepareFinalConnectionStrings(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
@@ -269,7 +295,7 @@ public class ServiceStepOverrideHelper {
       String appSettingsSweepingOutputName) {
     NGServiceV2InfoConfig ngServiceV2InfoConfig = serviceV2Config.getNgServiceV2InfoConfig();
     if (ngServiceV2InfoConfig == null) {
-      throw new InvalidRequestException("No service configuration found in the service");
+      throw new InvalidRequestException(SERVICE_CONFIGURATION_NOT_FOUND);
     }
     final List<ApplicationSettingsConfiguration> finalAppSettings =
         prepareFinalAppSettings(ngServiceV2InfoConfig, serviceOverrideConfig, ngEnvironmentConfig);
@@ -397,6 +423,37 @@ public class ServiceStepOverrideHelper {
     if (isNotEmpty(serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles())) {
       return serviceV2Config.getServiceDefinition().getServiceSpec().getConfigFiles().stream().collect(Collectors.toMap(
           configFileWrapper -> configFileWrapper.getConfigFile().getIdentifier(), Function.identity()));
+    }
+    return emptyMap();
+  }
+
+  private static Map<String, ServiceHookWrapper> getServiceHooks(ServiceSpec serviceSpec) {
+    if (serviceSpec instanceof KubernetesServiceSpec) {
+      if (isNotEmpty(((KubernetesServiceSpec) serviceSpec).getHooks())) {
+        return ((KubernetesServiceSpec) serviceSpec)
+            .getHooks()
+            .stream()
+            .filter(f -> f.getHook() != null)
+            .collect(Collectors.toMap(serviceHookWrapper -> {
+              String identifier;
+              ServiceHook serviceHook = serviceHookWrapper.getHook();
+              identifier = serviceHook.getIdentifier();
+              return identifier;
+            }, Function.identity()));
+      }
+    } else if (serviceSpec instanceof NativeHelmServiceSpec) {
+      if (isNotEmpty(((NativeHelmServiceSpec) serviceSpec).getHooks())) {
+        return ((NativeHelmServiceSpec) serviceSpec)
+            .getHooks()
+            .stream()
+            .filter(f -> f.getHook() != null)
+            .collect(Collectors.toMap(serviceHookWrapper -> {
+              String identifier;
+              ServiceHook serviceHook = serviceHookWrapper.getHook();
+              identifier = serviceHook.getIdentifier();
+              return identifier;
+            }, Function.identity()));
+      }
     }
     return emptyMap();
   }

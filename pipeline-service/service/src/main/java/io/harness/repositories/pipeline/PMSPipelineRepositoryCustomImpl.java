@@ -211,7 +211,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     }
     if (savedEntity.getStoreType() == StoreType.REMOTE) {
       String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
-
+      log.info("Fetching pipeline from working branchName - " + branchName);
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
             accountId, orgIdentifier, projectIdentifier, savedEntity, branchName, loadFromCache);

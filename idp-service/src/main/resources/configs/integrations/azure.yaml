@@ -1,3 +1,4 @@
-azure:
-  - host: HOST_VALUE
-    token: ${AZURE_TOKEN}
+integrations:
+  azure:
+    - host: HOST_VALUE
+      token: ${HARNESS_AZURE_REPO_TOKEN}

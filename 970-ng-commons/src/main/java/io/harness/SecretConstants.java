@@ -12,4 +12,5 @@ public class SecretConstants {
   public static final String REGIONS = "regions";
   public static final String VERSION = "version";
   public static final String LATEST = "latest";
+  public static final String EXPIRES_ON = "expiresOn";
 }

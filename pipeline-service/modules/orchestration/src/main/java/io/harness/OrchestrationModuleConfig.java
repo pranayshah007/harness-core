@@ -16,6 +16,7 @@ import io.harness.event.OrchestrationLogConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.repositories.planExecutionJson.ExpandedJsonLockConfig;
 
 import javax.annotation.Nullable;
 import lombok.Builder;
@@ -54,4 +55,6 @@ public class OrchestrationModuleConfig {
   ServiceHttpClientConfig licenseClientConfig;
   String licenseClientServiceSecret;
   String licenseClientId;
+
+  ExpandedJsonLockConfig expandedJsonLockConfig;
 }

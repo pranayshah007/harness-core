@@ -8,7 +8,7 @@
 package io.harness.delegate.metrics;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.DELEGATE_AGENT_METRIC_MAP;
+import static io.harness.govern.Switch.unhandled;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.service.DelegateAgentService;
@@ -47,8 +47,19 @@ public class DelegateAgentMetrics {
   }
 
   public void registerDelegateMetrics() {
-    DELEGATE_AGENT_METRIC_MAP.forEach((metricName, metricDetails)
-                                          -> metricRegistry.registerGaugeMetric(
-                                              metricName, metricDetails.getLabels(), metricDetails.getDescription()));
+    for (DelegateMetric delegateMetric : DelegateMetric.values()) {
+      switch (delegateMetric.getMetricType()) {
+        case GAUGE:
+          metricRegistry.registerGaugeMetric(
+              delegateMetric.getMetricName(), delegateMetric.getLabels(), delegateMetric.getDescription());
+          break;
+        case COUNT:
+          metricRegistry.registerCounterMetric(
+              delegateMetric.getMetricName(), delegateMetric.getLabels(), delegateMetric.getDescription());
+          break;
+        default:
+          unhandled(delegateMetric.getMetricType());
+      }
+    }
   }
 }

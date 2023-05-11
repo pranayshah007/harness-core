@@ -77,6 +77,12 @@ public class OutcomeInstance implements PersistentEntity, UuidAccess {
                  .field(OutcomeInstanceKeys.producedByRuntimeId)
                  .descRangeField(OutcomeInstanceKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("planExecutionId_fully_qualified_name_createdAt")
+                 .field(OutcomeInstanceKeys.planExecutionId)
+                 .field(OutcomeInstanceKeys.fullyQualifiedName)
+                 .descRangeField(OutcomeInstanceKeys.createdAt)
+                 .build())
         .build();
   }
 
@@ -93,6 +99,8 @@ public class OutcomeInstance implements PersistentEntity, UuidAccess {
   @Wither @Version Long version;
   String groupName;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
+
+  String fullyQualifiedName;
 
   public String getOutcomeJsonValue() {
     if (!isEmpty(outcomeValue)) {

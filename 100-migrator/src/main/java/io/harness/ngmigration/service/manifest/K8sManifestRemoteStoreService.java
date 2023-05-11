@@ -129,6 +129,10 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
             .paths(MigratorUtility.splitWithComma(path))
             .build();
 
+    if (StringUtils.isNotBlank(gitFileConfig.getRepoName())) {
+      gitStore.setRepoName(ParameterField.createValueField(gitFileConfig.getRepoName()));
+    }
+
     if (StringUtils.isNotBlank(gitFileConfig.getCommitId())) {
       gitStore.setCommitId(ParameterField.createValueField(gitFileConfig.getCommitId()));
     }

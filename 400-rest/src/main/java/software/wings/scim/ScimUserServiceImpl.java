@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.Generation.CG;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -33,6 +35,7 @@ import software.wings.beans.UserInvite.UserInviteBuilder;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.UserService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -62,6 +65,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   @Inject private UserService userService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private UserServiceHelper userServiceHelper;
 
   private static final Integer MAX_RESULT_COUNT = 20;
   private static final String GIVEN_NAME = "givenName";
@@ -83,6 +87,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       userQuery.setActive(true);
       if (shouldUpdateUser(userQuery, user)) {
         updateUser(user.getUuid(), accountId, userQuery);
+        userService.updateUserAccountLevelDataForThisGen(accountId, user, CG, SCIM);
         log.info("SCIM: Creating user call for accountId {} with updation {}", accountId, userQuery);
       } else {
         log.info("SCIM: Creating user call for accountId {} with conflict {}", accountId, userQuery);
@@ -308,8 +313,7 @@ public class ScimUserServiceImpl implements ScimUserService {
           patchOperation.getValue(String.class));
     }
 
-    if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId)
-        && "userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
+    if ("userName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null
         && !user.getEmail().equalsIgnoreCase(patchOperation.getValue(String.class))) {
       updateUser(patchOperation, user, UserKeys.email);
       log.info("SCIM: Updated user's {}, email from {} to email id: {}", userId, user.getEmail(),
@@ -450,8 +454,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       final String userPrimaryEmail =
           isEmpty(userResource.getUserName()) ? null : userResource.getUserName().toLowerCase();
 
-      if (featureFlagService.isEnabled(FeatureName.UPDATE_EMAILS_VIA_SCIM, accountId) && userPrimaryEmail != null
-          && !userPrimaryEmail.equals(user.getEmail())) {
+      if (userPrimaryEmail != null && !userPrimaryEmail.equals(user.getEmail())) {
         updateOperations.set(UserKeys.email, userPrimaryEmail);
         userUpdate = true;
         log.info(

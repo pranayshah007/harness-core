@@ -37,6 +37,7 @@ public class MigrationEntityComparator implements Comparator<NGYamlFile> {
   private static final int ENVIRONMENT = 25;
   private static final int INFRA = 35;
   private static final int SERVICE_VARIABLE = 40;
+  private static final int MONITORED_SERVICE_TEMPLATE = 65;
   private static final int WORKFLOW = 70;
   private static final int PIPELINE = 100;
 
@@ -68,6 +69,7 @@ public class MigrationEntityComparator implements Comparator<NGYamlFile> {
           .put(NGMigrationEntityType.WORKFLOW, WORKFLOW)
           .put(NGMigrationEntityType.PIPELINE, PIPELINE)
           .put(NGMigrationEntityType.TRIGGER, TRIGGER)
+          .put(NGMigrationEntityType.MONITORED_SERVICE_TEMPLATE, MONITORED_SERVICE_TEMPLATE)
           .build();
 
   @Override

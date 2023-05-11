@@ -91,8 +91,10 @@ import java.nio.file.StandardCopyOption;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,7 +110,6 @@ import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.CreateBranchCommand.SetupUpstreamMode;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListBranchCommand;
 import org.eclipse.jgit.api.LsRemoteCommand;
 import org.eclipse.jgit.api.PullCommand;
 import org.eclipse.jgit.api.PushCommand;
@@ -152,6 +153,8 @@ public class GitClientV2Impl implements GitClientV2 {
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
   private static final int SOCKET_CONNECTION_READ_TIMEOUT_SECONDS = 60;
+  private static final String REFS_HEADS = "refs/heads/";
+  private static final String ORIGIN = "origin/";
 
   @Inject private GitClientHelper gitClientHelper;
   /**
@@ -269,6 +272,17 @@ public class GitClientV2Impl implements GitClientV2 {
           // if set to <code>true</code> no branch will be checked out, after the clone.
           // This enhances performance of the clone command when there is no need for a checked out branch.
           .setNoCheckout(noCheckout);
+    } else {
+      Map<String, Ref> refs = listRemote(request);
+      if (refs.containsKey(REFS_HEADS + request.getBranch())) {
+        cloneCommand.setBranch(isEmpty(request.getBranch()) ? null : request.getBranch());
+        cloneCommand.setNoCheckout(noCheckout);
+      } else {
+        String branchToClone = refs.get("HEAD").getTarget().getName();
+        cloneCommand.setBranch(branchToClone);
+        cloneCommand.setBranchesToClone(Collections.singleton(branchToClone));
+        cloneCommand.setNoCheckout(true);
+      }
     }
     try (Git git = cloneCommand.call()) {
     } catch (GitAPIException ex) {
@@ -285,15 +299,16 @@ public class GitClientV2Impl implements GitClientV2 {
         CheckoutCommand checkoutCommand = git.checkout();
         checkoutCommand.setCreateBranch(true).setName(request.getBranch());
         if (!request.isUnsureOrNonExistentBranch()) {
-          checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint("origin/" + request.getBranch());
+          checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint(ORIGIN + request.getBranch());
         } else {
-          List<Ref> refs = git.branchList().setListMode(ListBranchCommand.ListMode.REMOTE).call();
-          String startPoint = refs.stream()
-                                  .filter(ref -> ref.getName().contains("main") || ref.getName().contains("master"))
-                                  .findFirst()
-                                  .orElseGet(() -> refs.stream().findFirst().orElseThrow())
-                                  .getName();
-          checkoutCommand.setUpstreamMode(SetupUpstreamMode.NOTRACK).setStartPoint(startPoint);
+          Map<String, Ref> refs = listRemote(request);
+          if (refs.containsKey(REFS_HEADS + request.getBranch())) {
+            checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK).setStartPoint(ORIGIN + request.getBranch());
+          } else {
+            String branchToClone = refs.get("HEAD").getTarget().getName();
+            checkoutCommand.setUpstreamMode(SetupUpstreamMode.TRACK)
+                .setStartPoint(ORIGIN + branchToClone.replace(REFS_HEADS, ""));
+          }
         }
         checkoutCommand.call();
       }
@@ -1228,6 +1243,17 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  @Override
+  public Map<String, Ref> listRemote(GitBaseRequest request) {
+    try {
+      LsRemoteCommand lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(Git.lsRemoteRepository(), request);
+      return lsRemoteCommand.setRemote(request.getRepoUrl()).callAsMap();
+    } catch (GitAPIException e) {
+      log.error(GIT_YAML_LOG_PREFIX + "Error in listing remote: " + ExceptionSanitizer.sanitizeForLogging(e));
+      throw new YamlException("Error in listing remote", USER);
+    }
+  }
+
   private void tryResetWorkingDir(GitBaseRequest request) {
     try {
       resetWorkingDir(request);
@@ -1307,7 +1333,7 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info("Checking out Branch: " + request.getBranch());
       CheckoutCommand checkoutCommand = git.checkout()
                                             .setCreateBranch(true)
-                                            .setStartPoint("origin/" + request.getBranch())
+                                            .setStartPoint(ORIGIN + request.getBranch())
                                             .setForce(true)
                                             .setUpstreamMode(SetupUpstreamMode.TRACK)
                                             .setName(request.getBranch());

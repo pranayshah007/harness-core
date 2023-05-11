@@ -62,7 +62,8 @@ public class OnetimeDowntimeSpec extends DowntimeSpec {
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class OnetimeEndTimeBasedSpec extends OnetimeSpec {
-    @NotNull private long endTime;
+    @Deprecated private long endTime;
+    private String endDateTime;
     @Override
     public OnetimeDowntimeType getType() {
       return OnetimeDowntimeType.END_TIME;

@@ -15,12 +15,11 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -96,7 +95,7 @@ public class AbstractAnalysisStateTest extends WingsBaseTest {
   @Before
   public void setup() {
     initMocks(this);
-    when(containerInstanceHandler.isContainerDeployment(anyObject())).thenReturn(false);
+    when(containerInstanceHandler.isContainerDeployment(any())).thenReturn(false);
     when(infrastructureMapping.getDeploymentType()).thenReturn(DeploymentType.KUBERNETES.name());
     when(infraMappingService.get(anyString(), anyString())).thenReturn(infrastructureMapping);
     when(serviceResourceService.getDeploymentType(any(), any(), any())).thenReturn(DeploymentType.KUBERNETES);

@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -42,6 +43,7 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
@@ -52,6 +54,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 @AllArgsConstructor
 @StoreIn(DbAliases.IDP)
 @Entity(value = "catalogConnector", noClassnameStored = true)
+@Document("catalogConnector")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.IDP)
 public class CatalogConnectorEntity
@@ -61,6 +64,8 @@ public class CatalogConnectorEntity
   @NotNull String identifier;
   @NotNull String connectorIdentifier;
   @NotNull String connectorProviderType;
+  @NotNull Set<String> delegateSelectors;
+  @NotNull String host;
   @NotNull CatalogInfraConnectorType type;
   CatalogRepositoryDetails catalogRepositoryDetails;
   @SchemaIgnore @CreatedBy private EmbeddedUser createdBy;

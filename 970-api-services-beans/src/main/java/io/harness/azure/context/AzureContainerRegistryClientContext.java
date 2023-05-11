@@ -22,7 +22,7 @@ public class AzureContainerRegistryClientContext extends AzureClientContext {
   @Builder
   AzureContainerRegistryClientContext(@NonNull AzureConfig azureConfig, @NonNull String subscriptionId,
       @NonNull String resourceGroupName, @NonNull String registryName) {
-    super(azureConfig, subscriptionId, resourceGroupName);
+    super(azureConfig, subscriptionId, resourceGroupName, false);
     this.registryName = registryName;
   }
 }

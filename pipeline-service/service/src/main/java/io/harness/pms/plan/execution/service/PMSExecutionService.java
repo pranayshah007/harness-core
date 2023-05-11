@@ -17,6 +17,7 @@ import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlWithTemplat
 import io.harness.pms.pipeline.PMSPipelineListBranchesResponse;
 import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.ResolveInputYamlType;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
@@ -32,7 +33,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(PIPELINE)
 public interface PMSExecutionService {
   InputSetYamlWithTemplateDTO getInputSetYamlWithTemplate(String accountId, String orgId, String projectId,
-      String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions);
+      String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions,
+      ResolveInputYamlType resolveExpressionsType);
 
   String getInputSetYamlForRerun(
       String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted);

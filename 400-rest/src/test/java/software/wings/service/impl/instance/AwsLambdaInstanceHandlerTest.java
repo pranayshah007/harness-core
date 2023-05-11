@@ -14,11 +14,11 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -259,8 +259,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
     InvocationCount invocationCount = InvocationCount.builder().build();
     doReturn(Optional.of(invocationCount))
         .when(awsLambdaInstanceHandler)
-        .getInvocationCountForKey(any(), any(Date.class), any(InvocationCountKey.class), any(), any(),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .getInvocationCountForKey(
+            any(), any(Date.class), any(InvocationCountKey.class), any(), any(), any(AwsConfig.class), anyList());
 
     List<InvocationCount> invocationCounts = awsLambdaInstanceHandler.prepareInvocationCountList("helloworkld",
         new Date(), Arrays.asList(InvocationCountKey.LAST_30_DAYS, InvocationCountKey.SINCE_LAST_DEPLOYED), "appid",
@@ -283,8 +283,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(cloudWatchStatisticsResponse)
         .when(awsLambdaInstanceHandler)
-        .fetchInvocationCountFromCloudWatch(any(), any(Date.class), any(Date.class), any(), any(), any(AwsConfig.class),
-            anyListOf(EncryptedDataDetail.class));
+        .fetchInvocationCountFromCloudWatch(
+            any(), any(Date.class), any(Date.class), any(), any(), any(AwsConfig.class), anyList());
     {
       Optional<InvocationCount> invocationCountForKey =
           awsLambdaInstanceHandler.getInvocationCountForKey("hello", new Date(), InvocationCountKey.LAST_30_DAYS,
@@ -298,8 +298,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
     {
       doReturn(AwsCloudWatchStatisticsResponse.builder().build())
           .when(awsLambdaInstanceHandler)
-          .fetchInvocationCountFromCloudWatch(any(), any(Date.class), any(Date.class), any(), any(),
-              any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+          .fetchInvocationCountFromCloudWatch(
+              any(), any(Date.class), any(Date.class), any(), any(), any(AwsConfig.class), anyList());
 
       Optional<InvocationCount> invocationCountForKey =
           awsLambdaInstanceHandler.getInvocationCountForKey("hello", new Date(), InvocationCountKey.LAST_30_DAYS,
@@ -324,13 +324,10 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void testSyncInstances() {
-    doNothing()
-        .when(awsLambdaInstanceHandler)
-        .syncInstancesInternal(any(), any(), anyListOf(DeploymentSummary.class), any(), any());
+    doNothing().when(awsLambdaInstanceHandler).syncInstancesInternal(any(), any(), anyList(), any(), any());
     awsLambdaInstanceHandler.syncInstances("appid", "innfraid", InstanceSyncFlow.MANUAL);
 
-    verify(awsLambdaInstanceHandler, times(1))
-        .syncInstancesInternal(any(), any(), anyListOf(DeploymentSummary.class), any(), any());
+    verify(awsLambdaInstanceHandler, times(1)).syncInstancesInternal(any(), any(), anyList(), any(), any());
 
     ArgumentCaptor<List> argumentcaptor = ArgumentCaptor.forClass(List.class);
     verify(awsLambdaInstanceHandler, times(1))
@@ -417,12 +414,12 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
     awsLambdaInstanceHandler.syncInstancesInternal(
         "appid", "inframappinfid", Collections.emptyList(), null, InstanceSyncFlow.ITERATOR);
     verify(awsLambdaInstanceHandler, times(2))
-        .syncInDBInstance(any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class),
-            anyListOf(EncryptedDataDetail.class), any(ServerlessInstance.class));
+        .syncInDBInstance(
+            any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList(), any(ServerlessInstance.class));
 
     verify(awsLambdaInstanceHandler, times(0))
-        .handleNewDeploymentInternal(anyListOf(DeploymentSummary.class), anyListOf(ServerlessInstance.class),
-            any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .handleNewDeploymentInternal(
+            anyList(), anyList(), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
   }
 
   private void setupAwsLambdaInstanceHandler() {
@@ -433,8 +430,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
 
     doNothing()
         .when(awsLambdaInstanceHandler)
-        .syncInDBInstance(any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class),
-            anyListOf(EncryptedDataDetail.class), any(ServerlessInstance.class));
+        .syncInDBInstance(
+            any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList(), any(ServerlessInstance.class));
   }
 
   @Test()
@@ -449,8 +446,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
 
     doNothing()
         .when(awsLambdaInstanceHandler)
-        .handleNewDeploymentInternal(anyListOf(DeploymentSummary.class), anyListOf(ServerlessInstance.class),
-            any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .handleNewDeploymentInternal(
+            anyList(), anyList(), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
 
     List<DeploymentSummary> newDeploymentSummaries =
         Arrays.asList(DeploymentSummary.builder().build(), DeploymentSummary.builder().build());
@@ -458,12 +455,12 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
         "appid", "inframappinfid", newDeploymentSummaries, null, InstanceSyncFlow.NEW_DEPLOYMENT);
 
     verify(awsLambdaInstanceHandler, times(0))
-        .syncInDBInstance(any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class),
-            anyListOf(EncryptedDataDetail.class), any(ServerlessInstance.class));
+        .syncInDBInstance(
+            any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList(), any(ServerlessInstance.class));
 
     verify(awsLambdaInstanceHandler, times(1))
-        .handleNewDeploymentInternal(eq(newDeploymentSummaries), anyListOf(ServerlessInstance.class),
-            any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .handleNewDeploymentInternal(eq(newDeploymentSummaries), anyList(), any(AwsLambdaInfraStructureMapping.class),
+            any(AwsConfig.class), anyList());
   }
 
   private SettingAttribute setCloudProvider() {
@@ -490,7 +487,7 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   @Owner(developers = ROHIT_KUMAR)
   @Category(UnitTests.class)
   public void deleteInstances() {
-    doReturn(true).when(serverlessInstanceService).delete(anyListOf(String.class));
+    doReturn(true).when(serverlessInstanceService).delete(anyList());
     List<ServerlessInstance> serverlessInstances = getServerlessInstances();
     awsLambdaInstanceHandler.deleteInstances(serverlessInstances);
 
@@ -510,9 +507,9 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   public void handleNewDeploymentInternal() {
     doNothing()
         .when(awsLambdaInstanceHandler)
-        .handleNewDeploymentSummary(any(DeploymentSummary.class), any(AwsLambdaInfraStructureMapping.class),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
-    doNothing().when(awsLambdaInstanceHandler).deleteInstances(anyListOf(ServerlessInstance.class));
+        .handleNewDeploymentSummary(
+            any(DeploymentSummary.class), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
+    doNothing().when(awsLambdaInstanceHandler).deleteInstances(anyList());
     awsLambdaInstanceHandler.handleNewDeploymentInternal(
         getDeploymentSummarList(), getServerlessInstances(), getInframapping(), getAwsConfig(), getEncryptionDetails());
     verify(awsLambdaInstanceHandler, times(1)).deleteInstances(getServerlessInstances());
@@ -527,8 +524,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   public void handleNewDeploymentSummary() {
     doReturn(AwsLambdaInstanceInfo.builder().build())
         .when(awsLambdaInstanceHandler)
-        .getLambdaInstanceInfo(any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .getLambdaInstanceInfo(
+            any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
 
     doReturn(getServerlessInstance())
         .when(awsLambdaInstanceHandler)
@@ -548,8 +545,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   public void handleNewDeploymentSummary_error() {
     doThrow(new RuntimeException("error"))
         .when(awsLambdaInstanceHandler)
-        .getLambdaInstanceInfo(any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .getLambdaInstanceInfo(
+            any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
 
     awsLambdaInstanceHandler.handleNewDeploymentSummary(
         getDeploymentSummary(), getInframapping(), getAwsConfig(), getEncryptionDetails());
@@ -624,8 +621,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   public void syncInDBInstance_function_deleted() {
     doReturn(null)
         .when(awsLambdaInstanceHandler)
-        .getLambdaInstanceInfo(any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .getLambdaInstanceInfo(
+            any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
 
     doReturn(false)
         .when(awsLambdaInstanceHandler)
@@ -692,13 +689,11 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
         AwsLambdaDetails.builder().functionName("f1").aliases(Collections.singletonList("alias")).build();
     doReturn(awsLambdaDetails)
         .when(awsLambdaInstanceHandler)
-        .getFunctionDetails(any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class),
-            anyListOf(EncryptedDataDetail.class), any(), any());
+        .getFunctionDetails(any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList(), any(), any());
 
     doReturn(Collections.emptyList())
         .when(awsLambdaInstanceHandler)
-        .prepareInvocationCountList(any(), any(Date.class), anyListOf(InvocationCountKey.class), any(), any(),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .prepareInvocationCountList(any(), any(Date.class), anyList(), any(), any(), any(AwsConfig.class), anyList());
 
     AwsLambdaInstanceInfo instanceInfo = awsLambdaInstanceHandler.getLambdaInstanceInfo(
         "f1", "1", new Date(), getInframapping(), getAwsConfig(), getEncryptionDetails());
@@ -712,9 +707,7 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void handle_handleNewDeployment() {
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
-    doNothing()
-        .when(awsLambdaInstanceHandler)
-        .syncInstancesInternal(any(), any(), anyListOf(DeploymentSummary.class), any(), any());
+    doNothing().when(awsLambdaInstanceHandler).syncInstancesInternal(any(), any(), anyList(), any(), any());
     awsLambdaInstanceHandler.handleNewDeployment(getDeploymentSummarList(), false, onDemandRollbackInfo);
     verify(awsLambdaInstanceHandler, times(1))
         .syncInstancesInternal(any(), any(), eq(getDeploymentSummarList()), any(), any());
@@ -726,13 +719,13 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
   public void test_handlePerpetualTask() {
     doNothing()
         .when(awsLambdaInstanceHandler)
-        .syncInstancesInternal(any(), any(), anyListOf(DeploymentSummary.class),
-            any(AwsLambdaDetailsMetricsResponse.class), any(InstanceSyncFlow.class));
+        .syncInstancesInternal(
+            any(), any(), anyList(), any(AwsLambdaDetailsMetricsResponse.class), any(InstanceSyncFlow.class));
     awsLambdaInstanceHandler.processInstanceSyncResponseFromPerpetualTask(
         getInframapping(), AwsLambdaDetailsMetricsResponse.builder().build());
     verify(awsLambdaInstanceHandler, times(1))
-        .syncInstancesInternal(any(), any(), anyListOf(DeploymentSummary.class),
-            isNotNull(AwsLambdaDetailsMetricsResponse.class), eq(InstanceSyncFlow.PERPETUAL_TASK));
+        .syncInstancesInternal(any(), any(), anyList(), isNotNull(AwsLambdaDetailsMetricsResponse.class),
+            eq(InstanceSyncFlow.PERPETUAL_TASK));
   }
 
   @Test
@@ -827,8 +820,8 @@ public class AwsLambdaInstanceHandlerTest extends WingsBaseTest {
     AwsLambdaInstanceInfo instanceInfo = AwsLambdaInstanceInfo.builder().build();
     doReturn(instanceInfo)
         .when(awsLambdaInstanceHandler)
-        .getLambdaInstanceInfo(any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class),
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class));
+        .getLambdaInstanceInfo(
+            any(), any(), any(Date.class), any(AwsLambdaInfraStructureMapping.class), any(AwsConfig.class), anyList());
 
     return instanceInfo;
   }

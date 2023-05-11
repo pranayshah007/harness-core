@@ -135,7 +135,8 @@ public class GoogleFunctionInstanceSyncHandlerTest extends InstancesTestBase {
         (GoogleFunctionDeploymentInfoDTO) googleFunctionInstanceSyncHandler.getDeploymentInfo(
             infrastructureOutcome, Arrays.asList(googleFunctionServerInstanceInfo));
 
-    assertThat(googleFunctionDeploymentInfoDTO.getRevision()).isEqualTo(googleFunctionServerInstanceInfo.getRevision());
+    assertThat(googleFunctionDeploymentInfoDTO.getEnvironmentType())
+        .isEqualTo(googleFunctionServerInstanceInfo.getEnvironmentType());
     assertThat(googleFunctionDeploymentInfoDTO.getFunctionName())
         .isEqualTo(googleFunctionServerInstanceInfo.getFunctionName());
     assertThat(googleFunctionDeploymentInfoDTO.getProject()).isEqualTo(googleFunctionServerInstanceInfo.getProject());

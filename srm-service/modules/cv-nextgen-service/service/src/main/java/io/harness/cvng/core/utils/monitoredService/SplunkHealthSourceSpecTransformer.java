@@ -28,7 +28,7 @@ public class SplunkHealthSourceSpecTransformer
         .feature(cvConfigs.get(0).getProductName())
         .queries(cvConfigs.stream()
                      .map(cv
-                         -> SplunkHealthSourceSpec.QueryDTO.builder()
+                         -> SplunkHealthSourceSpec.SplunkHealthSourceQueryDTO.builder()
                                 .name(cv.getQueryName())
                                 .query(cv.getQuery())
                                 .serviceInstanceIdentifier(cv.getServiceInstanceIdentifier())

@@ -121,7 +121,7 @@ public class K8sHelmCommonStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHelmChartManifestWithSubChartDefValuesYaml() {
     List<HelmFetchFileConfig> helmFetchFileConfigs = k8sHelmCommonStepHelper.mapHelmChartManifestsToHelmFetchFileConfig(
-        "manifest-1", Collections.emptyList(), ManifestType.HelmChart, "sub-chart-1");
+        "manifest-1", Collections.emptyList(), ManifestType.HelmChart, "charts/sub-chart-1");
 
     assertThat(helmFetchFileConfigs.get(0).getFilePaths()).contains("charts/sub-chart-1/values.yaml");
   }

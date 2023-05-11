@@ -9,8 +9,8 @@ package software.wings.graphql.datafetcher.execution;
 
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

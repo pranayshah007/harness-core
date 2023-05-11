@@ -45,6 +45,7 @@ import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -65,7 +66,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
   private final KubernetesContainerService kubernetesContainerService;
   private final KryoSerializer kryoSerializer;
   private final K8sTaskHelperBase k8sTaskHelperBase;
-  private final KryoSerializer referenceFalseKryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private final KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public InstanceSyncData fetchRunningInstanceDetails(
@@ -114,7 +115,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
                                           .build()))
           .setErrorMessage("Exception while fetching running K8s pods. Exception message: " + e.getMessage())
           .setTaskResponse(ByteString.copyFrom(
-              referenceFalseKryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
+              kryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
           .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
           .build();
     }

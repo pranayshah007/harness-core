@@ -24,13 +24,11 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.service.InstanceSyncConstants;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
 import java.util.List;
@@ -41,10 +39,9 @@ import org.eclipse.jetty.server.Response;
 @Singleton
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
+public class PcfInstanceSyncDelegateExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject PcfDelegateTaskHelper pcfDelegateTaskHelper;
   @Inject DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
@@ -58,13 +55,14 @@ public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
     String orgName = instanceSyncParams.getOrgName();
     String space = instanceSyncParams.getSpace();
 
-    CfInternalConfig cfInternalConfig =
-        (CfInternalConfig) referenceFalseKryoSerializer.asObject(instanceSyncParams.getPcfConfig().toByteArray());
+    CfInternalConfig cfInternalConfig = (CfInternalConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                            .asObject(instanceSyncParams.getPcfConfig().toByteArray());
 
     ByteString encryptedData = instanceSyncParams.getEncryptedData();
 
     List<EncryptedDataDetail> encryptedDataDetailList =
-        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(encryptedData.toByteArray());
+        (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(encryptedData.toByteArray());
 
     CfInstanceSyncRequest cfInstanceSyncRequest = CfInstanceSyncRequest.builder()
                                                       .pcfConfig(cfInternalConfig)

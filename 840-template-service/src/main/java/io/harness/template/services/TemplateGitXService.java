@@ -10,8 +10,8 @@ package io.harness.template.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityInfo;
-import io.harness.template.beans.TemplateImportRequestDTO;
 import io.harness.template.entity.TemplateEntity;
+import io.harness.template.resources.beans.TemplateImportRequestDTO;
 
 @OwnedBy(HarnessTeam.PL)
 public interface TemplateGitXService {

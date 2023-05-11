@@ -24,7 +24,7 @@ import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.plan.creation.PlanCreationBlobResponseUtils;
 import io.harness.pms.sdk.core.pipeline.creators.BaseCreatorService;
-import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecorator;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationContext;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;
 import io.harness.pms.yaml.PipelineVersion;
@@ -45,13 +45,12 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class VariableCreatorService
     extends BaseCreatorService<VariableCreationResponse, SetupMetadata, VariablesCreationBlobRequest> {
-  private final PipelineServiceInfoProvider pipelineServiceInfoProvider;
+  private final PipelineServiceInfoDecorator serviceInfoDecorator;
   private final PmsGitSyncHelper pmsGitSyncHelper;
 
   @Inject
-  public VariableCreatorService(
-      PipelineServiceInfoProvider pipelineServiceInfoProvider, PmsGitSyncHelper pmsGitSyncHelper) {
-    this.pipelineServiceInfoProvider = pipelineServiceInfoProvider;
+  public VariableCreatorService(PipelineServiceInfoDecorator serviceInfoDecorator, PmsGitSyncHelper pmsGitSyncHelper) {
+    this.serviceInfoDecorator = serviceInfoDecorator;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
   }
 
@@ -69,7 +68,7 @@ public class VariableCreatorService
   public VariableCreationResponse processNodeInternal(
       SetupMetadata setupMetadata, YamlField yamlField, VariablesCreationBlobRequest request) {
     Optional<VariableCreator> variableCreatorOptional =
-        findVariableCreator(pipelineServiceInfoProvider.getVariableCreators(), yamlField);
+        findVariableCreator(serviceInfoDecorator.getVariableCreators(), yamlField);
 
     if (!variableCreatorOptional.isPresent()) {
       return null;

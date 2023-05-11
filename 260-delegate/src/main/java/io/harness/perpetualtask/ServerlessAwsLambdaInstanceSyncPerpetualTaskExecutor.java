@@ -27,10 +27,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaDeploymentRelease;
 import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,9 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private ServerlessTaskHelperBase serverlessTaskHelperBase;
 
@@ -53,13 +51,13 @@ public class ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor implements Per
     log.info("Running the ServerlessAwsLambda InstanceSync perpetual task executor for task id: {}", taskId);
     ServerlessAwsLambdaInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.class);
-    return executeServerlessAwsLambdaInstanceSyncTask(taskId, taskParams);
+    return executeServerlessAwsLambdaInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
-  private PerpetualTaskResponse executeServerlessAwsLambdaInstanceSyncTask(
-      PerpetualTaskId taskId, ServerlessAwsLambdaInstanceSyncPerpetualTaskParams taskParams) {
+  private PerpetualTaskResponse executeServerlessAwsLambdaInstanceSyncTask(PerpetualTaskId taskId,
+      ServerlessAwsLambdaInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     List<ServerlessAwsLambdaDeploymentReleaseData> deploymentReleaseDataList =
-        getServerlessAwsLambdaDeploymentReleaseData(taskParams);
+        getServerlessAwsLambdaDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos =
         deploymentReleaseDataList.stream()
@@ -85,18 +83,19 @@ public class ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor implements Per
   }
 
   private List<ServerlessAwsLambdaDeploymentReleaseData> getServerlessAwsLambdaDeploymentReleaseData(
-      ServerlessAwsLambdaInstanceSyncPerpetualTaskParams taskParams) {
+      ServerlessAwsLambdaInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     return taskParams.getServerlessAwsLambdaDeploymentReleaseListList()
         .stream()
-        .map(this::toServerlessAwsLambdaDeploymentReleaseData)
+        .map(data -> toServerlessAwsLambdaDeploymentReleaseData(data, referenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
   private ServerlessAwsLambdaDeploymentReleaseData toServerlessAwsLambdaDeploymentReleaseData(
-      ServerlessAwsLambdaDeploymentRelease serverlessAwsLambdaDeploymentRelease) {
+      ServerlessAwsLambdaDeploymentRelease serverlessAwsLambdaDeploymentRelease, boolean referenceFalseKryoSerializer) {
     return ServerlessAwsLambdaDeploymentReleaseData.builder()
-        .serverlessInfraConfig((ServerlessAwsLambdaInfraConfig) referenceFalseKryoSerializer.asObject(
-            serverlessAwsLambdaDeploymentRelease.getServerlessInfraConfig().toByteArray()))
+        .serverlessInfraConfig(
+            (ServerlessAwsLambdaInfraConfig) getKryoSerializer(referenceFalseKryoSerializer)
+                .asObject(serverlessAwsLambdaDeploymentRelease.getServerlessInfraConfig().toByteArray()))
         .functions(serverlessAwsLambdaDeploymentRelease.getFunctionsList())
         .region(serverlessAwsLambdaDeploymentRelease.getRegion())
         .serviceName(serverlessAwsLambdaDeploymentRelease.getServiceName())

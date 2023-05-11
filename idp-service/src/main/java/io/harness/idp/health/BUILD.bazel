@@ -1,0 +1,24 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/harness.bzl", "java_library")
+
+java_library(
+    name = "module",
+    srcs = glob(["**/*.java"]),
+    resources = [],
+    visibility = ["//idp-service:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/annotations:module",
+        "//980-commons/src/main/java/io/harness/health:module",
+        "//980-commons/src/main/java/io/harness/maintenance:module",
+        "//980-commons/src/main/java/io/harness/rest:module",
+        "//980-commons/src/main/java/io/harness/security/annotations:module",
+        "//999-annotations:module",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+    ],
+)

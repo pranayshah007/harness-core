@@ -26,7 +26,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
-@FieldNameConstants(innerTypeName = "NamespaceNameValue")
+@FieldNameConstants(innerTypeName = "NamespaceKeys")
 @StoreIn(DbAliases.IDP)
 @Entity(value = "backstageNamespace", noClassnameStored = true)
 @Document("backstageNamespace")

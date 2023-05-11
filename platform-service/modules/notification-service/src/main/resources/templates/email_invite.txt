@@ -56,7 +56,7 @@ body: >-
                   Hi ${name!},
                   <#if projectname??> <br>You've been invited to join project ${projectname} on Harness Platform. Click below to accept this invitation.
                   <#elseif organizationname??> <br>You've been invited to join organization ${organizationname} on Harness Platform. Click below to accept this invitation.
-                  <#else> <br>You've been invited to join account ${accountname} on Harness Platform. Click below to accept this invitation.
+                  <#else> <br>You've been invited to join account <a href="${url!}" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none; color: #00ade4; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; line-height: 33px;">${accountname}</a> on Harness Platform. Click below to accept this invitation.
                   </#if>
                 </div>
               </td>

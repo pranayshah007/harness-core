@@ -19,6 +19,7 @@ import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -30,8 +31,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -40,10 +43,14 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("environmentGroupYaml")
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml")
+@FieldNameConstants(innerTypeName = "environmentGroupYamlKeys")
 public class EnvironmentGroupYaml implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME) @ApiModelProperty(hidden = true) private String uuid;
 
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> envGroupRef;
+  @Pattern(regexp = NGRegexValidatorConstants.NON_EMPTY_STRING_PATTERN)
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  private ParameterField<String> envGroupRef;
 
   @ApiModelProperty(dataType = SwaggerConstants.ENVIRONMENT_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)

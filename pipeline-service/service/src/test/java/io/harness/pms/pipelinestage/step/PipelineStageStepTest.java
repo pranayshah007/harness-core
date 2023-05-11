@@ -37,6 +37,7 @@ import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.interrupts.ManualIssuer;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
@@ -46,6 +47,7 @@ import io.harness.pms.pipelinestage.output.PipelineStageSweepingOutput;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.PlanExecutionInterruptType;
 import io.harness.pms.plan.execution.PlanExecutionResponseDto;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -137,6 +139,13 @@ public class PipelineStageStepTest extends CategoryTest {
         .findByPlanExecutionId(ambiance.getPlanExecutionId());
     PipelineStageStepParameters stepParameters =
         PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(
+            ambiance.getSetupAbstractions().get("accountId"), ordId, projectId, planExecutionId);
+
     PipelineStageInfo info = pipelineStageStep.prepareParentStageInfo(ambiance, stepParameters);
     assertThat(info.getHasParentPipeline()).isEqualTo(true);
     assertThat(info.getStageNodeId()).isEqualTo("stageNodeId");
@@ -144,7 +153,6 @@ public class PipelineStageStepTest extends CategoryTest {
     assertThat(info.getProjectId()).isEqualTo(projectId);
     assertThat(info.getOrgId()).isEqualTo(ordId);
     assertThat(info.getRunSequence()).isEqualTo(40);
-    assertThat(info.getTriggerJsonPayload()).isEqualTo("trigger");
   }
 
   @Test
@@ -187,6 +195,12 @@ public class PipelineStageStepTest extends CategoryTest {
     doReturn(Optional.of(PlanExecutionMetadata.builder().triggerJsonPayload("").build()))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(ambiance.getPlanExecutionId());
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .executionTriggerInfo(ExecutionTriggerInfo.newBuilder().build())
+                 .build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(
+            ambiance.getSetupAbstractions().get("accountId"), ordId, projectId, planExecutionId);
     PipelineStageStepParameters stepParameters =
         PipelineStageStepParameters.builder().stageNodeId("stageNodeId").build();
 

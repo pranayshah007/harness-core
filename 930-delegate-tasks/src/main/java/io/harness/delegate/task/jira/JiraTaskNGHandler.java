@@ -10,6 +10,8 @@ package io.harness.delegate.task.jira;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.exception.WingsException.USER;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.jira.mappers.JiraRequestResponseMapper;
@@ -101,18 +103,26 @@ public class JiraTaskNGHandler {
     JiraClient jiraClient = getJiraClient(params);
     Set<String> userTypeFields = new HashSet<>();
     if (EmptyPredicate.isNotEmpty(params.getFields())) {
-      JiraIssueCreateMetadataNG createMetadata = jiraClient.getIssueCreateMetadata(
-          params.getProjectKey(), params.getIssueType(), null, false, false, params.isNewMetadata(), false);
-      JiraProjectNG project = createMetadata.getProjects().get(params.getProjectKey());
-      if (project != null) {
-        JiraIssueTypeNG issueType = project.getIssueTypes().get(params.getIssueType());
-        if (issueType != null) {
-          issueType.getFields().entrySet().forEach(e -> {
-            if (e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER)) {
-              userTypeFields.add(e.getKey());
-            }
-          });
-          setUserTypeCustomFieldsIfPresent(jiraClient, userTypeFields, params);
+      JiraIssueCreateMetadataNG createMetadata = null;
+      try {
+        createMetadata = jiraClient.getIssueCreateMetadata(
+            params.getProjectKey(), params.getIssueType(), null, false, false, params.isNewMetadata(), false);
+      } catch (Exception ex) {
+        // skipping setting user fields if error occurred while fetching createMetadata.
+        log.warn("Failed fetching createMetadata for setting user type fields during create issue", ex);
+      }
+      if (!isNull(createMetadata)) {
+        JiraProjectNG project = createMetadata.getProjects().get(params.getProjectKey());
+        if (project != null) {
+          JiraIssueTypeNG issueType = project.getIssueTypes().get(params.getIssueType());
+          if (issueType != null) {
+            issueType.getFields().entrySet().forEach(e -> {
+              if (e.getValue().getSchema().getType().equals(JiraFieldTypeNG.USER)) {
+                userTypeFields.add(e.getKey());
+              }
+            });
+            setUserTypeCustomFieldsIfPresent(jiraClient, userTypeFields, params);
+          }
         }
       }
     }
@@ -125,7 +135,15 @@ public class JiraTaskNGHandler {
     JiraClient jiraClient = getJiraClient(params);
 
     if (EmptyPredicate.isNotEmpty(params.getFields())) {
-      JiraIssueUpdateMetadataNG updateMetadata = jiraClient.getIssueUpdateMetadata(params.getIssueKey());
+      JiraIssueUpdateMetadataNG updateMetadata = null;
+
+      try {
+        updateMetadata = jiraClient.getIssueUpdateMetadata(params.getIssueKey());
+      } catch (Exception ex) {
+        // skipping setting user fields if error occurred while fetching updateMetadata.
+        log.warn("Failed fetching updateMetadata for setting user type fields during update issue", ex);
+      }
+
       if (updateMetadata != null) {
         Set<String> userTypeFields = updateMetadata.getFields()
                                          .entrySet()

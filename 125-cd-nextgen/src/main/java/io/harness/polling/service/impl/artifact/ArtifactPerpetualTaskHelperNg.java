@@ -9,16 +9,20 @@ package io.harness.polling.service.impl.artifact;
 
 import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner;
 
+import static software.wings.beans.TaskType.PT_SERIALIZATION_SUPPORT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
+import io.harness.delegate.AccountId;
 import io.harness.delegate.Capability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
+import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -29,6 +33,7 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.util.HashMap;
@@ -40,7 +45,10 @@ import lombok.AllArgsConstructor;
 @Singleton
 @OwnedBy(HarnessTeam.CDC)
 public class ArtifactPerpetualTaskHelperNg {
-  KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject protected KryoSerializer kryoSerializer;
+  @Inject private DelegateServiceGrpcClient delegateServiceGrpcClient;
+
   ArtifactStepHelper artifactStepHelper;
 
   public PerpetualTaskExecutionBundle createPerpetualTaskExecutionBundle(PollingDocument pollingDocument) {
@@ -79,7 +87,8 @@ public class ArtifactPerpetualTaskHelperNg {
     ArtifactCollectionTaskParamsNg artifactCollectionTaskParamsNg =
         ArtifactCollectionTaskParamsNg.newBuilder()
             .setPollingDocId(pollingDocument.getUuid())
-            .setArtifactCollectionParams(ByteString.copyFrom(kryoSerializer.asBytes(taskParameters)))
+            .setArtifactCollectionParams(
+                ByteString.copyFrom(getKryoSerializer(pollingDocument.getAccountId()).asBytes(taskParameters)))
             .build();
 
     Any perpetualTaskParams = Any.pack(artifactCollectionTaskParamsNg);
@@ -88,11 +97,19 @@ public class ArtifactPerpetualTaskHelperNg {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(
-                   Capability.newBuilder()
-                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
-                       .build())
+               .addCapabilities(Capability.newBuilder()
+                                    .setKryoCapability(ByteString.copyFrom(
+                                        getKryoSerializer(accountId).asDeflatedBytes(executionCapability)))
+                                    .build())
                .build());
     return builder.setTaskParams(perpetualTaskParams).putAllSetupAbstractions(ngTaskSetupAbstractionsWithOwner).build();
+  }
+
+  private KryoSerializer getKryoSerializer(String accountIdentifier) {
+    io.harness.delegate.TaskType taskType =
+        io.harness.delegate.TaskType.newBuilder().setType(PT_SERIALIZATION_SUPPORT.name()).build();
+    AccountId accountId = AccountId.newBuilder().setId(accountIdentifier).build();
+    return delegateServiceGrpcClient.isTaskTypeSupported(accountId, taskType) ? referenceFalseKryoSerializer
+                                                                              : kryoSerializer;
   }
 }

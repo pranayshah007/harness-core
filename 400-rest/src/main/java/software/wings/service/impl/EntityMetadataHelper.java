@@ -7,7 +7,10 @@
 
 package software.wings.service.impl;
 
+import static io.harness.beans.FeatureName.SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT;
+
 import io.harness.beans.EmbeddedUser;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.audit.AuditHeader;
 import software.wings.audit.AuditHeader.AuditHeaderKeys;
@@ -36,6 +39,8 @@ public class EntityMetadataHelper {
   @Inject private AuditHelper auditHelper;
   @Inject private AccountService accountService;
   @Inject private ApiKeyService apiKeyService;
+
+  @Inject private FeatureFlagService featureFlagService;
 
   private WingsPersistence wingsPersistence;
 
@@ -79,9 +84,10 @@ public class EntityMetadataHelper {
 
     UpdateOperations<AuditHeader> updateOperation = wingsPersistence.createUpdateOperations(AuditHeader.class);
     updateOperation.set(AuditHeaderKeys.details, details);
-    wingsPersistence.update(header, updateOperation);
 
-    updateOperation.set(AuditHeaderKeys.createdBy, EmbeddedUser.builder().name("API").build());
+    if (!featureFlagService.isEnabled(SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT, accountId)) {
+      updateOperation.set(AuditHeaderKeys.createdBy, EmbeddedUser.builder().name("API").build());
+    }
     wingsPersistence.update(header, updateOperation);
   }
 

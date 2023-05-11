@@ -19,24 +19,30 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.events.SdkResponseEventType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.PipelineVersion;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.cronutils.utils.StringUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +59,10 @@ public class AmbianceUtils {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size() - 1);
     if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
       builder.setStageExecutionId(level.getRuntimeId());
+      if (isRollbackModeExecution(ambiance)) {
+        builder.setOriginalStageExecutionIdForRollbackMode(
+            obtainOriginalStageExecutionIdForRollbackMode(ambiance, level));
+      }
     }
     return builder.addLevels(level).build();
   }
@@ -79,8 +89,34 @@ public class AmbianceUtils {
     Ambiance.Builder builder = cloneBuilder(ambiance, ambiance.getLevelsList().size());
     if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
       builder.setStageExecutionId(level.getRuntimeId());
+      if (isRollbackModeExecution(ambiance)) {
+        builder.setOriginalStageExecutionIdForRollbackMode(
+            obtainOriginalStageExecutionIdForRollbackMode(ambiance, level));
+      }
     }
     return builder.addLevels(level).build();
+  }
+
+  String obtainOriginalStageExecutionIdForRollbackMode(Ambiance ambiance, Level stageLevel) {
+    List<PostExecutionRollbackInfo> postExecutionRollbackInfoList =
+        ambiance.getMetadata().getPostExecutionRollbackInfoList();
+    if (obtainCurrentLevel(ambiance).getStepType().getStepCategory().equals(StepCategory.STRATEGY)) {
+      // postExecutionRollbackStageId will be the strategy setup id, that is what we need as the current setup id
+      String strategySetupId = obtainCurrentSetupId(ambiance);
+      int currentIteration = stageLevel.getStrategyMetadata().getCurrentIteration();
+      return postExecutionRollbackInfoList.stream()
+          .filter(info -> Objects.equals(info.getPostExecutionRollbackStageId(), strategySetupId))
+          .filter(info -> info.getRollbackStageStrategyMetadata().getCurrentIteration() == currentIteration)
+          .map(PostExecutionRollbackInfo::getOriginalStageExecutionId)
+          .findFirst()
+          .orElse("");
+    }
+    String currentSetupId = stageLevel.getSetupId();
+    return postExecutionRollbackInfoList.stream()
+        .filter(info -> Objects.equals(info.getPostExecutionRollbackStageId(), currentSetupId))
+        .map(PostExecutionRollbackInfo::getOriginalStageExecutionId)
+        .findFirst()
+        .orElse("");
   }
 
   public static Ambiance.Builder cloneBuilder(Ambiance ambiance, int levelsToKeep) {
@@ -262,15 +298,15 @@ public class AmbianceUtils {
 
   public static String modifyIdentifier(Ambiance ambiance, String identifier) {
     Level level = obtainCurrentLevel(ambiance);
-    return modifyIdentifier(level, identifier);
+    return modifyIdentifier(level, identifier, ambiance.getMetadata().getUseMatrixFieldName());
   }
 
-  public static String modifyIdentifier(Level level, String identifier) {
+  public static String modifyIdentifier(Level level, String identifier, boolean useMatrixFieldName) {
     return identifier.replaceAll(
-        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level));
+        StrategyValidationUtils.STRATEGY_IDENTIFIER_POSTFIX_ESCAPED, getStrategyPostfix(level, useMatrixFieldName));
   }
 
-  public static String getStrategyPostfix(Level level) {
+  public static String getStrategyPostfix(Level level, boolean useMatrixFieldName) {
     if (level == null || !level.hasStrategyMetadata()) {
       return StringUtils.EMPTY;
     }
@@ -286,13 +322,24 @@ public class AmbianceUtils {
       }
       return "_" + level.getStrategyMetadata().getCurrentIteration();
     }
-    return "_"
-        + level.getStrategyMetadata()
-              .getMatrixMetadata()
-              .getMatrixCombinationList()
-              .stream()
-              .map(String::valueOf)
-              .collect(Collectors.joining("_"));
+
+    String levelIdentifier = level.getStrategyMetadata()
+                                 .getMatrixMetadata()
+                                 .getMatrixCombinationList()
+                                 .stream()
+                                 .map(String::valueOf)
+                                 .collect(Collectors.joining("_"));
+
+    if (useMatrixFieldName) {
+      levelIdentifier = level.getStrategyMetadata()
+                            .getMatrixMetadata()
+                            .getMatrixValuesMap()
+                            .entrySet()
+                            .stream()
+                            .map(t -> t.getValue().replace(".", ""))
+                            .collect(Collectors.joining("_"));
+    }
+    return "_" + (levelIdentifier.length() <= 126 ? levelIdentifier : levelIdentifier.substring(0, 126));
   }
 
   public boolean isCurrentStrategyLevelAtStage(Ambiance ambiance) {
@@ -361,5 +408,58 @@ public class AmbianceUtils {
       return ambiance.getMetadata().getExecutionUuid();
     }
     return null;
+  }
+
+  public static boolean isCurrentLevelChildOfStep(Ambiance ambiance, String stepName) {
+    if (isEmpty(ambiance.getLevelsList()) || ambiance.getLevelsCount() == 1) {
+      return false;
+    }
+    List<Level> levels = ambiance.getLevelsList();
+
+    int currentLevelIdx = levels.size() - 1;
+    for (int i = 0; i < currentLevelIdx; i++) {
+      Level level = levels.get(i);
+      if (level.hasStepType() && Objects.equals(stepName, level.getStepType().getType())) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  public static AutoLogContext autoLogContext(Ambiance ambiance, SdkResponseEventType sdkResponseEventType) {
+    Map<String, String> logContextMap = logContextMap(ambiance);
+    logContextMap.put("sdkEventType", sdkResponseEventType.toString());
+    return new AutoLogContext(logContextMap, OVERRIDE_NESTS);
+  }
+
+  public String getFQNUsingLevels(@NotNull List<Level> levels) {
+    List<String> fqnList = new ArrayList<>();
+    for (Level level : levels) {
+      // Strategy level also handled. Strategy identifier will not come is skipExpressionChain will be true.
+      if (YamlUtils.shouldIncludeInQualifiedName(
+              level.getIdentifier(), level.getSetupId(), level.getSkipExpressionChain())) {
+        fqnList.add(level.getIdentifier());
+      }
+    }
+    return String.join(".", fqnList);
+  }
+  public boolean isRollbackModeExecution(Ambiance ambiance) {
+    ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
+    return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
+  }
+
+  public String getStageExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getOriginalStageExecutionIdForRollbackMode();
+    }
+    return ambiance.getStageExecutionId();
+  }
+
+  public String getPlanExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
+    }
+    return ambiance.getPlanExecutionId();
   }
 }

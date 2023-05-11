@@ -13,10 +13,10 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -32,7 +32,6 @@ import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
@@ -56,7 +55,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -76,8 +75,7 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
     doReturn(singletonList(new Instance()))
         .when(ec2ServiceDelegate)
-        .listEc2Instances(
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), anyString(), anyListOf(Filter.class), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), anyString(), anyList(), eq(true));
 
     doReturn(retrofit2.Response.success("success")).when(call).execute();
   }
@@ -92,13 +90,12 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
 
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     PerpetualTaskResponse perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), perpetualTaskParams, Instant.now());
 
     verify(ec2ServiceDelegate, times(1))
-        .listEc2Instances(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), eq("us-east-1"),
-            anyListOf(Filter.class), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), eq("us-east-1"), anyList(), eq(true));
     verify(delegateAgentManagerClient, times(1))
         .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
     verifySuccessResponse(perpetualTaskResponse, captor.getValue());
@@ -132,14 +129,12 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
         .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
     doThrow(new InvalidRequestException("Invalid deployment id"))
         .when(ec2ServiceDelegate)
-        .listEc2Instances(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), eq("us-east-1"),
-            anyListOf(Filter.class), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), eq("us-east-1"), anyList(), eq(true));
     PerpetualTaskResponse perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), perpetualTaskParams, Instant.now());
 
     verify(ec2ServiceDelegate, times(1))
-        .listEc2Instances(
-            any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), anyString(), anyListOf(Filter.class), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), anyString(), anyList(), eq(true));
     verify(delegateAgentManagerClient, times(1))
         .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
     verifyFailureResponse(perpetualTaskResponse, captor.getValue());
@@ -168,6 +163,9 @@ public class AwsCodeDeployInstanceSyncExecutorTest extends DelegateTestBase {
     ByteString filterBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(singletonList(new Filter())));
     paramsBuilder.setFilter(filterBytes);
 
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(paramsBuilder.build())).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(paramsBuilder.build()))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

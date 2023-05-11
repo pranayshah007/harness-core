@@ -111,6 +111,7 @@ public class PipelineAsyncValidationServiceImplTest extends PipelineServiceTestB
     assertThat(validationEvent.getStatus()).isEqualTo(ValidationStatus.SUCCESS);
     assertThat(validationEvent.getFqn()).isEqualTo(fqn);
     assertThat(validationEvent.getParams().getPipelineEntity()).isEqualTo(pipeline);
+    assertThat(validationEvent.getResult().getTemplateValidationResponse().isValidYaml()).isTrue();
     assertThat(validationEvent.getResult().getGovernanceMetadata()).isEqualTo(governanceMetadata);
   }
 }

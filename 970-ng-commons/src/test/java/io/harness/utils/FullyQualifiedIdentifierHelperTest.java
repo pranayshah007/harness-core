@@ -94,8 +94,8 @@ public class FullyQualifiedIdentifierHelperTest extends CategoryTest {
   @Owner(developers = OwnerRule.VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldFetchScopeWiseIds() {
-    ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(
-        ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("ref1", "org.ref2", "account.ref3"));
+    ScopeWiseIds scopeWiseIds =
+        IdentifierRefHelper.getScopeWiseIds(ACC_ID, ORG_ID, PROJ_ID, Arrays.asList("ref1", "org.ref2", "account.ref3"));
     assertThat(scopeWiseIds).isNotNull();
     assertThat(scopeWiseIds.getAccountScopedIds()).hasSize(1);
     assertThat(scopeWiseIds.getAccountScopedIds()).contains("ref3");

@@ -114,12 +114,11 @@ public class SCMGitSyncHelper {
     return ScmGitUtils.createScmPushResponse(yaml, gitBranchInfo, pushFileResponse, entityDetail, changeType);
   }
 
-  public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String filePath,
-      String connectorRef, boolean loadFromCache, EntityType entityType, Map<String, String> contextMap,
-      boolean getOnlyFileContent) {
-    log.info("Principal in getFileByBranch is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
-    contextMap =
-        GitSyncLogContextHelper.setContextMap(scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
+  public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String commitId,
+      String filePath, String connectorRef, boolean loadFromCache, EntityType entityType,
+      Map<String, String> contextMap, boolean getOnlyFileContent) {
+    contextMap = GitSyncLogContextHelper.setContextMap(
+        scope, repoName, branchName, commitId, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       final GetFileRequest getFileRequest =
@@ -127,6 +126,7 @@ public class SCMGitSyncHelper {
               .setRepoName(repoName)
               .setConnectorRef(connectorRef)
               .setBranchName(Strings.nullToEmpty(branchName))
+              .setCommitId(Strings.nullToEmpty(commitId))
               .setFilePath(filePath)
               .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache))
               .putAllContextMap(contextMap)
@@ -156,7 +156,7 @@ public class SCMGitSyncHelper {
 
   public ScmCreateFileGitResponse createFile(
       Scope scope, ScmCreateFileGitRequest gitRequest, Map<String, String> contextMap) {
-    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(),
+    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(), "",
         gitRequest.getFilePath(), GitOperation.CREATE_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
@@ -193,7 +193,7 @@ public class SCMGitSyncHelper {
 
   public ScmUpdateFileGitResponse updateFile(
       Scope scope, ScmUpdateFileGitRequest gitRequest, Map<String, String> contextMap) {
-    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(),
+    contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(), "",
         gitRequest.getFilePath(), GitOperation.UPDATE_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
@@ -258,7 +258,8 @@ public class SCMGitSyncHelper {
 
   public ScmGetRepoUrlResponse getRepoUrl(
       Scope scope, String repoName, String connectorRef, Map<String, String> contextMap) {
-    contextMap = GitSyncLogContextHelper.setContextMap(scope, repoName, "", "", GitOperation.GET_REPO_URL, contextMap);
+    contextMap =
+        GitSyncLogContextHelper.setContextMap(scope, repoName, "", "", "", GitOperation.GET_REPO_URL, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       final GetRepoUrlRequest getRepoUrlRequest =

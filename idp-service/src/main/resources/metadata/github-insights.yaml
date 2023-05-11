@@ -1,0 +1,21 @@
+identifier: github-insights
+name: GitHub Insights
+description: View GitHub Insights for your components in Backstage.
+createdBy: roadie.io
+category: Source Control Mgmt
+source: https://roadie.io/backstage/plugins/github-insights/?utm_source=backstage.io&utm_medium=marketplace&utm_campaign=github-insights
+iconUrl: https://roadie.io/images/logos/insights.png
+imageUrl: ''
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityGithubInsightsContent
+      addByDefault: true
+      defaultRoute: /code-insights
+      layoutSchemaSpecs:
+        name: EntityGithubInsightsContent
+        title: Code Insights
+        contents:
+          - component: EntityGithubInsightsContent

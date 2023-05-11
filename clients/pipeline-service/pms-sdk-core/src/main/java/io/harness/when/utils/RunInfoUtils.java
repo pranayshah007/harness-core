@@ -8,6 +8,7 @@
 package io.harness.when.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.plan.ExecutionMode.NORMAL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -32,6 +33,7 @@ public class RunInfoUtils {
   String PIPELINE_SUCCESS = "OnPipelineSuccess";
   String PIPELINE_FAILURE = "OnPipelineFailure";
   String ALWAYS = "Always";
+  String ROLLBACK_MODE_EXECUTION = "OnRollbackModeExecution";
 
   // adding == true here because if <+pipeline.rollback.isPipelineRollback> is null, then
   // (<+pipeline.rollback.isPipelineRollback> || <+OnStageFailure>) will equate to (null || true) and this leads to a
@@ -41,8 +43,13 @@ public class RunInfoUtils {
   // If when conditions configured as <+input> and no value is given, when.getValue() will still
   // be null and handled accordingly
   public String getRunConditionForStage(ParameterField<StageWhenCondition> stageWhenCondition) {
+    return getRunConditionForStage(stageWhenCondition, NORMAL);
+  }
+
+  public String getRunConditionForStage(
+      ParameterField<StageWhenCondition> stageWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stageWhenCondition) || stageWhenCondition.getValue() == null) {
-      return getDefaultWhenCondition(true);
+      return getDefaultWhenCondition(true, executionMode);
     }
 
     if (stageWhenCondition.getValue().getPipelineStatus() == null) {
@@ -69,7 +76,7 @@ public class RunInfoUtils {
   public String getRunConditionForRollback(
       ParameterField<StepWhenCondition> stepWhenCondition, ExecutionMode executionMode) {
     if (ParameterField.isNull(stepWhenCondition) || stepWhenCondition.getValue() == null) {
-      return getStatusExpression(isRollbackMode(executionMode) ? ALWAYS : STAGE_FAILURE);
+      return getStatusExpression(ROLLBACK_MODE_EXECUTION) + " || " + getStatusExpression(STAGE_FAILURE);
     }
     if (stepWhenCondition.getValue().getStageStatus() == null) {
       throw new InvalidRequestException("Stage Status in step when condition cannot be empty.");
@@ -91,10 +98,14 @@ public class RunInfoUtils {
   }
 
   private String getDefaultWhenCondition(boolean isStage) {
+    return getDefaultWhenCondition(isStage, NORMAL);
+  }
+
+  private String getDefaultWhenCondition(boolean isStage, ExecutionMode executionMode) {
     if (!isStage) {
       return getStatusExpression(STAGE_SUCCESS);
     }
-    return getStatusExpression(PIPELINE_SUCCESS);
+    return isRollbackMode(executionMode) ? getStatusExpression(ALWAYS) : getStatusExpression(PIPELINE_SUCCESS);
   }
 
   private String combineExpressions(String statusExpression, String conditionExpression) {

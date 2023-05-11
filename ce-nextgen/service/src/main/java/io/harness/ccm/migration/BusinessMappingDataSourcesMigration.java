@@ -11,8 +11,8 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.businessMapping.dao.BusinessMappingDao;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.dao.BusinessMappingDao;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.helper.BusinessMappingDataSourceHelper;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;

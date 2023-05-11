@@ -316,6 +316,17 @@ public class YamlSchemaUtils {
   public void addOneOfInExecutionWrapperConfig(JsonNode pipelineSchema,
       List<YamlSchemaWithDetails> stepSchemaWithDetails, ModuleType moduleType, Set<String> enabledFeatureFlags,
       Map<String, Boolean> featureRestrictionsMap) {
+    addOneOfInExecutionWrapperConfig(
+        pipelineSchema, stepSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap, true);
+  }
+
+  public void addOneOfInExecutionWrapperConfig(JsonNode pipelineSchema,
+      List<YamlSchemaWithDetails> stepSchemaWithDetails, ModuleType moduleType, Set<String> enabledFeatureFlags,
+      Map<String, Boolean> featureRestrictionsMap, boolean shouldFilter) {
+    if (shouldFilter) {
+      stepSchemaWithDetails =
+          stepSchemaWithDetails.stream().filter(o -> o.getModuleType() != moduleType).collect(Collectors.toList());
+    }
     JsonNode executionWrapperConfigProperties = pipelineSchema.get(EXECUTION_WRAPPER_CONFIG_NODE).get(PROPERTIES_NODE);
     ArrayNode oneOfNode = getOneOfNode(executionWrapperConfigProperties, STEP_NODE);
     JsonNode stepsNode = executionWrapperConfigProperties.get(STEP_NODE);
@@ -373,12 +384,13 @@ public class YamlSchemaUtils {
     if (!supportedModules.contains(moduleType)) {
       return false;
     }
+    return true;
 
-    if (!validateByFeatureFlags(yamlSchemaMetadata, enabledFeatureFlags)) {
-      return false;
-    }
-
-    return validateByFeatureRestrictions(yamlSchemaMetadata, featureRestrictionsMap);
+    //    if (!validateByFeatureFlags(yamlSchemaMetadata, enabledFeatureFlags)) {
+    //      return false;
+    //    }
+    //
+    //    return validateByFeatureRestrictions(yamlSchemaMetadata, featureRestrictionsMap);
   }
 
   protected boolean validateByFeatureFlags(YamlSchemaMetadata yamlSchemaMetadata, Set<String> enabledFeatureFlags) {
@@ -439,8 +451,8 @@ public class YamlSchemaUtils {
       Set<String> enabledFeatureFlags, Map<String, Boolean> featureRestrictionsMap) {
     return filterRootClassesByYamlGroup(yamlSchemaRootClasses, yamlGroup)
         .stream()
-        .filter(o -> validateByFeatureFlags(o.getYamlSchemaMetadata(), enabledFeatureFlags))
-        .filter(o -> validateByFeatureRestrictions(o.getYamlSchemaMetadata(), featureRestrictionsMap))
+        //        .filter(o -> validateByFeatureFlags(o.getYamlSchemaMetadata(), enabledFeatureFlags))
+        //        .filter(o -> validateByFeatureRestrictions(o.getYamlSchemaMetadata(), featureRestrictionsMap))
         .map(YamlSchemaRootClass::getClazz)
         .collect(Collectors.toSet());
   }

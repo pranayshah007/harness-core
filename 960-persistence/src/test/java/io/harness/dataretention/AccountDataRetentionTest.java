@@ -75,11 +75,11 @@ public class AccountDataRetentionTest extends PersistenceTestBase {
 
     accountDataRetentionTestEntities.forEach(entity -> persistence.save(entity));
 
-    assertThat(accountDataRetentionService.corectValidUntilAccount(
+    assertThat(accountDataRetentionService.correctValidUntilAccount(
                    io.harness.dataretention.AccountDataRetentionTestEntity.class, accounts, now, now + 1000))
         .isEqualTo(3);
 
-    assertThat(accountDataRetentionService.corectValidUntilAccount(
+    assertThat(accountDataRetentionService.correctValidUntilAccount(
                    io.harness.dataretention.AccountDataRetentionTestEntity.class, accounts, now, now + 1000))
         .isEqualTo(0);
 
@@ -91,11 +91,11 @@ public class AccountDataRetentionTest extends PersistenceTestBase {
 
     // Adding two minutes to the set data retention
     Map<String, Long> newAccounts = ImmutableMap.<String, Long>builder().put(accountId, dataRetention + 120000).build();
-    assertThat(accountDataRetentionService.corectValidUntilAccount(
+    assertThat(accountDataRetentionService.correctValidUntilAccount(
                    io.harness.dataretention.AccountDataRetentionTestEntity.class, newAccounts, now, now + 1000))
         .isEqualTo(0);
 
-    assertThat(accountDataRetentionService.corectValidUntilAccount(
+    assertThat(accountDataRetentionService.correctValidUntilAccount(
                    io.harness.dataretention.AccountDataRetentionTestEntity.class, newAccounts, now,
                    now + dataRetention + 1000))
         .isEqualTo(4);

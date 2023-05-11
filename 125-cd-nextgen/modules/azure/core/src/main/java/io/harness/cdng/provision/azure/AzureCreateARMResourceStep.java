@@ -37,6 +37,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -115,6 +116,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
   @Inject private AzureCommonHelper azureCommonHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private AzureARMConfigDAL azureARMConfigDAL;
+  @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -289,12 +291,14 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
             azureARMTaskNGResponse.getUnitProgressData().getUnitProgresses(), azureARMTaskNGResponse.getErrorMsg());
       }
 
+      AzureCreateARMResourceOutcome azureCreateARMResourceOutcome =
+          new AzureCreateARMResourceOutcome(azureCommonHelper.getARMOutputs(azureARMTaskNGResponse.getOutputs()));
+      provisionerOutputHelper.saveProvisionerOutputByStepIdentifier(ambiance, azureCreateARMResourceOutcome);
       return StepResponse.builder()
           .unitProgressList(azureARMTaskNGResponse.getUnitProgressData().getUnitProgresses())
           .stepOutcome(StepResponse.StepOutcome.builder()
                            .name(OutcomeExpressionConstants.OUTPUT)
-                           .outcome(new AzureCreateARMResourceOutcome(
-                               azureCommonHelper.getARMOutputs(azureARMTaskNGResponse.getOutputs())))
+                           .outcome(azureCreateARMResourceOutcome)
                            .build())
           .status(Status.SUCCEEDED)
           .build();

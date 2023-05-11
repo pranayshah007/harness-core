@@ -482,8 +482,10 @@ public class SecretApiUtils {
     sshKeyReferenceSpec.setType(SSHKEYREFERENCE);
     sshKeyReferenceSpec.setUsername(sshKeyReferenceCredentialDTO.getUserName());
     sshKeyReferenceSpec.setKey(sshKeyReferenceCredentialDTO.getKey().toSecretRefStringValue());
-    sshKeyReferenceSpec.setEncryptedPassphrase(
-        sshKeyReferenceCredentialDTO.getEncryptedPassphrase().toSecretRefStringValue());
+    if (sshKeyReferenceCredentialDTO.getEncryptedPassphrase() != null) {
+      sshKeyReferenceSpec.setEncryptedPassphrase(
+          sshKeyReferenceCredentialDTO.getEncryptedPassphrase().toSecretRefStringValue());
+    }
     return sshKeyReferenceSpec;
   }
 
@@ -494,7 +496,9 @@ public class SecretApiUtils {
     sshKeyPathSpec.setType(SSHKEYPATH);
     sshKeyPathSpec.setUsername(sshKeyPathCredentialDTO.getUserName());
     sshKeyPathSpec.setKeyPath(sshKeyPathCredentialDTO.getKeyPath());
-    sshKeyPathSpec.setEncryptedPassphrase(sshKeyPathCredentialDTO.getEncryptedPassphrase().toSecretRefStringValue());
+    if (sshKeyPathCredentialDTO.getEncryptedPassphrase() != null) {
+      sshKeyPathSpec.setEncryptedPassphrase(sshKeyPathCredentialDTO.getEncryptedPassphrase().toSecretRefStringValue());
+    }
     return sshKeyPathSpec;
   }
 

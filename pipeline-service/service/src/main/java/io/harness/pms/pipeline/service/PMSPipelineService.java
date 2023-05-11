@@ -43,6 +43,7 @@ public interface PMSPipelineService {
   /**
    * Clone pipeline (inline/remote) and do validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param clonePipelineDTO
    * @param accountId
    * @return
@@ -52,6 +53,7 @@ public interface PMSPipelineService {
   /**
    * Get pipeline (inline/remote) and do validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param accountId
    * @param orgIdentifier
    * @param projectIdentifier

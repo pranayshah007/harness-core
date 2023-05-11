@@ -29,4 +29,5 @@ public class GoogleFunctionsStepPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructureOutcome;
   String manifestContent;
   UnitProgressData lastActiveUnitProgressData;
+  String environmentType;
 }

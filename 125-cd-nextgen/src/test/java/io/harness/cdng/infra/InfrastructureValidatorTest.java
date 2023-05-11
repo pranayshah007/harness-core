@@ -9,6 +9,7 @@ package io.harness.cdng.infra;
 
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -21,6 +22,7 @@ import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AsgInfrastructure.AsgInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure.ElastigroupInfrastructureBuilder;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -84,6 +86,22 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                               .build();
     assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8sGcpInfrastructure runtimeInputNamespace = K8sGcpInfrastructure.builder()
+                                                     .connectorRef(ParameterField.createValueField("connectorId"))
+                                                     .namespace(ParameterField.createValueField("<+input>"))
+                                                     .releaseName(ParameterField.createValueField("release"))
+                                                     .cluster(ParameterField.createValueField("cluster"))
+                                                     .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sGcpInfrastructure runtimeInputReleaseName = K8sGcpInfrastructure.builder()
+                                                       .connectorRef(ParameterField.createValueField("connectorId"))
+                                                       .namespace(ParameterField.createValueField("namespace"))
+                                                       .releaseName(ParameterField.createValueField("<+input>"))
+                                                       .cluster(ParameterField.createValueField("cluster"))
+                                                       .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
     K8sGcpInfrastructure emptyReleaseName = K8sGcpInfrastructure.builder()
                                                 .connectorRef(ParameterField.createValueField("connectorId"))
                                                 .namespace(ParameterField.createValueField("namespace"))
@@ -99,6 +117,14 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                 .cluster(ParameterField.createValueField(""))
                                                 .build();
     assertThatThrownBy(() -> validator.validate(emptyClusterName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sGcpInfrastructure runtimeInputClusterName = K8sGcpInfrastructure.builder()
+                                                       .connectorRef(ParameterField.createValueField("connectorId"))
+                                                       .namespace(ParameterField.createValueField("namespace"))
+                                                       .releaseName(ParameterField.createValueField("release"))
+                                                       .cluster(ParameterField.createValueField("<+input>"))
+                                                       .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputClusterName)).isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -138,6 +164,17 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                 .build();
     assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8sAzureInfrastructure runtimeInputNamespace =
+        K8sAzureInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .namespace(ParameterField.createValueField("<+input>"))
+            .releaseName(ParameterField.createValueField("release"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField("resourceGroup"))
+            .cluster(ParameterField.createValueField("cluster"))
+            .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
     K8sAzureInfrastructure emptyReleaseName = K8sAzureInfrastructure.builder()
                                                   .connectorRef(ParameterField.createValueField("connectorId"))
                                                   .namespace(ParameterField.createValueField("namespace"))
@@ -148,6 +185,17 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                   .build();
     assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8sAzureInfrastructure runtimeInputReleaseName =
+        K8sAzureInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .namespace(ParameterField.createValueField("namespace"))
+            .releaseName(ParameterField.createValueField("<+input>"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField("resourceGroup"))
+            .cluster(ParameterField.createValueField("cluster"))
+            .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
     K8sAzureInfrastructure emptySubscription = K8sAzureInfrastructure.builder()
                                                    .connectorRef(ParameterField.createValueField("connectorId"))
                                                    .namespace(ParameterField.createValueField("namespace"))
@@ -157,6 +205,18 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                    .cluster(ParameterField.createValueField("cluster"))
                                                    .build();
     assertThatThrownBy(() -> validator.validate(emptySubscription)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAzureInfrastructure runtimeInputSubscription =
+        K8sAzureInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .namespace(ParameterField.createValueField("namespace"))
+            .releaseName(ParameterField.createValueField("release"))
+            .subscriptionId(ParameterField.createValueField("<+input>"))
+            .resourceGroup(ParameterField.createValueField("resourceGroup"))
+            .cluster(ParameterField.createValueField("cluster"))
+            .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputSubscription))
+        .isInstanceOf(InvalidArgumentsException.class);
 
     K8sAzureInfrastructure emptyResourceGroupName =
         K8sAzureInfrastructure.builder()
@@ -169,6 +229,18 @@ public class InfrastructureValidatorTest extends CategoryTest {
             .build();
     assertThatThrownBy(() -> validator.validate(emptyResourceGroupName)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8sAzureInfrastructure runtimeInputResourceGroupName =
+        K8sAzureInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .namespace(ParameterField.createValueField("namespace"))
+            .releaseName(ParameterField.createValueField("release"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField("<+input>"))
+            .cluster(ParameterField.createValueField("cluster"))
+            .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputResourceGroupName))
+        .isInstanceOf(InvalidArgumentsException.class);
+
     K8sAzureInfrastructure emptyClusterName = K8sAzureInfrastructure.builder()
                                                   .connectorRef(ParameterField.createValueField("connectorId"))
                                                   .namespace(ParameterField.createValueField("namespace"))
@@ -178,6 +250,17 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                   .cluster(ParameterField.createValueField(""))
                                                   .build();
     assertThatThrownBy(() -> validator.validate(emptyClusterName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAzureInfrastructure runtimeInputClusterName =
+        K8sAzureInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .namespace(ParameterField.createValueField("namespace"))
+            .releaseName(ParameterField.createValueField("release"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField("resourceGroup"))
+            .cluster(ParameterField.createValueField("<+input>"))
+            .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputClusterName)).isInstanceOf(InvalidArgumentsException.class);
   }
 
   @Test
@@ -278,6 +361,22 @@ public class InfrastructureValidatorTest extends CategoryTest {
 
     assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8SDirectInfrastructure runtimeInputReleaseName = K8SDirectInfrastructure.builder()
+                                                          .connectorRef(ParameterField.createValueField("connectorId"))
+                                                          .namespace(ParameterField.createValueField("namespace"))
+                                                          .releaseName(ParameterField.createValueField("<+input>"))
+                                                          .build();
+
+    assertThatThrownBy(() -> validator.validate(runtimeInputReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8SDirectInfrastructure runtimeInputNamespace = K8SDirectInfrastructure.builder()
+                                                        .connectorRef(ParameterField.createValueField("connectorId"))
+                                                        .namespace(ParameterField.createValueField("<+input>"))
+                                                        .releaseName(ParameterField.createValueField("releaseName"))
+                                                        .build();
+
+    assertThatThrownBy(() -> validator.validate(runtimeInputNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
     K8SDirectInfrastructure emptyNamespace = K8SDirectInfrastructure.builder()
                                                  .connectorRef(ParameterField.createValueField("connectorId"))
                                                  .namespace(ParameterField.createValueField(""))
@@ -299,6 +398,14 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                               .build();
     assertThatThrownBy(() -> validator.validate(emptyNamespace)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8sAwsInfrastructure runtimeInputNamespace = K8sAwsInfrastructure.builder()
+                                                     .connectorRef(ParameterField.createValueField("connectorId"))
+                                                     .namespace(ParameterField.createValueField(""))
+                                                     .releaseName(ParameterField.createValueField("release"))
+                                                     .cluster(ParameterField.createValueField("cluster"))
+                                                     .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputNamespace)).isInstanceOf(InvalidArgumentsException.class);
+
     K8sAwsInfrastructure emptyReleaseName = K8sAwsInfrastructure.builder()
                                                 .connectorRef(ParameterField.createValueField("connectorId"))
                                                 .namespace(ParameterField.createValueField("namespace"))
@@ -307,6 +414,14 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                 .build();
     assertThatThrownBy(() -> validator.validate(emptyReleaseName)).isInstanceOf(InvalidArgumentsException.class);
 
+    K8sAwsInfrastructure runtimeInputReleaseName = K8sAwsInfrastructure.builder()
+                                                       .connectorRef(ParameterField.createValueField("connectorId"))
+                                                       .namespace(ParameterField.createValueField("namespace"))
+                                                       .releaseName(ParameterField.createValueField("<+input>"))
+                                                       .cluster(ParameterField.createValueField("cluster"))
+                                                       .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputReleaseName)).isInstanceOf(InvalidArgumentsException.class);
+
     K8sAwsInfrastructure emptyClusterName = K8sAwsInfrastructure.builder()
                                                 .connectorRef(ParameterField.createValueField("connectorId"))
                                                 .namespace(ParameterField.createValueField("namespace"))
@@ -314,5 +429,32 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                 .cluster(ParameterField.createValueField(""))
                                                 .build();
     assertThatThrownBy(() -> validator.validate(emptyClusterName)).isInstanceOf(InvalidArgumentsException.class);
+
+    K8sAwsInfrastructure runtimeInputClusterName = K8sAwsInfrastructure.builder()
+                                                       .connectorRef(ParameterField.createValueField("connectorId"))
+                                                       .namespace(ParameterField.createValueField("namespace"))
+                                                       .releaseName(ParameterField.createValueField("release"))
+                                                       .cluster(ParameterField.createValueField("<+input>"))
+                                                       .build();
+    assertThatThrownBy(() -> validator.validate(runtimeInputClusterName)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGoogleFunctionInfraMapperEmptyValues() {
+    GoogleFunctionsInfrastructure emptyRegionInfra = GoogleFunctionsInfrastructure.builder()
+                                                         .connectorRef(ParameterField.createValueField("connectorId"))
+                                                         .region(ParameterField.createValueField(""))
+                                                         .project(ParameterField.createValueField("project"))
+                                                         .build();
+    assertThatThrownBy(() -> validator.validate(emptyRegionInfra)).isInstanceOf(InvalidArgumentsException.class);
+
+    GoogleFunctionsInfrastructure emptyProjectInfra = GoogleFunctionsInfrastructure.builder()
+                                                          .connectorRef(ParameterField.createValueField("connectorId"))
+                                                          .region(ParameterField.createValueField("region"))
+                                                          .project(ParameterField.createValueField(""))
+                                                          .build();
+    assertThatThrownBy(() -> validator.validate(emptyProjectInfra)).isInstanceOf(InvalidArgumentsException.class);
   }
 }

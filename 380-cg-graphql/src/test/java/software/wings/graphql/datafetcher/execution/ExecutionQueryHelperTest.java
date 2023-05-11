@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -52,7 +52,6 @@ import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
@@ -74,7 +73,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
 
     Query query = mock(Query.class);
     FieldEnd fieldEnd = Mockito.mock(FieldEnd.class);
-    Mockito.when(query.field(Matchers.any())).thenReturn(fieldEnd);
+    Mockito.when(query.field(any())).thenReturn(fieldEnd);
     doReturn(query).when(wingsMongoPersistence).createAnalyticsQuery(any());
     doReturn(query).when(query).project(anyString(), anyBoolean());
     doReturn(List.of(Service.builder().appId("appId").build())).when(query).asList();
@@ -82,7 +81,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
 
     Query query2 = Mockito.mock(Query.class);
     FieldEnd fieldEnd2 = Mockito.mock(FieldEnd.class);
-    Mockito.when(query2.field(Matchers.any())).thenReturn(fieldEnd2);
+    Mockito.when(query2.field(any())).thenReturn(fieldEnd2);
     executionQueryHelper.setBaseQuery(Collections.singletonList(filter), query2, "ACCOUNT_ID");
     verify(query2, Mockito.times(1)).field(WorkflowExecutionKeys.appId);
   }
@@ -121,7 +120,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
 
     Query query = Mockito.mock(Query.class);
     FieldEnd fieldEnd = Mockito.mock(FieldEnd.class);
-    Mockito.when(query.field(Matchers.any())).thenReturn(fieldEnd);
+    Mockito.when(query.field(any())).thenReturn(fieldEnd);
     executionQueryHelper.setBaseQuery(Collections.singletonList(filter), query, "ACCOUNT_ID");
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.uuid);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.appId);
@@ -178,7 +177,7 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
 
     Query query = Mockito.mock(Query.class);
     FieldEnd fieldEnd = Mockito.mock(FieldEnd.class);
-    Mockito.when(query.field(Matchers.any())).thenReturn(fieldEnd);
+    Mockito.when(query.field(any())).thenReturn(fieldEnd);
     executionQueryHelper.setQuery(Collections.singletonList(filter), query, "ACCOUNT_ID");
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.uuid);
     Mockito.verify(query, Mockito.times(1)).field(WorkflowExecutionKeys.appId);

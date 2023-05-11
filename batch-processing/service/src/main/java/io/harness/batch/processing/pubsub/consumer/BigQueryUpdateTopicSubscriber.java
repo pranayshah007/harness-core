@@ -14,8 +14,8 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperService;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingHistoryService;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingHistoryService;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 
 import software.wings.beans.Account;

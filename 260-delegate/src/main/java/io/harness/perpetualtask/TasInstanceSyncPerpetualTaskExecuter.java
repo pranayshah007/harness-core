@@ -26,10 +26,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.TasDeploymentRelease;
 import io.harness.perpetualtask.instancesync.TasInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,9 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class TasInstanceSyncPerpetualTaskExecuter implements PerpetualTaskExecutor {
+public class TasInstanceSyncPerpetualTaskExecuter extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private TasTaskHelperBase tasTaskHelperBase;
 
@@ -52,12 +49,13 @@ public class TasInstanceSyncPerpetualTaskExecuter implements PerpetualTaskExecut
     log.info("Running the TAS InstanceSync perpetual task executor for task id: {}", taskId);
     TasInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), TasInstanceSyncPerpetualTaskParams.class);
-    return executeTasInstanceSyncTask(taskId, taskParams);
+    return executeTasInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
   public PerpetualTaskResponse executeTasInstanceSyncTask(
-      PerpetualTaskId taskId, TasInstanceSyncPerpetualTaskParams taskParams) {
-    List<TasDeploymentReleaseData> deploymentReleaseDataList = getTasDeploymentReleaseData(taskParams);
+      PerpetualTaskId taskId, TasInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+    List<TasDeploymentReleaseData> deploymentReleaseDataList =
+        getTasDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)
@@ -80,18 +78,20 @@ public class TasInstanceSyncPerpetualTaskExecuter implements PerpetualTaskExecut
     }
   }
 
-  private List<TasDeploymentReleaseData> getTasDeploymentReleaseData(TasInstanceSyncPerpetualTaskParams taskParams) {
+  private List<TasDeploymentReleaseData> getTasDeploymentReleaseData(
+      TasInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     return taskParams.getTasDeploymentReleaseListList()
         .stream()
-        .map(this::toTasDeploymentReleaseData)
+        .map(data -> toTasDeploymentReleaseData(data, referenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
-  private TasDeploymentReleaseData toTasDeploymentReleaseData(TasDeploymentRelease tasDeploymentRelease) {
+  private TasDeploymentReleaseData toTasDeploymentReleaseData(
+      TasDeploymentRelease tasDeploymentRelease, boolean referenceFalseKryoSerializer) {
     return TasDeploymentReleaseData.builder()
         .applicationName(tasDeploymentRelease.getApplicationName())
-        .tasInfraConfig((TasInfraConfig) referenceFalseKryoSerializer.asObject(
-            tasDeploymentRelease.getTasInfraConfig().toByteArray()))
+        .tasInfraConfig((TasInfraConfig) getKryoSerializer(referenceFalseKryoSerializer)
+                            .asObject(tasDeploymentRelease.getTasInfraConfig().toByteArray()))
         .build();
   }
 

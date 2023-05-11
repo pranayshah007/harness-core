@@ -10,6 +10,7 @@ package io.harness.hsqs.client.api;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.hsqs.client.api.impl.HsqsClientServiceImpl;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.hsqs.client.model.AckResponse;
 import io.harness.hsqs.client.model.DequeueRequest;
@@ -19,6 +20,7 @@ import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.hsqs.client.model.UnAckRequest;
 import io.harness.hsqs.client.model.UnAckResponse;
 
+import com.google.inject.ImplementedBy;
 import java.util.List;
 import retrofit2.http.Body;
 
@@ -27,6 +29,7 @@ import retrofit2.http.Body;
  * across envs to consumer
  */
 @OwnedBy(PIPELINE)
+@ImplementedBy(HsqsClientServiceImpl.class)
 public interface HsqsClientService {
   // Enqueues given payload to given topic
   EnqueueResponse enqueue(@Body EnqueueRequest enqueueRequest);

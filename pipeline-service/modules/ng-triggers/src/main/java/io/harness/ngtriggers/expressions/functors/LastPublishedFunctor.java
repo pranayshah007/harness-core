@@ -20,7 +20,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.CDC)
 public class LastPublishedFunctor implements LateBindingValue {
   private final Ambiance ambiance;
-  private final String ACCEPT_ALL_REGEX = ".*?";
+  private final String ACCEPT_ALL_REGEX = "\\*";
 
   public LastPublishedFunctor(Ambiance ambiance) {
     this.ambiance = ambiance;

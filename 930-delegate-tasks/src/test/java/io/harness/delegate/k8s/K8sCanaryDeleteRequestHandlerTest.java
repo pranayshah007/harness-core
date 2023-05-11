@@ -19,12 +19,11 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -87,8 +86,10 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
   final String canaryReleaseHistory = "canary-release-history";
   final String canaryFailedReleaseHistory = "canary-failed-release-history";
   final String canaryExceptionReleaseHistory = "canary-exception-release-history";
+  final String workingDirectory = "./repository/k8s";
   final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-  final K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
+  final K8sDelegateTaskParams delegateTaskParams =
+      K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
   final CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
 
   @Before
@@ -99,7 +100,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
     doReturn(releaseHistory).when(releaseHandler).getReleaseHistory(any(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
 
     ApiException apiException = new ApiException("Failed to get release history secret");
     InvalidRequestException exception =
@@ -216,8 +217,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(k8sTaskHelperBase, never())
-        .delete(any(Kubectl.class), eq(delegateTaskParams), anyListOf(KubernetesResourceId.class), eq(logCallback),
-            eq(true));
+        .delete(any(Kubectl.class), eq(delegateTaskParams), anyList(), eq(logCallback), eq(true));
   }
 
   @Test
@@ -239,8 +239,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(k8sTaskHelperBase, never())
-        .delete(any(Kubectl.class), eq(delegateTaskParams), anyListOf(KubernetesResourceId.class), eq(logCallback),
-            eq(true));
+        .delete(any(Kubectl.class), eq(delegateTaskParams), anyList(), eq(logCallback), eq(true));
   }
 
   @Test
@@ -261,8 +260,7 @@ public class K8sCanaryDeleteRequestHandlerTest extends CategoryTest {
         deleteRequest, delegateTaskParams, logStreamingTaskClient, commandUnitsProgress);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(k8sTaskHelperBase, never())
-        .delete(any(Kubectl.class), eq(delegateTaskParams), anyListOf(KubernetesResourceId.class), eq(logCallback),
-            eq(true));
+        .delete(any(Kubectl.class), eq(delegateTaskParams), anyList(), eq(logCallback), eq(true));
   }
 
   @Test

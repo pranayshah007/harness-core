@@ -8,6 +8,7 @@
 package io.harness.cvng.notification.beans;
 
 import io.harness.cvng.beans.activity.ActivityType;
+import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.exception.InvalidArgumentsException;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -53,6 +54,34 @@ public enum MonitoredServiceChangeEventType {
         return INCIDENT;
       default:
         throw new InvalidArgumentsException("Not a valid Activity Type " + activityType);
+    }
+  }
+
+  public static ChangeCategory convertMonitoredServiceChangeEventTypeToChangeCategory(
+      MonitoredServiceChangeEventType eventType) {
+    switch (eventType) {
+      case DEPLOYMENT:
+        return ChangeCategory.DEPLOYMENT;
+      case INFRASTRUCTURE:
+        return ChangeCategory.INFRASTRUCTURE;
+      case INCIDENT:
+        return ChangeCategory.ALERTS;
+      default:
+        throw new IllegalArgumentException("Unknown event type: " + eventType);
+    }
+  }
+
+  public static MonitoredServiceChangeEventType convertChangeCategoryToMonitoredServiceChangeEventType(
+      ChangeCategory changeCategory) {
+    switch (changeCategory) {
+      case DEPLOYMENT:
+        return MonitoredServiceChangeEventType.DEPLOYMENT;
+      case INFRASTRUCTURE:
+        return MonitoredServiceChangeEventType.INFRASTRUCTURE;
+      case ALERTS:
+        return MonitoredServiceChangeEventType.INCIDENT;
+      default:
+        return null;
     }
   }
 }

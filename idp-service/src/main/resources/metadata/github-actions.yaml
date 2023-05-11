@@ -1,0 +1,21 @@
+identifier: github-actions
+name: GitHub Actions
+description: GitHub Actions makes it easy to automate all your software workflows, now with world-class CI/CD. Build, test, and deploy your code right from GitHub.
+createdBy: Spotify
+category: CI/CD
+source: https://github.com/backstage/backstage/tree/master/plugins/github-actions
+iconUrl: https://avatars2.githubusercontent.com/u/44036562?s=400&v=4
+imageUrl: ''
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityGithubActionsContent
+      addByDefault: true
+      defaultRoute: /ci-cd
+      layoutSchemaSpecs:
+        name: EntityGithubActionsContent
+        title: CI/CD
+        contents:
+          - component: EntityGithubActionsContent

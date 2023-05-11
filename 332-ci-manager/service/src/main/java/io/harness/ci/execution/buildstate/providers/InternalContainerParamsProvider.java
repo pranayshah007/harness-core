@@ -20,6 +20,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ORG_ID_
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_USER_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LITE_ENGINE_CONTAINER_MEM;
@@ -28,6 +29,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.SETUP_ADDON_CON
 import static io.harness.ci.commonconstants.CIExecutionConstants.SH_COMMAND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_SETUP_ADDON_ARGS;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_SETUP_ADDON_ARGS;
+import static io.harness.ci.utils.UsageUtils.getExecutionUser;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.delegate.beans.ci.pod.CICommonConstants.LITE_ENGINE_CONTAINER_NAME;
 import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
@@ -41,6 +43,8 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.SecretEnvVars;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.CIK8ContainerParams;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -106,7 +110,7 @@ public class InternalContainerParamsProvider {
       Map<String, ConnectorDetails> publishArtifactConnectors, K8PodDetails k8PodDetails, Integer stageCpuRequest,
       Integer stageMemoryRequest, Map<String, String> logEnvVars, Map<String, String> tiEnvVars,
       Map<String, String> stoEnvVars, Map<String, String> volumeToMountPath, String workDirPath,
-      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance) {
+      ContainerSecurityContext ctrSecurityContext, String logPrefix, Ambiance ambiance, SecretEnvVars secretEnvVars) {
     String imageName = ciExecutionConfigService.getLiteEngineImage(AmbianceUtils.getAccountId(ambiance));
     String fullyQualifiedImage =
         IntegrationStageUtils.getFullyQualifiedImageName(imageName, harnessInternalImageConnector);
@@ -115,10 +119,11 @@ public class InternalContainerParamsProvider {
         .containerResourceParams(getLiteEngineResourceParams(stageCpuRequest, stageMemoryRequest))
         .envVars(getLiteEngineEnvVars(k8PodDetails, workDirPath, logPrefix, ambiance))
         .containerType(CIContainerType.LITE_ENGINE)
-        .containerSecrets(ContainerSecrets.builder()
-                              .connectorDetailsMap(publishArtifactConnectors)
-                              .plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars, tiEnvVars, stoEnvVars))
-                              .build())
+        .containerSecrets(
+            ContainerSecrets.builder()
+                .connectorDetailsMap(publishArtifactConnectors)
+                .plainTextSecretsByName(getLiteEngineSecretVars(logEnvVars, tiEnvVars, stoEnvVars, secretEnvVars))
+                .build())
         .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
                                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
                                        .imageConnectorDetails(harnessInternalImageConnector)
@@ -133,6 +138,7 @@ public class InternalContainerParamsProvider {
       K8PodDetails k8PodDetails, String workDirPath, String logPrefix, Ambiance ambiance) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String userID = getExecutionUser(ambiance.getMetadata().getPrincipalInfo());
     final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
     final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
     final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
@@ -154,6 +160,7 @@ public class InternalContainerParamsProvider {
     envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE, ciExecutionServiceConfig.getDelegateServiceEndpointVariableValue());
     envVars.put(DELEGATE_SERVICE_ID_VARIABLE, DELEGATE_SERVICE_ID_VARIABLE_VALUE);
     envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
+    envVars.put(HARNESS_USER_ID_VARIABLE, userID);
     envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
@@ -164,12 +171,17 @@ public class InternalContainerParamsProvider {
     return envVars;
   }
 
-  public Map<String, SecretParams> getLiteEngineSecretVars(
-      Map<String, String> logEnvVars, Map<String, String> tiEnvVars, Map<String, String> stoEnvVars) {
+  public Map<String, SecretParams> getLiteEngineSecretVars(Map<String, String> logEnvVars,
+      Map<String, String> tiEnvVars, Map<String, String> stoEnvVars, SecretEnvVars secretEnvVars) {
     Map<String, String> vars = new HashMap<>();
     vars.putAll(logEnvVars);
     vars.putAll(tiEnvVars);
     vars.putAll(stoEnvVars);
+    if (secretEnvVars != null) {
+      if (EmptyPredicate.isNotEmpty(secretEnvVars.getSscaEnvVars())) {
+        vars.putAll(secretEnvVars.getSscaEnvVars());
+      }
+    }
 
     Map<String, SecretParams> secretVars = new HashMap<>();
     for (Map.Entry<String, String> entry : vars.entrySet()) {

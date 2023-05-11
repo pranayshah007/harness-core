@@ -15,6 +15,7 @@ import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -826,8 +827,8 @@ public class ArtifactCollectionUtils {
     String artifactStreamType = artifactStream.getArtifactStreamType();
     Function<Artifact, String> keyFn = getArtifactKeyFn(artifactStreamType, artifactStreamAttributes);
     Set<String> artifactKeys = new HashSet<>();
-    try (HIterator<Artifact> artifacts =
-             new HIterator<>(artifactService.prepareArtifactWithMetadataQuery(artifactStream, true).fetch())) {
+    try (HIterator<Artifact> artifacts = new HIterator<>(
+             artifactService.prepareArtifactWithMetadataQuery(artifactStream, true).limit(NO_LIMIT).fetch())) {
       for (Artifact artifact : artifacts) {
         String key = keyFn.apply(artifact);
         if (key != null) {

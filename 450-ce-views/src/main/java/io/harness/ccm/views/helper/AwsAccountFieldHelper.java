@@ -93,6 +93,9 @@ public class AwsAccountFieldHelper {
   }
 
   public List<String> mergeAwsAccountNameWithValues(final List<String> values, final String accountId) {
+    if (Objects.isNull(values)) {
+      return Collections.emptyList();
+    }
     final Map<String, String> entityIdToName =
         entityMetadataService.getEntityIdToNameMapping(values, accountId, AWS_ACCOUNT_FIELD);
     return values.stream()

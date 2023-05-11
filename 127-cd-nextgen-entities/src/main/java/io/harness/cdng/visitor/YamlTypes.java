@@ -47,6 +47,7 @@ public interface YamlTypes {
   String K8S_BG_SWAP_SERVICES = StepSpecTypeConstants.K8S_BG_SWAP_SERVICES;
   String K8S_DELETE = StepSpecTypeConstants.K8S_DELETE;
   String K8S_CANARY_DELETE = StepSpecTypeConstants.K8S_CANARY_DELETE;
+  String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN;
 
   String HELM_DEPLOY = StepSpecTypeConstants.HELM_DEPLOY;
   String HELM_ROLLBACK = StepSpecTypeConstants.HELM_ROLLBACK;
@@ -94,6 +95,8 @@ public interface YamlTypes {
       StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC;
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT;
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_ROLLBACK;
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY;
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK;
   String TERRAFORM_CLOUD_RUN = StepSpecTypeConstants.TERRAFORM_CLOUD_RUN;
   String TERRAFORM_CLOUD_ROLLBACK = StepSpecTypeConstants.TERRAFORM_CLOUD_ROLLBACK;
   String MANIFEST_LIST_CONFIG = "manifests";
@@ -197,6 +200,9 @@ public interface YamlTypes {
   String ORG = "organization";
   String SPACE = "space";
 
+  String SERVICE_HOOKS = "hooks";
+  String PRE_HOOK = "preHook";
+  String POST_HOOK = "postHook";
   String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
   String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
 
@@ -209,6 +215,7 @@ public interface YamlTypes {
 
   // AWS SAM
   String AWS_SAM_DEPLOY = StepSpecTypeConstants.AWS_SAM_DEPLOY;
+  String AWS_SAM_BUILD = StepSpecTypeConstants.AWS_SAM_BUILD;
   String AWS_SAM_ROLLBACK = StepSpecTypeConstants.AWS_SAM_ROLLBACK;
 
   String AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK;

@@ -8,8 +8,8 @@
 package io.harness.perpetualtask.polling.artifact;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -33,6 +33,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.perpetualtask.polling.ArtifactCollectionTaskParamsNg;
@@ -63,7 +64,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -74,10 +75,11 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private static final String CONNECTOR_REF = "CONNECTOR_REF";
 
   private ArtifactPerpetualTaskExecutorNg artifactPerpetualTaskExecutorNg;
+  private PerpetualTaskExecutorBase perpetualTaskExecutorBase;
   private PerpetualTaskId perpetualTaskId;
   private String polling_doc_id;
 
-  @Inject KryoSerializer kryoSerializer;
+  private KryoSerializer kryoSerializer;
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private ArtifactRepositoryServiceImpl artifactRepositoryService;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -88,7 +90,7 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     PollingResponsePublisher pollingResponsePublisher =
         new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
     artifactPerpetualTaskExecutorNg = new ArtifactPerpetualTaskExecutorNg(
-        kryoSerializer, referenceFalseKryoSerializer, artifactRepositoryService, pollingResponsePublisher);
+        artifactRepositoryService, pollingResponsePublisher, kryoSerializer, referenceFalseKryoSerializer);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }
@@ -182,8 +184,10 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
     ArtifactCollectionTaskParamsNg taskParams =
         ArtifactCollectionTaskParamsNg.newBuilder().setPollingDocId(polling_doc_id).build();
 
-    PerpetualTaskExecutionParams executionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams executionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                       .setCustomizedParams(Any.pack(taskParams))
+                                                       .setReferenceFalseKryoSerializer(true)
+                                                       .build();
 
     artifactPerpetualTaskExecutorNg.cleanup(perpetualTaskId, executionParams);
     assertThat(artifactPerpetualTaskExecutorNg.getCache().getIfPresent(polling_doc_id)).isNull();
@@ -230,8 +234,10 @@ public class ArtifactPerpetualTaskExecutorNgTest extends DelegateTestBase {
                                                         referenceFalseKryoSerializer.asBytes(artifactTaskParameters)))
                                                     .build();
 
-    PerpetualTaskExecutionParams executionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams executionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                       .setCustomizedParams(Any.pack(taskParams))
+                                                       .setReferenceFalseKryoSerializer(true)
+                                                       .build();
 
     Mockito.when(delegateAgentManagerClient.publishPollingResultV2(anyString(), anyString(), any(RequestBody.class)))
         .thenReturn(call);

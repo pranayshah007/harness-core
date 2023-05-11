@@ -64,8 +64,8 @@ public class FileStoreMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
     RequestBody identifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getIdentifier());
     RequestBody name = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getName());
@@ -75,8 +75,9 @@ public class FileStoreMigrationService extends NgMigrationService {
     Response<ResponseDTO<FileDTO>> resp;
     try {
       resp = ngClient
-                 .createFolder(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                     inputDTO.getProjectIdentifier(), name, identifier, type, parentIdentifier)
+                 .createFolder(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                     inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(), name, identifier, type,
+                     parentIdentifier)
                  .execute();
       log.info("Folder creation Response details {} {}", resp.code(), resp.message());
     } catch (IOException e) {

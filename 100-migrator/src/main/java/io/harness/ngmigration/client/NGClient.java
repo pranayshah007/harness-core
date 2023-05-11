@@ -65,6 +65,15 @@ public interface NGClient {
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Part("file") RequestBody content,
       @Part("spec") RequestBody spec);
 
+  @POST("v2/secrets/filesMigration")
+  @Multipart
+  Call<ResponseDTO<SecretResponseWrapper>> createSecretFileInternal(@Header(X_API_KEY) String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query("encryptionKey") String encryptionKey, @Query("encryptedValue") String encryptedValue,
+      @Part("spec") RequestBody spec);
+
   @POST("servicesV2")
   Call<ResponseDTO<ServiceResponse>> createService(@Header(X_API_KEY) String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode serviceDTO);

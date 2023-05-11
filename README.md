@@ -104,6 +104,7 @@ Official steps to install docker on mac: [docker.com](https://docs.docker.com/de
 
    `git config --global core.filemode false`
 
+
 ### Build
 
 #### Some Bazel Best Practices you can follow before building harness-core locally.
@@ -667,4 +668,4 @@ We are already using logback framework in our application, so it is simple to en
 1. Create a new JIRA ticket(Don't use the feature branch).
 2. Checkout the branch to hotfix on and make the changes.
 3. Bump up the build number in the build.properties.
-4. Create a pull request on this branch and master as well, make sure you merge them on master within the next 3 4 hours.
+4. Create a pull request on this branch and master as well, make sure you merge them on master within the next 3 4 hours. 

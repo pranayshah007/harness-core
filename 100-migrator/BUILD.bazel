@@ -35,7 +35,7 @@ java_binary(
         "//390-db-migration:module",
         "//400-rest:module",
         "//420-delegate-service:module",
-        "//840-template-service:module",
+        "//840-template-service/contracts:module",
         "//870-cg-orchestration:module",
         "//874-orchestration-delay:module",
         "//890-sm-core:module",

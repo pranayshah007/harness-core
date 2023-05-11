@@ -51,8 +51,8 @@ public class AzureARMBaseHelperImpl implements AzureResourceCreationBaseHelper {
   @Override
   public AzureClientContext getAzureClientContext(
       AzureARMTaskNGParameters azureARMTaskNGParameters, AzureConfig azureConfig) {
-    return new AzureClientContext(
-        azureConfig, azureARMTaskNGParameters.getSubscriptionId(), azureARMTaskNGParameters.getResourceGroupName());
+    return new AzureClientContext(azureConfig, azureARMTaskNGParameters.getSubscriptionId(),
+        azureARMTaskNGParameters.getResourceGroupName(), false);
   }
 
   @Override

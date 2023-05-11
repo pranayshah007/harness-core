@@ -9,7 +9,6 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.utils.CaseFormat;
 
 import software.wings.beans.Workflow;
 import software.wings.service.impl.yaml.handler.workflow.BasicWorkflowYamlHandler;
@@ -21,7 +20,7 @@ public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
 
   @Override
-  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow, CaseFormat caseFormat) {
+  public JsonNode getTemplateSpec(MigrationContext migrationContext, Workflow workflow) {
     return getDeploymentStageTemplateSpec(
         migrationContext, WorkflowMigrationContext.newInstance(migrationContext, workflow));
   }

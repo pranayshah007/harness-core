@@ -7,10 +7,12 @@
 
 package io.harness.ng.core;
 
+import static io.harness.SecretConstants.EXPIRES_ON;
 import static io.harness.SecretConstants.LATEST;
 import static io.harness.SecretConstants.REGIONS;
 import static io.harness.SecretConstants.VERSION;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.SHREYAS;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -265,5 +267,33 @@ public class AdditionalMetadataValidationHelperTest extends CategoryTest {
         () -> additionalMetadataValidationHelper.validateAdditionalMetadataForGcpSecretManager(secretTextSpecDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Version should be either latest or an integer.");
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testValidateAdditionalMetadataForAzureValue_textSecret() {
+    SecretTextSpecDTO secretSpecDTO =
+        SecretTextSpecDTO.builder()
+            .additionalMetadata(AdditionalMetadata.builder().value(EXPIRES_ON, randomAlphabetic(10)).build())
+            .build();
+    assertThatThrownBy(() -> additionalMetadataValidationHelper.validateAdditionalMetadataForAzureValue(secretSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Value of %s should be a valid epoch timestamp but given: [%s]", EXPIRES_ON,
+            secretSpecDTO.getAdditionalMetadata().getValues().get(EXPIRES_ON)));
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testValidateAdditionalMetadataForAzureValue_fileSecret() {
+    SecretFileSpecDTO secretSpecDTO =
+        SecretFileSpecDTO.builder()
+            .additionalMetadata(AdditionalMetadata.builder().value(EXPIRES_ON, randomAlphabetic(10)).build())
+            .build();
+    assertThatThrownBy(() -> additionalMetadataValidationHelper.validateAdditionalMetadataForAzureValue(secretSpecDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("Value of %s should be a valid epoch timestamp but given: [%s]", EXPIRES_ON,
+            secretSpecDTO.getAdditionalMetadata().getValues().get(EXPIRES_ON)));
   }
 }

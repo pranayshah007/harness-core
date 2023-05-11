@@ -25,6 +25,7 @@ import lombok.Data;
 public class S3ArtifactSummary implements ArtifactSummary {
   String bucketName;
   String filePath;
+  String tag;
 
   @Override
   public String getDisplayName() {

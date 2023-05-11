@@ -18,7 +18,6 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsCodeDeployListDeploymentInstancesResponse;
@@ -28,7 +27,6 @@ import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -37,22 +35,22 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AwsCodeDeployInstanceSyncExecutor implements PerpetualTaskExecutor {
+public class AwsCodeDeployInstanceSyncExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     final AwsCodeDeployInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsCodeDeployInstanceSyncPerpetualTaskParams.class);
-    final List<Filter> filters =
-        (List<Filter>) referenceFalseKryoSerializer.asObject(taskParams.getFilter().toByteArray());
-    final AwsConfig awsConfig =
-        (AwsConfig) referenceFalseKryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final List<Filter> filters = (List<Filter>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                     .asObject(taskParams.getFilter().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                    .asObject(taskParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getEncryptedData().toByteArray());
 
     AwsCodeDeployListDeploymentInstancesResponse instancesListResponse =
         getCodeDeployResponse(taskParams.getRegion(), filters, awsConfig, encryptedDataDetails);

@@ -7,7 +7,7 @@
 
 package io.harness.gitops.models;
 
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,7 +48,7 @@ public class Cluster {
   }
 
   public String fetchRef() {
-    return FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
+    return IdentifierRefHelper.getRefFromIdentifierOrRef(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 }

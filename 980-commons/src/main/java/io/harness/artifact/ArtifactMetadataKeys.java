@@ -29,4 +29,6 @@ public interface ArtifactMetadataKeys {
   String SHAV2 = "SHAV2";
   String url = "url";
   String bucket = "bucket";
+
+  String artifactFileName = "artifactFileName";
 }

@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_AUTHENTICATION_SERVICE;
+import static io.harness.beans.FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
@@ -26,6 +27,7 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.authenticationservice.beans.SAMLProviderType;
 import io.harness.beans.SecretText;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
@@ -50,7 +52,6 @@ import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.OauthSettings;
-import software.wings.beans.sso.SAMLProviderType;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SamlSettings;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -120,25 +121,26 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig uploadSamlConfiguration(String accountId, InputStream inputStream, String displayName,
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
-      String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
+      String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName, boolean isNGSSO) {
     try {
       String fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
       groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
       buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, isNGSSO);
-      return getAccountAccessManagementSettings(accountId);
+          samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, false, null);
+      return getAccountAccessManagementSettings(accountId, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
   }
 
   @Override
-  public SSOConfig uploadOauthConfiguration(String accountId, String filter, Set<OauthProviderType> allowedProviders) {
+  public SSOConfig uploadOauthConfiguration(
+      String accountId, String filter, Set<OauthProviderType> allowedProviders, boolean isNG) {
     if (isEmpty(allowedProviders)) {
       throw new InvalidRequestException("At least one OAuth provider must be selected.");
     }
     buildAndUploadOauthSettings(accountId, filter, allowedProviders);
-    return getAccountAccessManagementSettings(accountId);
+    return getAccountAccessManagementSettings(accountId, isNG);
   }
 
   @Override
@@ -146,53 +148,91 @@ public class SSOServiceImpl implements SSOService {
       String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
       String samlProviderType, String clientId, char[] clientSecret, boolean isNGSSO) {
     try {
-      SamlSettings settings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-      String fileAsString;
-
-      groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
-
-      if (null != inputStream) {
-        fileAsString = IOUtils.toString(inputStream, Charset.defaultCharset());
-      } else {
-        fileAsString = settings.getMetaDataFile();
+      SamlSettings settings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+          ? ssoSettingService.getSamlSettingsByAccountId(accountId)
+          : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId);
+      if (null == settings) {
+        throw new InvalidRequestException(String.format(
+            "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s and SAML setting not created from CG. "
+                + "Please update on saml SSO Id API endpoint from NG: 'saml-metadata-upload/{samlSSOId}' to update a SAML setting.",
+            accountId));
       }
-
-      if (isEmpty(displayName)) {
-        displayName = settings.getDisplayName();
-      }
-      if (isNotEmpty(clientId) && isNotEmpty(clientSecret)
-          && SECRET_MASK.equals(String.valueOf(clientSecret))) { // suggests only clientId updated
-        // set the old cg secret ref
-        final String oldClientSecretRef = settings.getEncryptedClientSecret();
-        clientSecret = isNotEmpty(oldClientSecretRef) ? oldClientSecretRef.toCharArray() : clientSecret;
-      }
-
-      buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
-          samlProviderType, clientId, clientSecret, isNGSSO);
-      return getAccountAccessManagementSettings(accountId);
+      return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
+          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType, null, isNGSSO);
     } catch (SamlException | IOException | URISyntaxException e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
     }
   }
 
   @Override
+  public SSOConfig updateSamlConfiguration(String accountId, String samlSSOId, InputStream inputStream,
+      String displayName, String groupMembershipAttr, Boolean authorizationEnabled, String logoutUrl,
+      String entityIdentifier, String samlProviderType, String clientId, char[] clientSecret, String friendlySamlName,
+      boolean isNGSSO) {
+    try {
+      SamlSettings settings = ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+      return updateAndGetSamlSsoConfigInternal(groupMembershipAttr, authorizationEnabled, inputStream, settings,
+          displayName, clientId, clientSecret, accountId, logoutUrl, entityIdentifier, samlProviderType,
+          friendlySamlName, isNGSSO);
+    } catch (SamlException | IOException | URISyntaxException e) {
+      throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION, e);
+    }
+  }
+
+  @Override
+  public void updateAuthenticationEnabledForSAMLSetting(String accountId, String samlSSOId, boolean enable) {
+    ssoSettingService.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
+  }
+
+  @Override
   public SSOConfig updateLogoutUrlSamlSettings(String accountId, String logoutUrl) {
-    log.info("Logout url being set from API is {}", logoutUrl);
-    SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
+    SamlSettings samlSettings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+        ? ssoSettingService.getSamlSettingsByAccountId(accountId)
+        : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId);
     if (samlSettings != null) {
+      log.info("Logout url being set from API is {}", logoutUrl);
       samlSettings.setLogoutUrl(logoutUrl);
       ssoSettingService.saveSamlSettings(samlSettings);
     } else {
-      throw new InvalidRequestException("Cannot update Logout URL as no SAML Config exists for your account");
+      throw new InvalidRequestException("Cannot update Logout URL as no SAML Config exists for your account from CG");
     }
-    return getAccountAccessManagementSettings(accountId);
+    return getAccountAccessManagementSettings(accountId, false);
   }
 
   @Override
   public SSOConfig deleteSamlConfiguration(String accountId) {
     ssoSettingService.deleteSamlSettings(accountId);
-    SSOConfig ssoConfig = setAuthenticationMechanism(accountId, USER_PASSWORD);
-    setOauthIfSetAfterSSODelete(accountId);
+    return setToAuthMechanismAndReturnSsoConfig(accountId, false);
+  }
+
+  @Override
+  public SSOConfig deleteSamlConfiguration(String accountId, String samlSSOId) {
+    SamlSettings settings = ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+    ssoSettingService.deleteSamlSettingsWithAudits(settings);
+    return setToAuthMechanismAndReturnSsoConfig(accountId, true);
+  }
+
+  private SSOConfig setToAuthMechanismAndReturnSsoConfig(String accountId, boolean isWithSamlSSOId) {
+    boolean updateAuthMechanismToUserPwd = true;
+    if (isWithSamlSSOId && featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)) {
+      List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(accountId);
+      if (isNotEmpty(samlSettings)) {
+        for (SamlSettings setting : samlSettings) {
+          if (setting != null && setting.isAuthenticationEnabled()) {
+            updateAuthMechanismToUserPwd = false;
+            break;
+          }
+        }
+      }
+    }
+
+    SSOConfig ssoConfig;
+    if (updateAuthMechanismToUserPwd) {
+      ssoConfig = setAuthenticationMechanism(accountId, USER_PASSWORD, false);
+      setOauthIfSetAfterSSODelete(accountId);
+    } else {
+      ssoConfig = getAccountAccessManagementSettingsV2(accountId);
+    }
     return ssoConfig;
   }
 
@@ -202,15 +242,21 @@ public class SSOServiceImpl implements SSOService {
 
     if (newAuthMechanism == USER_PASSWORD) {
       if (oldAuthMechanism == SAML) {
-        ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountIdentifier);
+        ssoSettings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountIdentifier)
+            ? ssoSettingService.getSamlSettingsByAccountId(accountIdentifier)
+            : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountIdentifier);
       } else if (oldAuthMechanism == LDAP) {
         ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountIdentifier);
       }
-      auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.DISABLE);
+      if (null != ssoSettings) {
+        auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.DISABLE);
+      }
     } else {
       switch (newAuthMechanism) {
         case SAML:
-          ssoSettings = ssoSettingService.getSamlSettingsByAccountId(accountIdentifier);
+          ssoSettings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountIdentifier)
+              ? ssoSettingService.getSamlSettingsByAccountId(accountIdentifier)
+              : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountIdentifier);
           break;
         case LDAP:
           ssoSettings = ssoSettingService.getLdapSettingsByAccountId(accountIdentifier);
@@ -221,9 +267,11 @@ public class SSOServiceImpl implements SSOService {
         default:
           throw new InvalidRequestException("Unexpected authentication mechanism type: " + newAuthMechanism.name());
       }
-      auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.ENABLE);
+      if (null != ssoSettings) {
+        auditServiceHelper.reportForAuditingUsingAccountId(accountIdentifier, null, ssoSettings, Event.Type.ENABLE);
+      }
     }
-    log.info("CG Auth Audits: for account {} succesfully audited the change of authentication machanism from {} to {}",
+    log.info("CG Auth Audits: for account {} successfully audited the change of authentication mechanism from {} to {}",
         accountIdentifier, oldAuthMechanism.name(), newAuthMechanism.name());
   }
 
@@ -247,7 +295,7 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
-  public SSOConfig setAuthenticationMechanism(String accountId, AuthenticationMechanism mechanism) {
+  public SSOConfig setAuthenticationMechanism(String accountId, AuthenticationMechanism mechanism, boolean isFromNG) {
     checkIfOperationIsAllowed(accountId, mechanism);
 
     Account account = accountService.get(accountId);
@@ -277,21 +325,58 @@ public class SSOServiceImpl implements SSOService {
       cgAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
       ngAuditLoginSettings(accountId, currentAuthMechanism, mechanism);
       account.setAuthenticationMechanism(mechanism);
+      if (featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)) {
+        SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
+        if (samlSettings != null) {
+          ssoSettingService.updateAuthenticationEnabledForSAMLSetting(
+              accountId, samlSettings.getUuid(), SAML == mechanism);
+        }
+      } else {
+        if (!isFromNG) {
+          SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(accountId);
+          if (null == samlSettings) {
+            if (SAML == mechanism) {
+              throw new InvalidRequestException(String.format(
+                  "Multiple IdP support FF 'PL_ENABLE_MULTIPLE_IDP_SUPPORT' enabled on account %s and SAML setting not configured from CG. Please enable SAML authentication mechanism for account from NG",
+                  accountId));
+            }
+          } else {
+            ssoSettingService.updateAuthenticationEnabledForSAMLSetting(
+                accountId, samlSettings.getUuid(), SAML == mechanism);
+          }
+        }
+      }
     }
     accountService.update(account);
-    return getAccountAccessManagementSettings(accountId);
+    return featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId) && isFromNG
+        ? getAccountAccessManagementSettingsV2(accountId)
+        : getAccountAccessManagementSettings(accountId, false);
   }
 
   @Override
-  public SSOConfig getAccountAccessManagementSettings(String accountId) {
+  public SSOConfig getAccountAccessManagementSettings(String accountId, boolean isNG) {
     // We are handling the check programmatically for now, since we don't have enough info in the query / path
     // parameters
+    authorizeAccessManagementCall();
+    Account account = accountService.get(accountId);
+    SSOConfig ssoConfigBuilt =
+        SSOConfig.builder().accountId(accountId).authenticationMechanism(account.getAuthenticationMechanism()).build();
+    List<SSOSettings> ssoSettingsList =
+        featureFlagService.isEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, account.getUuid()) && isNG
+        ? getSSOSettingsV2(account)
+        : getSSOSettings(account);
+    ssoConfigBuilt.setSsoSettings(ssoSettingsList);
+    return ssoConfigBuilt;
+  }
+
+  @Override
+  public SSOConfig getAccountAccessManagementSettingsV2(String accountId) {
     authorizeAccessManagementCall();
     Account account = accountService.get(accountId);
     return SSOConfig.builder()
         .accountId(accountId)
         .authenticationMechanism(account.getAuthenticationMechanism())
-        .ssoSettings(getSSOSettings(account))
+        .ssoSettings(getSSOSettingsV2(account))
         .build();
   }
 
@@ -318,7 +403,9 @@ public class SSOServiceImpl implements SSOService {
 
   private List<SSOSettings> getSSOSettings(Account account) {
     List<SSOSettings> settings = new ArrayList<>();
-    SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
+    SamlSettings samlSettings = featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, account.getUuid())
+        ? ssoSettingService.getSamlSettingsByAccountId(account.getUuid())
+        : ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(account.getUuid());
     if (samlSettings != null) {
       settings.add(samlSettings.getPublicSSOSettings());
     }
@@ -333,9 +420,27 @@ public class SSOServiceImpl implements SSOService {
     return settings;
   }
 
+  private List<SSOSettings> getSSOSettingsV2(Account account) {
+    List<SSOSettings> settings = new ArrayList<>();
+    List<SamlSettings> samlSettings = ssoSettingService.getSamlSettingsListByAccountId(account.getUuid());
+    if (isNotEmpty(samlSettings)) {
+      samlSettings.forEach(setting -> settings.add(setting.getPublicSSOSettings()));
+    }
+    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(account.getUuid());
+    if (ldapSettings != null) {
+      settings.add(ldapSettings.getPublicSSOSettings());
+    }
+    OauthSettings oauthSettings = ssoSettingService.getOauthSettingsByAccountId(account.getUuid());
+    if (oauthSettings != null) {
+      settings.add(oauthSettings.getPublicSSOSettings());
+    }
+    return settings;
+  }
+
   private SamlSettings buildAndUploadSamlSettings(String accountId, String fileAsString, String displayName,
       String groupMembershipAttr, String logoutUrl, String entityIdentifier, String samlProviderType, String clientId,
-      char[] clientSecret, boolean isNGSSOSetting) throws SamlException, URISyntaxException {
+      char[] clientSecret, String friendlySamlName, boolean isNGSSOSetting, boolean isUpdateCase, String samlSSOId)
+      throws SamlException, URISyntaxException {
     SamlClient samlClient = samlClientService.getSamlClient(entityIdentifier, fileAsString);
 
     SamlSettings samlSettings = SamlSettings.builder()
@@ -346,9 +451,13 @@ public class SSOServiceImpl implements SSOService {
                                     .origin(new URI(samlClient.getIdentityProviderUrl()).getHost())
                                     .groupMembershipAttr(groupMembershipAttr)
                                     .entityIdentifier(entityIdentifier)
+                                    .friendlySamlName(friendlySamlName)
                                     .build();
 
     samlSettings.setSamlProviderType(getSAMLProviderType(samlProviderType));
+    if (isNotEmpty(samlSSOId)) {
+      samlSettings.setUuid(samlSSOId);
+    }
     if (isNotEmpty(clientId) && isNotEmpty(clientSecret)) {
       samlSettings.setClientId(clientId);
       samlSettings.setEncryptedClientSecret(String.valueOf(clientSecret));
@@ -361,9 +470,13 @@ public class SSOServiceImpl implements SSOService {
       samlSettings.setLogoutUrl(logoutUrl);
     }
     if (isNGSSOSetting) {
-      return ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings);
+      return featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+          ? ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings)
+          : ssoSettingService.saveSamlSettingsWithoutCGLicenseCheck(samlSettings, isUpdateCase, isNGSSOSetting);
     } else {
-      return ssoSettingService.saveSamlSettings(samlSettings);
+      return featureFlagService.isNotEnabled(PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+          ? ssoSettingService.saveSamlSettings(samlSettings)
+          : ssoSettingService.saveSamlSettings(samlSettings, isUpdateCase, isNGSSOSetting);
     }
   }
 
@@ -383,7 +496,7 @@ public class SSOServiceImpl implements SSOService {
   public LdapSettings deleteLdapSettings(@NotBlank String accountId) {
     LdapSettings settings = ssoSettingService.deleteLdapSettings(accountId);
     if (accountService.get(accountId).getAuthenticationMechanism() == AuthenticationMechanism.LDAP) {
-      setAuthenticationMechanism(accountId, USER_PASSWORD);
+      setAuthenticationMechanism(accountId, USER_PASSWORD, false);
       setOauthIfSetAfterSSODelete(accountId);
     }
     return settings;
@@ -444,9 +557,16 @@ public class SSOServiceImpl implements SSOService {
   }
 
   @Override
+  public SamlSettings getSamlSettings(@NotBlank String accountId, @NotNull String samlSSOId) {
+    return ssoSettingService.getSamlSettingsByAccountIdAndUuid(accountId, samlSSOId);
+  }
+
+  @Override
   public LdapTestResponse validateLdapConnectionSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
-    boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
+    populateEncryptedFields(ldapSettings);
+    boolean temporaryEncryption = isNotEmpty(ldapSettings.getConnectionSettings().getBindPassword())
+        && !ldapSettings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING);
     encryptSecretIfFFisEnabled(ldapSettings);
     ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
@@ -466,7 +586,9 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public LdapTestResponse validateLdapUserSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
-    boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
+    populateEncryptedFields(ldapSettings);
+    boolean temporaryEncryption = isNotEmpty(ldapSettings.getConnectionSettings().getBindPassword())
+        && !ldapSettings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING);
     encryptSecretIfFFisEnabled(ldapSettings);
     ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
@@ -486,7 +608,9 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public LdapTestResponse validateLdapGroupSettings(
       @NotNull LdapSettings ldapSettings, @NotBlank final String accountId) {
-    boolean temporaryEncryption = !populateEncryptedFields(ldapSettings);
+    populateEncryptedFields(ldapSettings);
+    boolean temporaryEncryption = isNotEmpty(ldapSettings.getConnectionSettings().getBindPassword())
+        && !ldapSettings.getConnectionSettings().getBindPassword().equals(LdapConstants.MASKED_STRING);
     encryptSecretIfFFisEnabled(ldapSettings);
     ldapSettings.encryptLdapInlineSecret(secretManager, false);
     EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
@@ -587,7 +711,7 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public SSOConfig deleteOauthConfiguration(String accountId) {
     ssoSettingService.deleteOauthSettings(accountId);
-    return setAuthenticationMechanism(accountId, USER_PASSWORD);
+    return setAuthenticationMechanism(accountId, USER_PASSWORD, false);
   }
 
   @Override
@@ -682,8 +806,30 @@ public class SSOServiceImpl implements SSOService {
         ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
   }
 
-  private void deleteTempSecret(
-      boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail, String accountId) {
+  private SSOConfig updateAndGetSamlSsoConfigInternal(String groupMembershipAttr, Boolean authorizationEnabled,
+      InputStream inputStream, SamlSettings settings, String displayName, String clientId, char[] clientSecret,
+      String accountId, String logoutUrl, String entityIdentifier, String samlProviderType, String friendlySamlName,
+      boolean isNGSSO) throws IOException, SamlException, URISyntaxException {
+    String fileAsString =
+        null != inputStream ? IOUtils.toString(inputStream, Charset.defaultCharset()) : settings.getMetaDataFile();
+    groupMembershipAttr = authorizationEnabled ? groupMembershipAttr : null;
+
+    if (isEmpty(displayName)) {
+      displayName = settings.getDisplayName();
+    }
+    if (isNotEmpty(clientId) && isNotEmpty(clientSecret)
+        && SECRET_MASK.equals(String.valueOf(clientSecret))) { // suggests only clientId updated
+      // set the old cg secret ref
+      final String oldClientSecretRef = settings.getEncryptedClientSecret();
+      clientSecret = isNotEmpty(oldClientSecretRef) ? oldClientSecretRef.toCharArray() : clientSecret;
+    }
+
+    buildAndUploadSamlSettings(accountId, fileAsString, displayName, groupMembershipAttr, logoutUrl, entityIdentifier,
+        samlProviderType, clientId, clientSecret, friendlySamlName, isNGSSO, true, settings.getUuid());
+    return getAccountAccessManagementSettings(accountId, isNGSSO);
+  }
+
+  public void deleteTempSecret(boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail, String accountId) {
     if (temporaryEncryption) {
       secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
     }

@@ -15,6 +15,7 @@ public class ShellScriptStepFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
 
   public ShellScriptStepFunctor(StepOutput stepOutput) {
+    super(stepOutput);
     this.stepOutput = stepOutput;
   }
 
@@ -27,10 +28,5 @@ public class ShellScriptStepFunctor extends StepExpressionFunctor {
 
     return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.output.outputVariables.%s>",
         stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), key);
-  }
-
-  @Override
-  public String getCgExpression() {
-    return stepOutput.getExpression();
   }
 }

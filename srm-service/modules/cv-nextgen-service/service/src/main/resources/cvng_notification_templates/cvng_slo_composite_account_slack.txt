@@ -1,0 +1,49 @@
+{
+    "text" : "*Harness SRM*\n*SLO: <${URL}|${SLO_NAME}> ${HEADER_MESSAGE}*\n",
+    "attachments" : [
+        {
+          "color" : "${COLOR}",
+          "blocks" : [
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "*Trigger*\n${TRIGGER_MESSAGE}"
+              }
+            },
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "_Incident occurred<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}>_"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Account Name*\n${ACCOUNT_NAME}"
+                    }
+                ]
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View SLO Details"
+                        },
+                        "url": "${URL}"
+                    }
+                ]
+            },
+          ]
+        }
+    ]
+}

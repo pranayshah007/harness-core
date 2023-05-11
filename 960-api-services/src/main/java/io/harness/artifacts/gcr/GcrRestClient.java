@@ -37,4 +37,11 @@ public interface GcrRestClient {
   Call<DockerImageManifestResponse>
   getImageManifest(@Header("Authorization") String bearerAuthHeader,
       @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json")
+  @GET("/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV2(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
 }

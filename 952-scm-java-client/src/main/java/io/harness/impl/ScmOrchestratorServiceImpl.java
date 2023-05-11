@@ -23,6 +23,8 @@ import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.impl.scm.SCMServiceGitClientImpl;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
@@ -35,6 +37,7 @@ import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
+import io.harness.product.ci.scm.proto.GenerateYamlResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
@@ -233,6 +236,11 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   }
 
   @Override
+  public GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, String yamlVersion) {
+    return scmServiceGitClient.autogenerateStageYamlForCI(cloneUrl, yamlVersion);
+  }
+
+  @Override
   public GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath) {
     return scmServiceGitClient.getLatestCommitOnFile(scmConnector, branchName, filepath);
@@ -246,5 +254,10 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
   @Override
   public GitFileBatchResponse getBatchFile(GitFileBatchRequest gitFileBatchRequest) {
     return scmServiceGitClient.getBatchFile(gitFileBatchRequest);
+  }
+
+  @Override
+  public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
+    return scmServiceGitClient.getUserDetails(userDetailsRequestDTO);
   }
 }

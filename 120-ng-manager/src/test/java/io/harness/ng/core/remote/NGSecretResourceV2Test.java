@@ -11,19 +11,24 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PIYUSH;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.SecretCrudService;
@@ -32,11 +37,15 @@ import io.harness.ng.core.api.impl.SecretPermissionValidator;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.SecretResourceFilterDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.rule.Owner;
+import io.harness.serializer.JsonUtils;
 
 import software.wings.service.impl.security.NGEncryptorService;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +58,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 
@@ -61,8 +71,11 @@ public class NGSecretResourceV2Test extends CategoryTest {
   private NGSecretResourceV2 ngSecretResourceV2;
   private NGEncryptorService ngEncryptorService;
 
+  PageRequest pageRequest;
+
   @Before
   public void setup() {
+    pageRequest = PageRequest.builder().pageSize(10).pageIndex(1).build();
     ngSecretService = mock(SecretCrudServiceImpl.class);
     secretPermissionValidator = mock(SecretPermissionValidator.class);
     encryptedDataService = mock(NGEncryptedDataService.class);
@@ -82,9 +95,9 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
-        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
+        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), pageRequest);
     assertThat(list.getData().getContent().size()).isEqualTo(1);
   }
 
@@ -97,11 +110,12 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
-    ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets("Test", "TestOrg",
-        "TestProj",
-        SecretResourceFilterDTO.builder().identifiers(null).includeAllSecretsAccessibleAtScope(true).build(), 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
+    ResponseDTO<PageResponse<SecretResponseWrapper>> list =
+        ngSecretResourceV2.listSecrets("Test", "TestOrg", "TestProj",
+            SecretResourceFilterDTO.builder().identifiers(null).includeAllSecretsAccessibleAtScope(true).build(),
+            pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -112,10 +126,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list = ngSecretResourceV2.listSecrets(
-        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        "Test", "TestOrg", "TestProj", SecretResourceFilterDTO.builder().identifiers(null).build(), pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -126,10 +140,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list =
-        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, true, 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, true);
+        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, true, pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, true, pageRequest);
   }
 
   @Test
@@ -141,10 +155,10 @@ public class NGSecretResourceV2Test extends CategoryTest {
     doNothing().when(secretPermissionValidator).checkForAccessOrThrow(any(), any(), any(), any());
     doReturn(page)
         .when(ngSecretService)
-        .list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        .list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
     ResponseDTO<PageResponse<SecretResponseWrapper>> list =
-        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, false, 1, 10);
-    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, 1, 10, null, false);
+        ngSecretResourceV2.list("Test", "TestOrg", "TestProj", null, null, null, null, null, false, false, pageRequest);
+    verify(ngSecretService).list("Test", "TestOrg", "TestProj", null, null, false, null, null, false, pageRequest);
   }
 
   @NotNull
@@ -161,7 +175,7 @@ public class NGSecretResourceV2Test extends CategoryTest {
   @Test(expected = JerseyViolationException.class)
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  public void testValidateRequestPayload() {
+  public void testValidateRequestPayload() throws JsonProcessingException {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
@@ -172,6 +186,45 @@ public class NGSecretResourceV2Test extends CategoryTest {
     Set<ConstraintViolation<Object>> violations = new HashSet<>();
     violations.add(mockviolation);
     when(validator.validate(any())).thenReturn(violations);
+    ngSecretResourceV2.createSecretFile(accountIdentifier, orgIdentifier, projectIdentifier, false, null, spec);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public <T> void testJsonDeserialize_inSecretFileCreationFlow() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String spec =
+        "{\"secret\":{\"type\":\"SecretFile\",\"identifier\":\"test_identifier\",\"description\":\"\",\"tags\":{},"
+        + "\"spec\":{\"secretManagerIdentifier\":\"harnessSecretManager\"}}}";
+    try (MockedStatic<JsonUtils> aStatic = mockStatic(JsonUtils.class, CALLS_REAL_METHODS)) {
+      try {
+        ngSecretResourceV2.createSecretFile(accountIdentifier, orgIdentifier, projectIdentifier, false, null, spec);
+      } catch (Exception ignored) {
+      }
+      aStatic.verify(() -> {
+        try {
+          JsonUtils.asObjectWithExceptionHandlingType(spec, SecretRequestWrapper.class);
+        } catch (JsonProcessingException e) {
+          e.printStackTrace();
+        }
+      }, times(1));
+    }
+  }
+
+  @Test(expected = JsonMappingException.class)
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testCreateSecretFile_withWrongSpec_shouldThrowException() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String spec =
+        "{\"secret\":{\"type\":\"SecretFile\",\"identifier\":\"test_identifier\",\"description\":\"\",\"tags\":,"
+        + "\"spec\":{\"secretManagerIdentifier\":\"harnessSecretManager\"}}}";
+    // passed tags with null in spec
     ngSecretResourceV2.createSecretFile(accountIdentifier, orgIdentifier, projectIdentifier, false, null, spec);
   }
 }

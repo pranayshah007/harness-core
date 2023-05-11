@@ -28,6 +28,8 @@ import io.harness.cvng.core.entities.LogFeedbackHistoryEntity;
 import io.harness.cvng.core.entities.LogFeedbackHistoryEntity.LogFeedbackHistoryEntityBuilder;
 import io.harness.cvng.core.services.api.LogFeedbackService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.ticket.beans.TicketResponseDto;
+import io.harness.cvng.ticket.entities.Ticket;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.persistence.HPersistence;
@@ -39,6 +41,7 @@ import dev.morphia.query.UpdateOperations;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class LogFeedbackServiceImpl implements LogFeedbackService {
@@ -106,7 +109,9 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     logFeedback = logFeedback.toBuilder()
                       .feedbackId(UUID.randomUUID().toString())
                       .createdAt(System.currentTimeMillis())
+                      .updatedAt(System.currentTimeMillis())
                       .createdBy(userPrincipal.getUsername())
+                      .updatedBy(userPrincipal.getUsername())
                       .build();
     LogFeedbackEntityBuilder logFeedbackEntityBuilder =
         LogFeedbackEntity.builder()
@@ -121,10 +126,11 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
             .projectIdentifier(projectParams.getProjectIdentifier())
             .createdByUser(logFeedback.getCreatedBy())
             .createdAt(logFeedback.getCreatedAt())
-            .updatedByUser(logFeedback.getUpdatedby())
+            .updatedByUser(logFeedback.getUpdatedBy())
             .lastUpdatedAt(logFeedback.getUpdatedAt());
     hPersistence.save(logFeedbackEntityBuilder.build());
-    createHistory(projectParams, userPrincipal.getEmail(), logFeedbackEntityBuilder.build());
+    createHistory(
+        projectParams, userPrincipal.getUsername(), getLogFeedbackFromFeedbackEntity(logFeedbackEntityBuilder.build()));
     updateDeploymentLogAnalysis(projectParams, logFeedback);
     return getLogFeedbackFromFeedbackEntity(logFeedbackEntityBuilder.build());
   }
@@ -132,6 +138,11 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   @Override
   public LogFeedback update(ProjectPathParams projectParams, String feedbackId, LogFeedback logFeedback) {
     UserPrincipal userPrincipal = (UserPrincipal) SecurityContextBuilder.getPrincipal();
+    long updateTimeStamp = System.currentTimeMillis();
+    LogFeedbackBuilder logFeedbackBuilder = logFeedback.toBuilder();
+    logFeedbackBuilder.updatedBy(userPrincipal.getUsername());
+    logFeedbackBuilder.updatedAt(updateTimeStamp);
+    logFeedbackBuilder.feedbackId(feedbackId);
     LogFeedbackEntity logFeedbackEntity = getLogFeedback(feedbackId);
     logFeedbackEntity.setFeedbackScore(logFeedback.getFeedbackScore().toString());
     logFeedbackEntity.setDescription(logFeedback.getDescription());
@@ -139,10 +150,14 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.description, logFeedback.getDescription());
     updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.feedbackScore, logFeedback.getFeedbackScore());
     updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.updatedByUser, userPrincipal.getUsername());
-    updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.lastUpdatedAt, System.currentTimeMillis());
+    updateOperations.set(LogFeedbackEntity.LogFeedbackKeys.lastUpdatedAt, updateTimeStamp);
+    if (Objects.nonNull(logFeedback.getTicket())) {
+      updateOperations.set(
+          LogFeedbackEntity.LogFeedbackKeys.ticket, Ticket.fromTicketResponseDto(logFeedback.getTicket()));
+    }
     hPersistence.update(logFeedbackEntity, updateOperations);
-    updateHistory(projectParams, userPrincipal.getEmail(), logFeedbackEntity);
-    updateDeploymentLogAnalysis(projectParams, logFeedback);
+    updateHistory(projectParams, userPrincipal.getUsername(), logFeedbackBuilder.build());
+    updateDeploymentLogAnalysis(projectParams, logFeedbackBuilder.build());
     return logFeedback;
   }
 
@@ -153,7 +168,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
   }
 
   @Override
-  public LogFeedback get(ProjectPathParams projectParams, String feedbackId) {
+  public LogFeedback get(String feedbackId) {
     LogFeedbackEntity logFeedbackEntity = getLogFeedback(feedbackId);
     if (logFeedbackEntity == null) {
       return null;
@@ -168,11 +183,12 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
         .createdAt(logFeedbackEntity.getCreatedAt())
         .updatedAt(logFeedbackEntity.getLastUpdatedAt())
         .createdBy(logFeedbackEntity.getCreatedByUser())
-        .updatedby(logFeedbackEntity.getUpdatedByUser())
+        .updatedBy(logFeedbackEntity.getUpdatedByUser())
+        .ticket(TicketResponseDto.fromTicket(logFeedbackEntity.getTicket()))
         .build();
   }
 
-  public void createHistory(ProjectPathParams projectParams, String userId, LogFeedbackEntity logFeedbackEntity) {
+  public void createHistory(ProjectPathParams projectParams, String userId, LogFeedback logFeedbackEntity) {
     LogFeedbackHistoryEntityBuilder logFeedbackHistoryEntityBuilder = LogFeedbackHistoryEntity.builder();
 
     logFeedbackHistoryEntityBuilder.historyId(UUID.randomUUID().toString())
@@ -187,7 +203,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     hPersistence.save(logFeedbackHistoryEntityBuilder.build());
   }
 
-  public void updateHistory(ProjectPathParams projectParams, String userId, LogFeedbackEntity logFeedbackEntity) {
+  public void updateHistory(ProjectPathParams projectParams, String userId, LogFeedback logFeedbackEntity) {
     LogFeedbackHistoryEntityBuilder logFeedbackHistoryEntityBuilder = LogFeedbackHistoryEntity.builder();
 
     logFeedbackHistoryEntityBuilder.historyId(UUID.randomUUID().toString())
@@ -206,11 +222,6 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     List<LogFeedbackHistoryEntity> logFeedbackHistoryEntities =
         hPersistence.createQuery(LogFeedbackHistoryEntity.class)
             .filter(LogFeedbackHistoryEntity.LogFeedbackHistoryKeys.feedbackId, feedbackId)
-            .filter(
-                LogFeedbackHistoryEntity.LogFeedbackHistoryKeys.accountIdentifier, projectParams.getAccountIdentifier())
-            .filter(
-                LogFeedbackHistoryEntity.LogFeedbackHistoryKeys.projectIdentifier, projectParams.getProjectIdentifier())
-            .filter(LogFeedbackHistoryEntity.LogFeedbackHistoryKeys.orgIdentifier, projectParams.getOrgIdentifier())
             .asList();
     return getLogFeedbackHistoryList(logFeedbackHistoryEntities);
   }
@@ -251,7 +262,7 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
     for (LogFeedbackHistoryEntity logFeedbackHistoryEntity : logFeedbackHistoryEntities) {
       LogFeedbackHistoryBuilder logFeedbackHistoryBuilder =
           LogFeedbackHistory.builder()
-              .logFeedback(getLogFeedback(logFeedbackHistoryEntity.getLogFeedbackEntity()))
+              .logFeedback(logFeedbackHistoryEntity.getLogFeedbackEntity())
               .createdBy(logFeedbackHistoryEntity.getCreatedByUser())
               .updatedBy(logFeedbackHistoryEntity.getUpdatedByUser());
       logFeedbackHistoryList.add(logFeedbackHistoryBuilder.build());
@@ -285,10 +296,11 @@ public class LogFeedbackServiceImpl implements LogFeedbackService {
             .environmentIdentifier(logFeedbackEntity.getEnvironmentIdentifier())
             .serviceIdentifier(logFeedbackEntity.getServiceIdentifier())
             .createdBy(logFeedbackEntity.getCreatedByUser())
-            .updatedby(logFeedbackEntity.getUpdatedByUser())
+            .updatedBy(logFeedbackEntity.getUpdatedByUser())
             .createdAt(logFeedbackEntity.getCreatedAt())
             .updatedAt(logFeedbackEntity.getLastUpdatedAt())
-            .sampleMessage(logFeedbackEntity.getSampleMessage());
+            .sampleMessage(logFeedbackEntity.getSampleMessage())
+            .ticket(TicketResponseDto.fromTicket(logFeedbackEntity.getTicket()));
     return logFeedbackBuilder.build();
   }
 }

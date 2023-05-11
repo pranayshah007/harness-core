@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terragrunt;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import java.util.HashMap;
@@ -17,7 +18,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terragrunt.TerragruntApplyOutcome")
-public class TerragruntApplyOutcome extends HashMap<String, Object> implements Outcome {
+public class TerragruntApplyOutcome extends HashMap<String, Object> implements Outcome, ExecutionSweepingOutput {
   public TerragruntApplyOutcome(Map<String, ?> m) {
     super(m);
   }

@@ -55,6 +55,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboardingService {
   private static final String ONBOARDING_PREFIX = "onboarding_";
@@ -174,6 +175,7 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
                              .queryParams(queryRecordsRequest.getHealthSourceQueryParams().getQueryParamsEntity())
                              .build()))
                      .metricPack(metricPacks.get(0))
+                     .healthSourceParams(queryRecordsRequest.getHealthSourceParams().getHealthSourceParamsEntity())
                      .build();
     } else {
       throw new NotImplementedForHealthSourceException("Not Implemented for health source provider.");
@@ -183,7 +185,8 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
         dataSourceTypeDataCollectionInfoMapperMap.get(providerType);
     DataCollectionInfo<ConnectorConfigDTO> dataCollectionInfo =
         dataCollectionInfoMapper.toDataCollectionInfo(cvConfig, VerificationTask.TaskType.SLI);
-    dataCollectionInfo.setCollectHostData(false);
+    dataCollectionInfo.setCollectHostData(
+        StringUtils.isNotEmpty(queryRecordsRequest.getHealthSourceQueryParams().getServiceInstanceField()));
     return dataCollectionInfo;
   }
 

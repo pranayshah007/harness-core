@@ -1087,6 +1087,7 @@ public class SettingsServiceImpl implements SettingsService {
                                             .filter(ID_KEY, varId)
                                             .get();
     setCertValidationRequired(settingAttribute);
+    setFeatureFlagIfRequired(settingAttribute);
     return settingAttribute;
   }
 
@@ -1104,7 +1105,18 @@ public class SettingsServiceImpl implements SettingsService {
   private SettingAttribute getById(String varId) {
     SettingAttribute settingAttribute = wingsPersistence.get(SettingAttribute.class, varId);
     setCertValidationRequired(settingAttribute);
+    setFeatureFlagIfRequired(settingAttribute);
     return settingAttribute;
+  }
+
+  private void setFeatureFlagIfRequired(SettingAttribute settingAttribute) {
+    try {
+      if (settingAttribute != null && settingAttribute.getValue() != null) {
+        settingServiceHelper.setFeatureFlagIfRequired(settingAttribute.getValue(), settingAttribute.getAccountId());
+      }
+    } catch (Exception ex) {
+      log.error("Failed to set Feature Flags for HostConnectionAttributes", ex);
+    }
   }
 
   @Override
@@ -1170,6 +1182,7 @@ public class SettingsServiceImpl implements SettingsService {
                                             .filter(SettingAttributeKeys.accountId, accountId)
                                             .get();
     setCertValidationRequired(settingAttribute);
+    setFeatureFlagIfRequired(settingAttribute);
     return settingAttribute;
   }
 
@@ -1375,7 +1388,6 @@ public class SettingsServiceImpl implements SettingsService {
   /* (non-Javadoc)
    * @see software.wings.service.intfc.SettingsService#update(software.wings.beans.SettingAttribute)
    */
-
   @Override
   public SettingAttribute update(SettingAttribute settingAttribute) {
     return update(settingAttribute, true, true);
@@ -1694,19 +1706,25 @@ public class SettingsServiceImpl implements SettingsService {
     if (category != null) {
       query.filter(SettingAttributeKeys.category, category);
     }
-    return query.get();
+    SettingAttribute settingAttribute = query.get();
+    if (null != settingAttribute) {
+      setFeatureFlagIfRequired(settingAttribute);
+    }
+    return settingAttribute;
   }
 
   @Override
   public SettingAttribute fetchSettingAttributeByName(
       String accountId, String attributeName, SettingVariableTypes settingVariableTypes) {
-    return wingsPersistence.createQuery(SettingAttribute.class)
-        .filter(SettingAttributeKeys.accountId, accountId)
-        .filter(SettingAttributeKeys.appId, GLOBAL_APP_ID)
-        .filter(SettingAttributeKeys.envId, GLOBAL_ENV_ID)
-        .filter(SettingAttributeKeys.name, attributeName)
-        .filter(SettingAttributeKeys.value_type, settingVariableTypes.name())
-        .get();
+    SettingAttribute settingAttribute = wingsPersistence.createQuery(SettingAttribute.class)
+                                            .filter(SettingAttributeKeys.accountId, accountId)
+                                            .filter(SettingAttributeKeys.appId, GLOBAL_APP_ID)
+                                            .filter(SettingAttributeKeys.envId, GLOBAL_ENV_ID)
+                                            .filter(SettingAttributeKeys.name, attributeName)
+                                            .filter(SettingAttributeKeys.value_type, settingVariableTypes.name())
+                                            .get();
+    setFeatureFlagIfRequired(settingAttribute);
+    return settingAttribute;
   }
 
   /* (non-Javadoc)
@@ -1826,7 +1844,11 @@ public class SettingsServiceImpl implements SettingsService {
   public List<SettingAttribute> getGlobalSettingAttributesByType(String accountId, String type) {
     PageRequest<SettingAttribute> pageRequest =
         aPageRequest().addFilter("accountId", EQ, accountId).addFilter("value.type", EQ, type).build();
-    return wingsPersistence.query(SettingAttribute.class, pageRequest).getResponse();
+    List<SettingAttribute> response = wingsPersistence.query(SettingAttribute.class, pageRequest).getResponse();
+    if (isNotEmpty(response)) {
+      response.forEach(r -> setFeatureFlagIfRequired(r));
+    }
+    return response;
   }
 
   @Override
@@ -1843,6 +1865,7 @@ public class SettingsServiceImpl implements SettingsService {
                                             .filter(SettingAttributeKeys.accountId, accountId)
                                             .get();
     if (settingAttribute != null) {
+      setFeatureFlagIfRequired(settingAttribute);
       return settingAttribute.getValue();
     }
     return null;

@@ -17,7 +17,6 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.dto.SettingAttribute;
@@ -25,7 +24,6 @@ import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +32,8 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
+public class PdcInstanceSyncExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private HostValidationService hostValidationService;
 
   @Override
@@ -45,8 +42,9 @@ public class PdcInstanceSyncExecutor implements PerpetualTaskExecutor {
     final PdcInstanceSyncPerpetualTaskParams instanceSyncParams =
         AnyUtils.unpack(params.getCustomizedParams(), PdcInstanceSyncPerpetualTaskParams.class);
 
-    final SettingAttribute settingAttribute = (SettingAttribute) referenceFalseKryoSerializer.asObject(
-        instanceSyncParams.getSettingAttribute().toByteArray());
+    final SettingAttribute settingAttribute =
+        (SettingAttribute) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(instanceSyncParams.getSettingAttribute().toByteArray());
     HostReachabilityResponse response;
     try {
       List<HostReachabilityInfo> hostReachabilityInfos =

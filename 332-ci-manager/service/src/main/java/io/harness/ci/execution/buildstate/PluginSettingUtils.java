@@ -102,6 +102,7 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -132,6 +133,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_BUILD_ARGS = "PLUGIN_BUILD_ARGS";
   public static final String PLUGIN_CUSTOM_LABELS = "PLUGIN_CUSTOM_LABELS";
   public static final String PLUGIN_MOUNT = "PLUGIN_MOUNT";
+  public static final String PLUGIN_DEBUG = "PLUGIN_DEBUG";
   public static final String PLUGIN_BUCKET = "PLUGIN_BUCKET";
   public static final String PLUGIN_ENDPOINT = "PLUGIN_ENDPOINT";
   public static final String PLUGIN_REGION = "PLUGIN_REGION";
@@ -155,12 +157,16 @@ public class PluginSettingUtils {
   public static final String PLUGIN_DAEMON_OFF = "PLUGIN_DAEMON_OFF";
   public static final String ECR_REGISTRY_PATTERN = "%s.dkr.ecr.%s.amazonaws.com";
   public static final String PLUGIN_DOCKER_REGISTRY = "PLUGIN_DOCKER_REGISTRY";
+  public static final String PLUGIN_CACHE_FROM = "PLUGIN_CACHE_FROM";
+  public static final String PLUGIN_CACHE_TO = "PLUGIN_CACHE_TO";
+  public static final String PLUGIN_BUILDER_DRIVER_OPTS = "PLUGIN_BUILDER_DRIVER_OPTS";
+  public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.0";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
   public Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier,
-      long timeout, Ambiance ambiance, Type infraType, boolean isMandatory) {
+      long timeout, Ambiance ambiance, Type infraType, boolean isMandatory, boolean isContainerizedPlugin) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
         return getECRStepInfoEnvVariables(ambiance, (ECRStepInfo) stepInfo, identifier, infraType);
@@ -169,7 +175,7 @@ public class PluginSettingUtils {
       case GCR:
         return getGCRStepInfoEnvVariables((GCRStepInfo) stepInfo, identifier, infraType);
       case DOCKER:
-        return getDockerStepInfoEnvVariables((DockerStepInfo) stepInfo, identifier, infraType);
+        return getDockerStepInfoEnvVariables((DockerStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case UPLOAD_ARTIFACTORY:
         return getUploadToArtifactoryStepInfoEnvVariables((UploadToArtifactoryStepInfo) stepInfo, identifier);
       case UPLOAD_GCS:
@@ -501,7 +507,7 @@ public class PluginSettingUtils {
   }
 
   private static Map<String, String> getDockerStepInfoEnvVariables(
-      DockerStepInfo stepInfo, String identifier, Type infraType) {
+      DockerStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     Map<String, String> map = new HashMap<>();
 
     setMandatoryEnvironmentVariable(map, PLUGIN_REPO,
@@ -554,6 +560,23 @@ public class PluginSettingUtils {
       }
     } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushDockerRegistry", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushDockerRegistry", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+        }
+      }
     }
 
     return map;
@@ -808,7 +831,10 @@ public class PluginSettingUtils {
   private static Map<String, String> getSslVerifyEnvVars(ParameterField<Boolean> sslVerifyParameter) {
     Map<String, String> map = new HashMap<>();
     boolean sslVerify = resolveBooleanParameter(sslVerifyParameter, true);
-    setOptionalEnvironmentVariable(map, GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
+    if (!sslVerify) {
+      // Set GIT_SSL_NO_VERIFY=true only when ssl verify is false
+      setOptionalEnvironmentVariable(map, GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
+    }
     return map;
   }
 
@@ -966,6 +992,11 @@ public class PluginSettingUtils {
     return String.join(",", stringList);
   }
 
+  // converts list "value1", "value2" to string "value1;value2"
+  private static String listToCustomStringSlice(List<String> stringList) {
+    return String.join(";", stringList);
+  }
+
   private static void setOptionalEnvironmentVariable(Map<String, String> envVarMap, String var, String value) {
     if (isEmpty(value)) {
       return;
@@ -994,5 +1025,61 @@ public class PluginSettingUtils {
       ciExecutionArgsCopy = CIExecutionArgs.builder().runSequence(ciExecutionArgs.getRunSequence()).build();
     }
     return BuildEnvironmentUtils.getBuildEnvironmentVariables(ciExecutionArgsCopy);
+  }
+
+  public boolean dlcSetupRequired(PluginCompatibleStep stepInfo) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+        return resolveBooleanParameter(dockerStepInfo.getCaching(), false);
+      case ECR:
+      case ACR:
+      case GCR:
+      default:
+        return false;
+    }
+  }
+
+  public String getDlcPrefix(String accountId, String identifier, PluginCompatibleStep stepInfo) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+
+        String repo =
+            resolveStringParameter("repo", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getRepo(), true);
+        return String.format("%s/%s/", accountId, repo);
+      case ECR:
+      case ACR:
+      case GCR:
+      default:
+        return "";
+    }
+  }
+
+  public void setupDlcArgs(PluginCompatibleStep stepInfo, String identifier, String cacheFromArg, String cacheToArg) {
+    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+      case DOCKER:
+        DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        List<String> cacheFrom = resolveListParameter(
+            "cacheFrom", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        dockerStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        dockerStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
+      case ECR:
+      case ACR:
+      case GCR:
+      default:
+        return;
+    }
   }
 }

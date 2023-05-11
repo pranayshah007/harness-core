@@ -36,6 +36,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.Workflow;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -54,7 +55,7 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class ShellScriptProvisionerStepMapperImpl extends StepMapper {
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     ShellScriptProvisionState state = (ShellScriptProvisionState) getState(graphNode);
 
     List<CgEntityId> references = new ArrayList<>();

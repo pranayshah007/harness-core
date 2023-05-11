@@ -19,6 +19,7 @@
         "type" : null,
         "spec" : {
           "credential" : null,
+          "awsSdkClientBackOffStrategyOverride" : null,
           "delegateSelectors" : [ "del-1" ],
           "executeOnDelegate" : true
         }

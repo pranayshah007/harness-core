@@ -24,8 +24,8 @@ import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.bamboo.BambooBuildStepInfo;
 import io.harness.cdng.chaos.ChaosStepNotifyData;
+import io.harness.cdng.configfile.ConfigFilesOutcome;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
-import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
 import io.harness.cdng.customDeployment.FetchInstanceScriptStepParameters;
 import io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo;
@@ -42,11 +42,15 @@ import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.gitops.syncstep.SyncResponse;
 import io.harness.cdng.gitops.syncstep.SyncStepOutcome;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
+import io.harness.cdng.hooks.ServiceHookAction;
+import io.harness.cdng.hooks.ServiceHookType;
+import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.InfraUseFromStage;
 import io.harness.cdng.infra.InfrastructureDef;
@@ -56,6 +60,8 @@ import io.harness.cdng.infra.yaml.AwsSamInfrastructure;
 import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepInfo;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
+import io.harness.cdng.k8s.K8sBGStageScaleDownStepInfo;
+import io.harness.cdng.k8s.K8sBGStageScaleDownStepParameters;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
 import io.harness.cdng.k8s.K8sCanaryOutcome;
 import io.harness.cdng.k8s.K8sCanaryStepInfo;
@@ -81,6 +87,7 @@ import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackNode;
@@ -136,6 +143,7 @@ import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
+import io.harness.gitops.models.Application;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.telemetry.beans.CdTelemetrySentStatus;
 
@@ -290,5 +298,15 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(SyncStepOutcome.class, 12665);
     kryo.register(TasRouteMappingStepInfo.class, 12666);
     kryo.register(TasRouteMappingStepParameters.class, 12667);
+    kryo.register(SyncResponse.class, 12668);
+    kryo.register(Application.class, 12669);
+
+    kryo.register(ServiceHooksOutcome.class, 12671);
+    kryo.register(ServiceHookAction.class, 12672);
+    kryo.register(InlineStoreConfig.class, 12673);
+    kryo.register(ServiceHookType.class, 12674);
+
+    kryo.register(K8sBGStageScaleDownStepInfo.class, 12647);
+    kryo.register(K8sBGStageScaleDownStepParameters.class, 12648);
   }
 }

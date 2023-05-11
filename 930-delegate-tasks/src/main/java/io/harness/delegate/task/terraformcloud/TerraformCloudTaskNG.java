@@ -34,6 +34,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudConnectorDTO;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -468,6 +469,20 @@ public class TerraformCloudTaskNG extends AbstractDelegateRunnableTask {
   }
 
   public LogCallback getLogCallback(String unitName, CommandUnitsProgress commandUnitsProgress) {
-    return new NGDelegateLogCallback(getLogStreamingTaskClient(), unitName, true, commandUnitsProgress);
+    return new NGDelegateLogCallback(
+        getLogStreamingTaskClient(), unitName, shouldOpenStream(unitName, commandUnitsProgress), commandUnitsProgress);
+  }
+
+  private boolean shouldOpenStream(String commandUnitName, CommandUnitsProgress commandUnitsProgress) {
+    if (commandUnitsProgress.getCommandUnitProgressMap() == null) {
+      return true;
+    }
+
+    CommandUnitProgress unitProgress = commandUnitsProgress.getCommandUnitProgressMap().get(commandUnitName);
+    if (unitProgress != null) {
+      return CommandExecutionStatus.RUNNING != unitProgress.getStatus();
+    }
+
+    return true;
   }
 }

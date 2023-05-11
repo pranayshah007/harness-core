@@ -49,14 +49,15 @@ public class SscaOrchestrationPluginUtils {
     }
 
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    OrchestrationStepEnvVariables envVariables = OrchestrationStepEnvVariables.builder()
-                                                     .sbomGenerationTool(tool)
-                                                     .sbomGenerationFormat(format)
-                                                     .sbomSource(sbomSource)
-                                                     .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getBaseUrl())
-                                                     .stepExecutionId(runtimeId)
-                                                     .stepIdentifier(identifier)
-                                                     .build();
+    OrchestrationStepEnvVariables envVariables =
+        OrchestrationStepEnvVariables.builder()
+            .sbomGenerationTool(tool)
+            .sbomGenerationFormat(format)
+            .sbomSource(sbomSource)
+            .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
+            .stepExecutionId(runtimeId)
+            .stepIdentifier(identifier)
+            .build();
     return SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
   }
 

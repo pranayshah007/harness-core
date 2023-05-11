@@ -12,10 +12,10 @@ import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -67,7 +67,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -343,7 +343,10 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                         .setClusterName("cluster")
                                                         .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(params))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 
   private PerpetualTaskExecutionParams getContainerInstancePerpetualTaskParamsHelm() {
@@ -364,7 +367,10 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                         .setReleaseName("release")
                                                         .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(params))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 
   private PerpetualTaskExecutionParams getK8sPerpetualTaskParams() {
@@ -381,6 +387,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                     .setReleaseName("release")
                                                     .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(params))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

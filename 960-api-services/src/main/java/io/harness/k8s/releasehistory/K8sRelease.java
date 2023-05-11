@@ -121,6 +121,11 @@ public class K8sRelease implements IK8sRelease {
     return this;
   }
 
+  @Override
+  public String getReleaseColor() {
+    return K8sReleaseSecretHelper.getReleaseColor(releaseSecret);
+  }
+
   private byte[] getCompressedYaml(List<KubernetesResource> resources) throws IOException {
     String manifestsYaml = ManifestHelper.toYaml(resources);
     return compressString(manifestsYaml, Deflater.BEST_COMPRESSION);

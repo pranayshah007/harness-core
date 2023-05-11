@@ -7,6 +7,8 @@
 
 package io.harness.idp.status.resources;
 
+import static io.harness.rule.OwnerRule.VIGNESWARA;
+
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -16,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.status.enums.StatusType;
 import io.harness.idp.status.service.StatusInfoService;
+import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 import io.harness.spec.server.idp.v1.model.StatusInfoRequest;
 import io.harness.spec.server.idp.v1.model.StatusInfoResponse;
@@ -43,6 +46,7 @@ public class StatusInfoApiImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testGetStatusByType() {
     type = StatusType.ONBOARDING.toString();
@@ -58,6 +62,7 @@ public class StatusInfoApiImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testSaveStatusInfoByType() {
     type = StatusType.ONBOARDING.toString();

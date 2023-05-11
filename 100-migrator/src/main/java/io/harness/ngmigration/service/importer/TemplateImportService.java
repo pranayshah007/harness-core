@@ -40,7 +40,7 @@ public class TemplateImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject TemplateService templateService;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importTemplateDTO) {
+  public DiscoveryResult discover(ImportDTO importTemplateDTO) {
     TemplateFilter filter = (TemplateFilter) importTemplateDTO.getFilter();
     String accountId = importTemplateDTO.getAccountIdentifier();
     String appId = filter.getAppId();

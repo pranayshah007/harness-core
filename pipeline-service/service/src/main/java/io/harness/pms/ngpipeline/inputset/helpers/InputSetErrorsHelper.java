@@ -193,7 +193,7 @@ public class InputSetErrorsHelper {
             }
           }
         } else {
-          String error = validateStaticValues(templateValue, valueFromRuntimeInputYaml);
+          String error = validateStaticValues(templateValue, valueFromRuntimeInputYaml, key.getExpressionFqn());
           if (EmptyPredicate.isNotEmpty(error)) {
             errorMap.put(key, error);
           }

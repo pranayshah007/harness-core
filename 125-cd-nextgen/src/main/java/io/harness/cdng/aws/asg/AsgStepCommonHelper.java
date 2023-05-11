@@ -29,6 +29,7 @@ import io.harness.cdng.aws.asg.AsgRollingPrepareRollbackDataOutcome.AsgRollingPr
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -143,6 +144,7 @@ public class AsgStepCommonHelper extends CDStepHelper {
 
     // Validate ManifestsOutcome
     validateManifestsOutcome(ambiance, manifestsOutcome);
+    checkRequiredManifests(manifestsOutcome);
 
     LogCallback logCallback = getLogCallback(AsgCommandUnitConstants.fetchManifests.toString(), ambiance, true);
 
@@ -185,6 +187,28 @@ public class AsgStepCommonHelper extends CDStepHelper {
                                                                .build();
 
     return chainFetchGitTaskUntilAllGitManifestsFetched(executionPassThroughData, ambiance, stepElementParameters);
+  }
+
+  private void checkRequiredManifests(ManifestsOutcome manifestsOutcome) {
+    boolean asgConfigurationPresent = false;
+    boolean launchTemplatePresent = false;
+
+    for (ManifestOutcome manifestOutcome : manifestsOutcome.values()) {
+      if (ManifestType.AsgConfiguration.equals(manifestOutcome.getType())) {
+        asgConfigurationPresent = true;
+      }
+      if (ManifestType.AsgLaunchTemplate.equals(manifestOutcome.getType())) {
+        launchTemplatePresent = true;
+      }
+    }
+
+    if (!asgConfigurationPresent) {
+      throw new InvalidRequestException("ASG Configuration manifest is required");
+    }
+
+    if (!launchTemplatePresent) {
+      throw new InvalidRequestException("Launch Template manifest is required");
+    }
   }
 
   public ManifestsOutcome resolveAsgManifestsOutcome(Ambiance ambiance) {

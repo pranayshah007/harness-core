@@ -21,5 +21,6 @@ import org.springframework.data.repository.CrudRepository;
 public interface BackstageEnvVariableRepository
     extends CrudRepository<BackstageEnvVariableEntity, String>, BackstageEnvVariableRepositoryCustom {
   Optional<BackstageEnvVariableEntity> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
+  Optional<BackstageEnvVariableEntity> findByEnvNameAndAccountIdentifier(String envName, String accountIdentifier);
   List<BackstageEnvVariableEntity> findByAccountIdentifier(String accountIdentifier);
 }

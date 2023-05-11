@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDS_K8S_SOCKET_CAPABILITY_CHECK_NG;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
@@ -223,7 +224,8 @@ public class K8sEntityHelper {
               format("Unsupported Infrastructure type: [%s]", infrastructure.getKind()));
       }
     } catch (ClassCastException ex) {
-      if (Set.of(KUBERNETES_DIRECT, KUBERNETES_GCP, KUBERNETES_AZURE).contains(infrastructure.getKind())) {
+      if (Set.of(KUBERNETES_DIRECT, KUBERNETES_GCP, KUBERNETES_AZURE, KUBERNETES_AWS)
+              .contains(infrastructure.getKind())) {
         String requiredConnectorType = getRequiredConnectorType(infrastructure.getKind());
         throw new InvalidArgumentsException(Pair.of("connectorRef",
             String.format(CLASS_CAST_EXCEPTION_ERROR, infrastructure.getKind(), connectorDTO.getConnectorType(),
@@ -241,6 +243,8 @@ public class K8sEntityHelper {
         return GCP.getDisplayName();
       case KUBERNETES_AZURE:
         return AZURE.getDisplayName();
+      case KUBERNETES_AWS:
+        return AWS.getDisplayName();
       default:
         return StringUtils.EMPTY;
     }

@@ -8,7 +8,9 @@
 package io.harness.pms.execution.utils;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -29,7 +31,9 @@ import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PostExecutionRollbackInfo;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -400,5 +404,178 @@ public class AmbianceUtilsTest extends CategoryTest {
         Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().setHarnessVersion("1").build()).build();
     String version = AmbianceUtils.getPipelineVersion(ambiance);
     assertThat(version).isEqualTo(PipelineVersion.V1);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testGetFQNFromAmbiance() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    assertThat(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList())).isEmpty();
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setIdentifier("pipeline")
+                                  .build())
+                   .build();
+    assertThat(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList())).isEqualTo("pipeline");
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setIdentifier("pipeline")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("stages")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("parallel")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .setIdentifier("stage1")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("spec")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("execution")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("step1")
+                                  .build())
+                   .build();
+    assertThat(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList()))
+        .isEqualTo("pipeline.stages.stage1.spec.execution.step1");
+
+    ambiance = Ambiance.newBuilder()
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.PIPELINE).build())
+                                  .setIdentifier("pipeline")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("stages")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                                  .setSkipExpressionChain(true)
+                                  .setIdentifier("stage1")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                  .setIdentifier("stage1_1")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("spec")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("execution")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                                  .setSkipExpressionChain(true)
+                                  .setIdentifier("step1")
+                                  .build())
+                   .addLevels(Level.newBuilder()
+                                  .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                  .setIdentifier("step1_0")
+                                  .build())
+                   .build();
+    assertThat(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList()))
+        .isEqualTo("pipeline.stages.stage1_1.spec.execution.step1_0");
+  }
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testObtainOriginalStageExecutionIdForRollbackMode() {
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder()
+            .addPostExecutionRollbackInfo(PostExecutionRollbackInfo.newBuilder()
+                                              .setPostExecutionRollbackStageId("stageSetupId")
+                                              .setOriginalStageExecutionId("stageRuntime1")
+                                              .build())
+            .addPostExecutionRollbackInfo(
+                PostExecutionRollbackInfo.newBuilder()
+                    .setPostExecutionRollbackStageId("strategySetupId")
+                    .setOriginalStageExecutionId("stageRuntime2")
+                    .setRollbackStageStrategyMetadata(StrategyMetadata.newBuilder().setCurrentIteration(2).build())
+                    .build())
+            .addPostExecutionRollbackInfo(
+                PostExecutionRollbackInfo.newBuilder()
+                    .setPostExecutionRollbackStageId("strategySetupId")
+                    .setOriginalStageExecutionId("stageRuntime3")
+                    .setRollbackStageStrategyMetadata(StrategyMetadata.newBuilder().setCurrentIteration(1).build())
+                    .build())
+            .build();
+    Level stageLevelNoStrategy = Level.newBuilder().setSetupId("stageSetupId").build();
+    Ambiance ambianceNoStrategy =
+        Ambiance.newBuilder()
+            .addLevels(Level.newBuilder()
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGES).build())
+                           .build())
+            .setMetadata(executionMetadata)
+            .build();
+    String runtimeId =
+        AmbianceUtils.obtainOriginalStageExecutionIdForRollbackMode(ambianceNoStrategy, stageLevelNoStrategy);
+    assertThat(runtimeId).isEqualTo("stageRuntime1");
+
+    Level stageLevelWithStrategy =
+        Level.newBuilder()
+            .setSetupId("stageSetupId2")
+            .setStrategyMetadata(StrategyMetadata.newBuilder().setCurrentIteration(2).build())
+            .build();
+    Ambiance ambianceWithStrategy =
+        Ambiance.newBuilder()
+            .addLevels(Level.newBuilder()
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                           .setSetupId("strategySetupId")
+                           .build())
+            .setMetadata(executionMetadata)
+            .build();
+    runtimeId =
+        AmbianceUtils.obtainOriginalStageExecutionIdForRollbackMode(ambianceWithStrategy, stageLevelWithStrategy);
+    assertThat(runtimeId).isEqualTo("stageRuntime2");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetStageExecutionIdForExecutionMode() {
+    ExecutionMetadata normalMode = ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.NORMAL).build();
+    Ambiance normalModeAmbiance = Ambiance.newBuilder().setMetadata(normalMode).setStageExecutionId("currId").build();
+    assertThat(AmbianceUtils.getStageExecutionIdForExecutionMode(normalModeAmbiance)).isEqualTo("currId");
+
+    ExecutionMetadata rbMode = ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK).build();
+    Ambiance rbModeAmbiance = Ambiance.newBuilder()
+                                  .setMetadata(rbMode)
+                                  .setStageExecutionId("currId")
+                                  .setOriginalStageExecutionIdForRollbackMode("origId")
+                                  .build();
+    assertThat(AmbianceUtils.getStageExecutionIdForExecutionMode(rbModeAmbiance)).isEqualTo("origId");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPlanExecutionIdForExecutionMode() {
+    ExecutionMetadata normalMode = ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.NORMAL).build();
+    Ambiance normalModeAmbiance = Ambiance.newBuilder().setMetadata(normalMode).setPlanExecutionId("currId").build();
+    assertThat(AmbianceUtils.getPlanExecutionIdForExecutionMode(normalModeAmbiance)).isEqualTo("currId");
+
+    ExecutionMetadata rbMode = ExecutionMetadata.newBuilder()
+                                   .setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK)
+                                   .setOriginalPlanExecutionIdForRollbackMode("origId")
+                                   .build();
+    Ambiance rbModeAmbiance = Ambiance.newBuilder().setMetadata(rbMode).build();
+    assertThat(AmbianceUtils.getPlanExecutionIdForExecutionMode(rbModeAmbiance)).isEqualTo("origId");
   }
 }

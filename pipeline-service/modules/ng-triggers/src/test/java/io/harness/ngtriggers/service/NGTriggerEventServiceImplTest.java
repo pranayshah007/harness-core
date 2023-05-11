@@ -62,7 +62,7 @@ public class NGTriggerEventServiceImplTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testFormCriteriaInvalidRegex() {
-    Criteria criteria = ngTriggerEventService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+    Criteria criteria = ngTriggerEventService.formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         PIPELINE_IDENTIFIER, IDENTIFIER, "a^s", Arrays.asList(ExecutionStatus.ABORTED));
     assertThat(criteria).isNotNull();
   }
@@ -84,7 +84,7 @@ public class NGTriggerEventServiceImplTest {
                                            .build();
 
     Page<TriggerEventHistory> eventHistoryPage = new PageImpl<>(Collections.singletonList(eventHistory), pageable, 1);
-    Criteria criteria = ngTriggerEventService.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+    Criteria criteria = ngTriggerEventService.formTriggerEventCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         PIPELINE_IDENTIFIER, IDENTIFIER, "a^s", Arrays.asList(ExecutionStatus.ABORTED));
     doReturn(eventHistoryPage).when(triggerEventHistoryRepository).findAll(criteria, pageable);
 

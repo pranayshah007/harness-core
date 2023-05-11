@@ -20,6 +20,9 @@ import io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeComm
 import io.harness.connector.entities.embedded.awscodecommitconnector.AwsCodeCommitSecretKeyAccessKey;
 import io.harness.connector.entities.embedded.awsconnector.AwsAccessKeyCredential;
 import io.harness.connector.entities.embedded.awsconnector.AwsConfig;
+import io.harness.connector.entities.embedded.awsconnector.AwsEqualJitterBackoffStrategy;
+import io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy;
+import io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy;
 import io.harness.connector.entities.embedded.awsconnector.AwsIamCredential;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsConnector;
 import io.harness.connector.entities.embedded.awskmsconnector.AwsKmsIamCredential;
@@ -107,6 +110,7 @@ import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConn
 import io.harness.connector.entities.embedded.servicenow.ServiceNowADFSAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
+import io.harness.connector.entities.embedded.signalfxconnector.SignalFXConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
@@ -170,6 +174,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureArtifactsConnector.class);
     set.add(BambooConnector.class);
     set.add(TerraformCloudConfig.class);
+    set.add(SignalFXConnector.class);
   }
 
   @Override
@@ -245,5 +250,11 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.jira.JiraUserNamePasswordAuthentication",
         JiraUserNamePasswordAuthentication.class);
     h.put("connector.entities.embedded.jira.JiraPATAuthentication", JiraPATAuthentication.class);
+    h.put("io.harness.connector.entities.embedded.awsconnecto.AwsEqualJitterBackoffStrategy",
+        AwsEqualJitterBackoffStrategy.class);
+    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFixedDelayBackoffStrategy",
+        AwsFixedDelayBackoffStrategy.class);
+    h.put("io.harness.connector.entities.embedded.awsconnector.AwsFullJitterBackoffStrategy",
+        AwsFullJitterBackoffStrategy.class);
   }
 }

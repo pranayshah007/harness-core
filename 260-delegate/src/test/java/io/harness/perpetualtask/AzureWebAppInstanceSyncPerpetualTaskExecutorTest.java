@@ -121,8 +121,10 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
             .addAllAzureWebAppDeploymentReleaseList(deploymentReleases)
             .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(message))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
 
     azureWebAppInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);
@@ -167,8 +169,10 @@ public class AzureWebAppInstanceSyncPerpetualTaskExecutorTest extends DelegateTe
             .addAllAzureWebAppDeploymentReleaseList(deploymentReleases)
             .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(message))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
 
     azureWebAppInstanceSyncPerpetualTaskExecutor.runOnce(
         PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build(), perpetualTaskExecutionParams, Instant.EPOCH);

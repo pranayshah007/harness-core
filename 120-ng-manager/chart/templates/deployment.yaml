@@ -1,0 +1,132 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ng-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ng-manager.labels" . | nindent 4 }}
+spec:
+  progressDeadlineSeconds: 800
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  selector:
+    matchLabels:
+      {{- include "ng-manager.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app: ng-manager
+        {{- include "ng-manager.selectorLabels" . | nindent 8 }}
+    spec:
+       {{- include "ng-manager.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "ng-manager.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      terminationGracePeriodSeconds: 30
+      initContainers:
+      - name: wait-for-harness-manager
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=harness-manager"
+      - name: wait-for-pipeline
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.waitForInitContainer.image "global" .Values.global) }}
+        imagePullPolicy: IfNotPresent
+        args:
+          - "pod"
+          - "-lapp=pipeline-service"
+      containers:
+      - name: ng-manager
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        ports:
+        - name: http-ng-manager
+          containerPort: {{ .Values.service.port }}
+          protocol: "TCP"
+        - name: grpc-ng-manager
+          containerPort: {{ .Values.service.grpcport }}
+          protocol: "TCP"
+        - name: grpc-git-sync
+          containerPort: {{ .Values.service.gitsyncgrpcport }}
+          protocol: "TCP"
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        env:
+            {{- include "harnesscommon.dbconnection.mongoEnv" . | indent 12 }}
+            {{- include "harnesscommon.dbconnection.timescaleEnv" . | indent 12 }}
+            - name: MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "ng-harness" "context" $) }}
+            - name : NOTIFICATION_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "notifications" "context" $) }}
+            - name: PMS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "pms-harness" "context" $) }}
+            - name : TIMESCALE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.timescaleSecret.password.name }}
+                  key: {{ .Values.timescaleSecret.password.key }}
+            - name: TIMESCALEDB_USERNAME
+              value: postgres
+            - name: TIMESCALE_URI
+              value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
+            {{- if .Values.global.ccm.enabled }}
+            - name : CE_AWS_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ceSecret.access_key.name }}
+                  key: {{ .Values.ceSecret.access_key.key }}
+            - name : CE_AWS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ceSecret.secret_key.name }}
+                  key: {{ .Values.ceSecret.secret_key.key }}
+            - name : CE_AWS_DESTINATION_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ceSecret.destination_bucket.name }}
+                  key: {{ .Values.ceSecret.destination_bucket.key }}
+            - name : CE_AWS_TEMPLATE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ceSecret.template_url.name }}
+                  key: {{ .Values.ceSecret.template_url.key }}
+            {{- end }}
+        envFrom:
+        - configMapRef:
+            name: ng-manager
+        {{- toYaml .Values.probes | nindent 8}}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - ng-manager
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

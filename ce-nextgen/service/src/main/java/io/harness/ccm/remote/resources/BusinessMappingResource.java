@@ -18,10 +18,10 @@ import io.harness.ccm.audittrails.events.CostCategoryDeleteEvent;
 import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
 import io.harness.ccm.commons.entities.CCMSortOrder;
 import io.harness.ccm.rbac.CCMRbacHelper;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.BusinessMappingListDTO;
-import io.harness.ccm.views.businessMapping.entities.CostCategorySortType;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMappingListDTO;
+import io.harness.ccm.views.businessmapping.entities.CostCategorySortType;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dto.CostCategoryDeleteDTO;
 import io.harness.ccm.views.dto.CostCategoryDeleteDTO.CostCategoryDeleteDTOBuilder;
 import io.harness.ccm.views.dto.LinkedPerspectives;
@@ -85,7 +85,7 @@ public class BusinessMappingResource {
   @ExceptionMetered
   @ApiOperation(value = "Create Business Mapping", nickname = "createBusinessMapping")
   public RestResponse<BusinessMapping> save(
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, @Valid BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

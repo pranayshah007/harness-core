@@ -30,6 +30,7 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
+import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryOption;
@@ -154,16 +155,30 @@ public class DelegateTelemetryPublisher extends IteratorPumpAndRedisModeHandler 
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("NG", isNg);
     properties.put("Type", delegateType);
-    Optional<UserPrincipal> userPrincipal = getUserPrincipalFromSourcePrincipal();
+    Optional<String> email = getEmailFromSourcePrincipal();
     telemetryReporter.sendTrackEvent(eventName,
-        userPrincipal.isPresent() ? userPrincipal.get().getEmail()
-                                  : TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId,
-        accountId, properties, null, Category.GLOBAL, TelemetryOption.builder().sendForCommunity(false).build());
+        email.orElseGet(() -> TelemetryConstants.SEGMENT_DUMMY_ACCOUNT_PREFIX + accountId), accountId, properties, null,
+        Category.GLOBAL, TelemetryOption.builder().sendForCommunity(false).build());
   }
 
-  private Optional<UserPrincipal> getUserPrincipalFromSourcePrincipal() {
+  private Optional<String> getEmailFromSourcePrincipal() {
     Principal principal = SourcePrincipalContextBuilder.getSourcePrincipal();
-    UserPrincipal userPrincipal = (UserPrincipal) principal;
-    return Optional.ofNullable(userPrincipal);
+    String email = null;
+
+    if (principal != null) {
+      switch (principal.getType()) {
+        case USER:
+          UserPrincipal userPrincipal = (UserPrincipal) principal;
+          email = userPrincipal.getEmail();
+          break;
+        case SERVICE_ACCOUNT:
+          ServiceAccountPrincipal serviceAccountPrincipal = (ServiceAccountPrincipal) principal;
+          email = serviceAccountPrincipal.getEmail();
+          break;
+        default:
+          break;
+      }
+    }
+    return Optional.ofNullable(email);
   }
 }

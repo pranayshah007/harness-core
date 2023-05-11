@@ -12,7 +12,7 @@ import static io.harness.connector.ConnectivityStatus.SUCCESS;
 import static software.wings.beans.TaskType.OCI_HELM_CONNECTIVITY_TASK;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

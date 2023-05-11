@@ -139,6 +139,9 @@ public class K8sCanaryStep extends TaskChainExecutableWithRollbackAndRbac implem
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
 
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
+      canaryRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
+    }
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
       Map<String, String> k8sCommandFlag =
           k8sStepHelper.getDelegateK8sCommandFlag(canaryStepParameters.getCommandFlags());

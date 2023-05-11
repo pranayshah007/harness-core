@@ -11,6 +11,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -58,10 +59,12 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
    */
   String versionUrl;
 
+  Map<String, String> label;
+
   @Builder
   public GithubPackagesArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
       String packageId, String packageName, String packageType, String version, String versionRegex,
-      String packageVisibility, String packageUrl, String versionUrl) {
+      String packageVisibility, String packageUrl, String versionUrl, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.packageId = packageId;
     this.packageName = packageName;
@@ -71,5 +74,6 @@ public class GithubPackagesArtifactDelegateResponse extends ArtifactDelegateResp
     this.packageVisibility = packageVisibility;
     this.packageUrl = packageUrl;
     this.versionUrl = versionUrl;
+    this.label = label;
   }
 }

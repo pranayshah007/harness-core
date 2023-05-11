@@ -59,8 +59,9 @@ public abstract class MarkStatusInterruptHandler implements InterruptHandler {
         nodeExecutionService.getWithFieldsIncluded(interrupt.getNodeExecutionId(), NodeProjectionUtils.withStatus);
     if (!StatusUtils.brokeStatuses().contains(nodeExecution.getStatus())
         && nodeExecution.getStatus() != INTERVENTION_WAITING) {
-      throw new InvalidRequestException(
-          "NodeExecution is not in a finalizable or broken status. Current Status: " + nodeExecution.getStatus());
+      throw new InvalidRequestException("Failed to interrupt node execution " + interrupt.getType()
+          + ". Either another interrupt is already in process or the current status: " + nodeExecution.getStatus()
+          + "does not allow interruption");
     }
 
     interrupt.setState(Interrupt.State.PROCESSING);

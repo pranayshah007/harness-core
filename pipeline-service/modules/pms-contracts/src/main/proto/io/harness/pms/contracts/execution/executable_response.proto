@@ -35,7 +35,8 @@ message AsyncExecutableResponse {
   repeated string logKeys = 2;
   repeated string units = 3;
   int32 timeout = 5;
-  Status status = 9;  // Async step can send the status they want to set for their step
+  Status status = 9;  // Async step can send the status they want to set for their step. This status is only for
+                      // non-final status (StatusUtils.RESUMABLE_STATUSES())
 }
 
 message ChildExecutableResponse {

@@ -39,7 +39,6 @@ import io.harness.exception.WingsException.ExecutionContext;
 import io.harness.ff.FeatureFlagService;
 import io.harness.globalcontex.AuditGlobalContextData;
 import io.harness.manage.GlobalContextManager;
-import io.harness.persistence.HIterator;
 import io.harness.persistence.NameAccess;
 import io.harness.persistence.UuidAccess;
 import io.harness.stream.BoundedInputStream;
@@ -194,20 +193,15 @@ public class AuditServiceImpl implements AuditService {
   }
 
   @Override
-  public List<AuditRecord> fetchEntityAuditRecordsOlderThanGivenTime(String auditHeaderId, long timestamp) {
-    List<AuditRecord> auditRecords = new ArrayList<>();
-    try (HIterator<AuditRecord> iterator =
-             new HIterator<>(wingsPersistence.createQuery(AuditRecord.class, excludeAuthority)
-                                 .filter(AuditRecordKeys.auditHeaderId, auditHeaderId)
-                                 .field(AuditRecordKeys.createdAt)
-                                 .lessThanOrEq(timestamp)
-                                 .order(Sort.ascending(AuditHeaderKeys.createdAt))
-                                 .fetch())) {
-      while (iterator.hasNext()) {
-        auditRecords.add(iterator.next());
-      }
-    }
-    return auditRecords;
+  public List<AuditRecord> fetchLimitedEntityAuditRecordsOlderThanGivenTime(
+      String auditHeaderId, long timestamp, int limit) {
+    return wingsPersistence.createQuery(AuditRecord.class, excludeAuthority)
+        .filter(AuditRecordKeys.auditHeaderId, auditHeaderId)
+        .field(AuditRecordKeys.createdAt)
+        .lessThanOrEq(timestamp)
+        .order(Sort.ascending(AuditHeaderKeys.createdAt))
+        .limit(limit)
+        .asList();
   }
 
   @Override
@@ -481,7 +475,8 @@ public class AuditServiceImpl implements AuditService {
     return wingsPersistence.createQuery(AuditHeader.class).filter(AuditHeader.ID_KEY2, Id).get();
   }
 
-  private <T> void addDetails(String accountId, T entity, String auditHeaderId, Type type) {
+  @VisibleForTesting
+  final <T> void addDetails(String accountId, T entity, String auditHeaderId, Type type) {
     if (auditHeaderId == null) {
       return;
     }
@@ -494,8 +489,14 @@ public class AuditServiceImpl implements AuditService {
     } else if (entity instanceof ApiKeyEntry && type.equals(Type.INVOKED)) {
       entityMetadataHelper.addAPIKeyDetails(accountId, entity, header);
     } else if (header.getCreatedBy() != null) {
-      entityMetadataHelper.addUserDetails(accountId, entity, header);
+      if (!isApiHeader(header)) {
+        entityMetadataHelper.addUserDetails(accountId, entity, header);
+      }
     }
+  }
+
+  private boolean isApiHeader(AuditHeader header) {
+    return "API".equals(header.getCreatedBy().getName()) && isEmpty(header.getCreatedBy().getUuid());
   }
 
   @Override

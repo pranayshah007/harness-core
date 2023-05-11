@@ -12,14 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.entities.VerificationTaskBase.VerificationTaskBaseKeys;
-import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
-import io.harness.cvng.core.services.api.FeatureFlagService;
-import io.harness.cvng.core.services.api.TimeSeriesRecordService;
-import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
@@ -28,7 +23,6 @@ import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateM
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
 import io.harness.persistence.HPersistence;
@@ -49,16 +43,10 @@ import lombok.extern.slf4j.Slf4j;
 public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineService {
   @Inject private Map<AnalysisState.StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap;
   @Inject private HPersistence hPersistence;
-  @Inject private CVConfigService cvConfigService;
-  @Inject private VerificationJobInstanceService verificationJobInstanceService;
-  @Inject private VerificationTaskService verificationTaskService;
   @Inject private Clock clock;
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private ExecutionLogService executionLogService;
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
-  @Inject private TimeSeriesRecordService timeSeriesRecordService;
-  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public void initiateStateMachine(String verificationTaskId, AnalysisStateMachine stateMachine) {

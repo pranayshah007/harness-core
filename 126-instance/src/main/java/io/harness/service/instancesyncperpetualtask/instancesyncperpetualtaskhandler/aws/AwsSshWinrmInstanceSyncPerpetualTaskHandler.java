@@ -31,6 +31,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.helper.InstanceSyncHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -59,6 +60,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
   @Inject private NGSecretServiceV2 ngSecretServiceV2;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
+  @Inject private InstanceSyncHelper instanceSyncHelper;
 
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructure,
@@ -78,6 +80,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
                              .collect(Collectors.toList());
 
     SecretSpecDTO secretSpecDTO = secret.getSecretSpec().toDTO();
+    instanceSyncHelper.updateFeatureFlagForSsh(secretSpecDTO, infrastructure.getAccountIdentifier());
     String serviceType = awsDeploymentInfoDTOs.get(0).getType();
 
     BaseNGAccess access = BaseNGAccess.builder()
@@ -99,7 +102,8 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
             .setServiceType(serviceType)
             .addAllHosts(hosts)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
-            .setInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(awsInfraDelegateConfig)))
+            .setInfraDelegateConfig(ByteString.copyFrom(
+                getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(awsInfraDelegateConfig)))
             .setHostConnectionType(awsInfrastructureOutcome.getHostConnectionType())
             .build();
 
@@ -107,7 +111,8 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(awsConnector);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
+        infrastructure.getAccountIdentifier());
   }
 
   private Secret findSecret(
@@ -138,7 +143,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
           .awsConnectorDTO(awsConnectorDTO)
           .region(awsInfrastructureOutcome.getRegion())
           .connectorEncryptionDataDetails(encryptedData)
-          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getHostTags()))
           .build();
     } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
       return AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
@@ -146,7 +151,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
           .awsConnectorDTO(awsConnectorDTO)
           .connectorEncryptionDataDetails(encryptedData)
           .region(awsInfrastructureOutcome.getRegion())
-          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getHostTags()))
           .build();
     }
     throw new InvalidArgumentsException(format("Invalid subclass %s provided for %s",

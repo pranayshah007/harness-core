@@ -16,8 +16,8 @@ public enum EditionAction {
   CONTACT_SALES(""),
   CONTACT_SUPPORT(""),
   MANAGE(""),
-  DISABLED_BY_TEAM("Team plan is subscribed by other module"),
-  DISABLED_BY_ENTERPRISE("Enterprise plan is subscribed by other module");
+  DISABLED_BY_TEAM("Other Harness modules are on plans other than Team"),
+  DISABLED_BY_ENTERPRISE("Other Harness modules are on plans other than Enterprise");
 
   private String reason;
 

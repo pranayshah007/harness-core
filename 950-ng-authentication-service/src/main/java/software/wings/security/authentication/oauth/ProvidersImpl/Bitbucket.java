@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import software.wings.security.authentication.oauth.OAuthConstants;
+
 import com.github.scribejava.apis.openid.OpenIdJsonTokenExtractor;
 import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.extractors.TokenExtractor;
@@ -26,7 +28,7 @@ public class Bitbucket extends DefaultApi20 {
 
   @Override
   public String getAccessTokenEndpoint() {
-    return "https://bitbucket.org/site/oauth2/access_token";
+    return OAuthConstants.BITBUCKET_ENDPOINT;
   }
 
   @Override

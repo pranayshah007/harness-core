@@ -23,13 +23,12 @@ import static software.wings.delegatetasks.pcf.PcfTestConstants.getPcfConfig;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -95,7 +94,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -1608,13 +1607,13 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
       throws PivotalClientApiException, IOException, ExecutionException {
     doReturn(executionLogCallback).when(logStreamingTaskClient).obtainLogCallback(anyString());
     doNothing().when(executionLogCallback).saveExecutionLog(anyString());
-    doNothing().when(pcfDeploymentManager).unmapRouteMapForApplication(any(), anyListOf(String.class), any());
+    doNothing().when(pcfDeploymentManager).unmapRouteMapForApplication(any(), anyList(), any());
     doReturn("PASSWORD".toCharArray()).when(pcfCommandTaskHelper).getPassword(any());
     doReturn(CfInternalConfig.builder().build()).when(secretDecryptionService).decrypt(any(), any(), anyBoolean());
     doNothing().when(pcfDeploymentManager).deleteApplication(any());
     doReturn(new File("artifact.war")).when(pcfCommandTaskHelper).downloadArtifactFromManager(any(), any(), any());
     doReturn(new File("manifest.yml")).when(pcfCommandTaskBaseHelper).createManifestYamlFileLocally(any());
-    doNothing().when(pcfCommandTaskBaseHelper).deleteCreatedFile(anyListOf(File.class));
+    doNothing().when(pcfCommandTaskBaseHelper).deleteCreatedFile(anyList());
     doReturn(previousReleases).when(pcfDeploymentManager).getDeployedServicesWithNonZeroInstances(any(), anyString());
 
     ApplicationDetail applicationDetails = ApplicationDetail.builder()

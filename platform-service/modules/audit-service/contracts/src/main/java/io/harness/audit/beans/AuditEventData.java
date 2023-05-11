@@ -52,7 +52,7 @@ import org.hibernate.validator.constraints.NotBlank;
           @JsonSubTypes.Type(
               value = UserMembershipAuditEventData.class, name = AuditEventDataTypeConstants.USER_MEMBERSHIP),
           @JsonSubTypes.Type(
-              value = NodeExecutionEventData.class, name = AuditEventDataTypeConstants.NODE_EXECUTION_EVENT_DATA)
+              value = NodeExecutionEventData.class, name = AuditEventDataTypeConstants.PIPELINE_EXECUTION_EVENT_DATA)
     })
 public abstract class AuditEventData {
   public static final String AUDIT_EVENT_DATA_TYPE = "io.harness.audit.beans.AuditEventDataType";

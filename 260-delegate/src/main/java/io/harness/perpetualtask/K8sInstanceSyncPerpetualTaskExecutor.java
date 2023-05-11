@@ -32,10 +32,8 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,13 +50,12 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class K8sInstanceSyncPerpetualTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final int DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT = 5;
   private static final String SUCCESS_RESPONSE_MSG = "success";
   private static final String NAMESPACE_RELEASE_NAME_KEY_PATTERN = "namespace:%s_releaseName:%s";
   private static final String DEFAULT_NAMESPACE = "default";
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -69,13 +66,13 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
     log.info("Running the K8s InstanceSync perpetual task executor for task id: {}", taskId);
     K8sInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParams.class);
-    return executeK8sInstanceSyncTask(taskId, taskParams);
+    return executeK8sInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
   private PerpetualTaskResponse executeK8sInstanceSyncTask(
-      PerpetualTaskId taskId, K8sInstanceSyncPerpetualTaskParams taskParams) {
+      PerpetualTaskId taskId, K8sInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     List<K8sDeploymentReleaseData> deploymentReleaseDataList =
-        fixK8sDeploymentReleaseData(getK8sDeploymentReleaseData(taskParams));
+        fixK8sDeploymentReleaseData(getK8sDeploymentReleaseData(taskParams, referenceFalseKryoSerializer));
 
     List<PodDetailsRequest> distinctPodDetailsRequestList = getDistinctPodDetailsRequestList(deploymentReleaseDataList);
 
@@ -91,19 +88,21 @@ public class K8sInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecut
     return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(instanceSyncResponseMsg).build();
   }
 
-  private List<K8sDeploymentReleaseData> getK8sDeploymentReleaseData(K8sInstanceSyncPerpetualTaskParams taskParams) {
+  private List<K8sDeploymentReleaseData> getK8sDeploymentReleaseData(
+      K8sInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
     return taskParams.getK8SDeploymentReleaseListList()
         .stream()
-        .map(this::toK8sDeploymentReleaseData)
+        .map(data -> toK8sDeploymentReleaseData(data, referenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
-  private K8sDeploymentReleaseData toK8sDeploymentReleaseData(K8sDeploymentRelease k8SDeploymentRelease) {
+  private K8sDeploymentReleaseData toK8sDeploymentReleaseData(
+      K8sDeploymentRelease k8SDeploymentRelease, boolean referenceFalseKryoSerializer) {
     return K8sDeploymentReleaseData.builder()
         .releaseName(k8SDeploymentRelease.getReleaseName())
         .namespaces(new LinkedHashSet<>(k8SDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) referenceFalseKryoSerializer.asObject(
-            k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
+        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializer)
+                                    .asObject(k8SDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
         .build();
   }
 

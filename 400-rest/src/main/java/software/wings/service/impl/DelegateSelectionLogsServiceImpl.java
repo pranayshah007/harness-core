@@ -100,7 +100,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
       "Cannot assign - CG task to CG Delegate only and NG task to NG delegate(s)";
   public static final String CAN_NOT_ASSIGN_DELEGATE_SCOPE_GROUP = "Delegate scope(s) mismatched";
   public static final String CAN_NOT_ASSIGN_PROFILE_SCOPE_GROUP = "Delegate profile scope(s) mismatched ";
-  public static final String CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP = "No matching selector(s)";
+  public static final String CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP = "Delegate(s) don't have selectors";
   public static final String CAN_NOT_ASSIGN_OWNER = "There are no delegates with the right ownership to execute task\"";
   public static final String TASK_VALIDATION_FAILED =
       "No eligible delegate was able to confirm that it has the capability to execute ";

@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 public class HttpStepFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
   public HttpStepFunctor(StepOutput stepOutput) {
+    super(stepOutput);
     this.stepOutput = stepOutput;
   }
 
@@ -37,10 +38,5 @@ public class HttpStepFunctor extends StepExpressionFunctor {
 
     return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.output.%s>",
         stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), newKey);
-  }
-
-  @Override
-  public String getCgExpression() {
-    return stepOutput.getExpression();
   }
 }

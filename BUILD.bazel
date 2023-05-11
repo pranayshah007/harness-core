@@ -103,6 +103,15 @@ default_java_toolchain(
     target_version = "11",
 )
 
+default_java_toolchain(
+    name = "harness_no_fdLimit_jdk17_toolchain",
+    configuration = dict(),
+    java_runtime = "@bazel_tools//tools/jdk:remotejdk_17",
+    jvm_opts = BASE_JDK9_JVM_OPTS + ["-XX:-MaxFDLimit"],  # Additional JDK options
+    source_version = "17",
+    target_version = "17",
+)
+
 java_plugin(
     name = "lombok_plugin",
     processor_class = "lombok.launch.AnnotationProcessorHider$AnnotationProcessor",
@@ -115,10 +124,16 @@ java_library(
     exported_plugins = [":lombok_plugin"],
     visibility = ["//visibility:public"],
     exports = [
+        ":lombok_maven_only",
         "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:org_projectlombok_lombok",
         "@maven//:org_slf4j_slf4j_api",
     ],
+)
+
+java_library(
+    name = "lombok_maven_only",
+    neverlink = 1,
+    exports = ["@maven//:org_projectlombok_lombok"],
 )
 
 filegroup(

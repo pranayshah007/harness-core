@@ -1,0 +1,64 @@
+{{- if .Values.global.istio.enabled }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: platform-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  gateways:
+    {{- if .Values.global.istio.gateway.create }}
+    - istio-system/public
+    {{- else }}
+    {{- range .Values.global.istio.virtualService.gateways }}
+    - {{ . }}
+    {{- end }}
+    {{- end }}
+  hosts:
+    {{- range .Values.global.istio.virtualService.hosts }}
+    - {{ . }}
+    {{- end }}
+  http:
+  - name: notification-service
+    match:
+    - uri:
+        prefix: /notifications/
+    - uri:
+        prefix: /notifications
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 9005
+        host: platform-service
+
+  - name: audit-service
+    match:
+    - uri:
+        prefix: /audit/
+    - uri:
+        prefix: /audit
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 9005
+        host: platform-service
+
+  - name: resourcegroup-service
+    match:
+    - uri:
+        prefix: /resourcegroup/
+    - uri:
+        prefix: /resourcegroup
+    rewrite:
+      uri: /
+    route:
+    - destination:
+        port:
+          number: 9005
+        host: platform-service
+{{ end }}

@@ -12,8 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -62,8 +62,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -149,13 +149,13 @@ public class TerraformCloudConnectorValidatorTest extends CategoryTest {
     on(terraformCloudValidationHandler).set("terraformCloudClient", terraformCloudClient);
     when(terraformCloudValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
     when(terraformCloudValidationHandler.validate(any(TerraformCloudConfig.class))).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("TerraformCloud")))
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("TerraformCloud")))
         .thenReturn(terraformCloudValidationHandler);
 
     TerraformCloudValidationParamsProvider terraformCloudValidationParamsProvider =
         new TerraformCloudValidationParamsProvider();
     on(terraformCloudValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("TerraformCloud")))
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("TerraformCloud")))
         .thenReturn(terraformCloudValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
@@ -211,13 +211,13 @@ public class TerraformCloudConnectorValidatorTest extends CategoryTest {
     on(terraformCloudValidationHandler).set("terraformCloudClient", terraformCloudClient);
     when(terraformCloudValidationHandler.validate(any(ConnectorValidationParams.class), any())).thenCallRealMethod();
     when(terraformCloudValidationHandler.validate(any(TerraformCloudConfig.class))).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("TerraformCloud")))
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("TerraformCloud")))
         .thenReturn(terraformCloudValidationHandler);
 
     TerraformCloudValidationParamsProvider terraformCloudValidationParamsProvider =
         new TerraformCloudValidationParamsProvider();
     on(terraformCloudValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("TerraformCloud")))
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("TerraformCloud")))
         .thenReturn(terraformCloudValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()

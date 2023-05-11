@@ -31,6 +31,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ResponseMessage;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -144,6 +145,11 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       WinRmExecutorHelper.cleanupFiles(
           session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
     } catch (RuntimeException re) {
+      commandExecutionStatus = FAILURE;
+      log.error(ERROR_WHILE_EXECUTING_COMMAND, re);
+      ResponseMessage details = buildErrorDetailsFromWinRmClientException(re);
+      saveExecutionLog(
+          format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
       throw re;
     } catch (Exception e) {
       commandExecutionStatus = FAILURE;
@@ -232,6 +238,7 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
     // combine both variable types
     List<String> allVariablesToCollect =
         Stream.concat(envVariablesToCollect.stream(), secretEnvVariablesToCollect.stream())
+            .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toList());
 
     if (!allVariablesToCollect.isEmpty()) {

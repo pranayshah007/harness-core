@@ -28,14 +28,14 @@ public class ConnectorMessageHandler implements EventMessageHandler {
   private GitIntegrationService gitIntegrationService;
 
   @Override
-  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) {
+  public void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws Exception {
     EventListenerLogger.logForEventReceived(message);
     switch (action) {
       case UPDATE_ACTION:
         gitIntegrationService.processConnectorUpdate(message, entityChangeDTO);
         break;
       default:
-        log.info("ACTION - {} is not to be handled by IDP connector event handler", action);
+        log.warn("ACTION - {} is not to be handled by IDP connector event handler", action);
     }
   }
 }

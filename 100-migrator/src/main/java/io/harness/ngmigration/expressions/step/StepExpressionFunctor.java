@@ -8,9 +8,16 @@
 package io.harness.ngmigration.expressions.step;
 
 import io.harness.expression.LateBindingMap;
+import io.harness.ngmigration.beans.StepOutput;
 
 public abstract class StepExpressionFunctor extends LateBindingMap {
   private String currentStageIdentifier;
+  private StepOutput stepOutput;
+
+  protected StepExpressionFunctor(StepOutput stepOutput) {
+    this.stepOutput = stepOutput;
+    this.currentStageIdentifier = null;
+  }
 
   public String getCurrentStageIdentifier() {
     return currentStageIdentifier;
@@ -20,5 +27,11 @@ public abstract class StepExpressionFunctor extends LateBindingMap {
     this.currentStageIdentifier = currentStageIdentifier;
   }
 
-  public abstract String getCgExpression();
+  public String getCgExpression() {
+    return stepOutput.getExpression();
+  }
+
+  public StepOutput getStepOutput() {
+    return stepOutput;
+  }
 }

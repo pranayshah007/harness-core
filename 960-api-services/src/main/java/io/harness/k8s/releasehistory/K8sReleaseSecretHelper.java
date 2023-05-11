@@ -103,6 +103,10 @@ public class K8sReleaseSecretHelper {
     return colorToCheck.equals(getReleaseLabelValue(releaseSecret, RELEASE_SECRET_RELEASE_COLOR_KEY));
   }
 
+  public String getReleaseColor(@NotNull V1Secret releaseSecret) {
+    return getReleaseLabelValue(releaseSecret, RELEASE_SECRET_RELEASE_COLOR_KEY);
+  }
+
   public static V1Secret resetSecretVersionMetadata(@NotNull V1Secret releaseSecret) {
     // This avoids 409 (Object has been modified) exceptions
     V1ObjectMeta secretMeta = releaseSecret.getMetadata();

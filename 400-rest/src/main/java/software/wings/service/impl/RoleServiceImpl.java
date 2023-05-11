@@ -7,11 +7,13 @@
 
 package software.wings.service.impl;
 
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.validation.Validator.notNullCheck;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Role;
 import software.wings.beans.Role.RoleKeys;
@@ -26,7 +28,7 @@ import software.wings.service.intfc.UserService;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.List;
+import dev.morphia.query.Query;
 import java.util.concurrent.ExecutorService;
 import javax.validation.executable.ValidateOnExecution;
 
@@ -102,10 +104,11 @@ public class RoleServiceImpl implements RoleService {
     boolean delete = wingsPersistence.delete(Role.class, roleId);
     if (delete) {
       executorService.submit(() -> {
-        List<User> users =
-            wingsPersistence.createQuery(User.class).disableValidation().filter(UserKeys.roles, roleId).asList();
-        for (User user : users) {
-          userService.revokeRole(user.getUuid(), roleId);
+        Query<User> query = wingsPersistence.createQuery(User.class).disableValidation().filter(UserKeys.roles, roleId);
+        try (HIterator<User> users = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
+          for (User user : users) {
+            userService.revokeRole(user.getUuid(), roleId);
+          }
         }
       });
     }
@@ -120,8 +123,8 @@ public class RoleServiceImpl implements RoleService {
   }
 
   @Override
-  public List<Role> getAccountRoles(String accountId) {
-    return wingsPersistence.createQuery(Role.class).filter(Role.ACCOUNT_ID_KEY2, accountId).asList();
+  public Query<Role> getAccountRolesQuery(String accountId) {
+    return wingsPersistence.createQuery(Role.class).filter(Role.ACCOUNT_ID_KEY2, accountId);
   }
 
   @Override

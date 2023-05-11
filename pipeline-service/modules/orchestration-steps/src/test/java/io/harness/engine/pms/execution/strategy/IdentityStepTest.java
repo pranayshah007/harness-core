@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.SHALINI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -168,6 +168,7 @@ public class IdentityStepTest extends CategoryTest {
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("RID")
                                   .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY))
+                                  .setNodeType("IDENTITY_PLAN_NODE")
                                   .build())
                    .build();
     ambiance1 = IdentityStep.modifyAmbiance(ambiance);
@@ -177,6 +178,7 @@ public class IdentityStepTest extends CategoryTest {
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("RID")
                                   .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY))
+                                  .setNodeType("IDENTITY_PLAN_NODE")
                                   .build())
                    .addLevels(Level.newBuilder()
                                   .setRuntimeId("RID")

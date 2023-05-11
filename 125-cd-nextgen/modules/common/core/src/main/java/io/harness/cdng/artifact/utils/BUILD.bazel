@@ -11,8 +11,10 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/artifact/mappers:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/artifact/steps/beans:module",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
         "//127-cd-nextgen-entities:module",
         "//420-delegate-service:module",
         "//440-connector-nextgen:module",

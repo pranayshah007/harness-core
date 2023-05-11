@@ -20,7 +20,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.mongo.index.IndexType;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
@@ -35,7 +34,7 @@ public class IndexManagerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
-  @RealMongo
+
   public void testMongoBehaviorCreateIndexWithExistingMatchingFields() {
     Morphia morphia = new Morphia();
     morphia.getMapper().getOptions().setMapSubPackages(true);

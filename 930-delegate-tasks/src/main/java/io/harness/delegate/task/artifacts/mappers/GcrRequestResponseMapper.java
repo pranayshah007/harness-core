@@ -9,9 +9,11 @@ package io.harness.delegate.task.artifacts.mappers;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 
 import java.util.List;
 import java.util.Map;
@@ -30,11 +32,22 @@ public class GcrRequestResponseMapper {
 
   public GcrArtifactDelegateResponse toGcrResponse(
       BuildDetailsInternal buildDetailsInternal, GcrArtifactDelegateRequest request) {
+    ArtifactBuildDetailsNG artifactBuildDetailsNG;
+    ArtifactMetaInfo artifactMetaInfo = buildDetailsInternal.getArtifactMetaInfo();
+    Map<String, String> label = null;
+    if (artifactMetaInfo != null) {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(
+          buildDetailsInternal, artifactMetaInfo.getSha(), artifactMetaInfo.getShaV2());
+      label = artifactMetaInfo.getLabels();
+    } else {
+      artifactBuildDetailsNG = ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal);
+    }
     return GcrArtifactDelegateResponse.builder()
-        .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetailsInternal))
+        .buildDetails(artifactBuildDetailsNG)
         .imagePath(request.getImagePath())
         .tag(buildDetailsInternal.getNumber())
         .sourceType(ArtifactSourceType.GCR)
+        .label(label)
         .build();
   }
 

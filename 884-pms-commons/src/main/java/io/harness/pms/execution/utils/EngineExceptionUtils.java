@@ -112,6 +112,8 @@ public class EngineExceptionUtils {
         return io.harness.exception.FailureType.APPROVAL_REJECTION;
       case DELEGATE_RESTART:
         return DELEGATE_RESTART;
+      case USER_MARKED_FAILURE:
+        return io.harness.exception.FailureType.USER_MARKED_FAILURE;
       default:
         throw new InvalidRequestException("No failure mapped to " + oFailureType.name());
     }
@@ -136,6 +138,8 @@ public class EngineExceptionUtils {
         return FailureType.TIMEOUT_FAILURE;
       case DELEGATE_RESTART:
         return FailureType.DELEGATE_RESTART;
+      case USER_MARKED_FAILURE:
+        return FailureType.USER_MARKED_FAILURE;
       default:
         return FailureType.UNKNOWN_FAILURE;
     }

@@ -16,7 +16,11 @@ import io.harness.cvng.core.beans.LogFeedbackHistory;
 import io.harness.cvng.core.beans.params.ProjectPathParams;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.LogFeedbackService;
+import io.harness.cvng.ticket.beans.TicketRequestDto;
+import io.harness.cvng.ticket.beans.TicketResponseDto;
+import io.harness.cvng.ticket.services.TicketService;
 import io.harness.rest.RestResponse;
+import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -30,6 +34,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -45,6 +50,7 @@ import retrofit2.http.Body;
 @NextGenManagerAuth
 public class LogFeedbackResource {
   @Inject private LogFeedbackService logFeedbackService;
+  @Inject private TicketService ticketService;
 
   @POST
   @Timed
@@ -73,7 +79,7 @@ public class LogFeedbackResource {
   @ApiOperation(value = "saves log data collected for verification", nickname = "getLogFeedback")
   public RestResponse<LogFeedback> getLogFeedback(@BeanParam @Valid ProjectPathParams projectParams,
       @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId) {
-    return new RestResponse<>(logFeedbackService.get(projectParams, logFeedbackId));
+    return new RestResponse<>(logFeedbackService.get(logFeedbackId));
   }
 
   @DELETE
@@ -94,5 +100,17 @@ public class LogFeedbackResource {
   public RestResponse<List<LogFeedbackHistory>> getFeedbackHistory(@BeanParam @Valid ProjectPathParams projectParams,
       @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId) {
     return new RestResponse<>(logFeedbackService.history(projectParams, logFeedbackId));
+  }
+
+  @POST
+  @Timed
+  @ExceptionMetered
+  @Path(LOG_FEEDBACK_ID_RESOURCE_PATH + "/ticket")
+  @ApiOperation(value = "creates ticket for log feedback", nickname = "createTicketForFeedback")
+  public TicketResponseDto createTicketForFeedbackId(@BeanParam @Valid ProjectPathParams projectParams,
+      @PathParam(CVNextGenConstants.LOG_FEEDBACK_ID) @NonNull String logFeedbackId,
+      @HeaderParam(NextGenAuthenticationFilter.AUTHORIZATION_HEADER) String authToken,
+      @NotNull @Valid @Body TicketRequestDto ticketRequestDto) {
+    return ticketService.createTicketForFeedbackId(projectParams, logFeedbackId, ticketRequestDto, authToken);
   }
 }

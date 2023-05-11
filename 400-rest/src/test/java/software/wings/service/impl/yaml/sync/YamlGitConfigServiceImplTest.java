@@ -18,8 +18,8 @@ import static software.wings.beans.User.Builder.anUser;
 import static software.wings.security.UserThreadLocal.userGuard;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.beans.PageResponse;

@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.artifacts.gcr;
 
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -16,6 +15,7 @@ import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.gcr.beans.GcrInternalConfig;
 import io.harness.artifacts.gcr.service.GcrApiService;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
@@ -73,17 +73,16 @@ public class GcrArtifactTaskHandler extends DelegateArtifactTaskHandler<GcrArtif
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GcrArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
     GcrInternalConfig gcrInternalConfig;
+    ArtifactMetaInfo artifactMetaInfo;
     try {
       gcrInternalConfig = getGcrInternalConfig(attributesRequest);
     } catch (IOException e) {
       log.error("Could not get basic auth header", e);
       throw new GcpClientRuntimeException(e.getMessage());
     }
-    if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())
-        || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-      String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
-      lastSuccessfulBuild =
-          gcrService.getLastSuccessfulBuildFromRegex(gcrInternalConfig, attributesRequest.getImagePath(), tagRegex);
+    if (EmptyPredicate.isNotEmpty(attributesRequest.getTagRegex())) {
+      lastSuccessfulBuild = gcrService.getLastSuccessfulBuildFromRegex(
+          gcrInternalConfig, attributesRequest.getImagePath(), attributesRequest.getTagRegex());
     } else {
       lastSuccessfulBuild =
           gcrService.verifyBuildNumber(gcrInternalConfig, attributesRequest.getImagePath(), attributesRequest.getTag());

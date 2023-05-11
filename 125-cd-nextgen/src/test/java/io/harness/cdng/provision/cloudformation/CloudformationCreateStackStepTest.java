@@ -11,10 +11,10 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -32,6 +32,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.S3UrlStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationCreateStackPassThroughData;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.connector.ConnectorInfoDTO;
@@ -72,6 +73,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -94,6 +96,7 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
   @Mock StepHelper stepHelper;
   @Mock CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock CloudformationConfigDAL cloudformationConfigDAL;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
 
   @InjectMocks private CloudformationCreateStackStep cloudformationCreateStackStep;
 
@@ -105,6 +108,11 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
         .putSetupAbstractions("projectIdentifier", "test-project")
         .putSetupAbstractions("orgIdentifier", "test-org")
         .build();
+  }
+
+  @Before
+  public void setUpMocks() {
+    doNothing().when(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
   }
 
   @Test

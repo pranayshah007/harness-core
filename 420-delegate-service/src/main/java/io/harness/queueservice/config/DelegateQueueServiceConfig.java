@@ -6,7 +6,7 @@
  */
 package io.harness.queueservice.config;
 
-import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.hsqs.client.model.QueueServiceClientConfig;
 
 import lombok.Builder;
 import lombok.Value;
@@ -15,6 +15,6 @@ import lombok.Value;
 @Builder
 public class DelegateQueueServiceConfig {
   boolean enableQueueAndDequeue;
-  ServiceHttpClientConfig queueServiceConfig;
   String topic;
+  QueueServiceClientConfig queueServiceClientConfig;
 }

@@ -37,7 +37,7 @@ public class SecretMessageHandler implements EventMessageHandler {
         backstageEnvVariableService.processSecretUpdate(entityChangeDTO);
         break;
       default:
-        log.info("ACTION - {} is not to be handled by IDP secret event handler", action);
+        log.warn("ACTION - {} is not to be handled by IDP secret event handler", action);
     }
   }
 }

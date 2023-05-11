@@ -7,6 +7,7 @@
 
 package io.harness.ci.integrationstage;
 
+import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
@@ -25,6 +26,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_ORG_ID_
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PIPELINE_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_PROJECT_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_STAGE_ID_VARIABLE;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_USER_ID_VARIABLE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.HARNESS_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LABEL_REGEX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.LOG_SERVICE_ENDPOINT_VARIABLE;
@@ -47,6 +49,8 @@ import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_C
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GOLANG_CACHE_ENV_NAME;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_DIR;
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.GRADLE_CACHE_ENV_NAME;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_PIPELINE;
+import static io.harness.ci.utils.UsageUtils.getExecutionUser;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_ENDPOINT_VARIABLE;
 import static io.harness.common.STOExecutionConstants.STO_SERVICE_TOKEN_VARIABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -534,6 +538,7 @@ public class K8InitializeTaskUtils {
       Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
+    final String userID = getExecutionUser(ambiance.getMetadata().getPrincipalInfo());
     final String orgID = AmbianceUtils.getOrgIdentifier(ambiance);
     final String projectID = AmbianceUtils.getProjectIdentifier(ambiance);
     final String pipelineID = ambiance.getMetadata().getPipelineIdentifier();
@@ -556,9 +561,11 @@ public class K8InitializeTaskUtils {
     // Add other environment variables needed in the containers
     envVars.put(HARNESS_WORKSPACE, workDirPath);
     envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
+    envVars.put(HARNESS_USER_ID_VARIABLE, userID);
     envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
+    envVars.put(PLUGIN_PIPELINE, pipelineID);
     envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
@@ -616,7 +623,7 @@ public class K8InitializeTaskUtils {
             })
             .collect(Collectors.toList());
 
-    if (isNotEmpty(entityDetails)) {
+    if (isNotEmpty(entityDetails) && featureFlagService.isEnabled(CIE_ENABLED_RBAC, accountIdentifier)) {
       pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, false);
     }
   }

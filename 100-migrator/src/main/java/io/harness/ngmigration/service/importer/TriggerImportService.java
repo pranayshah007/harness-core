@@ -82,7 +82,7 @@ public class TriggerImportService implements ImportService {
   @Inject @Named("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @Inject WorkflowImportService workflowImportService;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     TriggerFilter filter = (TriggerFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     String appId = filter.getAppId();
@@ -132,7 +132,7 @@ public class TriggerImportService implements ImportService {
                                                       yamlFile -> yamlFile));
 
     PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
-    MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(importDTO);
+    MigrationInputDTO inputDTO = MigratorUtility.getMigrationInput(authToken, importDTO);
     workflowImportService.createWorkflowsAsPipeline(authToken, importDTO, discoveryResult, summaryDTO);
 
     List<Trigger> triggers = discoveryResult.getEntities()
@@ -147,19 +147,20 @@ public class TriggerImportService implements ImportService {
       NgTriggerConfigSchemaWrapper triggerWrapper =
           generateTriggerPayload(inputDTO, discoveryResult, yamlFileMap, trigger);
       if (triggerWrapper != null) {
-        createTrigger(authToken, inputDTO, pmsClient, triggerWrapper);
+        createTrigger(inputDTO, pmsClient, triggerWrapper);
       }
     }
   }
 
-  private void createTrigger(String auth, MigrationInputDTO inputDTO, PmsClient pmsClient,
-      NgTriggerConfigSchemaWrapper triggerConfigSchemaWrapper) {
+  private void createTrigger(
+      MigrationInputDTO inputDTO, PmsClient pmsClient, NgTriggerConfigSchemaWrapper triggerConfigSchemaWrapper) {
     String yaml = YamlPipelineUtils.writeYamlString(triggerConfigSchemaWrapper).replaceFirst("!<trigger>", "");
     try {
       Response<ResponseDTO<NGTriggerResponseDTO>> resp =
           pmsClient
-              .createTrigger(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                  inputDTO.getProjectIdentifier(), triggerConfigSchemaWrapper.getTrigger().getPipelineIdentifier(),
+              .createTrigger(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                  inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
+                  triggerConfigSchemaWrapper.getTrigger().getPipelineIdentifier(),
                   RequestBody.create(MediaType.parse("application/yaml"), yaml))
               .execute();
       log.info("Trigger creation Response details {} {}", resp.code(), resp.message());
@@ -196,7 +197,8 @@ public class TriggerImportService implements ImportService {
             .enabled(false)
             .pipelineIdentifier(pipelineDetail.getIdentifier())
             .source(getSourceInfo(discoveryResult, trigger, yamlFileMap))
-            .inputYaml(migrationTemplateUtils.getPipelineInput(pipelineDetail, trigger.getAccountId()))
+            .inputYaml(
+                migrationTemplateUtils.getPipelineInput(pipelineDetail, inputDTO.getDestinationAccountIdentifier()))
             .build();
 
     return NgTriggerConfigSchemaWrapper.builder().trigger(triggerConfig).build();

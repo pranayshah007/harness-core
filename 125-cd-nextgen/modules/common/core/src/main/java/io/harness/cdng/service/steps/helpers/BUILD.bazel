@@ -11,6 +11,8 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
+        "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/execution/service:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/cdng/service/steps/constants:module",
         "//125-cd-nextgen/modules/common/core/src/main/java/io/harness/rbac:module",
         "//127-cd-nextgen-entities:module",

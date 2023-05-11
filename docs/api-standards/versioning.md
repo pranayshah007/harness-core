@@ -33,13 +33,13 @@ The API is versioned on two levels:
 1. Primary Version: based on the core principles of the API.
 2. Secondary Version: at the implementation level.
 
-### Primary Version
+### Generation
 
 The core principles should rarely change and marks a significant departure from the basic underpinnings of the existing API e.g. a system-wide refactor of core concepts or resources. For this reason individual services or endpoints should not need to be concerned with changes at this level. This version is represented as the initial segment within the path e.g. the “v1” within `api.hanress.io/v1/`.
 
-### Secondary Version
+### Harness Version
 
-Within the primary version, Harness provides a secondary level of versioning which allows for breaking changes at the service and implementation level.
+Within a Generation, Harness provides another level of versioning which allows for breaking changes at the service and implementation level.
 
 This versioning is represented by the date of release e.g. `2022-05-18`. This ensures the API is versioned as a whole but removes the need for the customer to keep track of different versions across multiple endpoints. However, it is still a breaking change and should so continue to be a last resort.
 

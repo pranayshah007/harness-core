@@ -103,7 +103,7 @@ public class PartialPlanResponseCallback extends AsyncResponseCallback<PartialPl
     List<String> waitIds = new ArrayList<>();
     Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
     for (Map.Entry<String, PlanCreatorServiceInfo> serviceEntry : services.entrySet()) {
-      if (!pmsSdkHelper.containsSupportedDependencyByYamlPath(
+      if (!PmsSdkHelper.containsSupportedDependencyByYamlPath(
               serviceEntry.getValue(), planCreationBlobResponse.getDeps())) {
         continue;
       }

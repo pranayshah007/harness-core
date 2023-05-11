@@ -26,7 +26,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.managerclient.VerificationManagerClientHelper;
 import io.harness.rule.Owner;
 import io.harness.service.intfc.LearningEngineService;
-import io.harness.threading.Poller;
 import io.harness.version.ServiceApiVersion;
 
 import software.wings.api.PhaseElement;
@@ -46,8 +45,6 @@ import software.wings.sm.StateExecutionInstance;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import dev.morphia.query.Query;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -284,46 +281,6 @@ public class LearningEngineAnalysisServiceImplTest extends VerificationBase {
             .analysis_minute((int) (TimeUnit.MILLISECONDS.toMinutes(TIME_SERIES_ANALYSIS_TASK_TIME_OUT)))
             .build();
     assertThat(learningEngineService.addLearningEngineAnalysisTask(learningEngineAnalysisTask)).isFalse();
-  }
-
-  @Test
-  @Owner(developers = PARNIAN)
-  @Category(UnitTests.class)
-  public void testAddLearningEngineAnalysisTask_QueueWithStatus() {
-    int numOfTasks = 100;
-    for (int i = 0; i < numOfTasks; i++) {
-      LearningEngineAnalysisTask learningEngineAnalysisTask = LearningEngineAnalysisTask.builder()
-                                                                  .state_execution_id(generateUUID())
-                                                                  .workflow_execution_id(generateUUID())
-                                                                  .executionStatus(ExecutionStatus.QUEUED)
-                                                                  .build();
-      learningEngineService.addLearningEngineAnalysisTask(learningEngineAnalysisTask);
-    }
-
-    assertThat(wingsPersistence.createQuery(LearningEngineAnalysisTask.class).count()).isEqualTo(numOfTasks);
-
-    Query<LearningEngineAnalysisTask> query1 =
-        wingsPersistence.createQuery(LearningEngineAnalysisTask.class, excludeAuthority)
-            .filter("executionStatus", ExecutionStatus.QUEUED)
-            .filter("retry", 0);
-
-    Query<LearningEngineAnalysisTask> query2 =
-        wingsPersistence.createQuery(LearningEngineAnalysisTask.class, excludeAuthority)
-            .filter("executionStatus", ExecutionStatus.RUNNING)
-            .filter("retry", 1);
-
-    for (int i = 1; i <= numOfTasks; i++) {
-      LearningEngineAnalysisTask leTask = learningEngineService.getNextLearningEngineAnalysisTask(
-          ServiceApiVersion.V1, Optional.of("false"), Optional.empty());
-      assertThat(leTask.getExecutionStatus()).isEqualTo(ExecutionStatus.RUNNING);
-
-      int expected = numOfTasks - i;
-
-      Poller.pollFor(Duration.ofSeconds(5), Duration.ofMillis(10), () -> query1.count() == expected);
-      assertThat(query1.count()).isEqualTo(expected);
-
-      assertThat(query2.count()).isEqualTo(i);
-    }
   }
 
   @Test

@@ -58,6 +58,7 @@ public class MarketPlace implements PersistentEntity, UuidAware, CreatedAtAware,
   private Date expirationDate;
   private String productCode;
   private String licenseType;
+  private String dimension;
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 

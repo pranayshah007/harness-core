@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -88,5 +89,27 @@ public class FQNHelper {
       }
     });
     toBeRemovedFQNs.forEach(templateMap::remove);
+  }
+
+  public void removeProperties(
+      Map<FQN, Object> templateMap, List<String> stageIdentifiers, List<String> stageIdentifiersWithCloneEnabled) {
+    if (EmptyPredicate.isEmpty(stageIdentifiersWithCloneEnabled)) {
+      return;
+    }
+    stageIdentifiers.retainAll(stageIdentifiersWithCloneEnabled);
+    if (stageIdentifiers.isEmpty()) {
+      Set<FQN> toBeRemovedFQNs =
+          templateMap.keySet()
+              .stream()
+              .filter(key
+                  -> (key.getFqnList().size() >= 2
+                         && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.PROPERTIES))
+                      || (key.getFqnList().size() > 3
+                          && key.getFqnList().get(1).getKey().equals(YAMLFieldNameConstants.TEMPLATE)
+                          && key.getFqnList().get(2).getKey().equals(YAMLFieldNameConstants.TEMPLATE_INPUTS)
+                          && key.getFqnList().get(3).getKey().equals(YAMLFieldNameConstants.PROPERTIES)))
+              .collect(Collectors.toSet());
+      toBeRemovedFQNs.forEach(templateMap::remove);
+    }
   }
 }

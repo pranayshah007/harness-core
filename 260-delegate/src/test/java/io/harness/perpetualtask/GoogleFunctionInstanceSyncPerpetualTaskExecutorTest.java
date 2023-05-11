@@ -51,8 +51,8 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.mockito.runners.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -112,8 +112,10 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutorTest extends Delegat
             .addGoogleFunctionsDeploymentReleaseList(deploymentRelease)
             .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
-        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
+                                                                    .setCustomizedParams(Any.pack(taskParams))
+                                                                    .setReferenceFalseKryoSerializer(true)
+                                                                    .build();
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build();
     GoogleFunctionDeploymentReleaseData deploymentReleaseData =
         GoogleFunctionDeploymentReleaseData.builder()

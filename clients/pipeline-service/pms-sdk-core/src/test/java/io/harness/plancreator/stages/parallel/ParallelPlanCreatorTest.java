@@ -242,6 +242,31 @@ public class ParallelPlanCreatorTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testGetLayoutNodeInfoForParallelStagesWithPRBStage() throws IOException {
+    ParallelPlanCreator parallelPlanCreator = new ParallelPlanCreator();
+    String stagesYaml = "stages:\n"
+        + "  - parallel:\n"
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "    - stage:\n"
+        + "        identifier: s2\n"
+        + "  - stage:\n"
+        + "      identifier: prb-abc\n"
+        + "      name: Pipeline Rollback Stage\n"
+        + "      type: PipelineRollback\n";
+    YamlField stagesYamlField = YamlUtils.injectUuidInYamlField(stagesYaml);
+    YamlField parallelField =
+        stagesYamlField.getNode().getField("stages").getNode().asArray().get(0).getField("parallel");
+    GraphLayoutResponse layoutNodeInfo = parallelPlanCreator.getLayoutNodeInfo(stageContext, parallelField);
+    assertThat(layoutNodeInfo).isNotNull();
+    for (GraphLayoutNode graphLayoutNode : layoutNodeInfo.getLayoutNodes().values()) {
+      assertThat(graphLayoutNode.getEdgeLayoutList().getNextIdsList()).isNullOrEmpty();
+    }
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testCreatePlanForParentNodeForParallelSteps() {
     List<String> childrenNodeIds = Lists.newArrayList(step0Field.getNode().getUuid(), step1Field.getNode().getUuid());
 

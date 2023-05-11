@@ -37,7 +37,7 @@ if [[ -z "$NEWRELIC_ENV" ]]; then
 fi
 
 if [[ "${ENABLE_G1GC}" == "true" ]]; then
-    export GC_PARAMS=" -XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=40 -XX:MaxGCPauseMillis=1000 -Dfile.encoding=UTF-8"
+    export GC_PARAMS=" -XX:+UseG1GC -Dfile.encoding=UTF-8"
 else
     if [[ "${ENABLE_SERIALGC}" == "true" ]]; then
         export GC_PARAMS=" -XX:+UseSerialGC -Dfile.encoding=UTF-8"

@@ -64,6 +64,9 @@ public class ApiUtils {
         case "updated":
           field = "lastUpdatedAt";
           break;
+        case "modified":
+          field = "lastModifiedAt";
+          break;
         default:
           throw new InvalidRequestException(
               "Field provided for sorting unidentified. Accepted values: identifier / name / created / updated");

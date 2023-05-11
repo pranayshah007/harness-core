@@ -9,7 +9,9 @@ package io.harness.idp.namespace.resource;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.idp.common.IdpCommonService;
 import io.harness.idp.namespace.service.NamespaceService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.idp.v1.AccountInfoApi;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
@@ -20,12 +22,15 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 @Slf4j
 public class AccountInfoApiImpl implements AccountInfoApi {
+  private IdpCommonService idpCommonService;
   private NamespaceService namespaceService;
 
   @Override
   public Response getAccountForNamespace(String namespace) {
+    idpCommonService.checkUserAuthorization();
     try {
       NamespaceInfo accountInfo = namespaceService.getAccountIdForNamespace(namespace);
       return Response.status(Response.Status.OK).entity(accountInfo).build();

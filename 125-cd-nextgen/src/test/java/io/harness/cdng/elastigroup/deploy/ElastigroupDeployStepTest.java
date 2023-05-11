@@ -127,7 +127,7 @@ public class ElastigroupDeployStepTest extends CategoryTest {
         ambiance, stepParameters, () -> { throw new IllegalStateException("test"); });
 
     // then
-    ArgumentCaptor<InvalidArgumentsException> captor = ArgumentCaptor.forClass(InvalidArgumentsException.class);
+    ArgumentCaptor<IllegalStateException> captor = ArgumentCaptor.forClass(IllegalStateException.class);
     verify(stepHelper).handleTaskFailure(eq(ambiance), eq(stepParameters), captor.capture());
 
     assertThat(captor.getValue()).isNotNull().extracting(Throwable::getMessage).isEqualTo("test");

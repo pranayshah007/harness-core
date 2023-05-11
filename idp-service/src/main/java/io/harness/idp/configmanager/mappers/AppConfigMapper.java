@@ -20,11 +20,12 @@ public class AppConfigMapper {
   public AppConfig toDTO(AppConfigEntity appConfigEntity) {
     AppConfig appConfig = new AppConfig();
     appConfig.setConfigId(appConfigEntity.getConfigId());
+    appConfig.setConfigName(appConfigEntity.getConfigName());
     appConfig.setConfigs(appConfigEntity.getConfigs());
-    appConfig.setEnabled(appConfigEntity.getEnabled());
     appConfig.setEnabledDisabledAt(appConfigEntity.getEnabledDisabledAt());
-    appConfig.setCreatedAt(appConfigEntity.getCreatedAt());
-    appConfig.setLastModifiedAt(appConfigEntity.getLastModifiedAt());
+    appConfig.setEnabled(appConfigEntity.getEnabled());
+    appConfig.setCreated(appConfigEntity.getCreatedAt());
+    appConfig.setUpdated(appConfigEntity.getLastModifiedAt());
     return appConfig;
   }
 
@@ -33,7 +34,7 @@ public class AppConfigMapper {
         .accountIdentifier(accountIdentifier)
         .configId(appConfig.getConfigId())
         .configs(appConfig.getConfigs())
-        .enabled(appConfig.isEnabled())
+        .configName(appConfig.getConfigName())
         .build();
   }
 }

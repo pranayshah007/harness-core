@@ -9,7 +9,6 @@ package io.harness.delegate.task.artifacts.azure;
 
 import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -56,11 +55,10 @@ public class AcrArtifactTaskHandler extends DelegateArtifactTaskHandler<AcrArtif
       azureConfig =
           AcrRequestResponseMapper.toAzureInternalConfig(attributesRequest, secretDecryptionService, workingDirectory);
 
-      if (isRegex(attributesRequest) || attributesRequest.getTag().equals(ACCEPT_ALL_REGEX)) {
-        String tagRegex = isRegex(attributesRequest) ? attributesRequest.getTagRegex() : attributesRequest.getTag();
+      if (isRegex(attributesRequest)) {
         lastSuccessfulBuild =
             azureAsyncTaskHelper.getLastSuccessfulBuildFromRegex(azureConfig, attributesRequest.getSubscription(),
-                attributesRequest.getRegistry(), attributesRequest.getRepository(), tagRegex);
+                attributesRequest.getRegistry(), attributesRequest.getRepository(), attributesRequest.getTagRegex());
       } else {
         lastSuccessfulBuild = azureAsyncTaskHelper.verifyBuildNumber(azureConfig, attributesRequest.getSubscription(),
             attributesRequest.getRegistry(), attributesRequest.getRepository(), attributesRequest.getTag());

@@ -18,12 +18,12 @@ import io.harness.event.client.EventPublisher;
 import io.harness.rule.Owner;
 
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.models.V1CronJob;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
-import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.util.ClientBuilder;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,7 +59,7 @@ public class SharedInformerFactoryFactoryTest extends CategoryTest {
           assertThat(sharedInformerFactory.getExistingSharedIndexInformer(V1DaemonSet.class)).isNotNull();
           assertThat(sharedInformerFactory.getExistingSharedIndexInformer(V1StatefulSet.class)).isNotNull();
           assertThat(sharedInformerFactory.getExistingSharedIndexInformer(V1Job.class)).isNotNull();
-          assertThat(sharedInformerFactory.getExistingSharedIndexInformer(V1beta1CronJob.class)).isNotNull();
+          assertThat(sharedInformerFactory.getExistingSharedIndexInformer(V1CronJob.class)).isNotNull();
         });
   }
 }

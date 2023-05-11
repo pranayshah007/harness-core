@@ -139,6 +139,26 @@ public class GcrArtifactResource {
     return ResponseDTO.newResponse(buildDetails);
   }
 
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(
+      value = "Gets gcr last successful build with Yaml expression", nickname = "getLastSuccessfulBuildForGcrV2")
+  public ResponseDTO<GcrBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam("imagePath") String imagePath,
+      @QueryParam("connectorRef") String gcrConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull GcrRequestDTO gcrRequestDTO) {
+    GcrBuildDetailsDTO buildDetails =
+        artifactResourceUtils.getSuccessfulBuildV2GCR(imagePath, gcrConnectorIdentifier, accountId, orgIdentifier,
+            projectIdentifier, fqnPath, serviceRef, pipelineIdentifier, gitEntityBasicInfo, gcrRequestDTO);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
   @GET
   @Path("validateArtifactServer")
   @ApiOperation(value = "Validate gcr artifact server", nickname = "validateArtifactServerForGcr")

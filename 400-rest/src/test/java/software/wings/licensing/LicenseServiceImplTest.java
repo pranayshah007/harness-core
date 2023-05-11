@@ -10,10 +10,13 @@ package software.wings.licensing;
 import static io.harness.ccm.license.CeLicenseType.Constants.CE_TRIAL_PERIOD_DAYS;
 import static io.harness.ccm.license.CeLicenseType.LIMITED_TRIAL;
 import static io.harness.rule.OwnerRule.HANTANG;
+import static io.harness.rule.OwnerRule.MTRAN;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +25,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.event.handler.impl.EventPublishHelper;
+import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.rule.Owner;
 
 import software.wings.app.MainConfiguration;
@@ -83,5 +88,57 @@ public class LicenseServiceImplTest extends CategoryTest {
         LocalDate.now().plusDays(CE_TRIAL_PERIOD_DAYS).toDate().toInstant().toEpochMilli());
     assertThat(updatedCeLicenseInfo.getExpiryTime())
         .isCloseTo(expiryTime, offset(Duration.of(1, ChronoUnit.DAYS).toMillis()));
+  }
+
+  @Test
+  @Owner(developers = MTRAN)
+  @Category(UnitTests.class)
+  public void shouldGetExpectedPlansFromDimensions() {
+    String dimension1 = "FF_TEAM_50";
+    assertThat(licenseService.getDimensionPlan(dimension1)).isEqualTo(Edition.TEAM);
+    String dimension2 = "FF_ENTERPRISE_50";
+    assertThat(licenseService.getDimensionPlan(dimension2)).isEqualTo(Edition.ENTERPRISE);
+  }
+
+  @Test
+  @Owner(developers = MTRAN)
+  @Category(UnitTests.class)
+  public void shouldGetExpectedNumberOfClientMAUsFromPlan() {
+    Long TEAM_CLIENT_MAUS = 100000L;
+    Long ENTERPRISE_CLIENT_MAUS = 1000000L;
+
+    Edition plan1 = Edition.TEAM;
+    assertThat(licenseService.getNumberOfClientMAUs(plan1)).isEqualTo(TEAM_CLIENT_MAUS);
+    Edition plan2 = Edition.ENTERPRISE;
+    assertThat(licenseService.getNumberOfClientMAUs(plan2)).isEqualTo(ENTERPRISE_CLIENT_MAUS);
+  }
+
+  @Test
+  @Owner(developers = MTRAN)
+  @Category(UnitTests.class)
+  public void shouldGetExpectedLicenseTypeFromDimensionAndPlan() {
+    String dimension1 = "FF_TEAM_50";
+    String dimension2 = "FF_ENTERPRISE_50";
+    String dimension3 = "";
+    Edition plan1 = Edition.TEAM;
+    Edition plan2 = Edition.ENTERPRISE;
+    Edition plan3 = null;
+
+    assertThat(licenseService.getModuleLicenseType(dimension1, plan1)).isEqualTo(LicenseType.PAID);
+    assertThat(licenseService.getModuleLicenseType(dimension2, plan2)).isEqualTo(LicenseType.PAID);
+    assertThat(licenseService.getModuleLicenseType(dimension3, plan3)).isEqualTo(null);
+  }
+
+  @Test
+  @Owner(developers = MTRAN)
+  @Category(UnitTests.class)
+  public void shouldGetExpectedPremierSupportFromDimension() {
+    String dimension1 = "FF_TEAM_PRMR_50";
+    String dimension2 = "FF_ENTERPRISE_PRMR_50";
+    String dimension3 = "FF_ENTERPRISE_50";
+
+    assertTrue(licenseService.hasPremierSupport(dimension1));
+    assertTrue(licenseService.hasPremierSupport(dimension2));
+    assertFalse(licenseService.hasPremierSupport(dimension3));
   }
 }

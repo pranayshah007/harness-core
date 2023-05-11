@@ -142,22 +142,30 @@ public class AMIArtifactResource {
 
       AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactSpecFromService;
 
-      if (StringUtils.isBlank(awsConnectorRef)) {
-        awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
-      }
+      if (amiArtifactConfig != null) {
+        if (StringUtils.isBlank(awsConnectorRef)) {
+          awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
+        }
 
-      if (StringUtils.isBlank(region)) {
-        region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
-      }
+        if (StringUtils.isBlank(region)) {
+          region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
+        }
 
-      if (amiArtifactConfig.getTags() != null && amiArtifactConfig.getTags().isExpression()
-          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
-        amiTags = amiRequestBody.getTags();
-      }
+        if (amiArtifactConfig.getTags() != null) {
+          if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
+            amiTags = amiRequestBody.getTags();
+          } else {
+            amiTags = amiArtifactConfig.getTags().getValue();
+          }
+        }
 
-      if (amiArtifactConfig.getFilters() != null && amiArtifactConfig.getFilters().isExpression()
-          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
-        amiFilters = amiRequestBody.getFilters();
+        if (amiArtifactConfig.getFilters() != null) {
+          if (NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
+            amiFilters = amiRequestBody.getFilters();
+          } else {
+            amiFilters = amiArtifactConfig.getFilters().getValue();
+          }
+        }
       }
 
       // Getting the resolved connectorRef  in case of expressions

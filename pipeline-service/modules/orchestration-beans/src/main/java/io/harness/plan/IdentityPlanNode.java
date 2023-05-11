@@ -10,11 +10,13 @@ package io.harness.plan;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -41,6 +43,10 @@ public class IdentityPlanNode implements Node {
   String originalNodeExecutionId;
   String serviceName;
   String executionInputTemplate;
+  // Saving the advisorObtainmentsForExecutionMode so that when the postProdRollback is triggered 2nd time for other
+  // stages, the advisorObtainment info is available for transforming the plan even when the planNode was converted into
+  // IdentityNode is 1st postProdRollback.
+  Map<ExecutionMode, List<AdviserObtainment>> advisorObtainmentsForExecutionMode;
 
   // if true, the advisor response from the previous execution will be ignored and adviserObtainments will be used
   @With @Builder.Default Boolean useAdviserObtainments = false;
@@ -105,6 +111,7 @@ public class IdentityPlanNode implements Node {
         .isSkipExpressionChain(node.isSkipExpressionChain())
         .serviceName(node.getServiceName())
         .stageFqn(node.getStageFqn())
+        .advisorObtainmentsForExecutionMode(node.getAdvisorObtainmentsForExecutionMode())
         .whenCondition(node.getWhenCondition())
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();

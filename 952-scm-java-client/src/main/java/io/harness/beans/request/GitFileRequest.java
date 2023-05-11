@@ -11,11 +11,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
+import lombok.ToString;
 import lombok.Value;
 
 @OwnedBy(HarnessTeam.PL)
 @Value
 @Builder
+@ToString
 public class GitFileRequest extends ScmBaseRequest {
   String branch;
   String commitId;

@@ -108,7 +108,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
 
   @Override
   public ArtifactoryRepoDetailsDTO getRepositories(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
-      @NonNull String orgIdentifier, @NonNull String projectIdentifier) {
+      String orgIdentifier, String projectIdentifier) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()
@@ -290,7 +290,7 @@ public class ArtifactoryResourceServiceImpl implements ArtifactoryResourceServic
 
   @Override
   public ArtifactoryImagePathsDTO getImagePaths(@NonNull String repositoryType, @NonNull IdentifierRef connectorRef,
-      @NonNull String orgIdentifier, @NonNull String projectIdentifier, @NotNull String repository) {
+      String orgIdentifier, String projectIdentifier, @NotNull String repository) {
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()

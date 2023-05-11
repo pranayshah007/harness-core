@@ -1,0 +1,8 @@
+{
+  "name": "k8s",
+  "identifier": "k8s",
+  "type": "K8sCluster",
+  "spec": {
+    "key": "value"
+  }
+}

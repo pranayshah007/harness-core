@@ -82,7 +82,8 @@ public class GcpSecretsManagerResourceV2 {
     BoundedInputStream boundedInputStream =
         new BoundedInputStream(uploadedInputStream, configuration.getFileUploadLimits().getEncryptedFileLimit());
     char[] credentials = IOUtils.toString(boundedInputStream, Charset.defaultCharset()).toCharArray();
-    GcpSecretsManagerConfig gcpSecretsManagerConfig = new GcpSecretsManagerConfig(name, credentials, delegateSelectors);
+    GcpSecretsManagerConfig gcpSecretsManagerConfig =
+        new GcpSecretsManagerConfig(name, credentials, false, delegateSelectors);
     gcpSecretsManagerConfig.setDefault(isDefault);
     gcpSecretsManagerConfig.setEncryptionType(encryptionType);
     gcpSecretsManagerConfig.setUsageRestrictions(usageRestrictions);
@@ -105,7 +106,8 @@ public class GcpSecretsManagerResourceV2 {
     BoundedInputStream boundedInputStream =
         new BoundedInputStream(uploadedInputStream, configuration.getFileUploadLimits().getEncryptedFileLimit());
     char[] credentials = IOUtils.toString(boundedInputStream, Charset.defaultCharset()).toCharArray();
-    GcpSecretsManagerConfig gcpSecretsManagerConfig = new GcpSecretsManagerConfig(name, credentials, delegateSelectors);
+    GcpSecretsManagerConfig gcpSecretsManagerConfig =
+        new GcpSecretsManagerConfig(name, credentials, false, delegateSelectors);
     gcpSecretsManagerConfig.setUuid(secretManagerId);
     gcpSecretsManagerConfig.setDefault(isDefault);
     gcpSecretsManagerConfig.setEncryptionType(encryptionType);
