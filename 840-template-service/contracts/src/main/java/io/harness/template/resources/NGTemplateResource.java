@@ -665,11 +665,11 @@ public interface NGTemplateResource {
   @POST
   @Path("/update/git-metadata/{templateIdentifier}/{versionLabel}")
   @ApiOperation(value = "Update git metadata details for a remote template", nickname = "updateGitDetails")
-  @Operation(operationId = "moveTemplateConfigs", summary = "Move Template YAML from inline to remote",
+  @Operation(operationId = "updateGitDetails", summary = "Update git metadata details for a remote template",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "default", description = "Fetches Template YAML from Harness DB and creates a remote entity")
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Update git metadata details for a remote template")
       })
   ResponseDTO<TemplateUpdateGitMetadataResponse>
   updateGitMetadataDetails(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(

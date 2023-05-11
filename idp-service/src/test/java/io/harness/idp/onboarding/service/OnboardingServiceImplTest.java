@@ -13,7 +13,10 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,6 +30,7 @@ import io.harness.idp.common.CommonUtils;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
+import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.idp.onboarding.client.FakeOrganizationClient;
 import io.harness.idp.onboarding.client.FakeProjectClient;
@@ -52,7 +56,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -80,6 +83,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @InjectMocks HarnessProjectToBackstageSystem harnessProjectToBackstageSystem;
   @Mock ConnectorProcessorFactory connectorProcessorFactory;
   @Mock GithubConnectorProcessor githubConnectorProcessor;
+  @Mock GitIntegrationService gitIntegrationService;
   @Mock CatalogConnectorRepository catalogConnectorRepository;
   @Mock StatusInfoService statusInfoService;
   @Mock DelegateSelectorsCache delegateSelectorsCache;
@@ -177,7 +181,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SATHISH)
   @Category(UnitTests.class)
-  public void testImportHarnessEntities() throws ExecutionException {
+  public void testImportHarnessEntities() throws Exception {
     GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
                                                 .url(URL)
                                                 .connectionType(GitConnectionType.ACCOUNT)
@@ -198,6 +202,7 @@ public class OnboardingServiceImplTest extends CategoryTest {
         .thenReturn(githubConnectorProcessor);
     when(githubConnectorProcessor.getInfraConnectorType(any())).thenReturn("DIRECT");
     when(githubConnectorProcessor.getConnectorInfo(any(), any())).thenReturn(connectorInfoDTO);
+    doNothing().when(gitIntegrationService).createOrUpdateConnectorInBackstage(any(), any(), any(), any());
     ImportEntitiesResponse importEntitiesResponse = onboardingServiceImpl.importHarnessEntities(ACCOUNT_IDENTIFIER,
         new ImportEntitiesBase()
             .type(ImportEntitiesBase.TypeEnum.SAMPLE)

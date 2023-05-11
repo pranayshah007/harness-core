@@ -10,6 +10,7 @@ package io.harness.cdng.infra.beans;
 import io.harness.cdng.infra.Connector;
 
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Map;
 import lombok.Data;
 import lombok.Getter;
 
@@ -31,4 +32,6 @@ public abstract class InfrastructureOutcomeAbstract implements InfrastructureOut
   @ApiModelProperty(hidden = true) public Boolean skipInstances;
 
   private Connector connector;
+
+  Map<String, String> tags;
 }

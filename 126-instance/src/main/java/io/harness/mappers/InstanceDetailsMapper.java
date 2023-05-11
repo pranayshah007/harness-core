@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsLambdaInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AwsSamInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
@@ -103,6 +104,8 @@ public class InstanceDetailsMapper {
       return ServiceSpecType.ASG;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof GoogleFunctionInstanceInfoDTO) {
       return ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
+    } else if (instanceDTO.getInstanceInfoDTO() instanceof AwsSamInstanceInfoDTO) {
+      return ServiceSpecType.AWS_SAM;
     } else if (instanceDTO.getInstanceInfoDTO() instanceof AwsLambdaInstanceInfoDTO) {
       return ServiceSpecType.AWS_LAMBDA;
     }

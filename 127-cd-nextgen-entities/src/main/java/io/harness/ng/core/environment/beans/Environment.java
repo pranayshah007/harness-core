@@ -16,6 +16,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.mongo.collation.CollationLocale;
+import io.harness.mongo.collation.CollationStrength;
+import io.harness.mongo.index.Collation;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -66,6 +69,16 @@ public class Environment implements PersistentEntity, ScopeAware {
                  .field(EnvironmentKeys.identifier)
                  .field(EnvironmentKeys.yamlGitConfigRef)
                  .field(EnvironmentKeys.branch)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_organizationIdentifier_projectIdentifier_deleted_collation_en")
+                 .unique(true)
+                 .field(EnvironmentKeys.accountId)
+                 .field(EnvironmentKeys.orgIdentifier)
+                 .field(EnvironmentKeys.projectIdentifier)
+                 .field(EnvironmentKeys.deleted)
+                 .collation(
+                     Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
         .build();
   }
