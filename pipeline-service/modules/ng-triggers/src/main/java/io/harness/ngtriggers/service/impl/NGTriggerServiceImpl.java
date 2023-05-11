@@ -46,6 +46,8 @@ import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
 import io.harness.expression.common.ExpressionConstants;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -266,7 +268,15 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
         PollingDocument pollingDocument =
             (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
-        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
+        try (
+            AutoLogContext ignore0 = new NgTriggerAutoLogContext("pollingDocumentId", pollingDocument.getPollingDocId(),
+                ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
+                ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(),
+                ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+          log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
+              ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
+          updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
+        }
       }
     } catch (Exception exception) {
       log.error(String.format("Polling Subscription Request failed for Trigger: %s with error",
