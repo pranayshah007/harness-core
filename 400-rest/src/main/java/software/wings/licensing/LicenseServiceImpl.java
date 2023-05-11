@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
+import io.harness.cd.CDLicenseType;
 import io.harness.configuration.DeployVariant;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
@@ -106,7 +107,9 @@ public class LicenseServiceImpl implements LicenseService {
   private static final String FEATURE_FLAGS = "FF";
   private static final String PREMIER = "PRMR";
   private static final String TEAM = "TEAM";
+  private static final String TEAM_SHORT = "TM";
   private static final String ENTERPRISE = "ENTERPRISE";
+  private static final String ENTERPRISE_SHORT = "EN";
   private static final String PAID = "PAID";
   private static final String EMAIL_SUBJECT_ACCOUNT_EXPIRED = "Harness License Expired!";
   private static final String EMAIL_SUBJECT_ACCOUNT_ABOUT_TO_EXPIRE = "Harness License about to Expire!";
@@ -671,7 +674,8 @@ public class LicenseServiceImpl implements LicenseService {
     } else if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)) {
       adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
-              .serviceInstances(orderQuantity)
+              .workloads(orderQuantity)
+              .cdLicenseType(CDLicenseType.SERVICES)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CD)
               .edition(plan)
@@ -772,9 +776,9 @@ public class LicenseServiceImpl implements LicenseService {
       }
 
       String tempPlan = result[1];
-      if (TEAM.equals(tempPlan)) {
+      if (TEAM.equals(tempPlan) || TEAM_SHORT.equals(tempPlan)) {
         plan = Edition.TEAM;
-      } else if (ENTERPRISE.equals(tempPlan)) {
+      } else if (ENTERPRISE.equals(tempPlan) || ENTERPRISE_SHORT.equals(tempPlan)) {
         plan = Edition.ENTERPRISE;
       } else {
         log.error("Unresolved plan for dimension:[{}]", dimension, tempPlan);
