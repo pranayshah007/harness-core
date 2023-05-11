@@ -47,7 +47,7 @@ public class VmBackgroundStepSerializer {
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
         "Image", "Background", identifier, backgroundStepInfo.getImage(), false);
-    if (image.equals(NULL_STR)) {
+    if (isNotEmpty(image) && image.equals(NULL_STR)) {
       image = "";
     }
     String connectorIdentifier;
