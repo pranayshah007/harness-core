@@ -25,7 +25,6 @@ import io.harness.ngmigration.beans.WorkflowMigrationContext;
 import io.harness.ngmigration.monitoredservice.bean.CGMonitoredServiceEntity;
 import io.harness.ngmigration.monitoredservice.healthsource.HealthSourceGeneratorFactory;
 import io.harness.ngmigration.monitoredservice.utils.MonitoredServiceEntityToMonitoredServiceMapper;
-import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
@@ -62,7 +61,6 @@ public abstract class VerificationBaseService extends StepMapper {
       + "      connectorRef: \"<+input>\"";
   @Inject MonitoredServiceEntityToMonitoredServiceMapper monitoredServiceEntityToMonitoredServiceMapper;
   @Inject HealthSourceGeneratorFactory healthSourceGeneratorFactory;
-  @Inject MigrationTemplateUtils migrationTemplateUtils;
 
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
