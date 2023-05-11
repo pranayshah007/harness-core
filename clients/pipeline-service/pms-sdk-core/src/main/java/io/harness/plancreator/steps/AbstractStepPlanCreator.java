@@ -36,8 +36,7 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
-    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(
-        yamlField.getNode().getParentNode().getCurrJsonNode());
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(yamlField);
   }
 
   @Override
