@@ -25,6 +25,7 @@ import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -61,6 +62,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
   private static List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
     for (NGTriggerEntity trigger : triggers) {
       TriggerStatus triggerStatus = trigger.getTriggerStatus();
+      List<String> detailedMessages = new ArrayList<>();
 
       if (triggerStatus == null) {
         TriggerStatus status = TriggerStatus.builder().status(StatusResult.FAILED).build();
@@ -83,10 +85,10 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
           triggerStatus.setStatus(StatusResult.FAILED);
 
           if (validationStatus != null && validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
-            triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+            detailedMessages.add(validationStatus.getDetailedMessage());
           } else if (pollingSubscriptionStatus != null
               && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
-            triggerStatus.setDetailedMessage(pollingSubscriptionStatus.getDetailedMessage());
+            detailedMessages.add(pollingSubscriptionStatus.getDetailedMessage());
           }
         }
       } else if (trigger.getType() == NGTriggerType.SCHEDULED) {
@@ -104,7 +106,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
           triggerStatus.setStatus(StatusResult.FAILED);
         }
 
-        triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+        detailedMessages.add(validationStatus.getDetailedMessage());
 
       } else if (trigger.getType() == NGTriggerType.WEBHOOK) {
         // WEBHOOK TRIGGERS
@@ -122,7 +124,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
             triggerStatus.setStatus(StatusResult.FAILED);
           }
 
-          triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+          detailedMessages.add(validationStatus.getDetailedMessage());
 
         } else {
           if (validationStatus != null && webhookAutoRegistrationStatus != null
@@ -133,17 +135,19 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
             triggerStatus.setStatus(StatusResult.FAILED);
 
             if (validationStatus != null && validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
-              triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
+              detailedMessages.add(validationStatus.getDetailedMessage());
             } else if (webhookAutoRegistrationStatus != null
                 && (webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
                     || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.ERROR)
                     || webhookAutoRegistrationStatus.getRegistrationResult().equals(
                         WebhookRegistrationStatus.TIMEOUT))) {
-              triggerStatus.setDetailedMessage(webhookAutoRegistrationStatus.getDetailedMessage());
+              detailedMessages.add(webhookAutoRegistrationStatus.getDetailedMessage());
             }
           }
         }
       }
+
+      triggerStatus.setDetailMessages(detailedMessages);
 
       trigger.setTriggerStatus(triggerStatus);
     }
