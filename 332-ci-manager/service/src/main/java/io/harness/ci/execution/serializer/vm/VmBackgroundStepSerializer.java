@@ -9,7 +9,6 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
-import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -47,9 +46,6 @@ public class VmBackgroundStepSerializer {
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
         "Image", "Background", identifier, backgroundStepInfo.getImage(), false);
-    if (image.equals(NULL_STR)) {
-      image = "";
-    }
     String connectorIdentifier;
     if (isNotEmpty(registries)) {
       connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);

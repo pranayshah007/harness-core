@@ -66,9 +66,6 @@ public class VmRunTestStepSerializer {
     }
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, runTestsStepInfo.getImage(), false);
-    if (image.equals(NULL_STR)) {
-      image = "";
-    }
     String connectorIdentifier;
 
     if (isNotEmpty(registries)) {
