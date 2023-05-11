@@ -120,23 +120,24 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
       overrideValidatorService.checkForImmutablePropertiesOrThrow(existingEntityInDb.get(), requestedEntity);
 
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        NGServiceOverridesEntity tempResult = serviceOverrideRepositoryV2.update(equalityCriteria, requestedEntity);
-        if (tempResult == null) {
+        NGServiceOverridesEntity updatedServiceOverride =
+            serviceOverrideRepositoryV2.update(equalityCriteria, requestedEntity);
+        if (updatedServiceOverride == null) {
           throw new InvalidRequestException(String.format(
               "ServiceOverride [%s] under Project [%s], Organization [%s] couldn't be updated or doesn't exist.",
               requestedEntity.getIdentifier(), requestedEntity.getProjectIdentifier(),
               requestedEntity.getOrgIdentifier()));
         }
         outboxService.save(EnvironmentUpdatedEvent.builder()
-                               .accountIdentifier(tempResult.getAccountId())
-                               .orgIdentifier(tempResult.getOrgIdentifier())
-                               .projectIdentifier(tempResult.getProjectIdentifier())
-                               .newServiceOverridesEntity(tempResult)
+                               .accountIdentifier(updatedServiceOverride.getAccountId())
+                               .orgIdentifier(updatedServiceOverride.getOrgIdentifier())
+                               .projectIdentifier(updatedServiceOverride.getProjectIdentifier())
+                               .newServiceOverridesEntity(updatedServiceOverride)
                                .resourceType(EnvironmentUpdatedEvent.ResourceType.SERVICE_OVERRIDE)
                                .status(EnvironmentUpdatedEvent.Status.UPDATED)
                                .oldServiceOverridesEntity(existingEntityInDb.get())
                                .build());
-        return tempResult;
+        return updatedServiceOverride;
       }));
     } else {
       throw new InvalidRequestException(String.format(
