@@ -46,13 +46,13 @@ public class HarnessCacheManagerImpl implements HarnessCacheManager {
   @Override
   public <K, V> Cache<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy) {
-    return getCacheInternal(cacheName, keyType, valueType, expiryPolicy, false);
+    return getResilientCache(cacheName, keyType, valueType, expiryPolicy, false);
   }
 
   @Override
   public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
       Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis) {
-    return getCacheInternal(cacheName, keyType, valueType, expiryPolicy, enterpriseRedis);
+    return getResilientCache(cacheName, keyType, valueType, expiryPolicy, enterpriseRedis);
   }
 
   @Override
@@ -60,7 +60,7 @@ public class HarnessCacheManagerImpl implements HarnessCacheManager {
   public <K, V> Cache<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, Factory<ExpiryPolicy> expiryPolicy, String keyPrefix) {
     Cache<VersionedKey<K>, V> jCache =
-        getCacheInternal(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy, false);
+        getResilientCache(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy, false);
     return new VersionedCache<>(jCache, keyPrefix);
   }
 
@@ -68,8 +68,13 @@ public class HarnessCacheManagerImpl implements HarnessCacheManager {
   public <K, V> Cache<K, V> getCache(String cacheName, Class<K> keyType, Class<V> valueType,
       Factory<ExpiryPolicy> expiryPolicy, String keyPrefix, boolean enterpriseRedis) {
     Cache<VersionedKey<K>, V> jCache =
-        getCacheInternal(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy, enterpriseRedis);
+        getResilientCache(cacheName, (Class) VersionedKey.class, valueType, expiryPolicy, enterpriseRedis);
     return new VersionedCache<>(jCache, keyPrefix);
+  }
+
+  private <K, V> Cache<K, V> getResilientCache(String cacheName, Class<K> keyType, Class<V> valueType,
+      Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis) {
+    return new ResilientCache<>(getCacheInternal(cacheName, keyType, valueType, expiryPolicy, enterpriseRedis));
   }
 
   private <K, V> Cache<K, V> getCacheInternal(String cacheName, Class<K> keyType, Class<V> valueType,
