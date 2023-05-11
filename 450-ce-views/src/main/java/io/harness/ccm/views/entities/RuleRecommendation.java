@@ -9,6 +9,7 @@ package io.harness.ccm.views.entities;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.StoreIn;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.views.helper.ExecutionSummary;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -44,6 +45,7 @@ public final class RuleRecommendation implements PersistentEntity, CreatedAtAwar
   @Schema(description = "accountId") String accountId;
   @Schema(description = "isValid") Boolean isValid;
   @Schema(description = "executions") List<ExecutionSummary> executions;
+  @Schema(description = "JiraDetails") CCMJiraDetails jiraDetails;
   @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
   public RuleRecommendation toDTO() {
     return RuleRecommendation.builder()
@@ -53,6 +55,7 @@ public final class RuleRecommendation implements PersistentEntity, CreatedAtAwar
         .accountId(getAccountId())
         .isValid(getIsValid())
         .executions(getExecutions())
+        .jiraDetails(getJiraDetails())
         .build();
   }
 }

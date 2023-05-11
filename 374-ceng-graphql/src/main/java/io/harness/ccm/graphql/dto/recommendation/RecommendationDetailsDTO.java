@@ -11,5 +11,5 @@ import io.leangen.graphql.annotations.types.GraphQLUnion;
 
 @GraphQLUnion(name = "recommendationDetails", description = "This union of all types of recommendations",
     possibleTypes = {WorkloadRecommendationDTO.class, NodeRecommendationDTO.class, ECSRecommendationDTO.class,
-        EC2RecommendationDTO.class})
+        EC2RecommendationDTO.class, RuleRecommendationDTO.class})
 public interface RecommendationDetailsDTO {}
