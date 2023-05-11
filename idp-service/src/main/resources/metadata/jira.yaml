@@ -9,7 +9,7 @@ imageUrl: ''
 config: |-
   proxy:
     '/jira/api':
-      target: <your-jira-url>
+      target: '<your-jira-url>'
       pathRewrite:
         'api/proxy/jira/?': '/'
       headers:
