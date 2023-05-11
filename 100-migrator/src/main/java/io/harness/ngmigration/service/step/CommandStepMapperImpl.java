@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.step;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 import static io.harness.ngmigration.utils.NGMigrationConstants.SERVICE_COMMAND_TEMPLATE_SEPARATOR;
 import static io.harness.ngmigration.utils.NGMigrationConstants.UNKNOWN_SERVICE;
 
@@ -32,6 +33,8 @@ import software.wings.sm.State;
 import software.wings.sm.states.CommandState;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -121,8 +124,15 @@ public class CommandStepMapperImpl extends StepMapper {
   @Override
   public void overrideTemplateInputs(MigrationContext migrationContext, WorkflowMigrationContext context,
       WorkflowPhase phase, GraphNode graphNode, NGYamlFile templateFile, JsonNode templateInputs) {
-    // Fix delegate selectors in the workflow
     CommandState state = new CommandState(graphNode.getName());
+    boolean shouldRunOnDelegate = state.isExecuteOnDelegate();
+    JsonNode onDelegate = templateInputs.at("/spec/onDelegate");
+    if (onDelegate instanceof TextNode) {
+      if (RUNTIME_INPUT.equals(onDelegate.asText())) {
+        ((ObjectNode) templateInputs.get("spec")).putPOJO("onDelegate", shouldRunOnDelegate);
+      }
+    }
+    // Fix delegate selectors in the workflow
     overrideTemplateDelegateSelectorInputs(templateInputs, state.getDelegateSelectors());
   }
 }
