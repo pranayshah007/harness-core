@@ -23,6 +23,8 @@ import io.harness.beans.InputSetValidatorType;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepInfo;
+import io.harness.cdng.customDeployment.FetchInstanceScriptStepNode;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -604,6 +606,27 @@ public abstract class WorkflowHandler {
     return ParameterField.createExpressionField(true, "<+input>", null, false);
   }
 
+  private static boolean requiresAdditionOfFetchInstanceStepForCustomDeployments(
+      ServiceDefinitionType serviceDefinitionType, List<ExecutionWrapperConfig> steps) {
+    if (!ServiceDefinitionType.CUSTOM_DEPLOYMENT.equals(serviceDefinitionType)) {
+      return false;
+    }
+    if (EmptyPredicate.isEmpty(steps)) {
+      return true;
+    }
+
+    boolean required = true;
+    for (ExecutionWrapperConfig step : steps) {
+      if (step.getStepGroup() != null && step.getStepGroup().toString().contains("FetchInstanceScript")) {
+        required = false;
+      }
+      if (step.getStep() != null && step.getStep().toString().contains("FetchInstanceScript")) {
+        required = false;
+      }
+    }
+    return required;
+  }
+
   DeploymentStageConfig getDeploymentStageConfig(MigrationContext migrationContext, WorkflowMigrationContext context,
       ServiceDefinitionType serviceDefinitionType, WorkflowPhase phase, WorkflowPhase rollbackPhase) {
     List<ExecutionWrapperConfig> stepGroups = getStepGroups(migrationContext, context, phase);
@@ -617,26 +640,38 @@ public abstract class WorkflowHandler {
 
   DeploymentStageConfig getDeploymentStageConfig(ServiceDefinitionType serviceDefinitionType,
       List<ExecutionWrapperConfig> steps, List<ExecutionWrapperConfig> rollbackSteps, CaseFormat caseFormat) {
+    List<ExecutionWrapperConfig> allSteps = new ArrayList<>();
     if (EmptyPredicate.isEmpty(steps)) {
       AbstractStepNode waitStepNode = MigratorUtility.getWaitStepNode("Wait", 60, true, caseFormat);
       ExecutionWrapperConfig waitStep =
           ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
-      steps = Collections.singletonList(waitStep);
+      allSteps.add(waitStep);
+    } else {
+      allSteps.addAll(steps);
     }
+
+    if (requiresAdditionOfFetchInstanceStepForCustomDeployments(serviceDefinitionType, steps)) {
+      FetchInstanceScriptStepNode fetchInstanceScriptStepNode = new FetchInstanceScriptStepNode();
+      fetchInstanceScriptStepNode.setName("Fetch Instances");
+      fetchInstanceScriptStepNode.setIdentifier("harnessAutoFetchInstances");
+      FetchInstanceScriptStepInfo stepInfo = new FetchInstanceScriptStepInfo();
+      stepInfo.setDelegateSelectors(ParameterField.createValueField(Collections.emptyList()));
+      fetchInstanceScriptStepNode.setFetchInstanceScriptStepInfo(stepInfo);
+      allSteps.add(
+          0, ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(fetchInstanceScriptStepNode)).build());
+    }
+
     return DeploymentStageConfig.builder()
         .deploymentType(serviceDefinitionType)
-        .service(ServiceYamlV2.builder()
-                     .serviceRef(ParameterField.createValueField("<+input>"))
-                     .serviceInputs(getRuntimeInput())
-                     .build())
+        .service(ServiceYamlV2.builder().serviceRef(RUNTIME_INPUT).serviceInputs(getRuntimeInput()).build())
         .environment(EnvironmentYamlV2.builder()
                          .deployToAll(ParameterField.createValueField(false))
-                         .environmentRef(ParameterField.createValueField("<+input>"))
+                         .environmentRef(RUNTIME_INPUT)
                          .environmentInputs(getRuntimeInput())
                          .serviceOverrideInputs(getRuntimeInput())
                          .infrastructureDefinitions(ParameterField.createExpressionField(true, "<+input>", null, false))
                          .build())
-        .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollbackSteps).build())
+        .execution(ExecutionElementConfig.builder().steps(allSteps).rollbackSteps(rollbackSteps).build())
         .build();
   }
 

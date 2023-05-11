@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_FIELD;
 
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
@@ -79,7 +80,8 @@ public class CustomArtifactSourceTemplateService implements NgTemplateService {
                             .name(v.getName())
                             .type(NGVariableType.STRING)
                             .description(v.getDescription())
-                            .value(ParameterField.createValueField(v.getValue()))
+                            .value(StringUtils.isBlank(v.getValue()) ? RUNTIME_FIELD
+                                                                     : ParameterField.createValueField(v.getValue()))
                             .build()));
     }
 
