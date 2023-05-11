@@ -10,6 +10,7 @@ package io.harness.ccm.views.entities;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.StoreIn;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
+import io.harness.ccm.views.helper.RuleCostType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.ccm.views.helper.RuleExecutionType;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -75,8 +76,8 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
   @Schema(description = "resourceType") String resourceType;
   @Schema(description = "actionType") String actionType;
   @Schema(description = "costComputed") Boolean costComputed;
-  @Schema(description = "potentialSavings") Double potentialSavings;
-  @Schema(description = "realizedSavings") Double realizedSavings;
+  @Schema(description = "cost") Double cost;
+  @Schema(description = "costType") RuleCostType costType;
   @EqualsAndHashCode.Exclude @FdTtlIndex Instant ttl;
 
   public static List<MongoIndex> mongoIndexes() {
@@ -133,8 +134,8 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
         .resourceType(getResourceType())
         .actionType(getActionType())
         .costComputed(getCostComputed())
-        .potentialSavings(getPotentialSavings())
-        .realizedSavings(getRealizedSavings())
+        .cost(getCost())
+        .costType(getCostType())
         .build();
   }
 }
