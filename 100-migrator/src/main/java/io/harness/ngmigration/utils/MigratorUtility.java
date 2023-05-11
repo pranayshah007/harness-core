@@ -251,6 +251,10 @@ public class MigratorUtility {
 
   public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
     String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    return getScopedIdentifier(scope, identifier);
+  }
+
+  public static String getScopedIdentifier(Scope scope, String identifier) {
     switch (scope) {
       case ACCOUNT:
         return "account." + identifier;

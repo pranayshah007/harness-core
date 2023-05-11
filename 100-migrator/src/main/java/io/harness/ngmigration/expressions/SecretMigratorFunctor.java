@@ -15,12 +15,15 @@ import io.harness.ngmigration.utils.MigratorUtility;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class SecretMigratorFunctor implements ExpressionFunctor {
   private Map<String, String> nameToIdentifier;
   private CaseFormat caseFormat;
 
   private Scope scope;
+
+  private static Pattern VAR_PATTERN = Pattern.compile("VAR.*VAR.*");
 
   public SecretMigratorFunctor(Map<String, String> nameToIdentifier, CaseFormat caseFormat, Scope scope) {
     this.caseFormat = caseFormat;
@@ -35,9 +38,16 @@ public class SecretMigratorFunctor implements ExpressionFunctor {
   }
 
   public Object getValue(String secretName) {
-    String secretIdentifier = MigratorUtility.getIdentifierWithScope(this.scope, secretName, caseFormat);
+    String secretIdentifier;
     if (nameToIdentifier.containsKey(secretName)) {
       secretIdentifier = nameToIdentifier.get(secretName);
+    } else if (VAR_PATTERN.matcher(secretName).matches()) {
+      // Nested expressions, expression engine creates an intermediate value like VARfadsVARfedasf. In this case, we
+      // want to keep it as it is so the Engine can decode it.
+      secretIdentifier = MigratorUtility.getScopedIdentifier(scope, secretName);
+    } else {
+      // Default value
+      secretIdentifier = MigratorUtility.getIdentifierWithScope(this.scope, secretName, caseFormat);
     }
     return "<+secrets.getValue(\"" + secretIdentifier + "\")>";
   }
