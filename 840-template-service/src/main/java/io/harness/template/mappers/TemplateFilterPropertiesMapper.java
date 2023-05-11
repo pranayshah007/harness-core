@@ -13,8 +13,8 @@ import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.filter.entity.FilterProperties;
 import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.ng.core.mapper.TagMapper;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.TemplateFilterProperties;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import org.modelmapper.ModelMapper;
 

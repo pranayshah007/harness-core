@@ -25,8 +25,8 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.rule.Owner;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import com.google.inject.Inject;
 import java.io.IOException;

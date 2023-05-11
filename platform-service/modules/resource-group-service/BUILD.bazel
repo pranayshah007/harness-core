@@ -23,6 +23,7 @@ java_library(
     ],
     deps = [
         "//:lombok",
+        "//840-template-service/contracts:module",
         "//890-sm-core:module",
         "//930-ng-core-clients:module",
         "//940-feature-flag:module",
@@ -43,6 +44,7 @@ java_library(
         "//clients/audit:module",
         "//clients/pipeline-service/pms-client:module",
         "//clients/resource-group:module",
+        "//clients/template-service:module",
         "//platform-service/modules/audit-service/contracts:module",
         "//platform-service/modules/resource-group-service/contracts/openapi/v1:resource-group-server-spec-module",
         "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup:module",

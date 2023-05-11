@@ -16,8 +16,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.resources.beans.TemplateFilterProperties;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import java.util.Collections;
 import org.junit.Before;
