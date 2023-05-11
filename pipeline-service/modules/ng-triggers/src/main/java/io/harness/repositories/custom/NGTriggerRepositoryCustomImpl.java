@@ -58,7 +58,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         triggers, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGTriggerEntity.class));
   }
 
-  private List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
+  private static List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
     for (NGTriggerEntity trigger : triggers) {
       TriggerStatus triggerStatus = trigger.getTriggerStatus();
 
@@ -135,9 +135,10 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
             if (validationStatus != null && validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
               triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
             } else if (webhookAutoRegistrationStatus != null
-                    && webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
-                || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.ERROR)
-                || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.TIMEOUT)) {
+                && (webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
+                    || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.ERROR)
+                    || webhookAutoRegistrationStatus.getRegistrationResult().equals(
+                        WebhookRegistrationStatus.TIMEOUT))) {
               triggerStatus.setDetailedMessage(webhookAutoRegistrationStatus.getDetailedMessage());
             }
           }
