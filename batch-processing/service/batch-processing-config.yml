@@ -212,7 +212,7 @@ governanceConfig:
   packsInEnforcement: 30
   policiesInEnforcement: 30
   policiesInPack: 30
-  sleepTime: 2
+  sleepTime: 120
 
 azureVmPricingConfig:
   baseUrl: https://prices.azure.com/api/retail/
