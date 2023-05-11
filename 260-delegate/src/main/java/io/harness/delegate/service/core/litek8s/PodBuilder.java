@@ -7,12 +7,12 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
-import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.core.util.K8SVolumeUtils;
 
@@ -45,6 +45,7 @@ public class PodBuilder extends V1PodBuilder {
   private static final V1Volume WORKDIR_VOLUME = K8SVolumeUtils.emptyDir(WORKDIR_VOLUME_NAME);
   private static final V1VolumeMount WORKDIR_VOLUME_MNT =
       K8SVolumeUtils.volumeMount(WORKDIR_VOLUME_NAME, WORKDIR_MOUNT_PATH);
+  private static final String SERVICE_PORT_SUFFIX = "_SERVICE_PORT";
 
   //  private final ContainerBuilder containerBuilder;
   //  private final CoreV1Api coreApi;
@@ -68,10 +69,9 @@ public class PodBuilder extends V1PodBuilder {
         //        class
         .withVolumes(WORKDIR_VOLUME) // We will always have workdir volume
         //        .withHostAliases(List.of()) // To add entries to pods /etc/hosts
+        //        .withPriorityClassName(podParams.getPriorityClassName()); // TODO: Add option for priority classes
+        //            to infra spec if needed
         .endSpec();
-    //            .withPriorityClassName(podParams.getPriorityClassName()); // TODO: Add option for priority classes
-    //            to infra spec if needed
-    //        .endSpec();
   }
 
   public PodBuilder withTasks(final List<V1Container> containers) {
@@ -95,8 +95,12 @@ public class PodBuilder extends V1PodBuilder {
 
   private PodBuilder withLiteEngine(final ContainerBuilder containerBuilder, final ResourceRequirements resource,
       final V1Secret loggingSecret, final PortMap portMap) {
-    final var leContainer = containerBuilder.createLEContainer(resource, portMap.getPortMap())
+    final var portEnvMap =
+        portMap.getPortMap().entrySet().stream().collect(toMap(e -> e.getKey() + SERVICE_PORT_SUFFIX, String::valueOf));
+
+    final var leContainer = containerBuilder.createLEContainer(resource)
                                 .addToEnvFrom(K8SEnvVar.fromSecret(loggingSecret))
+                                .addAllToEnv(K8SEnvVar.fromMap(portEnvMap))
                                 .build();
     this.editOrNewSpec().addToContainers(leContainer).endSpec();
     return this;

@@ -10,6 +10,7 @@ package io.harness.delegate.service.core.litek8s;
 import io.harness.delegate.core.beans.ExecutionEnvironment;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecurityContext;
+import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 
 import com.google.common.base.Strings;
@@ -46,6 +47,7 @@ public class ContainerBuilder {
   private static final String HARNESS_CI_INDIRECT_LOG_UPLOAD_FF = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF";
   private static final String HARNESS_LE_STATUS_REST_ENABLED = "HARNESS_LE_STATUS_REST_ENABLED";
   private static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
+  private static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
   private static final String HARNESS_ACCOUNT_ID_VARIABLE = "HARNESS_ACCOUNT_ID";
 
   private static final String WORKING_DIR = "/harness";
@@ -61,7 +63,7 @@ public class ContainerBuilder {
                                                     .withCommand(ADDON_RUN_COMMAND)
                                                     .withArgs(String.format(ADDON_RUN_ARGS_FORMAT, port))
                                                     .withPorts(getPort(port))
-                                                    .withEnv(getEnvVars(containerRuntime.getEnvMap()))
+                                                    .withEnv(K8SEnvVar.fromMap(containerRuntime.getEnvMap()))
                                                     .withResources(getResources("100m", "100Mi"))
                                                     .withImagePullPolicy("Always");
 
@@ -94,12 +96,12 @@ public class ContainerBuilder {
         .withResources(getResources("100m", "100Mi"));
   }
 
-  public V1ContainerBuilder createLEContainer(final ResourceRequirements resource, final Map<String, Integer> portMap) {
+  public V1ContainerBuilder createLEContainer(final ResourceRequirements resource) {
     // TODO: See how to share ports to LE, possibly env var?
     return new V1ContainerBuilder()
         .withName(LE_CONTAINER_NAME)
         .withImage(getLeImage())
-        .withEnv(getEnvVars(getLeEnvVars()))
+        .withEnv(K8SEnvVar.fromMap(getLeEnvVars()))
         .withImagePullPolicy("Always")
         .withPorts(getPort(RESERVED_LE_PORT))
         .withResources(getResources(resource.getCpu(), resource.getMemory()))
@@ -112,7 +114,7 @@ public class ContainerBuilder {
     envVars.put(HARNESS_CI_INDIRECT_LOG_UPLOAD_FF, "true");
     envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
     envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE, "delegate-service"); // Todo: make per delegate
-    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, "delegate-grpc-service"); // fixme: What's this for?
+    envVars.put(DELEGATE_SERVICE_ID_VARIABLE, "delegate-grpc-service"); // fixme: What's this for?
     //    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
     //    envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     //    envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
@@ -146,13 +148,6 @@ public class ContainerBuilder {
   @NonNull
   private String getLeImage() {
     return "harness/ci-lite-engine:1.16.7"; // TODO: Same as for Addon image
-  }
-
-  private List<V1EnvVar> getEnvVars(final Map<String, String> envMap) {
-    return envMap.entrySet()
-        .stream()
-        .map(entry -> new V1EnvVarBuilder().withName(entry.getKey()).withValue(entry.getValue()).build())
-        .collect(Collectors.toList());
   }
 
   @NonNull
