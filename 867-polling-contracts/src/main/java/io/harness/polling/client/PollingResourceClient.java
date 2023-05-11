@@ -23,13 +23,8 @@ import retrofit2.http.Query;
 public interface PollingResourceClient {
   String POLLING_API = "polling";
 
-  //@TODO: Remove V1 versions once all delegates adopts V2 version
   @POST(POLLING_API + "/delegate-response/{perpetualTaskId}")
   Call<ResponseDTO> processPolledResult(@Path("perpetualTaskId") String perpetualTaskId,
-      @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
-
-  @POST(POLLING_API + "/delegate-response/v2/{perpetualTaskId}")
-  Call<ResponseDTO> processPolledResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
   @POST(POLLING_API + "/subscribe") Call<ResponseDTO<PollingResponseDTO>> subscribe(@Body RequestBody pollingItem);

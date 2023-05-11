@@ -81,8 +81,7 @@ public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(hosts, port);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
-        infrastructure.getAccountIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
   }
 
   private int getPort(InfrastructureMappingDTO infrastructure, PdcInfrastructureOutcome pdcInfrastructureOutcome) {

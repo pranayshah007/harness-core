@@ -37,7 +37,6 @@ import software.wings.WingsBaseTest;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -52,7 +51,7 @@ import retrofit2.Response;
 
 @OwnedBy(DX)
 public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer kryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService ngSecretManagerService;
   @Mock private Call<ResponseDTO<ConnectorValidationParameterResponse>> call;
@@ -80,7 +79,7 @@ public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
             .isInvalid(false)
             .build();
     when(call.execute()).thenReturn(Response.success(ResponseDTO.newResponse(connectorValidationParameterResponse)));
-    FieldUtils.writeField(connectorHeartbeatPerpetualTaskClient, "referenceFalseKryoSerializer", kryoSerializer, true);
+    FieldUtils.writeField(connectorHeartbeatPerpetualTaskClient, "kryoSerializer", kryoSerializer, true);
     Map<String, String> connectorDetails = ImmutableMap.of(ACCOUNT_KEY, accountIdentifier, ORG_KEY, orgIdentifier,
         PROJECT_KEY, projectIdentifier, CONNECTOR_IDENTIFIER_KEY, identifier);
     perpetualTaskClientContext = PerpetualTaskClientContext.builder().clientParams(connectorDetails).build();
@@ -91,8 +90,7 @@ public class ConnectorHeartbeatPerpetualTaskClientTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void getTaskParams() {
     ConnectorHeartbeatTaskParams taskParams =
-        (ConnectorHeartbeatTaskParams) connectorHeartbeatPerpetualTaskClient.getTaskParams(
-            perpetualTaskClientContext, true);
+        (ConnectorHeartbeatTaskParams) connectorHeartbeatPerpetualTaskClient.getTaskParams(perpetualTaskClientContext);
     assertThat(taskParams).isNotNull();
     assertThat(taskParams.getAccountIdentifier()).isEqualTo(accountIdentifier);
   }

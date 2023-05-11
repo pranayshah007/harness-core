@@ -142,8 +142,8 @@ public class PerpetualTaskRecordDao {
     persistence.update(query, updateOperations);
   }
 
-  public boolean resetDelegateIdForTask(String accountId, String taskId,
-      PerpetualTaskExecutionBundle taskExecutionBundle, boolean referenceFalseKryoSerializer) {
+  public boolean resetDelegateIdForTask(
+      String accountId, String taskId, PerpetualTaskExecutionBundle taskExecutionBundle) {
     Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
                                            .filter(PerpetualTaskRecordKeys.accountId, accountId)
                                            .filter(PerpetualTaskRecordKeys.uuid, taskId);
@@ -152,7 +152,6 @@ public class PerpetualTaskRecordDao {
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.delegateId, "")
             .set(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
-            .set(PerpetualTaskRecordKeys.referenceFalseKryoSerializer, referenceFalseKryoSerializer)
             .unset(PerpetualTaskRecordKeys.unassignedReason)
             .unset(PerpetualTaskRecordKeys.assignTryCount);
 

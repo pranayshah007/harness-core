@@ -53,7 +53,6 @@ import software.wings.service.intfc.ContainerService;
 import software.wings.service.intfc.aws.delegate.AwsEcsHelperServiceDelegate;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.time.Instant;
@@ -81,7 +80,6 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
   @Mock private AwsEcsHelperServiceDelegate awsEcsHelperServiceDelegate;
   @Mock private Call<RestResponse<Boolean>> call;
   @Inject KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private ArgumentCaptor<ContainerSyncResponse> containerSyncResponseCaptor =
       ArgumentCaptor.forClass(ContainerSyncResponse.class);
@@ -93,7 +91,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   @Before
   public void setup() {
-    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializer);
   }
 
   @Test
@@ -110,7 +108,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         .getPodDetails(any(KubernetesConfig.class), eq("namespace"), eq("release"), anyLong());
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
@@ -118,7 +116,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getK8sPerpetualTaskParams(), Instant.now());
 
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), k8TaskResponseCaptor.capture());
+        .publishInstanceSyncResult(eq("id"), eq("accountId"), k8TaskResponseCaptor.capture());
 
     final K8sTaskExecutionResponse k8sTaskExecutionResponse = k8TaskResponseCaptor.getValue();
 
@@ -156,7 +154,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         .getPodDetails(any(KubernetesConfig.class), eq("namespace"), eq("release"), anyLong());
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
@@ -164,7 +162,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), getK8sPerpetualTaskParams(), Instant.now());
 
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), k8TaskResponseCaptor.capture());
+        .publishInstanceSyncResult(eq("id"), eq("accountId"), k8TaskResponseCaptor.capture());
 
     final K8sTaskExecutionResponse k8sTaskExecutionResponse = k8TaskResponseCaptor.getValue();
 
@@ -198,7 +196,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         .getContainerInfos(any(ContainerServiceParams.class), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
     doReturn(true).when(awsEcsHelperServiceDelegate).serviceExists(any(), any(), anyString(), anyString(), anyString());
 
@@ -207,7 +205,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         PerpetualTaskId.newBuilder().setId("id").build(), getContainerInstancePerpetualTaskParams(), Instant.now());
 
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), containerSyncResponseCaptor.capture());
+        .publishInstanceSyncResult(eq("id"), eq("accountId"), containerSyncResponseCaptor.capture());
 
     final ContainerSyncResponse containerSyncResponse = containerSyncResponseCaptor.getValue();
 
@@ -238,7 +236,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         .getContainerInfos(any(ContainerServiceParams.class), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     PerpetualTaskResponse perpetualTaskResponse;
@@ -246,7 +244,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         PerpetualTaskId.newBuilder().setId("id").build(), getContainerInstancePerpetualTaskParamsHelm(), Instant.now());
 
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), containerSyncResponseCaptor.capture());
+        .publishInstanceSyncResult(eq("id"), eq("accountId"), containerSyncResponseCaptor.capture());
 
     final ContainerSyncResponse containerSyncResponse = containerSyncResponseCaptor.getValue();
 
@@ -281,7 +279,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         .getContainerInfos(any(ContainerServiceParams.class), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
     doReturn(true).when(awsEcsHelperServiceDelegate).serviceExists(any(), any(), anyString(), anyString(), anyString());
 
@@ -290,7 +288,7 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
         PerpetualTaskId.newBuilder().setId("id").build(), getContainerInstancePerpetualTaskParams(), Instant.now());
 
     verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), containerSyncResponseCaptor.capture());
+        .publishInstanceSyncResult(eq("id"), eq("accountId"), containerSyncResponseCaptor.capture());
 
     final ContainerSyncResponse containerSyncResponse = containerSyncResponseCaptor.getValue();
 
@@ -327,9 +325,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
 
   private PerpetualTaskExecutionParams getContainerInstancePerpetualTaskParams() {
     AwsConfig awsConfig = AwsConfig.builder().accountId("accountId").build();
-    ByteString configBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(
-        SettingAttribute.builder().accountId("accountId").value(awsConfig).build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+    ByteString configBytes = ByteString.copyFrom(
+        kryoSerializer.asBytes(SettingAttribute.builder().accountId("accountId").value(awsConfig).build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
     ContainerInstanceSyncPerpetualTaskParams params =
         ContainerInstanceSyncPerpetualTaskParams.newBuilder()
@@ -343,17 +341,14 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                         .setClusterName("cluster")
                                                         .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 
   private PerpetualTaskExecutionParams getContainerInstancePerpetualTaskParamsHelm() {
     AwsConfig awsConfig = AwsConfig.builder().accountId("accountId").build();
-    ByteString configBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(
-        SettingAttribute.builder().accountId("accountId").value(awsConfig).build()));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+    ByteString configBytes = ByteString.copyFrom(
+        kryoSerializer.asBytes(SettingAttribute.builder().accountId("accountId").value(awsConfig).build()));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
     ContainerInstanceSyncPerpetualTaskParams params =
         ContainerInstanceSyncPerpetualTaskParams.newBuilder()
@@ -367,15 +362,12 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                         .setReleaseName("release")
                                                         .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 
   private PerpetualTaskExecutionParams getK8sPerpetualTaskParams() {
-    ByteString configBytes = ByteString.copyFrom(
-        referenceFalseKryoSerializer.asBytes(K8sClusterConfig.builder().namespace("namespace").build()));
+    ByteString configBytes =
+        ByteString.copyFrom(kryoSerializer.asBytes(K8sClusterConfig.builder().namespace("namespace").build()));
 
     ContainerInstanceSyncPerpetualTaskParams params =
         ContainerInstanceSyncPerpetualTaskParams.newBuilder()
@@ -387,9 +379,6 @@ public class ContainerInstanceSyncPerpetualTaskExecutorTest extends DelegateTest
                                                     .setReleaseName("release")
                                                     .build())
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 }

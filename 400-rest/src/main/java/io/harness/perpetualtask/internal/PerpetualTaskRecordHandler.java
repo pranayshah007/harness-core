@@ -63,7 +63,6 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -82,7 +81,6 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
   @Inject private MorphiaPersistenceRequiredProvider<PerpetualTaskRecord> persistenceProvider;
   @Inject private AccountService accountService;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
@@ -273,12 +271,11 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
     List<ExecutionCapability> executionCapabilityList = new ArrayList<>();
     List<Capability> capabilityList = perpetualTaskExecutionBundle.getCapabilitiesList();
     if (isNotEmpty(capabilityList)) {
-      executionCapabilityList =
-          capabilityList.stream()
-              .map(capability
-                  -> (ExecutionCapability) getKryoSerializer(taskRecord.isReferenceFalseKryoSerializer())
-                         .asInflatedObject(capability.getKryoCapability().toByteArray()))
-              .collect(toList());
+      executionCapabilityList = capabilityList.stream()
+                                    .map(capability
+                                        -> (ExecutionCapability) kryoSerializer.asInflatedObject(
+                                            capability.getKryoCapability().toByteArray()))
+                                    .collect(toList());
     }
 
     return DelegateTask.builder()
@@ -303,8 +300,4 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
 
   @Override
   public void onRebalanceRequired() {}
-
-  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
-    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
-  }
 }
