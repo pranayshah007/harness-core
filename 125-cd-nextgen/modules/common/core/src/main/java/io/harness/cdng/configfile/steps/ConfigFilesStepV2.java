@@ -151,7 +151,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       ConfigFileWrapper file = configFiles.get(i);
       ConfigFileAttributes spec = file.getConfigFile().getSpec();
       String identifier = file.getConfigFile().getIdentifier();
-      IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+      validateConfigFileParametersAtRuntime(logCallback, spec, identifier);
       verifyConfigFileReference(identifier, spec, ambiance);
       configFilesOutcome.put(identifier, ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i + 1, spec));
     }
@@ -185,7 +185,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       ConfigFileWrapper file = configFiles.get(i);
       ConfigFileAttributes spec = file.getConfigFile().getSpec();
       String identifier = file.getConfigFile().getIdentifier();
-      IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+      validateConfigFileParametersAtRuntime(logCallback, spec, identifier);
       verifyConfigFileReference(identifier, spec, ambiance);
       ConfigFileOutcome configFileOutcome = ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i + 1, spec);
       if (ManifestStoreType.isInGitSubset(configFileOutcome.getStore().getKind())) {
@@ -229,6 +229,19 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, CONFIG_FILES_STEP);
 
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
+  }
+
+  private void validateConfigFileParametersAtRuntime(
+      NGLogCallback logCallback, ConfigFileAttributes spec, String identifier) {
+    Set<String> invalidParameters =
+        IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+    if (isNotEmpty(invalidParameters)) {
+      logCallback.saveExecutionLog(
+          String.format(
+              "Values for following parameters for config file %s are either empty or not provided: {%s}. This may result in failure of deployment.",
+              identifier, invalidParameters.stream().collect(Collectors.joining(","))),
+          LogLevel.WARN);
+    }
   }
 
   private String createGitDelegateTask(
