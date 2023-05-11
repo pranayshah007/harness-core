@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfigHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.visitor.helpers.store.HarnessStoreVisitorHelper;
 import io.harness.common.ParameterFieldHelper;
@@ -29,11 +30,14 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -45,6 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = HarnessStoreVisitorHelper.class)
 @TypeAlias("harnessStore")
 @RecasterAlias("io.harness.cdng.manifest.yaml.harness.HarnessStore")
+@FieldNameConstants(innerTypeName = "HarnessStoreConfigKeys")
 public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -106,5 +111,15 @@ public class HarnessStore implements HarnessStoreConfig, FileStorageStoreConfig,
   @Override
   public FileStorageConfigDTO toFileStorageConfigDTO() {
     return toHarnessStoreDTO();
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkListOfStringsParameterNullOrInput(secretFiles)
+        && StoreConfigHelper.checkListOfStringsParameterNullOrInput(files)) {
+      invalidParameters.add(HarnessStoreConfigKeys.files);
+    }
+    return invalidParameters;
   }
 }
