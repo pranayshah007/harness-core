@@ -76,6 +76,7 @@ import io.harness.beans.SearchFilter;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
+import io.harness.cd.CDLicenseType;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.handler.impl.EventPublishHelper;
@@ -2182,7 +2183,7 @@ public class UserServiceImpl implements UserService {
                         .build();
       wingsPersistence.save(GCPMarketplaceCustomer.builder()
                                 .gcpAccountId(gcpAccountId)
-                                .harnessAccountId(setupAccountForUser(user, userInvite, licenseInfo))
+                                .harnessAccountId(setupAccountForUser(user, userInvite, licenseInfo, true))
                                 .build());
       gcpProcurementService.approveAccount(gcpAccountId);
     } else {
@@ -2198,15 +2199,18 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  private String setupAccountForUser(User user, UserInvite userInvite, LicenseInfo licenseInfo) {
+  private String setupAccountForUser(User user, UserInvite userInvite, LicenseInfo licenseInfo, boolean isNG) {
     Account account = Account.Builder.anAccount()
                           .withAccountName(user.getAccountName())
                           .withCompanyName(user.getCompanyName())
                           .withLicenseInfo(licenseInfo)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
-
-    account = setupAccount(account);
+    if (isNG) {
+      account = setupNGAccount(account);
+    } else {
+      account = setupAccount(account);
+    }
     String accountId = account.getUuid();
     List<UserGroup> accountAdminGroups = getAccountAdminGroup(accountId);
     saveUserAndUserGroups(user, account, accountAdminGroups);
@@ -3569,6 +3573,18 @@ public class UserServiceImpl implements UserService {
     return setupAccount(account, true);
   }
 
+  private Account setupNGAccount(Account account) {
+    account.setAppId(GLOBAL_APP_ID);
+    account.setDefaultExperience(DefaultExperience.NG);
+    account.setCreatedFromNG(true);
+    account.setProductLed(true);
+
+    Account savedAccount = accountService.save(account, false, false);
+    log.info("New account created with accountId {} and licenseType {}", account.getUuid(),
+        account.getLicenseInfo().getAccountType());
+    return savedAccount;
+  }
+
   private Account setupAccount(Account account, boolean shouldCreateSampleApp) {
     // HAR-8645: Always set default appId for account creation to pass validation
     account.setAppId(GLOBAL_APP_ID);
@@ -4238,7 +4254,7 @@ public class UserServiceImpl implements UserService {
     updateUser(existingUser.getUuid(), updateOperations);
   }
 
-  private String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
+  public String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
     String accountId;
     LicenseInfo licenseInfo = LicenseInfo.builder()
                                   .accountType(AccountType.PAID)
@@ -4260,7 +4276,7 @@ public class UserServiceImpl implements UserService {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
     } else if (marketPlace.getProductCode().equals(
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceCeProductCode())) {
       CeLicenseType ceLicenseType = CeLicenseType.PAID;
@@ -4269,7 +4285,7 @@ public class UserServiceImpl implements UserService {
       }
       licenseInfo.setAccountType(AccountType.TRIAL);
       licenseInfo.setLicenseUnits(MINIMAL_ORDER_QUANTITY);
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       licenseService.updateCeLicense(accountId,
           CeLicenseInfo.builder()
               .expiryTime(marketPlace.getExpirationDate().getTime())
@@ -4282,10 +4298,11 @@ public class UserServiceImpl implements UserService {
       }
 
       // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
-              .serviceInstances(orderQuantity)
+              .workloads(orderQuantity)
+              .cdLicenseType(CDLicenseType.SERVICES)
               .accountIdentifier(accountId)
               .moduleType(ModuleType.CD)
               .edition(plan)
@@ -4305,7 +4322,7 @@ public class UserServiceImpl implements UserService {
       log.info("spendLimit:{}", spendLimit);
 
       // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
 
       licenseService.updateCeLicense(accountId,
           CeLicenseInfo.builder()
@@ -4334,7 +4351,7 @@ public class UserServiceImpl implements UserService {
       log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
 
       // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CFModuleLicenseDTO.builder()
               .numberOfClientMAUs(numberOfClientMAUs)
@@ -4354,7 +4371,7 @@ public class UserServiceImpl implements UserService {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CIModuleLicenseDTO.builder()
               .numberOfCommitters(orderQuantity)
@@ -4373,7 +4390,7 @@ public class UserServiceImpl implements UserService {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           SRMModuleLicenseDTO.builder()
               .numberOfServices(orderQuantity)
@@ -4392,7 +4409,7 @@ public class UserServiceImpl implements UserService {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       // TODO: please add trial logic here [PLG-1942]
-      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           STOModuleLicenseDTO.builder()
               .numberOfDevelopers(orderQuantity)

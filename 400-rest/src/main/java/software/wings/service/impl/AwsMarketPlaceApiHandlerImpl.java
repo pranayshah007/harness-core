@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.DeployMode;
 import io.harness.exception.WingsException;
+import io.harness.licensing.Edition;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.MarketPlace;
@@ -69,7 +70,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   @Inject private SecretManager secretManager;
   @Inject private AuthenticationUtils authenticationUtils;
   @Inject private MarketPlaceService marketPlaceService;
-
+  private final String MANUALLY_PROVISIONED_MESSAGE =
+      "Instructions to get started should be provided. If not, please contact Harness at support@harness.io";
   private static final String INFO = "INFO";
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
@@ -82,10 +84,10 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     /**
      * If request gets routed to the free cluster, reject the request rightaway
      */
-    if (configuration.isTrialRegistrationAllowed()) {
-      final String message = "Invalid cluster, please contact Harness at support@harness.io, customertoken=" + token;
-      return generateMessageResponse(message, "ERROR", null, null);
-    }
+    // if (configuration.isTrialRegistrationAllowed()) {
+    //   final String message = "Invalid cluster, please contact Harness at support@harness.io, customertoken=" + token;
+    //   return generateMessageResponse(message, "ERROR", null, null);
+    // }
 
     if (DeployMode.isOnPrem(configuration.getDeployMode().name())) {
       final String message =
@@ -104,7 +106,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     try {
       resolveCustomerResult = AWSMarketplaceMeteringClientBuilder.standard()
                                   .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                                  .withRegion(Regions.US_EAST_1)
+                                  .withRegion(Regions.US_WEST_1)
                                   .build()
                                   .resolveCustomer(resolveCustomerRequest);
     } catch (AWSMarketplaceMeteringException e) {
@@ -162,10 +164,20 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     log.info("Dimension=[{}]", dimension);
     log.info("Order Quantity=[{}]", orderQuantity);
 
-    String dimensionModule = getDimensionModule(dimension);
+    if (isManuallyProvisioned(dimension)) {
+      log.info("Manually provision license for Dimension=[{}], EntitlementResult=[{}]", dimension, entitlements);
+      return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+    }
 
     if (awsMarketPlaceV2ProductCodes.contains(productCode)) {
       orderQuantity = getDimensionQuantity(dimension);
+
+      if (!isDimensionV2Provisionable(dimension, orderQuantity)) {
+        log.info(
+            "Dimensions provided does not include required all information. Dimension=[{}], EntitlementResult=[{}]",
+            dimension, entitlements);
+        return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      }
     }
 
     Date expirationDate = entitlements.getEntitlements().get(0).getExpirationDate();
@@ -233,7 +245,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       URI redirectUrl = null;
       try {
         redirectUrl = new URI(authenticationUtils.getBaseUrl()
-            + ("auth/#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken));
+            + ("auth/#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken)
+            + getUTMUrlParams(marketPlaceConfig, productCode));
       } catch (URISyntaxException e) {
         throw new WingsException(e);
       }
@@ -297,14 +310,24 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     }
   }
 
-  // Gets module from dimension string
-  private String getDimensionModule(String dimension) {
-    String module = "";
-    if (StringUtils.isNotBlank(dimension)) {
-      String[] result = dimension.split("_");
-      module = result[0];
+  // User will manually provision working closely with Harness
+  private boolean isManuallyProvisioned(String dimension) {
+    boolean shouldManuallyProvision = false;
+    String escapeProvisionKey = "x";
+    if (StringUtils.isNotBlank(dimension) && dimension.toLowerCase().endsWith(escapeProvisionKey)) {
+      shouldManuallyProvision = true;
     }
-    return module;
+    return shouldManuallyProvision;
+  }
+
+  private boolean isDimensionV2Provisionable(String dimension, Integer quantity) {
+    boolean isProvisionReady = false;
+    Edition plan = licenseService.getDimensionPlan(dimension);
+
+    if (StringUtils.isNotBlank(dimension) && dimension.split("_").length >= 3 && plan != null && quantity != null) {
+      isProvisionReady = true;
+    }
+    return isProvisionReady;
   }
 
   // Gets quantity from dimension string
@@ -337,5 +360,32 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     }
 
     return quantity;
+  }
+
+  private String getUTMUrlParams(MarketPlaceConfig marketPlaceConfig, String productCode) {
+    // TODO: Add for CE (Chaos)
+    String UTMUrlParam = "";
+
+    if (marketPlaceConfig.getAwsMarketPlaceCdProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=cd&utm_campaign=23-4-6-cd-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceCiProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ci&utm_campaign=23-4-6-ci-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ff&utm_campaign=23-4-6-ff-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=ce&utm_campaign=23-4-6-ccm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=sto&utm_campaign=23-4-6-srm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    } else if (marketPlaceConfig.getAwsMarketPlaceSrmProductCode().equals(productCode)) {
+      UTMUrlParam =
+          "&module=sto&utm_campaign=23-4-6-srm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
+    }
+
+    return UTMUrlParam;
   }
 }
