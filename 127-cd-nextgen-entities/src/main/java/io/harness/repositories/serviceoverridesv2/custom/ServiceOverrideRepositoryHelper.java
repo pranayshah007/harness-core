@@ -9,7 +9,6 @@ package io.harness.repositories.serviceoverridesv2.custom;
 
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
-import io.harness.utils.IdentifierRefHelper;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -34,14 +33,15 @@ public class ServiceOverrideRepositoryHelper {
     return update;
   }
 
-  public Criteria getEqualityCriteriaForServiceOverride(String accountId, String orgIdentifier, String projectIdentifier, String identifier ) {
+  public Criteria getEqualityCriteriaForServiceOverride(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
     return Criteria.where(NGServiceOverridesEntityKeys.accountId)
-            .is(accountId)
-            .and(NGServiceOverridesEntityKeys.orgIdentifier)
-            .is(orgIdentifier)
-            .and(NGServiceOverridesEntityKeys.projectIdentifier)
-            .is(projectIdentifier)
-            .and(NGServiceOverridesEntityKeys.identifier)
-            .is(identifier);
+        .is(accountId)
+        .and(NGServiceOverridesEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(NGServiceOverridesEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(NGServiceOverridesEntityKeys.identifier)
+        .is(identifier);
   }
 }

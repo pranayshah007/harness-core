@@ -7,7 +7,6 @@
 
 package io.harness.cdng.serviceoverridesv2.services;
 
-import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import java.util.Optional;

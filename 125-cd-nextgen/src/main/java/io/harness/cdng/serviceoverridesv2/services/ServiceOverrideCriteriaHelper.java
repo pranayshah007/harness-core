@@ -7,18 +7,10 @@
 
 package io.harness.cdng.serviceoverridesv2.services;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
-import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 
-import java.util.ArrayList;
-import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
-import org.checkerframework.checker.units.qual.C;
-import org.opensaml.xmlsec.signature.P;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @UtilityClass

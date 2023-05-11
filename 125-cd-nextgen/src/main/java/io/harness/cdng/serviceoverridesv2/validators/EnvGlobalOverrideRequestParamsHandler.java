@@ -21,5 +21,4 @@ public class EnvGlobalOverrideRequestParamsHandler implements ServiceOverrideTyp
   public String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity) {
     return String.join("_", serviceOverridesEntity.getEnvironmentRef()).replace(".", "_");
   }
-
 }

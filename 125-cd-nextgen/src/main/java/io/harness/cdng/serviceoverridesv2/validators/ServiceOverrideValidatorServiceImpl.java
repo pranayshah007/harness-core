@@ -40,8 +40,8 @@ public class ServiceOverrideValidatorServiceImpl implements ServiceOverrideValid
   @Override
   public void validateRequestOrThrow(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId) {
     validateServiceOverrideRequestBasicChecksOrThrow(requestDTOV2, accountId);
-    validateEnvWithRBACOrThrow(accountId, requestDTOV2.getOrgIdentifier(),
-        requestDTOV2.getProjectIdentifier(), requestDTOV2.getEnvironmentRef());
+    validateEnvWithRBACOrThrow(accountId, requestDTOV2.getOrgIdentifier(), requestDTOV2.getProjectIdentifier(),
+        requestDTOV2.getEnvironmentRef());
     ServiceOverrideTypeBasedRequestParamsHandler validator =
         overrideValidatorFactory.getTypeBasedValidator(requestDTOV2.getType());
     validator.validateRequest(requestDTOV2, accountId);

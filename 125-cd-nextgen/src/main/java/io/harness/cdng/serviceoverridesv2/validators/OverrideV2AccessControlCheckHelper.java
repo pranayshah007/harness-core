@@ -20,13 +20,12 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.CollectionUtils;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,10 +55,10 @@ public class OverrideV2AccessControlCheckHelper {
 
   public void validateRBACForService(ServiceOverrideRequestDTOV2 requestDTOV2, String accountId) {
     IdentifierRef svcIdentifierRef = IdentifierRefHelper.getIdentifierRef(
-            requestDTOV2.getServiceRef(), accountId, requestDTOV2.getOrgIdentifier(), requestDTOV2.getProjectIdentifier());
+        requestDTOV2.getServiceRef(), accountId, requestDTOV2.getOrgIdentifier(), requestDTOV2.getProjectIdentifier());
     accessControlClient.checkForAccessOrThrow(
-            ResourceScope.of(accountId, svcIdentifierRef.getOrgIdentifier(), svcIdentifierRef.getProjectIdentifier()),
-            Resource.of(NGResourceType.SERVICE, svcIdentifierRef.getIdentifier()), SERVICE_UPDATE_PERMISSION);
+        ResourceScope.of(accountId, svcIdentifierRef.getOrgIdentifier(), svcIdentifierRef.getProjectIdentifier()),
+        Resource.of(NGResourceType.SERVICE, svcIdentifierRef.getIdentifier()), SERVICE_UPDATE_PERMISSION);
   }
 
   private List<PermissionCheckDTO> getPermissionChecksDTOForEnvironment(
