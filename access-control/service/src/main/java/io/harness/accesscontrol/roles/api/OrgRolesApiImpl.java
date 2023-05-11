@@ -12,6 +12,7 @@ import static io.harness.accesscontrol.AccessControlPermissions.EDIT_ROLE_PERMIS
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ROLE_PERMISSION;
 import static io.harness.accesscontrol.AccessControlResourceTypes.ROLE;
 import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
+import static io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel.fromString;
 import static io.harness.accesscontrol.roles.api.RoleDTOMapper.fromDTO;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
@@ -94,7 +95,7 @@ public class OrgRolesApiImpl implements OrganizationRolesApi {
         HarnessScopeParams.builder().accountIdentifier(account).orgIdentifier(org).build();
     Scope scope = scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
     RoleDTO roleDTO = rolesApiUtils.getRoleOrgDTO(body);
-    roleDTO.setAllowedScopeLevels(Sets.newHashSet(scope.getLevel().toString()));
+    roleDTO.setAllowedScopeLevels(Sets.newHashSet(fromString(scope.getLevel().toString())));
 
     RolesResponse response = Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleResponseDTO responseDTO = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));
