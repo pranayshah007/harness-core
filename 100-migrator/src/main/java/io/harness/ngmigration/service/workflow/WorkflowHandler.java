@@ -974,25 +974,30 @@ public abstract class WorkflowHandler {
     }
     List<WorkflowPhase> phases = getPhases(workflow);
 
-    if (isEmpty(phases)) {
+    if (isEmpty(phases) || phases.size() == 1) {
       return true;
     }
 
-    return areAllPhasesNonTemplatizedAndHaveSameSvcInfra(phases) || areAllPhasesTemplatizedAndHaveSameSvcInfra(phases);
+    return doAllPhasesUseSingleSvcAndSingleInfra(phases);
   }
 
-  private boolean areAllPhasesNonTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
+  private boolean doAllPhasesUseSingleSvcAndSingleInfra(List<WorkflowPhase> phases) {
     Set<String> serviceIds = new HashSet<>();
     Set<String> infraDefIds = new HashSet<>();
 
     for (WorkflowPhase workflowPhase : phases) {
-      if (workflowPhase.checkServiceTemplatized() || workflowPhase.checkInfraDefinitionTemplatized()) {
-        return false;
+      String serviceId = workflowPhase.checkServiceTemplatized() ? fetchTemplateExpression(workflowPhase, "serviceId")
+                                                                 : workflowPhase.getServiceId();
+      if (serviceId != null) {
+        serviceIds.add(serviceId);
       }
-      String serviceId = workflowPhase.getServiceId();
-      String infraDefinitionId = workflowPhase.getInfraDefinitionId();
-      serviceIds.add(serviceId);
-      infraDefIds.add(infraDefinitionId);
+
+      String infraDefId = workflowPhase.checkInfraDefinitionTemplatized()
+          ? fetchTemplateExpression(workflowPhase, "infraDefinitionId")
+          : workflowPhase.getInfraDefinitionId();
+      if (infraDefId != null) {
+        infraDefIds.add(infraDefId);
+      }
       if (serviceIds.size() > 1 || infraDefIds.size() > 1) {
         return false;
       }
@@ -1000,30 +1005,15 @@ public abstract class WorkflowHandler {
     return true;
   }
 
-  private boolean areAllPhasesTemplatizedAndHaveSameSvcInfra(List<WorkflowPhase> phases) {
-    Set<String> serviceExpressions = new HashSet<>();
-    Set<String> infraDefExpressions = new HashSet<>();
+  private String fetchTemplateExpression(WorkflowPhase workflowPhase, String fieldName) {
+    List<TemplateExpression> templateExpressions = CollectionUtils.emptyIfNull(workflowPhase.getTemplateExpressions());
 
-    for (WorkflowPhase workflowPhase : phases) {
-      if (!workflowPhase.checkServiceTemplatized() || !workflowPhase.checkInfraDefinitionTemplatized()) {
-        return false;
-      }
-      List<TemplateExpression> templateExpressions =
-          CollectionUtils.emptyIfNull(workflowPhase.getTemplateExpressions());
-
-      for (TemplateExpression templateExpression : templateExpressions) {
-        if ("serviceId".equals(templateExpression.getFieldName())) {
-          serviceExpressions.add(templateExpression.getExpression());
-        }
-        if ("infraDefinitionId".equals(templateExpression.getFieldName())) {
-          infraDefExpressions.add(templateExpression.getExpression());
-        }
-      }
-      if (serviceExpressions.size() > 1 || infraDefExpressions.size() > 1) {
-        return false;
+    for (TemplateExpression templateExpression : templateExpressions) {
+      if (fieldName.equals(templateExpression.getFieldName())) {
+        return templateExpression.getExpression();
       }
     }
-    return true;
+    return null;
   }
 
   public List<StepExpressionFunctor> getExpressionFunctors(MigrationContext migrationContext, Workflow workflow) {
