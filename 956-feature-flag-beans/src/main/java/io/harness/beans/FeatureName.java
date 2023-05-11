@@ -737,7 +737,9 @@ public enum FeatureName {
   CIE_USE_DOCKER_BUILDX("Enable docker build and push step to use buildx", HarnessTeam.CI),
   CDS_STAGE_EXECUTION_DATA_SYNC(
       "This flag controls if you want CD Stage execution data saved in cd service and eventually synced to timescale",
-      HarnessTeam.CDC);
+      HarnessTeam.CDC),
+  CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
+  CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {
