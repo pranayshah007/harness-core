@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Value;
+import lombok.experimental.NonFinal;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Value
@@ -57,8 +58,14 @@ public class YamlNode implements Visitable {
 
   String fieldName;
   YamlNode parentNode;
-  @NotNull JsonNode currJsonNode;
+  @NonFinal @NotNull JsonNode currJsonNode;
 
+  public void setCurrJsonNode(JsonNode jsonNode, String fieldName) {
+    this.currJsonNode = jsonNode;
+    if (parentNode.getCurrJsonNode() instanceof ObjectNode) {
+      ((ObjectNode) parentNode.getCurrJsonNode()).set(fieldName, jsonNode);
+    }
+  }
   public YamlNode(JsonNode currJsonNode) {
     this(null, currJsonNode, null);
   }
