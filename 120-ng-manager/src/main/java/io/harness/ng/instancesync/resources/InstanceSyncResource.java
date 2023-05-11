@@ -65,7 +65,8 @@ public class InstanceSyncResource {
       @Body DelegateResponseData delegateResponseData) {
     InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse =
         (InstanceSyncPerpetualTaskResponse) delegateResponseData;
-    log.info(LOG_ERROR_TEMPLATE, accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
+    log.info("Received instance sync perpetual task response for accountId : {} and perpetualTaskId : {} : {}",
+        accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse.toString());
     instanceSyncService.processInstanceSyncByPerpetualTask(
         accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse);
     return ResponseDTO.newResponse(Boolean.TRUE);

@@ -489,8 +489,6 @@ public enum TaskType {
   K8S_COMMAND_TASK_NG_V2(TaskGroup.K8S_NG, "K8s Task with service Hooks"),
   HELM_COMMAND_TASK_NG_V2(TaskGroup.HELM, "Helm Command Task with service Hooks"),
   INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG"),
-  // Dummy Task type to support referenceFalseSerialization
-  PT_SERIALIZATION_SUPPORT(TaskGroup.CAPABILITY_VALIDATION),
   COMMAND_TASK_NG_WITH_GIT_CONFIGS(TaskGroup.COMMAND_TASK_NG, "Command Task"),
   K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK(TaskGroup.K8S_NG, "K8s Task with Blue Green Stage Scale down step", true);
 

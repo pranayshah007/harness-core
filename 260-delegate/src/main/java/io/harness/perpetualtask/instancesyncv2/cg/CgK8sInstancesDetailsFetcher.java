@@ -45,7 +45,6 @@ import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -66,7 +65,6 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
   private final KubernetesContainerService kubernetesContainerService;
   private final KryoSerializer kryoSerializer;
   private final K8sTaskHelperBase k8sTaskHelperBase;
-  @Inject @Named("referenceFalseKryoSerializer") private final KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public InstanceSyncData fetchRunningInstanceDetails(
@@ -80,8 +78,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       return InstanceSyncData.newBuilder().setTaskDetailsId(releaseDetails.getTaskDetailsId()).build();
     }
     try {
-      K8sClusterConfig config = (K8sClusterConfig) referenceFalseKryoSerializer.asObject(
-          instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
+      K8sClusterConfig config =
+          (K8sClusterConfig) kryoSerializer.asObject(instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
       KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
 
       DelegateTaskNotifyResponseData taskResponseData = instanceSyncTaskDetails.getIsHelm()
@@ -90,7 +88,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
-          .setTaskResponse(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(taskResponseData)))
+          .setTaskResponse(ByteString.copyFrom(kryoSerializer.asBytes(taskResponseData)))
           .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
                                           .setReleaseName(instanceSyncTaskDetails.getReleaseName())
                                           .setNamespace(instanceSyncTaskDetails.getNamespace())
