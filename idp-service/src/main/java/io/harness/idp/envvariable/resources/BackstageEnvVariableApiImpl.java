@@ -10,6 +10,7 @@ package io.harness.idp.envvariable.resources;
 import static io.harness.idp.common.Constants.IDP_PERMISSION;
 import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,8 +43,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response createBackstageEnvVariable(@Valid BackstageEnvVariableRequest body, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  public Response createBackstageEnvVariable(
+      @Valid BackstageEnvVariableRequest body, @AccountIdentifier String harnessAccount) {
+    //    idpCommonService.checkUserAuthorization();
     try {
       BackstageEnvVariable envVariable = backstageEnvVariableService.create(body.getEnvVariable(), harnessAccount);
       BackstageEnvVariableResponse secretResponse = new BackstageEnvVariableResponse();
@@ -59,8 +61,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response createBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  public Response createBackstageEnvVariables(
+      @Valid BackstageEnvVariableBatchRequest body, @AccountIdentifier String harnessAccount) {
+    //    idpCommonService.checkUserAuthorization();
     List<BackstageEnvVariable> responseSecrets;
     try {
       responseSecrets = backstageEnvVariableService.createOrUpdate(body.getEnvVariables(), harnessAccount);
@@ -77,8 +80,8 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response deleteBackstageEnvVariable(String backstageEnvVariable, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  public Response deleteBackstageEnvVariable(String backstageEnvVariable, @AccountIdentifier String harnessAccount) {
+    //    idpCommonService.checkUserAuthorization();
     try {
       backstageEnvVariableService.delete(backstageEnvVariable, harnessAccount);
     } catch (Exception e) {
@@ -92,8 +95,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response deleteBackstageEnvVariables(List<String> backstageEnvVariables, String accountIdentifier) {
-    idpCommonService.checkUserAuthorization();
+  public Response deleteBackstageEnvVariables(
+      List<String> backstageEnvVariables, @AccountIdentifier String accountIdentifier) {
+    //    idpCommonService.checkUserAuthorization();
     try {
       backstageEnvVariableService.deleteMulti(backstageEnvVariables, accountIdentifier);
     } catch (Exception e) {
@@ -107,8 +111,8 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getBackstageEnvVariable(String backstageEnvVariable, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  public Response getBackstageEnvVariable(String backstageEnvVariable, @AccountIdentifier String harnessAccount) {
+    //    idpCommonService.checkUserAuthorization();
     Optional<BackstageEnvVariable> backstageEnvVariableOpt =
         backstageEnvVariableService.findByIdAndAccountIdentifier(backstageEnvVariable, harnessAccount);
     if (backstageEnvVariableOpt.isEmpty()) {
@@ -122,16 +126,17 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response getBackstageEnvVariables(String harnessAccount, Integer page, Integer limit, String sort) {
-    idpCommonService.checkUserAuthorization();
+  public Response getBackstageEnvVariables(
+      @AccountIdentifier String harnessAccount, Integer page, Integer limit, String sort) {
+    //    idpCommonService.checkUserAuthorization();
     List<BackstageEnvVariable> secrets = backstageEnvVariableService.findByAccountIdentifier(harnessAccount);
     return Response.status(Response.Status.OK).entity(BackstageEnvVariableMapper.toResponseList(secrets)).build();
   }
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response syncBackstageEnvVariables(String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  public Response syncBackstageEnvVariables(@AccountIdentifier String harnessAccount) {
+    //    idpCommonService.checkUserAuthorization();
     try {
       backstageEnvVariableService.findAndSync(harnessAccount);
     } catch (Exception e) {
@@ -145,9 +150,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
 
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response updateBackstageEnvVariable(
-      String backstageEnvVariableId, @Valid BackstageEnvVariableRequest request, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  public Response updateBackstageEnvVariable(String backstageEnvVariableId, @Valid BackstageEnvVariableRequest request,
+      @AccountIdentifier String harnessAccount) {
+    //    idpCommonService.checkUserAuthorization();
     try {
       BackstageEnvVariable backstageEnvVariable =
           backstageEnvVariableService.update(request.getEnvVariable(), harnessAccount);
@@ -163,8 +168,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
   @Override
   @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
-  public Response updateBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String accountIdentifier) {
-    idpCommonService.checkUserAuthorization();
+  public Response updateBackstageEnvVariables(
+      @Valid BackstageEnvVariableBatchRequest body, @AccountIdentifier String accountIdentifier) {
+    //    idpCommonService.checkUserAuthorization();
     try {
       List<BackstageEnvVariable> responseVariables =
           backstageEnvVariableService.createOrUpdate(body.getEnvVariables(), accountIdentifier);
