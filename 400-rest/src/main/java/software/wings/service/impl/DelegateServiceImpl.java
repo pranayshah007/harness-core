@@ -2767,7 +2767,6 @@ public class DelegateServiceImpl implements DelegateService {
   @VisibleForTesting
   Delegate upsertDelegateOperation(
       Delegate existingDelegate, Delegate delegate, DelegateSetupDetails delegateSetupDetails) {
-    long lastRecordedHeartBeat = existingDelegate != null ? existingDelegate.getLastHeartBeat() : 0L;
     long delegateHeartbeat = delegate.getLastHeartBeat();
     long now = now();
     long skew = Math.abs(now - delegateHeartbeat);
@@ -2827,10 +2826,9 @@ public class DelegateServiceImpl implements DelegateService {
 
     // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
     if (registeredDelegate != null) {
-      boolean isDelegateReconnectingAfterLongPause = now > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
+      boolean isDelegateReconnectingAfterLongPause = now() > (existingDelegate.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
       if (existingDelegate != null && isDelegateReconnectingAfterLongPause) {
-        log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(),
-            lastRecordedHeartBeat);
+        log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(), existingDelegate.getLastHeartBeat());
         subject.fireInform(DelegateObserver::onReconnected, delegate);
       }
     }
