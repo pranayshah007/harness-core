@@ -200,6 +200,8 @@ public class ActivityServiceImpl implements ActivityService {
             .filter(ActivityBucketKeys.orgIdentifier, activityBucket.getOrgIdentifier())
             .filter(ActivityBucketKeys.projectIdentifier, activityBucket.getProjectIdentifier())
             .filter(ActivityBucketKeys.monitoredServiceIdentifiers, activityBucket.getMonitoredServiceIdentifiers())
+            .filter(ActivityBucketKeys.type, activityBucket.getType())
+            .filter(ActivityKeys.validUntil, activityBucket.getBucketTime())
             .filter(ActivityBucketKeys.bucketTime, activityBucket.getBucketTime());
     UpdateOperations<ActivityBucket> updateOperations = hPersistence.createUpdateOperations(ActivityBucket.class);
     updateOperations.inc(ActivityBucketKeys.count);

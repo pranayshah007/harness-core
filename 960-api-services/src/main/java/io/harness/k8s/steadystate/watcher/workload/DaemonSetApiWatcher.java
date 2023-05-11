@@ -13,19 +13,19 @@ import static io.harness.k8s.steadystate.K8sSteadyStateConstants.WATCH_CALL_TIME
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.configuration.KubernetesCliCommandType;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
-import io.harness.k8s.KubernetesContainerServiceImpl;
-import io.harness.k8s.WorkloadDetails;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8ApiResponseDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
 import io.harness.k8s.steadystate.statusviewer.DaemonSetStatusViewer;
+import io.harness.k8s.steadystate.watcher.client.K8sWatchClient;
+import io.harness.k8s.steadystate.watcher.client.K8sWatchClientFactory;
 import io.harness.logging.LogCallback;
 import io.harness.supplier.ThrowingSupplier;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -37,54 +37,50 @@ import okhttp3.Call;
 @Singleton
 @Slf4j
 @OwnedBy(CDP)
-public class DaemonSetApiWatcher implements WorkloadWatcher {
+public class DaemonSetApiWatcher extends AbstractWorkloadWatcher {
   @Inject private DaemonSetStatusViewer statusViewer;
-  @Inject private KubernetesContainerServiceImpl kubernetesContainerService;
-  private static final Type v1DaemonSetType = new TypeToken<Watch.Response<V1DaemonSet>>() {}.getType();
+  @Inject private K8sWatchClientFactory watchClientFactory;
+  @VisibleForTesting static final Type v1DaemonSetType = new TypeToken<Watch.Response<V1DaemonSet>>() {}.getType();
 
   @Override
-  public boolean watchRolloutStatus(K8sStatusWatchDTO k8SStatusWatchDTO, KubernetesResourceId workload,
+  protected boolean watchRolloutStatusInternal(K8sStatusWatchDTO k8SStatusWatchDTO, KubernetesResourceId workload,
       LogCallback executionLogCallback) throws Exception {
-    return watchDaemonSetWithRetry(
-        k8SStatusWatchDTO.getApiClient(), workload, executionLogCallback, k8SStatusWatchDTO.isErrorFrameworkEnabled());
-  }
-
-  private boolean watchDaemonSetWithRetry(ApiClient apiClient, KubernetesResourceId workload,
-      LogCallback executionLogCallback, boolean errorFrameworkEnabled) throws Exception {
-    AppsV1Api appsV1Api = new AppsV1Api(apiClient);
-    WorkloadDetails workloadDetails =
-        new WorkloadDetails(v1DaemonSetType, apiClient, workload, executionLogCallback, errorFrameworkEnabled);
+    K8sWatchClient k8sWatchClient =
+        watchClientFactory.create(k8SStatusWatchDTO.getApiClient(), k8SStatusWatchDTO.getRetry());
+    AppsV1Api appsV1Api = new AppsV1Api(k8SStatusWatchDTO.getApiClient());
     ThrowingSupplier<Call> callSupplier = ()
         -> appsV1Api.listNamespacedDaemonSetCall(workload.getNamespace(), null, null, null, null, null, null, null,
             null, WATCH_CALL_TIMEOUT_SECONDS, true, null);
-    return kubernetesContainerService.<V1DaemonSet>watchRetriesWrapper(workloadDetails, callSupplier, event -> {
-      V1DaemonSet daemonSet = event.object;
-      V1ObjectMeta meta = daemonSet.getMetadata();
-      if (meta == null || workload.getName().equals(meta.getName())) {
-        switch (event.type) {
-          case "ADDED":
-          case "MODIFIED":
-            K8ApiResponseDTO rolloutStatus = statusViewer.extractRolloutStatus(daemonSet);
-            executionLogCallback.saveExecutionLog(rolloutStatus.getMessage());
-            if (rolloutStatus.isFailed()) {
-              if (errorFrameworkEnabled) {
-                throw new KubernetesCliTaskRuntimeException(
-                    rolloutStatus.getMessage(), KubernetesCliCommandType.STEADY_STATE_CHECK);
-              }
-              return false;
-            }
-            if (rolloutStatus.isDone()) {
-              return true;
-            }
-            break;
-          case "DELETED":
+    return k8sWatchClient.<V1DaemonSet>waitOnCondition(
+        v1DaemonSetType, callSupplier, event -> processEvent(event, workload, executionLogCallback));
+  }
+
+  private boolean processEvent(
+      Watch.Response<V1DaemonSet> event, KubernetesResourceId workload, LogCallback logCallback) {
+    V1DaemonSet daemonSet = event.object;
+    V1ObjectMeta meta = daemonSet.getMetadata();
+    if (meta == null || workload.getName().equals(meta.getName())) {
+      switch (event.type) {
+        case "ADDED":
+        case "MODIFIED":
+          K8ApiResponseDTO rolloutStatus = statusViewer.extractRolloutStatus(daemonSet);
+          logCallback.saveExecutionLog(rolloutStatus.getMessage());
+          if (rolloutStatus.isFailed()) {
             throw new KubernetesCliTaskRuntimeException(
-                "object has been deleted", KubernetesCliCommandType.STEADY_STATE_CHECK);
-          default:
-            log.warn(String.format("Unexpected k8s event type %s", event.type));
-        }
+                rolloutStatus.getMessage(), KubernetesCliCommandType.STEADY_STATE_CHECK);
+          }
+
+          if (rolloutStatus.isDone()) {
+            return true;
+          }
+          break;
+        case "DELETED":
+          throw new KubernetesCliTaskRuntimeException(
+              "object has been deleted", KubernetesCliCommandType.STEADY_STATE_CHECK);
+        default:
+          log.warn(String.format("Unexpected k8s event type %s", event.type));
       }
-      return false;
-    });
+    }
+    return false;
   }
 }

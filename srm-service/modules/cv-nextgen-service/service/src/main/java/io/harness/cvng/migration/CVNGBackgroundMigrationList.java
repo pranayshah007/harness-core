@@ -9,6 +9,7 @@ package io.harness.cvng.migration;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.migration.list.ActivityBucketCleanupAndMigration;
 import io.harness.cvng.migration.list.ActivityCleanupAndBucketMigration;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
@@ -140,6 +141,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(62, OrphanMonitoredServicesCleanup.class))
         .add(Pair.of(63, ActivityCleanupAndBucketMigration.class))
         .add(Pair.of(64, UpdateMSNotificationChangeCategoriesMigration.class))
+        .add(Pair.of(65, ActivityBucketCleanupAndMigration.class))
         .build();
   }
 }

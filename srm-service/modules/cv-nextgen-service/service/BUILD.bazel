@@ -38,6 +38,7 @@ shared_dependencies = [
     "//980-commons:module",
     "//clients/access-control/sdk:module",
     "//clients/pipeline-service/pms-sdk:module",
+    "//clients/template-service:module",
     "//srm-service/modules/cv-nextgen-service/contracts/api:module",
     "@maven//:com_fasterxml_jackson_core_jackson_annotations",
     "@maven//:com_fasterxml_jackson_core_jackson_core",

@@ -57,7 +57,7 @@ public class VmRunStepSerializer {
         RunTimeInputHandler.resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), false);
     String connectorIdentifier;
 
-    if (image.equals(NULL_STR)) {
+    if (isNotEmpty(image) && image.equals(NULL_STR)) {
       image = "";
     }
 

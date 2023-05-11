@@ -7,7 +7,7 @@
 FILES_WITHOUT_STMTS=()
 
 HARNESS_INC="Copyright [0-9]{4} Harness Inc. All rights reserved."
-EXCLUSION_LIST='\.pem\|\.tgz\|\.tpl\|\.lock\|\.helmignore\|\.mod\|\.sum\|\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|\.jfc\|\.MD\|\.factories\|project/bazelproject\|scripts/jenkins/bazelignore\|resources/mockito-extensions\|\.bazelignore\|\.datacollection\|\.tf\|\.ftl\|\.gitignore\|^\.'
+EXCLUSION_LIST='\.pem\|\.tgz\|\.tpl\|\.lock\|\.helmignore\|\.mod\|\.sum\|\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|\.jfc\|\.MD\|\.factories\|exclusion-file\|project/bazelproject\|scripts/jenkins/bazelignore\|resources/mockito-extensions\|\.bazelignore\|\.datacollection\|\.tf\|\.ftl\|\.gitignore\|^\.'
 
 MERGE_SUMMARY=($(git diff --name-only $COMMIT_SHA..$BASE_SHA | grep -v ${EXCLUSION_LIST}))
 

@@ -475,10 +475,10 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
                     "service.gitOpsEnabled", "artifacts.primary.connectorRef", "artifacts.primary.repositoryName",
                     "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.tag",
                     "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
-                    "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
-                    "artifacts.primary.dockerConfigJsonSecret", "artifacts.primary.registryHostname",
-                    "artifacts.primary.digest", "artifacts.primary.metadata", "artifacts.primary.label",
-                    "serviceVariables.envVar1", "serviceVariables.svar1"))
+                    "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePath",
+                    "artifacts.primary.imagePullSecret", "artifacts.primary.dockerConfigJsonSecret",
+                    "artifacts.primary.registryHostname", "artifacts.primary.digest", "artifacts.primary.metadata",
+                    "artifacts.primary.label", "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(
                 List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags", "env.environmentRef",
                     "env.variables.envVar1", "env.variables.svar1", "env.envGroupRef", "env.envGroupName"))

@@ -39,6 +39,8 @@ public enum Action {
   // START, END, PAUSE, RESUME, ABORT,TIMEOUT are used as PipelineExecution Actions
   START,
   END,
+  STAGE_START,
+  STAGE_END,
   PAUSE,
   RESUME,
   ABORT,

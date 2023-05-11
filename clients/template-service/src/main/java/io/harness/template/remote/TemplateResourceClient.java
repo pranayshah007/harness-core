@@ -26,7 +26,7 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
-import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
