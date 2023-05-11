@@ -64,6 +64,7 @@ import io.harness.ci.states.CIDelegateTaskExecutor;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIYAMLSanitizationService;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -264,7 +265,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
         AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
-    populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
@@ -398,9 +398,12 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
+
     if (EmptyPredicate.isEmpty(principal)) {
       return;
     }
+
+    populateStrategyExpansion(initializeStepInfo, ambiance);
 
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
@@ -585,6 +588,13 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     initializeStepInfo.setExecutionElementConfig(
         ExecutionElementConfig.builder().steps(expandedExecutionElement).build());
+    IntegrationStageConfigImpl integrationStageConfigImpl =
+        (IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig();
+    integrationStageConfigImpl.setExecution(ExecutionElementConfig.builder()
+                                                .uuid(integrationStageConfigImpl.getExecution().getUuid())
+                                                .steps(expandedExecutionElement)
+                                                .build());
+    initializeStepInfo.setStageElementConfig(integrationStageConfigImpl);
     initializeStepInfo.setStrategyExpansionMap(strategyExpansionMap);
   }
 
