@@ -774,6 +774,7 @@ import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
+import io.harness.delegate.task.k8s.K8sBlueGreenStageScaleDownRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeleteRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
@@ -2487,5 +2488,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionGenOneRollbackRequest.class, 1800007);
     kryo.register(GoogleFunctionGenOneRollbackResponse.class, 1800008);
     kryo.register(ServiceHookDelegateConfig.class, 10000527);
+    kryo.register(K8sBlueGreenStageScaleDownRequest.class, 680032);
   }
 }
