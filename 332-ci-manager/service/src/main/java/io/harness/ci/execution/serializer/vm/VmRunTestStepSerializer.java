@@ -9,6 +9,7 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -66,7 +67,7 @@ public class VmRunTestStepSerializer {
     }
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, runTestsStepInfo.getImage(), false);
-    if (image.equals(NULL_STR)) {
+    if (isNotEmpty(image) && image.equals(NULL_STR)) {
       image = "";
     }
     String connectorIdentifier;
