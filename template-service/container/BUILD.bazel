@@ -25,12 +25,12 @@ pkg_tar(
     name = "files",
     srcs = [
         "//400-rest/src/main/resources:redisson-jcache.yaml",
-        "//840-template-service:config.yml",
-        "//840-template-service:keystore.jks",
+        "//template-service:config.yml",
+        "//template-service:keystore.jks",
     ],
     files = {
         "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
-        "//840-template-service:module_deploy.jar": "template-service-capsule.jar",
+        "//template-service:module_deploy.jar": "template-service-capsule.jar",
     },
     mode = "0600",
     owner = "65534.65534",

@@ -14,7 +14,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//840-template-service/contracts/openapi/v1:template-server-spec-module",
+        "//template-service/contracts/openapi/v1:template-server-spec-module",
         "//878-ng-common-utilities:module",
         "//900-git-sync-sdk:module",
         "//960-ng-core-beans:module",

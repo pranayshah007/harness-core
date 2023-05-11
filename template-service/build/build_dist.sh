@@ -20,14 +20,14 @@ fi
 
 BAZEL_BIN="${HOME}/.bazel-dirs/bin"
 
-cp ${BAZEL_BIN}/840-template-service/module_deploy.jar template-service-capsule.jar
-cp ../../840-template-service/config.yml .
+cp ${BAZEL_BIN}/template-service/module_deploy.jar template-service-capsule.jar
+cp ../../template-service/config.yml .
 cp ../../keystore.jks .
-cp ../../840-template-service/key.pem .
-cp ../../840-template-service/cert.pem .
-cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
-cp ../../840-template-service/src/main/resources/jfr/default.jfc .
-cp ../../840-template-service/src/main/resources/jfr/profile.jfc .
+cp ../../template-service/key.pem .
+cp ../../template-service/cert.pem .
+cp ../../template-service/src/main/resources/redisson-jcache.yaml .
+cp ../../template-service/src/main/resources/jfr/default.jfc .
+cp ../../template-service/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
