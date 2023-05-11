@@ -174,6 +174,9 @@ public class PollingResponseHandler {
     // If polled response is null, it means it was first time collecting output from perpetual task
     // There is no need to publish collected new keys in this case.
     if (savedResponse == null) {
+      log.info("This is a first time collecting output for artifacts from perpetual task {} and accountId {}. "
+              + "Polled keys are not published",
+          pollingDocument.getPerpetualTaskId(), accountId);
       pollingService.updatePolledResponse(accountId, pollDocId,
           ArtifactPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedArtifactKeys)).build());
       return;
@@ -236,6 +239,7 @@ public class PollingResponseHandler {
         polledItemPublisher.publishPolledItems(
             PollingResponse.newBuilder()
                 .setAccountId(pollingDocument.getAccountId())
+                .setPollingDocId(pollingDocument.getUuid())
                 .setBuildInfo(BuildInfo.newBuilder()
                                   .setName(polledResponseResult.getName())
                                   .addAllMetadata(metaDataList)
@@ -248,6 +252,7 @@ public class PollingResponseHandler {
     } else {
       polledItemPublisher.publishPolledItems(PollingResponse.newBuilder()
                                                  .setAccountId(pollingDocument.getAccountId())
+                                                 .setPollingDocId(pollingDocument.getUuid())
                                                  .setBuildInfo(BuildInfo.newBuilder()
                                                                    .setName(polledResponseResult.getName())
                                                                    .addAllMetadata(newArtifactsMetadata)
@@ -271,7 +276,7 @@ public class PollingResponseHandler {
     // If polled response is null, it means it was first time collecting output from perpetual task
     // There is no need to publish collected new keys in this case.
     if (savedResponse == null) {
-      log.info("This is a first time collecting output from perpetual task {} and accountId {}. "
+      log.info("This is a first time collecting output for gitpolling from perpetual task {} and accountId {}. "
               + "Polled keys are not published",
           pollingDocument.getPerpetualTaskId(), accountId);
 
@@ -342,6 +347,9 @@ public class PollingResponseHandler {
     // If polled response is null, it means it was first time collecting output from perpetual task
     // There is no need to publish collected new versions in this case.
     if (savedResponse == null) {
+      log.info("This is a first time collecting output for manifests from perpetual task {} and accountId {}. "
+              + "Polled keys are not published",
+          pollingDocument.getPerpetualTaskId(), accountId);
       pollingService.updatePolledResponse(accountId, pollDocId,
           ManifestPolledResponse.builder().allPolledKeys(new HashSet<>(unpublishedManifests)).build());
       return;
