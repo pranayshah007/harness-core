@@ -77,7 +77,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @NextGenManagerAuth
-@Hidden
 @Api("/serviceOverrides")
 @Hidden
 @Path("/serviceOverrides")
