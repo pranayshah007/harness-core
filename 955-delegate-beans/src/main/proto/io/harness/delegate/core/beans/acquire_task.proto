@@ -11,9 +11,37 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.
 
 option java_multiple_files = true;
 
+message AcquireTasksResponse {
+  repeated TaskDescriptor tasks = 1;
+}
+
 /*
   Top level request object for acquiring tasks
  */
-message AcquireTasksResponse {
-  repeated TaskDescriptor tasks = 1;
+message AcquireRequestResponse {
+  // There will be only one payload per request at current stage of implementation.
+  // But it's always good to keep API definition plural for future extensibility.
+  repeated RequestPayload payloads = 1;
+}
+
+/*
+ All data that is needed to execute the job
+ */
+message RequestPayload {
+  string id = 1;  // Id for the request.
+
+  // specifies the resource and method delegate will take actions about
+  // With new architecture, we will bring two concepts as first class in delegate
+  // 1. initializing an execution infrastructure 2. executing steps
+  // When delegate acquires a RequestPayload, based on the resourceUri and resourceMethod it will invoke corresponding
+  // handler to process the payload. For example, when delegate receives POST /executioninfrastructure/{runnerType},
+  // delegate will invoke the handler of creating an execution infra. When delegate receives POST /task/{runnerType},
+  // delegate will invoke the handler of executing a task, in which it will call the corresponding runner's API to
+  // execute the task.
+  string resourceUri = 2;
+  string resourceMethod = 3;
+
+  string callback_token = 4;  // Token for sending notify event to the service that initiated a task
+  InputData task_data = 5;    // binary data for tasks.
+  InputData infra_data = 6;   // binary data for runner.
 }
