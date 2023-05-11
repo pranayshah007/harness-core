@@ -19,6 +19,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,6 +34,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Data
 @Builder
@@ -71,5 +73,13 @@ public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements 
         .delegateSelectors(delegateSelectors)
         .assumeCredentialsOnDelegate(assumeCredentialsOnDelegate)
         .build();
+  }
+
+  @Override
+  public void validate() {
+    if (BooleanUtils.isTrue(assumeCredentialsOnDelegate)) {
+      Preconditions.checkNotNull(this.delegateSelectors, "delegateSelectors cannot be null");
+      Preconditions.checkState(this.delegateSelectors.size() > 0, "delegateSelectors cannot be empty");
+    }
   }
 }
