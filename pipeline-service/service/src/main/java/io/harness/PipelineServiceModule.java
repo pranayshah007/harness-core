@@ -109,7 +109,6 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetServiceImpl;
 import io.harness.pms.opa.service.PMSOpaService;
 import io.harness.pms.opa.service.PMSOpaServiceImpl;
-import io.harness.pms.outbox.NodeExecutionOutboxEventPublisher;
 import io.harness.pms.outbox.PMSOutboxEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineResource;
@@ -501,8 +500,6 @@ public class PipelineServiceModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.TRIGGER).to(TriggerOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE).to(PipelineOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.INPUT_SET).to(PipelineOutboxEventHandler.class);
-    outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE_EXECUTION)
-        .to(NodeExecutionOutboxEventPublisher.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
