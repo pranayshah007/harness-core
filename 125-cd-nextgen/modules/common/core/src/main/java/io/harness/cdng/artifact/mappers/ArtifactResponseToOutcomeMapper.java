@@ -529,6 +529,7 @@ public class ArtifactResponseToOutcomeMapper {
     return ArtifactoryArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .image(getImageValue(artifactDelegateResponse))
+        .imagePath(artifactConfig.getArtifactPath().getValue())
         .connectorRef(artifactConfig.getConnectorRef().getValue())
         .artifactPath(artifactConfig.getArtifactPath().getValue())
         .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
