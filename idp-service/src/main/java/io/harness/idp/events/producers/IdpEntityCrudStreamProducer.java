@@ -27,11 +27,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(IDP)
-public class IdpProducer {
+public class IdpEntityCrudStreamProducer {
   private final Producer eventProducer;
 
   @Inject
-  public IdpProducer(@Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer) {
+  public IdpEntityCrudStreamProducer(@Named(EventsFrameworkConstants.ENTITY_CRUD) Producer eventProducer) {
     this.eventProducer = eventProducer;
   }
 

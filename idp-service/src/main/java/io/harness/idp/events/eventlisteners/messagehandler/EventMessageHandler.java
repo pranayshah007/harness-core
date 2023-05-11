@@ -10,8 +10,6 @@ package io.harness.idp.events.eventlisteners.messagehandler;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 
-import java.util.concurrent.ExecutionException;
-
 public interface EventMessageHandler {
-  void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws ExecutionException;
+  void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws Exception;
 }

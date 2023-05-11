@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -71,7 +70,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws ExecutionException {
+  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws Exception {
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     String connectorIdentifier = entityChangeDTO.getIdentifier().getValue();
     Optional<CatalogConnectorEntity> catalogConnector =
@@ -95,15 +94,11 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   @Override
   public void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
-      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) {
-    try {
-      createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
-      String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
-      createOrUpdateConnectorConfigEnvVariable(accountIdentifier, host, catalogConnectorEntityType);
-      createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
-    } catch (Exception e) {
-      log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
-    }
+      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) throws Exception {
+    createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+    createOrUpdateConnectorConfigEnvVariable(accountIdentifier, host, catalogConnectorEntityType);
+    createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
   }
 
   @VisibleForTesting
@@ -142,7 +137,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   @Override
   public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
-      throws ExecutionException {
+      throws Exception {
     connectorDetails.setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(connectorDetails.getIdentifier()));
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
@@ -188,17 +183,14 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     appConfig.setConfigs(integrationConfigs);
     appConfig.setEnabled(true);
 
-    try {
-      configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
-      configManagerService.mergeAndSaveAppConfig(accountIdentifier);
-    } catch (Exception e) {
-      log.error(e.getMessage());
-    }
+    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
+    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+
     log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
   }
 
-  private CatalogConnectorEntity saveOrUpdateConnector(ConnectorInfoDTO connectorInfoDTO, String accountIdentifier,
-      String catalogInfraConnectorType) throws ExecutionException {
+  private CatalogConnectorEntity saveOrUpdateConnector(
+      ConnectorInfoDTO connectorInfoDTO, String accountIdentifier, String catalogInfraConnectorType) throws Exception {
     Set<String> delegateSelectors = GitIntegrationUtils.extractDelegateSelectors(connectorInfoDTO);
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity =

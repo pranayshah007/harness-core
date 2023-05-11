@@ -21,6 +21,7 @@ import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.spec.server.idp.v1.model.BackstageEnvConfigVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
@@ -28,7 +29,6 @@ import io.harness.spec.server.idp.v1.model.CatalogConnectorInfo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.math3.util.Pair;
 
 @OwnedBy(HarnessTeam.IDP)
 public class BitbucketConnectorProcessor extends ConnectorProcessor {
@@ -66,6 +66,11 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
 
     Map<String, BackstageEnvVariable> secrets = new HashMap<>();
 
+    secrets.put(Constants.BITBUCKET_CLOUD_USERNAME,
+        new BackstageEnvConfigVariable()
+            .value(spec.getUsername())
+            .envName(Constants.BITBUCKET_CLOUD_USERNAME)
+            .type(BackstageEnvVariable.TypeEnum.CONFIG));
     secrets.put(Constants.BITBUCKET_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(pwdSecretIdentifier, Constants.BITBUCKET_TOKEN));
     return secrets;
