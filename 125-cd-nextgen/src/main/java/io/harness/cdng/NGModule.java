@@ -13,6 +13,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.STAGE_
 
 import io.harness.WalkTreeModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceService;
 import io.harness.cdng.artifact.resources.acr.service.AcrResourceServiceImpl;
 import io.harness.cdng.artifact.resources.ami.AMIResourceService;
@@ -70,6 +71,7 @@ import io.harness.cdng.manifest.resources.HelmChartService;
 import io.harness.cdng.manifest.resources.HelmChartServiceImpl;
 import io.harness.cdng.plugininfoproviders.AwsSamBuildPluginInfoProvider;
 import io.harness.cdng.plugininfoproviders.AwsSamDeployPluginInfoProvider;
+import io.harness.cdng.plugininfoproviders.GitClonePluginInfoProvider;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.provision.terraformcloud.executiondetails.TerraformCloudPlanExecutionDetailsService;
@@ -83,6 +85,7 @@ import io.harness.cdng.tas.service.TasResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
+import io.harness.ci.serializer.ProtobufStepSerializer;
 import io.harness.filter.FilterType;
 import io.harness.filter.impl.FilterServiceImpl;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -101,15 +104,24 @@ import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.service.services.impl.ServiceSequenceServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
+import io.harness.plugin.CdPluginCompatibleSerializer;
+import io.harness.plugin.service.BasePluginCompatibleSerializer;
+import io.harness.plugin.service.K8InitializeServiceImpl;
+import io.harness.plugin.service.K8sInitializeService;
+import io.harness.plugin.service.PluginService;
+import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instance.InstanceServiceImpl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -195,5 +207,12 @@ public class NGModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), new TypeLiteral<>() {});
     pluginInfoProviderMultibinder.addBinding().to(AwsSamDeployPluginInfoProvider.class);
     pluginInfoProviderMultibinder.addBinding().to(AwsSamBuildPluginInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(GitClonePluginInfoProvider.class);
+
+    bind(new TypeLiteral<ProtobufStepSerializer<PluginCompatibleStep>>() {
+    }).toInstance(new CdPluginCompatibleSerializer());
+    bind(K8sInitializeService.class).to(K8InitializeServiceImpl.class);
+    bind(PluginService.class).to(PluginServiceImpl.class);
+    bind(BasePluginCompatibleSerializer.class).to(CdPluginCompatibleSerializer.class);
   }
 }

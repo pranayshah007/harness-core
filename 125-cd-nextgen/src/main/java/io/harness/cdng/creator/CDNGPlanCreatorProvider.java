@@ -257,6 +257,7 @@ import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntDestroySte
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntPlanStepVariableCreator;
 import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntRollbackStepVariableCreator;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.ci.plancreator.GitCloneStepPlanCreator;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -486,6 +487,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new AwsSamDeployStepPlanCreator());
     planCreators.add(new AwsSamBuildStepPlanCreator());
     planCreators.add(new AwsSamRollbackStepPlanCreator());
+    planCreators.add(new GitCloneStepPlanCreator());
 
     planCreators.add(new K8sBGStageScaleDownStepPlanCreator());
 
