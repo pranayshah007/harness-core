@@ -125,8 +125,7 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
           triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
 
         } else {
-          if (validationStatus != null && webhookAutoRegistrationStatus != null && pollingSubscriptionStatus != null
-              && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.SUCCESS)
+          if (validationStatus != null && webhookAutoRegistrationStatus != null
               && validationStatus.getStatusResult().equals(StatusResult.SUCCESS)
               && webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.SUCCESS)) {
             triggerStatus.setStatus(StatusResult.SUCCESS);
@@ -135,9 +134,6 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
 
             if (validationStatus != null && validationStatus.getStatusResult().equals(StatusResult.FAILED)) {
               triggerStatus.setDetailedMessage(validationStatus.getDetailedMessage());
-            } else if (pollingSubscriptionStatus != null
-                && pollingSubscriptionStatus.getStatusResult().equals(StatusResult.FAILED)) {
-              triggerStatus.setDetailedMessage(pollingSubscriptionStatus.getDetailedMessage());
             } else if (webhookAutoRegistrationStatus != null
                     && webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.FAILED)
                 || webhookAutoRegistrationStatus.getRegistrationResult().equals(WebhookRegistrationStatus.ERROR)
