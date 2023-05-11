@@ -16,6 +16,7 @@ import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.Consumes;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -41,6 +42,7 @@ public interface InstanceSyncResourceClient {
       @NotNull @Body InstanceSyncResponseV2 instanceSyncResponseV2);
 
   @GET(INSTANCE_SYNC + "/task/{perpetualTaskId}/details")
+  @Consumes({"application/x-protobuf"})
   Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
       @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId);
