@@ -2558,7 +2558,8 @@ public class DelegateServiceImpl implements DelegateService {
     final String hostName = ECS.equals(delegateParams.getDelegateType())
         ? getHostNameToBeUsedForECSDelegate(delegateParams.getHostName(), delegateParams.getSequenceNum())
         : delegateParams.getHostName();
-    log.info("Sequence num received {}, host name received {}", delegateParams.getSequenceNum(), delegateParams.getHostName());
+    log.info("Sequence num received {}, host name received {}", delegateParams.getSequenceNum(),
+        delegateParams.getHostName());
     log.info("Host name look for ECS DELEGATE {}", hostName);
 
     final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), hostName,
@@ -2827,8 +2828,9 @@ public class DelegateServiceImpl implements DelegateService {
     // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
     if (registeredDelegate != null) {
       boolean isDelegateReconnectingAfterLongPause = now > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
-      if (isDelegateReconnectingAfterLongPause) {
-        log.info("Delegate {} reconnecting after long pause.", registeredDelegate.getUuid());
+      if (existingDelegate != null && isDelegateReconnectingAfterLongPause) {
+        log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(),
+            lastRecordedHeartBeat);
         subject.fireInform(DelegateObserver::onReconnected, delegate);
       }
     }
