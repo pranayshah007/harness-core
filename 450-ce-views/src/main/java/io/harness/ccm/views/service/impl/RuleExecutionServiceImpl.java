@@ -8,6 +8,8 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
+import static io.harness.ccm.views.helper.RuleCostType.POTENTIAL;
+import static io.harness.ccm.views.helper.RuleCostType.REALIZED;
 import static io.harness.ccm.views.helper.RuleExecutionType.INTERNAL;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
@@ -153,8 +155,10 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   public Map<String, Double> getResourcePotentialCost(String accountId, RuleExecutionFilter ruleExecutionFilter) {
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
-                            .and(RuleExecutionKeys.potentialSavings)
+                            .and(RuleExecutionKeys.cost)
                             .ne(null)
+                            .and(RuleExecutionKeys.costType)
+                            .is(POTENTIAL)
                             .and(RuleExecutionKeys.executionType)
                             .is(INTERNAL);
     if (ruleExecutionFilter.getTime() != null) {
@@ -170,7 +174,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     }
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation group =
-        group(RuleExecutionKeys.resourceType).sum(RuleExecutionKeys.potentialSavings).as(ResourceTypeCostKey.cost);
+        group(RuleExecutionKeys.resourceType).sum(RuleExecutionKeys.cost).as(ResourceTypeCostKey.cost);
     ProjectionOperation projectionStage =
         project().and(MONGODB_ID).as(ResourceTypeCostKey.resourceName).andInclude(ResourceTypeCostKey.cost);
     SortOperation sortStage = sort(Sort.by(ResourceTypeCostKey.cost));
@@ -187,8 +191,10 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   public List<Map> getResourceActualCost(String accountId, RuleExecutionFilter ruleExecutionFilter) {
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
-                            .and(RuleExecutionKeys.realizedSavings)
+                            .and(RuleExecutionKeys.cost)
                             .ne(null)
+                            .and(RuleExecutionKeys.costType)
+                            .is(REALIZED)
                             .and(RuleExecutionKeys.executionType)
                             .ne(INTERNAL);
     if (ruleExecutionFilter.getTime() != null) {
@@ -208,9 +214,9 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
                                                   + "$createdAt"
                                                   + "))")
                                               .as("formatted_day")
-                                              .andInclude("realizedSavings");
+                                              .andInclude("cost");
 
-    GroupOperation group = Aggregation.group("formatted_day").sum("realizedSavings").as("cost");
+    GroupOperation group = Aggregation.group("formatted_day").sum("cost").as("cost");
     AggregationOperation[] stages = {matchStage, projectionStage, group};
     Aggregation aggregation = Aggregation.newAggregation(stages);
     List<Map> result = mongoTemplate.aggregate(aggregation, "governanceRuleExecution", Map.class).getMappedResults();

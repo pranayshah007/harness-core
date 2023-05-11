@@ -57,6 +57,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,12 +76,13 @@ public class GovernanceRecommendationService {
   @Autowired BatchMainConfig configuration;
   private static final String DEFAULT_TIMEZONE = "GMT";
 
-  public void generateRecommendation() {
+  public void generateRecommendation() throws InterruptedException {
     // get all ce enabled accounts
     List<String> getAccounts = accountShardService.getCeEnabledAccountIds();
     for (String account : getAccounts) {
       log.info("generateRecommendationForAccount: {}", account);
       generateRecommendationForAccount(account);
+      TimeUnit.MINUTES.sleep(configuration.getGovernanceConfig().getSleepTime());
     }
   }
 

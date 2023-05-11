@@ -74,8 +74,7 @@ public class RuleExecutionDAO {
     query.and(criteria, query.criteria(RuleExecutionKeys.accountId).equal(ruleExecutionFilter.getAccountId()));
     if (ruleExecutionFilter.getSavings() != null) {
       CriteriaContainer criteriaSort =
-          query.or(query.criteria(RuleExecutionKeys.realizedSavings).greaterThanOrEq(ruleExecutionFilter.getSavings()),
-              query.criteria(RuleExecutionKeys.potentialSavings).greaterThanOrEq(ruleExecutionFilter.getSavings()));
+          query.criteria(RuleExecutionKeys.cost).greaterThanOrEq(ruleExecutionFilter.getSavings());
       query.and(criteriaSort);
     }
     if (ruleExecutionFilter.getTargetAccount() != null) {
@@ -120,7 +119,7 @@ public class RuleExecutionDAO {
     if (ruleExecutionFilter.getSortByCost() != null && ruleExecutionFilter.getSortByCost()) {
       ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
                                              .offset(ruleExecutionFilter.getOffset())
-                                             .order(Sort.descending(RuleExecutionKeys.potentialSavings))
+                                             .order(Sort.descending(RuleExecutionKeys.cost))
                                              .asList());
     } else {
       ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
