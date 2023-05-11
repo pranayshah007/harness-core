@@ -29,6 +29,7 @@ container_run_and_commit_layer(
     name = "grpc_health_probe_layer",
     commands = [
         "wget https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/v0.3.0/grpc_health_probe-linux-amd64 -O /bin/grpc_health_probe",
+        "wget https://github.com/mikefarah/yq/releases/download/v4.33.2/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq",
         "chmod 755 /bin/grpc_health_probe",
     ],
     image = "@openjdk_8u242//image",
