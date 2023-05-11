@@ -8,9 +8,12 @@
 package io.harness.ccm.views.dao;
 import static io.harness.persistence.HQuery.excludeValidate;
 
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
+import io.harness.ccm.views.entities.RuleRecommendation;
+import io.harness.ccm.views.entities.RuleRecommendation.RuleRecommendationId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.OverviewExecutionDetails;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
@@ -24,7 +27,9 @@ import dev.morphia.query.CriteriaContainer;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.List;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 
 @Slf4j
 @Singleton
@@ -134,5 +139,13 @@ public class RuleExecutionDAO {
         ruleDAO.list(GovernanceRuleFilter.builder().accountId(accountId).build()).getRules().size());
     overviewExecutionDetails.setTotalRuleEnforcements(ruleEnforcementDAO.list(accountId).size());
     return overviewExecutionDetails;
+  }
+  public void updateJiraInGovernanceRecommendation(
+      @NonNull String accountId, @NonNull String id, CCMJiraDetails jiraDetails) {
+    hPersistence.upsert(hPersistence.createQuery(RuleRecommendation.class)
+                            .filter(RuleRecommendationId.accountId, accountId)
+                            .filter(RuleRecommendationId.uuid, new ObjectId(id)),
+        hPersistence.createUpdateOperations(RuleRecommendation.class)
+            .set(RuleRecommendationId.jiraDetails, jiraDetails));
   }
 }

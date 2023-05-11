@@ -267,4 +267,13 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
         RuleExecutionFilter.builder().executionIds(executionIds).accountId(accountId).build();
     return rulesExecutionDAO.filterExecutionInternal(ruleExecutionFilter);
   }
+
+  @Override
+  public RuleRecommendation getRuleRecommendation(String ruleRecommendationId, String accountId) {
+    MatchOperation match = Aggregation.match(Criteria.where("_id").is(ruleRecommendationId));
+    Aggregation aggregation = Aggregation.newAggregation(match);
+    return mongoTemplate.aggregate(aggregation, "governanceRecommendation", RuleRecommendation.class)
+        .getMappedResults()
+        .get(0);
+  }
 }
