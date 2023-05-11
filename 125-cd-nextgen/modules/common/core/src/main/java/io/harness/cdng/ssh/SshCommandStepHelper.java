@@ -36,6 +36,8 @@ import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -44,6 +46,7 @@ import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.rollback.CommandStepRollbackHelper;
+import io.harness.cdng.ssh.rollback.SshWinRmPrepareRollbackDataOutcome;
 import io.harness.cdng.ssh.rollback.SshWinRmRollbackData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -80,6 +83,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -192,6 +196,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       return createRollbackSshTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     } else {
+      prepareSshWinRmRollbackData(ambiance);
       return createSshTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     }
   }
@@ -208,6 +213,7 @@ public class SshCommandStepHelper extends CDStepHelper {
     if (commandStepParameters.isRollback) {
       return createRollbackWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     } else {
+      prepareSshWinRmRollbackData(ambiance);
       return createWinRmTaskParameters(ambiance, commandStepParameters, mergedEnvVariables, delegateConfig);
     }
   }
@@ -308,7 +314,8 @@ public class SshCommandStepHelper extends CDStepHelper {
       SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput) {
     // Rollback Logic
     // Get the rollback data from the latest successful deployment, getting it from DB.
-    SshWinRmRollbackData sshWinRmRollbackData = getSshWinRmRollbackData(ambiance, mergedEnvVariables);
+    SshWinRmRollbackData sshWinRmRollbackData =
+        getSshWinRmRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     return SshCommandTaskParameters.builder()
         .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -356,7 +363,8 @@ public class SshCommandStepHelper extends CDStepHelper {
       WinRmInfraDelegateConfigOutput winRmInfraDelegateConfigOutput) {
     // Rollback Logic
     // Get the rollback data from the latest successful deployment, getting it from DB.
-    SshWinRmRollbackData sshWinRmRollbackData = getSshWinRmRollbackData(ambiance, mergedEnvVariables);
+    SshWinRmRollbackData sshWinRmRollbackData =
+        getSshWinRmRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     Boolean onDelegate = getBooleanParameterFieldValue(commandStepParameters.onDelegate);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     return WinrmTaskParameters.builder()
@@ -379,11 +387,12 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private SshWinRmRollbackData getSshWinRmRollbackData(Ambiance ambiance, Map<String, String> mergedEnvVariables) {
+  private SshWinRmRollbackData getSshWinRmRollbackData(
+      Ambiance ambiance, Map<String, String> mergedEnvVariables, CommandStepParameters commandStepParameters) {
     String stageExecutionId = ambiance.getStageExecutionId();
     log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
     Optional<SshWinRmRollbackData> rollbackData =
-        commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables);
+        commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     if (!rollbackData.isPresent()) {
       log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
       throw new SkipRollbackException("Not found previous successful rollback data, hence skipping rollback");
@@ -391,6 +400,27 @@ public class SshCommandStepHelper extends CDStepHelper {
 
     log.info("Found rollback data in DB, stageExecutionId: {}", stageExecutionId);
     return rollbackData.get();
+  }
+
+  void prepareSshWinRmRollbackData(Ambiance ambiance) {
+    ExecutionInfoKey executionInfoKey = commandStepRollbackHelper.getExecutionInfoKey(ambiance);
+    Optional<StageExecutionInfo> stageExecutionInfo =
+        commandStepRollbackHelper.getLatestSuccessfulStageExecutionInfo(ambiance, executionInfoKey);
+
+    if (stageExecutionInfo.isPresent() && stageExecutionInfo.get().getExecutionDetails() != null) {
+      log.info("Found rollback executionDetails, stageExecutionId: {}, stageExecutionInfoId: {}",
+          ambiance.getStageExecutionId(), stageExecutionInfo.get().getUuid());
+
+      SshWinRmPrepareRollbackDataOutcome sshWinRmPrepareRollbackDataOutcome =
+          SshWinRmPrepareRollbackDataOutcome.builder()
+              .executionInfoKey(executionInfoKey)
+              .stageExecutionInfoId(stageExecutionInfo.get().getUuid())
+              .build();
+
+      executionSweepingOutputService.consume(ambiance,
+          OutcomeExpressionConstants.SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME, sshWinRmPrepareRollbackDataOutcome,
+          StepOutcomeGroup.STEP.name());
+    }
   }
 
   @Nullable
