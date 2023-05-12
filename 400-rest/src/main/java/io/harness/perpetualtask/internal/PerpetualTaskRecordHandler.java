@@ -9,12 +9,12 @@ package io.harness.perpetualtask.internal;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
-import static io.harness.microservice.NotifyEngineTarget.GENERAL;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
+import static io.harness.perpetualtask.PerpetualTaskType.CONTAINER_INSTANCE_SYNC;
 
+import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
 
@@ -25,14 +25,18 @@ import io.harness.beans.DelegateTask;
 import io.harness.delegate.Capability;
 import io.harness.delegate.DelegateTaskValidationFailedException;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskInvalidRequestException;
+import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.NoInstalledDelegatesException;
+import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.utils.DelegateTaskMigrationHelper;
 import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorPumpAndRedisModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
@@ -50,11 +54,11 @@ import io.harness.perpetualtask.PerpetualTaskState;
 import io.harness.perpetualtask.PerpetualTaskUnassignedReason;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord.PerpetualTaskRecordKeys;
 import io.harness.serializer.KryoSerializer;
-import io.harness.waiter.WaitNotifyEngine;
 import io.harness.workers.background.CrossEnvironmentAccountStatusBasedEntityProcessController;
 
 import software.wings.beans.TaskType;
 import software.wings.service.InstanceSyncConstants;
+import software.wings.service.impl.PerpetualTaskCapabilityCheckResponse;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;
@@ -79,8 +83,6 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
   @Inject private AccountService accountService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
-  @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
   private static final Duration ACCEPTABLE_EXECUTION_TIME = ofSeconds(30);
@@ -160,11 +162,56 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
         return;
       }
       try {
-        waitNotifyEngine.waitForAllOn(GENERAL,
-            new PerpetualTaskValidationCallback(taskRecord.getAccountId(), taskId, validationTask.getUuid()),
-            validationTask.getWaitId());
-        delegateService.queueTaskV2(validationTask);
-        perpetualTaskRecordDao.updateTaskProcessed(taskId, taskRecord.getAssignTryCount());
+        DelegateResponseData response = delegateService.executeTaskV2(validationTask);
+
+        if (response instanceof ErrorNotifyResponseData) {
+          log.info("Perpetual validation task {} failed, unable to assign delegate.", validationTask.getUuid());
+          if (CONTAINER_INSTANCE_SYNC.equals(taskRecord.getPerpetualTaskType())) {
+            perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
+                PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE,
+                ((ErrorNotifyResponseData) response).getErrorMessage());
+          } else {
+            perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
+                PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID,
+                ((ErrorNotifyResponseData) response).getErrorMessage());
+          }
+          return;
+        }
+
+        if (response instanceof DelegateTaskNotifyResponseData) {
+          if (response instanceof PerpetualTaskCapabilityCheckResponse) {
+            boolean isAbleToExecutePerpetualTask =
+                ((PerpetualTaskCapabilityCheckResponse) response).isAbleToExecutePerpetualTask();
+            if (!isAbleToExecutePerpetualTask) {
+              perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
+                  PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE,
+                  "Unable to execute task");
+              return;
+            }
+          }
+          if (((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo() != null) {
+            String delegateId = ((DelegateTaskNotifyResponseData) response).getDelegateMetaInfo().getId();
+            log.info("Delegate {} is assigned to the inactive {} perpetual task with id={}.", delegateId,
+                taskRecord.getPerpetualTaskType(), taskId);
+            perpetualTaskService.appointDelegate(
+                taskRecord.getAccountId(), taskId, delegateId, System.currentTimeMillis());
+          } else {
+            log.info("Perpetual validation task {} unable to assign delegate due to missing DelegateMetaInfo.",
+                validationTask.getUuid());
+            perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
+                PerpetualTaskUnassignedReason.NO_DELEGATE_AVAILABLE, PerpetualTaskState.TASK_INVALID,
+                "Unable to assign to any delegates");
+          }
+        } else if ((response instanceof RemoteMethodReturnValueData)
+            && (((RemoteMethodReturnValueData) response).getException() instanceof InvalidRequestException)) {
+          perpetualTaskRecordDao.updateTaskStateNonAssignableReason(taskId,
+              PerpetualTaskUnassignedReason.PT_TASK_FAILED, taskRecord.getAssignTryCount(),
+              PerpetualTaskState.TASK_NON_ASSIGNABLE);
+          log.error("Invalid request exception: ", ((RemoteMethodReturnValueData) response).getException());
+        } else {
+          log.error(format(
+              "Assignment for perpetual task id=%s got unexpected delegate response %s", taskId, response.toString()));
+        }
       } catch (NoInstalledDelegatesException exception) {
         ignoredOnPurpose(exception);
         perpetualTaskRecordDao.updateTaskStateNonAssignableReason(taskId,
@@ -239,17 +286,15 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
     }
 
     return DelegateTask.builder()
-        .uuid(delegateTaskMigrationHelper.generateDelegateTaskUUID())
         .executionCapabilities(executionCapabilityList)
         .accountId(taskRecord.getAccountId())
         .data(TaskData.builder()
-                  .async(true)
+                  .async(false)
                   .taskType(TaskType.CAPABILITY_VALIDATION.name())
                   .parameters(executionCapabilityList.toArray())
                   .timeout(TimeUnit.MINUTES.toMillis(InstanceSyncConstants.VALIDATION_TIMEOUT_MINUTES))
                   .build())
         .setupAbstractions(perpetualTaskExecutionBundle.getSetupAbstractionsMap())
-        .waitId(generateUuid())
         .build();
   }
 

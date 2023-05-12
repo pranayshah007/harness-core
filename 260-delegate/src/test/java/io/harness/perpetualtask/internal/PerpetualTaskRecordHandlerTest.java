@@ -24,6 +24,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.DelegateMetaInfo;
+import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskService;
@@ -75,6 +77,19 @@ public class PerpetualTaskRecordHandlerTest extends CategoryTest {
         .thenReturn(delegateTask);
 
     doNothing().when(perpetualTaskService).appointDelegate(eq(accountId), anyString(), eq(delegateId), anyLong());
+  }
+
+  @Test
+  @Owner(developers = HANTANG)
+  @Category(UnitTests.class)
+  public void testHandle() throws InterruptedException {
+    DelegateTaskNotifyResponseData response = AssignmentTaskResponse.builder()
+                                                  .delegateId(delegateId)
+                                                  .delegateMetaInfo(DelegateMetaInfo.builder().id(delegateId).build())
+                                                  .build();
+    when(delegateService.executeTaskV2(isA(DelegateTask.class))).thenReturn(response);
+    perpetualTaskRecordHandler.assign(record);
+    verify(perpetualTaskService).appointDelegate(eq(accountId), anyString(), eq(delegateId), anyLong());
   }
 
   @Test
