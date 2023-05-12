@@ -30,6 +30,8 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+
+import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -135,6 +137,42 @@ public class FailureStrategiesUtils {
               ((ManualInterventionFailureActionConfig) actionUnderRetry).getSpecConfig())) {
         throw new InvalidRequestException(
             "Retry Action cannot be applied under Manual Action which itself is in Retry Action");
+      }
+    }
+  }
+
+  public void validateRetrySGFailureAction(RetrySGFailureActionConfig retryAction) {
+    if (retryAction.getSpecConfig() == null) {
+      throw new InvalidRequestException("Retry Spec cannot be null or empty");
+    }
+
+    ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
+    if (retryCount.getValue() == null) {
+      throw new InvalidRequestException("Retry Count cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getRetryIntervals().getValue() == null) {
+      throw new InvalidRequestException("Retry Interval cannot be null or empty");
+    }
+    if (retryAction.getSpecConfig().getOnRetryFailure() == null) {
+      throw new InvalidRequestException("Retry Action cannot be null or empty");
+    }
+    if (retryCount.isExpression()) {
+      throw new InvalidRequestException("RetryCount fixed value is not given.");
+    }
+    if (retryAction.getSpecConfig().getRetryIntervals().isExpression()) {
+      throw new InvalidRequestException("RetryIntervals cannot be expression/runtime input. Please give values.");
+    }
+    FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
+
+    if (!validateActionAfterRetryFailure(actionUnderRetry)) {
+      throw new InvalidRequestException("Retry action cannot have post retry failure action as Retry");
+    }
+    // validating Retry -> Manual Intervention -> Retry
+    if (actionUnderRetry.getType().equals(NGFailureActionType.MANUAL_INTERVENTION)) {
+      if (validateRetryActionUnderManualAction(
+              ((ManualInterventionFailureActionConfig) actionUnderRetry).getSpecConfig())) {
+        throw new InvalidRequestException(
+                "Retry Action cannot be applied under Manual Action which itself is in Retry Action");
       }
     }
   }

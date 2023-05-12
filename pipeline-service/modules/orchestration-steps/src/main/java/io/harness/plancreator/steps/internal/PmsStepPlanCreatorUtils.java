@@ -21,6 +21,7 @@ import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserRollbackParameters;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
+import io.harness.advisers.retry.RetrySGAdviserWithRollback;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.RollbackStrategy;
@@ -57,6 +58,7 @@ import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 import io.harness.yaml.core.failurestrategy.NGFailureActionType;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
+import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
@@ -249,7 +251,12 @@ public class PmsStepPlanCreatorUtils {
             adviserObtainmentBuilder, retryAction, retryCount, actionUnderRetry, currentField));
         break;
       case RETRY_STEP_GROUP:
-
+        RetrySGFailureActionConfig retrySGAction = (RetrySGFailureActionConfig) action;
+        FailureStrategiesUtils.validateRetrySGFailureAction(retrySGAction);
+        ParameterField<Integer> retrySGCount = retrySGAction.getSpecConfig().getRetryCount();
+        FailureStrategyActionConfig actionUnderRetrySG = retrySGAction.getSpecConfig().getOnRetryFailure().getAction();
+        adviserObtainmentList.add(getRetrySGAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid,
+            adviserObtainmentBuilder, retrySGAction, retrySGCount, actionUnderRetrySG, currentField));
       case MARK_AS_SUCCESS:
         adviserObtainmentList.add(
             adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
@@ -326,6 +333,28 @@ public class PmsStepPlanCreatorUtils {
       String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
       ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            RetryAdviserRollbackParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .nextNodeId(nextNodeUuid)
+                .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
+                .retryCount(retryCount.getValue())
+                .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
+                .waitIntervalList(retryAction.getSpecConfig()
+                                      .getRetryIntervals()
+                                      .getValue()
+                                      .stream()
+                                      .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
+                                      .collect(Collectors.toList()))
+                .build())))
+        .build();
+  }
+
+  @VisibleForTesting
+  AdviserObtainment getRetrySGAdviserObtainment(KryoSerializer kryoSerializer, Set<FailureType> failureTypes,
+      String nextNodeUuid, AdviserObtainment.Builder adviserObtainmentBuilder, RetrySGFailureActionConfig retryAction,
+      ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
+    return adviserObtainmentBuilder.setType(RetrySGAdviserWithRollback.ADVISER_TYPE)
         .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
             RetryAdviserRollbackParameters.builder()
                 .applicableFailureTypes(failureTypes)
