@@ -23,6 +23,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MEMORY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
@@ -447,7 +448,8 @@ public class K8InitializeStepUtils {
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
-    if (runStepInfo.getImage() == null) {
+    String image = resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), true);
+    if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
     }
 
@@ -509,7 +511,7 @@ public class K8InitializeStepUtils {
       String identifier, String name, String accountId, OSType os, Integer extraMemoryPerStep,
       Integer extraCPUPerStep) {
     String image = resolveStringParameter("Image", "Background", identifier, backgroundStepInfo.getImage(), true);
-    if (isEmpty(image)) {
+    if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
     }
 
@@ -575,7 +577,8 @@ public class K8InitializeStepUtils {
       String identifier, String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
     Integer port = portFinder.getNextPort();
 
-    if (runTestsStepInfo.getImage() == null) {
+    String image = resolveStringParameter("Image", "RunTest", identifier, runTestsStepInfo.getImage(), true);
+    if (isEmpty(image) || image.equals(NULL_STR)) {
       throw new CIStageExecutionException("image can't be empty in k8s infrastructure");
     }
 
