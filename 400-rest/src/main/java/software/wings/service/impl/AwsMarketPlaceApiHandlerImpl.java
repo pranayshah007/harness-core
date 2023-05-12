@@ -106,7 +106,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     try {
       resolveCustomerResult = AWSMarketplaceMeteringClientBuilder.standard()
                                   .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                                  .withRegion(Regions.US_WEST_1)
+                                  .withRegion(Regions.US_EAST_1)
                                   .build()
                                   .resolveCustomer(resolveCustomerRequest);
     } catch (AWSMarketplaceMeteringException e) {
