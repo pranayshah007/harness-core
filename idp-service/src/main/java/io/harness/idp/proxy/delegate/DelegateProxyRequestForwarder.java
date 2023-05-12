@@ -53,12 +53,13 @@ public class DelegateProxyRequestForwarder {
     List<HttpHeaderConfig> headerList = new ArrayList<>();
     try {
       for (Map.Entry<String, Object> entry : headers.entrySet()) {
-        if (entry.getKey().equalsIgnoreCase("Content-Length") || entry.getKey().equalsIgnoreCase("host")) {
+        if (entry.getKey().equalsIgnoreCase("Content-Length") || entry.getKey().equalsIgnoreCase("host")
+            || entry.getKey().equalsIgnoreCase("Connection")) {
           continue;
         }
         String value = entry.getValue().toString();
         headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(value).build());
-        log.debug("header {} : {}", entry.getKey(), value);
+        log.info("header {} : {}", entry.getKey(), value);
       }
     } catch (Exception ex) {
       log.error("Error while mapping the headers", ex);
@@ -87,11 +88,13 @@ public class DelegateProxyRequestForwarder {
         ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
         log.error("errorMessage: {}", errorNotifyResponseData.getErrorMessage());
       }
+      log.info("responseData httpResponse before typecast: {}", responseData);
       if (responseData instanceof HttpStepResponse) {
         httpResponse = (HttpStepResponse) responseData;
 
-        log.debug("responseData header: {}", httpResponse.getHeader());
-        log.debug("responseData body: {}", httpResponse.getHttpResponseBody());
+        log.info("responseData header: {}", httpResponse.getHeader());
+        log.info("responseData body: {}", httpResponse.getHttpResponseBody());
+        log.info("responseData httpResponse: {}", httpResponse);
       }
     } catch (Exception ex) {
       log.error("Delegate error: ", ex);

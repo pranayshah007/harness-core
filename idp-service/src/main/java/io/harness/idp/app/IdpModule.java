@@ -254,7 +254,7 @@ public class IdpModule extends AbstractModule {
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {
-        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.MORPHIA).build();
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
     install(new DelegateServiceDriverGrpcClientModule(
@@ -323,6 +323,10 @@ public class IdpModule extends AbstractModule {
         .to(BackstageEnvConfigVariableMapper.class);
     backstageEnvVariableMapBinder.addBinding(BackstageEnvVariableType.SECRET)
         .to(BackstageEnvSecretVariableMapper.class);
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
   }
 
   @Provides
