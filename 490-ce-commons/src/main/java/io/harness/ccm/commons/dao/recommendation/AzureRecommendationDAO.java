@@ -56,7 +56,7 @@ public class AzureRecommendationDAO {
                                            .field(AzureRecommendationKeys.accountId)
                                            .equal(accountIdentifier)
                                            .field(AzureRecommendationKeys.uuid)
-                                           .equal(id);
+                                           .equal(new ObjectId(id));
     return query.get();
   }
 
