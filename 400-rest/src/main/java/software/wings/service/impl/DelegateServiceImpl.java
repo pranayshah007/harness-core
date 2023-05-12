@@ -2489,8 +2489,12 @@ public class DelegateServiceImpl implements DelegateService {
           .build();
     }
 
+    final String hostName = ECS.equals(delegate.getDelegateType())
+        ? getHostNameToBeUsedForECSDelegate(delegate.getHostName(), delegate.getSequenceNum())
+        : delegate.getHostName();
+
     final Delegate existingDelegate = getExistingDelegate(
-        delegate.getAccountId(), delegate.getHostName(), delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
+        delegate.getAccountId(), hostName, delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
 
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true)
@@ -2549,8 +2553,10 @@ public class DelegateServiceImpl implements DelegateService {
           .migrateUrl(accountService.get(delegateParams.getAccountId()).getMigratedToClusterUrl())
           .build();
     }
-
-    final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
+    final String hostName = ECS.equals(delegateParams.getDelegateType())
+        ? getHostNameToBeUsedForECSDelegate(delegateParams.getHostName(), delegateParams.getSequenceNum())
+        : delegateParams.getHostName();
+    final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), hostName,
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
     // this code is to mark all the task in running as failed if same delegate registration for immutable
@@ -2706,7 +2712,8 @@ public class DelegateServiceImpl implements DelegateService {
     return calendar.getTimeInMillis();
   }
 
-  private Delegate getExistingDelegate(
+  @VisibleForTesting
+  protected Delegate getExistingDelegate(
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
@@ -2754,7 +2761,6 @@ public class DelegateServiceImpl implements DelegateService {
   @VisibleForTesting
   Delegate upsertDelegateOperation(
       Delegate existingDelegate, Delegate delegate, DelegateSetupDetails delegateSetupDetails) {
-    long lastRecordedHeartBeat = existingDelegate != null ? existingDelegate.getLastHeartBeat() : 0L;
     long delegateHeartbeat = delegate.getLastHeartBeat();
     long now = now();
     long skew = Math.abs(now - delegateHeartbeat);
@@ -2784,6 +2790,7 @@ public class DelegateServiceImpl implements DelegateService {
 
       delegateTelemetryPublisher.sendTelemetryTrackEvents(
           delegate.getAccountId(), delegate.getDelegateType(), delegate.isNg(), DELEGATE_REGISTERED_EVENT);
+      subject.fireInform(DelegateObserver::onReconnected, delegate);
     } else {
       log.debug("Delegate exists, updating: {}", delegate.getUuid());
       delegate.setUuid(existingDelegate.getUuid());
@@ -2812,9 +2819,12 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
-    if (registeredDelegate != null) {
-      boolean isDelegateReconnectingAfterLongPause = now > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
-      if (existingDelegate == null || isDelegateReconnectingAfterLongPause) {
+    if (registeredDelegate != null && existingDelegate != null) {
+      boolean isDelegateReconnectingAfterLongPause =
+          now > (existingDelegate.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
+      if (isDelegateReconnectingAfterLongPause) {
+        log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(),
+            existingDelegate.getLastHeartBeat());
         subject.fireInform(DelegateObserver::onReconnected, delegate);
       }
     }
@@ -3683,7 +3693,8 @@ public class DelegateServiceImpl implements DelegateService {
     return sequenceConfig;
   }
 
-  private String getHostNameToBeUsedForECSDelegate(String hostName, String seqNum) {
+  @VisibleForTesting
+  protected String getHostNameToBeUsedForECSDelegate(String hostName, String seqNum) {
     return hostName + DELIMITER + seqNum;
   }
 
