@@ -14,10 +14,6 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
-<<<<<<< HEAD
-=======
-import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
->>>>>>> f47d97b7f78 (feat: [CDS-54465]: Reuse or create a new Perpetual Task for new Deployment)
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;

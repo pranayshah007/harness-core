@@ -135,7 +135,7 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
   }
 
   public boolean isInstanceSyncV2Enabled() {
-    return true;
+    return false;
   }
 
   public String createPerpetualTaskV2(AbstractInstanceSyncHandler abstractInstanceSyncHandler,
