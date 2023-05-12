@@ -73,6 +73,8 @@ function sonar_check() {
   echo "$sonar"
 }
 
+
+
 function print_log() {
   printf "${YELLOW}##################################${NC}\n"
   printf "${GREEN} Compilation is not required as files/folders are added in bazelignore${NC}\n"
