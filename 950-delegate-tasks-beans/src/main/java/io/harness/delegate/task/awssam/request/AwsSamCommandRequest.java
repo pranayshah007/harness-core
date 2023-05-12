@@ -52,7 +52,6 @@ public interface AwsSamCommandRequest extends TaskParameters, ExecutionCapabilit
       capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS CLI Installed").build());
     }
 
-    capabilities.add(AwsSamInstallationCapability.builder().criteria("AWS SAM Installed").build());
     return capabilities;
   }
 }
