@@ -42,7 +42,6 @@ public interface InstanceSyncResourceClient {
       @NotNull @Body InstanceSyncResponseV2 instanceSyncResponseV2);
 
   @GET(INSTANCE_SYNC + "/task/{perpetualTaskId}/details")
-  @Consumes({"application/x-protobuf"})
   Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
       @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId);
