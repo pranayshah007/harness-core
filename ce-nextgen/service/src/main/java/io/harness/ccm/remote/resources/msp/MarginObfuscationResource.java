@@ -79,8 +79,8 @@ public class MarginObfuscationResource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns margin details for given uuid") })
   public ResponseDTO<MarginDetails>
   get(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
-      @AccountIdentifier String accountIdentifier, @QueryParam("id") String uuid) {
-    return ResponseDTO.newResponse(marginDetailsService.get(uuid));
+      @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId) {
+    return ResponseDTO.newResponse(marginDetailsService.get(accountIdentifier, managedAccountId));
   }
 
   @GET

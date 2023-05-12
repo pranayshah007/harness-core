@@ -30,6 +30,15 @@ public class MarginDetailsDao {
     return hPersistence.get(MarginDetails.class, uuid);
   }
 
+  public MarginDetails getMarginDetailsForAccount(String mspAccountId, String accountId) {
+    return hPersistence.createQuery(MarginDetails.class)
+        .field(MarginDetailsKeys.accountId)
+        .equal(accountId)
+        .field(MarginDetailsKeys.mspAccountId)
+        .equal(mspAccountId)
+        .first();
+  }
+
   public List<MarginDetails> list(String mspAccountId) {
     return hPersistence.createQuery(MarginDetails.class)
         .field(MarginDetailsKeys.mspAccountId)
@@ -106,9 +115,8 @@ public class MarginDetailsDao {
   }
 
   public boolean delete(String accountId) {
-    Query<MarginDetails> query = hPersistence.createQuery(MarginDetails.class)
-                                     .field(MarginDetailsKeys.accountId)
-                                     .equal(accountId);
+    Query<MarginDetails> query =
+        hPersistence.createQuery(MarginDetails.class).field(MarginDetailsKeys.accountId).equal(accountId);
     return hPersistence.delete(query);
   }
 }

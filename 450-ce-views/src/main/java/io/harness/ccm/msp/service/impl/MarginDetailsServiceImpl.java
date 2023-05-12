@@ -1,14 +1,12 @@
 package io.harness.ccm.msp.service.impl;
 
 import io.harness.ccm.msp.dao.MarginDetailsDao;
-import io.harness.ccm.msp.entities.AmountDetails;
-import io.harness.ccm.msp.entities.ManagedAccountDetails;
-import io.harness.ccm.msp.entities.ManagedAccountsOverview;
-import io.harness.ccm.msp.entities.MarginDetails;
+import io.harness.ccm.msp.entities.*;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,6 +43,11 @@ public class MarginDetailsServiceImpl implements MarginDetailsService {
   }
 
   @Override
+  public MarginDetails get(String mspAccountId, String managedAccountId) {
+    return marginDetailsDao.getMarginDetailsForAccount(mspAccountId, managedAccountId);
+  }
+
+  @Override
   public List<MarginDetails> list(String mspAccountId) {
     return marginDetailsDao.list(mspAccountId);
   }
@@ -68,6 +71,20 @@ public class MarginDetailsServiceImpl implements MarginDetailsService {
         .totalMarkupAmount(getTotalMarkupAmountDetails(marginDetailsList))
         .totalSpend(getTotalSpendDetails(marginDetailsList))
         .build();
+  }
+
+  @Override
+  public ManagedAccountsOverview getTotalMarkupAndSpend(String mspAccountId, String managedAccountId) {
+    MarginDetails marginDetails = marginDetailsDao.getMarginDetailsForAccount(mspAccountId, managedAccountId);
+    return ManagedAccountsOverview.builder()
+        .totalMarkupAmount(getTotalMarkupAmountDetails(Collections.singletonList(marginDetails)))
+        .totalSpend(getTotalSpendDetails(Collections.singletonList(marginDetails)))
+        .build();
+  }
+
+  @Override
+  public ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(String managedAccountId) {
+    return null;
   }
 
   private AmountDetails getTotalMarkupAmountDetails(List<MarginDetails> marginDetailsList) {
