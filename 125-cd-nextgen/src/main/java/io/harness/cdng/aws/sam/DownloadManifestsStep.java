@@ -10,6 +10,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.GitCloneStep;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -76,6 +77,8 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
 
     @Override
     public StepResponse handleAsyncResponse(Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-        return null;
+        return StepResponse.builder()
+                .status(Status.SUCCEEDED)
+                .build();
     }
 }
