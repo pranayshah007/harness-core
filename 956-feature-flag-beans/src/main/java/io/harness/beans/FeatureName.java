@@ -755,7 +755,8 @@ public enum FeatureName {
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
-  CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP);
+  CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
+  CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE);
 
   @Deprecated
   FeatureName() {
