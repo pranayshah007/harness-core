@@ -248,6 +248,8 @@ public class PmsStepPlanCreatorUtils {
         adviserObtainmentList.add(getRetryAdviserObtainment(kryoSerializer, failureTypes, nextNodeUuid,
             adviserObtainmentBuilder, retryAction, retryCount, actionUnderRetry, currentField));
         break;
+      case RETRY_STEP_GROUP:
+
       case MARK_AS_SUCCESS:
         adviserObtainmentList.add(
             adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
