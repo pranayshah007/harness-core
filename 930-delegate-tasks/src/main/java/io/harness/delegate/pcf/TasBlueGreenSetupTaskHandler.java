@@ -152,6 +152,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(blueGreenSetupRequestNG);
       cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
+      cfRequestConfig.setApplicationName(blueGreenSetupRequestNG.getReleaseNamePrefix());
       activeApplicationInfo = getActiveApplicationInfo(previousReleases, cfRequestConfig, logCallback, workingDirectory,
           blueGreenSetupRequestNG.getTimeoutIntervalInMin());
       inActiveApplicationInfo = getInActiveApplicationInfo(activeApplicationInfo, previousReleases, cfRequestConfig,

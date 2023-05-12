@@ -199,6 +199,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
           renameApps(cfRequestConfig, cfCommandSetupRequest, nonVersioning, renames, executionLogCallback);
 
       // currently Active version is stamped for BG only.
+      cfRequestConfig.setApplicationName(((CfCommandSetupRequest) cfCommandRequest).getReleaseNamePrefix());
       ApplicationSummary activeApplication = pcfCommandTaskBaseHelper.findActiveApplication(
           executionLogCallback, cfCommandSetupRequest.isBlueGreen(), cfRequestConfig, previousReleases);
 
@@ -402,6 +403,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
 
     if (nonVersioning) {
       executionLogCallback.saveExecutionLog("\n# Initiating renaming of apps");
+      cfRequestConfig.setApplicationName(cfCommandSetupRequest.getReleaseNamePrefix());
       ApplicationSummary activeApp = pcfCommandTaskBaseHelper.findActiveApplication(
           executionLogCallback, cfCommandSetupRequest.isBlueGreen(), cfRequestConfig, releases);
       ApplicationSummary inActiveApp = pcfCommandTaskBaseHelper.getMostRecentInactiveApplication(

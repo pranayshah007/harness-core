@@ -37,6 +37,8 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
+import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
+import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
@@ -510,7 +512,21 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       LogCallback executionLogCallback, String appName, List<String> routeList) throws PivotalClientApiException {
     cfCommandTaskHelperNG.unmapRouteMaps(appName, routeList, cfRequestConfig, executionLogCallback);
     cfRequestConfig.setApplicationName(appName);
-    cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
+    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryPolicy retryPolicy =
+            RetryPolicy.builder()
+                    .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .finalErrorMessage(String.format(
+                            "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .retry(3)
+                    .build();
+
+    retryAbleTaskExecutor.execute(
+            ()
+                    -> cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
+            executionLogCallback, log, retryPolicy);
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
@@ -568,8 +584,22 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void updateEnvVariableForApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
       String appName, boolean isActiveApplication) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(appName);
-    cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
-        cfRequestConfig, isActiveApplication, executionLogCallback);
+    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryPolicy retryPolicy =
+            RetryPolicy.builder()
+                    .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .finalErrorMessage(String.format(
+                            "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .retry(3)
+                    .build();
+
+    retryAbleTaskExecutor.execute(
+            ()
+                    -> cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
+                    cfRequestConfig, isActiveApplication, executionLogCallback),
+            executionLogCallback, log, retryPolicy);
   }
 
   private CfInBuiltVariablesUpdateValues performAppRenaming(NamingTransition transition,

@@ -524,6 +524,7 @@ public class PcfCommandTaskBaseHelper {
     if (isEmpty(previousReleases)) {
       return null;
     }
+    String releaseNamePrefix = cfRequestConfig.getApplicationName();
 
     // For existing
     ApplicationSummary activeApplication = previousReleases.get(previousReleases.size() - 1);
@@ -540,6 +541,21 @@ public class PcfCommandTaskBaseHelper {
         executionLogCallback.saveExecutionLog(
             String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
                 PcfUtils.encodeColor(applicationSummary.getName())));
+      }
+    }
+
+    if(!logPrinted) {
+      for (int i = previousReleases.size() - 1; i >= 0; i--) {
+        ApplicationSummary applicationSummary = previousReleases.get(i);
+
+        if (releaseNamePrefix.equals(applicationSummary.getName())) {
+          activeApplication = applicationSummary;
+          activeVersions.add(applicationSummary);
+          logPrinted = true;
+          executionLogCallback.saveExecutionLog(
+                  String.format("Found current Active App: [%s], as none of them have HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+                          PcfUtils.encodeColor(activeApplication.getName())));
+        }
       }
     }
 
@@ -835,6 +851,7 @@ public class PcfCommandTaskBaseHelper {
     }
     // case 3 : for non-version -> non-version, rename the inactive app to <name-prefix>__<max_version+1>
     // case 4 : for non-version -> version, rename the inactive app to <name-prefix>__<max_version+1>
+    cfRequestConfig.setApplicationName(releaseNamePrefix);
     ApplicationSummary activeApplication =
         findActiveApplication(executionLogCallback, true, cfRequestConfig, previousReleases);
 
