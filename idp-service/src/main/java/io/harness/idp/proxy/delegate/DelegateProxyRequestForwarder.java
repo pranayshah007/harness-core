@@ -49,17 +49,16 @@ public class DelegateProxyRequestForwarder {
     return uriBuilder;
   }
 
-  public List<HttpHeaderConfig> createHeaderConfig(Map<String, Object> headers) {
+  public List<HttpHeaderConfig> createHeaderConfig(Map<String, String> headers) {
     List<HttpHeaderConfig> headerList = new ArrayList<>();
     try {
-      for (Map.Entry<String, Object> entry : headers.entrySet()) {
+      for (Map.Entry<String, String> entry : headers.entrySet()) {
         if (entry.getKey().equalsIgnoreCase("Content-Length") || entry.getKey().equalsIgnoreCase("host")
             || entry.getKey().equalsIgnoreCase("Connection")) {
           continue;
         }
-        String value = entry.getValue().toString();
-        headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(value).build());
-        log.info("header {} : {}", entry.getKey(), value);
+        headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(entry.getValue()).build());
+        log.info("header {} : {}", entry.getKey(), entry.getValue());
       }
     } catch (Exception ex) {
       log.error("Error while mapping the headers", ex);
