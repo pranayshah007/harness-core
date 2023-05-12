@@ -40,6 +40,8 @@ import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -201,8 +203,8 @@ public class ActivityServiceImpl implements ActivityService {
             .filter(ActivityBucketKeys.projectIdentifier, activityBucket.getProjectIdentifier())
             .filter(ActivityBucketKeys.monitoredServiceIdentifiers, activityBucket.getMonitoredServiceIdentifiers())
             .filter(ActivityBucketKeys.type, activityBucket.getType())
-            .filter(ActivityKeys.validUntil, activityBucket.getBucketTime())
-            .filter(ActivityBucketKeys.bucketTime, activityBucket.getBucketTime());
+            .filter(ActivityBucketKeys.bucketTime, activityBucket.getBucketTime())
+            .filter(ActivityKeys.validUntil, Date.from(activityBucket.getBucketTime().plus(180, ChronoUnit.DAYS)));
     UpdateOperations<ActivityBucket> updateOperations = hPersistence.createUpdateOperations(ActivityBucket.class);
     updateOperations.inc(ActivityBucketKeys.count);
     FindAndModifyOptions findAndModifyOptions = new FindAndModifyOptions().upsert(true);
