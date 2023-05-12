@@ -263,7 +263,6 @@ BAZEL_MODULES="\
 
 bazel ${bazelrc} build $BAZEL_MODULES `bazel query "//...:*" | grep "module_deploy.jar"` ${BAZEL_ARGUMENTS} --remote_download_outputs=all
 
-
 build_bazel_module() {
   module=$1
   BAZEL_MODULE="//${module}:module"
@@ -273,7 +272,6 @@ build_bazel_module() {
     exit 1
   fi
 }
-
 
 build_bazel_tests() {
   module=$1
