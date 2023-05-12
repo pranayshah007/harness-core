@@ -74,7 +74,11 @@ public class HarnessCacheManagerImpl implements HarnessCacheManager {
 
   private <K, V> Cache<K, V> getResilientCache(String cacheName, Class<K> keyType, Class<V> valueType,
       Factory<ExpiryPolicy> expiryPolicy, boolean enterpriseRedis) {
-    return new ResilientCache<>(getCacheInternal(cacheName, keyType, valueType, expiryPolicy, enterpriseRedis));
+    Cache<K, V> cacheInternal = getCacheInternal(cacheName, keyType, valueType, expiryPolicy, enterpriseRedis);
+    if (cacheInternal == null) {
+      return cacheInternal;
+    }
+    return new ResilientCache<>(cacheInternal);
   }
 
   private <K, V> Cache<K, V> getCacheInternal(String cacheName, Class<K> keyType, Class<V> valueType,
