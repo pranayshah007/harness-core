@@ -48,7 +48,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       ObjectMapper mapper = new ObjectMapper();
       backstageProxyRequest = mapper.readValue(body, BackstageProxyRequest.class);
     } catch (Exception err) {
-      log.info("Error parsing backstageProxyRequest ", err);
+      log.info("Error parsing backstageProxyRequest. Request: {}", body, err);
       throw err;
     }
     log.info("Parsed request body: {}", backstageProxyRequest);
