@@ -32,6 +32,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
@@ -536,7 +537,7 @@ public class PluginSettingUtils {
 
     String dockerFile =
         resolveStringParameter("dockerfile", "BuildAndPushDockerRegistry", identifier, stepInfo.getDockerfile(), false);
-    if (dockerFile != null && !dockerFile.equals(UNRESOLVED_PARAMETER)) {
+    if (dockerFile != null && !dockerFile.equals(UNRESOLVED_PARAMETER) && !dockerFile.equals(NULL_STR)) {
       setOptionalEnvironmentVariable(map, PLUGIN_DOCKERFILE, dockerFile);
     }
 
