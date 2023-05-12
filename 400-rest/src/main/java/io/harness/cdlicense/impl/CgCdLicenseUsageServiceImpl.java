@@ -19,8 +19,11 @@ import io.harness.cdlicense.bean.CgServiceInstancesUsageInfo;
 import io.harness.cdlicense.bean.CgServiceUsage;
 import io.harness.cdlicense.bean.CgServiceUsage.CgServiceUsageBuilder;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +37,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 @Singleton
 public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
+  private static final int SLICE_SIZE = 200;
+
   @Inject private CgCdLicenseUsageQueryHelper cgCdLicenseUsageQueryHelper;
 
   @Override
@@ -41,14 +46,34 @@ public class CgCdLicenseUsageServiceImpl implements CgCdLicenseUsageService {
     List<String> serviceIdsFromDeployments =
         cgCdLicenseUsageQueryHelper.fetchDistinctSvcIdUsedInDeployments(accountId, TIME_PERIOD);
     Map<String, CgServiceUsage> percentileInstanceServicesUsageMap =
-        cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(
-            accountId, serviceIdsFromDeployments, 30, INSTANCE_COUNT_PERCENTILE_DISC);
+        queryPercentileInstanceForServices(accountId, serviceIdsFromDeployments);
     Map<String, Pair<String, String>> servicesDetails =
         cgCdLicenseUsageQueryHelper.fetchServicesNames(accountId, serviceIdsFromDeployments);
     Set<String> appIds = servicesDetails.values().parallelStream().map(Pair::getRight).collect(Collectors.toSet());
     Map<String, String> appNames = cgCdLicenseUsageQueryHelper.fetchAppNames(accountId, appIds);
     return buildCgActiveServicesUsageInfo(
         serviceIdsFromDeployments, percentileInstanceServicesUsageMap, servicesDetails, appNames);
+  }
+
+  @VisibleForTesting
+  Map<String, CgServiceUsage> queryPercentileInstanceForServices(String accountId, List<String> svcIds) {
+    if (isEmpty(svcIds)) {
+      return Collections.emptyMap();
+    }
+    Map<String, CgServiceUsage> result = new HashMap<>();
+
+    int fromIndex;
+    int toIndex = 0;
+    do {
+      fromIndex = toIndex;
+      toIndex = Math.min(svcIds.size(), toIndex + SLICE_SIZE);
+
+      result.putAll(cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(
+          accountId, svcIds.subList(fromIndex, toIndex), 30, INSTANCE_COUNT_PERCENTILE_DISC));
+
+    } while (toIndex < svcIds.size());
+
+    return result;
   }
 
   @Override

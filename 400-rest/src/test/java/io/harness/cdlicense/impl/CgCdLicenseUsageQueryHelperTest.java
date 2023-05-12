@@ -136,7 +136,7 @@ public class CgCdLicenseUsageQueryHelperTest extends CategoryTest {
                            -> cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(
                                accountIdentifier, svcIds, timePeriod, percentile))
         .isInstanceOf(CgLicenseUsageException.class)
-        .hasMessageContaining("MAX RETRY FAILURE : Failed to fetch service usage within interval");
+        .hasMessageContaining("MAX RETRY FAILURE : Failed to fetch percentile instance count for services");
   }
 
   @Test
