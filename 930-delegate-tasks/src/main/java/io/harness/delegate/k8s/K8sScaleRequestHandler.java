@@ -119,6 +119,7 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
               .namespace(resourceIdToScale.getNamespace())
               .denoteOverallSuccess(true)
               .isErrorFrameworkEnabled(true)
+              .kubernetesConfig(kubernetesConfig)
               .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sScaleRequest.isUseK8sApiForSteadyStateCheck());
