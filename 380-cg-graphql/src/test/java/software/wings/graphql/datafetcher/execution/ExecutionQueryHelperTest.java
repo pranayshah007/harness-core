@@ -21,7 +21,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -66,9 +65,6 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
   public void shouldSetQueryFiltersCorrectly_optimizationFFEnabled() {
-    doReturn(true)
-        .when(featureFlagService)
-        .isEnabled(eq(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL), any());
     QLBaseExecutionFilter filter = new QLBaseExecutionFilter();
 
     Query query = mock(Query.class);
@@ -90,9 +86,6 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldSetQueryFiltersCorrectlyQLBaseExecutionFilter() {
-    doReturn(false)
-        .when(featureFlagService)
-        .isEnabled(eq(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL), any());
     QLBaseExecutionFilter filter = new QLBaseExecutionFilter();
     filter.setExecution(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"EXEC"}).build());
     filter.setApplication(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"APP"}).build());
@@ -145,9 +138,6 @@ public class ExecutionQueryHelperTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldSetQueryFiltersCorrectlyQLExecutionFilter() {
-    doReturn(false)
-        .when(featureFlagService)
-        .isEnabled(eq(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL), any());
     QLExecutionFilter filter = new QLExecutionFilter();
     filter.setExecution(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"EXEC"}).build());
     filter.setApplication(QLIdFilter.builder().operator(QLIdOperator.EQUALS).values(new String[] {"APP"}).build());

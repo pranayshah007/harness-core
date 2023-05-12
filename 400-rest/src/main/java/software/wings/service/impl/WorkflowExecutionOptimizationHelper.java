@@ -53,9 +53,8 @@ public class WorkflowExecutionOptimizationHelper {
   @Inject FeatureFlagService featureFlagService;
 
   public void enforceAppIdFromChildrenEntities(PageRequest<WorkflowExecution> pageRequest, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, accountId)) {
-      return;
-    }
+    boolean isHintEnabled =
+        featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING, accountId);
 
     Set<String> appIds = new HashSet<>();
     PageRequest<WorkflowExecution> dummyPageRequest = populatePageFilters(pageRequest);
@@ -74,8 +73,10 @@ public class WorkflowExecutionOptimizationHelper {
                                                .in(asList(filter.getFieldValues()))
                                                .asList();
           environments.forEach(environment -> appIds.add(environment.getAppId()));
-          pageRequest.setIndexHint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_ENVIDS));
+          if (isHintEnabled) {
+            pageRequest.setIndexHint(
+                BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_ENVIDS));
+          }
         } else if (WorkflowExecutionKeys.serviceIds.equals(filter.getFieldName())) {
           List<Service> services = hPersistence.createQuery(Service.class)
                                        .filter(ServiceKeys.accountId, accountId)
@@ -83,8 +84,10 @@ public class WorkflowExecutionOptimizationHelper {
                                        .in(asList(filter.getFieldValues()))
                                        .asList();
           services.forEach(service -> appIds.add(service.getAppId()));
-          pageRequest.setIndexHint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS));
+          if (isHintEnabled) {
+            pageRequest.setIndexHint(
+                BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_SERVICEIDS));
+          }
         } else if (WorkflowExecutionKeys.pipelineSummary_pipelineId.equals(filter.getFieldName())) {
           List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
                                          .filter(PipelineKeys.accountId, accountId)
@@ -98,8 +101,10 @@ public class WorkflowExecutionOptimizationHelper {
                                     .fieldName(WorkflowExecutionKeys.workflowId)
                                     .op(filter.getOp())
                                     .build());
-          pageRequest.setIndexHint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          if (isHintEnabled) {
+            pageRequest.setIndexHint(
+                BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          }
         } else if (WorkflowExecutionKeys.workflowId.equals(filter.getFieldName())) {
           List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
                                          .filter(WorkflowKeys.accountId, accountId)
@@ -107,8 +112,10 @@ public class WorkflowExecutionOptimizationHelper {
                                          .in(asList(filter.getFieldValues()))
                                          .asList();
           workflows.forEach(workflow -> appIds.add(workflow.getAppId()));
-          pageRequest.setIndexHint(
-              BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          if (isHintEnabled) {
+            pageRequest.setIndexHint(
+                BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), WFE_EXECUTIONS_SEARCH_WORKFLOWID));
+          }
         }
       });
     }
