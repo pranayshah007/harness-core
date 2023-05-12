@@ -18,9 +18,11 @@ import static io.harness.timescaledb.Tables.CE_RECOMMENDATIONS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
+import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation.AzureRecommendationKeys;
+import io.harness.ccm.commons.entities.recommendations.RecommendationAzureVmId;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -29,9 +31,11 @@ import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 
 @Slf4j
@@ -139,5 +143,49 @@ public class AzureRecommendationDAO {
                             .filter(AzureRecommendationKeys.uuid, new ObjectId(id)),
         hPersistence.createUpdateOperations(AzureRecommendation.class)
             .set(AzureRecommendationKeys.jiraDetails, jiraDetails));
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void ignoreAzureVmRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationAzureVmId> azureVmIds) {
+    if (azureVmIds.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.IGNORED.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.OPEN.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.AZURE_INSTANCE.name()))
+                   .and(getAzureVmCondition(azureVmIds)))
+        .execute();
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public void unIgnoreAzureVmRecommendations(
+      @NonNull String accountId, @NonNull List<RecommendationAzureVmId> azureVmIds) {
+    if (azureVmIds.isEmpty()) {
+      return;
+    }
+    dslContext.update(CE_RECOMMENDATIONS)
+        .set(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE, RecommendationState.OPEN.name())
+        .where(CE_RECOMMENDATIONS.ACCOUNTID.eq(accountId)
+                   .and(CE_RECOMMENDATIONS.RECOMMENDATIONSTATE.eq(RecommendationState.IGNORED.name()))
+                   .and(CE_RECOMMENDATIONS.RESOURCETYPE.eq(ResourceType.AZURE_INSTANCE.name()))
+                   .and(getAzureVmCondition(azureVmIds)))
+        .execute();
+  }
+
+  private Condition getAzureVmCondition(List<RecommendationAzureVmId> azureVmIds) {
+    RecommendationAzureVmId azureVmId = azureVmIds.get(0);
+    Condition condition = CE_RECOMMENDATIONS.CLUSTERNAME.eq(azureVmId.getSubscriptionId())
+                              .and(CE_RECOMMENDATIONS.NAMESPACE.eq(azureVmId.getResourceGroupId()))
+                              .and(CE_RECOMMENDATIONS.NAME.eq(azureVmId.getVmName()));
+    for (int i = 1; i < azureVmIds.size(); i++) {
+      azureVmId = azureVmIds.get(i);
+      condition.or(CE_RECOMMENDATIONS.CLUSTERNAME.eq(azureVmId.getSubscriptionId())
+                       .and(CE_RECOMMENDATIONS.NAMESPACE.eq(azureVmId.getResourceGroupId()))
+                       .and(CE_RECOMMENDATIONS.NAME.eq(azureVmId.getVmName())));
+    }
+    return condition;
   }
 }
