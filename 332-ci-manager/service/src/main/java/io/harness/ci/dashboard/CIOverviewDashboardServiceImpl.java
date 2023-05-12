@@ -8,7 +8,11 @@
 package io.harness.core.ci.services;
 
 import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
 
 import io.harness.app.beans.entities.BuildActiveInfo;
 import io.harness.app.beans.entities.BuildCount;
@@ -17,6 +21,7 @@ import io.harness.app.beans.entities.BuildFailureInfo;
 import io.harness.app.beans.entities.BuildHealth;
 import io.harness.app.beans.entities.BuildInfo;
 import io.harness.app.beans.entities.BuildRepositoryCount;
+import io.harness.app.beans.entities.CIDashboardHelper;
 import io.harness.app.beans.entities.CIUsageResult;
 import io.harness.app.beans.entities.DashboardBuildExecutionInfo;
 import io.harness.app.beans.entities.DashboardBuildRepositoryInfo;
@@ -29,10 +34,15 @@ import io.harness.app.beans.entities.StatusAndTime;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.usage.beans.ReferenceDTO;
 import io.harness.licensing.usage.beans.UsageDataDTO;
+import io.harness.ng.core.OrgProjectIdentifier;
 import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.ng.core.dashboard.GitInfo;
 import io.harness.ng.core.dashboard.ServiceDeploymentInfo;
+import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -49,12 +59,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardService {
   @Inject TimeScaleDBService timeScaleDBService;
+
+  @Inject private ProjectClient projectClient;
   private static final String tableNameServiceAndInfra = "service_infra_info";
   private static final String tableName = "pipeline_execution_summary_ci";
   private static final long HR_IN_MS = 60 * 60 * 1000;
@@ -148,18 +161,38 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return null;
   }
 
-  public StatusAndTime queryCalculatorForStatusAndTime(
-      String accountId, String orgId, String projectId, long startInterval, long endInterval) {
-    if (accountId == null || orgId == null || projectId == null) {
-      throw new InvalidRequestException("Account ID, OrgID, ProjectID cannot be empty");
+  public StatusAndTime queryCalculatorForStatusAndTime(String accountId,
+      List<OrgProjectIdentifier> orgProjectIdentifiers, GroupBy groupBy, long startInterval, long endInterval) {
+    if (isEmpty(accountId)) {
+      throw new InvalidRequestException("Account ID cannot be empty");
+    }
+
+    if (isEmpty(orgProjectIdentifiers)) {
+      throw new InvalidRequestException("No projects are accessible by current user");
     }
 
     if (startInterval <= 0 && endInterval <= 0) {
       throw new InvalidRequestException("Timestamp must be a positive long");
     }
+    String startTsQuery = "startts";
+    if (groupBy != null) {
+      startTsQuery = "time_bucket_gapfill(" + groupBy.getNoOfMilliseconds() + ", startts) as startts";
+    }
 
-    String selectStatusQuery = "select status,startts from " + tableName
-        + " where accountid=? and orgidentifier=? and projectidentifier=? and startts>=? and startts<?;";
+    String selectStatusQuery = "select status, " + startTsQuery + " from " + tableName + " where accountid=?";
+    String orgIds = orgProjectIdentifiers.stream()
+                        .map(OrgProjectIdentifier::getOrgIdentifier)
+                        .distinct()
+                        .map(o -> String.format("'%s'", o))
+                        .collect(Collectors.joining(","));
+    String projectIds = orgProjectIdentifiers.stream()
+                            .map(OrgProjectIdentifier::getProjectIdentifier)
+                            .distinct()
+                            .map(p -> String.format("'%s'", p))
+                            .collect(Collectors.joining(","));
+
+    selectStatusQuery += " and orgidentifier IN (" + orgIds + ") and projectidentifier IN (" + projectIds
+        + ") and startts>=? and startts<?;";
 
     long totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
@@ -167,9 +200,9 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       ResultSet resultSet = null;
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement statement = connection.prepareStatement(selectStatusQuery)) {
-        setPrepareStatement(accountId, orgId, projectId, statement);
-        statement.setLong(4, startInterval);
-        statement.setLong(5, endInterval);
+        statement.setString(1, accountId);
+        statement.setLong(2, startInterval);
+        statement.setLong(3, endInterval);
         resultSet = statement.executeQuery();
         return parseResultToStatusAndTime(resultSet);
       } catch (SQLException ex) {
@@ -251,9 +284,11 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     previousStartInterval = getStartingDateEpochValue(previousStartInterval);
 
     endInterval = endInterval + DAY_IN_MS;
+    OrgProjectIdentifier orgProjectIdentifier =
+        OrgProjectIdentifier.builder().orgIdentifier(orgId).projectIdentifier(projectId).build();
 
-    StatusAndTime statusAndTime =
-        queryCalculatorForStatusAndTime(accountId, orgId, projectId, previousStartInterval, endInterval);
+    StatusAndTime statusAndTime = queryCalculatorForStatusAndTime(
+        accountId, Collections.singletonList(orgProjectIdentifier), null, previousStartInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
@@ -292,25 +327,39 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
 
   @Override
   public DashboardBuildExecutionInfo getBuildExecutionBetweenIntervals(
-      String accountId, String orgId, String projectId, long startInterval, long endInterval) {
-    startInterval = getStartingDateEpochValue(startInterval);
-    endInterval = getStartingDateEpochValue(endInterval);
+      String accountId, String orgId, String projectId, GroupBy groupBy, long startInterval, long endInterval) {
+    List<ProjectDTO> accessibleProjectList = NGRestUtils.getResponse(projectClient.getProjectList(accountId, null));
+    List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(accessibleProjectList);
+    List<OrgProjectIdentifier> orgProjectIdentifiers =
+        getOrgProjectIdentifierList(orgProjectIdentifierList, orgId, projectId);
 
-    endInterval = endInterval + DAY_IN_MS;
+    Long intervalInMs = DAY_IN_MS;
+    if (groupBy != null) {
+      intervalInMs = groupBy.getNoOfMilliseconds();
+    }
+
+    startInterval = getStartingDateEpochValue(startInterval, intervalInMs);
+    endInterval = getStartingDateEpochValue(endInterval, intervalInMs);
+    long previousInterval = startInterval - (endInterval - startInterval);
+
+    endInterval = endInterval + intervalInMs;
 
     List<BuildExecutionInfo> buildExecutionInfoList = new ArrayList<>();
 
     StatusAndTime statusAndTime =
-        queryCalculatorForStatusAndTime(accountId, orgId, projectId, startInterval, endInterval);
+        queryCalculatorForStatusAndTime(accountId, orgProjectIdentifiers, groupBy, previousInterval, endInterval);
     List<String> status = statusAndTime.getStatus();
     List<Long> time = statusAndTime.getTime();
 
     long startDateCopy = startInterval;
     long endDateCopy = endInterval;
+    long currentBuildsCount = getCountForInterval(time, startInterval, endInterval);
+    long previousBuildsCount = getCountForInterval(time, previousInterval, startInterval);
+
     while (startDateCopy < endDateCopy) {
       long total = 0, success = 0, failed = 0, expired = 0, aborted = 0;
       for (int i = 0; i < time.size(); i++) {
-        if (startDateCopy == getStartingDateEpochValue(time.get(i))) {
+        if (startDateCopy == getStartingDateEpochValue(time.get(i), intervalInMs)) {
           total++;
           if (status.get(i).contentEquals(ExecutionStatus.SUCCESS.name())) {
             success++;
@@ -326,10 +375,23 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       BuildCount buildCount =
           BuildCount.builder().total(total).success(success).expired(expired).aborted(aborted).failed(failed).build();
       buildExecutionInfoList.add(BuildExecutionInfo.builder().time(startDateCopy).builds(buildCount).build());
-      startDateCopy = startDateCopy + DAY_IN_MS;
+      startDateCopy = startDateCopy + intervalInMs;
     }
 
-    return DashboardBuildExecutionInfo.builder().buildExecutionInfoList(buildExecutionInfoList).build();
+    double noOfBuckets = Math.ceil(((endInterval - startInterval) * 1.0) / intervalInMs);
+    double currentBuildRate = CIDashboardHelper.truncate(currentBuildsCount / noOfBuckets);
+    double previousBuildRate = CIDashboardHelper.truncate(previousBuildsCount / noOfBuckets);
+    double changeRate = getChangeRate(currentBuildRate, previousBuildRate);
+
+    return DashboardBuildExecutionInfo.builder()
+        .buildExecutionInfoList(buildExecutionInfoList)
+        .buildRate(currentBuildRate)
+        .buildRateChangeRate(changeRate)
+        .build();
+  }
+
+  private long getCountForInterval(List<Long> time, long startInterval, long endInterval) {
+    return time.stream().filter(timeEpoch -> timeEpoch >= startInterval && timeEpoch < endInterval).count();
   }
 
   public List<BuildFailureInfo> queryCalculatorBuildFailureInfo(
@@ -391,6 +453,15 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
       }
       buildFailureInfos.get(i).setServiceInfoList(serviceDeploymentInfoList);
     }
+  }
+
+  private double getChangeRate(double previousValue, double newValue) {
+    double change = newValue - previousValue;
+    if (change == 0) {
+      return 0;
+    }
+    double rate = previousValue != 0 ? (change * 100.0) / previousValue : Double.MAX_VALUE;
+    return CIDashboardHelper.truncate(rate);
   }
 
   private void parseResultToBuildFailureInfo(
@@ -788,10 +859,41 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
     return epochValue - epochValue % DAY_IN_MS;
   }
 
+  public long getStartingDateEpochValue(long epochValue, long interval) {
+    return epochValue - epochValue % interval;
+  }
+
   private void setPrepareStatement(
       String accountId, String orgId, String projectId, PreparedStatement preparedStatement) throws SQLException {
     preparedStatement.setString(1, accountId);
     preparedStatement.setString(2, orgId);
     preparedStatement.setString(3, projectId);
+  }
+
+  private List<OrgProjectIdentifier> getOrgProjectIdentifier(List<ProjectDTO> listOfAccessibleProject) {
+    return emptyIfNull(listOfAccessibleProject)
+        .stream()
+        .map(projectDTO
+            -> OrgProjectIdentifier.builder()
+                   .orgIdentifier(projectDTO.getOrgIdentifier())
+                   .projectIdentifier(projectDTO.getIdentifier())
+                   .build())
+        .collect(Collectors.toList());
+  }
+
+  private List<OrgProjectIdentifier> getOrgProjectIdentifierList(
+      List<OrgProjectIdentifier> orgProjectIdentifierList, String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
+      OrgProjectIdentifier orgProjectIdentifier =
+          OrgProjectIdentifier.builder().orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+      if (orgProjectIdentifierList.contains(orgProjectIdentifier)) {
+        return Collections.singletonList(orgProjectIdentifier);
+      } else {
+        throw new InvalidRequestException(
+            format("Project with identifier %s in organization with identifier %s in not accessible to the user",
+                projectIdentifier, orgIdentifier));
+      }
+    }
+    return orgProjectIdentifierList;
   }
 }

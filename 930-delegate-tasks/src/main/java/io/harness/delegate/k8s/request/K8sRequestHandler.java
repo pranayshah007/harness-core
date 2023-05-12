@@ -18,6 +18,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.k8s.evaluator.KubernetesPlaceholderEvaluator;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sNGTaskResponse;
@@ -78,12 +79,16 @@ public abstract class K8sRequestHandler {
     return null;
   }
 
-  protected List<String> getManifestOverrideFlies(K8sDeployRequest request) {
+  protected List<String> getManifestOverrideFlies(K8sDeployRequest request, Map<String, String> replaceValues) {
+    List<String> manifestOverrideFiles;
     if (KUSTOMIZE.equals(request.getManifestDelegateConfig().getManifestType())) {
-      return request.getKustomizePatchesList();
+      manifestOverrideFiles = request.getKustomizePatchesList();
     } else {
-      return isEmpty(request.getValuesYamlList()) ? request.getOpenshiftParamList() : request.getValuesYamlList();
+      manifestOverrideFiles =
+          isEmpty(request.getValuesYamlList()) ? request.getOpenshiftParamList() : request.getValuesYamlList();
     }
+
+    return KubernetesPlaceholderEvaluator.evaluateAllStatic(manifestOverrideFiles, replaceValues);
   }
 
   private K8sDeployResponse executeTaskWithExceptionHandling(K8sDeployRequest k8sDeployRequest,

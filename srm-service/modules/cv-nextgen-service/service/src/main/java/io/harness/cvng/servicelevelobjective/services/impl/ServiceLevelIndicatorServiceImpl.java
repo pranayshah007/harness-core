@@ -43,28 +43,30 @@ import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.datacollection.entity.TimeSeriesRecord;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
@@ -92,7 +94,6 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorService {
   private static final int INTERVAL_HOURS = 12;
   @Inject private HPersistence hPersistence;
-  @Inject private Map<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
   @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private HealthSourceService healthSourceService;
@@ -141,8 +142,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                        .timeStamp(Instant.ofEpochMilli(timeSeriesRecord.getTimestamp()))
                        .build(),
                 Collectors.toList())));
-    List<SLIAnalyseResponse> sliAnalyseResponses = sliDataProcessorService.process(sliAnalyseRequest,
-        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponses =
+        sliDataProcessorService.process(sliAnalyseRequest, serviceLevelIndicatorDTO, startTime, endTime);
     sliAnalyseResponses.sort(Comparator.comparing(SLIAnalyseResponse::getTimeStamp));
     final SLIAnalyseResponse initialSLIResponse = sliAnalyseResponses.get(0);
 
@@ -150,20 +151,15 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         TimeGraphResponse.builder()
             .startTime(startTime.toEpochMilli())
             .endTime(endTime.toEpochMilli())
-            .dataPoints(sliAnalyseResponses.stream()
-                            .map(sliAnalyseResponse
-                                -> DataPoints.builder()
-                                       .timeStamp(sliAnalyseResponse.getTimeStamp().toEpochMilli())
-                                       .value(serviceLevelIndicatorDTO.getSliMissingDataType()
-                                                  .calculateSLIValue(sliAnalyseResponse.getRunningGoodCount(),
-                                                      sliAnalyseResponse.getRunningBadCount(),
-                                                      Duration.between(initialSLIResponse.getTimeStamp(),
-                                                                  sliAnalyseResponse.getTimeStamp())
-                                                              .toMinutes()
-                                                          + 1)
-                                                  .sliPercentage())
-                                       .build())
-                            .collect(Collectors.toList()))
+            .dataPoints(
+                sliAnalyseResponses.stream()
+                    .map(sliAnalyseResponse
+                        -> DataPoints.builder()
+                               .timeStamp(sliAnalyseResponse.getTimeStamp().toEpochMilli())
+                               .value(getSLIValue(serviceLevelIndicatorDTO, sliAnalyseResponse, initialSLIResponse)
+                                          .sliPercentage())
+                               .build())
+                    .collect(Collectors.toList()))
             .build();
 
     return SLIOnboardingGraphs.builder()
@@ -193,6 +189,24 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         .build();
   }
 
+  private SLIValue getSLIValue(ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, SLIAnalyseResponse sliAnalyseResponse,
+      SLIAnalyseResponse initialSLIResponse) {
+    if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.WINDOW) {
+      return serviceLevelIndicatorDTO.getSLIMissingDataType().calculateSLIValue(
+          sliAnalyseResponse.getRunningGoodCount(), sliAnalyseResponse.getRunningBadCount(),
+          Duration.between(initialSLIResponse.getTimeStamp(), sliAnalyseResponse.getTimeStamp()).toMinutes() + 1);
+    } else if (serviceLevelIndicatorDTO.getType() == SLIEvaluationType.REQUEST) {
+      return SLIValue.builder()
+          .goodCount(sliAnalyseResponse.getRunningGoodCount())
+          .badCount(sliAnalyseResponse.getRunningBadCount())
+          .total(sliAnalyseResponse.getRunningGoodCount() + sliAnalyseResponse.getRunningBadCount())
+          .build();
+    } else {
+      throw new InvalidArgumentsException(
+          String.format("Invalid Service Level Indicator Type %s", serviceLevelIndicatorDTO.getType()));
+    }
+  }
+
   private List<CVConfig> getCvConfigs(
       ProjectParams projectParams, String monitoredServiceIdentifier, String healthSourceRef) {
     List<CVConfig> cvConfigs =
@@ -206,7 +220,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                 -> metricPackService.populateDataCollectionDsl(
                     metricCVConfig.getType(), metricCVConfig.getMetricPack()))
             .collect(Collectors.toList());
-    Preconditions.checkArgument(isNotEmpty(cvConfigs), "Health source not present");
+    if (cvConfigs.isEmpty()) {
+      throw new InvalidArgumentsException("Health source not present");
+    }
     return cvConfigs;
   }
 
@@ -259,10 +275,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
 
   private void generateNameAndIdentifier(
       String serviceLevelObjectiveIdentifier, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO) {
-    serviceLevelIndicatorDTO.setName(serviceLevelObjectiveIdentifier + "_"
-        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
-    serviceLevelIndicatorDTO.setIdentifier(serviceLevelObjectiveIdentifier + "_"
-        + ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec().getMetricName());
+    serviceLevelIndicatorDTO.getSpec().generateNameAndIdentifier(
+        serviceLevelObjectiveIdentifier, serviceLevelIndicatorDTO);
   }
 
   @Override
@@ -382,9 +396,13 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         if (intervalEndTime.isAfter(endTime)) {
           intervalEndTime = endTime;
         }
-        orchestrationService.queueAnalysis(verificationTaskService.getSLIVerificationTaskId(
-                                               serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()),
-            intervalStartTime, intervalEndTime);
+        orchestrationService.queueAnalysis(
+            AnalysisInput.builder()
+                .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
+                    serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()))
+                .startTime(intervalStartTime)
+                .endTime(intervalEndTime)
+                .build());
         intervalStartTime = intervalEndTime;
       }
     } else {
@@ -531,12 +549,12 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       if (record.getMetricIdentifier().equals(metricIdentifiers.get(1))) {
         long timestamp = record.getTimestamp();
         if (metric1ValuesMap.containsKey(timestamp)) {
-          double ratio;
-          if (eventType.equals(RatioSLIMetricEventType.GOOD)) {
-            ratio = metric1ValuesMap.get(timestamp) * 100 / record.getMetricValue();
-          } else {
-            ratio = (1 - (metric1ValuesMap.get(timestamp) / record.getMetricValue())) * 100;
+          double metricValue1 = metric1ValuesMap.get(timestamp);
+          double metricValue2 = record.getMetricValue();
+          if (Objects.isNull(metricValue1) || Objects.isNull(metricValue2) || metricValue2 == 0) {
+            continue;
           }
+          double ratio = eventType.computeSLIMetricValue(metricValue1, metricValue2);
           dataPoints.add(DataPoints.builder().timeStamp(timestamp).value(ratio).build());
         }
       }
@@ -591,6 +609,24 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                       .startTime(startTime.getEpochSecond())
                                       .endTime(endTime.getEpochSecond())
                                       .build()));
-    orchestrationService.queueAnalysis(verificationTaskId, startTime, endTime);
+    for (Instant intervalStartTime = startTime; intervalStartTime.isBefore(endTime);) {
+      Instant intervalEndTime = intervalStartTime.plus(INTERVAL_HOURS, ChronoUnit.HOURS);
+      if (intervalEndTime.isAfter(endTime)) {
+        intervalEndTime = endTime;
+      }
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(intervalStartTime)
+                                             .endTime(intervalEndTime)
+                                             .build());
+      intervalStartTime = intervalEndTime;
+    }
+  }
+
+  @Override
+  public String getScopedIdentifier(ServiceLevelIndicator serviceLevelIndicator) {
+    return ScopedInformation.getScopedInformation(serviceLevelIndicator.getAccountId(),
+        serviceLevelIndicator.getOrgIdentifier(), serviceLevelIndicator.getProjectIdentifier(),
+        serviceLevelIndicator.getIdentifier());
   }
 }

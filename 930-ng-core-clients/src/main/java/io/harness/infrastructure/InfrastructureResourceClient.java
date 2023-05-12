@@ -10,6 +10,7 @@ package io.harness.infrastructure;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 
@@ -28,4 +29,12 @@ public interface InfrastructureResourceClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier);
+
+  @GET(INFRA_API + "/runtimeInputs")
+  Call<ResponseDTO<NGEntityTemplateResponseDTO>> getInfrastructureInputs(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
+      @Query(NGCommonEntityConstants.INFRA_IDENTIFIERS) String infraIdentifier);
 }

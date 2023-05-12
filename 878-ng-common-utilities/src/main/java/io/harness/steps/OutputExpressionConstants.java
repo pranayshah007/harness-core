@@ -22,4 +22,5 @@ public interface OutputExpressionConstants {
   String OUTPUT = "output";
   String INFRA = "infra";
   String INSTANCES = "instances";
+  String PROVISIONER = "provisioner";
 }

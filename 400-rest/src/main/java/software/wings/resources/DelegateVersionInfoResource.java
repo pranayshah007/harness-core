@@ -13,14 +13,15 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 
 import static java.util.Collections.emptyList;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.delegate.beans.SupportedDelegateVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.DelegateAuth2;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
 import io.harness.service.intfc.DelegateRingService;
 
-import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.service.intfc.AccountService;
 
@@ -85,9 +86,9 @@ public class DelegateVersionInfoResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = MANAGE_DELEGATES)
-  @ApiKeyAuthorized(permissionType = MANAGE_DELEGATES)
+  @InternalApi
   public RestResponse<SupportedDelegateVersion> getSupportedDelegateVersion(
-      @QueryParam("accountId") @NotEmpty String accountId) {
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountId) {
     String latestSupportedDelegateImage = delegateRingService.getDelegateImageTag(accountId);
     String[] split = latestSupportedDelegateImage.split(":");
     String latestVersion = split[1];

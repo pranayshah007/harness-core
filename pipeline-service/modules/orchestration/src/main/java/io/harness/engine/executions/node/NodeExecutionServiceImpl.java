@@ -180,6 +180,24 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public List<NodeExecution> getAllWithFieldIncluded(Set<String> nodeExecutionIds, Set<String> fieldsToInclude) {
+    if (EmptyPredicate.isEmpty(nodeExecutionIds)) {
+      return new ArrayList<>();
+    }
+
+    if (nodeExecutionIds.size() > MAX_BATCH_SIZE) {
+      throw new InvalidRequestException(
+          String.format("requested %d records more than threshold of %d. consider pagination", nodeExecutionIds.size(),
+              MAX_BATCH_SIZE));
+    }
+    // Uses - id index
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
+    for (String field : fieldsToInclude) {
+      query.fields().include(field);
+    }
+    return mongoTemplate.find(query, NodeExecution.class);
+  }
+  @Override
   public CloseableIterator<NodeExecution> fetchAllStepNodeExecutions(
       String planExecutionId, Set<String> fieldsToInclude) {
     // Uses - planExecutionId_stepCategory_identifier_idx
@@ -318,7 +336,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       finalList.add(allExecutions.stream()
                         .filter(ne -> ne.getUuid().equals(parentId))
                         .findFirst()
-                        .orElseThrow(() -> new UnexpectedException("Expected parent to be in list")));
+                        .orElseThrow(() -> new UnexpectedException("Pipeline has already completed execution")));
     }
     return finalList;
   }
@@ -687,7 +705,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                                .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
                                .setEventType(orchestrationEventType)
                                .setServiceName(nodeExecution.getModule())
-                               .setTriggerPayload(triggerPayload);
+                               .setTriggerPayload(triggerPayload)
+                               .setEndTs(nodeExecution.getEndTs() == null ? 0 : nodeExecution.getEndTs());
 
     updateEventIfCausedByAutoAbortThroughTrigger(nodeExecution, orchestrationEventType, eventBuilder);
     eventEmitter.emitEvent(eventBuilder.build());
@@ -739,7 +758,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
   }
 
-  private List<NodeExecution> fetchStageExecutions(String planExecutionId) {
+  @Override
+  public List<NodeExecution> fetchStageExecutions(String planExecutionId) {
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
                       .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
                       .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));

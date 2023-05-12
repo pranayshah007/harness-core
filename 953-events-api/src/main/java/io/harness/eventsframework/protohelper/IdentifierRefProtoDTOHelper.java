@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -26,12 +27,12 @@ import java.util.Map;
 @OwnedBy(PL)
 @Singleton
 public class IdentifierRefProtoDTOHelper {
-  public IdentifierRefProtoDTO createIdentifierRefProtoDTO(
+  public static IdentifierRefProtoDTO createIdentifierRefProtoDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
     return createIdentifierRefProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null);
   }
 
-  public IdentifierRefProtoDTO createIdentifierRefProtoDTO(String accountIdentifier, String orgIdentifier,
+  public static IdentifierRefProtoDTO createIdentifierRefProtoDTO(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String identifier, Map<String, String> metadata) {
     Scope scope = ScopeHelper.getScope(accountIdentifier, orgIdentifier, projectIdentifier);
     if (scope == null) {
@@ -54,5 +55,10 @@ public class IdentifierRefProtoDTOHelper {
     }
 
     return identifierRefBuilder.build();
+  }
+
+  public static IdentifierRefProtoDTO fromIdentifierRef(IdentifierRef identifierRef) {
+    return createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+        identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
   }
 }

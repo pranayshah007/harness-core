@@ -25,8 +25,7 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -167,7 +166,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
     //                                                   ownerManager.create(), Applications.GENERIC_TEST));
     switch (type) {
       case JENKINS:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
         //        owners = new Owners();
         //        owners.add(account);
         //        settingAttribute = settingGenerator.ensurePredefined(seed, owners, HARNESS_JENKINS_CONNECTOR);
@@ -178,7 +177,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
         artifactStream.setAppId(appId);
         break;
       case BAMBOO:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
         settingAttribute =
             aSettingAttribute()
                 .withName(HARNESS_BAMBOO)
@@ -199,7 +198,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
         break;
 
       case NEXUS:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(nexusBuildService);
         settingAttribute =
             aSettingAttribute()
                 .withName(HARNESS_NEXUS)
@@ -221,7 +220,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
         break;
 
       case DOCKER:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(dockerBuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(dockerBuildService);
         settingAttribute =
             aSettingAttribute()
                 .withName(HARNESS_DOCKER_REGISTRY)
@@ -240,7 +239,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
         artifactStream.setAppId(appId);
         break;
       case ARTIFACTORY:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(artifactoryBuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(artifactoryBuildService);
         settingAttribute =
             aSettingAttribute()
                 .withName(HARNESS_ARTIFACTORY)
@@ -262,7 +261,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
         artifactStream.setAppId(appId);
         break;
       case ECR:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(ecrBuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(ecrBuildService);
         settingAttribute =
             aSettingAttribute()
                 .withName("AWS")
@@ -281,7 +280,7 @@ public class BuildSourceServiceIntegrationTest extends IntegrationTestBase {
         artifactStream.setAppId(appId);
         break;
       case AMAZON_S3:
-        when(delegateProxyFactory.getV2(anyObject(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
+        when(delegateProxyFactory.getV2(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
         settingAttribute =
             aSettingAttribute()
                 .withName("AWS")

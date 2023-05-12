@@ -7,10 +7,11 @@
 
 package io.harness.engine;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.network.SafeHttpCall;
@@ -39,7 +40,7 @@ public class GovernanceServiceImpl implements GovernanceService {
   @Override
   public GovernanceMetadata evaluateGovernancePolicies(String expandedJson, String accountId, String orgIdentifier,
       String projectIdentifier, String action, String planExecutionId, String pipelineVersion) {
-    pipelineVersion = EmptyPredicate.isEmpty(pipelineVersion) ? PipelineVersion.V0 : pipelineVersion;
+    pipelineVersion = isEmpty(pipelineVersion) ? PipelineVersion.V0 : pipelineVersion;
     switch (pipelineVersion) {
       case PipelineVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
@@ -54,6 +55,9 @@ public class GovernanceServiceImpl implements GovernanceService {
             .setMessage(
                 String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_PIPELINE_GOVERNANCE, accountId))
             .build();
+      }
+      if (isEmpty(expandedJson)) {
+        return GovernanceMetadata.newBuilder().setDeny(false).build();
       }
       log.info("Initiating policy check for pipeline with expanded JSON:\n" + expandedJson);
 

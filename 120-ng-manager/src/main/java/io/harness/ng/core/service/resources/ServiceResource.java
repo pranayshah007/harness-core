@@ -104,8 +104,7 @@ public class ServiceResource {
       throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));
     }
-    return ResponseDTO.newResponse(
-        serviceEntity.get().getVersion().toString(), serviceEntity.map(ServiceElementMapper::writeDTO).orElse(null));
+    return ResponseDTO.newResponse(serviceEntity.map(ServiceElementMapper::writeDTO).orElse(null));
   }
 
   @POST
@@ -115,8 +114,7 @@ public class ServiceResource {
     ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
-    return ResponseDTO.newResponse(
-        createdService.getVersion().toString(), ServiceElementMapper.writeDTO(createdService));
+    return ResponseDTO.newResponse(ServiceElementMapper.writeDTO(createdService));
   }
 
   @POST
@@ -154,8 +152,7 @@ public class ServiceResource {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
-    return ResponseDTO.newResponse(
-        updatedService.getVersion().toString(), ServiceElementMapper.writeDTO(updatedService));
+    return ResponseDTO.newResponse(ServiceElementMapper.writeDTO(updatedService));
   }
 
   @PUT
@@ -167,8 +164,7 @@ public class ServiceResource {
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity upsertedService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);
-    return ResponseDTO.newResponse(
-        upsertedService.getVersion().toString(), ServiceElementMapper.writeDTO(upsertedService));
+    return ResponseDTO.newResponse(ServiceElementMapper.writeDTO(upsertedService));
   }
 
   @GET

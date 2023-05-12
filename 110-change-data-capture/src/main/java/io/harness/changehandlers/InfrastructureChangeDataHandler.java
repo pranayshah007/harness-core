@@ -13,6 +13,7 @@ import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
+import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
@@ -121,6 +122,10 @@ public class InfrastructureChangeDataHandler extends AbstractChangeDataHandler {
       case "SERVERLESS_AWS_LAMBDA":
         region = ((ServerlessAwsLambdaInfrastructure) infrastructure).getRegion().getValue();
         break;
+      case "KUBERNETES_AWS":
+        cluster = ((K8sAwsInfrastructure) infrastructure).getCluster().getValue();
+        namespace = ((K8sAwsInfrastructure) infrastructure).getNamespace().getValue();
+        break;
       default:
         break;
     }
@@ -139,6 +144,18 @@ public class InfrastructureChangeDataHandler extends AbstractChangeDataHandler {
     if (resource_group != null) {
       columnValueMapping.put("resource_group", resource_group);
     }
+    return columnValueMapping;
+  }
+
+  public boolean shouldDelete() {
+    return false;
+  }
+
+  @Override
+  public Map<String, String> getColumnValueMappingForDelete() {
+    Map<String, String> columnValueMapping = new HashMap<>();
+    columnValueMapping.put("deleted", "true");
+    columnValueMapping.put("deleted_at", String.valueOf(System.currentTimeMillis()));
     return columnValueMapping;
   }
 

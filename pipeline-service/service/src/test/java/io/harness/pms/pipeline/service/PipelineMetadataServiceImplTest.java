@@ -128,7 +128,8 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .identifier(PIPE_IDENTIFIER)
                                 .build();
-    int result = pipelineMetadataService.incrementRunSequence(entity);
+    int result =
+        pipelineMetadataService.incrementRunSequence(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER);
     assertThat(result).isEqualTo(4);
   }
 
@@ -151,8 +152,9 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
                                 .identifier(PIPE_IDENTIFIER)
                                 .runSequence(2)
                                 .build();
-    int result = pipelineMetadataService.incrementRunSequence(entity);
-    assertThat(result).isEqualTo(3);
+    int result =
+        pipelineMetadataService.incrementRunSequence(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER);
+    assertThat(result).isEqualTo(1);
 
     ArgumentCaptor<PipelineMetadataV2> arg = ArgumentCaptor.forClass(PipelineMetadataV2.class);
     verify(pipelineMetadataRepository).save(arg.capture());
@@ -162,7 +164,7 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
     assertThat(metadata.getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
     assertThat(metadata.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(metadata.getIdentifier()).isEqualTo(PIPE_IDENTIFIER);
-    assertThat(metadata.getRunSequence()).isEqualTo(3);
+    assertThat(metadata.getRunSequence()).isEqualTo(1);
   }
 
   @Test
@@ -178,7 +180,10 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .identifier(PIPE_IDENTIFIER)
                                 .build();
-    Assertions.assertThatCode(() -> pipelineMetadataService.incrementRunSequence(entity))
+    Assertions
+        .assertThatCode(()
+                            -> pipelineMetadataService.incrementRunSequence(
+                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unable to update build sequence, please retry the execution");
   }

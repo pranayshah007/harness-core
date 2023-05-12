@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
-public class GcpKmsSecretMigrator implements SecretMigrator {
+public class GcpKmsSecretMigrator implements io.harness.ngmigration.secrets.SecretMigrator {
   @Override
   public SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig secretManagerConfig, String secretManagerIdentifier) {
@@ -51,6 +51,16 @@ public class GcpKmsSecretMigrator implements SecretMigrator {
                   .value(PLEASE_FIX_ME)
                   .secretManagerIdentifier(secretManagerIdentifier)
                   .build());
+  }
+
+  @Override
+  public String getEncryptionKey(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
+  }
+
+  @Override
+  public String getEncryptionValue(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
   }
 
   @Override

@@ -24,4 +24,5 @@ public interface NGFailureTypeConstants {
   String INPUT_TIMEOUT_ERROR = "InputTimeoutError";
   String APPROVAL_REJECTION = "ApprovalRejection";
   String DELEGATE_RESTART_ERROR = "DelegateRestart";
+  String USER_MARKED_FAILURE_ERROR = "UserMarkedFailure";
 }

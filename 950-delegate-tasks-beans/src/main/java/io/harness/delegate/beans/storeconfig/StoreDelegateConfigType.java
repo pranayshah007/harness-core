@@ -17,5 +17,6 @@ public enum StoreDelegateConfigType {
   HARNESS,
   CUSTOM_REMOTE,
   INLINE,
-  AMAZON_S3
+  AMAZON_S3,
+  GIT_FETCHED
 }

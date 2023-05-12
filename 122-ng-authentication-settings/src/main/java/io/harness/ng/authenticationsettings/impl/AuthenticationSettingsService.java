@@ -29,6 +29,7 @@ import okhttp3.MultipartBody;
 @OwnedBy(HarnessTeam.PL)
 public interface AuthenticationSettingsService {
   AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier);
+  AuthenticationSettingsResponse getAuthenticationSettingsV2(String accountIdentifier);
   void updateOauthProviders(String accountId, OAuthSettings settings);
   void updateAuthMechanism(String accountId, AuthenticationMechanism authenticationMechanism);
   void removeOauthMechanism(String accountId);
@@ -36,12 +37,20 @@ public interface AuthenticationSettingsService {
   void updateWhitelistedDomains(String accountIdentifier, Set<String> whitelistedDomains);
   SSOConfig uploadSAMLMetadata(@NotNull String accountId, @NotNull MultipartBody.Part inputStream,
       @NotNull String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
-      String entityIdentifier, String samlProviderType, String clientId, String clientSecret);
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName);
   SSOConfig updateSAMLMetadata(@NotNull String accountId, MultipartBody.Part inputStream, String displayName,
       String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl, String entityIdentifier,
       String samlProviderType, String clientId, String clientSecret);
+  // this overloading is for case when updating a SAML setting among list of settings in account {samlSSOId}
+  SSOConfig updateSAMLMetadata(@NotNull String accountId, String samlSSOId, MultipartBody.Part inputStream,
+      String displayName, String groupMembershipAttr, @NotNull Boolean authorizationEnabled, String logoutUrl,
+      String entityIdentifier, String samlProviderType, String clientId, String clientSecret, String friendlySamlName);
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
+  // this overloading is for case when we delete a SAML setting among list of settings in account {samlSSOId}
+  SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier, @NotNull String samlSSOId);
   LoginTypeResponse getSAMLLoginTest(@NotNull String accountIdentifier);
+  // this overloading is for case when we test-connection a SAML setting among list of settings in account {samlSSOId}
+  LoginTypeResponse getSAMLLoginTestV2(@NotNull String accountIdentifier, @NotNull String samlSSOId);
   LDAPSettings getLdapSettings(@NotNull String accountIdentifier);
   LDAPSettings createLdapSettings(@NotNull String accountIdentifier, LDAPSettings ldapSettings);
   LDAPSettings updateLdapSettings(@NotNull String accountIdentifier, LDAPSettings ldapSettings);
@@ -53,4 +62,7 @@ public interface AuthenticationSettingsService {
       @AccountIdentifier String accountIdentifier, SessionTimeoutSettings sessionTimeoutSettings);
 
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);
+  // updates authenticationEnabled value for a SAML setting {samlSSOId} in account
+  void updateAuthenticationForSAMLSetting(
+      @NotNull String accountId, @NotNull String samlSSOId, @NotNull Boolean enable);
 }

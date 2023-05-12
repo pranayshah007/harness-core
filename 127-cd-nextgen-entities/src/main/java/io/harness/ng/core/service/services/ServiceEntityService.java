@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceInputsMergedResponseDto;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 
@@ -99,4 +100,7 @@ public interface ServiceEntityService {
 
   Optional<ServiceEntity> getService(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
+
+  ValidateTemplateInputsResponseDTO validateTemplateInputs(
+      String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache);
 }

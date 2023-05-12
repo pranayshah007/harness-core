@@ -29,8 +29,11 @@ public class ThresholdServiceLevelIndicatorTransformer
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
         .name(serviceLevelIndicatorDTO.getName())
-        .sliMissingDataType(serviceLevelIndicatorDTO.getSliMissingDataType())
+        .sliMissingDataType(serviceLevelIndicatorDTO.getSLIMissingDataType())
         .metric1(thresholdSLIMetricSpec.getMetric1())
+        .considerConsecutiveMinutes(thresholdSLIMetricSpec.getConsiderConsecutiveMinutes())
+        .considerAllConsecutiveMinutesFromStartAsBad(
+            thresholdSLIMetricSpec.getConsiderAllConsecutiveMinutesFromStartAsBad())
         .thresholdValue(thresholdSLIMetricSpec.getThresholdValue())
         .thresholdType(thresholdSLIMetricSpec.getThresholdType())
         .monitoredServiceIdentifier(monitoredServiceIdentifier)
@@ -43,10 +46,14 @@ public class ThresholdServiceLevelIndicatorTransformer
   protected WindowBasedServiceLevelIndicatorSpec getSpec(ThresholdServiceLevelIndicator serviceLevelIndicator) {
     return WindowBasedServiceLevelIndicatorSpec.builder()
         .type(SLIMetricType.THRESHOLD)
+        .sliMissingDataType(serviceLevelIndicator.getSliMissingDataType())
         .spec(ThresholdSLIMetricSpec.builder()
                   .metric1(serviceLevelIndicator.getMetric1())
                   .thresholdValue(serviceLevelIndicator.getThresholdValue())
                   .thresholdType(serviceLevelIndicator.getThresholdType())
+                  .considerConsecutiveMinutes(serviceLevelIndicator.getConsiderConsecutiveMinutes())
+                  .considerAllConsecutiveMinutesFromStartAsBad(
+                      serviceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad())
                   .build())
         .build();
   }

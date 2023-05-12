@@ -63,6 +63,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
       throw NestedExceptionUtils.hintWithExplanationException("Google Artifact Registry: Could not get Bearer Token",
           "Refresh Token might be not getting generated", new InvalidArtifactServerException(e.getMessage(), USER));
     }
+
     if (isRegex(attributesRequest)) {
       lastSuccessfulBuild =
           garApiService.getLastSuccessfulBuildFromRegex(garInternalConfig, attributesRequest.getVersionRegex());
@@ -72,6 +73,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
     GarDelegateResponse garDelegateResponse = toGarResponse(lastSuccessfulBuild, attributesRequest);
     return getSuccessTaskExecutionResponse(Collections.singletonList(garDelegateResponse));
   }
+
   @Override
   public ArtifactTaskExecutionResponse getBuilds(GarDelegateRequest attributesRequest) {
     List<BuildDetailsInternal> builds;

@@ -100,6 +100,7 @@ public class TasRunPluginCommandTaskHandler extends CfCommandTaskNGHandler {
 
     try {
       workingDirectory = createWorkingDirectory();
+      cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       final String workingDirCanonicalPath = dirCanonicalPath(workingDirectory);
 
       // save the files in the directory

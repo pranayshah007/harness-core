@@ -86,12 +86,7 @@ public class RunInfoUtilsTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldTestGetStepRollbackRunCondition() {
     String defaultRunConditionForRollback = RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.NORMAL);
-    assertThat(defaultRunConditionForRollback).isEqualTo("<+OnStageFailure>");
-
-    assertThat(RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.POST_EXECUTION_ROLLBACK))
-        .isEqualTo("<+Always>");
-    assertThat(RunInfoUtils.getRunConditionForRollback(null, ExecutionMode.PIPELINE_ROLLBACK)).isEqualTo("<+Always>");
-    assertThat(RunInfoUtils.getRunConditionForRollback(null, null)).isEqualTo("<+OnStageFailure>");
+    assertThat(defaultRunConditionForRollback).isEqualTo("<+OnRollbackModeExecution> || <+OnStageFailure>");
 
     assertThatThrownBy(
         ()

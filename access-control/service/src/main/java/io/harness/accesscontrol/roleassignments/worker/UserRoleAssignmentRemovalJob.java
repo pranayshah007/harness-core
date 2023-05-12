@@ -14,6 +14,7 @@ import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
 import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
@@ -33,11 +34,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -46,6 +46,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -100,14 +101,10 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     log.info(DEBUG_MESSAGE + " completed...");
   }
 
-  private void execute() {
-    List<AccountDTO> accountDTOS = new ArrayList<>();
-    try {
-      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts", ex);
-    }
-    List<String> targetAccounts = filterAccountsForFFEnabled(accountDTOS);
+  @VisibleForTesting
+  void execute() {
+    Set<String> targetAccounts = featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS);
+
     if (isEmpty(targetAccounts)) {
       return;
     }
@@ -128,7 +125,7 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     }
   }
 
-  private List<String> filterAccountsForAccountBasicRoleOnlyFF(List<String> accountIds) {
+  private List<String> filterAccountsForAccountBasicRoleOnlyFF(Set<String> accountIds) {
     List<String> filteredAccounts = new ArrayList<>();
     try {
       for (String accountId : accountIds) {
@@ -141,22 +138,6 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF ACCOUNT_BASIC_ROLE_ONLY");
     }
     return filteredAccounts;
-  }
-
-  private List<String> filterAccountsForFFEnabled(List<AccountDTO> ngEnabledAccounts) {
-    List<String> targetAccounts = new ArrayList<>();
-    try {
-      for (AccountDTO accountDTO : ngEnabledAccounts) {
-        boolean isRemoveUserViewerRoleAssignment =
-            featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountDTO.getIdentifier());
-        if (isRemoveUserViewerRoleAssignment) {
-          targetAccounts.add(accountDTO.getIdentifier());
-        }
-      }
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS");
-    }
-    return targetAccounts;
   }
 
   private void deleteAccountScopeRoleAssignments(String accountId) {
@@ -254,9 +235,10 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
                               .and(RoleAssignmentDBOKeys.scopeIdentifier)
                               .in(scopeIdentifiers)
                               .and(RoleAssignmentDBOKeys.resourceGroupIdentifier)
-                              .is(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER)
+                              .in(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER,
+                                  ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER)
                               .and(RoleAssignmentDBOKeys.roleIdentifier)
-                              .in(NGConstants.ACCOUNT_VIEWER_ROLE)
+                              .is(NGConstants.ACCOUNT_VIEWER_ROLE)
                               .and(RoleAssignmentDBOKeys.principalScopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
                               .and(RoleAssignmentDBOKeys.scopeLevel)

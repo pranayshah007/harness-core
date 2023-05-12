@@ -24,8 +24,8 @@ import static io.harness.rule.OwnerRule.PRAVEEN;
 import static junit.framework.TestCase.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -466,7 +466,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(testLogAnalysisLearningEngineTask.getControlDataUrl()).isNull();
     assertThat(testLogAnalysisLearningEngineTask.getTestDataUrl())
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
-            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
+            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000&hosts=");
   }
 
   @Test
@@ -503,7 +503,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
             + baselineVerificationTaskId + "&analysisStartTime=1595846760000&analysisEndTime=1595847660000");
     assertThat(testLogAnalysisLearningEngineTask.getTestDataUrl())
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
-            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
+            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000&hosts=");
   }
 
   @Test

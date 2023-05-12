@@ -19,9 +19,9 @@ import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
-import io.harness.ssca.cd.beans.stepinfo.CdSscaOrchestrationSpecParameters;
+import io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationSpecParameters;
 import io.harness.ssca.client.SSCAServiceUtils;
-import io.harness.ssca.execution.SscaOrchestrationStepPluginUtils;
+import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
@@ -62,8 +62,12 @@ public class SscaOrchestrationPluginHelper {
                                                      .sbomSource(sbomSource)
                                                      .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getBaseUrl())
                                                      .stepExecutionId(runtimeId)
+                                                     .stepIdentifier(identifier)
                                                      .build();
-    return SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
+    Map<String, String> envVars = SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
+    envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));
+    return envVars;
   }
 
   private static String getFormat(CdSscaOrchestrationSpecParameters stepInfo) {

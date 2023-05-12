@@ -7,21 +7,31 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.cdng.beans.CVNGStepType;
+import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
+import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+
 @OwnedBy(HarnessTeam.CV)
 public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
   @Inject InjectorUtils injectorUtils;
@@ -29,6 +39,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new CVNGPlanCreatorV2());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -37,6 +48,7 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new CVNGStepFilterJsonCreator());
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STEPS, SPEC, STRATEGY))); // ??
     injectorUtils.injectMembers(filterJsonCreators);
     return filterJsonCreators;
   }
@@ -45,6 +57,8 @@ public class CVNGPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new CVNGStepVariableCreator());
+    variableCreators.add(
+        new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS, SPEC, STEP_GROUP))); // ??
     return variableCreators;
   }
 

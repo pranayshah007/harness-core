@@ -58,6 +58,11 @@ public class K8sLegacyRelease implements IK8sRelease {
   }
 
   @Override
+  public String getReleaseColor() {
+    return "";
+  }
+
+  @Override
   public IK8sRelease setReleaseData(List<KubernetesResource> resources, boolean isPruningEnabled) {
     if (isPruningEnabled) {
       List<KubernetesResource> resourcesWithPruningEnabled =

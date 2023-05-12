@@ -118,7 +118,7 @@ public class EnvironmentStepTest extends CategoryTest {
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
-    assertThat(entityMap.size()).isEqualTo(4);
+    assertThat(entityMap.size()).isEqualTo(5);
     assertThat(entityMap.get(FreezeEntityType.ENVIRONMENT)).isEqualTo(Lists.newArrayList("envRef"));
     assertThat(entityMap.get(FreezeEntityType.ORG)).isEqualTo(Lists.newArrayList("ORG_ID"));
     assertThat(entityMap.get(FreezeEntityType.PROJECT)).isEqualTo(Lists.newArrayList("PROJECT_ID"));
@@ -141,7 +141,7 @@ public class EnvironmentStepTest extends CategoryTest {
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
-    assertThat(entityMap.size()).isEqualTo(4);
+    assertThat(entityMap.size()).isEqualTo(5);
     assertThat(entityMap.get(FreezeEntityType.ENVIRONMENT)).isEqualTo(Lists.newArrayList("org.envRef"));
     assertThat(entityMap.get(FreezeEntityType.ORG)).isEqualTo(Lists.newArrayList("ORG_ID"));
     assertThat(entityMap.get(FreezeEntityType.PROJECT)).isEqualTo(Lists.newArrayList("PROJECT_ID"));
@@ -164,7 +164,7 @@ public class EnvironmentStepTest extends CategoryTest {
     verify(freezeEvaluateService, times(1)).getActiveManualFreezeEntities(any(), any(), any(), captor.capture());
 
     Map<FreezeEntityType, List<String>> entityMap = captor.getValue();
-    assertThat(entityMap.size()).isEqualTo(4);
+    assertThat(entityMap.size()).isEqualTo(5);
     assertThat(entityMap.get(FreezeEntityType.ENVIRONMENT)).isEqualTo(Lists.newArrayList("account.envRef"));
     assertThat(entityMap.get(FreezeEntityType.ORG)).isEqualTo(Lists.newArrayList("ORG_ID"));
     assertThat(entityMap.get(FreezeEntityType.PROJECT)).isEqualTo(Lists.newArrayList("PROJECT_ID"));
@@ -282,6 +282,7 @@ public class EnvironmentStepTest extends CategoryTest {
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234L)
         .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPipelineIdentifier("pipelineId")
                          .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
                                                .setPrincipal("prinicipal")
                                                .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)

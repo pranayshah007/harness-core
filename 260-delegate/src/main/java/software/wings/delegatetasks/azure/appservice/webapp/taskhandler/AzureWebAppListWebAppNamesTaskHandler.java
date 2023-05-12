@@ -43,7 +43,8 @@ public class AzureWebAppListWebAppNamesTaskHandler extends AbstractAzureWebAppTa
     String resourceGroupName =
         ((AzureWebAppListWebAppNamesParameters) azureAppServiceTaskParameters).getResourceGroupName();
 
-    AzureClientContext azureClientContext = new AzureClientContext(azureConfig, subscriptionId, resourceGroupName);
+    AzureClientContext azureClientContext =
+        new AzureClientContext(azureConfig, subscriptionId, resourceGroupName, false);
 
     List<WebAppBasic> webAppsBasic = azureWebClient.listWebAppsByResourceGroupName(azureClientContext);
 

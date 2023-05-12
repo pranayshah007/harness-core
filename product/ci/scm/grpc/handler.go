@@ -133,6 +133,10 @@ func (h *handler) RefreshToken(ctx context.Context, in *pb.RefreshTokenRequest) 
 	return git.RefreshToken(ctx, in, h.log)
 }
 
+func (h *handler) GenerateStageYamlForCI(ctx context.Context, in *pb.GenerateYamlRequest) (*pb.GenerateYamlResponse, error) {
+	return git.GenerateStageYamlForCI(ctx, in, h.log)
+}
+
 // FindFilesInPR lists the files in a PR.
 func (h *handler) FindFilesInPR(ctx context.Context, in *pb.FindFilesInPRRequest) (*pb.FindFilesInPRResponse, error) {
 	return git.FindFilesInPR(ctx, in, h.log)

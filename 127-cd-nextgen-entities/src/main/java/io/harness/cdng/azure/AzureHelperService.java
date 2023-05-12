@@ -154,6 +154,13 @@ public class AzureHelperService {
 
   public DelegateResponseData getResponseData(Ambiance ambiance, BaseNGAccess ngAccess,
       ExecutionCapabilityDemander executionCapabilityDemander, Optional<Integer> customTimeoutInSec) {
+    return getResponseData(
+        ambiance, ngAccess, executionCapabilityDemander, ArtifactTaskType.GET_BUILDS, customTimeoutInSec);
+  }
+
+  public DelegateResponseData getResponseData(Ambiance ambiance, BaseNGAccess ngAccess,
+      ExecutionCapabilityDemander executionCapabilityDemander, ArtifactTaskType artifactTaskType,
+      Optional<Integer> customTimeoutInSec) {
     TaskParameters taskParameters = null;
     String taskType = null;
     Collection<? extends String> taskSelectors = null;
@@ -167,7 +174,7 @@ public class AzureHelperService {
       AcrArtifactDelegateRequest acrArtifactDelegateRequest = (AcrArtifactDelegateRequest) executionCapabilityDemander;
       ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                           .accountId(ngAccess.getAccountIdentifier())
-                                                          .artifactTaskType(ArtifactTaskType.GET_BUILDS)
+                                                          .artifactTaskType(artifactTaskType)
                                                           .attributes(acrArtifactDelegateRequest)
                                                           .build();
       taskParameters = artifactTaskParameters;
@@ -213,6 +220,12 @@ public class AzureHelperService {
   public DelegateResponseData executeSyncTask(
       ExecutionCapabilityDemander params, BaseNGAccess ngAccess, String ifFailedMessage) {
     DelegateResponseData responseData = getResponseData(null, ngAccess, params, Optional.empty());
+    return getTaskExecutionResponse(responseData, ifFailedMessage);
+  }
+
+  public DelegateResponseData executeSyncTask(ExecutionCapabilityDemander params, BaseNGAccess ngAccess,
+      ArtifactTaskType artifactTaskType, String ifFailedMessage) {
+    DelegateResponseData responseData = getResponseData(null, ngAccess, params, artifactTaskType, Optional.empty());
     return getTaskExecutionResponse(responseData, ifFailedMessage);
   }
   public DelegateResponseData executeSyncTask(

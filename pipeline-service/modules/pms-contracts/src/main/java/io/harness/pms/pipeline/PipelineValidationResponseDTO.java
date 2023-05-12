@@ -31,4 +31,6 @@ public class PipelineValidationResponseDTO {
   @Schema(description = "End time of the Evaluation") Long endTs;
 
   @Schema(description = "Result of Policy Evaluations on the Pipeline") GovernanceMetadata policyEval;
+  @Schema(description = "Template Resolution Validation Status")
+  TemplateValidationResponseDTO templateValidationResponse;
 }

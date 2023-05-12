@@ -15,10 +15,9 @@ import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.UnavailabilityInstancesResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventDetailsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsResponse;
-import io.harness.cvng.servicelevelobjective.beans.secondaryEvents.SecondaryEventsType;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsResponse;
+import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -35,9 +34,6 @@ public interface SLODashboardService {
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
   PageResponse<MSDropdownResponse> getSLOAssociatedMonitoredServices(
       ProjectParams projectParams, PageParams pageParams);
-
-  List<UnavailabilityInstancesResponse> getUnavailabilityInstances(
-      ProjectParams projectParams, long startTime, long endTime, String identifier);
 
   List<SecondaryEventsResponse> getSecondaryEvents(
       ProjectParams projectParams, long startTime, long endTime, String identifier);

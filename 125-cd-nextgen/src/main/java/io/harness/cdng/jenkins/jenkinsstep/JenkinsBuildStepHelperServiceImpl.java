@@ -70,9 +70,9 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
   private final SecretManagerClientService secretManagerClientService;
   private final KryoSerializer referenceFalseKryoSerializer;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
+  public static final String COMMAND_UNIT = "Execute";
+  @VisibleForTesting static final int TIMEOUT_IN_SECS = 120;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  @VisibleForTesting static final int timeoutInSecs = 30;
-  public String COMMAND_UNIT = "Execute";
 
   @Inject
   public JenkinsBuildStepHelperServiceImpl(ConnectorResourceClient connectorResourceClient,
@@ -191,12 +191,12 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.JENKINS_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
-            .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
+            .executionTimeout(java.time.Duration.ofSeconds(TIMEOUT_IN_SECS))
             .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
             .taskSetupAbstraction("ng", "true")
             .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
             .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
-            .taskSelectors(delegateRequest.getJenkinsConnectorDTO().getDelegateSelectors())
+            .taskSelectors(delegateRequest.getDelegateSelectors())
             .logStreamingAbstractions(logAbstractionMap)
             .build();
     return delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);

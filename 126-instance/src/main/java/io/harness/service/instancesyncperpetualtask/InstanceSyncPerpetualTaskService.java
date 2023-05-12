@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
@@ -27,9 +28,14 @@ public interface InstanceSyncPerpetualTaskService {
       InfrastructureMappingDTO infrastructureMappingDTO, AbstractInstanceSyncHandler abstractInstanceSyncHandler,
       List<DeploymentInfoDTO> deploymentInfoDTOList, InfrastructureOutcome infrastructureOutcome);
 
+  void resetPerpetualTaskV2(String accountIdentifier, String perpetualTaskId,
+      InfrastructureMappingDTO infrastructureMappingDTO, AbstractInstanceSyncHandler abstractInstanceSyncHandler,
+      ConnectorInfoDTO connectorInfoDTO);
+
   void deletePerpetualTask(String accountIdentifier, String perpetualTaskId);
 
   boolean isInstanceSyncV2Enabled();
 
-  String createPerpetualTaskV2();
+  String createPerpetualTaskV2(AbstractInstanceSyncHandler abstractInstanceSyncHandler,
+      InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO);
 }

@@ -25,7 +25,6 @@ import software.wings.service.impl.delegate.AwsEcrApiHelperServiceDelegate;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Base64;
 import java.util.List;
 
 @Singleton
@@ -52,10 +51,10 @@ public class TasElasticContainerRegistrySettingsProvider extends AbstractTasRegi
     AwsInternalConfig awsInternalConfig =
         getAwsInternalConfig(awsConnectorDTO, region, artifactConfig.getEncryptedDataDetails());
     String registryUrl = getRegistryUrl(artifactConfig.getImage());
-    String password = getEcrPassword(awsInternalConfig, region, artifactConfig.getImage());
+    String password = String.valueOf(awsInternalConfig.getSecretKey());
 
-    validateSettings(artifactConfig, registryUrl, ECR_USERNAME, password);
-    return populateDockerSettings(registryUrl, ECR_USERNAME, password);
+    validateSettings(artifactConfig, registryUrl, String.valueOf(awsInternalConfig.getAccessKey()), password);
+    return populateDockerSettings(registryUrl, String.valueOf(awsInternalConfig.getAccessKey()), password);
   }
 
   private AwsInternalConfig getAwsInternalConfig(
@@ -77,13 +76,5 @@ public class TasElasticContainerRegistrySettingsProvider extends AbstractTasRegi
     fullImageUrl = fullImageUrl.substring(0, fullImageUrl.length() - 1);
     int index = fullImageUrl.lastIndexOf('/');
     return fullImageUrl.substring(0, index + 1);
-  }
-
-  private String getEcrPassword(AwsInternalConfig awsInternalConfig, String region, String ecrImageUrl) {
-    String authToken = awsEcrApiHelperServiceDelegate.getAmazonEcrAuthToken(
-        awsInternalConfig, ecrImageUrl.substring(0, ecrImageUrl.indexOf('.')), region);
-
-    String decoded = new String(Base64.getDecoder().decode(authToken));
-    return decoded.split(":")[1];
   }
 }

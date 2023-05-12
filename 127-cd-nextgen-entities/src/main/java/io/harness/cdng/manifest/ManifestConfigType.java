@@ -47,7 +47,9 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.AwsLambdaFunctionDefinition) AWS_LAMBDA(ManifestType.AwsLambdaFunctionDefinition),
   @JsonProperty(ManifestType.AwsLambdaFunctionAliasDefinition)
   AWS_LAMBDA_ALIAS(ManifestType.AwsLambdaFunctionAliasDefinition),
-  @JsonProperty(ManifestType.AwsSamDirectory) AWS_SAM_DIRECTORY(ManifestType.AwsSamDirectory);
+  @JsonProperty(ManifestType.AwsSamDirectory) AWS_SAM_DIRECTORY(ManifestType.AwsSamDirectory),
+  @JsonProperty(ManifestType.GoogleCloudFunctionGenOneDefinition)
+  CLOUD_FUNCTION_GEN_ONE_DEFINITION(ManifestType.GoogleCloudFunctionGenOneDefinition);
 
   private final String displayName;
 

@@ -15,6 +15,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.ConnectorFilterPropertiesDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.helper.ConnectorEntityDetailUtils;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
@@ -22,6 +23,7 @@ import io.harness.gitsync.FileChange;
 import io.harness.gitsync.ScopeDetails;
 import io.harness.gitsync.common.GitSyncFileConstants;
 import io.harness.ng.core.entitydetail.EntityDetailRestToProtoMapper;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 @Slf4j
@@ -73,9 +76,10 @@ public class ConnectorFullSyncHelper {
   private List<ConnectorInfoDTO> getConnectorListForFullSync(ScopeDetails scope) {
     // todo(abhinav): do pagination
     final EntityScopeInfo entityScope = scope.getEntityScope();
-    final Page<ConnectorResponseDTO> connectorResponseDtos = connectorService.list(0, 1000, entityScope.getAccountId(),
+    final Page<ConnectorResponseDTO> connectorResponseDtos = connectorService.list(entityScope.getAccountId(),
         excludeSecretManagerConnectorForFullSyncInFilter(), getStringFromStringValue(entityScope.getOrgId()),
-        getStringFromStringValue(entityScope.getProjectId()), null, null, false, false);
+        getStringFromStringValue(entityScope.getProjectId()), null, null, false, false,
+        PageUtils.getPageRequest(0, 1000, List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString())));
     return connectorResponseDtos.get()
         .filter(connectorResponseDTO -> connectorResponseDTO.getGitDetails().getFilePath() == null)
         .map(ConnectorResponseDTO::getConnector)

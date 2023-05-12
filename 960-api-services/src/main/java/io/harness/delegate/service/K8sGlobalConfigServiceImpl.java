@@ -48,7 +48,7 @@ public class K8sGlobalConfigServiceImpl implements K8sGlobalConfigService {
   @Override
   public String getGoTemplateClientPath() {
     try {
-      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_1);
+      return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4_2);
     } catch (IllegalArgumentException e) {
       return getToolPath(GO_TEMPLATE, GoTemplateVersion.V0_4);
     }

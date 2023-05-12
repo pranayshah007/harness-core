@@ -30,23 +30,20 @@ import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.TrackMessage;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.GTM)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(SecurityContextBuilder.class)
 public class SegmentReporterImplTest extends TelemetrySdkTestBase {
   @Mock SegmentSender segmentSender;
+  MockedStatic<SecurityContextBuilder> securityContextBuilderMockedStatic;
   @InjectMocks SegmentReporterImpl segmentReporterImpl;
 
   private static final String EMAIL = "dummy@dummy";
@@ -69,8 +66,8 @@ public class SegmentReporterImplTest extends TelemetrySdkTestBase {
   @Before
   public void setUp() {
     initMocks(this);
-    PowerMockito.mockStatic(SecurityContextBuilder.class);
-    Mockito.when(SecurityContextBuilder.getPrincipal())
+    securityContextBuilderMockedStatic = Mockito.mockStatic(SecurityContextBuilder.class);
+    securityContextBuilderMockedStatic.when(() -> SecurityContextBuilder.getPrincipal())
         .thenReturn(new UserPrincipal("dummy", EMAIL, "dummy", ACCOUNT_ID));
     properties = new HashMap<>();
     properties.put(PROPERTY_KEY, PROPERTY_VALUE);
@@ -79,6 +76,11 @@ public class SegmentReporterImplTest extends TelemetrySdkTestBase {
     trackCaptor = ArgumentCaptor.forClass(TrackMessage.Builder.class);
     groupCaptor = ArgumentCaptor.forClass(GroupMessage.Builder.class);
     identifyCaptor = ArgumentCaptor.forClass(IdentifyMessage.Builder.class);
+  }
+
+  @After
+  public void cleanUp() {
+    securityContextBuilderMockedStatic.close();
   }
 
   @Test
@@ -103,7 +105,8 @@ public class SegmentReporterImplTest extends TelemetrySdkTestBase {
   @Owner(developers = ALLEN)
   @Category(UnitTests.class)
   public void testSendTrackEventWithAnalyticsUser() {
-    Mockito.when(SecurityContextBuilder.getPrincipal()).thenReturn(new UserPrincipal(null, null, null, null));
+    securityContextBuilderMockedStatic.when(() -> SecurityContextBuilder.getPrincipal())
+        .thenReturn(new UserPrincipal(null, null, null, null));
     Mockito.when(segmentSender.isEnabled()).thenReturn(true);
     String testAccountId = "testAccount";
     segmentReporterImpl.sendTrackEvent("test", null, testAccountId, properties, destinations, TEST_CATEGORY);
@@ -123,7 +126,8 @@ public class SegmentReporterImplTest extends TelemetrySdkTestBase {
   @Owner(developers = ALLEN)
   @Category(UnitTests.class)
   public void testSendTrackEventWithSystemUser() {
-    Mockito.when(SecurityContextBuilder.getPrincipal()).thenReturn(new UserPrincipal(null, null, null, null));
+    securityContextBuilderMockedStatic.when(() -> SecurityContextBuilder.getPrincipal())
+        .thenReturn(new UserPrincipal(null, null, null, null));
     Mockito.when(segmentSender.isEnabled()).thenReturn(true);
     segmentReporterImpl.sendTrackEvent("test", null, null, properties, destinations, TEST_CATEGORY);
     Mockito.verify(segmentSender).enqueue(trackCaptor.capture());

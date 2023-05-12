@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -23,4 +24,5 @@ public class TerraformDestroyCommandRequest {
   String varParams; // Needed to send inline variable values in CG
   String uiLogs; // Needed in CG to prevent printing secrets
   boolean isTerraformCloudCli;
+  Map<String, String> additionalCliFlags;
 }

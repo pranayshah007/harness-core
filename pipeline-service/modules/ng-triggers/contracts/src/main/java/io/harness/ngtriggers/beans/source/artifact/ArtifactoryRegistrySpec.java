@@ -25,6 +25,8 @@ import lombok.Data;
 public class ArtifactoryRegistrySpec implements ArtifactTypeSpec {
   String connectorRef;
   List<TriggerEventDataCondition> eventConditions;
+  List<TriggerEventDataCondition> metaDataConditions;
+  String jexlCondition;
   String artifactDirectory;
   String artifactPath;
   String repository;
@@ -44,5 +46,15 @@ public class ArtifactoryRegistrySpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

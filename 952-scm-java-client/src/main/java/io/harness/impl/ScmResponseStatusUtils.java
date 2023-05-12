@@ -121,4 +121,7 @@ public class ScmResponseStatusUtils {
   public boolean isSuccessResponse(int statusCode) {
     return statusCode == 200;
   }
+  public boolean isSuccessfulCreateResponse(int statusCode) {
+    return statusCode == 200 || statusCode == 201;
+  }
 }

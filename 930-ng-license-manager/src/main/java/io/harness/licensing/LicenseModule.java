@@ -1,7 +1,8 @@
 /*
  * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
+ * that can be found in the licenses directory at the root of this repository,
+ * also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
@@ -12,6 +13,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.configuration.DeployMode;
+import io.harness.credit.CreditRegistrarFactory;
+import io.harness.credit.mappers.CreditObjectConverter;
+import io.harness.credit.mappers.CreditObjectMapper;
 import io.harness.credit.services.CreditService;
 import io.harness.credit.services.impl.CreditServiceImpl;
 import io.harness.licensing.checks.LicenseComplianceResolver;
@@ -75,10 +79,15 @@ public class LicenseModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), ModuleType.class, LicenseObjectMapper.class);
     MapBinder<ModuleType, ModuleLicenseClient> interfaceMapBinder =
         MapBinder.newMapBinder(binder(), ModuleType.class, ModuleLicenseClient.class);
+    MapBinder<ModuleType, CreditObjectMapper> creditObjectMapperMapBinder =
+        MapBinder.newMapBinder(binder(), ModuleType.class, CreditObjectMapper.class);
 
     for (ModuleType moduleType : ModuleLicenseRegistrarFactory.getSupportedModuleTypes()) {
       objectMapperMapBinder.addBinding(moduleType).to(ModuleLicenseRegistrarFactory.getLicenseObjectMapper(moduleType));
       interfaceMapBinder.addBinding(moduleType).to(ModuleLicenseRegistrarFactory.getModuleLicenseClient(moduleType));
+    }
+    for (ModuleType moduleType : CreditRegistrarFactory.getSupportedModuleTypes()) {
+      creditObjectMapperMapBinder.addBinding(moduleType).to(CreditRegistrarFactory.getCreditObjectMapper(moduleType));
     }
 
     MapBinder<Edition, LicenseEditionChecker> editionCheckerMapBinder =
@@ -88,6 +97,7 @@ public class LicenseModule extends AbstractModule {
     editionCheckerMapBinder.addBinding(Edition.ENTERPRISE).to(EnterpriseChecker.class);
 
     bind(LicenseObjectConverter.class);
+    bind(CreditObjectConverter.class);
     bind(ModuleLicenseInterface.class).to(ModuleLicenseImpl.class);
     if (DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE))) {
       bind(LicenseService.class).to(SMPLicenseServiceImpl.class);

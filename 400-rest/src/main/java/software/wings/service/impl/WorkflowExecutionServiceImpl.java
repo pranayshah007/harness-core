@@ -38,9 +38,9 @@ import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
 import static io.harness.beans.FeatureName.RESOLVE_DEPLOYMENT_TAGS_BEFORE_EXECUTION;
 import static io.harness.beans.FeatureName.SPG_ALLOW_REFRESH_PIPELINE_EXECUTION_BEFORE_CONTINUE_PIPELINE;
+import static io.harness.beans.FeatureName.SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE;
 import static io.harness.beans.FeatureName.SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS;
 import static io.harness.beans.FeatureName.SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS;
-import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.FeatureName.WORKFLOW_EXECUTION_REFRESH_STATUS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
@@ -170,6 +170,7 @@ import io.harness.limits.checker.LimitApproachingException;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -278,7 +279,6 @@ import software.wings.beans.execution.RollbackType;
 import software.wings.beans.execution.RollbackWorkflowExecutionInfo;
 import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.execution.WorkflowExecutionInfo.WorkflowExecutionInfoBuilder;
-import software.wings.beans.infrastructure.Host;
 import software.wings.beans.trigger.Trigger;
 import software.wings.beans.trigger.TriggerConditionType;
 import software.wings.dl.WingsPersistence;
@@ -1223,9 +1223,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                                   .withLimit("5")
                                   .build();
 
-    if (featureFlagService.isEnabled(SPG_WFE_OPTIMIZE_UPDATE_PIPELINE_ESTIMATES, workflowExecution.getAccountId())) {
-      pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
-    }
+    pageRequest.addFieldsIncluded(WorkflowExecutionKeys.pipelineExecution);
 
     List<WorkflowExecution> workflowExecutions = wingsPersistence.queryAnalytics(WorkflowExecution.class, pageRequest);
     // Adding check for pse.getStateUuid() == null for backward compatibility. Can be removed later
@@ -2739,30 +2737,43 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       Set<String> keywords, ExecutionArgs executionArgs, String accountId) {
     boolean shouldReduceKeywords =
         featureFlagService.isEnabled(SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS, accountId);
+    boolean shouldCollectArtifactVariablesData =
+        featureFlagService.isEnabled(SPG_ENABLE_POPULATE_USING_ARTIFACT_VARIABLE, accountId);
+
     if (featureFlagService.isEnabled(HELM_CHART_AS_ARTIFACT, accountId)) {
       populateHelmChartsInWorkflowExecution(
           workflowExecution, keywords, executionArgs, accountId, shouldReduceKeywords);
     }
 
-    if (isEmpty(executionArgs.getArtifacts())) {
-      return;
-    }
+    List<Artifact> artifacts;
+    if (isNotEmpty(executionArgs.getArtifacts())) {
+      List<String> artifactIds = executionArgs.getArtifacts()
+                                     .stream()
+                                     .map(Artifact::getUuid)
+                                     .filter(Objects::nonNull)
+                                     .distinct()
+                                     .collect(toList());
+      if (isEmpty(artifactIds)) {
+        return;
+      }
 
-    List<String> artifactIds = executionArgs.getArtifacts()
-                                   .stream()
-                                   .map(Artifact::getUuid)
-                                   .filter(Objects::nonNull)
-                                   .distinct()
-                                   .collect(toList());
-    if (isEmpty(artifactIds)) {
+      artifacts = artifactService.listByIds(appService.getAccountIdByAppId(workflowExecution.getAppId()), artifactIds);
+      if (artifacts == null || artifacts.size() != artifactIds.size()) {
+        log.error("artifactIds from executionArgs contains invalid artifacts");
+        throw new InvalidRequestException("Invalid artifact");
+      }
+    } else if (shouldCollectArtifactVariablesData && isNotEmpty(executionArgs.getArtifactVariables())) {
+      List<List<Artifact>> tempArts = executionArgs.getArtifactVariables()
+                                          .stream()
+                                          .map(artifactVar
+                                              -> artifactService.listArtifactsByArtifactStreamId(accountId,
+                                                  artifactVar.getArtifactInput().getArtifactStreamId(),
+                                                  artifactVar.getArtifactInput().getBuildNo()))
+                                          .collect(toList());
+      artifacts = tempArts.stream().collect(ArrayList::new, List::addAll, List::addAll);
+    } else {
+      log.info("artifact info from executionArgs doesnt contains valid artifacts");
       return;
-    }
-
-    List<Artifact> artifacts =
-        artifactService.listByIds(appService.getAccountIdByAppId(workflowExecution.getAppId()), artifactIds);
-    if (artifacts == null || artifacts.size() != artifactIds.size()) {
-      log.error("artifactIds from executionArgs contains invalid artifacts");
-      throw new InvalidRequestException("Invalid artifact");
     }
 
     // Filter out the artifacts that do not belong to the workflow.
@@ -2785,8 +2796,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       }
     }
 
-    executionArgs.setArtifactIdNames(
-        filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
+    if (shouldCollectArtifactVariablesData) {
+      executionArgs.setArtifactIdNames(filteredArtifacts.stream().collect(
+          toMap(Artifact::getUuid, Artifact::getDisplayName, (artifact1, artifact2) -> artifact1)));
+    } else {
+      executionArgs.setArtifactIdNames(
+          filteredArtifacts.stream().collect(toMap(Artifact::getUuid, Artifact::getDisplayName)));
+    }
     filteredArtifacts.forEach(artifact -> {
       artifact.setArtifactFiles(null);
       artifact.setCreatedBy(null);
@@ -4937,7 +4953,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
           workflowExecution.getWorkflowId());
       total = workflowExecution.getTotal();
       if (total == 0) {
-        total = refreshTotal(workflowExecution);
+        total = (int) refreshTotal(workflowExecution);
       }
       breakdown = getBreakdownFromPhases(workflowExecution);
       breakdown.setQueued(total - (breakdown.getFailed() + breakdown.getSuccess() + breakdown.getInprogress()));
@@ -5047,7 +5063,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return breakdown;
   }
 
-  private int refreshTotal(WorkflowExecution workflowExecution) {
+  private long refreshTotal(WorkflowExecution workflowExecution) {
     Workflow workflow = workflowService.readWorkflow(workflowExecution.getAppId(), workflowExecution.getWorkflowId());
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       log.info("Workflow was deleted. Skipping the refresh total");
@@ -5060,8 +5076,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       return 0;
     }
     try {
-      List<Host> hosts = hostService.getHostsByInfraMappingIds(workflow.getAppId(), resolvedInfraMappingIds);
-      return hosts == null ? 0 : hosts.size();
+      return hostService.getHostsCountByInfraMappingIds(workflow.getAppId(), resolvedInfraMappingIds);
     } catch (Exception e) {
       log.error(
           "Error occurred while calculating Refresh total for workflow execution {}", workflowExecution.getUuid(), e);
@@ -5605,10 +5620,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public List<WorkflowExecution> obtainWorkflowExecutions(
-      List<String> appIds, long fromDateEpochMilli, String[] projectedKeys) {
+      String accountId, List<String> appIds, long fromDateEpochMilli, String[] projectedKeys) {
     List<WorkflowExecution> workflowExecutions = new ArrayList<>();
     try (HIterator<WorkflowExecution> iterator =
-             obtainWorkflowExecutionIterator(appIds, fromDateEpochMilli, projectedKeys)) {
+             obtainWorkflowExecutionIterator(accountId, appIds, fromDateEpochMilli, projectedKeys)) {
       while (iterator.hasNext()) {
         workflowExecutions.add(iterator.next());
       }
@@ -5632,8 +5647,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   @Override
   public HIterator<WorkflowExecution> obtainWorkflowExecutionIterator(
-      List<String> appIds, long epochMilli, String[] projectedKeys) {
+      String accountId, List<String> appIds, long epochMilli, String[] projectedKeys) {
     Query<WorkflowExecution> query = wingsPersistence.createQuery(WorkflowExecution.class)
+                                         .filter(WorkflowExecutionKeys.accountId, accountId)
                                          .field(WorkflowExecutionKeys.appId)
                                          .in(appIds)
                                          .field(WorkflowExecutionKeys.createdAt)
@@ -5659,7 +5675,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     for (String projectedKey : projectedKeys) {
       query.project(projectedKey, true);
     }
-    return new HIterator<>(query.fetch());
+    return new HIterator<>(query.limit(MongoConfig.NO_LIMIT).fetch());
   }
 
   @Override

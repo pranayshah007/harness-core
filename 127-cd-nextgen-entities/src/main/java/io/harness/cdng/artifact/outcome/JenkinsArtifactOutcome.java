@@ -55,7 +55,7 @@ public class JenkinsArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return JenkinsArtifactSummary.builder().jobName(jobName).build(build).build();
+    return JenkinsArtifactSummary.builder().jobName(jobName).build(build).tag(jobName + ":" + build).build();
   }
 
   @Override

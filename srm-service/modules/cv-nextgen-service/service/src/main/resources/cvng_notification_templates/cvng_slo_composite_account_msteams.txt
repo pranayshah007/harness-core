@@ -1,0 +1,23 @@
+{
+  "@type": "MessageCard",
+  "themeColor": "#FFFFFF",
+  "summary": "Harness SRM",
+  "sections": [
+    {
+      "activityTitle": "SLO: ${SLO_NAME} ${HEADER_MESSAGE}",
+      "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
+      "facts": [
+              {
+                  "name": "Account Name",
+                  "value": "${ACCOUNT_NAME}"
+              },
+             {
+                   "name": "View SLO details",
+                   "value": "[${URL}](${URL})"
+             },
+      ],
+    }
+  ]
+}
+
+

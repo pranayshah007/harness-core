@@ -66,8 +66,8 @@ public class TestConfiguration implements MongoRuleMixin {
     AdvancedDatastore eventsDatastore =
         (AdvancedDatastore) morphia.createDatastore(fakeLegacyMongoClient(closingFactory), "events");
     MongoConfig mongoConfig = MongoConfig.builder().build();
-    eventsDatastore.setQueryFactory(
-        new QueryFactory(mongoConfig.getTraceMode(), mongoConfig.getMaxOperationTimeInMillis()));
+    eventsDatastore.setQueryFactory(new QueryFactory(mongoConfig.getTraceMode(),
+        mongoConfig.getMaxOperationTimeInMillis(), mongoConfig.getMaxDocumentsToBeFetched()));
 
     @SuppressWarnings("unchecked")
     val datastoreMap = (Map<String, AdvancedDatastore>) getField(hPersistence, "datastoreMap");

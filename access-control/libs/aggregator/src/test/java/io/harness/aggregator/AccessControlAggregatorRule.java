@@ -19,8 +19,8 @@ import io.harness.accesscontrol.AccessControlCoreModule;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.principals.PrincipalValidator;
 import io.harness.accesscontrol.scopes.core.ScopeLevel;
-import io.harness.aggregator.consumers.ChangeConsumerService;
-import io.harness.aggregator.consumers.ChangeConsumerServiceImpl;
+import io.harness.aggregator.consumers.ACLGeneratorService;
+import io.harness.aggregator.consumers.ACLGeneratorServiceImpl;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -115,7 +115,7 @@ public class AccessControlAggregatorRule implements MethodRule, InjectorRuleMixi
         implicitPermissionsByScope.addBinding(Pair.of(TEST_SCOPE, false))
             .toInstance(Collections.singleton("test_permission_1"));
 
-        bind(ChangeConsumerService.class).to(ChangeConsumerServiceImpl.class);
+        bind(ACLGeneratorService.class).to(ACLGeneratorServiceImpl.class);
       }
     });
 

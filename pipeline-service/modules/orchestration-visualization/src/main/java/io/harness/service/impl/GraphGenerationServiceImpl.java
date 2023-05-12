@@ -287,55 +287,61 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   }
 
   public OrchestrationGraph buildOrchestrationGraph(String planExecutionId) {
-    log.warn(String.format(
-        "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s]", planExecutionId));
-    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
-    if (planExecution == null) {
-      throw NestedExceptionUtils.hintWithExplanationException("Pipeline Execution with given plan execution id: ["
-              + planExecutionId + "] not found or unable to generate a graph for it",
-          "Try to open an execution which is not 6 months old. If issue persists, please contact harness support",
-          new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
-    }
-    List<NodeExecution> nodeExecutions = new LinkedList<>();
-    try (CloseableIterator<NodeExecution> iterator =
-             nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(planExecutionId)) {
-      while (iterator.hasNext()) {
-        nodeExecutions.add(iterator.next());
+    try {
+      log.warn(String.format(
+          "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s]", planExecutionId));
+      PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
+      if (planExecution == null) {
+        throw NestedExceptionUtils.hintWithExplanationException("Pipeline Execution with given plan execution id: ["
+                + planExecutionId + "] not found or unable to generate a graph for it",
+            "Try to open an execution which is not 6 months old. If issue persists, please contact harness support",
+            new InvalidRequestException("Graph could not be generated for planExecutionId [" + planExecutionId + "]."));
       }
-    }
-    log.warn(String.format(
-        "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s] with nodeExecutionsCount [%d]",
-        planExecutionId, nodeExecutions.size()));
-    if (isEmpty(nodeExecutions)) {
-      return OrchestrationGraph.builder()
-          .adjacencyList(OrchestrationAdjacencyListInternal.builder()
-                             .adjacencyMap(new HashMap<>())
-                             .graphVertexMap(new HashMap<>())
-                             .build())
-          .rootNodeIds(new ArrayList<>())
-          .build();
-    }
-
-    String rootNodeId = obtainStartingNodeExId(nodeExecutions);
-
-    OrchestrationGraph graph =
-        OrchestrationGraph.builder()
-            .cacheKey(planExecutionId)
-            .cacheContextOrder(System.currentTimeMillis())
-            .cacheParams(null)
-            .planExecutionId(planExecution.getUuid())
-            .startTs(planExecution.getStartTs())
-            .endTs(planExecution.getEndTs())
-            .status(planExecution.getStatus())
-            .rootNodeIds(Lists.newArrayList(rootNodeId))
-            .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(rootNodeId, nodeExecutions, true))
+      List<NodeExecution> nodeExecutions = new LinkedList<>();
+      try (CloseableIterator<NodeExecution> iterator =
+               nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesIterator(planExecutionId)) {
+        while (iterator.hasNext()) {
+          nodeExecutions.add(iterator.next());
+        }
+      }
+      log.warn(String.format(
+          "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s] with nodeExecutionsCount [%d]",
+          planExecutionId, nodeExecutions.size()));
+      if (isEmpty(nodeExecutions)) {
+        return OrchestrationGraph.builder()
+            .adjacencyList(OrchestrationAdjacencyListInternal.builder()
+                               .adjacencyMap(new HashMap<>())
+                               .graphVertexMap(new HashMap<>())
+                               .build())
+            .rootNodeIds(new ArrayList<>())
             .build();
+      }
 
-    List<NodeExecution> stageNodeExecutions =
-        nodeExecutions.stream().filter(OrchestrationUtils::isStageOrParallelStageNode).collect(Collectors.toList());
-    cacheOrchestrationGraph(graph);
-    pmsExecutionSummaryService.regenerateStageLayoutGraph(planExecutionId, stageNodeExecutions);
-    return graph;
+      String rootNodeId = obtainStartingNodeExId(nodeExecutions);
+
+      OrchestrationGraph graph = OrchestrationGraph.builder()
+                                     .cacheKey(planExecutionId)
+                                     .cacheContextOrder(System.currentTimeMillis())
+                                     .cacheParams(null)
+                                     .planExecutionId(planExecution.getUuid())
+                                     .startTs(planExecution.getStartTs())
+                                     .endTs(planExecution.getEndTs())
+                                     .status(planExecution.getStatus())
+                                     .rootNodeIds(Lists.newArrayList(rootNodeId))
+                                     .adjacencyList(orchestrationAdjacencyListGenerator.generateAdjacencyList(
+                                         rootNodeId, nodeExecutions, true))
+                                     .build();
+
+      List<NodeExecution> stageNodeExecutions =
+          nodeExecutions.stream().filter(OrchestrationUtils::isStageOrParallelStageNode).collect(Collectors.toList());
+      cacheOrchestrationGraph(graph);
+      pmsExecutionSummaryService.regenerateStageLayoutGraph(planExecutionId, stageNodeExecutions);
+      return graph;
+    } catch (Exception ex) {
+      log.error("Exception occurred while generating graph from nodeExecutions", ex);
+      throw new InvalidRequestException(
+          "Could not fetch graph for the given execution. It might have been deleted or does not exist");
+    }
   }
 
   private OrchestrationGraphDTO generatePartialGraph(String startId, OrchestrationGraph orchestrationGraph) {

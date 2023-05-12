@@ -44,5 +44,8 @@ public class SLODashboardApiFilter {
   @Parameter(description = "For filtering on the basis of SLO type") ServiceLevelObjectiveType type;
   @Parameter(description = "For filtering on the basis of SLO target spec") SLOTargetFilterDTO sloTargetFilterDTO;
   @Parameter(description = "For filtering on the basis of Composite SLO") String compositeSLOIdentifier;
+  @Parameter(description = "For filtering on the basis of SLI Evaluation type")
+  @QueryParam("evaluationType")
+  SLIEvaluationType evaluationType;
   @Parameter(description = "For filtering the simple slo's on the basis of accountId") boolean childResource;
 }

@@ -72,7 +72,7 @@ public class PreferenceResource {
   public RestResponse<PageResponse<Preference>> listPreferences(
       @QueryParam("accountId") @NotEmpty String accountId, @BeanParam PageRequest<Preference> pageRequest) {
     User user = UserThreadLocal.get();
-    return new RestResponse<>(prefService.list(pageRequest, user.getUuid()));
+    return new RestResponse<>(prefService.list(pageRequest, accountId, user.getUuid()));
   }
 
   @GET

@@ -19,6 +19,7 @@ import io.harness.exception.InvalidArgumentsException;
 import java.util.Arrays;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -28,6 +29,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 @FieldNameConstants(innerTypeName = "ScopeKeys")
+@EqualsAndHashCode
 public class Scope {
   @NotEmpty String accountIdentifier;
   String orgIdentifier;

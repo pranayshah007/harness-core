@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
@@ -20,6 +21,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.ssh.SshCommandStepHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -42,6 +44,7 @@ import io.harness.steps.TaskRequestsUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,7 +68,13 @@ public class ShellScriptProvisionStepTest extends CategoryTest {
   @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Mock private StepHelper stepHelper;
   @Mock private SshCommandStepHelper sshCommandStepHelper;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
   @InjectMocks private ShellScriptProvisionStep shellScriptProvisionStep;
+
+  @Before
+  public void setUpMocks() {
+    doNothing().when(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
+  }
 
   @Test
   @Owner(developers = TMACARI)

@@ -6,11 +6,12 @@
  */
 
 package io.harness.workers.background.critical.iterator;
+
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.MOUNIK;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Event;

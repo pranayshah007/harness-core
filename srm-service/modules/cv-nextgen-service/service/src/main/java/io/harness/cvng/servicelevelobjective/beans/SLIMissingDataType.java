@@ -25,22 +25,18 @@ public enum SLIMissingDataType {
     switch (this) {
       case GOOD:
         return SLIValue.builder()
-            .goodCount((int) (goodCount + missingDataCount))
-            .badCount((int) badCount)
-            .total((int) (totalMinutes - disabledMinutes))
+            .goodCount(goodCount + missingDataCount)
+            .badCount(badCount)
+            .total(totalMinutes - disabledMinutes)
             .build();
       case BAD:
         return SLIValue.builder()
-            .goodCount((int) goodCount)
-            .badCount((int) (badCount + missingDataCount))
-            .total((int) (totalMinutes - disabledMinutes))
+            .goodCount(goodCount)
+            .badCount(badCount + missingDataCount)
+            .total(totalMinutes - disabledMinutes)
             .build();
       case IGNORE:
-        return SLIValue.builder()
-            .goodCount((int) goodCount)
-            .badCount((int) badCount)
-            .total((int) (goodCount + badCount))
-            .build();
+        return SLIValue.builder().goodCount(goodCount).badCount(badCount).total(goodCount + badCount).build();
       default:
         throw new IllegalStateException("Unhanded SLIMissingDataType " + this);
     }

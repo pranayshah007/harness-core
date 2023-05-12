@@ -7,10 +7,12 @@
 
 package io.harness.ng.core.variable.resources;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.variable.VariablePermissions.VARIABLE_DELETE_PERMISSION;
 import static io.harness.ng.core.variable.VariablePermissions.VARIABLE_EDIT_PERMISSION;
 import static io.harness.ng.core.variable.VariablePermissions.VARIABLE_RESOURCE_TYPE;
 import static io.harness.ng.core.variable.VariablePermissions.VARIABLE_VIEW_PERMISSION;
+import static io.harness.utils.PageUtils.getPageRequest;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
@@ -21,11 +23,14 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SortOrder;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.variable.dto.VariableRequestDTO;
 import io.harness.ng.core.variable.dto.VariableResponseDTO;
 import io.harness.ng.core.variable.entity.Variable;
+import io.harness.ng.core.variable.entity.Variable.VariableKeys;
 import io.harness.ng.core.variable.mappers.VariableMapper;
 import io.harness.ng.core.variable.services.VariableService;
 
@@ -69,10 +74,15 @@ public class VariableResourceImpl implements VariableResource {
   @Override
   @NGAccessControlCheck(resourceType = VARIABLE_RESOURCE_TYPE, permission = VARIABLE_VIEW_PERMISSION)
   public ResponseDTO<PageResponse<VariableResponseDTO>> list(@AccountIdentifier String accountIdentifier,
-      @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, int page, int size,
-      String searchTerm, boolean includeVariablesFromEverySubScope) {
-    return ResponseDTO.newResponse(variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, page, size,
-        searchTerm, includeVariablesFromEverySubScope));
+      @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, String searchTerm,
+      boolean includeVariablesFromEverySubScope, PageRequest pageRequest) {
+    if (isEmpty(pageRequest.getSortOrders())) {
+      SortOrder order =
+          SortOrder.Builder.aSortOrder().withField(VariableKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
+      pageRequest.setSortOrders(List.of(order));
+    }
+    return ResponseDTO.newResponse(variableService.list(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm,
+        includeVariablesFromEverySubScope, getPageRequest(pageRequest)));
   }
 
   @Override

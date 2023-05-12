@@ -359,10 +359,10 @@ public class InstanceServiceImpl implements InstanceService {
                             .is(false);
 
     if (isNotEmpty(orgIdentifier)) {
-      criteria.and(InstanceKeys.orgIdentifier);
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
     }
     if (isNotEmpty(projectIdentifier)) {
-      criteria.and(InstanceKeys.projectIdentifier);
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
     }
 
     Update update =

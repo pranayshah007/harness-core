@@ -22,6 +22,7 @@ import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
 import io.harness.ssca.client.SSCAServiceUtils;
+import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;
@@ -48,14 +49,15 @@ public class SscaOrchestrationPluginUtils {
     }
 
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    OrchestrationStepEnvVariables envVariables = OrchestrationStepEnvVariables.builder()
-                                                     .sbomGenerationTool(tool)
-                                                     .sbomGenerationFormat(format)
-                                                     .sbomSource(sbomSource)
-                                                     .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getBaseUrl())
-                                                     .stepExecutionId(runtimeId)
-                                                     .stepIdentifier(identifier)
-                                                     .build();
+    OrchestrationStepEnvVariables envVariables =
+        OrchestrationStepEnvVariables.builder()
+            .sbomGenerationTool(tool)
+            .sbomGenerationFormat(format)
+            .sbomSource(sbomSource)
+            .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
+            .stepExecutionId(runtimeId)
+            .stepIdentifier(identifier)
+            .build();
     return SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
   }
 

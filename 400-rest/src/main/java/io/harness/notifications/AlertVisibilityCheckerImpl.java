@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.validation.constraints.NotEmpty;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -37,18 +38,19 @@ public class AlertVisibilityCheckerImpl implements AlertVisibilityChecker {
   @Inject private WorkflowExecutionService workflowExecutionService;
 
   @Override
-  public boolean shouldAlertBeShownToUser(String accountId, @Nonnull Alert alert, @Nonnull User user) {
+  public boolean shouldAlertBeShownToUser(
+      @NotEmpty List<String> userGroupByUserAndAccountId, @Nonnull Alert alert, String accountId) {
     List<AlertNotificationRule> allRules = ruleService.getAll(accountId);
 
     boolean showAlertToUser = false;
     if (alert.getCategory().equals(AlertCategory.Approval)) {
-      showAlertToUser = isUserPresentInUserGroupsApproval(accountId, alert, user);
+      showAlertToUser = isUserPresentInUserGroupsApproval(userGroupByUserAndAccountId, alert);
     }
 
     for (AlertNotificationRule rule : allRules) {
       boolean isPresent = false;
       if (rule.getAlertCategory().equals(AlertCategory.All)) {
-        isPresent = isUserPresentInUserGroups(accountId, rule.getUserGroupsToNotify(), user);
+        isPresent = isUserPresentInUserGroups(userGroupByUserAndAccountId, rule.getUserGroupsToNotify());
       }
 
       if (showAlertToUser) {
@@ -63,22 +65,20 @@ public class AlertVisibilityCheckerImpl implements AlertVisibilityChecker {
     return showAlertToUser;
   }
 
-  private boolean isUserPresentInUserGroups(String accountId, Set<String> userGroupIds, User user) {
-    List<String> userGroupsWithCurrentUser = userGroupService.listByAccountId(accountId, user, true)
-                                                 .stream()
-                                                 .map(UserGroup::getUuid)
-                                                 .collect(Collectors.toList());
+  public List<String> listUserGroupByUserAccountId(String accountId, User user) {
+    return userGroupService.listByAccountId(accountId, user, true)
+        .stream()
+        .map(UserGroup::getUuid)
+        .collect(Collectors.toList());
+  }
 
+  private boolean isUserPresentInUserGroups(List<String> userGroupsWithCurrentUser, Set<String> userGroupIds) {
     // if the intersection of userGroupIds matching the alertNotificationRule and userGroupIds with current user
     // is not empty, it means that user should be shown given alert.
     return !intersection(userGroupIds, userGroupsWithCurrentUser).isEmpty();
   }
 
-  private boolean isUserPresentInUserGroupsApproval(String accountId, Alert alert, User user) {
-    List<String> userGroupsWithCurrentUser = userGroupService.listByAccountId(accountId, user, true)
-                                                 .stream()
-                                                 .map(UserGroup::getUuid)
-                                                 .collect(Collectors.toList());
+  private boolean isUserPresentInUserGroupsApproval(List<String> userGroupsWithCurrentUser, Alert alert) {
     List<ApprovalStateExecutionData> a = workflowExecutionService.fetchApprovalStateExecutionsDataFromWorkflowExecution(
         alert.getAppId(), ((ApprovalNeededAlert) alert.getAlertData()).getExecutionId());
     return !a.stream()

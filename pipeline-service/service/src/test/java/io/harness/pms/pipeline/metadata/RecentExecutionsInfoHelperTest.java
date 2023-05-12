@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.metadata;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.plan.ExecutionMode.PIPELINE_ROLLBACK;
 import static io.harness.pms.pipeline.metadata.RecentExecutionsInfoHelper.NUM_RECENT_EXECUTIONS;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
@@ -26,6 +27,7 @@ import io.harness.execution.PlanExecution;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.noop.AcquiredNoopLock;
 import io.harness.observer.Subject.Informant0;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.RecentExecutionInfo;
@@ -91,6 +93,33 @@ public class RecentExecutionsInfoHelperTest extends CategoryTest {
     recentExecutionsInfoHelper.onExecutionStart(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, planExecution);
     verify(pipelineMetadataService, times(2)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testOnExecutionStartForRollbackModeExecution() {
+    recentExecutionsInfoHelper.onExecutionStart(null, null, null, null,
+        PlanExecution.builder()
+            .metadata(ExecutionMetadata.newBuilder().setExecutionMode(PIPELINE_ROLLBACK).build())
+            .build());
+    verify(persistentLocker, times(0)).waitToAcquireLock(any(), any(), any());
+    verify(pipelineMetadataService, times(0)).getMetadata(any(), any(), any(), any());
+    verify(pipelineMetadataService, times(0)).update(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testOnExecutionUpdateForRollbackModeExecution() {
+    recentExecutionsInfoHelper.onExecutionUpdate(
+        Ambiance.newBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(PIPELINE_ROLLBACK).build())
+            .build(),
+        null);
+    verify(persistentLocker, times(0)).waitToAcquireLock(any(), any(), any());
+    verify(pipelineMetadataService, times(0)).getMetadata(any(), any(), any(), any());
+    verify(pipelineMetadataService, times(0)).update(any(), any());
   }
 
   @Test

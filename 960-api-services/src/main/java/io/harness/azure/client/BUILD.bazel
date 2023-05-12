@@ -11,6 +11,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/beans:module",
         "//960-api-services/src/main/java/io/harness/azure/model/blueprint:module",
         "//960-api-services/src/main/java/io/harness/azure/model/blueprint/artifact:module",
         "//960-api-services/src/main/java/io/harness/azure/model/blueprint/assignment:module",

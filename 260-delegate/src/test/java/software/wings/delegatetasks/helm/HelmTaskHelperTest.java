@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.contains;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -88,9 +88,9 @@ import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.beans.settings.helm.OciHelmRepoConfig;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.service.intfc.security.EncryptionService;
@@ -184,7 +184,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                         .username("admin")
                                         .password("admin".toCharArray())
                                         .build(),
-        V3, LONG_TIMEOUT_INTERVAL, "/home");
+        V3, LONG_TIMEOUT_INTERVAL, "/home", "");
     verify(helmTaskHelperBase, times(1))
         .executeCommand(anyMap(), captor.capture(), captor.capture(), captor.capture(), eq(LONG_TIMEOUT_INTERVAL),
             eq(HelmCliCommandType.OCI_REGISTRY_LOGIN));
@@ -212,7 +212,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
                                                                .username("admin")
                                                                .password("admin".toCharArray())
                                                                .build(),
-                            V3, LONG_TIMEOUT_INTERVAL, "/home"))
+                            V3, LONG_TIMEOUT_INTERVAL, "/home", ""))
         .withMessageContaining(
             "Failed to login to the helm OCI Registry repo. Exit Code = [1]. Executed command = [v3/helm registry login localhost:5005/test-charts --username admin --password *******].");
   }
@@ -302,7 +302,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
 
     assertThatCode(()
                        -> helmTaskHelperBase.fetchChartFromRepo("repo", "repo display", "chart", "1.0.0", "/dir", V3,
-                           HelmCommandFlag.builder().build(), 90000, ""))
+                           HelmCommandFlag.builder().build(), 90000, "", ""))
         .doesNotThrowAnyException();
 
     verify(helmTaskHelperBase, times(1))
@@ -463,17 +463,19 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
     ProcessResult successfulResult = new ProcessResult(0, null);
 
+    doReturn("reg-config.json").when(helmTaskHelperBase).getRegFileConfigPath();
     doReturn(true).when(helmTaskHelperBase).checkChartVersion(anyString(), anyString(), anyString());
     doNothing()
         .when(helmTaskHelperBase)
         .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
-            HelmVersion.V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString());
+            HelmVersion.V380, LONG_TIMEOUT_INTERVAL, outputTemporaryDir.toString(), "reg-config.json");
     doReturn("cache").when(helmTaskHelper).getCacheDir(anyString(), anyBoolean(), eq(HelmVersion.V3));
     doReturn(successfulResult).when(processExecutor).execute();
+
     helmTaskHelper.downloadChartFiles(configParams, outputTemporaryDir.toString(), LONG_TIMEOUT_INTERVAL, null);
     verify(helmTaskHelperBase, times(1))
         .createProcessExecutor(
-            eq("v3/helm pull oci://localhost:5005/test-charts/chartName  --untar --version 0.1.0 --repository-config cache/repo-oci://localhost:5005/test-charts.yaml"),
+            eq("v3/helm pull oci://localhost:5005/test-charts/chartName  --untar --version 0.1.0 --registry-config reg-config.json --repository-config cache/repo-oci://localhost:5005/test-charts.yaml"),
             eq(outputTemporaryDir.toString()), eq(LONG_TIMEOUT_INTERVAL), anyMap());
     verify(processExecutor, times(1)).execute();
     deleteDirectoryAndItsContentIfExists(outputTemporaryDir.toString());

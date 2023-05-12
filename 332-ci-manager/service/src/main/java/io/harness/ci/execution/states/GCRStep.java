@@ -61,6 +61,7 @@ public class GCRStep extends AbstractStepExecutable {
           String[] imageWithTag = desc.getImageName().split(":");
           String image = imageWithTag[0];
           String tag = imageWithTag[1];
+          image = image.replaceFirst("^" + Pattern.quote(dockerArtifactMetadata.getRegistryUrl()) + "/?", "");
 
           stepArtifactsBuilder.publishedImageArtifact(PublishedImageArtifact.builder()
                                                           .imageName(image)

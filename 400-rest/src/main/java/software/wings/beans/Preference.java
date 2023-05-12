@@ -76,5 +76,10 @@ public abstract class Preference extends Base implements AccountAccess {
     // Temporary
     public static final String createdAt = "createdAt";
     public static final String uuid = "uuid";
+    public static final String name = "name";
+    public static final String id = "_id";
+    public static final String userId = "userId";
+    public static final String accountId = "accountId";
+    public static final String userGroupsIdToShare = "userGroupsIdToShare";
   }
 }

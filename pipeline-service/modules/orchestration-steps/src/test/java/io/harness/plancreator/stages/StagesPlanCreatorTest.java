@@ -79,7 +79,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     List<YamlNode> stages = stagesYamlField.getNode().asArray();
     String approvalStageUuid = Objects.requireNonNull(stages.get(0).getField("stage")).getNode().getUuid();
     List<String> childrenNodeIds = Collections.singletonList(approvalStageUuid);
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null);
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null, null);
     PlanNode planForParentNode = stagesPlanCreator.createPlanForParentNode(context, stagesConfig, childrenNodeIds);
     assertThat(planForParentNode).isNotNull();
 
@@ -114,7 +114,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(parallelDeploymentStages).isNotNull();
     String parallelStagesUuid = parallelDeploymentStages.getNode().getUuid();
 
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(kryoSerializer);
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(kryoSerializer, null);
     LinkedHashMap<String, PlanCreationResponse> planForChildrenNodes =
         stagesPlanCreator.createPlanForChildrenNodes(context, stagesConfig);
     assertThat(planForChildrenNodes).isNotEmpty();
@@ -149,7 +149,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
     assertThat(parallelDeploymentStages).isNotNull();
     String parallelStagesUuid = parallelDeploymentStages.getNode().getUuid();
 
-    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null);
+    StagesPlanCreator stagesPlanCreator = new StagesPlanCreator(null, null);
     GraphLayoutResponse layoutNodeInfo = stagesPlanCreator.getLayoutNodeInfo(context, stagesConfig);
     assertThat(layoutNodeInfo).isNotNull();
     assertThat(layoutNodeInfo.getStartingNodeId()).isEqualTo(approvalStageUuid);

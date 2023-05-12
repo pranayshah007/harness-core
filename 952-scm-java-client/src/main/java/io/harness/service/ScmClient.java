@@ -23,6 +23,8 @@ import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -34,6 +36,7 @@ import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.FindCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
+import io.harness.product.ci.scm.proto.GenerateYamlResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
@@ -108,6 +111,8 @@ public interface ScmClient {
 
   GetUserReposResponse getUserRepos(ScmConnector scmConnector, PageRequestDTO pageRequest);
 
+  UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO);
+
   GetUserRepoResponse getRepoDetails(ScmConnector scmConnector);
 
   GetUserReposResponse getAllUserRepos(ScmConnector scmConnector);
@@ -119,6 +124,8 @@ public interface ScmClient {
 
   RefreshTokenResponse refreshToken(
       ScmConnector scmConnector, String clientId, String clientSecret, String endpoint, String refreshToken);
+
+  GenerateYamlResponse autogenerateStageYamlForCI(String cloneUrl, String yamlVersion);
 
   GetLatestCommitOnFileResponse getLatestCommitOnFile(ScmConnector scmConnector, String branchName, String filepath);
 

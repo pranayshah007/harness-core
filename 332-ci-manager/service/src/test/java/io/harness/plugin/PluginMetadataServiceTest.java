@@ -52,7 +52,7 @@ public class PluginMetadataServiceTest {
   @Category(UnitTests.class)
   public void testListPluginsNotPopulated() {
     doReturn(null).when(pluginMetadataStatusRepository).find();
-    pluginMetadataService.listPlugins(null, 0, 1);
+    pluginMetadataService.listPlugins(null, null, 0, 1);
   }
 
   @Test
@@ -63,7 +63,29 @@ public class PluginMetadataServiceTest {
     Page<PluginMetadataConfig> pageableMetadataConfig = PageUtils.getPage(Arrays.asList(getMockData()), 0, 1);
 
     doReturn(pageableMetadataConfig).when(pluginMetadataRepository).findAll(any(), any());
-    pluginMetadataService.listPlugins(null, 0, 1);
+    pluginMetadataService.listPlugins(null, null, 0, 1);
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM)
+  @Category(UnitTests.class)
+  public void testListPluginsWithKind() {
+    doReturn(PluginMetadataStatus.builder().version(1).build()).when(pluginMetadataStatusRepository).find();
+    Page<PluginMetadataConfig> pageableMetadataConfig = PageUtils.getPage(Arrays.asList(getMockData()), 0, 1);
+
+    doReturn(pageableMetadataConfig).when(pluginMetadataRepository).findAll(any(), any());
+    pluginMetadataService.listPlugins(null, "harness", 0, 1);
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM)
+  @Category(UnitTests.class)
+  public void testListPluginsWithKindAndName() {
+    doReturn(PluginMetadataStatus.builder().version(1).build()).when(pluginMetadataStatusRepository).find();
+    Page<PluginMetadataConfig> pageableMetadataConfig = PageUtils.getPage(Arrays.asList(getMockData()), 0, 1);
+
+    doReturn(pageableMetadataConfig).when(pluginMetadataRepository).findAll(any(), any());
+    pluginMetadataService.listPlugins("cache", "harness", 0, 1);
   }
 
   private static PluginMetadataConfig getMockData() {

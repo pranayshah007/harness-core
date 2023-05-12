@@ -221,7 +221,6 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
-import com.github.zafarkhaja.semver.Version;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -1319,18 +1318,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     DelegateScripts delegateScripts = DelegateScripts.builder().version(version).doUpgrade(false).build();
     if (isNotEmpty(scriptParams)) {
-      String upgradeToVersion = scriptParams.get(UPGRADE_VERSION);
-      log.info("Upgrading delegate to version: {}", upgradeToVersion);
-      boolean doUpgrade;
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
-        doUpgrade = true;
-      } else {
-        final String delegateVersion = substringBefore(version, "-").trim();
-        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
-        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
-      }
-      delegateScripts.setDoUpgrade(doUpgrade);
-      delegateScripts.setVersion(upgradeToVersion);
       delegateScripts.setStartScript(processTemplate(watcherScriptParams, "start.sh.ftl"));
       delegateScripts.setDelegateScript(processTemplate(scriptParams, "delegate.sh.ftl"));
       delegateScripts.setStopScript(processTemplate(scriptParams, "stop.sh.ftl"));
@@ -1369,18 +1356,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     DelegateScripts delegateScripts = DelegateScripts.builder().version(version).doUpgrade(false).build();
     if (isNotEmpty(scriptParams)) {
-      String upgradeToVersion = scriptParams.get(UPGRADE_VERSION);
-      log.info("Upgrading delegate to version: {}", upgradeToVersion);
-      boolean doUpgrade;
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
-        doUpgrade = true;
-      } else {
-        final String delegateVersion = substringBefore(version, "-").trim();
-        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
-        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
-      }
-      delegateScripts.setDoUpgrade(doUpgrade);
-      delegateScripts.setVersion(upgradeToVersion);
       delegateScripts.setStartScript(processTemplate(watcherScriptParams, "start.sh.ftl"));
       delegateScripts.setDelegateScript(processTemplate(scriptParams, "delegate.sh.ftl"));
       delegateScripts.setStopScript(processTemplate(scriptParams, "stop.sh.ftl"));
@@ -1426,32 +1401,6 @@ public class DelegateServiceImpl implements DelegateService {
     final String delegateStorageUrl = getDelegateStorageUrl(cdnConfig, useCDN, delegateMetadataUrl);
     final String delegateCheckLocation = delegateMetadataUrl.substring(delegateMetadataUrl.lastIndexOf('/') + 1);
 
-    String latestVersion = null;
-    String delegateJarDownloadUrl = null;
-
-    try {
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
-        log.info("Multi-Version is enabled");
-        latestVersion = templateParameters.getVersion();
-        final String fullVersion =
-            Optional.ofNullable(getDelegateBuildVersion(templateParameters.getVersion())).orElse(null);
-        delegateJarDownloadUrl =
-            infraDownloadService.getDownloadUrlForDelegate(fullVersion, templateParameters.getAccountId());
-      } else {
-        final String delegateMatadata = delegateVersionCache.get(templateParameters.getAccountId());
-        log.info("Delegate metadata: [{}]", delegateMatadata);
-        latestVersion = substringBefore(delegateMatadata, " ").trim();
-        final String jarRelativePath = substringAfter(delegateMatadata, " ").trim();
-        delegateJarDownloadUrl = delegateStorageUrl + "/" + jarRelativePath;
-      }
-    } catch (ExecutionException e) {
-      log.warn("Unable to fetch delegate version information", e);
-      log.warn("CurrentVersion: [{}], LatestVersion=[{}], delegateJarDownloadUrl=[{}]", templateParameters.getVersion(),
-          latestVersion, delegateJarDownloadUrl);
-    }
-
-    log.info("Current version of delegate :[{}], latest version: [{}] url: [{}]", templateParameters.getVersion(),
-        latestVersion, delegateJarDownloadUrl);
     final String watcherMetadataUrl;
     if (useCDN) {
       watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
@@ -1494,7 +1443,6 @@ public class DelegateServiceImpl implements DelegateService {
             .put("delegateToken", accountSecret)
             .put("base64Secret", base64Secret)
             .put("hexkey", hexkey)
-            .put(UPGRADE_VERSION, latestVersion)
             .put("managerHostAndPort", templateParameters.getManagerHost())
             .put("verificationHostAndPort", templateParameters.getVerificationHost())
             .put("watcherStorageUrl", watcherStorageUrl)

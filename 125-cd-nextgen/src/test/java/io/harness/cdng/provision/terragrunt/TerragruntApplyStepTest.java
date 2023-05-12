@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -22,6 +23,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -58,6 +60,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -83,8 +86,14 @@ public class TerragruntApplyStepTest extends CategoryTest {
   @Mock private TerragruntStepHelper terragruntStepHelper;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private StepHelper stepHelper;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
   @InjectMocks private TerragruntApplyStep terragruntApplyStep = new TerragruntApplyStep();
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
+
+  @Before
+  public void setUpMocks() {
+    doNothing().when(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
+  }
 
   @Test
   @Owner(developers = VLICA)

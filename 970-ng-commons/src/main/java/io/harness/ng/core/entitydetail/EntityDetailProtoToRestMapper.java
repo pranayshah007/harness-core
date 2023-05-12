@@ -12,6 +12,7 @@ import static io.harness.data.structure.HarnessStringUtils.nullIfEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INFRASTRUCTURE;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.INPUT_SETS;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
+import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TRIGGERS;
 
 import io.harness.EntityType;
 import io.harness.beans.EntityReference;
@@ -19,6 +20,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.InfraDefReference;
 import io.harness.beans.InputSetReference;
 import io.harness.beans.NGTemplateReference;
+import io.harness.beans.TriggerReference;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
@@ -27,6 +29,7 @@ import io.harness.eventsframework.schemas.entity.InfraDefinitionReferenceProtoDT
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
+import io.harness.eventsframework.schemas.entity.TriggerReferenceProtoDTO;
 import io.harness.exception.UnknownEnumTypeException;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.event.EventProtoToEntityHelper;
@@ -61,9 +64,21 @@ public class EntityDetailProtoToRestMapper {
       return createTemplateRef(entityDetail.getTemplateRef());
     } else if (entityDetail.getType() == INFRASTRUCTURE) {
       return createInfraDefRef(entityDetail.getInfraDefRef());
+    } else if (entityDetail.getType() == TRIGGERS) {
+      return createTriggerRef(entityDetail.getTriggerRef());
     } else {
       return createIdentifierRef(entityDetail.getIdentifierRef());
     }
+  }
+
+  private EntityReference createTriggerRef(TriggerReferenceProtoDTO triggerReferenceProtoDTO) {
+    return TriggerReference.builder()
+        .accountIdentifier(triggerReferenceProtoDTO.getAccountIdentifier().getValue())
+        .orgIdentifier(triggerReferenceProtoDTO.getOrgIdentifier().getValue())
+        .projectIdentifier(triggerReferenceProtoDTO.getProjectIdentifier().getValue())
+        .pipelineIdentifier(triggerReferenceProtoDTO.getPipelineIdentifier().getValue())
+        .identifier(triggerReferenceProtoDTO.getIdentifier().getValue())
+        .build();
   }
 
   private EntityReference createInfraDefRef(InfraDefinitionReferenceProtoDTO infraDefRef) {

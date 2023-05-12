@@ -15,6 +15,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.JiraClientException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.network.Http;
 import io.harness.network.SafeHttpCall;
 import io.harness.validation.Validator;
@@ -36,6 +37,7 @@ import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hibernate.validator.constraints.NotBlank;
 import retrofit2.Call;
@@ -341,8 +343,20 @@ public class JiraClient {
    */
   public JiraIssueNG createIssue(@NotBlank String projectKey, @NotBlank String issueTypeName,
       Map<String, String> fields, boolean checkRequiredFields, boolean ffEnabled, boolean fromCG) {
-    JiraIssueCreateMetadataNG createMetadata =
-        getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled, fromCG);
+    JiraIssueCreateMetadataNG createMetadata;
+
+    try {
+      createMetadata = getIssueCreateMetadata(projectKey, issueTypeName, null, false, false, ffEnabled, fromCG);
+    } catch (Exception ex) {
+      log.warn("Failed to fetch createMetadata while creating the issue", ex);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check if project key and issue type provided are correct",
+          "Failed to fetch create metadata while creating the issue",
+          new JiraClientException(String.format("Failed to fetch create metadata while creating the issue: %s",
+                                      ExceptionUtils.getMessage(ex)),
+              ex));
+    }
+
     JiraProjectNG project = createMetadata.getProjects().get(projectKey);
     if (project == null) {
       throw new InvalidRequestException(String.format("Invalid project: %s", projectKey));

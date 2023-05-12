@@ -114,6 +114,8 @@ public class SMPLicenseServiceImpl extends DefaultLicenseServiceImpl {
         moduleLicenseDTO.setId(existingLicense.getId());
         updateModuleLicense(moduleLicenseDTO);
       } else {
+        // if not set null explicitly, record with empty "" id is created post 784xx
+        moduleLicenseDTO.setId(null);
         createModuleLicense(moduleLicenseDTO);
       }
     }

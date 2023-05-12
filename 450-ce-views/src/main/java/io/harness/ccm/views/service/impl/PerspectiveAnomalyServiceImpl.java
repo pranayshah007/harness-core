@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 
+@Slf4j
 public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService {
   @Inject CEViewService viewService;
   @Inject PerspectiveToAnomalyQueryHelper perspectiveToAnomalyQueryHelper;
@@ -39,12 +41,18 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
   @Override
   public List<AnomalyData> listPerspectiveAnomaliesForDate(
       @NonNull String accountIdentifier, @NonNull String perspectiveId, Instant date) {
+    log.info("Perspective id: {}", perspectiveId);
     CEView perspective = viewService.get(perspectiveId);
+    log.info("Perspective: {}", perspective);
     List<CCMFilter> filters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+    log.info("ConvertedRulesForPerspective size: {}", filters.size());
+    log.info("ConvertedRulesForPerspective: {}", filters);
     Condition condition = anomalyQueryBuilder.applyPerspectiveRuleFilters(filters);
+    log.info("Condition: {}", condition);
     List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForNotification(accountIdentifier, condition,
         anomalyQueryBuilder.getOrderByFields(Collections.emptyList()), DEFAULT_OFFSET, DEFAULT_LIMIT,
         date.truncatedTo(ChronoUnit.DAYS));
+    log.info("Anomalies: {}", anomalies);
     List<AnomalyData> anomalyData = new ArrayList<>();
     anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
     return anomalyData;

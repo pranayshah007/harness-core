@@ -37,7 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.nodes.security.AwsSecurityHubScanNode")
 public class AwsSecurityHubScanNode extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull AwsSecurityHubScanNode.StepType type = StepType.AWS_SECURITY_HUB;
+  @JsonProperty("type") @NotNull AwsSecurityHubScanNode.StepType type = StepType.AWSSecurityHub;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -54,7 +54,7 @@ public class AwsSecurityHubScanNode extends CIAbstractStepNode {
   }
 
   enum StepType {
-    AWS_SECURITY_HUB(CIStepInfoType.AWS_SECURITY_HUB.getDisplayName());
+    AWSSecurityHub(CIStepInfoType.AWS_SECURITY_HUB.getDisplayName());
     @Getter String name;
 
     StepType(String name) {

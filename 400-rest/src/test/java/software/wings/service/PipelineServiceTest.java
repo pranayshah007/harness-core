@@ -63,13 +63,12 @@ import static junit.framework.TestCase.assertNotSame;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -207,7 +206,8 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(updateOperations.unset(any())).thenReturn(updateOperations);
     when(serviceResourceService.fetchServicesByUuids(APP_ID, Arrays.asList(SERVICE_ID)))
         .thenReturn(Arrays.asList(Service.builder().name(SERVICE_NAME).uuid(SERVICE_ID).build()));
-    when(workflowService.fetchDeploymentMetadata(any(), any(Workflow.class), any(), anyList(), anyList(), any()))
+    when(workflowService.fetchDeploymentMetadata(
+             any(), any(Workflow.class), any(), anyList(), anyList(), any(DeploymentMetadata.Include[].class)))
         .thenReturn(DeploymentMetadata.builder()
                         .artifactRequiredServiceIds(asList(SERVICE_ID))
                         .envIds(asList(ENV_ID))
@@ -1669,8 +1669,8 @@ public class PipelineServiceTest extends WingsBaseTest {
     when(workflowService.readWorkflow(eq(APP_ID), anyString()))
         .thenAnswer(invocation -> workflowMap.getOrDefault((String) invocation.getArguments()[1], null));
 
-    when(workflowService.fetchDeploymentMetadata(
-             any(), any(Workflow.class), any(), any(), any(), anyBoolean(), any(), any()))
+    when(workflowService.fetchDeploymentMetadata(any(), any(Workflow.class), any(), any(), any(), anyBoolean(), any(),
+             any(DeploymentMetadata.Include[].class)))
         .thenAnswer(invocation -> {
           Workflow argument = (Workflow) invocation.getArguments()[1];
           switch (argument.getName()) {
@@ -1780,7 +1780,7 @@ public class PipelineServiceTest extends WingsBaseTest {
         aWorkflow().uuid(workflowId1).name("w1").orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build();
     when(workflowService.readWorkflowWithoutServices(eq(APP_ID), eq(workflowId1))).thenReturn(workflow1);
 
-    when(workflowService.fetchDeploymentMetadata(any(), any(Workflow.class), anyMap(), any(), any(), anyVararg()))
+    when(workflowService.fetchDeploymentMetadata(any(), any(Workflow.class), anyMap(), any(), any(), any()))
         .thenAnswer(invocation -> {
           Workflow argument = (Workflow) invocation.getArguments()[1];
           switch (argument.getName()) {

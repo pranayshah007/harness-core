@@ -156,7 +156,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
       if (isNotEmpty(apiKey)) {
         if (!containerRequestContext.getUriInfo().getAbsolutePath().getPath().endsWith("graphql")) {
-          ensureValidQPM(containerRequestContext.getHeaderString(API_KEY_HEADER));
+          ensureValidQPM(containerRequestContext);
         }
 
         try {
@@ -366,8 +366,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     JWTAuthenticationFilter.filter(containerRequestContext, serviceToJWTTokenHandlerMapping, serviceToSecretMapping);
   }
 
-  private void ensureValidQPM(String key) {
+  private void ensureValidQPM(ContainerRequestContext containerRequestContext) {
+    String key = containerRequestContext.getHeaderString(API_KEY_HEADER);
     if (rateLimitingService.rateLimitRequest(key)) {
+      String reqPath = containerRequestContext.getUriInfo().getPath();
+      String queryParams = containerRequestContext.getUriInfo().getQueryParameters().toString();
+      log.warn("Rate Limit exceeded for QPM {}, reqPath {}, queryParams {}", rateLimitingService.getMaxQPMPerManager(),
+          reqPath, queryParams);
       throw new WebApplicationException(Response.status(429)
                                             .entity("Too Many requests. Throttled. Max QPS: "
                                                 + rateLimitingService.getMaxQPMPerManager() * NUM_MANAGERS / 60)

@@ -130,12 +130,33 @@ public class VmExecuteStepUtils {
   }
 
   private List<String> setRunConfig(VmRunStep runStep, ConfigBuilder configBuilder) {
+    Map<String, String> envs = new HashMap<>();
     List<String> secrets = new ArrayList<>();
+    if (isNotEmpty(runStep.getEnvVariables())) {
+      envs = runStep.getEnvVariables();
+    }
+
     ImageAuth imageAuth = getImageAuth(runStep.getImage(), runStep.getImageConnector());
     if (imageAuth != null) {
       configBuilder.imageAuth(imageAuth);
       secrets.add(imageAuth.getPassword());
     }
+
+    if (runStep.getConnector() != null) {
+      Map<String, SecretParams> secretVars = secretSpecBuilder.decryptConnectorSecret(runStep.getConnector());
+      for (Map.Entry<String, SecretParams> entry : secretVars.entrySet()) {
+        String secret = new String(decodeBase64(entry.getValue().getValue()));
+        String key = entry.getKey();
+
+        // Drone docker plugin does not work with v2 registry
+        if (key.equals(DOCKER_REGISTRY_ENV) && secret.equals(CIVMConstants.DOCKER_REGISTRY_V2)) {
+          secret = CIVMConstants.DOCKER_REGISTRY_V1;
+        }
+        envs.put(entry.getKey(), secret);
+        secrets.add(secret);
+      }
+    }
+
     configBuilder.kind(RUN_STEP_KIND)
         .runConfig(ExecuteStepRequest.RunConfig.builder()
                        .command(Arrays.asList(runStep.getCommand()))
@@ -144,7 +165,7 @@ public class VmExecuteStepUtils {
         .image(runStep.getImage())
         .pull(runStep.getPullPolicy())
         .user(runStep.getRunAsUser())
-        .envs(runStep.getEnvVariables())
+        .envs(envs)
         .privileged(runStep.isPrivileged())
         .outputVars(runStep.getOutputVariables())
         .testReport(convertTestReport(runStep.getUnitTestReport()))

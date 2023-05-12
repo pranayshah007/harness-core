@@ -8,6 +8,7 @@ load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
+    "//123-ng-core-user:module",
     "//125-cd-nextgen:module",
     "//127-cd-nextgen-entities:module",
     "//400-rest:module",

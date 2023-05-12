@@ -80,8 +80,8 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     scopeService = mock(ScopeService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
-    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
-        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
+    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(), aclRepository);
     roleAssignmentChangeConsumer = new RoleAssignmentChangeConsumerImpl(
         aclRepository, roleAssignmentRepository, changeConsumerService, roleAssignmentCRUDEventHandler);
     scopeIdentifier =

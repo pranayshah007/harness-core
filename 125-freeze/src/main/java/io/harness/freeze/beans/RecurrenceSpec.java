@@ -7,10 +7,13 @@
 
 package io.harness.freeze.beans;
 
-import javax.validation.constraints.NotNull;
+import javax.annotation.Nullable;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import lombok.Data;
 
 @Data
 public class RecurrenceSpec {
-  @NotNull String until;
+  String until;
+  @Nullable @Min(2) @Max(11) Integer value;
 }

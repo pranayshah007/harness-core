@@ -13,10 +13,10 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.DEFAULT_STRING_VALUE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ID_SEPARATOR;
 
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostParameters;
-import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostParameters;
+import io.harness.ccm.views.businessmapping.entities.SharedCostSplit;
 import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.DataPoint.DataPointBuilder;
 import io.harness.ccm.views.dto.Reference;
@@ -181,9 +181,7 @@ public class PerspectiveTimeSeriesResponseHelper {
       }
     });
 
-    return updatedDataPoints.stream()
-        .filter(dataPoint -> dataPoint.getValue().doubleValue() > 0.0D)
-        .collect(Collectors.toList());
+    return updatedDataPoints;
   }
 
   private List<DataPoint> addSharedCostsToDataPoint(
@@ -248,7 +246,9 @@ public class PerspectiveTimeSeriesResponseHelper {
         double sharedCostForGivenTimestamp = sharedCostsPerTimestamp.getOrDefault(timestamp, 0.0D);
         switch (sharedCostBucket.getStrategy()) {
           case PROPORTIONAL:
-            sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            if (Double.compare(sharedCostParameters.getTotalCost(), 0.0D) != 0) {
+              sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            }
             break;
           case EQUAL:
             sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());

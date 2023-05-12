@@ -15,7 +15,7 @@ import static io.harness.rule.OwnerRule.BRETT;
 import static ch.qos.logback.classic.Level.INFO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;

@@ -36,6 +36,7 @@ import io.harness.cvng.beans.MetricPackDTO.MetricDefinitionDTO;
 import io.harness.cvng.beans.MetricResponseMappingDTO;
 import io.harness.cvng.beans.NewRelicDataCollectionInfo;
 import io.harness.cvng.beans.PrometheusDataCollectionInfo;
+import io.harness.cvng.beans.SignalFXMetricDataCollectionInfo;
 import io.harness.cvng.beans.SplunkDataCollectionInfo;
 import io.harness.cvng.beans.SplunkMetricDataCollectionInfo;
 import io.harness.cvng.beans.StackdriverDataCollectionInfo;
@@ -93,6 +94,7 @@ import io.harness.cvng.beans.prometheus.PrometheusFetchSampleDataRequest;
 import io.harness.cvng.beans.prometheus.PrometheusLabelNamesFetchRequest;
 import io.harness.cvng.beans.prometheus.PrometheusLabelValuesFetchRequest;
 import io.harness.cvng.beans.prometheus.PrometheusMetricListFetchRequest;
+import io.harness.cvng.beans.signalfx.SignalFXMetricSampleDataRequest;
 import io.harness.cvng.beans.splunk.SplunkDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkLatestHistogramDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest;
@@ -225,5 +227,8 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(SumologicLogDataCollectionInfo.class, 9142);
     kryo.register(SumologicMetricDataCollectionInfo.class, 9143);
     kryo.register(SumologicMetricDataCollectionInfo.MetricCollectionInfo.class, 9144);
+    kryo.register(SignalFXMetricSampleDataRequest.class, 9146);
+    kryo.register(SignalFXMetricDataCollectionInfo.class, 9147);
+    kryo.register(SignalFXMetricDataCollectionInfo.MetricCollectionInfo.class, 9148);
   }
 }

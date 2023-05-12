@@ -28,6 +28,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
+import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
@@ -80,7 +81,7 @@ public class K8sApiClientTest extends CategoryTest {
     boolean result = k8sApiClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();
     verify(k8sClientHelper, times(0))
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
   }
 
   @Test
@@ -95,7 +96,7 @@ public class K8sApiClientTest extends CategoryTest {
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
     doReturn(apiClient)
         .when(k8sClientHelper)
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -119,6 +120,7 @@ public class K8sApiClientTest extends CategoryTest {
                          .build())
             .namespace("ns1")
             .isErrorFrameworkEnabled(true)
+            .k8sDelegateTaskParams(K8sDelegateTaskParams.builder().workingDirectory("workingDir").build())
             .build();
     assertThatThrownBy(() -> k8sApiClient.performSteadyStateCheck(k8sSteadyStateDTO)).isInstanceOf(ApiException.class);
     verify(k8sApiEventWatcher, times(1)).destroyRunning(anyList());
@@ -136,7 +138,7 @@ public class K8sApiClientTest extends CategoryTest {
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
     doReturn(apiClient)
         .when(k8sClientHelper)
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -160,6 +162,7 @@ public class K8sApiClientTest extends CategoryTest {
                          .build())
             .namespace("ns1")
             .isErrorFrameworkEnabled(true)
+            .k8sDelegateTaskParams(K8sDelegateTaskParams.builder().workingDirectory("workingDir").build())
             .build();
     boolean result = k8sApiClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isFalse();
@@ -178,7 +181,7 @@ public class K8sApiClientTest extends CategoryTest {
     doReturn(namespaces).when(k8sClientHelper).getNamespacesToMonitor(anyList(), anyString());
     doReturn(apiClient)
         .when(k8sClientHelper)
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class));
     doReturn(k8sEventWatchDTO)
         .when(k8sClientHelper)
         .createEventWatchDTO(any(K8sSteadyStateDTO.class), any(ApiClient.class));
@@ -202,6 +205,7 @@ public class K8sApiClientTest extends CategoryTest {
                          .build())
             .namespace("ns1")
             .isErrorFrameworkEnabled(true)
+            .k8sDelegateTaskParams(K8sDelegateTaskParams.builder().workingDirectory("workingDir").build())
             .build();
     boolean result = k8sApiClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();

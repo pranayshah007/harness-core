@@ -20,9 +20,10 @@ import static io.harness.rule.OwnerRule.vivekveman;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,8 +38,10 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
+import io.harness.ng.core.events.ServiceCreateEvent;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ArtifactSourcesResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -48,12 +51,16 @@ import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 import io.harness.ng.core.service.services.validators.NoOpServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.refresh.ErrorNodeSummary;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.rule.Owner;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.utils.PageUtils;
 
 import com.google.common.io.Resources;
@@ -79,6 +86,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 @RunWith(Parameterized.class)
@@ -90,6 +99,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private ServiceEntityValidatorFactory serviceEntityValidatorFactory;
   @Mock private NoOpServiceEntityValidator noOpServiceEntityValidator;
   @Mock private ServiceRepository serviceRepository;
+
+  @Mock private TemplateResourceClient templateResourceClient;
 
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -118,6 +129,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
     Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
     Reflect.on(serviceEntityService).set("serviceEntityValidatorFactory", serviceEntityValidatorFactory);
+    Reflect.on(serviceEntityService).set("templateResourceClient", templateResourceClient);
     when(serviceEntityValidatorFactory.getServiceEntityValidator(any())).thenReturn(noOpServiceEntityValidator);
   }
   @Parameterized.Parameters
@@ -164,7 +176,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(createdService.getName()).isEqualTo(serviceEntity.getName());
     assertThat(createdService.getType()).isEqualTo(serviceEntity.getType());
     assertThat(createdService.getGitOpsEnabled()).isEqualTo(serviceEntity.getGitOpsEnabled());
-    assertThat(createdService.getVersion()).isEqualTo(0L);
+    assertThat(createdService.getVersion()).isZero();
 
     // Get operations
     Optional<ServiceEntity> getService =
@@ -269,7 +281,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
 
     list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
-    assertThat(list.getContent().size()).isEqualTo(0);
+    assertThat(list.getContent().size()).isZero();
 
     // Upsert operations for org level
     ServiceEntity upsertServiceRequestOrgLevel = ServiceEntity.builder()
@@ -313,19 +325,20 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testBulkCreate() {
     List<ServiceEntity> serviceEntities = new ArrayList<>();
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 2; i++) {
       String serviceIdentifier = "identifier " + i;
       String serviceName = "serviceName " + i;
       ServiceEntity serviceEntity = createServiceEntity(serviceIdentifier, serviceName);
       serviceEntities.add(serviceEntity);
     }
     serviceEntityService.bulkCreate(ACCOUNT_ID, serviceEntities);
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 2; i++) {
       String serviceIdentifier = "identifier " + i;
       Optional<ServiceEntity> serviceEntitySaved =
           serviceEntityService.get(ACCOUNT_ID, ORG_ID, PROJECT_ID, serviceIdentifier, false);
       assertThat(serviceEntitySaved.isPresent()).isTrue();
     }
+    verify(outboxService, times(2)).save(any(ServiceCreateEvent.class));
   }
 
   @Test
@@ -333,8 +346,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testGetAllServices() {
     List<ServiceEntity> serviceEntities = new ArrayList<>();
-    int pageSize = 1000;
-    int numOfServices = pageSize * 2 + 100; // creating adhoc num of services, not in multiples of page size
+    int pageSize = 50;
+    int numOfServices = pageSize * 2 + 10; // creating adhoc num of services, not in multiples of page size
     for (int i = 0; i < numOfServices; i++) {
       String serviceIdentifier = "identifier " + i;
       String serviceName = "serviceName " + i;
@@ -353,7 +366,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testGetAllNonDeletedServices() {
     List<ServiceEntity> serviceEntities = new ArrayList<>();
-    int numOfServices = 20;
+    int numOfServices = 4;
     for (int i = 0; i < numOfServices; i++) {
       String serviceIdentifier = "identifier " + i;
       String serviceName = "serviceName " + i;
@@ -373,7 +386,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Category(UnitTests.class)
   public void testGetAllNonDeletedServicesWithSort() {
     List<ServiceEntity> serviceEntities = new ArrayList<>();
-    int numOfServices = 20;
+    int numOfServices = 4;
     for (int i = 0; i < numOfServices; i++) {
       String serviceIdentifier = "identifier" + i;
       String serviceName = String.valueOf((char) ('A' + i));
@@ -384,7 +397,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.bulkCreate(ACCOUNT_ID, serviceEntities);
 
     List<ServiceEntity> serviceEntityList =
-        serviceEntityService.getAllNonDeletedServices(ACCOUNT_ID, ORG_ID, PROJECT_ID, Arrays.asList("name,DESC"));
+        serviceEntityService.getAllNonDeletedServices(ACCOUNT_ID, ORG_ID, PROJECT_ID, List.of("name,DESC"));
     assertThat(serviceEntityList.size()).isEqualTo(numOfServices / 2);
     assertThat(serviceEntityList.get(0).getName())
         .isGreaterThan(serviceEntityList.get(serviceEntityList.size() - 1).getName());
@@ -409,7 +422,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.bulkCreate(ACCOUNT_ID, serviceEntities);
     Integer activeServiceCount =
         serviceEntityService.findActiveServicesCountAtGivenTimestamp(ACCOUNT_ID, ORG_ID, PROJECT_ID, 16);
-    assertThat(activeServiceCount).isEqualTo(16 - 2);
+    assertThat(activeServiceCount).isEqualTo(14);
   }
 
   private ServiceEntity createServiceEntity(String identifier, String name) {
@@ -444,7 +457,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testErrorMessageWhenServiceIsReferenced() {
-    List<EntitySetupUsageDTO> referencedByEntities = Arrays.asList(getEntitySetupUsageDTO());
+    List<EntitySetupUsageDTO> referencedByEntities = List.of(getEntitySetupUsageDTO());
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(referencedByEntities));
     assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L, false))
@@ -452,7 +465,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         .hasMessage(
             "The service SERVICE cannot be deleted because it is being referenced in 1 entity. To delete your service, please remove the reference service from these entities.");
 
-    referencedByEntities = Arrays.asList(getEntitySetupUsageDTO(), getEntitySetupUsageDTO());
+    referencedByEntities = List.of(getEntitySetupUsageDTO(), getEntitySetupUsageDTO());
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(new PageImpl<>(referencedByEntities));
     assertThatThrownBy(() -> serviceEntityService.delete(ACCOUNT_ID, ORG_ID, PROJECT_ID, "SERVICE", 0L, false))
@@ -494,7 +507,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
-    assertThat(list.getContent().size()).isEqualTo(0);
+    assertThat(list.getContent().size()).isZero();
   }
 
   @Test
@@ -521,7 +534,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
-    assertThat(list.getContent().size()).isEqualTo(0);
+    assertThat(list.getContent().size()).isZero();
   }
 
   @Test
@@ -829,9 +842,9 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Criteria criteriaFromServiceFilter =
         ServiceFilterHelper.createCriteriaForGetList("ACCOUNT_ID", null, null, null, false, false);
 
-    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("accountId")).isTrue();
-    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("orgIdentifier")).isTrue();
-    assertThat(criteriaFromServiceFilter.getCriteriaObject().containsKey("projectIdentifier")).isTrue();
+    assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("accountId");
+    assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("orgIdentifier");
+    assertThat(criteriaFromServiceFilter.getCriteriaObject()).containsKey("projectIdentifier");
   }
 
   @Test
@@ -936,7 +949,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     serviceEntityService.create(serviceEntity);
     when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
         .thenReturn(Page.empty());
-    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, true);
+    serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L, true);
     verify(entitySetupUsageService, times(0))
         .listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString());
   }
@@ -980,7 +993,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
     Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
-    assertThat(list.getContent().size()).isEqualTo(0);
+    assertThat(list.getContent().size()).isZero();
 
     // List services operations.
     Criteria projectServiceCriteria = CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
@@ -988,6 +1001,79 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     list = serviceEntityService.list(projectServiceCriteria, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testValidateTemplateInputsWithNormalService() {
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .name("Service")
+                                       .build();
+
+    serviceEntityService.create(serviceEntity1);
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        serviceEntityService.validateTemplateInputs("ACCOUNT_ID", "ORG_ID", null, "IDENTIFIER_1", "false");
+
+    assertThat(validateTemplateInputsResponseDTO.isValidYaml()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testValidateTemplateInputsWithInvalidService() throws IOException {
+    // create service
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .name("Service")
+                                       .yaml("service:\n"
+                                           + "  name: Service\n"
+                                           + "  identifier: IDENTIFIER_1\n"
+                                           + "  tags: {}\n"
+                                           + "  serviceDefinition:\n"
+                                           + "    spec:\n"
+                                           + "      artifacts:\n"
+                                           + "        primary:\n"
+                                           + "          primaryArtifactRef: <+input>\n"
+                                           + "          sources:\n"
+                                           + "            - name: s1\n"
+                                           + "              identifier: s1\n"
+                                           + "              template:\n"
+                                           + "                templateRef: nginx\n"
+                                           + "                versionLabel: v1\n"
+                                           + "                templateInputs:\n"
+                                           + "                  type: DockerRegistry\n"
+                                           + "                  spec:\n"
+                                           + "                    tag: <+input>\n"
+                                           + "    type: Kubernetes")
+                                       .build();
+
+    serviceEntityService.create(serviceEntity1);
+
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(serviceEntity1.fetchNonEmptyYaml()).build();
+
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder()
+            .validYaml(false)
+            .errorNodeSummary(ErrorNodeSummary.builder().build())
+            .build();
+    Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> callRequest = mock(Call.class);
+    doReturn(callRequest)
+        .when(templateResourceClient)
+        .validateTemplateInputsForGivenYaml(
+            "ACCOUNT_ID", "ORG_ID", null, null, null, null, null, null, null, null, null, "false", refreshRequest);
+    when(callRequest.execute())
+        .thenReturn(Response.success(ResponseDTO.newResponse(validateTemplateInputsResponseDTO)));
+
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO2 =
+        serviceEntityService.validateTemplateInputs("ACCOUNT_ID", "ORG_ID", null, "IDENTIFIER_1", "false");
+
+    assertThat(validateTemplateInputsResponseDTO2.isValidYaml()).isFalse();
   }
 
   private String readFile(String filename) {

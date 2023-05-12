@@ -47,7 +47,7 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String WHITELIST_CACHE = "whitelistCache";
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String DEPLOYMENT_RECONCILIATION_CACHE = "deploymentReconciliationCache";
-
+  public static final String GIT_POLLING_CACHE = "gitPolling";
   public static final String WAIT_ENGINE_EVENT_CACHE = "waitEngineEventsCache";
 
   @Provides
@@ -130,6 +130,15 @@ public class ManagerCacheRegistrar extends AbstractModule {
   }
 
   @Provides
+  @Named(GIT_POLLING_CACHE)
+  @Singleton
+  public Cache<String, Long> getGitPollingCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(GIT_POLLING_CACHE, String.class, Long.class,
+        CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
   @Singleton
   @Named(WAIT_ENGINE_EVENT_CACHE)
   public Cache<String, Integer> waitEngineEventsCache(
@@ -166,6 +175,8 @@ public class ManagerCacheRegistrar extends AbstractModule {
     }, Names.named(WHITELIST_CACHE)));
     mapBinder.addBinding(WAIT_ENGINE_EVENT_CACHE).to(Key.get(new TypeLiteral<Cache<String, Integer>>() {
     }, Names.named(WAIT_ENGINE_EVENT_CACHE)));
+    mapBinder.addBinding(GIT_POLLING_CACHE).to(Key.get(new TypeLiteral<Cache<String, Long>>() {
+    }, Names.named(GIT_POLLING_CACHE)));
   }
 
   private void registerRequiredBindings() {

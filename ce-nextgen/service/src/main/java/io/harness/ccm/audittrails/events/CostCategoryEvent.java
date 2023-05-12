@@ -9,7 +9,7 @@ package io.harness.ccm.audittrails.events;
 
 import static io.harness.audit.ResourceTypeConstants.COST_CATEGORY;
 
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.event.Event;
 import io.harness.ng.core.AccountScope;
 import io.harness.ng.core.Resource;

@@ -18,30 +18,35 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
-@Value
-@Builder
+@Data
+@SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("NGTriggerEventHistoryResponse")
 @OwnedBy(PIPELINE)
-public class NGTriggerEventHistoryDTO {
+public class NGTriggerEventHistoryDTO extends NGTriggerEventHistoryBaseDTO {
   String triggerIdentifier;
-  String accountId;
   String orgIdentifier;
   String projectIdentifier;
   String targetIdentifier;
-  String eventCorrelationId;
-  String payload;
-  Long eventCreatedAt;
-  TriggerEventResponse.FinalStatus finalStatus;
-  String message;
-  Boolean exceptionOccurred;
-  Long createdAt;
   TargetExecutionSummary targetExecutionSummary;
   NGTriggerType type;
+
+  public NGTriggerEventHistoryDTO(String accountId, String eventCorrelationId, String payload, Long eventCreatedAt,
+      TriggerEventResponse.FinalStatus finalStatus, String message, Boolean exceptionOccurred, Long createdAt,
+      String triggerIdentifier, String orgIdentifier, String projectIdentifier, String targetIdentifier,
+      TargetExecutionSummary targetExecutionSummary, NGTriggerType type) {
+    super(accountId, eventCorrelationId, payload, eventCreatedAt, finalStatus, message, exceptionOccurred, createdAt);
+    this.triggerIdentifier = triggerIdentifier;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.targetIdentifier = targetIdentifier;
+    this.targetExecutionSummary = targetExecutionSummary;
+    this.type = type;
+  }
 }

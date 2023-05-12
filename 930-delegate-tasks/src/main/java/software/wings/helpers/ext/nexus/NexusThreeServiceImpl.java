@@ -37,7 +37,6 @@ import io.harness.nexus.model.DockerImageResponse;
 import io.harness.nexus.model.DockerImageTagResponse;
 import io.harness.nexus.model.Nexus3AssetResponse;
 import io.harness.nexus.model.Nexus3ComponentResponse;
-import io.harness.nexus.model.Nexus3Repository;
 import io.harness.stream.StreamUtils;
 
 import software.wings.beans.artifact.ArtifactMetadataKeys;
@@ -53,19 +52,16 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.net.ssl.HttpsURLConnection;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -79,6 +75,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 public class NexusThreeServiceImpl {
   private static final int MAX_PAGES = 10;
   private static final List<String> IGNORE_EXTENSIONS = Lists.newArrayList("pom", "sha1", "sha256", "sha512", "md5");
+  private static final int HTTP_CLIENT_TIMOUT_SECONDS = 600;
 
   @Inject private ArtifactCollectionCommonTaskHelper artifactCollectionCommonTaskHelper;
   @Inject private CGNexusHelper nexusHelper;
@@ -741,47 +738,25 @@ public class NexusThreeServiceImpl {
     return true;
   }
 
-  public boolean isServerValid(NexusRequest nexusConfig) throws IOException {
-    log.info("Validate if nexus is running by retrieving repositories");
-    NexusThreeRestClient nexusThreeRestClient = getNexusThreeClient(nexusConfig);
-    Response<List<Nexus3Repository>> response;
-    if (nexusConfig.isHasCredentials()) {
-      response =
-          nexusThreeRestClient
-              .listRepositories(Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())))
-              .execute();
-    } else {
-      response = nexusThreeRestClient.listRepositories().execute();
-    }
-    if (response == null) {
-      return false;
-    }
-
-    if (response.code() == 404) {
-      throw new InvalidArtifactServerException("Invalid Artifact server");
-    }
-    return isSuccessful(response);
-  }
-
   @SuppressWarnings({"squid:S3510"})
   public Pair<String, InputStream> downloadArtifactByUrl(
       NexusRequest nexusConfig, String artifactName, String artifactUrl) {
     try {
       if (nexusConfig.isHasCredentials()) {
-        Authenticator.setDefault(new NexusThreeServiceImpl.MyAuthenticator(
-            nexusConfig.getUsername(), new String(nexusConfig.getPassword())));
+        OkHttpClient okHttpClient =
+            Http.getUnsafeOkHttpClient(artifactUrl, HTTP_CLIENT_TIMOUT_SECONDS, HTTP_CLIENT_TIMOUT_SECONDS);
+        Request request = new Request.Builder()
+                              .url(artifactUrl)
+                              .header("Authorization",
+                                  Credentials.basic(nexusConfig.getUsername(), new String(nexusConfig.getPassword())))
+                              .build();
+
+        return ImmutablePair.of(artifactName, okHttpClient.newCall(request).execute().body().byteStream());
       }
-      URL url = new URL(artifactUrl);
-      URLConnection conn = url.openConnection();
-      if (conn instanceof HttpsURLConnection) {
-        HttpsURLConnection conn1 = (HttpsURLConnection) url.openConnection();
-        conn1.setHostnameVerifier((hostname, session) -> true);
-        conn1.setSSLSocketFactory(Http.getSslContext().getSocketFactory());
-        return ImmutablePair.of(artifactName, conn1.getInputStream());
-      } else {
-        return ImmutablePair.of(artifactName, conn.getInputStream());
-      }
-    } catch (IOException ex) {
+
+      return ImmutablePair.of(artifactName,
+          Http.getResponseStreamFromUrl(artifactUrl, HTTP_CLIENT_TIMOUT_SECONDS, HTTP_CLIENT_TIMOUT_SECONDS));
+    } catch (Exception ex) {
       throw new InvalidRequestException(ExceptionUtils.getMessage(ex), ex);
     }
   }
@@ -801,19 +776,5 @@ public class NexusThreeServiceImpl {
     }
     log.info(format("Computed file size: [%d] bytes for artifact Path: [%s]", size, artifactUrl));
     return size;
-  }
-
-  static class MyAuthenticator extends Authenticator {
-    private String username, password;
-
-    MyAuthenticator(String user, String pass) {
-      username = user;
-      password = pass;
-    }
-
-    @Override
-    protected PasswordAuthentication getPasswordAuthentication() {
-      return new PasswordAuthentication(username, password.toCharArray());
-    }
   }
 }

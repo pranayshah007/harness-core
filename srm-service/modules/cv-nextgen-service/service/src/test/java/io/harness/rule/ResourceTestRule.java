@@ -15,6 +15,7 @@ import io.harness.cvng.exception.NotFoundExceptionMapper;
 import io.harness.serializer.JsonSubtypeResolver;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.collect.Sets;
@@ -64,7 +65,7 @@ public class ResourceTestRule implements TestRule {
     this.singletons = singletons;
     this.providers = providers;
     this.properties = properties;
-    this.mapper = mapper;
+    this.mapper = mapper.configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_USING_DEFAULT_VALUE, true);
     this.testContainerFactory = testContainerFactory;
   }
 

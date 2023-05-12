@@ -26,6 +26,7 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.manage.GlobalContextManager;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.ErrorResponse;
@@ -75,7 +76,6 @@ public class FilterCreatorMergeService {
   private final PipelineSetupUsageHelper pipelineSetupUsageHelper;
   private final PmsGitSyncHelper pmsGitSyncHelper;
   private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
-  private final IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   private final GitSyncSdkService gitSyncSdkService;
   private final PrincipalInfoHelper principalInfoHelper;
   private final TriggeredByHelper triggeredByHelper;
@@ -86,55 +86,56 @@ public class FilterCreatorMergeService {
   @Inject
   public FilterCreatorMergeService(PmsSdkHelper pmsSdkHelper, PipelineSetupUsageHelper pipelineSetupUsageHelper,
       PmsGitSyncHelper pmsGitSyncHelper, PMSPipelineTemplateHelper pmsPipelineTemplateHelper,
-      IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper, GitSyncSdkService gitSyncSdkService,
-      PrincipalInfoHelper principalInfoHelper, TriggeredByHelper triggeredByHelper) {
+      GitSyncSdkService gitSyncSdkService, PrincipalInfoHelper principalInfoHelper,
+      TriggeredByHelper triggeredByHelper) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pipelineSetupUsageHelper = pipelineSetupUsageHelper;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
     this.pmsPipelineTemplateHelper = pmsPipelineTemplateHelper;
-    this.identifierRefProtoDTOHelper = identifierRefProtoDTOHelper;
     this.gitSyncSdkService = gitSyncSdkService;
     this.principalInfoHelper = principalInfoHelper;
     this.triggeredByHelper = triggeredByHelper;
   }
 
   public FilterCreatorMergeServiceResponse getPipelineInfo(PipelineEntity pipelineEntity) throws IOException {
-    Map<String, PlanCreatorServiceInfo> services = getServices();
-    Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
-    Map<String, String> filters = new HashMap<>();
-    SetupMetadata.Builder setupMetadataBuilder = getSetupMetadataBuilder(
-        pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-    if (gitSyncBranchContext != null) {
-      setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+    try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("[PMS_FilterCreatorMergeService]")) {
+      Map<String, PlanCreatorServiceInfo> services = getServices();
+      Dependencies dependencies = getDependencies(pipelineEntity.getYaml());
+      Map<String, String> filters = new HashMap<>();
+      SetupMetadata.Builder setupMetadataBuilder = getSetupMetadataBuilder(
+          pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
+      ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
+      if (gitSyncBranchContext != null) {
+        setupMetadataBuilder.setGitSyncBranchContext(gitSyncBranchContext);
+      }
+      setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
+      if (!gitSyncSdkService.isGitSyncEnabled(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+              pipelineEntity.getProjectIdentifier())) {
+        setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
+      }
+      FilterCreationBlobResponse response =
+          obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
+      validateFilterCreationBlobResponse(response);
+      if (GitContextHelper.isFullSyncFlow()) {
+        deleteExistingSetupUsages(pipelineEntity);
+      }
+      if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+        List<EntityDetailProtoDTO> templateReferences =
+            pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
+                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
+        response = response.toBuilder().addAllReferredEntities(templateReferences).build();
+      }
+      Optional<EntityDetailProtoDTO> gitConnectorReference = getGitConnectorReference(pipelineEntity);
+      if (gitConnectorReference.isPresent()) {
+        response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
+      }
+      pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
+      return FilterCreatorMergeServiceResponse.builder()
+          .filters(filters)
+          .stageCount(response.getStageCount())
+          .stageNames(new ArrayList<>(response.getStageNamesList()))
+          .build();
     }
-    setupMetadataBuilder.setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
-    if (!gitSyncSdkService.isGitSyncEnabled(
-            pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier())) {
-      setupMetadataBuilder.setTriggeredInfo(triggeredByHelper.getFromSecurityContext());
-    }
-    FilterCreationBlobResponse response =
-        obtainFiltersRecursively(services, dependencies, filters, setupMetadataBuilder.build());
-    validateFilterCreationBlobResponse(response);
-    if (GitContextHelper.isFullSyncFlow()) {
-      deleteExistingSetupUsages(pipelineEntity);
-    }
-    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-      List<EntityDetailProtoDTO> templateReferences =
-          pmsPipelineTemplateHelper.getTemplateReferencesForGivenYaml(pipelineEntity.getAccountId(),
-              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
-      response = response.toBuilder().addAllReferredEntities(templateReferences).build();
-    }
-    Optional<EntityDetailProtoDTO> gitConnectorReference = getGitConnectorReference(pipelineEntity);
-    if (gitConnectorReference.isPresent()) {
-      response = response.toBuilder().addAllReferredEntities(Arrays.asList(gitConnectorReference.get())).build();
-    }
-    pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, response.getReferredEntitiesList());
-    return FilterCreatorMergeServiceResponse.builder()
-        .filters(filters)
-        .stageCount(response.getStageCount())
-        .stageNames(new ArrayList<>(response.getStageNamesList()))
-        .build();
   }
 
   private void deleteExistingSetupUsages(PipelineEntity pipelineEntity) {
@@ -218,7 +219,7 @@ public class FilterCreatorMergeService {
       FilterCreationBlobResponse.Builder responseBuilder, Map<String, String> filters, SetupMetadata setupMetadata) {
     CompletableFutures<FilterCreationResponseWrapper> completableFutures = new CompletableFutures<>(executor);
     for (Map.Entry<String, PlanCreatorServiceInfo> serviceEntry : services.entrySet()) {
-      if (!pmsSdkHelper.containsSupportedDependencyByYamlPath(serviceEntry.getValue(), responseBuilder.getDeps())) {
+      if (!PmsSdkHelper.containsSupportedDependencyByYamlPath(serviceEntry.getValue(), responseBuilder.getDeps())) {
         continue;
       }
 
@@ -287,7 +288,7 @@ public class FilterCreatorMergeService {
               pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
 
       IdentifierRefProtoDTO connectorReference =
-          identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
+          IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(identifierRef.getAccountIdentifier(),
               identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(), identifierRef.getIdentifier());
       EntityDetailProtoDTO connectorDetails = EntityDetailProtoDTO.newBuilder()
                                                   .setIdentifierRef(connectorReference)

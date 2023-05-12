@@ -17,13 +17,22 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsAccessKeyCredential;
 import io.harness.aws.AwsConfig;
+import io.harness.aws.AwsSdkClientBackoffStrategyOverride;
+import io.harness.aws.AwsSdkClientEqualJitterBackoffStrategy;
+import io.harness.aws.AwsSdkClientFixedDelayBackoffStrategy;
+import io.harness.aws.AwsSdkClientFullJitterBackoffStrategy;
 import io.harness.aws.CrossAccountAccess;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsEqualJitterBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsFixedDelayBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsFullJitterBackoffStrategySpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategySpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthenticationDTO;
@@ -31,6 +40,7 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsC
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -101,7 +111,48 @@ public class AwsNgConfigMapper {
                                                       .externalId(crossAccountAccess.getExternalId())
                                                       .build());
     }
+    AwsSdkClientBackoffStrategyDTO awsSdkClientBackoffStrategyDTO =
+        awsConnectorDTO.getAwsSdkClientBackOffStrategyOverride();
+
+    if (awsConnectorDTO.getAwsSdkClientBackOffStrategyOverride() != null) {
+      awsInternalConfig.setAwsSdkClientBackoffStrategyOverride(
+          getAwsSdkClientBackoffStrategyOverride(awsSdkClientBackoffStrategyDTO));
+    }
+
     return awsInternalConfig;
+  }
+
+  private AwsSdkClientBackoffStrategyOverride getAwsSdkClientBackoffStrategyOverride(
+      AwsSdkClientBackoffStrategyDTO awsSdkClientBackoffStrategyDTO) {
+    AwsSdkClientBackoffStrategySpecDTO awsSdkClientBackoffStrategy =
+        awsSdkClientBackoffStrategyDTO.getBackoffStrategyConfig();
+    switch (awsSdkClientBackoffStrategyDTO.getAwsSdkClientBackoffStrategyType()) {
+      case FIXED_DELAY_BACKOFF_STRATEGY:
+        AwsFixedDelayBackoffStrategySpecDTO awsFixedDelayBackoffStrategyDTO =
+            (AwsFixedDelayBackoffStrategySpecDTO) awsSdkClientBackoffStrategy;
+        return AwsSdkClientFixedDelayBackoffStrategy.builder()
+            .fixedBackoff(awsFixedDelayBackoffStrategyDTO.getFixedBackoff())
+            .retryCount(awsFixedDelayBackoffStrategyDTO.getRetryCount())
+            .build();
+      case EQUAL_JITTER_BACKOFF_STRATEGY:
+        AwsEqualJitterBackoffStrategySpecDTO awsEqualJitterBackoffStrategyDTO =
+            (AwsEqualJitterBackoffStrategySpecDTO) awsSdkClientBackoffStrategy;
+        return AwsSdkClientEqualJitterBackoffStrategy.builder()
+            .baseDelay(awsEqualJitterBackoffStrategyDTO.getBaseDelay())
+            .maxBackoffTime(awsEqualJitterBackoffStrategyDTO.getMaxBackoffTime())
+            .retryCount(awsEqualJitterBackoffStrategyDTO.getRetryCount())
+            .build();
+      case FULL_JITTER_BACKOFF_STRATEGY:
+        AwsFullJitterBackoffStrategySpecDTO awsFullJitterBackoffStrategyDTO =
+            (AwsFullJitterBackoffStrategySpecDTO) awsSdkClientBackoffStrategy;
+        return AwsSdkClientFullJitterBackoffStrategy.builder()
+            .baseDelay(awsFullJitterBackoffStrategyDTO.getBaseDelay())
+            .maxBackoffTime(awsFullJitterBackoffStrategyDTO.getMaxBackoffTime())
+            .retryCount(awsFullJitterBackoffStrategyDTO.getRetryCount())
+            .build();
+      default:
+        throw new InvalidRequestException("Invalid AWS SDk Backoff Strategy");
+    }
   }
 
   public AwsConfig mapAwsConfigWithDecryption(

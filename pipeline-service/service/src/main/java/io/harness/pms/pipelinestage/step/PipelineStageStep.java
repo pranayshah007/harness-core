@@ -15,6 +15,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.execution.PipelineStageResponseData;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.interrupts.InterruptService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
@@ -69,6 +70,7 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
   @Inject private PMSExecutionService pmsExecutionService;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject InterruptService interruptService;
+  @Inject private PlanExecutionMetadataService planExecutionMetadataService;
 
   @Override
   public Class<PipelineStageStepParameters> getStepParametersClass() {

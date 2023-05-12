@@ -9,6 +9,11 @@ package io.harness.idp.gitintegration.repositories;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 
 @OwnedBy(HarnessTeam.IDP)
-public interface CatalogConnectorRepositoryCustom {}
+public interface CatalogConnectorRepositoryCustom {
+  CatalogConnectorEntity saveOrUpdate(CatalogConnectorEntity catalogConnectorEntity);
+
+  CatalogConnectorEntity findLastUpdated(String accountIdentifier);
+}

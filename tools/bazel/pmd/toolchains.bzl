@@ -31,7 +31,7 @@ def rules_pmd_toolchains(pmd_version = "6.23.0"):
             maven.artifact("net.sourceforge.pmd", "pmd-dist", pmd_version),
         ],
         repositories = [
-            "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
+            "https://harness-artifactory.harness.io/artifactory/portal-maven",
             "https://repo1.maven.org/maven2",
             "https://repo.maven.apache.org/maven2/",
         ],

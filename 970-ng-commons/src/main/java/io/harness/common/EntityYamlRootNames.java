@@ -105,10 +105,14 @@ public class EntityYamlRootNames {
   public static final String BURP = "Burp";
   public static final String CHECKMARX = "Checkmarx";
   public static final String CLAIR = "Clair";
+  public static final String CODEQL = "CodeQL";
+  public static final String CUSTOM_INGEST = "CustomIngest";
   public static final String DATA_THEOREM = "DataTheorem";
   public static final String DOCKER_CONTENT_TRUST = "DockerContentTrust";
   public static final String EXTERNAL = "External";
   public static final String FORTIFY_ON_DEMAND = "FortifyOnDemand";
+  public static final String FOSSA = "Fossa";
+  public static final String GIT_LEAKS = "Gitleaks";
   public static final String GRYPE = "Grype";
   public static final String JFROG_XRAY = "JfrogXray";
   public static final String MEND = "Mend";
@@ -123,6 +127,8 @@ public class EntityYamlRootNames {
   public static final String PROWLER = "Prowler";
   public static final String QUALYS = "Qualys";
   public static final String REAPSAW = "Reapsaw";
+
+  public static final String SEMGREP = "Semgrep";
   public static final String SHIFT_LEFT = "ShiftLeft";
   public static final String SNIPER = "Sniper";
   public static final String SNYK = "Snyk";
@@ -215,10 +221,13 @@ public class EntityYamlRootNames {
   public static final String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   public static final String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   public static final String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  public static final String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
+  public static final String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
@@ -227,8 +236,9 @@ public class EntityYamlRootNames {
 
   // AWS SAM
   public static final String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  public static final String AWS_SAM_BUILD = "AwsSamBuild";
   public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
-  public static final String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  public static final String TAS_ROUTE_MAPPING = "RouteMapping";
 }

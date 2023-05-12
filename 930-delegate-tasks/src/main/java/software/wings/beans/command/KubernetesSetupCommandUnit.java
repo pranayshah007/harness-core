@@ -1719,7 +1719,7 @@ public class KubernetesSetupCommandUnit extends ContainerSetupCommandUnit {
                 .withProtocol(serviceSpecification.getProtocol().name())
                 .withPort(serviceSpecification.getPort())
                 .withNewTargetPort()
-                .withIntVal(serviceSpecification.getTargetPort())
+                .withValue(serviceSpecification.getTargetPort())
                 .endTargetPort()
                 .withName(isNotBlank(serviceSpecification.getPortName()) ? serviceSpecification.getPortName() : "http");
         if (serviceSpecification.getServiceType() == KubernetesServiceType.NodePort

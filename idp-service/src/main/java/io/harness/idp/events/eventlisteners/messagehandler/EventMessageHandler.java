@@ -11,5 +11,5 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 
 public interface EventMessageHandler {
-  void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action);
+  void handleMessage(Message message, EntityChangeDTO entityChangeDTO, String action) throws Exception;
 }

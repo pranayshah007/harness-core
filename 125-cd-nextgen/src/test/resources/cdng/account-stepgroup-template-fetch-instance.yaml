@@ -6,38 +6,4 @@ template:
   tags: {}
   spec:
     stageType: Deployment
-    steps:
-      - parallel:
-          - step:
-              name: "Fetch Instances"
-              identifier: fetchInstances
-              type: FetchInstanceScript
-              timeout: 10m
-              spec: {}
-          - stepGroup:
-              name: saas
-              identifier: saas
-              steps:
-                - parallel:
-                    - step:
-                        type: ShellScript
-                        name: echo1
-                        identifier: echo1
-                        spec:
-                          shell: Bash
-                          onDelegate: true
-                          source:
-                            type: Inline
-                            spec:
-                              script: echo done
-                          environmentVariables: []
-                          outputVariables: []
-                          executionTarget: {}
-                        timeout: 10m
-      - step:
-          type: SwapRoutes
-          name: Swap Routes_1
-          identifier: SwapRoutes_1
-          spec:
-            downSizeOldApplication: false
-          timeout: 10m
+    steps: []

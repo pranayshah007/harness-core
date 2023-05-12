@@ -16,6 +16,7 @@ import io.harness.ng.core.user.UserInfo;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.user.remote.UserClient;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class UserInfoMigration implements NGMigration {
   private MongoTemplate mongoTemplate;
   private final UserRepository userRepository;
 
+  @Inject
   public UserInfoMigration(UserClient userClient, MongoTemplate mongoTemplate, UserRepository userRepository) {
     this.userClient = userClient;
     this.mongoTemplate = mongoTemplate;
@@ -54,7 +56,7 @@ public class UserInfoMigration implements NGMigration {
       while (iterator.hasNext()) {
         UserDBO userDBO = iterator.next();
         try {
-          Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserById(userDBO.getId()));
+          Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserById(userDBO.getIdentifier()));
           if (userInfo.isPresent()) {
             userDBO.setEmail(userInfo.get().getEmail());
             userDBO.setName(userInfo.get().getName());

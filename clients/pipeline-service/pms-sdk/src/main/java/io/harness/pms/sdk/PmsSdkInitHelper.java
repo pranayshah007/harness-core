@@ -39,6 +39,7 @@ import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.exception.InitializeSdkException;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoDecoratorImpl;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.Step;
@@ -126,7 +127,8 @@ public class PmsSdkInitHelper {
 
   private static InitializeSdkRequest buildInitializeSdkRequest(
       Injector injector, PmsSdkConfiguration sdkConfiguration) {
-    PipelineServiceInfoProvider infoProvider = injector.getInstance(PipelineServiceInfoProvider.class);
+    PipelineServiceInfoProvider infoProvider = injector.getInstance(PipelineServiceInfoDecoratorImpl.class);
+
     ModuleType moduleType = sdkConfiguration.getModuleType();
     EventsFrameworkConfiguration eventsConfig = sdkConfiguration.getEventsFrameworkConfiguration();
     return InitializeSdkRequest.newBuilder()
@@ -165,8 +167,8 @@ public class PmsSdkInitHelper {
   }
 
   private static List<SdkStep> mapToSdkStep(List<StepType> stepTypeList, List<StepInfo> stepInfos) {
-    Map<String, StepType> stepTypeStringToStepType =
-        stepTypeList.stream().collect(Collectors.toMap(StepType::getType, stepType -> stepType));
+    Map<String, StepType> stepTypeStringToStepType = stepTypeList.stream().collect(
+        Collectors.toMap(StepType::getType, stepType -> stepType, (stepType1, stepType2) -> stepType1));
     Map<String, StepInfo> stepTypeStringToStepInfo = new HashMap<>();
     for (StepInfo stepInfo : stepInfos) {
       stepTypeStringToStepInfo.put(stepInfo.getType(), stepInfo);

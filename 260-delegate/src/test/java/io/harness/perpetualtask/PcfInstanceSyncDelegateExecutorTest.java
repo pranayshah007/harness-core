@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.DelegateTestBase;
@@ -33,6 +33,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -46,7 +47,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -59,7 +60,7 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
   private static final String SUCCESS = "success";
   private static final String NULL_CF_INSTANCE_SYNC_RESPONSE_RETURNED = "Null cfInstanceSyncResponse returned";
 
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private PcfDelegateTaskHelper pcfDelegateTaskHelper;
@@ -70,10 +71,10 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
 
   @Before
   public void setUp() throws IOException {
-    on(pcfInstanceSyncDelegateExecutor).set("kryoSerializer", kryoSerializer);
+    on(pcfInstanceSyncDelegateExecutor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());
+        .publishInstanceSyncResultV2(any(), any(), perpetualTaskResponseCaptor.capture());
     doReturn(retrofit2.Response.success(SUCCESS)).when(call).execute();
   }
 
@@ -148,9 +149,12 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
             .setApplicationName(APP_NAME)
             .setOrgName(ORG_NAME)
             .setSpace(SPACE)
-            .setEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(Collections.emptyList())))
-            .setPcfConfig(ByteString.copyFrom(kryoSerializer.asBytes(CfInternalConfig.builder().build())))
+            .setEncryptedData(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(Collections.emptyList())))
+            .setPcfConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(CfInternalConfig.builder().build())))
             .build();
-    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
+    return PerpetualTaskExecutionParams.newBuilder()
+        .setCustomizedParams(Any.pack(message))
+        .setReferenceFalseKryoSerializer(true)
+        .build();
   }
 }

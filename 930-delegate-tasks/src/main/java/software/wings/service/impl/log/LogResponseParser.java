@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LogResponseParser {
   private static final String TIMESTAMP_FIELD = "timestamp";
-  private static String DEFAULT_TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+  private static String DEFAULT_TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss[.SSS][.SS]XXX";
   private static final int MAX_CONCAT_JSON_FIELDS = 100;
 
   private String timestampFormat = DEFAULT_TIMESTAMP_FORMAT;

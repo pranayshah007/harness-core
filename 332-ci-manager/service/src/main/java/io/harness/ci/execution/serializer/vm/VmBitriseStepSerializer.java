@@ -8,7 +8,6 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
-import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
@@ -43,7 +42,7 @@ public class VmBitriseStepSerializer {
 
     if (!isEmpty(with)) {
       for (Map.Entry<String, String> entry : with.entrySet()) {
-        String key = PLUGIN_ENV_PREFIX + entry.getKey().toUpperCase();
+        String key = entry.getKey();
         env.put(key, entry.getValue());
       }
     }

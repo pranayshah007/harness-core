@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.infrastructure;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,7 +28,9 @@ import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
@@ -105,13 +108,56 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
 
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     YamlField rcField = InfrastructurePmsPlanCreator.addResourceConstraintDependency(
-        yamlField.getNode().getField("spec").getNode().getField("environment").getNode(), planCreationResponseMap, "");
+        yamlField.getNode().getField("spec").getNode().getField("environment").getNode(), planCreationResponseMap, "",
+        null, false);
 
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     Map<String, String> dependencyMap =
         planCreationResponseMap.get(rcField.getNode().getUuid()).getDependencies().getDependenciesMap();
     assertThat(dependencyMap).hasSize(1);
     assertThat(dependencyMap).containsKey(rcField.getNode().getUuid());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testAddRCDependencyForInterProjects() {
+    String yaml = "---\n"
+        + "spec: \n"
+        + " environment: \n"
+        + "   infraDefinitions: \n"
+        + " execution: \n";
+    YamlField yamlField;
+    try {
+      String yamlFieldWithUuid = YamlUtils.injectUuid(yaml);
+      yamlField = YamlUtils.readTree(yamlFieldWithUuid);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Exception while parsing yaml");
+    }
+    PlanCreationContext context = PlanCreationContext.builder()
+                                      .globalContext(Map.of("metadata",
+                                          PlanCreationContextValue.newBuilder()
+                                              .setAccountIdentifier("accountId")
+                                              .setOrgIdentifier("orgId")
+                                              .setProjectIdentifier("projectId")
+                                              .build()))
+                                      .build();
+
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+    YamlField rcField = InfrastructurePmsPlanCreator.addResourceConstraintDependency(
+        yamlField.getNode().getField("spec").getNode().getField("environment").getNode(), planCreationResponseMap, "",
+        context, true);
+
+    assertThat(planCreationResponseMap.size()).isEqualTo(1);
+    Map<String, String> dependencyMap =
+        planCreationResponseMap.get(rcField.getNode().getUuid()).getDependencies().getDependenciesMap();
+    assertThat(dependencyMap).hasSize(1);
+    assertThat(dependencyMap).containsKey(rcField.getNode().getUuid());
+    assertThat(rcField.getNode().getField("spec").getNode().getField("resourceUnit").getNode().asText())
+        .isEqualTo("<+INFRA_KEY>_"
+            + String
+                  .join("_", context.getAccountIdentifier(), context.getOrgIdentifier(), context.getProjectIdentifier())
+                  .hashCode());
   }
   @Test
   @Owner(developers = OwnerRule.YOGESH)
@@ -148,8 +194,8 @@ public class InfrastructurePmsPlanCreatorTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testAddResourceConstraintDependency() {
     YamlField rc = new YamlField(new YamlNode("rc", null));
-    List<AdviserObtainment> adviserObtainments =
-        InfrastructurePmsPlanCreator.addResourceConstraintDependency(new LinkedHashMap<>(), rc, kryoSerializer);
+    List<AdviserObtainment> adviserObtainments = InfrastructurePmsPlanCreator.addResourceConstraintDependency(
+        new LinkedHashMap<>(), rc, kryoSerializer, null, false);
     assertThat(adviserObtainments).hasSize(2);
   }
 }

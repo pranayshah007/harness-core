@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.FileStorageConfigDTO;
 import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -32,7 +33,8 @@ import org.springframework.data.annotation.TypeAlias;
 public class TerraformInheritOutput implements ExecutionSweepingOutput {
   String workspace;
   GitStoreConfig configFiles;
-  FileStorageStoreConfig fileStoreConfig;
+  FileStorageStoreConfig fileStoreConfig; // should be removed
+  FileStorageConfigDTO fileStorageConfigDTO;
   List<TerraformVarFileConfig> varFileConfigs;
   TerraformBackendConfigFileConfig backendConfigurationFileConfig;
   String backendConfig;

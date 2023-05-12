@@ -12,6 +12,7 @@ import static io.harness.azure.AzureEnvironmentType.AZURE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.encryption.SecretRefData;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestSpecDTO;
 
@@ -29,10 +30,13 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("AZURE_VAULT")
 public class AzureKeyVaultMetadataRequestSpecDTO extends SecretManagerMetadataRequestSpecDTO {
-  @NotNull private String clientId;
-  @NotNull private String tenantId;
-  @ApiModelProperty(dataType = "string") @NotNull private SecretRefData secretKey;
+  private String clientId;
+  private String tenantId;
+  @ApiModelProperty(dataType = "string") private SecretRefData secretKey;
   @NotNull private String subscription;
   private AzureEnvironmentType azureEnvironmentType = AZURE;
   private Set<String> delegateSelectors;
+  private Boolean useManagedIdentity;
+  private AzureManagedIdentityType azureManagedIdentityType;
+  private String managedClientId;
 }

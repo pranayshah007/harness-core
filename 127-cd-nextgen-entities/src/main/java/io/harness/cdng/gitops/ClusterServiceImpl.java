@@ -26,7 +26,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.repositories.gitops.spring.ClusterRepository;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.PageUtils;
 import io.harness.utils.ScopeWiseIds;
 
@@ -98,8 +98,6 @@ public class ClusterServiceImpl implements ClusterService {
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier,
       String clusterRef, ScopeLevel scopeLevel) {
     checkArgument(isNotEmpty(accountId), "accountId must be present");
-    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
-    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
     checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
 
     Criteria criteria = getClusterEqualityCriteria(
@@ -193,7 +191,7 @@ public class ClusterServiceImpl implements ClusterService {
       String projectIdentifier, Collection<String> envRefs) {
     List<Cluster> entities = new ArrayList<>();
     ScopeWiseIds scopeWiseIds =
-        FullyQualifiedIdentifierHelper.getScopeWiseIds(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
+        IdentifierRefHelper.getScopeWiseIds(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
     entities.addAll(getAllClusters(
         page, size, accountIdentifier, orgIdentifier, projectIdentifier, scopeWiseIds.getProjectScopedIds()));
     entities.addAll(getAllClusters(page, size, accountIdentifier, orgIdentifier, null, scopeWiseIds.getOrgScopedIds()));

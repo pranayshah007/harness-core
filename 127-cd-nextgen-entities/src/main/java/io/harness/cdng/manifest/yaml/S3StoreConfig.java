@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
@@ -45,7 +46,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("s3Store")
 @RecasterAlias("io.harness.cdng.manifest.yaml.S3StoreConfig")
-public class S3StoreConfig implements StoreConfig, Visitable, WithConnectorRef {
+public class S3StoreConfig implements FileStorageStoreConfig, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -116,5 +117,16 @@ public class S3StoreConfig implements StoreConfig, Visitable, WithConnectorRef {
     if (ParameterField.isNotNull(overridingConnectorRef)) {
       connectorRef = overridingConnectorRef;
     }
+  }
+
+  @Override
+  public FileStorageConfigDTO toFileStorageConfigDTO() {
+    return S3StorageConfigDTO.builder()
+        .connectorRef(ParameterFieldHelper.getParameterFieldValue(connectorRef))
+        .region(ParameterFieldHelper.getParameterFieldValue(region))
+        .bucket(ParameterFieldHelper.getParameterFieldValue(bucketName))
+        .paths(ParameterFieldHelper.getParameterFieldValue(paths))
+        .folderPath(ParameterFieldHelper.getParameterFieldValue(folderPath))
+        .build();
   }
 }

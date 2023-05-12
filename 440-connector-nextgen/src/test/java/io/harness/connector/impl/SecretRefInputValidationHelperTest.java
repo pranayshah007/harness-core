@@ -10,7 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;

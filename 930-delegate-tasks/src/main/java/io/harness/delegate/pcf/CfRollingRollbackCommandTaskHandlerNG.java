@@ -134,6 +134,7 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
       List<ApplicationSummary> previousReleases = cfDeploymentManager.getPreviousReleasesForRolling(
           cfRequestConfig, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getApplicationName());
       workingDirectory = generateWorkingDirectoryOnDelegate(cfRollingRollbackRequestNG);
+      cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
           workingDirectory, ((CfRollingRollbackRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
       ApplicationDetail detailsBeforeDeployment = isEmpty(previousReleases)
@@ -166,6 +167,16 @@ public class CfRollingRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandle
                                           .currentProdInfo(null)
                                           .build();
         logCallback.saveExecutionLog(color("\n# Deleted successfully", White, Bold));
+        logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
+        return cfRollingRollbackResponseNG;
+      } else if (currentProdInfo == null && cfRollingRollbackRequestNG.isFirstDeployment()) {
+        logCallback.saveExecutionLog(
+            color("\n# App was not created in the deploy step, so skipping rollback", White, Bold));
+        cfRollingRollbackResponseNG = CfRollingRollbackResponseNG.builder()
+                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                          .newApplicationInfo(null)
+                                          .currentProdInfo(null)
+                                          .build();
         logCallback.saveExecutionLog("\n ----------  PCF Rolling Rollback completed successfully", INFO, SUCCESS);
         return cfRollingRollbackResponseNG;
       }

@@ -96,6 +96,7 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @Singleton
@@ -753,13 +754,11 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier,
-      ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
-      String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
-      Boolean getDistinctFromBranches) {
-    return defaultConnectorService.list(page, size, accountIdentifier, filterProperties, orgIdentifier,
-        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches);
+  public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable) {
+    return defaultConnectorService.list(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
   }
 
   @Override
@@ -782,13 +781,12 @@ public class ConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(int page, int size, String accountIdentifier,
+  public Page<CombineCcmK8sConnectorResponseDTO> listCcmK8S(String accountIdentifier,
       ConnectorFilterPropertiesDTO filterProperties, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, Boolean includeAllConnectorsAccessibleAtScope,
-      Boolean getDistinctFromBranches) {
-    return defaultConnectorService.listCcmK8S(page, size, accountIdentifier, filterProperties, orgIdentifier,
-        projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches);
+      Boolean getDistinctFromBranches, Pageable pageable) {
+    return defaultConnectorService.listCcmK8S(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
   }
 
   @Override

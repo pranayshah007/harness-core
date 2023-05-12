@@ -21,10 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(CDC)
 public class NGVariableNameValidator implements ConstraintValidator<NGVariableName, String> {
   public static final String ALLOWED_CHARS_STRING_DEFAULT =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ";
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_. ";
 
-  public static final Set<String> NOT_ALLOWED_STRING_SET_DEFAULT = Sets.newHashSet("or", "and", "eq", "ne", "lt", "gt",
-      "le", "ge", "div", "mod", "not", "null", "true", "false", "new", "var", "return");
+  static final Set<String> NOT_ALLOWED_STRING_SET_DEFAULT = Sets.newHashSet("or", "and", "eq", "ne", "lt", "gt", "le",
+      "ge", "div", "mod", "not", "null", "true", "false", "new", "var", "return");
 
   public static final int MAX_ALLOWED_LENGTH = 128;
 
@@ -65,8 +65,7 @@ public class NGVariableNameValidator implements ConstraintValidator<NGVariableNa
     if (containsNotAllowedChars) {
       context.disableDefaultConstraintViolation();
       context
-          .buildConstraintViolationWithTemplate(
-              "cannot be equal to reserved words - " + NOT_ALLOWED_STRING_SET_DEFAULT.toString())
+          .buildConstraintViolationWithTemplate("cannot be equal to reserved words - " + NOT_ALLOWED_STRING_SET_DEFAULT)
           .addConstraintViolation();
       return false;
     }

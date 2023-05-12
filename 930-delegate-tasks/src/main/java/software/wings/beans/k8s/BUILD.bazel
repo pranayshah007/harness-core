@@ -1,0 +1,35 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//950-delegate-tasks-beans:module",
+        "//957-cg-beans:module",
+        "//960-api-services/src/main/java/io/harness/k8s:module",
+        "//960-api-services/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/model:module",
+        "//970-api-services-beans/src/main/java/software/wings/annotation:module",
+        "//970-api-services-beans/src/main/java/software/wings/settings:module",
+        "//970-rbac-core:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/encryption:module",
+        "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/expression:module",
+        "//980-commons/src/main/java/software/wings/jersey:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+    ],
+)
+
+run_analysis_per_module()

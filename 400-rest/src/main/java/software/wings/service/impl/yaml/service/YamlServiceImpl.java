@@ -217,6 +217,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.error.Mark;
@@ -673,7 +674,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
 
           T yamlSyncHandler = yamlHandlerFactory.getYamlHandler(yamlType, yamlSubType);
           Class yamlClass = yamlSyncHandler.getYamlClass();
-          BaseYaml yaml = getYaml(change.getFileContent(), yamlClass);
+          BaseYaml yaml = getYaml(change.getFileContent(), yamlClass, change.getAccountId());
           notNullCheck("Could not get yaml object for :" + yamlFilePath, yaml);
 
           ChangeContext.Builder changeContextBuilder = ChangeContext.Builder.aChangeContext()
@@ -1027,10 +1028,13 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
     return null;
   }
 
-  private BaseYaml getYaml(String yamlString, Class<? extends BaseYaml> yamlClass) throws IOException {
+  @VisibleForTesting
+  BaseYaml getYaml(String yamlString, Class<? extends BaseYaml> yamlClass, String accountId) throws IOException {
     //    todo @abhinav: we can cache this object
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    if (featureFlagService.isNotEnabled(FeatureName.SPG_ENABLE_GIT_SYNC_YAML_VALIDATE, accountId)) {
+      mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
     return mapper.readValue(yamlString, yamlClass);
   }
 
@@ -1097,7 +1101,7 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
    * @return
    */
   private void validateYaml(String yamlString) throws ScannerException {
-    Yaml yamlObj = new Yaml(new SafeConstructor());
+    Yaml yamlObj = new Yaml(new SafeConstructor(new LoaderOptions()));
 
     // We just load the yaml to see if its well formed.
     LinkedHashMap<String, Object> load = (LinkedHashMap<String, Object>) yamlObj.load(yamlString);

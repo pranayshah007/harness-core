@@ -12,8 +12,9 @@ import static io.harness.rule.OwnerRule.GUNA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -34,6 +35,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -43,14 +45,13 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GoogleCredential.class})
+@RunWith(MockitoJUnitRunner.class)
 public class InfraDownloadServiceTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -58,6 +59,7 @@ public class InfraDownloadServiceTest extends CategoryTest {
   @Mock private SystemEnvironment sysenv;
   @Mock private MainConfiguration mainConfiguration;
   @Mock private FeatureFlagService featureFlagService;
+  private MockedStatic<GoogleCredential> googleCredentialMockedStatic;
   @InjectMocks @Inject InfraDownloadServiceImpl infraDownloadService;
 
   @Mock private GoogleCredential credential;
@@ -78,11 +80,17 @@ public class InfraDownloadServiceTest extends CategoryTest {
 
   @Before
   public void setUp() throws Exception {
-    PowerMockito.mockStatic(GoogleCredential.class);
+    googleCredentialMockedStatic = mockStatic(GoogleCredential.class);
     when(portalConfig.getUrl()).thenReturn("testUrl");
     when(mainConfiguration.getPortal()).thenReturn(portalConfig);
-    PowerMockito.when(GoogleCredential.fromStream(any(InputStream.class))).thenAnswer(invocationOnMock -> credential);
+    googleCredentialMockedStatic.when(() -> GoogleCredential.fromStream(any(InputStream.class)))
+        .thenAnswer(invocationOnMock -> credential);
     when(credential.createScoped(any())).thenReturn(credential);
+  }
+
+  @After
+  public void cleanup() {
+    googleCredentialMockedStatic.close();
   }
 
   @Test

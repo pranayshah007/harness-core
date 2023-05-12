@@ -37,11 +37,10 @@ import static dev.morphia.mapping.Mapper.ID_KEY;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyCollection;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -111,7 +110,7 @@ public class ServiceInstanceServiceTest extends WingsBaseTest {
     when(query.field(anyString())).thenReturn(end);
     when(end.hasAnyOf(anyCollection())).thenReturn(query);
     when(wingsPersistence.createUpdateOperations(ServiceInstance.class)).thenReturn(updateOperations);
-    when(updateOperations.set(anyString(), anyObject())).thenReturn(updateOperations);
+    when(updateOperations.set(anyString(), any())).thenReturn(updateOperations);
     when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
   }
 

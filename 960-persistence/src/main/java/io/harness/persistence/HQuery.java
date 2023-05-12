@@ -32,6 +32,7 @@ import dev.morphia.query.MorphiaIterator;
 import dev.morphia.query.MorphiaKeyIterator;
 import dev.morphia.query.Query;
 import dev.morphia.query.QueryImpl;
+import dev.morphia.query.internal.MorphiaKeyCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -61,6 +62,7 @@ public class HQuery<T> extends QueryImpl<T> {
   private final Subject<Tracer> tracerSubject;
   private Set<QueryChecks> queryChecks = allChecks;
   private final int maxOperationTimeInMillis;
+  private final int maxDocumentsToBeFetched;
   private List<Criteria> children;
 
   private static final Set<String> requiredFilterArgs = Sets.newHashSet("accountId", "accounts", "appId", "accountIds");
@@ -84,11 +86,12 @@ public class HQuery<T> extends QueryImpl<T> {
    * @param tracerSubject the trace subject used in case trace mode is ENABLED
    */
   public HQuery(Class<T> clazz, DBCollection coll, Datastore ds, TraceMode traceMode, Subject<Tracer> tracerSubject,
-      int maxOperationTimeInMillis) {
+      int maxOperationTimeInMillis, int maxDocumentsToBeFetched) {
     super(clazz, coll, ds);
     this.traceMode = traceMode;
     this.tracerSubject = tracerSubject;
     this.maxOperationTimeInMillis = maxOperationTimeInMillis;
+    this.maxDocumentsToBeFetched = maxDocumentsToBeFetched;
     this.children = new ArrayList<>();
   }
 
@@ -177,6 +180,9 @@ public class HQuery<T> extends QueryImpl<T> {
       if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
         options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
       }
+      if (options.getLimit() == 0) {
+        options.limit(maxDocumentsToBeFetched);
+      }
       return HPersistence.retry(() -> {
         final List<Key<T>> list = super.asKeyList(options);
         checkKeyListSize(list);
@@ -197,6 +203,9 @@ public class HQuery<T> extends QueryImpl<T> {
       enforceHarnessRules();
       if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
         options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      if (options.getLimit() == 0) {
+        options.limit(maxDocumentsToBeFetched);
       }
       traceQuery();
       return HPersistence.retry(() -> {
@@ -246,6 +255,9 @@ public class HQuery<T> extends QueryImpl<T> {
       if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
         options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
       }
+      if (options.getLimit() == 0) {
+        options.limit(maxDocumentsToBeFetched);
+      }
       return HPersistence.retry(() -> { return super.fetch(options); });
     } catch (MongoExecutionTimeoutException ex) {
       log.error("fetch query {} exceeded max time limit of {} ms for entityClass {} with error {}", this,
@@ -264,6 +276,9 @@ public class HQuery<T> extends QueryImpl<T> {
       if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
         options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
       }
+      if (options.getLimit() == 0) {
+        options.limit(maxDocumentsToBeFetched);
+      }
       return HPersistence.retry(() -> { return super.fetchEmptyEntities(options); });
     } catch (MongoExecutionTimeoutException ex) {
       log.error("fetchEmptyEntities query {} exceeded max time limit of {} ms for entityClass {} with error {}", this,
@@ -281,6 +296,9 @@ public class HQuery<T> extends QueryImpl<T> {
       traceQuery();
       if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
         options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      if (options.getLimit() == 0) {
+        options.limit(maxDocumentsToBeFetched);
       }
       return HPersistence.retry(() -> super.fetchKeys(options));
     } catch (MongoExecutionTimeoutException ex) {
@@ -302,6 +320,27 @@ public class HQuery<T> extends QueryImpl<T> {
     enforceHarnessRules();
     traceQuery();
     return super.search(search, language);
+  }
+
+  @Override
+  public MorphiaKeyCursor<T> keys(FindOptions options) {
+    Class<T> entityClass = null;
+    try {
+      entityClass = super.getEntityClass();
+      enforceHarnessRules();
+      traceQuery();
+      if (options.getMaxTime(TimeUnit.MILLISECONDS) == 0) {
+        options.maxTime(maxOperationTimeInMillis, TimeUnit.MILLISECONDS);
+      }
+      if (options.getLimit() == 0) {
+        options.limit(maxDocumentsToBeFetched);
+      }
+      return HPersistence.retry(() -> super.keys(options));
+    } catch (MongoExecutionTimeoutException ex) {
+      log.error("keys query {} exceeded max time limit of {} ms for entityClass {} with error {}", this,
+          maxOperationTimeInMillis, entityClass, ex);
+      throw ex;
+    }
   }
 
   private void enforceHarnessRules() {

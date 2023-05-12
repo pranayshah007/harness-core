@@ -18,7 +18,7 @@ import static software.wings.service.impl.instance.InstanceSyncTestConstants.SER
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -92,7 +92,7 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
 
     prepareK8sTaskData(k8sClusterConfig);
     final ContainerInstanceSyncPerpetualTaskParams taskParams =
-        (ContainerInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(true));
+        (ContainerInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(true), true);
 
     assertThat(taskParams.getContainerType()).isEqualTo("K8S");
     assertThat(taskParams.getK8SContainerPerpetualTaskParams()).isNotNull();
@@ -111,7 +111,7 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
     AzureConfig azureConfig = AzureConfig.builder().accountId(ACCOUNT_ID).tenantId("harness").build();
     prepareAzureTaskData(azureConfig);
     final ContainerInstanceSyncPerpetualTaskParams taskParams =
-        (ContainerInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(false));
+        (ContainerInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(false), true);
 
     assertThat(taskParams.getContainerType()).isEqualTo("");
     assertThat(taskParams.getContainerServicePerpetualTaskParams()).isNotNull();
@@ -131,7 +131,7 @@ public class ContainerInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).tag("harness").build();
     prepareAwsTaskData(awsConfig);
     final ContainerInstanceSyncPerpetualTaskParams taskParams =
-        (ContainerInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(false));
+        (ContainerInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(false), true);
 
     assertThat(taskParams.getContainerType()).isEqualTo("");
     assertThat(taskParams.getContainerServicePerpetualTaskParams()).isNotNull();

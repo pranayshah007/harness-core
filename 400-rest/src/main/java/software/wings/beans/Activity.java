@@ -19,6 +19,7 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.TriggeredBy;
 import io.harness.beans.WorkflowType;
 import io.harness.dataretention.AccountDataRetentionEntity;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -85,6 +86,11 @@ public class Activity implements PersistentEntity, AccountDataRetentionEntity, U
                  .field(ActivityKeys.environmentId)
                  .field(ActivityKeys.status)
                  .descSortField(ActivityKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_validUntil")
+                 .field(ActivityKeys.accountId)
+                 .field(ActivityKeys.validUntil)
                  .build())
         .build();
   }

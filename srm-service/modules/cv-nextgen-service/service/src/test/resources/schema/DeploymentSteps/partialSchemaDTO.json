@@ -585,7 +585,7 @@
               "type" : "array",
               "items" : {
                 "type" : "string",
-                "enum" : [ "Unknown", "AllErrors", "Authentication", "Connectivity", "Timeout", "Authorization", "Verification", "DelegateProvisioning", "PolicyEvaluationFailure", "InputTimeoutError", "ApprovalRejection", "DelegateRestart" ]
+                "enum" : [ "Unknown", "AllErrors", "Authentication", "Connectivity", "Timeout", "Authorization", "Verification", "DelegateProvisioning", "PolicyEvaluationFailure", "InputTimeoutError", "ApprovalRejection", "DelegateRestart", "UserMarkedFailure" ]
               }
             }
           },

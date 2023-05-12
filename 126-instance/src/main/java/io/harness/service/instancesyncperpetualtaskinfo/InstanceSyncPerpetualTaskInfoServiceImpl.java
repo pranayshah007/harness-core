@@ -8,10 +8,6 @@
 package io.harness.service.instancesyncperpetualtaskinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
@@ -23,8 +19,10 @@ import io.harness.repositories.instancesyncperpetualtaskinfo.InstanceSyncPerpetu
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.client.result.DeleteResult;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -92,14 +90,15 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   }
 
   @Override
-  public boolean deleteAllInstanceSyncPTs(String accountIdentifier) {
-    checkArgument(isNotEmpty(accountIdentifier), "accountId must be present");
-    Criteria criteria = getCriteriaForDeletion(accountIdentifier);
-    DeleteResult delete = instanceSyncPerpetualTaskInfoRepository.delete(criteria);
-    return delete.wasAcknowledged();
-  }
+  public List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(accountId)
+                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId)
+                            .is(perpetualTaskId);
 
-  private Criteria getCriteriaForDeletion(String accountIdentifier) {
-    return where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier).is(accountIdentifier);
+    return instanceSyncPerpetualTaskInfoRepository.findAll(criteria)
+        .stream()
+        .map(InstanceSyncPerpetualTaskInfoMapper::toDTO)
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 }

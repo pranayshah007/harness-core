@@ -26,6 +26,7 @@ public class DelegateTaskResponse {
   private DelegateResponseData response;
   private ResponseCode responseCode;
   TaskType taskType;
+  String taskTypeName;
   @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
 
   public enum ResponseCode {

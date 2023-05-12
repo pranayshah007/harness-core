@@ -23,6 +23,8 @@ import io.harness.beans.response.GitFileBatchResponse;
 import io.harness.beans.response.GitFileResponse;
 import io.harness.beans.response.ListFilesInCommitResponse;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -36,7 +38,7 @@ import io.harness.product.ci.scm.proto.FindFilesInBranchResponse;
 import io.harness.product.ci.scm.proto.FindFilesInCommitResponse;
 import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
 import io.harness.product.ci.scm.proto.FindPRResponse;
-import io.harness.product.ci.scm.proto.GetAuthenticatedUserResponse;
+import io.harness.product.ci.scm.proto.GenerateYamlResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
@@ -138,7 +140,8 @@ public interface ScmServiceClient {
   CompareCommitsResponse compareCommits(
       ScmConnector scmConnector, String initialCommitId, String finalCommitId, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
-  GetAuthenticatedUserResponse getAuthenticatedUser(ScmConnector scmConnector, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  UserDetailsResponseDTO getUserDetails(
+      UserDetailsRequestDTO userDetailsRequestDTO, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
   GetUserReposResponse getUserRepos(
       ScmConnector scmConnector, PageRequestDTO pageRequest, SCMGrpc.SCMBlockingStub scmBlockingStub);
@@ -160,6 +163,8 @@ public interface ScmServiceClient {
   RefreshTokenResponse refreshToken(ScmConnector scmConnector, String clientId, String clientSecret, String endpoint,
       String refreshToken, SCMGrpc.SCMBlockingStub scmBlockingStub);
 
+  GenerateYamlResponse autogenerateStageYamlForCI(
+      String cloneUrl, String yamlVersion, SCMGrpc.SCMBlockingStub scmBlockingStub);
   GetLatestCommitOnFileResponse getLatestCommitOnFile(
       ScmConnector scmConnector, String branchName, String filepath, SCMGrpc.SCMBlockingStub scmBlockingStub);
 

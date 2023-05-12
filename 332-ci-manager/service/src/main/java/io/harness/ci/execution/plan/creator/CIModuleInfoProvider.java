@@ -12,7 +12,6 @@ import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
-import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.getGitRepo;
@@ -81,7 +80,6 @@ import com.google.inject.Singleton;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -202,6 +200,11 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       try {
         LicensesWithSummaryDTO licensesWithSummaryDTO =
             ciLicenseService.getLicenseSummary(baseNGAccess.getAccountIdentifier());
+
+        if (licensesWithSummaryDTO == null) {
+          throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+        }
+
         if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getLicenseType() != null) {
           licenseType = licensesWithSummaryDTO.getLicenseType() != null
               ? licensesWithSummaryDTO.getLicenseType().toString()
@@ -311,9 +314,6 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
 
     List<CIBuildCommit> ciBuildCommits = new ArrayList<>();
     if (isNotEmpty(codebaseSweepingOutput.getCommits())) {
-      if (shouldReverseCommitList(codebaseSweepingOutput.getRepoUrl())) {
-        Collections.reverse(codebaseSweepingOutput.getCommits());
-      }
       for (CodebaseSweepingOutput.CodeBaseCommit commit : codebaseSweepingOutput.getCommits()) {
         ciBuildCommits.add(CIBuildCommit.builder()
                                .id(commit.getId())
@@ -504,10 +504,5 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       log.warn("Failed to get repo info, assuming private. url", e);
       return true;
     }
-  }
-
-  private boolean shouldReverseCommitList(String repoUrl) {
-    // Azure gives latest commit first
-    return !repoUrl.contains(AZURE_REPO_BASE_URL);
   }
 }

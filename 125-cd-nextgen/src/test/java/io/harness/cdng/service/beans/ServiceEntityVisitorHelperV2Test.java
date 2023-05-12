@@ -145,6 +145,12 @@ public class ServiceEntityVisitorHelperV2Test extends CategoryTest {
     for (String id : entityIds) {
       assertThat(fetchedEntityIds.contains(id)).isTrue();
     }
+
+    serviceYamlV2 = ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("").build()).build();
+
+    entityDetailProtoDTOS = serviceEntityVisitorHelperV2.addReference(
+        serviceYamlV2, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, contextMap);
+    assertThat(entityDetailProtoDTOS).isEmpty();
   }
 
   private String readFile(String filename) {

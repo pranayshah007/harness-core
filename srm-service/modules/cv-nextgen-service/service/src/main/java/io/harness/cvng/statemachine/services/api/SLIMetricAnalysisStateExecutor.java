@@ -11,15 +11,19 @@ import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
+import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -28,6 +32,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLIMetricAnalysisTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
@@ -63,10 +68,17 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
 
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
+  @Inject private SLIConsecutiveMinutesProcessorService sliConsecutiveMinutesProcessorService;
+
   @Inject private MetricService metricService;
 
-  @Inject private Clock clock;
+  @Inject private EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
 
+  @Inject private CompositeSLOService compositeSLOService;
+
+  @Inject private OrchestrationService orchestrationService;
+
+  @Inject private Clock clock;
   @Override
   public AnalysisState execute(SLIMetricAnalysisState analysisState) {
     Instant startTime = analysisState.getInputs().getStartTime();
@@ -86,11 +98,12 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
         sliMetricAnalysisTransformer.getSLIAnalyseRequest(timeSeriesRecordDTOS);
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         serviceLevelIndicatorEntityAndDTOTransformer.getDto(serviceLevelIndicator);
-    List<SLIAnalyseResponse> sliAnalyseResponseList = sliDataProcessorService.process(sliAnalyseRequest,
-        ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSpec(), startTime, endTime);
+    List<SLIAnalyseResponse> sliAnalyseResponseList =
+        sliDataProcessorService.process(sliAnalyseRequest, serviceLevelIndicatorDTO, startTime, endTime);
     List<SLIRecordParam> sliRecordList = sliMetricAnalysisTransformer.getSLIAnalyseResponse(sliAnalyseResponseList);
     sliRecordList = sliDataUnavailabilityInstancesHandlerService.filterSLIRecordsToSkip(
         sliRecordList, projectParams, startTime, endTime, monitoredServiceIdentifier, serviceLevelIndicator.getUuid());
+    sliRecordList = sliConsecutiveMinutesProcessorService.process(sliRecordList, serviceLevelIndicator);
     sliRecordService.create(
         sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
     SimpleServiceLevelObjective serviceLevelObjective =
@@ -123,6 +136,32 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
   @Override
   public AnalysisState handleSuccess(SLIMetricAnalysisState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
+    if (analysisState.getInputs().isSLORestoreTask()) {
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(
+          verificationTaskService.getSliId(analysisState.getInputs().getVerificationTaskId()));
+      entityUnavailabilityStatusesService.updateDCPassedToDCRestoredForAllEntities(EntityType.SLO,
+          serviceLevelIndicator.getUuid(), analysisState.getInputs().getStartTime().getEpochSecond(),
+          analysisState.getInputs().getEndTime().getEpochSecond());
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .accountIdentifier(serviceLevelIndicator.getAccountId())
+                                        .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
+                                        .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
+                                        .build();
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
+      List<CompositeServiceLevelObjective> compositeServiceLevelObjectives =
+          compositeSLOService.getReferencedCompositeSLOs(projectParams, simpleServiceLevelObjective.getIdentifier());
+      for (CompositeServiceLevelObjective compositeServiceLevelObjective : compositeServiceLevelObjectives) {
+        String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+            serviceLevelIndicator.getAccountId(), compositeServiceLevelObjective.getUuid());
+        orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                               .verificationTaskId(verificationTaskId)
+                                               .startTime(analysisState.getInputs().getStartTime())
+                                               .endTime(Instant.now())
+                                               .isSLORestoreTask(true)
+                                               .build());
+      }
+    }
     return analysisState;
   }
 

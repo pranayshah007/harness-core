@@ -40,10 +40,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -118,8 +118,8 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import retrofit2.Call;
@@ -590,7 +590,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testGenerateBearerTokenWithJWTToken() throws UnsupportedEncodingException {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(true);
     Account mockAccount =
         Account.Builder.anAccount().withUuid("kmpySmUISimoRrJL6NL73w").withAccountKey("TestAccount").build();
     User mockUser = getMockUser(mockAccount);
@@ -622,7 +622,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testGenerateBearerTokenWithoutJWTToken() {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(false);
     Account mockAccount =
         Account.Builder.anAccount().withUuid("kmpySmUISimoRrJL6NL73w").withAccountKey("TestAccount").build();
     User mockUser = getMockUser(mockAccount);
@@ -633,7 +633,7 @@ public class AuthServiceTest extends WingsBaseTest {
     AuthToken authToken = new AuthToken(ACCOUNT_ID, USER_ID, 8640000L);
     JWT jwt = JWT.decode(user.getToken());
     String authTokenUuid = jwt.getClaim("authToken").asString();
-    when(cache.get(Matchers.any(), Matchers.matches(authTokenUuid))).thenReturn(authToken);
+    when(cache.get(any(), ArgumentMatchers.matches(authTokenUuid))).thenReturn(authToken);
     when(authTokenCache.get(authTokenUuid)).thenReturn(authToken);
     assertThat(user.getToken().length()).isGreaterThan(32);
     authService.validateToken(user.getToken());
@@ -643,7 +643,7 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
   public void shouldSendSegmentTrackEvent() throws IllegalAccessException {
-    when(featureFlagService.isEnabled(Matchers.any(FeatureName.class), anyString())).thenReturn(false);
+    when(featureFlagService.isEnabled(ArgumentMatchers.any(FeatureName.class), anyString())).thenReturn(false);
     Account mockAccount = Account.Builder.anAccount().withAccountKey("TestAccount").withUuid(ACCOUNT_ID).build();
     User mockUser = getMockUser(mockAccount);
     mockUser.setLastAccountId(ACCOUNT_ID);

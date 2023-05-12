@@ -6,41 +6,50 @@
  */
 package io.harness.idp.gitintegration.utils;
 
+import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.AZURE_HOST;
+
 import io.harness.beans.DecryptedSecretValue;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.connector.DelegateSelectable;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
-import io.harness.spec.server.idp.v1.model.EnvironmentSecret;
+import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
+import java.util.HashSet;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class GitIntegrationUtils {
   private static final String PATH_SEPARATOR_FOR_URL = "/";
-  public EnvironmentSecret getEnvironmentSecret(SecretManagerClientService ngSecretService, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String tokenSecretIdentifier, String connectorIdentifier,
-      String tokenType) {
-    EnvironmentSecret environmentSecret = new EnvironmentSecret();
-    environmentSecret.secretIdentifier(tokenSecretIdentifier);
+
+  public BackstageEnvSecretVariable getBackstageEnvSecretVariable(String tokenSecretIdentifier, String tokenType) {
+    BackstageEnvSecretVariable environmentSecret = new BackstageEnvSecretVariable();
+    environmentSecret.harnessSecretIdentifier(tokenSecretIdentifier);
     environmentSecret.setEnvName(tokenType);
+    environmentSecret.setType(BackstageEnvVariable.TypeEnum.SECRET);
+    return environmentSecret;
+  }
+
+  public String decryptSecret(SecretManagerClientService ngSecretService, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String tokenSecretIdentifier, String connectorIdentifier) {
     DecryptedSecretValue decryptedSecretValue = ngSecretService.getDecryptedSecretValue(
         accountIdentifier, orgIdentifier, projectIdentifier, tokenSecretIdentifier);
     if (decryptedSecretValue == null) {
       throw new InvalidRequestException(String.format(
           "Secret not found for identifier : [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
-    environmentSecret.setDecryptedValue(decryptedSecretValue.getDecryptedValue());
-    return environmentSecret;
+    return decryptedSecretValue.getDecryptedValue();
   }
 
-  public String getHostForConnector(ConnectorInfoDTO connectorInfoDTO, ConnectorType connectorType) {
-    switch (connectorType) {
+  public String getHostForConnector(ConnectorInfoDTO connectorInfoDTO) {
+    switch (connectorInfoDTO.getConnectorType()) {
       case GITHUB:
         GithubConnectorDTO configGithub = (GithubConnectorDTO) connectorInfoDTO.getConnectorConfig();
         return getHostFromURL(configGithub.getUrl());
@@ -51,8 +60,7 @@ public class GitIntegrationUtils {
         BitbucketConnectorDTO configBitbucket = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
         return getHostFromURL(configBitbucket.getUrl());
       case AZURE_REPO:
-        AzureRepoConnectorDTO configAzure = (AzureRepoConnectorDTO) connectorInfoDTO.getConnectorConfig();
-        return getHostFromURL(configAzure.getUrl());
+        return AZURE_HOST;
       default:
         return null;
     }
@@ -70,5 +78,18 @@ public class GitIntegrationUtils {
                && apiAccess.getType().toString().equals(GitIntegrationConstants.GITHUB_APP_CONNECTOR_TYPE))
         ? true
         : false;
+  }
+
+  public String replaceAccountScopeFromConnectorId(String connectorIdentifier) {
+    return connectorIdentifier.replace(GitIntegrationConstants.ACCOUNT_SCOPED, "");
+  }
+
+  public Set<String> extractDelegateSelectors(ConnectorInfoDTO connectorInfoDTO) {
+    Set<String> delegateSelectors = new HashSet<>();
+    ConnectorConfigDTO connectorConfig = connectorInfoDTO.getConnectorConfig();
+    if (connectorConfig instanceof DelegateSelectable) {
+      delegateSelectors = ((DelegateSelectable) connectorConfig).getDelegateSelectors();
+    }
+    return delegateSelectors;
   }
 }

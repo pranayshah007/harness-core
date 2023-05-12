@@ -22,7 +22,6 @@ import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2;
 import io.harness.ccm.helper.RecommendationQueryHelper;
-import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.FilterValuesDTO;
 import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
@@ -71,7 +70,6 @@ import org.springframework.stereotype.Service;
     content = { @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = ErrorDTO.class)) })
 public class RESTWrapperRecommendationOverview {
   @Inject private RecommendationsOverviewQueryV2 overviewQueryV2;
-  @Inject private CCMRbacHelper rbacHelper;
 
   private static final String FILTER_DESCRIPTION = "CCM Recommendations filter body.";
 

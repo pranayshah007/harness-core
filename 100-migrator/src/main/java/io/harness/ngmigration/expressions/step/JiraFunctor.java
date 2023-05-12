@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 public class JiraFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
   public JiraFunctor(StepOutput stepOutput) {
+    super(stepOutput);
     this.stepOutput = stepOutput;
   }
 
@@ -25,10 +26,5 @@ public class JiraFunctor extends StepExpressionFunctor {
     }
     return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.issue.%s>",
         stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), key);
-  }
-
-  @Override
-  public String getCgExpression() {
-    return stepOutput.getExpression();
   }
 }

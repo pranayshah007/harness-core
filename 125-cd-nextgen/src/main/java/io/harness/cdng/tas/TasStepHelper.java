@@ -18,17 +18,20 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAM
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.BAMBOO_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GITHUB_PACKAGES_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_ARTIFACT_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS2_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.AZURE_ARTIFACTS;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.BAMBOO;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.GOOGLE_CLOUD_STORAGE_ARTIFACT;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS2_REGISTRY;
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
@@ -70,12 +73,13 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
-import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
+import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GithubPackagesArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GoogleCloudStorageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
@@ -125,7 +129,8 @@ import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResp
 import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
-import io.harness.delegate.task.pcf.artifact.CustomArtifactTasRequestDetails;
+import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
@@ -155,7 +160,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
-import io.harness.logstreaming.NGLogCallback;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
@@ -435,11 +439,16 @@ public class TasStepHelper {
                       .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
                       .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
                       .build();
+    String infraIdentifier = infrastructure.getInfraIdentifier();
+    // infra identifier could be null in service/env version v1
+    if (isBlank(infraIdentifier)) {
+      infraIdentifier = infrastructure.getInfrastructureKey();
+    }
     return ExecutionInfoKey.builder()
         .scope(scope)
         .deploymentIdentifier(getDeploymentIdentifier(tasInfraConfig, appName))
         .envIdentifier(infrastructure.getEnvironment().getIdentifier())
-        .infraIdentifier(infrastructure.getInfrastructureKey())
+        .infraIdentifier(infraIdentifier)
         .serviceIdentifier(serviceOutcome.getIdentifier())
         .build();
   }
@@ -1738,8 +1747,9 @@ public class TasStepHelper {
       case AMAZON_S3_NAME:
       case JENKINS_NAME:
       case AZURE_ARTIFACTS_NAME:
-      case CUSTOM_ARTIFACT_NAME:
       case GITHUB_PACKAGES_NAME:
+      case BAMBOO_ARTIFACTS_NAME:
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
         if (isPackageArtifactType(artifactOutcome)) {
           return getTasPackageArtifactConfig(ambiance, artifactOutcome);
         } else {
@@ -1765,8 +1775,10 @@ public class TasStepHelper {
         return artifactOutcome instanceof JenkinsArtifactOutcome;
       case AZURE_ARTIFACTS_NAME:
         return artifactOutcome instanceof AzureArtifactsOutcome;
-      case CUSTOM_ARTIFACT_NAME:
-        return true;
+      case BAMBOO_ARTIFACTS_NAME:
+        return artifactOutcome instanceof BambooArtifactOutcome;
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
+        return artifactOutcome instanceof GoogleCloudStorageArtifactOutcome;
       default:
         return false;
     }
@@ -1883,17 +1895,6 @@ public class TasStepHelper {
                 .build());
         connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
         break;
-      case CUSTOM_ARTIFACT_NAME:
-        CustomArtifactOutcome customArtifactOutcome = (CustomArtifactOutcome) artifactOutcome;
-        artifactConfigBuilder.sourceType(ArtifactSourceType.CUSTOM_ARTIFACT);
-        artifactConfigBuilder.artifactDetails(CustomArtifactTasRequestDetails.builder()
-                                                  .identifier(customArtifactOutcome.getIdentifier())
-                                                  .artifactPath(customArtifactOutcome.getArtifactPath())
-                                                  .image(customArtifactOutcome.getImage())
-                                                  .displayName(customArtifactOutcome.getDisplayName())
-                                                  .metadata(customArtifactOutcome.getMetadata())
-                                                  .build());
-        break;
       case AMAZON_S3_NAME:
         S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
         artifactConfigBuilder.sourceType(AMAZONS3);
@@ -1955,6 +1956,30 @@ public class TasStepHelper {
                                                   .build());
         connectorInfoDTO = cdStepHelper.getConnector(azureArtifactsOutcome.getConnectorRef(), ambiance);
         break;
+      case BAMBOO_ARTIFACTS_NAME:
+        BambooArtifactOutcome bambooArtifactOutcome = (BambooArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(BAMBOO);
+        artifactConfigBuilder.artifactDetails(BambooTasArtifactRequestDetails.builder()
+                                                  .artifactPaths(bambooArtifactOutcome.getArtifactPath())
+                                                  .planKey(bambooArtifactOutcome.getPlanKey())
+                                                  .build(bambooArtifactOutcome.getBuild())
+                                                  .identifier(bambooArtifactOutcome.getIdentifier())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(bambooArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
+        GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
+            (GoogleCloudStorageArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(GOOGLE_CLOUD_STORAGE_ARTIFACT);
+        connectorInfoDTO = cdStepHelper.getConnector(googleCloudStorageArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.artifactDetails(GoogleCloudStorageTasArtifactRequestDetails.builder()
+                                                  .artifactPath(googleCloudStorageArtifactOutcome.getArtifactPath())
+                                                  .bucket(googleCloudStorageArtifactOutcome.getBucket())
+                                                  .project(googleCloudStorageArtifactOutcome.getProject())
+                                                  .identifier(googleCloudStorageArtifactOutcome.getIdentifier())
+                                                  .connectorRef(connectorInfoDTO.getIdentifier())
+                                                  .build());
+        break;
       default:
         throw new InvalidArgumentsException(
             Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
@@ -1984,28 +2009,24 @@ public class TasStepHelper {
       return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     }
 
-    List<UnitProgress> finalUnitProgressList = currentProgressData.getUnitProgresses()
-                                                   .stream()
-                                                   .map(unitProgress -> {
-                                                     if (unitProgress.getStatus() == RUNNING) {
-                                                       LogCallback logCallback =
-                                                           getLogCallback(unitProgress.getUnitName(), ambiance, false);
-                                                       logCallback.saveExecutionLog(exceptionMessage, ERROR, FAILURE);
-                                                       return UnitProgress.newBuilder(unitProgress)
-                                                           .setStatus(UnitStatus.FAILURE)
-                                                           .setEndTime(System.currentTimeMillis())
-                                                           .build();
-                                                     }
+    List<UnitProgress> finalUnitProgressList =
+        currentProgressData.getUnitProgresses()
+            .stream()
+            .map(unitProgress -> {
+              if (unitProgress.getStatus() == RUNNING) {
+                LogCallback logCallback = cdStepHelper.getLogCallback(unitProgress.getUnitName(), ambiance, false);
+                logCallback.saveExecutionLog(exceptionMessage, ERROR, FAILURE);
+                return UnitProgress.newBuilder(unitProgress)
+                    .setStatus(UnitStatus.FAILURE)
+                    .setEndTime(System.currentTimeMillis())
+                    .build();
+              }
 
-                                                     return unitProgress;
-                                                   })
-                                                   .collect(Collectors.toList());
+              return unitProgress;
+            })
+            .collect(Collectors.toList());
 
     return UnitProgressData.builder().unitProgresses(finalUnitProgressList).build();
-  }
-
-  public LogCallback getLogCallback(String commandUnitName, Ambiance ambiance, boolean shouldOpenStream) {
-    return new NGLogCallback(logStreamingStepClientFactory, ambiance, commandUnitName, shouldOpenStream);
   }
 
   public void closeLogStream(Ambiance ambiance) {

@@ -43,6 +43,7 @@ public class RecommendationQueryHelper {
         .perspectiveFilters(ccmFilter.getPerspectiveFilters())
         .minSaving(ccmFilter.getMinSaving())
         .minCost(ccmFilter.getMinCost())
+        .daysBack(ccmFilter.getDaysBack())
         .offset(ccmFilter.getOffset())
         .limit(ccmFilter.getLimit())
         .build();

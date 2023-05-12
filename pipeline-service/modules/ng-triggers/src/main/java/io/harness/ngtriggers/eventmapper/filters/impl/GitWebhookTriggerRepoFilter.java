@@ -225,10 +225,17 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   And we allow connector url as http://<something>, http://www.<something>, https://www.<something>
   This method will do the required fix
    */
+  @VisibleForTesting
   String sanitizeUrl(String url) {
     String modifiedUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     modifiedUrl = modifiedUrl.replaceFirst("http://", "https://");
     modifiedUrl = modifiedUrl.replaceFirst("https://www.", "https://");
+
+    if (modifiedUrl.contains("ssh://")) {
+      modifiedUrl = !modifiedUrl.contains("@") ? modifiedUrl.replaceFirst("ssh://", "git@")
+                                               : modifiedUrl.replaceFirst("ssh://", "");
+      modifiedUrl = modifiedUrl.contains(":") ? modifiedUrl : modifiedUrl.replaceFirst("/", ":");
+    }
 
     return modifiedUrl;
   }

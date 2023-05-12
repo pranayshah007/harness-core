@@ -10,7 +10,7 @@ package io.harness.perpetualtask.ecs;
 import static io.harness.rule.OwnerRule.ROHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
@@ -74,7 +74,7 @@ public class EcsPerpetualTaskServiceClientTest extends WingsBaseTest {
     PerpetualTaskClientContext perpetualTaskClientContext =
         PerpetualTaskClientContext.builder().clientParams(clientParamsMap).build();
     EcsPerpetualTaskParams ecsPerpetualTaskParams =
-        ecsPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext);
+        ecsPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext, true);
     assertThat(ecsPerpetualTaskParams.getClusterId()).isEqualTo(CLUSTER_ID);
     assertThat(ecsPerpetualTaskParams.getClusterName()).isEqualTo(CLUSTER_NAME);
     assertThat(ecsPerpetualTaskParams.getRegion()).isEqualTo(REGION);

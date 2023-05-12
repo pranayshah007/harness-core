@@ -142,6 +142,6 @@ public class GroupEventInterceptorTest extends TelemetrySdkTestBase {
     Mockito.when(sendGroupEvent.identity()).thenReturn(defaultInput);
 
     groupEventInterceptor.processGroupEvent(sendGroupEvent, ARGUMENTS);
-    Mockito.verifyZeroInteractions(segmentReporterImpl);
+    Mockito.verifyNoInteractions(segmentReporterImpl);
   }
 }

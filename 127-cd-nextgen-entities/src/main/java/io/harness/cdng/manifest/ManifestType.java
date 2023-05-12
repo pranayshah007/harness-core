@@ -30,6 +30,8 @@ public interface ManifestType {
       ManifestType.AsgConfiguration, ManifestType.AsgScalingPolicy, ManifestType.AsgScheduledUpdateGroupAction);
 
   Set<String> GOOGLE_FUNCTIONS_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.GoogleCloudFunctionDefinition);
+  Set<String> GOOGLE_FUNCTIONS_GEN_ONE_SUPPORTED_MANIFEST_TYPES =
+      ImmutableSet.of(ManifestType.GoogleCloudFunctionGenOneDefinition);
   Set<String> AWS_LAMBDA_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition);
   Set<String> AWS_SAM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.AwsSamDirectory);
@@ -58,6 +60,7 @@ public interface ManifestType {
   String AsgScalingPolicy = "AsgScalingPolicy";
   String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
   String GoogleCloudFunctionDefinition = "GoogleCloudFunctionDefinition";
+  String GoogleCloudFunctionGenOneDefinition = "GoogleCloudFunctionGenOneDefinition";
   String HelmRepoOverride = "HelmRepoOverride";
   String AwsLambdaFunctionDefinition = "AwsLambdaFunctionDefinition";
   String AwsLambdaFunctionAliasDefinition = "AwsLambdaFunctionAliasDefinition";
@@ -72,6 +75,6 @@ public interface ManifestType {
         ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
         AsgScheduledUpdateGroupAction, ManifestType.GoogleCloudFunctionDefinition,
         ManifestType.AwsLambdaFunctionDefinition, ManifestType.AwsLambdaFunctionAliasDefinition,
-        ManifestType.AwsSamDirectory));
+        ManifestType.AwsSamDirectory, ManifestType.GoogleCloudFunctionGenOneDefinition));
   }
 }

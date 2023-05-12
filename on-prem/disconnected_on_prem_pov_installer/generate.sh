@@ -156,7 +156,7 @@ for kubectlVersion in v1.13.2 v1.19.2; do
 
 done
 
-for goversion in v0.2 v0.3 v0.4; do
+for goversion in v0.4.2; do
   echo "Adding goversion $goversion"
   GOTEMPLATE_LINUX_DIR="${IMAGES_DIR}/go-template/linux/$goversion/"
   GOTEMPLATE_MAC_DIR="${IMAGES_DIR}/go-template/darwin/$goversion/"
@@ -228,7 +228,7 @@ for chartmuseumversion in v0.8.2 v0.12.0; do
   curl -L -o "${CHARTMUSEUM_MAC_DIR}chartmuseum" "${CHARTMUSEUM_MAC_URL}"
 done
 
-for tfConfigInspectVersion in v1.0 v1.1; do
+for tfConfigInspectVersion in v1.0 v1.1 v1.2; do
   echo "Adding terraform-config-inspect" $tfConfigInspectVersion
 
   TF_CONFIG_INSPECT_LINUX_DIR="${IMAGES_DIR}/tf-config-inspect/linux/$tfConfigInspectVersion/"

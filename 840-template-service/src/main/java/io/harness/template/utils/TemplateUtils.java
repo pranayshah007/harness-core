@@ -25,6 +25,7 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitx.USER_FLOW;
 import io.harness.manage.GlobalContextManager;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -36,12 +37,17 @@ import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.EnumSet;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class TemplateUtils {
   public static final String TEMPLATE_FIELD_NAME = "template";
+  public final EnumSet<TemplateEntityType> remoteEnabledTemplateTypes = EnumSet.of(TemplateEntityType.STAGE_TEMPLATE,
+      TemplateEntityType.STEP_TEMPLATE, TemplateEntityType.STEPGROUP_TEMPLATE, TemplateEntityType.PIPELINE_TEMPLATE,
+      TemplateEntityType.MONITORED_SERVICE_TEMPLATE);
+
   public Scope buildScope(TemplateEntity templateEntity) {
     return Scope.of(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier());

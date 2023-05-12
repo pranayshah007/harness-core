@@ -7,23 +7,23 @@
 
 package io.harness.app.yaml;
 
-import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.SERGEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.harness.CategoryTest;
 import io.harness.agent.sdk.HarnessAlwaysRun;
-import io.harness.app.impl.STOManagerTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class YAMLTest extends STOManagerTestBase {
+public class YAMLTest extends CategoryTest {
   private String yamlString = "dummyYamlString";
 
   @Test
-  @Owner(developers = ALEKSANDAR)
+  @Owner(developers = SERGEY)
   @Category(UnitTests.class)
   @HarnessAlwaysRun
   public void getPipelineYAML() {
@@ -32,7 +32,7 @@ public class YAMLTest extends STOManagerTestBase {
   }
 
   @Test
-  @Owner(developers = ALEKSANDAR)
+  @Owner(developers = SERGEY)
   @Category(UnitTests.class)
   public void testEquals() {
     YAML yaml = YAML.builder().pipelineYAML(yamlString).build();
@@ -41,7 +41,7 @@ public class YAMLTest extends STOManagerTestBase {
   }
 
   @Test
-  @Owner(developers = ALEKSANDAR)
+  @Owner(developers = SERGEY)
   @Category(UnitTests.class)
   public void testHashCode() {
     YAML yaml = YAML.builder().pipelineYAML(yamlString).build();

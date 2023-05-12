@@ -7,6 +7,7 @@
 
 package io.harness.terraform.request;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -14,4 +15,5 @@ import lombok.Value;
 @Builder
 public class TerraformInitCommandRequest {
   String tfBackendConfigsFilePath;
+  Map<String, String> additionalCliFlags;
 }

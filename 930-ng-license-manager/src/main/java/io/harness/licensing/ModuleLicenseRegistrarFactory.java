@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -11,6 +11,7 @@ import io.harness.ModuleType;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
 import io.harness.licensing.interfaces.clients.local.CDLocalClient;
 import io.harness.licensing.interfaces.clients.local.CELocalClient;
+import io.harness.licensing.interfaces.clients.local.CETLocalClient;
 import io.harness.licensing.interfaces.clients.local.CFLocalClient;
 import io.harness.licensing.interfaces.clients.local.CILocalClient;
 import io.harness.licensing.interfaces.clients.local.ChaosLocalClient;
@@ -20,6 +21,7 @@ import io.harness.licensing.interfaces.clients.local.STOLocalClient;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CDLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CELicenseObjectMapper;
+import io.harness.licensing.mappers.modules.CETLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CFLicenseObjectMapper;
 import io.harness.licensing.mappers.modules.CILicenseObjectMapper;
 import io.harness.licensing.mappers.modules.ChaosLicenseObjectMapper;
@@ -55,6 +57,8 @@ public class ModuleLicenseRegistrarFactory {
         new ModuleLicenseRegistrar(ModuleType.CHAOS, ChaosLicenseObjectMapper.class, ChaosLocalClient.class));
     registrar.put(ModuleType.IACM,
         new ModuleLicenseRegistrar(ModuleType.IACM, IACMLicenseObjectMapper.class, IACMLocalClient.class));
+    registrar.put(
+        ModuleType.CET, new ModuleLicenseRegistrar(ModuleType.CET, CETLicenseObjectMapper.class, CETLocalClient.class));
   }
 
   public static Class<? extends LicenseObjectMapper> getLicenseObjectMapper(ModuleType moduleType) {

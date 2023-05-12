@@ -144,14 +144,32 @@ public final class K8sTestConstants {
       + "data:\n"
       + "  hello: world";
 
+  public static String SKIP_VERSIONING_CONFIG_MAP_YAML = "apiVersion: v1\n"
+      + "kind: ConfigMap\n"
+      + "metadata:\n"
+      + "  name: mycm-sv\n"
+      + "  annotations:\n"
+      + "    harness.io/skip-versioning: true\n"
+      + "data:\n"
+      + "  hello: world";
+
   public static String SECRET_YAML = "apiVersion: v1\n"
       + "kind: Secret\n"
       + "metadata:\n"
       + "  name: mysecret\n"
       + "type: Opaque\n"
-      + "data:\n"
-      + "  username: YWRtaW4=\n"
-      + "  password: MWYyZDFlMmU2N2Rm";
+      + "stringData:\n"
+      + "  a: b\n";
+
+  public static String SKIP_VERSIONING_SECRET_YAML = "apiVersion: v1\n"
+      + "kind: Secret\n"
+      + "metadata:\n"
+      + "  name: mysecret-sv\n"
+      + "  annotations:\n"
+      + "    harness.io/skip-versioning: true\n"
+      + "type: Opaque\n"
+      + "stringData:\n"
+      + "  a: b\n";
 
   private K8sTestConstants() {
     throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

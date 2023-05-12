@@ -16,6 +16,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
+import io.harness.pms.contracts.execution.Status;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -60,6 +61,10 @@ public class DeploymentSummary implements PersistentEntity {
   private String projectIdentifier;
   private String pipelineExecutionId;
   private String pipelineExecutionName;
+  private String stageNodeExecutionId;
+  private Status stageStatus;
+  private String stageSetupId;
+  private RollbackStatus rollbackStatus;
   private ArtifactDetails artifactDetails;
   private String deployedById;
   private String deployedByName;

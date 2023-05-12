@@ -66,6 +66,9 @@ public class VmRunTestStepSerializer {
     }
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, runTestsStepInfo.getImage(), false);
+    if (image.equals(NULL_STR)) {
+      image = "";
+    }
     String connectorIdentifier;
 
     if (isNotEmpty(registries)) {
@@ -87,12 +90,15 @@ public class VmRunTestStepSerializer {
         RunTimeInputHandler.resolveStringParameter("Command", stepName, identifier, runTestsStepInfo.getArgs(), true);
     String testAnnotations = RunTimeInputHandler.resolveStringParameter(
         "TestAnnotations", stepName, identifier, runTestsStepInfo.getTestAnnotations(), false);
+    String testRoot = RunTimeInputHandler.resolveStringParameter(
+        "TestRoot", stepName, identifier, runTestsStepInfo.getTestRoot(), false);
     String packages = RunTimeInputHandler.resolveStringParameter(
         "Packages", stepName, identifier, runTestsStepInfo.getPackages(), false);
     String namespaces = RunTimeInputHandler.resolveStringParameter(
         "Namespaces", stepName, identifier, runTestsStepInfo.getNamespaces(), false);
     String buildEnvironment = RunTimeInputHandler.resolveDotNetBuildEnvName(runTestsStepInfo.getBuildEnvironment());
     String frameworkVersion = RunTimeInputHandler.resolveDotNetVersion(runTestsStepInfo.getFrameworkVersion());
+    String pythonVersion = RunTimeInputHandler.resolvePythonVersion(runTestsStepInfo.getPythonVersion());
 
     boolean runOnlySelectedTests = resolveBooleanParameter(runTestsStepInfo.getRunOnlySelectedTests(), true);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
@@ -119,7 +125,9 @@ public class VmRunTestStepSerializer {
             .outputVariables(outputVarNames)
             .timeoutSecs(timeout)
             .buildEnvironment(buildEnvironment)
-            .frameworkVersion(frameworkVersion);
+            .frameworkVersion(frameworkVersion)
+            .pythonVersion(pythonVersion)
+            .testRoot(testRoot);
 
     ConnectorDetails connectorDetails;
     if (!StringUtils.isEmpty(image) && !StringUtils.isEmpty(connectorIdentifier)) {

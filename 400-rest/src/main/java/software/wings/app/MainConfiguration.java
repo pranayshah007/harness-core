@@ -251,7 +251,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
 
   private int applicationPort;
   private boolean sslEnabled;
-
+  @JsonProperty(value = "moveGitPollingToRunnable") private boolean moveGitPollingToRunnable;
   private static final String IS_OPTION_HEAD_HTTP_METHOD_BLOCKED = "IS_OPTION_HEAD_REQUEST_METHOD_BLOCKED";
 
   /**

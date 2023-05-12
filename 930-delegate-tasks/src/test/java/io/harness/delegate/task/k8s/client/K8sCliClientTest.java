@@ -80,7 +80,7 @@ public class K8sCliClientTest extends CategoryTest {
     boolean result = k8sCliClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();
     verify(k8sClientHelper, times(0))
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(LogCallback.class));
+        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
   }
 
   @Test

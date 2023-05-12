@@ -26,6 +26,10 @@ scripts/
 service_version.properties
 toolset
 .*.md$
+.*.MD$
 .*./Dockerfile.*.
 .*./build.properties$
 .*.gitleaksignore$
+.*.jira-projects.txt$
+.github/
+

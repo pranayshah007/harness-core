@@ -9,8 +9,8 @@ package io.harness.monitoring;
 
 import static io.harness.rule.OwnerRule.GARVIT;
 
-import static org.mockito.Matchers.anyDouble;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 

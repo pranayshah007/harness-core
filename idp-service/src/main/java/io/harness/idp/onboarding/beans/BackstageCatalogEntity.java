@@ -46,8 +46,8 @@ public class BackstageCatalogEntity {
 
     public void setMetadata(String identifier, String absoluteIdentifier, String name, String description,
         List<String> tags, Map<String, String> annotations) {
-      this.absoluteIdentifier = absoluteIdentifier;
       this.identifier = identifier;
+      this.absoluteIdentifier = absoluteIdentifier;
       this.name = name;
       this.description = description;
       this.tags = tags;

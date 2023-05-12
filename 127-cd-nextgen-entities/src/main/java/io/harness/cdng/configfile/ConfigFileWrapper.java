@@ -18,6 +18,7 @@ import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
@@ -35,7 +36,7 @@ public class ConfigFileWrapper implements Visitable {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  ConfigFile configFile;
+  @Valid ConfigFile configFile;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 

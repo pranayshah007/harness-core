@@ -235,7 +235,10 @@ public class GitClientHelper {
     return "https://";
   }
 
-  public static String getGitlabApiURL(String url) {
+  public static String getGitlabApiURL(String url, String apiUrl) {
+    if (!StringUtils.isBlank(apiUrl)) {
+      return StringUtils.stripEnd(apiUrl, "/") + "/";
+    }
     if (GitClientHelper.isGitlabSAAS(url)) {
       return "https://gitlab.com/";
     } else {
@@ -615,6 +618,14 @@ public class GitClientHelper {
     String gitRepo = getGitRepo(sshRepoUrl);
     return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR,
         BITBUCKET_SAAS_GIT_LABEL, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
+  }
+
+  public static String getCompleteHTTPUrlForGitLab(String anyRepoUrl) {
+    String scmGroup = getGitSCM(anyRepoUrl);
+    String gitOwner = getGitOwner(anyRepoUrl, true);
+    String gitRepo = getGitRepo(anyRepoUrl);
+    return StringUtils.join(HTTPS, COLON_SEPARATOR, PATH_SEPARATOR, PATH_SEPARATOR, scmGroup, PATH_SEPARATOR, gitOwner,
+        PATH_SEPARATOR, gitRepo);
   }
 
   public static String getCompleteHTTPRepoUrlForAzureRepoSaas(String anyRepoUrl) {

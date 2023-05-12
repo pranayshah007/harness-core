@@ -18,15 +18,19 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
+@Builder
 @OwnedBy(STO)
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class STOYamlSonarqubeToolData {
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> include;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) protected ParameterField<String> exclude;
+
+  @ApiModelProperty(dataType = STRING_CLASSPATH, name = "project_key") protected ParameterField<String> projectKey;
 
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = "io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters")

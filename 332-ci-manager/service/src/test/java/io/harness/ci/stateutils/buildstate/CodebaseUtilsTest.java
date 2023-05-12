@@ -7,9 +7,12 @@
 
 package io.harness.ci.stateutils.buildstate;
 
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_LINK;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_MESSAGE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_PULL_REQUEST_TITLE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -24,6 +27,7 @@ import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.execution.GitBuildStatusUtility;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -58,6 +62,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
   @Inject public CodebaseUtils codebaseUtils;
   @Mock private ConnectorUtils connectorUtils;
+  @Mock private GitBuildStatusUtility gitBuildStatusUtility;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   private Ambiance ambiance;
 
@@ -65,11 +70,13 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
   public void setUp() {
     on(codebaseUtils).set("connectorUtils", connectorUtils);
     on(codebaseUtils).set("executionSweepingOutputResolver", executionSweepingOutputService);
+    on(codebaseUtils).set("gitBuildStatusUtility", gitBuildStatusUtility);
     ambiance = Ambiance.newBuilder()
                    .putSetupAbstractions("accountId", "accountId")
                    .putSetupAbstractions("projectIdentifier", "projectId")
                    .putSetupAbstractions("orgIdentifier", "orgIdentifier")
                    .build();
+    when(gitBuildStatusUtility.getBuildDetailsUrl(any())).thenReturn("url");
   }
 
   @Test
@@ -345,11 +352,16 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
                                     .sourceBranch("source")
                                     .state("open")
                                     .commitSha("commitSha")
+                                    .prTitle("PR Title")
+                                    .commitMessage("Commit Message")
                                     .build())
                         .build());
     final Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance, connectorDetails);
     assertThat(runtimeCodebaseVars).isNotEmpty();
     assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_REF)).isEqualTo("+refs/heads/source");
+    assertThat(runtimeCodebaseVars.get(DRONE_BUILD_LINK)).isEqualTo("url");
+    assertThat(runtimeCodebaseVars.get(DRONE_PULL_REQUEST_TITLE)).isEqualTo("PR Title");
+    assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_MESSAGE)).isEqualTo("Commit Message");
     assertThat(runtimeCodebaseVars.get(DRONE_COMMIT_SHA)).isEqualTo("commitSha");
   }
 

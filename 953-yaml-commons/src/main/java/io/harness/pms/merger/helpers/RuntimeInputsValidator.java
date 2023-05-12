@@ -58,7 +58,8 @@ public class RuntimeInputsValidator {
     ObjectNode dummySourceNodeSpecNode = mapper.createObjectNode();
     dummySourceNodeSpecNode.set(DUMMY_NODE, sourceNode);
     String dummySourceNodeSpecYaml = convertToYaml(dummySourceNodeSpecNode);
-    String sourceNodeInputSetFormatYaml = RuntimeInputFormHelper.createTemplateFromYaml(dummySourceNodeSpecYaml);
+    String sourceNodeInputSetFormatYaml =
+        RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(dummySourceNodeSpecYaml);
 
     // if there are no runtime inputs in source node, return true if nodeToValidate is also null.
     if (isEmpty(sourceNodeInputSetFormatYaml)) {

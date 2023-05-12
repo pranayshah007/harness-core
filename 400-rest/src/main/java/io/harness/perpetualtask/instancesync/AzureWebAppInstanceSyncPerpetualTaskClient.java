@@ -18,10 +18,10 @@ import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppInstancesParameters;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureWebAppInfrastructureMapping;
@@ -45,24 +45,25 @@ import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AzureWebAppInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
+public class AzureWebAppInstanceSyncPerpetualTaskClient
+    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   private static final String APP_NAME = "appName";
   private static final String SLOT_NAME = "slotName";
 
   @Inject private InfrastructureMappingService infraMappingService;
   @Inject private SettingsService settingsService;
   @Inject private SecretManager secretManager;
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private AzureVMSSStateHelper azureVMSSStateHelper;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     AzureWebAppInstanceSyncPerpetualTaskClient.PerpetualTaskData perpetualTaskData =
         getPerpetualTaskData(clientContext);
 
-    ByteString azureConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAzureConfig()));
+    ByteString azureConfigBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getAzureConfig()));
     ByteString encryptedDataBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AzureWebAppInstanceSyncPerpetualProtoTaskParams.newBuilder()
         .setAzureConfig(azureConfigBytes)

@@ -46,12 +46,12 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.CostTarget;
-import io.harness.ccm.views.businessMapping.entities.SharedCost;
-import io.harness.ccm.views.businessMapping.entities.SharedCostSplit;
-import io.harness.ccm.views.businessMapping.entities.UnallocatedCostStrategy;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.CostTarget;
+import io.harness.ccm.views.businessmapping.entities.SharedCost;
+import io.harness.ccm.views.businessmapping.entities.SharedCostSplit;
+import io.harness.ccm.views.businessmapping.entities.UnallocatedCostStrategy;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.dao.ViewCustomFieldDao;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewCustomField;
@@ -417,26 +417,32 @@ public class ViewsQueryBuilder {
     return query;
   }
 
-  @NotNull
   public SelectQuery getSharedCostQuery(final List<QLCEViewGroupBy> groupBy,
       final List<QLCEViewAggregation> aggregateFunction, final Map<String, Double> entityCosts, final double totalCost,
       final CostTarget costTarget, final SharedCost sharedCost, final BusinessMapping businessMapping,
       final String cloudProviderTableName, final boolean isClusterPerspective) {
-    final SelectQuery selectQuery = new SelectQuery();
+    SelectQuery selectQuery = null;
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
     switch (sharedCost.getStrategy()) {
       case PROPORTIONAL:
-        decorateSharedCostQueryWithAggregations(selectQuery, aggregateFunction, tableIdentifier,
-            entityCosts.getOrDefault(costTarget.getName(), 0.0D), totalCost);
+        if (Double.compare(totalCost, 0.0D) != 0) {
+          selectQuery = new SelectQuery();
+          decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
+          decorateSharedCostQueryWithAggregations(selectQuery, aggregateFunction, tableIdentifier,
+              entityCosts.getOrDefault(costTarget.getName(), 0.0D), totalCost);
+        }
         break;
       case EQUAL:
+        selectQuery = new SelectQuery();
+        decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
         decorateSharedCostQueryWithAggregations(
             selectQuery, aggregateFunction, tableIdentifier, 1, businessMapping.getCostTargets().size());
         break;
       case FIXED:
         for (final SharedCostSplit sharedCostSplit : sharedCost.getSplits()) {
           if (costTarget.getName().equals(sharedCostSplit.getCostTargetName())) {
+            selectQuery = new SelectQuery();
+            decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
             decorateSharedCostQueryWithAggregations(
                 selectQuery, aggregateFunction, tableIdentifier, sharedCostSplit.getPercentageContribution(), 100.0D);
             break;

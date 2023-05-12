@@ -68,6 +68,9 @@ import com.offbytwo.jenkins.model.Job;
 import com.offbytwo.jenkins.model.JobWithDetails;
 import com.offbytwo.jenkins.model.QueueItem;
 import com.offbytwo.jenkins.model.QueueReference;
+import io.github.resilience4j.core.IntervalFunction;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
@@ -111,6 +114,20 @@ public class JenkinsRegistryUtils {
 
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
+  public Retry retry;
+  public static final int RETRIES = 10; // TODO:: read from config
+  private static final int TIMEOUT = 60; // TODO:: read from config
+
+  public JenkinsRegistryUtils() {
+    final RetryConfig config = RetryConfig.custom()
+                                   .maxAttempts(RETRIES)
+                                   .intervalFunction(IntervalFunction.ofExponentialBackoff(Duration.ofSeconds(1)))
+                                   .build();
+    this.retry = Retry.of("JenkinsRegistry", config);
+
+    Retry.EventPublisher retryEventPublisher = retry.getEventPublisher();
+    retryEventPublisher.onRetry(event -> log.warn("Retrying Jenkins Get Build Details Of API call. Event: " + event));
+  }
 
   public boolean isRunning(JenkinsInternalConfig jenkinsInternalConfig) {
     try {
@@ -143,7 +160,16 @@ public class JenkinsRegistryUtils {
       List<String> artifactPaths, int lastN) throws IOException {
     return getBuildsForJob(jenkinsInternalConfig, jobname, artifactPaths, lastN, false);
   }
-
+  public BuildDetails verifyBuildForJob(JenkinsInternalConfig jenkinsInternalConfig, String jobname,
+      List<String> artifactPaths, String buildNumber) throws IOException {
+    BuildWithDetails buildWithDetails = getBuildDetail(jenkinsInternalConfig, jobname, buildNumber);
+    if (buildWithDetails == null) {
+      return null;
+    }
+    return (buildWithDetails.getResult() == BuildResult.SUCCESS) && isNotEmpty(buildWithDetails.getArtifacts())
+        ? getBuildDetails(buildWithDetails, artifactPaths)
+        : null;
+  }
   public List<BuildDetails> getBuildsForJob(JenkinsInternalConfig jenkinsInternalConfig, String jobname,
       List<String> artifactPaths, int lastN, boolean allStatuses) throws IOException {
     JobWithDetails jobWithDetails = getJobWithDetails(jenkinsInternalConfig, jobname);
@@ -295,7 +321,43 @@ public class JenkinsRegistryUtils {
           new InvalidArtifactServerException("Failure in fetching job with details:", USER));
     }
   }
+  public BuildWithDetails getBuildDetail(
+      JenkinsInternalConfig jenkinsInternalConfig, String jobname, String buildNumber) {
+    log.info("Retrieving job {}", jobname);
+    try {
+      return HTimeLimiter.callUninterruptible(timeLimiter, Duration.ofSeconds(120), () -> {
+        if (jobname == null) {
+          return null;
+        }
 
+        JobPathDetails jobPathDetails = constructJobPathDetails(jobname);
+        BuildWithDetails buildWithDetails = null;
+
+        try {
+          JenkinsCustomServer jenkinsServer = JenkinsClient.getJenkinsServer(jenkinsInternalConfig);
+          FolderJob folderJob = getFolderJob(jobPathDetails.getParentJobName(), jobPathDetails.getParentJobUrl());
+          buildWithDetails =
+              Retry
+                  .decorateCallable(retry,
+                      () -> jenkinsServer.getBuildDetail(folderJob, jobPathDetails.getChildJobName(), buildNumber))
+                  .call();
+
+        } catch (HttpResponseException e) {
+          if (e.getStatusCode() == 500 || ExceptionUtils.getMessage(e).contains(SERVER_ERROR)) {
+            log.warn("Error occurred while retrieving build details {}. Retrying ", jobname, e);
+          } else {
+            throw e;
+          }
+        }
+        log.info("Retrieving build details {} success", jobname);
+        return buildWithDetails;
+      });
+    } catch (Exception e) {
+      throw NestedExceptionUtils.hintWithExplanationException("Failure in fetching build details",
+          "Check if the build exist, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching the Job details",
+          new InvalidArtifactServerException("Failure in fetching job with details:", USER));
+    }
+  }
   public List<JobDetails> getJobs(JenkinsInternalConfig jenkinsInternalConfig, String parentJob) {
     try {
       return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(120), () -> {

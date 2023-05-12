@@ -52,6 +52,11 @@ secrets:
 
 enableAuth: true
 
+zendeskApiConfig:
+  baseUrl: https://takipi.zendesk.com
+  token: c291cmFiaC5hd2FzaHRpQGhhcm5lc3MuaW8vdG9rZW46QktyR3pLNFFYcnk0eEVqcXZ1ck83eFBIeFNPYXh4STRDQ2xHT1M0RQ==
+  coveoToken: xxdd34e3348396965abb18
+
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15

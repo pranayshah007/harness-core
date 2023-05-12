@@ -10,7 +10,7 @@ This document describes the default URL schema for Harness APIs.
   * [Organization Scoped](#organization-scoped)
   * [Account Scoped](#account-scoped)
 - [Naming Conventions and Casing](#naming-conventions-and-casing)
-- [Ingress](#ingress)
+- [Base API Path](#base-api-path)
 
 
 ## Canonical Paths
@@ -108,4 +108,13 @@ Use kebab-case in resource collection names over snake_case or camelCase
 use: /audit-trails/audit-trail-name
 not: /audit_trails/audit-trail-name
 not: /auditTrails/audit-trail-name
+```
+
+## Base API Path
+
+API Paths will be cleaner, with no mention of service related information.
+```
+use: https://app.harness.io/v1/orgs/{org}/projects/{project}/resources
+not: https://app.harness.io/gateway/v1/orgs/{org}/projects/{project}/resources
+not: https://app.harness.io/gateway/service/api/v1/orgs/{org}/projects/{project}/resources
 ```

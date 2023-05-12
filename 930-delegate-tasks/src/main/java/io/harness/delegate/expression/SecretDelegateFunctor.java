@@ -35,8 +35,6 @@ public class SecretDelegateFunctor implements ExpressionFunctor {
   }
 
   public Object obtainBase64(String secretDetailsUuid, int token) {
-    String base64SecretValue = EncodingUtils.encodeBase64((String) obtain(secretDetailsUuid, token));
-    secrets.put(secretDetailsUuid, base64SecretValue.toCharArray());
-    return base64SecretValue;
+    return EncodingUtils.encodeBase64((String) obtain(secretDetailsUuid, token));
   }
 }

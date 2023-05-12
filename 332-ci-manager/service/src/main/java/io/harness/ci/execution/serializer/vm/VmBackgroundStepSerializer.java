@@ -7,7 +7,9 @@
 
 package io.harness.ci.serializer.vm;
 
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -45,6 +47,9 @@ public class VmBackgroundStepSerializer {
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
         "Image", "Background", identifier, backgroundStepInfo.getImage(), false);
+    if (image.equals(NULL_STR)) {
+      image = "";
+    }
     String connectorIdentifier;
     if (isNotEmpty(registries)) {
       connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
@@ -95,7 +100,6 @@ public class VmBackgroundStepSerializer {
                                                         .portBindings(portBindings)
                                                         .pullPolicy(imagePullPolicy)
                                                         .privileged(privileged);
-
     if (backgroundStepInfo.getReports().getValue() != null) {
       if (backgroundStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {
         JUnitTestReport junitTestReport = (JUnitTestReport) backgroundStepInfo.getReports().getValue().getSpec();
@@ -103,6 +107,11 @@ public class VmBackgroundStepSerializer {
             RunTimeInputHandler.resolveListParameter("paths", "run", identifier, junitTestReport.getPaths(), false);
         backgroundStepBuilder.unitTestReport(VmJunitTestReport.builder().paths(resolvedReport).build());
       }
+    }
+
+    Integer runAsUser = resolveIntegerParameter(backgroundStepInfo.getRunAsUser(), null);
+    if (runAsUser != null) {
+      backgroundStepBuilder.runAsUser(runAsUser.toString());
     }
 
     return backgroundStepBuilder.build();

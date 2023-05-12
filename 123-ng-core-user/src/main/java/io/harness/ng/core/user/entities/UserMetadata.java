@@ -9,11 +9,13 @@ package io.harness.ng.core.user.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.user.entities.UserMetadata.UserMetadataKeys;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;
@@ -42,6 +44,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("userMetadata")
 @TypeAlias("userMetadata")
 @OwnedBy(PL)
+@ChangeDataCapture(table = "ng_users", dataStore = "ng-harness",
+    fields = {UserMetadataKeys.email, UserMetadataKeys.createdAt, UserMetadataKeys.name, UserMetadataKeys.userId,
+        UserMetadataKeys.lastModifiedAt},
+    handler = "NgUsers")
 public class UserMetadata implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

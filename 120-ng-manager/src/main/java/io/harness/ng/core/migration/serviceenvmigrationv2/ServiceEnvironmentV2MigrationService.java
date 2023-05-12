@@ -28,11 +28,11 @@ import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
+import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
-import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -157,6 +157,7 @@ public class ServiceEnvironmentV2MigrationService {
                                   .infraIdentifierFormat(requestDto.getInfraIdentifierFormat())
                                   .templateMap(requestDto.getTemplateMap())
                                   .branch(requestDto.getBranch())
+                                  .isNewBranch(requestDto.isNewBranch())
                                   .expressionMap(new HashMap<>())
                                   .stageMap(new HashMap<>())
                                   .build(),
@@ -362,11 +363,10 @@ public class ServiceEnvironmentV2MigrationService {
       gitDetails = EntityGitDetails.builder().build();
     }
     String branch = gitDetails.getBranch();
-    boolean isNewBranch = false;
+    boolean isNewBranch = requestDto.isNewBranch();
     boolean createPr = false;
     if (isNotEmpty(requestDto.getBranch())) {
       branch = requestDto.getBranch();
-      isNewBranch = true;
       createPr = true;
     }
     NGRestUtils.getResponse(pipelineServiceClient.updatePipeline(null, requestDto.getPipelineIdentifier(), accountId,

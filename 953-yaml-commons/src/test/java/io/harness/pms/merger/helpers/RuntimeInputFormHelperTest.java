@@ -9,6 +9,7 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
@@ -164,5 +165,18 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
 
     RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(jsonNode);
     assertThat(jsonNode).isEqualTo(mapper.readTree(yaml));
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateTemplateFromPipelineTemplateWithDefaults() {
+    String filename = "pipeline-template-defaults.yml";
+    String yaml = readFile(filename);
+    String templateYaml = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
+
+    String resFile = "pipeline-template-defaults-runtime.yml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
   }
 }

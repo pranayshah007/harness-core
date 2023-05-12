@@ -88,12 +88,15 @@ public class UserGroupMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     UserGroupDTO userGroupDTO = ((UserGroupYamlDTO) yamlFile.getYaml()).getUserGroupDTO();
+    userGroupDTO.setAccountIdentifier(inputDTO.getDestinationAccountIdentifier());
     try {
       Response<ResponseDTO<UserGroupDTO>> resp =
-          ngClient.createUserGroup(auth, userGroupDTO.getAccountIdentifier(), userGroupDTO).execute();
+          ngClient
+              .createUserGroup(inputDTO.getDestinationAuthToken(), userGroupDTO.getAccountIdentifier(), userGroupDTO)
+              .execute();
       if (resp.code() >= 200 && resp.code() < 300) {
         return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
       }

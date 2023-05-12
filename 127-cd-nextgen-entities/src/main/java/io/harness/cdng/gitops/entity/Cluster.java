@@ -18,7 +18,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -80,7 +80,6 @@ public class Cluster implements PersistentEntity {
   @Wither @LastModifiedDate Long lastModifiedAt;
 
   public String fetchEnvRef() {
-    return FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(
-        accountId, orgIdentifier, projectIdentifier, envRef);
+    return IdentifierRefHelper.getRefFromIdentifierOrRef(accountId, orgIdentifier, projectIdentifier, envRef);
   }
 }

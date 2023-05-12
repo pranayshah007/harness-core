@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: log-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "log-service.labels" . | nindent 4 }}
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "log-service.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{.Values.maxSurge}}
+      maxUnavailable: {{.Values.maxUnavailable}}
+  template:
+    metadata:
+      labels:
+        {{- include "log-service.selectorLabels" . | nindent 8 }}
+    spec:
+      terminationGracePeriodSeconds: 30
+      {{ include "log-service.pullSecrets" . | nindent 6 }}
+      serviceAccountName: {{ include "log-service.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+      - name: log-service
+        envFrom:
+        - configMapRef:
+            name: log-service
+        env:
+          {{- if .Values.s3.accessKeyId }}
+          - name: LOG_SERVICE_S3_ACCESS_KEY_ID
+            value: {{ .Values.s3.accessKeyId  }}
+          {{- else }}
+          - name: LOG_SERVICE_S3_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.logServiceS3AccessKeyID.name }}
+                key: {{ .Values.logServiceS3AccessKeyID.key }}
+          {{- end }}
+          {{- if .Values.s3.secretAccessKey }}
+          - name: LOG_SERVICE_S3_SECRET_ACCESS_KEY
+            value: {{ .Values.s3.secretAccessKey }}
+          {{- else }}
+          - name: LOG_SERVICE_S3_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.logServiceS3SecretAccessKey.name }}
+                key: {{ .Values.logServiceS3SecretAccessKey.key }}
+          {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http-log-svc
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http-log-svc
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        ports:
+        - name: http-log-svc
+          containerPort: {{ .Values.service.port }}
+          protocol: "TCP"
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - log-service
+            topologyKey: "kubernetes.io/hostname"
+      {{- with .Values.affinity }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

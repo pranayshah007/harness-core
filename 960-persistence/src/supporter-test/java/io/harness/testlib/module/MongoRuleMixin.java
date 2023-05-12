@@ -9,12 +9,9 @@ package io.harness.testlib.module;
 
 import static io.harness.testlib.module.FakeLegacyMongoCreator.takeFakeLegacyMongo;
 import static io.harness.testlib.module.FakeMongoCreator.takeFakeMongo;
-import static io.harness.testlib.module.RealLegacyMongoCreator.takeRealLegacyMongo;
-import static io.harness.testlib.module.RealMongoCreator.takeRealMongo;
 
 import io.harness.factory.ClosingFactory;
 import io.harness.govern.ProviderModule;
-import io.harness.testlib.RealMongo;
 
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -25,14 +22,14 @@ import java.util.List;
 import java.util.Random;
 
 public interface MongoRuleMixin {
-  enum MongoType { REAL, FAKE }
+  enum MongoType { FAKE }
 
   default Module mongoTypeModule(List<Annotation> annotations) {
     return new ProviderModule() {
       @Provides
       @Singleton
       MongoType provideMongoType() {
-        return annotations.stream().anyMatch(RealMongo.class ::isInstance) ? MongoType.REAL : MongoType.FAKE;
+        return MongoType.FAKE;
       }
     };
   }
@@ -50,21 +47,9 @@ public interface MongoRuleMixin {
     return fakeMongo.getMongoClient();
   }
 
-  default MongoClient realLegacyMongoClient(ClosingFactory closingFactory, String databaseName) {
-    RealLegacyMongoCreator.RealLegacyMongo realMongo = takeRealLegacyMongo(databaseName);
-    closingFactory.addServer(realMongo);
-    return realMongo.getMongoClient();
-  }
-
   default com.mongodb.client.MongoClient fakeMongoClient(ClosingFactory closingFactory) {
     FakeMongoCreator.FakeMongo fakeMongo = takeFakeMongo();
     closingFactory.addServer(fakeMongo);
     return fakeMongo.getMongoClient();
-  }
-
-  default com.mongodb.client.MongoClient realMongoClient(ClosingFactory closingFactory, String databaseName) {
-    RealMongoCreator.RealMongo realMongo = takeRealMongo(databaseName);
-    closingFactory.addServer(realMongo);
-    return realMongo.getMongoClient();
   }
 }

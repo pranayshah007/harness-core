@@ -18,11 +18,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.DelegateTestBase;
@@ -56,6 +56,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -87,7 +88,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.CE)
@@ -107,6 +108,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
   @Captor private ArgumentCaptor<Map<String, String>> mapArgumentCaptor;
 
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private static final String KUBE_SYSTEM_ID = "aa4062a7-d214-4642-8bb5-dfc32e750ed0";
   private final String WATCH_ID = "watch-id";
@@ -128,7 +130,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     doReturn(apiClient).when(apiClientFactory).getClient(any(KubernetesConfig.class));
 
     k8SWatchTaskExecutor = new K8SWatchTaskExecutor(eventPublisher, k8sWatchServiceDelegate, apiClientFactory,
-        kryoSerializer, containerDeploymentDelegateHelper, k8sConnectorHelper);
+        kryoSerializer, containerDeploymentDelegateHelper, k8sConnectorHelper, referenceFalseKryoSerializer);
 
     stubFor(get(urlPathEqualTo("/api/v1/namespaces/kube-system"))
                 .willReturn(aResponse().withStatus(200).withBody(new Gson().toJson(new V1NamespaceBuilder()
@@ -210,7 +212,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     PerpetualTaskResponse perpetualTaskResponse = k8SWatchTaskExecutor.runOnce(perpetualTaskId, params, heartBeatTime);
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(200);
 
-    verifyZeroInteractions(k8sConnectorHelper);
+    verifyNoInteractions(k8sConnectorHelper);
   }
 
   @Test
@@ -229,7 +231,7 @@ public class K8SWatchTaskExecutorTest extends DelegateTestBase {
     PerpetualTaskResponse perpetualTaskResponse = k8SWatchTaskExecutor.runOnce(perpetualTaskId, params, heartBeatTime);
     assertThat(perpetualTaskResponse.getResponseCode()).isEqualTo(200);
 
-    verifyZeroInteractions(containerDeploymentDelegateHelper);
+    verifyNoInteractions(containerDeploymentDelegateHelper);
   }
 
   private K8sWatchTaskParams getK8sWatchTaskParamsNG() {

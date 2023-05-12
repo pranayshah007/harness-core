@@ -26,6 +26,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.pcf.PcfAppNotFoundException;
@@ -142,17 +143,19 @@ public class PcfInstanceHandler extends InstanceHandler implements InstanceSyncB
           log.warn("Delegates are not available", e.getMessage());
           failedToRetrieveData = true;
         } catch (Exception e) {
-          log.warn("Error while fetching application details for PCFApplication", e);
-
           if (e instanceof PcfAppNotFoundException) {
-            log.info("PCF Application Name : [{}] is not found, Infrastructure Mapping Id : [{}]", pcfApplicationName,
-                infraMappingId);
+            throw new InvalidRequestException(
+                String.format(
+                    "Application not found for PCF application Name: [%s] with InfraMappingId: [%s], Failed to perform instance sync for this PCF Application with Exception: [%s]",
+                    pcfApplicationName, infraMappingId, ExceptionUtils.getMessage(e)),
+                e);
           } else {
-            log.info("Failed to retrieve data for PCF Application Name : [{}]. Infrastructure Mapping Id : [{}]",
-                pcfApplicationName, infraMappingId);
+            throw new InvalidRequestException(
+                String.format(
+                    "Failed to retrieve data for PCF Application Name: [%s] with InfraMappingId: [%s],  Failed to perform instance sync for this PCF Application with Exception: [%s]",
+                    pcfApplicationName, infraMappingId, ExceptionUtils.getMessage(e)),
+                e);
           }
-          throw new InvalidRequestException(
-              String.format("Failed to instance sync for PCF Application Name: %s", pcfApplicationName));
         }
 
         if (!failedToRetrieveData) {

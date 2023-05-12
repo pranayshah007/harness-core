@@ -15,6 +15,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -30,21 +31,24 @@ public class AcrArtifactDelegateResponse extends ArtifactDelegateResponse {
   /** Tag refers to exact tag number */
   String tag;
 
+  Map<String, String> label;
+
   @Builder
   public AcrArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String subscription, String registry, String repository, String tag) {
+      String subscription, String registry, String repository, String tag, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.subscription = subscription;
     this.registry = registry;
     this.repository = repository;
     this.tag = tag;
+    this.label = label;
   }
 
   @Override
   public String describe() {
     String buildMetadataUrl = getBuildDetails() != null ? getBuildDetails().getBuildUrl() : null;
     String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
-        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        ? "\nTo pull image use: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
         : null;
     return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null)
         + "\nsubscription: " + getSubscription() + "\nregistry: " + getRegistry() + "\nrepository: " + getRepository()

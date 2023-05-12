@@ -142,6 +142,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     List<TasApplicationInfo> renames = null;
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(basicSetupRequestNG);
+      cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
       currentProdInfo = getCurrentProdInfo(previousReleases, clonePcfRequestConfig(cfRequestConfig).build(),
           workingDirectory, ((CfBasicSetupRequestNG) cfCommandRequestNG).getTimeoutIntervalInMin(), logCallback);
 

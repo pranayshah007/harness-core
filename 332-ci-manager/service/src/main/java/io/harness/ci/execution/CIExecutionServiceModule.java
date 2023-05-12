@@ -131,7 +131,10 @@ public class CIExecutionServiceModule extends AbstractModule {
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {
-        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
+        return WaiterConfiguration.builder()
+            .versioningDisabled(true)
+            .persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING)
+            .build();
       }
     });
   }

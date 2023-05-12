@@ -23,6 +23,7 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
@@ -32,6 +33,7 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
   public static final String DELEGATE_CACHE = "delegate";
   public static final String DELEGATE_GROUP_CACHE = "delegate_group";
   public static final String DELEGATES_FROM_GROUP_CACHE = "delegates_from_group";
+  public static final String ABORTED_TASK_LIST_CACHE = "aborted_task_list";
   private static final Integer CACHE_SIZE = 10000;
 
   @Provides
@@ -55,6 +57,13 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
     return cacheManager.getCache(DELEGATES_FROM_GROUP_CACHE, String.class, List.class, getLocalCachedMapOptions(30));
   }
 
+  @Provides
+  @Named(ABORTED_TASK_LIST_CACHE)
+  @Singleton
+  public RLocalCachedMap<String, Set<String>> getAbortedTaskListCache(DelegateRedissonCacheManager cacheManager) {
+    return cacheManager.getCache(ABORTED_TASK_LIST_CACHE, String.class, Set.class, getLocalCachedMapOptions(30));
+  }
+
   @Override
   protected void configure() {
     registerRequiredBindings();
@@ -70,6 +79,8 @@ public class DelegateServiceCacheRegistrar extends AbstractModule {
     rmapBinder.addBinding(DELEGATES_FROM_GROUP_CACHE)
         .to(Key.get(
             new TypeLiteral<RLocalCachedMap<String, List<Delegate>>>() {}, Names.named(DELEGATES_FROM_GROUP_CACHE)));
+    rmapBinder.addBinding(ABORTED_TASK_LIST_CACHE).to(Key.get(new TypeLiteral<RLocalCachedMap<String, Set<String>>>() {
+    }, Names.named(ABORTED_TASK_LIST_CACHE)));
   }
 
   public LocalCachedMapOptions getLocalCachedMapOptions(int timeToLiveInMinutes) {

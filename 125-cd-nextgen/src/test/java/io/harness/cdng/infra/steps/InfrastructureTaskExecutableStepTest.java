@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -100,6 +102,7 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
 import software.wings.beans.TaskType;
@@ -137,6 +140,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private NGLogCallback mockLogCallback;
   @Mock InstanceOutcomeHelper instanceOutcomeHelper;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @InjectMocks private InfrastructureTaskExecutableStep infrastructureStep = new InfrastructureTaskExecutableStep();
 
@@ -195,6 +199,10 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
+    doNothing()
+        .when(infrastructureStepHelper)
+        .saveInfraExecutionDataToStageInfo(any(Ambiance.class), any(StepResponse.class));
+    when(ngFeatureFlagHelperService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
     doAnswer(im -> im.getArgument(4))
         .when(stageExecutionHelper)
         .saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(any(Ambiance.class), any(ExecutionInfoKey.class),
@@ -217,12 +225,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureSshInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .subscriptionId("subscriptionId")
                         .hostConnectionType("Hostname")
-                        .tags(Map.of("Env", "Dev"))
+                        .hostTags(Map.of("Env", "Dev"))
                         .credentialsRef("sshKeyRef")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("572beaec293c79ba725f68bea0a8a1c7806dc878")
@@ -252,12 +260,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .region("region")
                         .hostConnectionType("Hostname")
-                        .tags(Map.of("testTag", "test"))
+                        .hostTags(Map.of("testTag", "test"))
                         .credentialsRef("sshKeyRef")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("70dd2bc5aa8fc8920b04247e4151e8e1074332d3")
@@ -287,12 +295,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureWinrmInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .subscriptionId("subscriptionId")
                         .resourceGroup("resourceGroup")
-                        .tags(Map.of("Env", "Dev"))
+                        .hostTags(Map.of("Env", "Dev"))
                         .credentialsRef("sshKeyRef")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("572beaec293c79ba725f68bea0a8a1c7806dc878")
@@ -322,12 +330,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsWinrmInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .credentialsRef("sshKeyRef")
                         .region("regionId")
-                        .tags(Map.of("testTag", "test"))
+                        .hostTags(Map.of("testTag", "test"))
                         .hostConnectionType("Hostname")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("70dd2bc5aa8fc8920b04247e4151e8e1074332d3")
@@ -366,8 +374,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
         .resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(INFRA_TASK_EXECUTABLE_STEP_OUTPUT));
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AZURE));
+        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AZURE));
     doNothing()
         .when(stageExecutionHelper)
         .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),
@@ -426,8 +433,7 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
         .thenReturn(new HashSet<>(Arrays.asList("host1")));
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfoAndPublishExecutionInfoKey(
-            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AWS));
+        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.SSH_WINRM_AWS));
     doNothing()
         .when(stageExecutionHelper)
         .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),

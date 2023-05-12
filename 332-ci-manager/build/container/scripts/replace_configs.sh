@@ -139,6 +139,46 @@ if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
   export CACHE_SERVICE_KEY; yq -i '.ciExecutionServiceConfig.cacheIntelligenceConfig.serviceKey=env(CACHE_SERVICE_KEY)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DLC_S3_ENDPOINT" ]]; then
+  export DLC_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.endpoint=env(DLC_S3_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_BUCKET" ]]; then
+  export DLC_S3_BUCKET; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.bucket=env(DLC_S3_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_ACCESS_KEY" ]]; then
+  export DLC_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.accessKey=env(DLC_S3_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_SECRET_KEY" ]]; then
+  export DLC_S3_SECRET_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.secretKey=env(DLC_S3_SECRET_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_S3_REGION" ]]; then
+  export DLC_S3_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.region=env(DLC_S3_REGION)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_ENDPOINT" ]]; then
+  export DLC_GCS_ENDPOINT; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.endpoint=env(DLC_GCS_ENDPOINT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_BUCKET" ]]; then
+  export DLC_GCS_BUCKET; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.bucket=env(DLC_GCS_BUCKET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_ACCESS_KEY" ]]; then
+  export DLC_GCS_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.accessKey=env(DLC_GCS_ACCESS_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_SECRET_KEY" ]]; then
+  export DLC_GCS_SECRET_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.secretKey=env(DLC_GCS_SECRET_KEY)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DLC_GCS_REGION" ]]; then
+  export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
+fi
+
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then
   export HOSTED_VM_SPLIT_LINUX_AMD64_POOL; yq -i '.ciExecutionServiceConfig.hostedVmConfig.splitLinuxAmd64Pool=env(HOSTED_VM_SPLIT_LINUX_AMD64_POOL)' $CONFIG_FILE
 fi
@@ -249,6 +289,10 @@ if [[ "" != "$STO_SERVICE_ENDPOINT" ]]; then
   export STO_SERVICE_ENDPOINT; yq -i '.stoServiceConfig.baseUrl=env(STO_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$IACM_SERVICE_ENDPOINT" ]]; then
   export $IACM_SERVICE_ENDPOINT; yq -i '.iacmServiceConfig.baseUrl=env(IACM_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
@@ -283,6 +327,10 @@ fi
 
 if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
+  export SSCA_SERVICE_GLOBAL_TOKEN; yq -i '.sscaServiceConfig.globalToken=env(SSCA_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
 if [[ "" != "$IACM_SERVICE_GLOBAL_TOKEN" ]]; then
@@ -491,6 +539,10 @@ fi
 
 if [[ "" != "$HSQS_BASE_URL" ]]; then
   export HSQS_BASE_URL; yq -i '.ciExecutionServiceConfig.queueServiceClientConfig.httpClientConfig.baseUrl=env(HSQS_BASE_URL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$HSQS_TOPIC" ]]; then
+  export HSQS_TOPIC; yq -i '.ciExecutionServiceConfig.queueServiceClientConfig.topic=env(HSQS_TOPIC)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HSQS_AUTH_TOKEN" ]]; then

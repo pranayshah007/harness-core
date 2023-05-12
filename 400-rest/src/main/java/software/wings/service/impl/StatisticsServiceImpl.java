@@ -11,13 +11,12 @@ import static io.harness.beans.EnvironmentType.ALL;
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.SPG_SERVICES_OVERVIEW_RBAC;
 import static io.harness.beans.WorkflowType.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.time.EpochUtils.PST_ZONE_ID;
 import static io.harness.validation.Validator.notNullCheck;
-
-import static software.wings.beans.WorkflowExecution.ACCOUNTID_PIPEXECUTIONID_CREATEDAT;
 
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
@@ -28,10 +27,10 @@ import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.ff.FeatureFlagService;
-import io.harness.mongo.index.BasicDBUtils;
 import io.harness.time.EpochUtils;
 
 import software.wings.beans.ElementExecutionSummary;
+import software.wings.beans.User;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.stats.DeploymentStatistics;
@@ -40,18 +39,23 @@ import software.wings.beans.stats.DeploymentStatistics.AggregatedDayStats.DaySta
 import software.wings.beans.stats.ServiceInstanceStatistics;
 import software.wings.beans.stats.TopConsumer;
 import software.wings.dl.WingsPersistence;
+import software.wings.security.PermissionAttribute;
+import software.wings.security.UserRequestContext;
+import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.StatisticsService;
+import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +65,8 @@ public class StatisticsServiceImpl implements StatisticsService {
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private WingsPersistence wingsPersistence;
+
+  @Inject private UsageRestrictionsService usageRestrictionsService;
 
   private static final String[] workflowExecutionKeys = {WorkflowExecutionKeys.uuid, WorkflowExecutionKeys.accountId,
       WorkflowExecutionKeys.appId, WorkflowExecutionKeys.appName, WorkflowExecutionKeys.createdAt,
@@ -98,7 +104,7 @@ public class StatisticsServiceImpl implements StatisticsService {
           workflowExecutionService.obtainWorkflowExecutions(accountId, fromDateEpochMilli, projectionKeys);
     } else {
       workflowExecutions =
-          workflowExecutionService.obtainWorkflowExecutions(appIds, fromDateEpochMilli, projectionKeys);
+          workflowExecutionService.obtainWorkflowExecutions(accountId, appIds, fromDateEpochMilli, projectionKeys);
     }
 
     if (isEmpty(workflowExecutions)) {
@@ -168,7 +174,7 @@ public class StatisticsServiceImpl implements StatisticsService {
   public ServiceInstanceStatistics getServiceInstanceStatisticsNew(
       String accountId, List<String> appIds, int numOfDays) {
     long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
-
+    Set<String> allowedSvcIds = new HashSet<>();
     ServiceInstanceStatistics instanceStats = new ServiceInstanceStatistics();
     Query<WorkflowExecution> query =
         wingsPersistence.createAuthorizedQueryOnAnalyticNode(WorkflowExecution.class)
@@ -193,10 +199,17 @@ public class StatisticsServiceImpl implements StatisticsService {
       query.field(WorkflowExecutionKeys.appId).in(appIds);
     }
 
-    FindOptions findOptions = new FindOptions();
-    findOptions.hint(BasicDBUtils.getIndexObject(WorkflowExecution.mongoIndexes(), ACCOUNTID_PIPEXECUTIONID_CREATEDAT));
+    if (featureFlagService.isEnabled(SPG_SERVICES_OVERVIEW_RBAC, accountId) && hasUserContext()) {
+      UserRequestContext userRequestContext = UserThreadLocal.get().getUserRequestContext();
+      Map<String, Set<String>> appSvcMap = usageRestrictionsService.getAppSvcMapFromUserPermissions(
+          accountId, userRequestContext.getUserPermissionInfo(), PermissionAttribute.Action.READ);
+      for (String appId : appSvcMap.keySet()) {
+        allowedSvcIds.addAll(appSvcMap.get(appId));
+      }
+      query.field(WorkflowExecutionKeys.serviceIds).hasAnyOf(allowedSvcIds);
+    }
 
-    List<WorkflowExecution> workflowExecutions = query.asList(findOptions);
+    List<WorkflowExecution> workflowExecutions = query.asList();
 
     if (isEmpty(workflowExecutions)) {
       return instanceStats;
@@ -227,6 +240,11 @@ public class StatisticsServiceImpl implements StatisticsService {
     return instanceStats;
   }
 
+  private boolean hasUserContext() {
+    User user = UserThreadLocal.get();
+    return user != null && user.getUserRequestContext() != null;
+  }
+
   @Override
   public ServiceInstanceStatistics getServiceInstanceStatistics(String accountId, List<String> appIds, int numOfDays) {
     long fromDateEpochMilli = getEpochMilliPSTZone(numOfDays);
@@ -242,7 +260,7 @@ public class StatisticsServiceImpl implements StatisticsService {
           workflowExecutionService.obtainWorkflowExecutions(accountId, fromDateEpochMilli, projectionKeys);
     } else {
       workflowExecutions =
-          workflowExecutionService.obtainWorkflowExecutions(appIds, fromDateEpochMilli, projectionKeys);
+          workflowExecutionService.obtainWorkflowExecutions(accountId, appIds, fromDateEpochMilli, projectionKeys);
     }
     if (isEmpty(workflowExecutions)) {
       return instanceStats;

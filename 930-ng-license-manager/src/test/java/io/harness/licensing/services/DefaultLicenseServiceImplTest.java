@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -9,6 +9,7 @@ package io.harness.licensing.services;
 
 import static io.harness.ModuleType.CD;
 import static io.harness.ModuleType.CE;
+import static io.harness.ModuleType.CET;
 import static io.harness.ModuleType.CF;
 import static io.harness.ModuleType.CHAOS;
 import static io.harness.ModuleType.CI;
@@ -31,11 +32,11 @@ import static io.harness.rule.OwnerRule.XIN;
 import static io.harness.rule.OwnerRule.ZHUO;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -140,6 +141,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
                                    .put(STO, Lists.newArrayList())
                                    .put(SRM, Lists.newArrayList())
                                    .put(IACM, Lists.newArrayList())
+                                   .put(CET, Lists.newArrayList())
                                    .build())
             .build();
 
@@ -314,7 +316,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     verify(telemetryReporter, times(1)).sendGroupEvent(eq(ACCOUNT_IDENTIFIER), any(), any());
     verify(telemetryReporter, times(1))
         .sendTrackEvent(eq(SUCCEED_START_TRIAL_OPERATION), any(), any(), eq(io.harness.telemetry.Category.SIGN_UP));
-    verifyZeroInteractions(ceLicenseClient);
+    verifyNoInteractions(ceLicenseClient);
     assertThat(result).isEqualTo(DEFAULT_CI_MODULE_LICENSE_DTO);
     verify(cache, times(1)).remove(any());
   }
@@ -371,7 +373,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     ModuleLicenseDTO result = licenseService.extendTrialLicense(ACCOUNT_IDENTIFIER, startTrialRequestDTO);
     verify(telemetryReporter, times(1))
         .sendTrackEvent(eq(SUCCEED_EXTEND_TRIAL_OPERATION), any(), any(), eq(io.harness.telemetry.Category.SIGN_UP));
-    verifyZeroInteractions(ceLicenseClient);
+    verifyNoInteractions(ceLicenseClient);
     assertThat(result).isEqualTo(DEFAULT_CI_MODULE_LICENSE_DTO);
     verify(cache, times(1)).remove(any());
 

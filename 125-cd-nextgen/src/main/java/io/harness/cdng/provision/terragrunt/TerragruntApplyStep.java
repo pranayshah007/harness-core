@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.executables.CdTaskExecutable;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
@@ -69,6 +70,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
+  @Inject private ProvisionerOutputHelper provisionerOutputHelper;
 
   @Override
   public Class getStepParametersClass() {
@@ -239,7 +241,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
 
       stepResponseBuilder.unitProgressList(unitProgresses);
       helper.saveRollbackDestroyConfigInline(stepParameters, terragruntApplyTaskResponse, ambiance);
-      addStepOutcomeToStepResponse(stepResponseBuilder, terragruntApplyTaskResponse);
+      addStepOutcomeToStepResponse(ambiance, stepResponseBuilder, terragruntApplyTaskResponse);
       if (terragruntApplyTaskResponse.getStateFileId() != null) {
         helper.updateParentEntityIdAndVersion(
             helper.generateFullIdentifier(
@@ -265,7 +267,7 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
       stepResponseBuilder.unitProgressList(unitProgresses);
       helper.saveRollbackDestroyConfigInherited(stepParameters, ambiance);
 
-      addStepOutcomeToStepResponse(stepResponseBuilder, terragruntApplyTaskResponse);
+      addStepOutcomeToStepResponse(ambiance, stepResponseBuilder, terragruntApplyTaskResponse);
       if (terragruntApplyTaskResponse.getStateFileId() != null) {
         helper.updateParentEntityIdAndVersion(
             helper.generateFullIdentifier(
@@ -297,12 +299,14 @@ public class TerragruntApplyStep extends CdTaskExecutable<TerragruntApplyTaskRes
         stepHelper.getEnvironmentType(ambiance));
   }
 
-  private void addStepOutcomeToStepResponse(
-      StepResponseBuilder stepResponseBuilder, TerragruntApplyTaskResponse terragruntApplyTaskResponse) {
+  private void addStepOutcomeToStepResponse(Ambiance ambiance, StepResponseBuilder stepResponseBuilder,
+      TerragruntApplyTaskResponse terragruntApplyTaskResponse) {
+    TerragruntApplyOutcome terragruntApplyOutcome =
+        new TerragruntApplyOutcome(helper.parseTerragruntOutputs(terragruntApplyTaskResponse.getOutputs()));
+    provisionerOutputHelper.saveProvisionerOutputByStepIdentifier(ambiance, terragruntApplyOutcome);
     stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
                                         .name(OutcomeExpressionConstants.OUTPUT)
-                                        .outcome(new TerragruntApplyOutcome(
-                                            helper.parseTerragruntOutputs(terragruntApplyTaskResponse.getOutputs())))
+                                        .outcome(terragruntApplyOutcome)
                                         .build());
   }
 }

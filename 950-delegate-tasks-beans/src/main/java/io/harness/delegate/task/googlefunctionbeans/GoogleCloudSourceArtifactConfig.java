@@ -12,6 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.expression.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -30,4 +31,8 @@ public class GoogleCloudSourceArtifactConfig implements GoogleFunctionArtifactCo
   String identifier;
   ConnectorInfoDTO connectorDTO;
   List<EncryptedDataDetail> encryptedDataDetails;
+  GoogleCloudSourceFetchType googleCloudSourceFetchType;
+  @NonFinal @Expression(ALLOW_SECRETS) String branch;
+  @NonFinal @Expression(ALLOW_SECRETS) String tag;
+  @NonFinal @Expression(ALLOW_SECRETS) String commitId;
 }

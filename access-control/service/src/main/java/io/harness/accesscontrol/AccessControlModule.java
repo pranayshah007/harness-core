@@ -31,6 +31,8 @@ import io.harness.accesscontrol.acl.ResourceAttributeProvider;
 import io.harness.accesscontrol.acl.api.ACLResource;
 import io.harness.accesscontrol.acl.api.ACLResourceImpl;
 import io.harness.accesscontrol.acl.api.ResourceAttributeProviderImpl;
+import io.harness.accesscontrol.admin.api.AccessControlAdminResource;
+import io.harness.accesscontrol.admin.api.AccessControlAdminResourceImpl;
 import io.harness.accesscontrol.aggregator.api.AggregatorResource;
 import io.harness.accesscontrol.aggregator.api.AggregatorResourceImpl;
 import io.harness.accesscontrol.aggregator.consumers.AccessControlChangeEventFailureHandler;
@@ -132,6 +134,7 @@ import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.TokenClientModule;
+import io.harness.user.UserClientModule;
 import io.harness.usergroups.UserGroupClientModule;
 import io.harness.usermembership.UserMembershipClientModule;
 import io.harness.version.VersionModule;
@@ -324,6 +327,9 @@ public class AccessControlModule extends AbstractModule {
       install(AggregatorModule.getInstance(config.getAggregatorConfiguration()));
       bind(ChangeEventFailureHandler.class).to(AccessControlChangeEventFailureHandler.class);
     }
+    install(UserClientModule.getInstance(config.getAccountClientConfiguration().getAccountServiceConfig(),
+        config.getAccountClientConfiguration().getAccountServiceSecret(), ACCESS_CONTROL_SERVICE.toString()));
+
     bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
 
     bind(OutboxEventHandler.class).to(AccessControlOutboxEventHandler.class);
@@ -391,6 +397,7 @@ public class AccessControlModule extends AbstractModule {
 
     bind(ACLResource.class).to(ACLResourceImpl.class);
     bind(AggregatorResource.class).to(AggregatorResourceImpl.class);
+    bind(AccessControlAdminResource.class).to(AccessControlAdminResourceImpl.class);
     bind(HealthResource.class).to(HealthResourceImpl.class);
     bind(PermissionResource.class).to(PermissionResourceImpl.class);
     bind(AccessControlPreferenceResource.class).to(AccessControlPreferenceResourceImpl.class);

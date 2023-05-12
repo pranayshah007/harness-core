@@ -30,9 +30,10 @@ import org.springframework.data.annotation.TypeAlias;
 public class TasAppResizeStepParameters extends TasAppResizeBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public TasAppResizeStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      TasInstanceSelectionWrapper newAppInstances, TasInstanceSelectionWrapper oldAppInstances, String tasBGAppSetupFqn,
-      String tasBasicAppSetupFqn, String tasCanaryAppSetupFqn) {
-    super(newAppInstances, oldAppInstances, delegateSelectors, tasBGAppSetupFqn, tasBasicAppSetupFqn,
-        tasCanaryAppSetupFqn);
+      TasInstanceSelectionWrapper newAppInstances, TasInstanceSelectionWrapper oldAppInstances,
+      ParameterField<Boolean> ignoreInstanceCountManifest, String tasBGAppSetupFqn, String tasBasicAppSetupFqn,
+      String tasCanaryAppSetupFqn) {
+    super(newAppInstances, oldAppInstances, ignoreInstanceCountManifest, delegateSelectors, tasBGAppSetupFqn,
+        tasBasicAppSetupFqn, tasCanaryAppSetupFqn);
   }
 }

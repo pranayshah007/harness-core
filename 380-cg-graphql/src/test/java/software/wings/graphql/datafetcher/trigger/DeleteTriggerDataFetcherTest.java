@@ -36,8 +36,8 @@ import software.wings.service.intfc.TriggerService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -128,11 +128,12 @@ public class DeleteTriggerDataFetcherTest extends CategoryTest {
     QLDeleteTriggerPayload qlDeleteTriggerPayload =
         deleteTriggerDataFetcher.mutateAndFetch(qlDeleteTriggerInput, mutationContext);
 
-    Mockito.verify(triggerService, Mockito.times(2)).get(Matchers.anyString(), Matchers.anyString());
-    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(Matchers.any(Trigger.class));
-    Mockito.verify(triggerService, Mockito.times(1)).authorize(Matchers.any(Trigger.class), Matchers.anyBoolean());
-    Mockito.verify(triggerService, Mockito.times(1)).delete(Matchers.anyString(), Matchers.anyString());
-    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(Matchers.anyString());
+    Mockito.verify(triggerService, Mockito.times(2)).get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(ArgumentMatchers.any(Trigger.class));
+    Mockito.verify(triggerService, Mockito.times(1))
+        .authorize(ArgumentMatchers.any(Trigger.class), ArgumentMatchers.anyBoolean());
+    Mockito.verify(triggerService, Mockito.times(1)).delete(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(ArgumentMatchers.anyString());
 
     assertThat(qlDeleteTriggerPayload).isNotNull();
     assertThat(qlDeleteTriggerPayload.getClientMutationId()).isEqualTo(qlDeleteTriggerInput.getClientMutationId());
@@ -161,11 +162,12 @@ public class DeleteTriggerDataFetcherTest extends CategoryTest {
 
     deleteTriggerDataFetcher.mutateAndFetch(qlDeleteTriggerInput, mutationContext);
 
-    Mockito.verify(triggerService, Mockito.times(2)).get(Matchers.anyString(), Matchers.anyString());
-    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(Matchers.any(Trigger.class));
-    Mockito.verify(triggerService, Mockito.times(1)).authorize(Matchers.any(Trigger.class), Matchers.anyBoolean());
-    Mockito.verify(triggerService, Mockito.times(1)).delete(Matchers.anyString(), Matchers.anyString());
-    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(Matchers.anyString());
+    Mockito.verify(triggerService, Mockito.times(2)).get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(ArgumentMatchers.any(Trigger.class));
+    Mockito.verify(triggerService, Mockito.times(1))
+        .authorize(ArgumentMatchers.any(Trigger.class), ArgumentMatchers.anyBoolean());
+    Mockito.verify(triggerService, Mockito.times(1)).delete(ArgumentMatchers.anyString(), ArgumentMatchers.anyString());
+    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(ArgumentMatchers.anyString());
   }
 
   @Test()
@@ -192,8 +194,9 @@ public class DeleteTriggerDataFetcherTest extends CategoryTest {
     assertThatThrownBy(() -> deleteTriggerDataFetcher.mutateAndFetch(qlDeleteTriggerInput, mutationContext))
         .isInstanceOf(WingsException.class);
 
-    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(Matchers.any(Trigger.class));
-    Mockito.verify(triggerService, Mockito.times(1)).authorize(Matchers.any(Trigger.class), Matchers.anyBoolean());
-    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(Matchers.anyString());
+    Mockito.verify(triggerService, Mockito.times(1)).triggerActionExists(ArgumentMatchers.any(Trigger.class));
+    Mockito.verify(triggerService, Mockito.times(1))
+        .authorize(ArgumentMatchers.any(Trigger.class), ArgumentMatchers.anyBoolean());
+    Mockito.verify(appService, Mockito.times(1)).getAccountIdByAppId(ArgumentMatchers.anyString());
   }
 }

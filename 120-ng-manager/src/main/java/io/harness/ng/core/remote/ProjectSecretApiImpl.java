@@ -107,8 +107,8 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
 
   @Override
   public Response getProjectScopedSecrets(String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit, String account) {
-    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit);
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String account, String sort, String order) {
+    return getSecrets(account, org, project, secret, type, recursive, searchTerm, page, limit, sort, order);
   }
 
   @Override
@@ -203,10 +203,10 @@ public class ProjectSecretApiImpl implements ProjectSecretApi {
   }
 
   private Response getSecrets(String account, String org, String project, List<String> secret, List<String> type,
-      Boolean recursive, String searchTerm, Integer page, Integer limit) {
+      Boolean recursive, String searchTerm, Integer page, Integer limit, String sort, String order) {
     List<SecretType> secretTypes = secretApiUtils.toSecretTypes(type);
-    Page<SecretResponseWrapper> secretPage = ngSecretService.list(
-        account, org, project, secret, secretTypes, recursive, searchTerm, page, limit, null, false);
+    Page<SecretResponseWrapper> secretPage = ngSecretService.list(account, org, project, secret, secretTypes, recursive,
+        searchTerm, null, false, ApiUtils.getPageRequest(page, limit, sort, order));
     List<SecretResponseWrapper> content = getNGPageResponse(secretPage).getContent();
 
     List<SecretResponse> secretResponse =

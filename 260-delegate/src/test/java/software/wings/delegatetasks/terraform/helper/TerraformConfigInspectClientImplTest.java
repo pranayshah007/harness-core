@@ -12,11 +12,10 @@ import static io.harness.rule.OwnerRule.BOJANA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;
@@ -33,27 +32,30 @@ import software.wings.delegatetasks.terraform.TerraformConfigInspectClient;
 
 import java.io.IOException;
 import java.util.List;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({InstallUtils.class})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class TerraformConfigInspectClientImplTest extends CategoryTest {
   private static final String GIT_REPO_DIRECTORY = "repository/terraformTest";
   private static final boolean useLatestVersion = true;
+  private MockedStatic<InstallUtils> aStatic;
   TerraformConfigInspectClientImpl terraformConfigInspectClientSpy = spy(new TerraformConfigInspectClientImpl());
 
   @Before
   public void setUp() {
-    mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+    aStatic = Mockito.mockStatic(InstallUtils.class);
+    aStatic.when(() -> InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test

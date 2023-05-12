@@ -65,6 +65,13 @@ public class OnFailPipelineRollbackAdviserTest extends CategoryTest {
     verify(executionSweepingOutputService, times(1))
         .consumeOptional(ambiance, "usePipelineRollbackStrategy",
             OnFailPipelineRollbackOutput.builder().shouldStartPipelineRollback(true).build(), "PIPELINE");
+    verify(executionSweepingOutputService, times(1))
+        .consumeOptional(ambiance, "pipelineRollbackFailureInfo",
+            OnFailPipelineRollbackOutput.builder()
+                .shouldStartPipelineRollback(true)
+                .levelsAtFailurePoint(ambiance.getLevelsList())
+                .build(),
+            "STAGE");
   }
 
   @Test

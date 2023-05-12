@@ -14,11 +14,13 @@ import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.TwoFactorAuthMechanismInfo;
 import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.UserInfoUpdateDTO;
 
 @OwnedBy(HarnessTeam.PL)
 public interface UserInfoService {
   UserInfo getCurrentUser();
   UserInfo update(UserInfo userInfo, String accountIdentifier);
+  UserInfo update(UserInfoUpdateDTO userInfoUpdateDTO, String userId, String accountIdentifier);
   TwoFactorAuthSettingsInfo getTwoFactorAuthSettingsInfo(TwoFactorAuthMechanismInfo twoFactorAuthMechanismInfo);
   UserInfo updateTwoFactorAuthInfo(TwoFactorAuthSettingsInfo authSettingsInfo);
   UserInfo disableTFA();

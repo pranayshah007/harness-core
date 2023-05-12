@@ -6,27 +6,4 @@ template:
   tags: {}
   spec:
     stageType: Deployment
-    steps:
-      - stepGroup:
-          name: stepgrp
-          identifier: stepgrp
-          steps:
-            - parallel:
-                - step:
-                    type: BGAppSetup
-                    name: BG App Setup_1
-                    identifier: BGAppSetup_1
-                    spec:
-                      tasInstanceCountType: FromManifest
-                      existingVersionToKeep: 3
-                    timeout: 10m
-                - step:
-                    type: AppResize
-                    name: App Resize_1
-                    identifier: AppResize_1
-                    spec:
-                      newAppInstances:
-                        type: Percentage
-                        spec:
-                          value: "100"
-                    timeout: 10m
+    steps: []

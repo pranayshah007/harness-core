@@ -14,8 +14,8 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +51,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.RollbackExecutionInfo;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
@@ -904,7 +905,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
     // entities are <=1. Checking error message
     when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
         .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
-    RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
+    RetryHistoryResponseDto retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId, "planExecutionId");
     assertThat(retryHistory.getErrorMessage()).isNotNull();
 
     pipelineExecutionSummaryEntities = Arrays.asList(PipelineExecutionSummaryEntity.builder()
@@ -928,7 +929,10 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     when(pmsExecutionSummaryRepository.fetchPipelineSummaryEntityFromRootParentIdUsingSecondaryMongo(rootExecutionId))
         .thenReturn(PipelineServiceTestHelper.createCloseableIterator(pipelineExecutionSummaryEntities.iterator()));
-    retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId);
+    doReturn(Optional.of(PlanExecutionMetadata.builder().build()))
+        .when(planExecutionMetadataService)
+        .findByPlanExecutionId("planExecutionId");
+    retryHistory = retryExecuteHelper.getRetryHistory(rootExecutionId, "planExecutionId");
     assertThat(retryHistory.getErrorMessage()).isNull();
     assertThat(retryHistory.getLatestExecutionId()).isEqualTo("uuid1");
     assertThat(retryHistory.getExecutionInfos().size()).isEqualTo(3);
@@ -1008,6 +1012,22 @@ public class RetryExecuteHelperTest extends CategoryTest {
     assertThat(retryInfo.getErrorMessage())
         .isEqualTo(
             "This execution is not the latest of all retried execution. You can only retry the latest execution.");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testValidateRetryForExecutionsThatHaveUndergonePRB() {
+    doReturn(PipelineExecutionSummaryEntity.builder()
+                 .isLatestExecution(true)
+                 .rollbackExecutionInfo(RollbackExecutionInfo.builder().rollbackModeExecutionId("something").build())
+                 .build())
+        .when(executionService)
+        .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
+    RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
+    assertThat(retryInfo.isResumable()).isFalse();
+    assertThat(retryInfo.getErrorMessage())
+        .isEqualTo("This execution has undergone Pipeline Rollback, and hence cannot be retried.");
   }
 
   @Test

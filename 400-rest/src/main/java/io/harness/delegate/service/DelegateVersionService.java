@@ -49,12 +49,12 @@ public class DelegateVersionService {
   private final HPersistence persistence;
 
   public String getDelegateImageTag(final String accountId, boolean immutable) {
-    final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
-    if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
-      return versionOverride.getVersion();
-    }
-
     if (immutable) {
+      final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
+      if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+        return versionOverride.getVersion();
+      }
+
       if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
         return fetchImmutableDelegateImageOnPrem();
       }

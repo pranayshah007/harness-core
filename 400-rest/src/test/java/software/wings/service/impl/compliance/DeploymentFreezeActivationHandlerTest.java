@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,8 +30,8 @@ import com.google.inject.Inject;
 import java.util.Arrays;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
@@ -46,7 +46,7 @@ public class DeploymentFreezeActivationHandlerTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldDoNothingForNoFreezeWindows() {
     deploymentFreezeActivationHandler.handle(GovernanceConfig.builder().build());
-    Mockito.verify(deploymentFreezeUtils, Mockito.never()).handleActivationEvent(any(), Matchers.anyString());
+    Mockito.verify(deploymentFreezeUtils, Mockito.never()).handleActivationEvent(any(), ArgumentMatchers.anyString());
   }
 
   @Test
@@ -61,7 +61,7 @@ public class DeploymentFreezeActivationHandlerTest extends WingsBaseTest {
                                   .build()))
             .build();
     deploymentFreezeActivationHandler.handle(governanceConfig);
-    Mockito.verify(deploymentFreezeUtils, Mockito.never()).handleActivationEvent(any(), Matchers.anyString());
+    Mockito.verify(deploymentFreezeUtils, Mockito.never()).handleActivationEvent(any(), ArgumentMatchers.anyString());
   }
 
   @Test
@@ -86,6 +86,7 @@ public class DeploymentFreezeActivationHandlerTest extends WingsBaseTest {
                                             .timeRangeBasedFreezeConfigs(Arrays.asList(window1, window2, window3))
                                             .build();
     deploymentFreezeActivationHandler.handle(governanceConfig);
-    Mockito.verify(deploymentFreezeUtils, Mockito.times(2)).handleActivationEvent(any(), Matchers.eq(ACCOUNT_ID));
+    Mockito.verify(deploymentFreezeUtils, Mockito.times(2))
+        .handleActivationEvent(any(), ArgumentMatchers.eq(ACCOUNT_ID));
   }
 }

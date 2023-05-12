@@ -7,12 +7,14 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.DataCollectionTaskDTO.DataCollectionTaskResult;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.DataCollectionTask;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +28,9 @@ public interface DataCollectionTaskService {
   List<DataCollectionTaskDTO> getNextTaskDTOs(String accountId, String dataCollectionWorkerId);
 
   DataCollectionTask getDataCollectionTask(String dataCollectionTaskId);
+
+  DataCollectionTask getFirstDataCollectionTaskWithStatusAfterStartTime(
+      String verificationTaskId, DataCollectionExecutionStatus status, Instant startTime);
 
   void updateTaskStatus(DataCollectionTaskResult dataCollectionTaskResult);
 

@@ -9,6 +9,8 @@ package io.harness.accesscontrol.support.persistence;
 
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
+import static java.util.Optional.of;
+
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
@@ -19,6 +21,7 @@ import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 
 import dev.morphia.annotations.Entity;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -78,5 +81,10 @@ public class SupportPreferenceDBO implements PersistentRegularIterable, AccessCo
   @Override
   public String getUuid() {
     return id;
+  }
+
+  @Override
+  public Optional<String> getAccountId() {
+    return of(accountIdentifier);
   }
 }

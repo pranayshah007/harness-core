@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.JENNY;
 
 import static java.time.Duration.ofMinutes;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;

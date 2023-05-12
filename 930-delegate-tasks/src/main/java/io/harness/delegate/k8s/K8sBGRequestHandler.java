@@ -25,10 +25,12 @@ import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
+import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_COLOR_KEY;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -50,6 +52,8 @@ import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.client.K8sClient;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
@@ -58,12 +62,15 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
+import io.harness.k8s.KubernetesReleaseDetails;
+import io.harness.k8s.KubernetesReleaseDetails.KubernetesReleaseDetailsBuilder;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
+import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -71,6 +78,8 @@ import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.IK8sRelease.Status;
 import io.harness.k8s.releasehistory.IK8sReleaseHistory;
@@ -143,14 +152,21 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     LogCallback executionLogCallback = k8sTaskHelperBase.getLogCallback(
         logStreamingTaskClient, FetchFiles, k8sBGDeployRequest.isShouldOpenFetchFilesLogStream(), commandUnitsProgress);
+    ServiceHookDTO serviceHookTaskParams = new ServiceHookDTO(k8sDelegateTaskParams);
+    ServiceHookHandler serviceHookHandler =
+        new ServiceHookHandler(k8sBGDeployRequest.getServiceHooks(), serviceHookTaskParams, timeoutInMillis);
     executionLogCallback.saveExecutionLog(
         color("\nStarting Kubernetes Blue-Green Deployment", LogColor.White, LogWeight.Bold));
-
+    serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
     k8sTaskHelperBase.fetchManifestFilesAndWriteToDirectory(k8sBGDeployRequest.getManifestDelegateConfig(),
-        manifestFilesDirectory, executionLogCallback, timeoutInMillis, k8sBGDeployRequest.getAccountId());
-
+        manifestFilesDirectory, executionLogCallback, timeoutInMillis, k8sBGDeployRequest.getAccountId(), false);
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
+    executionLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     init(k8sBGDeployRequest, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress));
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Init, true, commandUnitsProgress), serviceHookHandler);
 
     prepareForBlueGreen(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Prepare, true, commandUnitsProgress),
@@ -178,21 +194,29 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
               k8sTaskHelperBase.getLatestRevision(client, managedWorkload.getResourceId(), k8sDelegateTaskParams));
     }
 
-    K8sSteadyStateDTO k8sSteadyStateDTO =
-        K8sSteadyStateDTO.builder()
-            .request(k8sDeployRequest)
-            .resourceIds(Collections.singletonList(managedWorkload.getResourceId()))
-            .executionLogCallback(k8sTaskHelperBase.getLogCallback(
-                logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress))
-            .k8sDelegateTaskParams(k8sDelegateTaskParams)
-            .namespace(managedWorkload.getResourceId().getNamespace())
-            .denoteOverallSuccess(true)
-            .isErrorFrameworkEnabled(true)
-            .build();
+    LogCallback steadyStateLogCallback =
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
+
+    serviceHookHandler.addWorkloadContextForHooks(Collections.singletonList(managedWorkload), Collections.emptyList());
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+        k8sDelegateTaskParams.getWorkingDirectory(), steadyStateLogCallback);
+
+    K8sSteadyStateDTO k8sSteadyStateDTO = K8sSteadyStateDTO.builder()
+                                              .request(k8sDeployRequest)
+                                              .resourceIds(Collections.singletonList(managedWorkload.getResourceId()))
+                                              .executionLogCallback(steadyStateLogCallback)
+                                              .k8sDelegateTaskParams(k8sDelegateTaskParams)
+                                              .namespace(managedWorkload.getResourceId().getNamespace())
+                                              .denoteOverallSuccess(false)
+                                              .isErrorFrameworkEnabled(true)
+                                              .build();
 
     K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sBGDeployRequest.isUseK8sApiForSteadyStateCheck());
     k8sClient.performSteadyStateCheck(k8sSteadyStateDTO);
 
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+        k8sDelegateTaskParams.getWorkingDirectory(), steadyStateLogCallback);
+    steadyStateLogCallback.saveExecutionLog("Done.", INFO, SUCCESS);
     LogCallback wrapUpLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress);
 
@@ -248,13 +272,13 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   }
 
   @VisibleForTesting
-  void init(K8sBGDeployRequest request, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback)
-      throws Exception {
+  void init(K8sBGDeployRequest request, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
+      ServiceHookHandler serviceHookHandler) throws Exception {
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
 
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        request.getK8sInfraDelegateConfig(), executionLogCallback);
+        request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
     releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
@@ -266,7 +290,23 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     k8sTaskHelperBase.deleteSkippedManifestFiles(manifestFilesDirectory, executionLogCallback);
 
-    List<String> manifestOverrideFiles = getManifestOverrideFlies(request);
+    KubernetesReleaseDetailsBuilder releaseBuilder =
+        KubernetesReleaseDetails.builder().releaseNumber(currentReleaseNumber);
+
+    if (useDeclarativeRollback) {
+      IK8sRelease latestRelease = releaseHistory.getLatestRelease();
+      if (latestRelease == null) {
+        // Since HarnessLabelValues.colorDefault is for primary service during first time deployment
+        // for stage color we should reverse of it
+        releaseBuilder.color(k8sBGBaseHandler.getInverseColor(HarnessLabelValues.colorDefault));
+      } else {
+        releaseBuilder.color(k8sBGBaseHandler.getInverseColor(latestRelease.getReleaseColor()));
+      }
+    }
+
+    List<String> manifestOverrideFiles = getManifestOverrideFlies(request, releaseBuilder.build().toContextMap());
+    serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     List<FileData> manifestFiles = k8sTaskHelperBase.renderTemplate(k8sDelegateTaskParams,
         request.getManifestDelegateConfig(), manifestFilesDirectory, manifestOverrideFiles, releaseName,
@@ -278,6 +318,9 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
 
     executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(resources));
+
+    serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+        k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
     if (request.isSkipDryRun()) {
       executionLogCallback.saveExecutionLog(color("\nSkipping Dry Run", Yellow, Bold), INFO);

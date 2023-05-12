@@ -34,6 +34,22 @@ public class DateTimeUtils {
     return zonedDateTime.toInstant();
   }
 
+  public static Instant roundUpTo5MinBoundary(Instant instant) {
+    return roundUpToMinBoundary(instant, 5);
+  }
+
+  public static Instant roundUpToMinBoundary(Instant instant, int minBoundary) {
+    Preconditions.checkArgument(minBoundary > 0 && minBoundary < 60, "Minute boundary need to be between 1 to 59");
+    ZonedDateTime zonedDateTime = instant.atZone(ZoneOffset.UTC);
+    int minute = zonedDateTime.getMinute();
+    if (minute % minBoundary != 0) {
+      minute = minute + (minBoundary - minute % minBoundary);
+    }
+    zonedDateTime = ZonedDateTime.of(zonedDateTime.getYear(), zonedDateTime.getMonthValue(),
+        zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), minute, 0, 0, ZoneOffset.UTC);
+    return zonedDateTime.toInstant();
+  }
+
   public static long instantToEpochMinute(Instant instant) {
     return TimeUnit.MILLISECONDS.toMinutes(instant.toEpochMilli());
   }

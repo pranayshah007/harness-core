@@ -21,6 +21,7 @@ import io.harness.app.beans.dto.CITaskDetails;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.execution.license.CILicenseService;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.logserviceclient.CILogServiceUtils;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.delegate.TaskSelector;
@@ -28,6 +29,7 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.encryption.Scope;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.hsqs.client.api.HsqsClientService;
 import io.harness.hsqs.client.model.AckRequest;
 import io.harness.licensing.Edition;
@@ -74,6 +76,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
   @Inject private OutcomeService outcomeService;
   @Inject private GitBuildStatusUtility gitBuildStatusUtility;
   @Inject private StageCleanupUtility stageCleanupUtility;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   @Inject private CILogServiceUtils ciLogServiceUtils;
   @Inject private CILicenseService ciLicenseService;
   @Inject private CITaskDetailsRepository ciTaskDetailsRepository;
@@ -111,14 +114,15 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         if (level.getStepType().getStepCategory() == StepCategory.STAGE && isFinalStatus(status)) {
           // TODO: Once Robust Cleanup implementation is done shift this after response from delegate is received.
           try {
+            String topic = ciExecutionServiceConfig.getQueueServiceClientConfig().getTopic();
             CIExecutionMetadata ciExecutionMetadata =
                 queueExecutionUtils.deleteActiveExecutionRecord(ambiance.getStageExecutionId());
             if (ciExecutionMetadata != null && StringUtils.isNotBlank(ciExecutionMetadata.getQueueId())) {
               // ack the request so that its not processed again.
               AckRequest ackRequest = AckRequest.builder()
                                           .itemId(ciExecutionMetadata.getQueueId())
-                                          .consumerName(SERVICE_NAME_CI)
-                                          .topic(SERVICE_NAME_CI)
+                                          .consumerName(topic)
+                                          .topic(topic)
                                           .subTopic(accountId)
                                           .build();
               hsqsClientService.ack(ackRequest);
@@ -238,6 +242,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         .stageId(stageId)
         .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
         .taskSelectors(taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()))
+        .selectors(taskSelectors)
         .taskSetupAbstractions(abstractions)
         .executionTimeout(java.time.Duration.ofSeconds(900))
         .taskType(taskType)
@@ -298,6 +303,9 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
 
   private void updateDailyBuildCount(Level level, Status status, String serviceName, String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
       if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
           && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == RUNNING)) {

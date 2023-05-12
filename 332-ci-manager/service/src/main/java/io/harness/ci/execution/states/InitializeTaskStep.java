@@ -62,6 +62,7 @@ import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.dlite.DliteVmInitializeTaskParams;
 import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -90,7 +91,6 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.TaskExecutableWithRbac;
@@ -125,7 +125,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CI)
 public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementParameters, CITaskExecutionResponse> {
-  public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
   @Inject private AccountClient accountClient;
 
@@ -150,7 +149,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   @Inject private CIYAMLSanitizationService sanitizationService;
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Inject private CILicenseService ciLicenseService;
-  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject private CIStagePlanCreationUtils ciStagePlanCreationUtils;
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
@@ -252,8 +251,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
-    CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(accountExecutionMetadataRepository,
-        ciLicenseService, AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
+    ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
+        AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
     populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
@@ -380,9 +379,14 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
-        && CIStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
+        && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 

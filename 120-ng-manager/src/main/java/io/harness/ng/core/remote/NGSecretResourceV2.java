@@ -33,6 +33,7 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DecryptableEntityWithEncryptionConsumers;
 import io.harness.ng.core.NGAccess;
@@ -55,6 +56,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.service.impl.security.NGEncryptorService;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import io.swagger.annotations.Api;
@@ -78,8 +80,8 @@ import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
 import javax.validation.Validator;
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -301,18 +303,13 @@ public class NGSecretResourceV2 {
               + " accessible at the scope. For eg if set as true, at the Project scope we will get"
               + " org and account Secrets also in the response") @QueryParam("includeAllSecretsAccessibleAtScope")
       @DefaultValue("false") boolean includeAllSecretsAccessibleAtScope,
-      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
-          NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(
-          description =
-              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
+      @BeanParam PageRequest pageRequest) {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
-        projectIdentifier, identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size,
-        sourceCategory, includeAllSecretsAccessibleAtScope)));
+        projectIdentifier, identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, sourceCategory,
+        includeAllSecretsAccessibleAtScope, pageRequest)));
   }
 
   @POST
@@ -329,19 +326,14 @@ public class NGSecretResourceV2 {
   listSecrets(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                   NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Body SecretResourceFilterDTO secretResourceFilterDTO,
-      @Parameter(description = "Navigation page number. By default, it is set to 0.") @QueryParam(
-          NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
-      @Parameter(
-          description =
-              "Number of entries per page. The default number of entries per page is 100, while the maximum number allowed is 1000.")
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(1000) int size) {
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body SecretResourceFilterDTO secretResourceFilterDTO, @BeanParam PageRequest pageRequest) {
     return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
         projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
-        secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,
-        size, secretResourceFilterDTO.getSourceCategory(),
-        secretResourceFilterDTO.isIncludeAllSecretsAccessibleAtScope())));
+        secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(),
+        secretResourceFilterDTO.getSourceCategory(), secretResourceFilterDTO.isIncludeAllSecretsAccessibleAtScope(),
+        pageRequest)));
   }
 
   @GET
@@ -496,8 +488,9 @@ public class NGSecretResourceV2 {
           NGCommonEntityConstants.IDENTIFIER_KEY) @NotNull String identifier,
       @Parameter(description = "This is the encrypted Secret File that needs to be uploaded.") @FormDataParam(
           "file") InputStream uploadedInputStream,
-      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec) {
-    SecretRequestWrapper dto = JsonUtils.asObject(spec, SecretRequestWrapper.class);
+      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec)
+      throws JsonProcessingException {
+    SecretRequestWrapper dto = JsonUtils.asObjectWithExceptionHandlingType(spec, SecretRequestWrapper.class);
     validateRequestPayload(dto);
 
     SecretResponseWrapper secret =
@@ -532,6 +525,50 @@ public class NGSecretResourceV2 {
       @QueryParam("privateSecret") @DefaultValue("false") boolean privateSecret,
       @Parameter(description = "This is the encrypted Secret File that needs to be uploaded.") @NotNull @FormDataParam(
           "file") InputStream uploadedInputStream,
+      @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec)
+      throws JsonProcessingException {
+    SecretRequestWrapper dto = JsonUtils.asObjectWithExceptionHandlingType(spec, SecretRequestWrapper.class);
+    validateRequestPayload(dto);
+
+    if (!Objects.equals(orgIdentifier, dto.getSecret().getOrgIdentifier())
+        || !Objects.equals(projectIdentifier, dto.getSecret().getProjectIdentifier())) {
+      throw new InvalidRequestException("Invalid request, scope in payload and params do not match.", USER);
+    }
+
+    secretPermissionValidator.checkForAccessOrThrow(
+        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
+        SECRET_EDIT_PERMISSION, privateSecret ? SecurityContextBuilder.getPrincipal() : null);
+    if (privateSecret) {
+      dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
+    }
+
+    return ResponseDTO.newResponse(ngSecretService.createFile(accountIdentifier, dto.getSecret(), uploadedInputStream));
+  }
+
+  @POST
+  @Hidden
+  @Path("filesMigration")
+  @ApiOperation(value = "File type secrets migration", nickname = "migrateSecretFiles", hidden = true)
+  @Operation(operationId = "migrateSecretFiles", summary = "migrate secret files",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns created Secret file")
+      })
+  @Consumes(MediaType.MULTIPART_FORM_DATA)
+  public ResponseDTO<SecretResponseWrapper>
+  createSecretFile(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                       NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(
+          description = "This is a boolean value to specify if the Secret is Private. The default value is False.")
+      @QueryParam("privateSecret") @DefaultValue("false") boolean privateSecret,
+      @Parameter(description = "encryptionKey of the file secret from cg") @QueryParam(
+          "encryptionKey") @NotNull String encryptionKey,
+      @Parameter(description = "encryptionValue of the file secret from cg") @QueryParam(
+          "encryptedValue") @NotNull String encryptedValue,
       @Parameter(description = "Specification of Secret file") @FormDataParam("spec") String spec) {
     SecretRequestWrapper dto = JsonUtils.asObject(spec, SecretRequestWrapper.class);
     validateRequestPayload(dto);
@@ -548,7 +585,8 @@ public class NGSecretResourceV2 {
       dto.getSecret().setOwner(SecurityContextBuilder.getPrincipal());
     }
 
-    return ResponseDTO.newResponse(ngSecretService.createFile(accountIdentifier, dto.getSecret(), uploadedInputStream));
+    return ResponseDTO.newResponse(
+        ngSecretService.createFile(accountIdentifier, dto.getSecret(), encryptionKey, encryptedValue));
   }
 
   @POST

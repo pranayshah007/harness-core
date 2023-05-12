@@ -7,6 +7,7 @@
 
 package io.harness.ng.overview.dto;
 
+import io.harness.entities.RollbackStatus;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class InstanceGroupedByEnvironmentList {
   public static class InstanceGroupedByEnvironment {
     @NotNull String envId;
     String envName;
+    List<String> envGroups;
     @NotNull List<InstanceGroupedByEnvironmentType> instanceGroupedByEnvironmentTypeList;
     long lastDeployedAt;
   }
@@ -50,8 +52,16 @@ public class InstanceGroupedByEnvironmentList {
   @Value
   @Builder
   public static class InstanceGroupedByArtifact {
+    // Passing the instanceKey and infrastructureMappingId to uniquely identity the Instance for rollback.
+    String instanceKey;
+    String infrastructureMappingId;
     String artifact; // displayName of artifact
     Integer count;
     long lastDeployedAt;
+    String lastPlanExecutionId;
+    String stageNodeExecutionId;
+    String pipelineIdentifier;
+    String stageSetupId;
+    RollbackStatus rollbackStatus;
   }
 }

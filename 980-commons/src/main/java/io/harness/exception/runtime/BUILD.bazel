@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//980-commons/src/main/java/io/harness/eraro:module",
         "//980-commons/src/main/java/io/harness/exception:module",
+        "//980-commons/src/main/java/io/harness/exception/runtime/utils:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
     ],
 )

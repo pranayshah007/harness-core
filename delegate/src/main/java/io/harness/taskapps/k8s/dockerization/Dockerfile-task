@@ -32,8 +32,8 @@ WORKDIR /opt/harness
 
 RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
     && curl -s -L -o client-tools/kubectl/v1.24.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.24.3/bin/linux/$TARGETARCH/kubectl  \
-    && mkdir -m 777 -p client-tools/go-template/v0.4 \
-    && curl -s -L -o client-tools/go-template/v0.4/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4/bin/linux/$TARGETARCH/go-template \
+    && mkdir -m 777 -p client-tools/go-template/v0.4.2 \
+    && curl -s -L -o client-tools/go-template/v0.4.2/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.2/bin/linux/$TARGETARCH/go-template \
     && chmod -R 755 /opt/harness \
     && chgrp -R 0 /opt/harness  \
     && chown -R 1001 /opt/harness

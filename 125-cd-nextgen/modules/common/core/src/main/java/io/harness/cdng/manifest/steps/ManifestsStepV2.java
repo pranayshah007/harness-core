@@ -118,9 +118,7 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (noManifestsConfigured(finalSvcManifestsMap)) {
       logCallback.saveExecutionLog(
-          String.format("No manifests configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.MANIFESTS),
-          LogLevel.WARN);
+          "No manifests configured in the service. manifest expressions will not work", LogLevel.WARN);
 
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
@@ -182,10 +180,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
         manifests.stream()
             .filter(manifest -> ManifestConfigType.HELM_CHART == manifest.getManifest().getType())
             .findFirst();
-    helmChartOptional.ifPresent((ManifestConfigWrapper manifestConfigWrapper) -> {
-      overrideHelmRepoConnector(manifestConfigWrapper, finalSvcManifestsMap);
-      manifests.removeIf(manifest -> ManifestConfigType.HELM_REPO_OVERRIDE == manifest.getManifest().getType());
-    });
+    helmChartOptional.ifPresent((ManifestConfigWrapper manifestConfigWrapper)
+                                    -> overrideHelmRepoConnector(manifestConfigWrapper, finalSvcManifestsMap));
+    manifests.removeIf(manifest -> ManifestConfigType.HELM_REPO_OVERRIDE == manifest.getManifest().getType());
   }
 
   private void overrideHelmRepoConnector(

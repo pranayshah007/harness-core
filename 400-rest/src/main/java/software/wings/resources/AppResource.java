@@ -94,7 +94,7 @@ public class AppResource {
           : Integer.toString(Parser.asInt(pageRequest.getLimit(), Integer.parseInt(baseLimit)));
       pageRequest.setLimit(limit);
     }
-    return new RestResponse<>(appService.list(pageRequest, details, withTags, tagFilter));
+    return new RestResponse<>(appService.list(pageRequest, details, withTags, tagFilter, true));
   }
 
   /**

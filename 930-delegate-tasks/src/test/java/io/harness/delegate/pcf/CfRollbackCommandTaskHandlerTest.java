@@ -8,13 +8,14 @@
 
 package io.harness.delegate.pcf;
 
+import static io.harness.pcf.model.CfConstants.CF_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -372,6 +373,7 @@ public class CfRollbackCommandTaskHandlerTest extends CategoryTest {
     assertThat(cfRequestConfig.getOrgName()).isEqualTo(ORGANIZATION);
     assertThat(cfRequestConfig.getSpaceName()).isEqualTo(SPACE);
     assertThat(cfRequestConfig.getPassword()).isEqualTo(PASSWORD);
+    assertThat(cfRequestConfig.getCfHomeDirPath()).contains(CF_ARTIFACT_DOWNLOAD_DIR_PATH);
     assertThat(cfRequestConfig.getTimeOutIntervalInMins()).isEqualTo(10);
   }
 

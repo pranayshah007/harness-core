@@ -10,15 +10,11 @@ package io.harness.delegate.beans.connector.terraformcloudconnector.outcome;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.terraformcloudconnector.TerraformCloudCredentialType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -38,13 +34,4 @@ public class TerraformCloudConnectorOutcomeDTO
   @Valid @NotNull TerraformCloudCredentialOutcomeDTO credential;
   Set<String> delegateSelectors;
   @Builder.Default Boolean executeOnDelegate = true;
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    if (credential.getType() == TerraformCloudCredentialType.API_TOKEN) {
-      TerraformCloudCredentialSpecOutcomeDTO terraformCloudCredentials = credential.getSpec();
-      return Collections.singletonList(terraformCloudCredentials);
-    }
-    return null;
-  }
 }

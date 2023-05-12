@@ -10,18 +10,18 @@ package io.harness.template.helpers;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
-import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ACCOUNT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.ORG_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.PROJECT_ID;
 import static io.harness.template.helpers.TemplateReferenceTestHelper.generateIdentifierRefWithUnknownScope;
+import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -178,7 +178,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
 
     ArgumentCaptor<List> referredEntitiesArgumentCapture = ArgumentCaptor.forClass(List.class);
     verify(templateSetupUsageHelper)
-        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture());
+        .publishSetupUsageEvent(eq(templateEntity), referredEntitiesArgumentCapture.capture(), any());
     List<EntityDetailProtoDTO> referredEntities = referredEntitiesArgumentCapture.getValue();
     assertThat(referredEntities).isNotNull().hasSize(4);
     assertThat(referredEntities).containsExactlyInAnyOrderElementsOf(getStageTemplateProtoReferences());

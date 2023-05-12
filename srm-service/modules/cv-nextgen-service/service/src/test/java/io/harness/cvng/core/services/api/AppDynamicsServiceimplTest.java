@@ -13,9 +13,9 @@ import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.RAGHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -404,7 +404,7 @@ public class AppDynamicsServiceimplTest extends CvNextGenTestBase {
         .isEqualTo(builderFactory.getClock().instant().minus(Duration.ofHours(1)).toEpochMilli());
     assertThat(appdynamicsMetricDataResponse.getEndTime())
         .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
-    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(5);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(6);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
   }
@@ -454,7 +454,7 @@ public class AppDynamicsServiceimplTest extends CvNextGenTestBase {
         .isEqualTo(builderFactory.getClock().instant().minus(Duration.ofHours(1)).toEpochMilli());
     assertThat(appdynamicsMetricDataResponse.getEndTime())
         .isEqualTo(builderFactory.getClock().instant().toEpochMilli());
-    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(5);
+    assertThat(appdynamicsMetricDataResponse.getDataPoints().size()).isEqualTo(6);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getTimestamp()).isEqualTo(1595760660000L);
     assertThat(appdynamicsMetricDataResponse.getDataPoints().get(0).getValue()).isEqualTo(233.0);
   }

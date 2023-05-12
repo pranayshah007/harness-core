@@ -1,0 +1,105 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679650710.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "integrations"
+  ],
+  "properties": {
+    "integrations": {
+      "$id": "#root/integrations",
+      "title": "Integrations",
+      "type": "object",
+      "required": [
+        "github"
+      ],
+      "properties": {
+        "github": {
+          "$id": "#root/integrations/github",
+          "title": "Github",
+          "type": "array",
+          "default": [],
+          "items":{
+            "$id": "#root/integrations/github/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "host",
+              "apps"
+            ],
+            "properties": {
+              "host": {
+                "$id": "#root/integrations/github/items/host",
+                "title": "Host",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "apps": {
+                "$id": "#root/integrations/github/items/apps",
+                "title": "Apps",
+                "type": "array",
+                "default": [],
+                "items":{
+                  "$id": "#root/integrations/github/items/apps/items",
+                  "title": "Items",
+                  "type": "object",
+                  "required": [
+                    "appId",
+                    "clientId",
+                    "clientSecret",
+                    "webhookSecret",
+                    "privateKey"
+                  ],
+                  "properties": {
+                    "appId": {
+                      "$id": "#root/integrations/github/items/apps/items/appId",
+                      "title": "Appid",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "clientId": {
+                      "$id": "#root/integrations/github/items/apps/items/clientId",
+                      "title": "Clientid",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "clientSecret": {
+                      "$id": "#root/integrations/github/items/apps/items/clientSecret",
+                      "title": "Clientsecret",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "webhookSecret": {
+                      "$id": "#root/integrations/github/items/apps/items/webhookSecret",
+                      "title": "Webhooksecret",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    },
+                    "privateKey": {
+                      "$id": "#root/integrations/github/items/apps/items/privateKey",
+                      "title": "Privatekey",
+                      "type": "string",
+                      "default": "",
+                      "pattern": "^.*$"
+                    }
+                  }
+                }
+
+              }
+            }
+          }
+
+        }
+      }
+    }
+
+  }
+}

@@ -14,12 +14,12 @@ import static software.wings.beans.dto.NewRelicMetricDataRecord.DEFAULT_GROUP_NA
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -130,7 +130,7 @@ public class MetricDataCollectionTaskTest extends WingsBaseTest {
     when(metricsDataCollectionInfo.getStartTime()).thenReturn(now);
     when(metricsDataCollectionInfo.getDataCollectionStartTime()).thenReturn(now);
     metricsDataCollectionTask.collectAndSaveData(metricsDataCollectionInfo);
-    verifyZeroInteractions(metricStoreService);
+    verifyNoInteractions(metricStoreService);
   }
 
   @Test

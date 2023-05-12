@@ -70,7 +70,8 @@ public class WaitForExecutionInputHelper {
       Long currentTime = System.currentTimeMillis();
       String inputInstanceId = UUIDGenerator.generateUuid();
       EngineExpressionEvaluator evaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
-      String fieldYaml = YamlNode.getNodeYaml(planExecutionMetadataOptional.get().getYaml(), ambiance);
+      String fieldYaml =
+          YamlNode.getNodeYaml(planExecutionMetadataOptional.get().getYaml(), ambiance).replaceAll("\"", "");
       // Resolve any expression in fieldYaml that can be resolved so far.
       fieldYaml = pmsEngineExpressionService.renderExpression(
           ambiance, fieldYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);

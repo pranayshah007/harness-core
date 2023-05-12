@@ -15,7 +15,7 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.services.api.UpdatableEntity;
-import io.harness.cvng.servicelevelobjective.beans.SLIExecutionType;
+import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator.RequestServiceLevelIndicatorUpdatableEntity;
@@ -45,14 +45,14 @@ public class ServiceLevelIndicatorEntityAndDTOTransformerTest extends CvNextGenT
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testFQDIMapping() {
-    assertThat(serviceLevelIndicatorFQDITransformerMapBinder.get(SLIExecutionType.REQUEST.name()).getClass())
+    assertThat(serviceLevelIndicatorFQDITransformerMapBinder.get(SLIEvaluationType.REQUEST.name()).getClass())
         .hasSameClassAs(RequestServiceLevelIndicatorTransformer.class);
     assertThat(serviceLevelIndicatorFQDITransformerMapBinder
-                   .get(SLIExecutionType.WINDOW.name() + "_" + SLIMetricType.RATIO.name())
+                   .get(SLIEvaluationType.WINDOW.name() + "_" + SLIMetricType.RATIO.name())
                    .getClass())
         .hasSameClassAs(RatioServiceLevelIndicatorTransformer.class);
     assertThat(serviceLevelIndicatorFQDITransformerMapBinder
-                   .get(SLIExecutionType.WINDOW.name() + "_" + SLIMetricType.THRESHOLD.name())
+                   .get(SLIEvaluationType.WINDOW.name() + "_" + SLIMetricType.THRESHOLD.name())
                    .getClass())
         .hasSameClassAs(ThresholdServiceLevelIndicatorTransformer.class);
   }
@@ -63,12 +63,12 @@ public class ServiceLevelIndicatorEntityAndDTOTransformerTest extends CvNextGenT
   public void testGetFullyQualifiedIdentifier_forDTO() {
     String fullyQualifiedType =
         builderFactory.getRequestServiceLevelIndicatorDTOBuilder().build().getEvaluationAndMetricType();
-    assertThat(fullyQualifiedType).isEqualTo(SLIExecutionType.REQUEST.name());
+    assertThat(fullyQualifiedType).isEqualTo(SLIEvaluationType.REQUEST.name());
     fullyQualifiedType = builderFactory.getRatioServiceLevelIndicatorDTOBuilder().build().getEvaluationAndMetricType();
-    assertThat(fullyQualifiedType).isEqualTo(SLIExecutionType.WINDOW.name() + "_" + SLIMetricType.RATIO.name());
+    assertThat(fullyQualifiedType).isEqualTo(SLIEvaluationType.WINDOW.name() + "_" + SLIMetricType.RATIO.name());
     fullyQualifiedType =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build().getEvaluationAndMetricType();
-    assertThat(fullyQualifiedType).isEqualTo(SLIExecutionType.WINDOW.name() + "_" + SLIMetricType.THRESHOLD.name());
+    assertThat(fullyQualifiedType).isEqualTo(SLIEvaluationType.WINDOW.name() + "_" + SLIMetricType.THRESHOLD.name());
   }
 
   @Test

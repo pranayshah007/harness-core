@@ -177,26 +177,12 @@ public class HostServiceImpl implements HostService {
   }
 
   @Override
-  public List<Host> getHostsByEnv(String appId, String envId) {
-    return wingsPersistence.createQuery(Host.class).filter("appId", appId).filter(HostKeys.envId, envId).asList();
-  }
-
-  @Override
-  public List<Host> getHostsByInfraMappingIds(String appId, List<String> infraMappingIds) {
+  public long getHostsCountByInfraMappingIds(String appId, List<String> infraMappingIds) {
     return wingsPersistence.createQuery(Host.class)
         .filter("appId", appId)
         .field(HostKeys.infraMappingId)
         .in(infraMappingIds)
-        .asList();
-  }
-
-  @Override
-  public List<Host> getHostsByInfraDefinitionIds(String appId, List<String> infraDefinitionIds) {
-    return wingsPersistence.createQuery(Host.class)
-        .filter("appId", appId)
-        .field(HostKeys.infraDefinitionId)
-        .in(infraDefinitionIds)
-        .asList();
+        .count();
   }
 
   @Override
@@ -230,11 +216,8 @@ public class HostServiceImpl implements HostService {
 
   @Override
   public void deleteByEnvironment(String appId, String envId) {
-    wingsPersistence.createQuery(Host.class)
-        .filter("appId", appId)
-        .filter(HostKeys.envId, envId)
-        .asList()
-        .forEach(this::delete);
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(Host.class).filter("appId", appId).filter(HostKeys.envId, envId));
   }
 
   @Override

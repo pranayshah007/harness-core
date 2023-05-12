@@ -67,7 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
-  @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
   @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
   private static final int PAGE = 0;
@@ -108,7 +107,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
 
   public void deleteExistingSetupUsages(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    IdentifierRefProtoDTO pipelineReference = identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
+    IdentifierRefProtoDTO pipelineReference = IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     EntityDetailProtoDTO pipelineDetails = EntityDetailProtoDTO.newBuilder()
                                                .setIdentifierRef(pipelineReference)
@@ -139,7 +138,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
     }
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
                 pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
                 pipelineEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.PIPELINES)
@@ -257,7 +256,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   private void deleteSetupUsagesForGivenPipeline(PipelineEntity pipelineEntity) {
     EntityDetailProtoDTO pipelineDetails =
         EntityDetailProtoDTO.newBuilder()
-            .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
+            .setIdentifierRef(IdentifierRefProtoDTOHelper.createIdentifierRefProtoDTO(pipelineEntity.getAccountId(),
                 pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
                 pipelineEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.PIPELINES)

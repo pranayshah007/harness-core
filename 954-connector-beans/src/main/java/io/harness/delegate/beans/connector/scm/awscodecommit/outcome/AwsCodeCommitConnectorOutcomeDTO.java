@@ -7,17 +7,11 @@
 
 package io.harness.delegate.beans.connector.scm.awscodecommit.outcome;
 
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
-import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsDTO;
-import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsSpecDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -48,18 +42,5 @@ public class AwsCodeCommitConnectorOutcomeDTO extends ConnectorConfigOutcomeDTO 
     this.url = url;
     this.authentication = authentication;
     this.delegateSelectors = delegateSelectors;
-  }
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
-    if (authentication.getType() == AwsCodeCommitAuthType.HTTPS) {
-      AwsCodeCommitHttpsCredentialsSpecDTO httpCredentialsSpec =
-          ((AwsCodeCommitHttpsCredentialsDTO) authentication.getSpec()).getHttpCredentialsSpec();
-      if (httpCredentialsSpec != null) {
-        decryptableEntities.add(httpCredentialsSpec);
-      }
-    }
-    return decryptableEntities;
   }
 }

@@ -44,6 +44,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 @UtilityClass
 public class VariableCreatorHelper {
+  private String LOGGER_NAME = "org.slf4j.Logger";
   public void addVariablesForVariables(
       YamlField variablesField, Map<String, YamlProperties> yamlPropertiesMap, String topRootFieldName) {
     List<YamlNode> variableNodes = variablesField.getNode().asArray();
@@ -447,6 +448,8 @@ public class VariableCreatorHelper {
       if (field.isAnnotationPresent(ApiModelProperty.class)) {
         ApiModelProperty annotation = field.getAnnotation(ApiModelProperty.class);
         return annotation.hidden();
+      } else if (field.getType().getTypeName().equals(LOGGER_NAME)) {
+        return true;
       } else {
         return field.isAnnotationPresent(JsonIgnore.class);
       }

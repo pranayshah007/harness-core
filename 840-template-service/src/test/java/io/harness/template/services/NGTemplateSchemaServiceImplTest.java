@@ -9,6 +9,7 @@ package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.when;
 import io.harness.TemplateServiceTestBase;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
@@ -118,7 +120,7 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
 
     MockedStatic<TemplateYamlSchemaMergeHelper> templateYamlSchemaMergeHelperMockedStatic =
         Mockito.mockStatic(TemplateYamlSchemaMergeHelper.class);
-    when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any())).thenReturn(true);
+    when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(any(), anyString(), any())).thenReturn(false);
     templateYamlSchemaMergeHelperMockedStatic
         .when(() -> TemplateYamlSchemaMergeHelper.mergeYamlSchema(any(), any(), any(), any()))
         .thenAnswer((Answer<Void>) invocation -> null);
@@ -226,6 +228,25 @@ public class NGTemplateSchemaServiceImplTest extends TemplateServiceTestBase {
       mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
       assertThatThrownBy(() -> ngTemplateSchemaService.validateYamlSchemaInternal(stepTemplateEntity))
           .isInstanceOf(InvalidYamlException.class);
+    }
+  }
+
+  @Test(expected = Test.None.class)
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testInvalidValidatePipelineSchemaWithSchemaValidationDisabled() throws IOException {
+    when(TemplateYamlSchemaMergeHelper.isFeatureFlagEnabled(
+             FeatureName.DISABLE_TEMPLATE_SCHEMA_VALIDATION, ACCOUNT_ID, accountClient))
+        .thenReturn(true);
+    when(yamlSchemaValidator.validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString()))
+        .thenThrow(new InvalidYamlException("msg", null, null));
+    Call<ResponseDTO<YamlSchemaResponse>> requestCall = mock(Call.class);
+    doReturn(requestCall).when(pipelineYamlSchemaServiceClient).getYamlSchema(any(), any(), any(), any(), any(), any());
+    try (MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class)) {
+      YamlSchemaResponse yamlSchemaResponse =
+          YamlSchemaResponse.builder().schema(null).schemaErrorResponse(null).build();
+      mockStatic.when(() -> NGRestUtils.getResponse(requestCall)).thenReturn(yamlSchemaResponse);
+      ngTemplateSchemaService.validateYamlSchemaInternal(stepTemplateEntity);
     }
   }
 }

@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.ABHIJITH;
 
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -61,7 +61,7 @@ public class EntityCRUDStreamConsumerTest extends CvNextGenTestBase {
   public void testStreamConsumerOnNonPrimaryMachine() throws InterruptedException {
     when(queueController.isNotPrimary()).thenReturn(true);
     runConsumerFor100ms();
-    verifyZeroInteractions(consumer);
+    verifyNoInteractions(consumer);
   }
 
   private void runConsumerFor100ms() throws InterruptedException {

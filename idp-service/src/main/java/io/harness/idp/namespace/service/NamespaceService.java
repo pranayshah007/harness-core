@@ -17,4 +17,7 @@ public interface NamespaceService {
   NamespaceInfo getAccountIdForNamespace(String namespace);
   NamespaceEntity saveAccountIdNamespace(String accountIdentifier);
   List<String> getAccountIds();
+  Boolean getAccountIdpStatus(String accountIdentifier);
+
+  NamespaceEntity createPREnvDefaultMappingEntry(String accountIdentifier, String namespace);
 }

@@ -24,6 +24,6 @@ public class TerraformEndpointsData {
   String account_id;
   String pipeline_execution_id;
   String pipeline_stage_execution_id;
-  String stack_id;
+  String workspace_id;
   String token;
 }

@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 import com.google.common.base.Splitter;
 
 /**
@@ -30,7 +31,7 @@ import com.google.common.base.Splitter;
  */
 @OwnedBy(HarnessTeam.DX)
 public enum ErrorCode {
-  DEFAULT_ERROR_CODE,
+  @JsonEnumDefaultValue DEFAULT_ERROR_CODE,
 
   INVALID_ARGUMENT,
 
@@ -573,6 +574,7 @@ public enum ErrorCode {
   UNRESOLVED_EXPRESSIONS_ERROR,
   KRYO_HANDLER_NOT_FOUND_ERROR,
   DELEGATE_ERROR_HANDLER_EXCEPTION,
+  DELEGATE_SERVICE_DRIVER_EXCEPTION,
   DELEGATE_INSTALLATION_COMMAND_NOT_SUPPORTED_EXCEPTION,
   UNEXPECTED_TYPE_ERROR,
   EXCEPTION_HANDLER_NOT_FOUND,
@@ -667,7 +669,17 @@ public enum ErrorCode {
   INTERNAL_SERVER_ERROR(Status.INTERNAL_SERVER_ERROR),
 
   SCM_FORBIDDEN,
-  AWS_EKS_ERROR;
+  AWS_EKS_ERROR,
+  OPA_POLICY_EVALUATION_ERROR,
+
+  USER_MARKED_FAILURE,
+  SSH_RETRY("Ssh retryable error"),
+  HTTP_CLIENT_ERROR_RESPONSE,
+  HTTP_INTERNAL_SERVER_ERROR,
+  HTTP_BAD_GATEWAY,
+  HTTP_SERVICE_UNAVAILABLE,
+  HTTP_GATEWAY_TIMEOUT,
+  HTTP_SERVER_ERROR_RESPONSE;
 
   private Status status = BAD_REQUEST;
   private String description;

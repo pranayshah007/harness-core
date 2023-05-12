@@ -258,9 +258,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (isEmpty(getLatestCommitResponseByteArray)) {
       throw new CIStageExecutionException("Codebase git commit information can't be obtained");
     }
-    GetLatestCommitResponse listCommitsResponse = GetLatestCommitResponse.parseFrom(getLatestCommitResponseByteArray);
+    GetLatestCommitResponse latestCommitResponse = GetLatestCommitResponse.parseFrom(getLatestCommitResponseByteArray);
 
-    if (listCommitsResponse.getCommit() == null || isEmpty(listCommitsResponse.getCommit().getSha())) {
+    if (latestCommitResponse.getCommit() == null || isEmpty(latestCommitResponse.getCommit().getSha())) {
       return null;
     }
 
@@ -269,7 +269,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       build = new Build("tag");
     }
 
-    String commitSha = listCommitsResponse.getCommit().getSha();
+    String commitSha = latestCommitResponse.getCommit().getSha();
     String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
 
     return CodebaseSweepingOutput.builder()
@@ -277,17 +277,19 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         .tag(tag)
         .build(build)
         .commits(asList(CodeBaseCommit.builder()
-                            .id(listCommitsResponse.getCommit().getSha())
-                            .link(listCommitsResponse.getCommit().getLink())
-                            .message(listCommitsResponse.getCommit().getMessage())
-                            .ownerEmail(listCommitsResponse.getCommit().getAuthor().getEmail())
-                            .ownerName(listCommitsResponse.getCommit().getAuthor().getName())
-                            .ownerId(listCommitsResponse.getCommit().getAuthor().getLogin())
-                            .timeStamp(listCommitsResponse.getCommit().getAuthor().getDate().getSeconds())
+                            .id(latestCommitResponse.getCommit().getSha())
+                            .link(latestCommitResponse.getCommit().getLink())
+                            .message(latestCommitResponse.getCommit().getMessage())
+                            .ownerEmail(latestCommitResponse.getCommit().getAuthor().getEmail())
+                            .ownerName(latestCommitResponse.getCommit().getAuthor().getName())
+                            .ownerId(latestCommitResponse.getCommit().getAuthor().getLogin())
+                            .timeStamp(latestCommitResponse.getCommit().getAuthor().getDate().getSeconds())
                             .build()))
         .commitSha(commitSha)
         .shortCommitSha(shortCommitSha)
         .repoUrl(scmGitRefTaskResponseData.getRepoUrl())
+        .gitUserId(latestCommitResponse.getCommit().getAuthor().getLogin())
+        .commitMessage(latestCommitResponse.getCommit().getMessage())
         .build();
   }
 
@@ -310,6 +312,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build());
         }
       }
+      sortCommitsInDecreasingTimeStamp(codeBaseCommits);
 
       String commitSha = prWebhookEvent.getBaseAttributes().getAfter();
       String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
@@ -334,6 +337,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .gitUserEmail(prWebhookEvent.getBaseAttributes().getAuthorEmail())
           .gitUserAvatar(prWebhookEvent.getBaseAttributes().getAuthorAvatar())
           .gitUserId(prWebhookEvent.getBaseAttributes().getAuthorLogin())
+          .commitMessage(getCommitMessage(codeBaseCommits))
           .build();
     } else if (webhookExecutionSource.getWebhookEvent().getType() == WebhookEvent.Type.BRANCH) {
       BranchWebhookEvent branchWebhookEvent = (BranchWebhookEvent) webhookExecutionSource.getWebhookEvent();
@@ -351,6 +355,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                   .build());
         }
       }
+      sortCommitsInDecreasingTimeStamp(codeBaseCommits);
 
       String commitSha = branchWebhookEvent.getBaseAttributes().getAfter();
       String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
@@ -367,6 +372,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .gitUserEmail(branchWebhookEvent.getBaseAttributes().getAuthorEmail())
           .gitUserAvatar(branchWebhookEvent.getBaseAttributes().getAuthorAvatar())
           .gitUserId(branchWebhookEvent.getBaseAttributes().getAuthorLogin())
+          .commitMessage(getCommitMessage(codeBaseCommits))
           .build();
     }
     return CodebaseSweepingOutput.builder().build();
@@ -409,6 +415,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     ListCommitsInPRResponse listCommitsInPRResponse =
         ListCommitsInPRResponse.parseFrom(listCommitsInPRResponseByteArray);
     PullRequest pr = findPRResponse.getPr();
+
     List<Commit> commits = listCommitsInPRResponse.getCommitsList();
     List<CodebaseSweepingOutput.CodeBaseCommit> codeBaseCommits = new ArrayList<>();
     for (Commit commit : commits) {
@@ -422,6 +429,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                               .ownerName(commit.getAuthor().getName())
                               .build());
     }
+    sortCommitsInDecreasingTimeStamp(codeBaseCommits);
 
     String commitSha = pr.getSha();
     String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
@@ -446,6 +454,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                                  .pullRequestLink(pr.getLink())
                                  .commits(codeBaseCommits)
                                  .state(getState(pr))
+                                 .commitMessage(getCommitMessage(codeBaseCommits))
                                  .build();
     return codebaseSweepingOutput;
   }
@@ -483,6 +492,17 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       state = "closed";
     }
     return state;
+  }
+
+  private String getCommitMessage(List<CodebaseSweepingOutput.CodeBaseCommit> commits) {
+    if (!commits.isEmpty()) {
+      return commits.get(0).getMessage();
+    }
+    return null;
+  }
+
+  private void sortCommitsInDecreasingTimeStamp(List<CodebaseSweepingOutput.CodeBaseCommit> commits) {
+    Collections.sort(commits, (a, b) -> a.getTimeStamp() > b.getTimeStamp() ? -1 : 1);
   }
 
   private ExecutionSource getExecutionSource(Ambiance ambiance, ExecutionSource executionSource) {

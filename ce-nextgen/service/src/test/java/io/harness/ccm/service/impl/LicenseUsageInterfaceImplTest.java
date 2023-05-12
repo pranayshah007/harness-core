@@ -9,7 +9,7 @@ package io.harness.ccm.service.impl;
 
 import static com.google.cloud.bigquery.FieldValue.Attribute.PRIMITIVE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -20,6 +20,7 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.beans.usage.CELicenseUsageDTO;
+import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.licensing.usage.params.UsageRequestParams;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -41,7 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LicenseUsageInterfaceImplTest extends CategoryTest {
@@ -57,6 +58,7 @@ public class LicenseUsageInterfaceImplTest extends CategoryTest {
   @Mock private BigQueryService bigQueryService;
   @Mock private CENextGenConfiguration configuration;
   @Mock private ClickHouseService clickHouseService;
+  @Mock private BigQueryHelper bigQueryHelper;
 
   private List<FieldValue> octoberClusterFieldValues;
   private List<FieldValue> octoberAzureFieldValues;

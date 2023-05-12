@@ -43,6 +43,7 @@ public class PlanCreationBlobResponseUtils {
     mergeLayoutNodeInfo(builder, other);
     addYamlUpdates(builder, other);
     mergePreservedNodesInRollbackMode(builder, other);
+    mergeServiceAffinityMap(builder, other);
   }
 
   /**
@@ -55,6 +56,17 @@ public class PlanCreationBlobResponseUtils {
       return;
     }
     builder.addAllPreservedNodesInRollbackMode(other.getPreservedNodesInRollbackModeList());
+  }
+
+  /**
+   * builder: the object into which the serviceAffinityMap to be retained
+   * other: the object from which the serviceAffinity of dependencies are present
+   */
+  public void mergeServiceAffinityMap(PlanCreationBlobResponse.Builder builder, PlanCreationBlobResponse other) {
+    if (EmptyPredicate.isEmpty(other.getServiceAffinityMap())) {
+      return;
+    }
+    builder.putAllServiceAffinity(other.getServiceAffinityMap());
   }
 
   public PlanCreationBlobResponse addYamlUpdates(

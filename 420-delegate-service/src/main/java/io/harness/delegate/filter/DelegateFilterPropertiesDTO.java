@@ -17,6 +17,7 @@ import io.harness.filter.dto.FilterPropertiesDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -35,15 +36,16 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Schema(description = "Properties to filter delegates")
 @OwnedBy(DEL)
 public class DelegateFilterPropertiesDTO extends FilterPropertiesDTO {
-  private DelegateInstanceConnectivityStatus status;
-  private String description;
-  private String hostName;
-  private String delegateName;
-  private String delegateType;
-  private String delegateGroupIdentifier;
-  private Set<String> delegateTags;
+  @Schema(description = "Filter on delegate connectivity") private DelegateInstanceConnectivityStatus status;
+  @Schema(description = "Filter on delegate description") private String description;
+  @Schema(description = "Filter on delegate name") private String delegateName;
+  @Schema(description = "Filter on delegate type") private String delegateType;
+  @Schema(description = "Filter on delegate group id") private String delegateGroupIdentifier;
+  @Schema(description = "Filter on delegate tags") private Set<String> delegateTags;
+  @Schema(description = "Filter on delegate instance status") private DelegateInstanceFilter delegateInstanceFilter;
 
   @Override
   public FilterType getFilterType() {

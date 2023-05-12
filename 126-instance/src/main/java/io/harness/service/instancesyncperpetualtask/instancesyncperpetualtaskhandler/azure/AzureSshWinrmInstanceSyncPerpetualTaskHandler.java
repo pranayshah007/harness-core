@@ -31,6 +31,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.helper.InstanceSyncHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
@@ -59,6 +60,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
   @Inject private NGSecretServiceV2 ngSecretServiceV2;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private AzureHelperService azureHelperService;
+  @Inject private InstanceSyncHelper instanceSyncHelper;
 
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructure,
@@ -78,6 +80,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
                              .collect(Collectors.toList());
 
     SecretSpecDTO secretSpecDTO = secret.getSecretSpec().toDTO();
+    instanceSyncHelper.updateFeatureFlagForSsh(secretSpecDTO, infrastructure.getAccountIdentifier());
     String serviceType = azureDeploymentInfoDTOs.get(0).getType();
 
     BaseNGAccess access = BaseNGAccess.builder()
@@ -99,7 +102,8 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
             .setServiceType(serviceType)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
             .addAllHosts(hosts)
-            .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(azureInfraDelegateConfig)))
+            .setAzureSshWinrmInfraDelegateConfig(ByteString.copyFrom(
+                getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(azureInfraDelegateConfig)))
             .build();
 
     Any perpetualTaskPack = Any.pack(azureInstanceSyncPerpetualTaskParamsNg);
@@ -107,7 +111,8 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
         getExecutionCapabilities(azureInfraDelegateConfig.getAzureConnectorDTO());
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
+        infrastructure.getAccountIdentifier());
   }
 
   private List<ExecutionCapability> getExecutionCapabilities(AzureConnectorDTO azureConnectorDTO) {
@@ -151,7 +156,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
           .connectorEncryptionDataDetails(encryptedData)
           .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
           .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
-          .tags(sshEntityHelper.filterInfraTags(azureInfrastructureOutcome.getTags()))
+          .tags(sshEntityHelper.filterInfraTags(azureInfrastructureOutcome.getHostTags()))
           .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
           .build();
     } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
@@ -161,7 +166,7 @@ public class AzureSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncP
           .connectorEncryptionDataDetails(encryptedData)
           .resourceGroup(azureInfrastructureOutcome.getResourceGroup())
           .subscriptionId(azureInfrastructureOutcome.getSubscriptionId())
-          .tags(sshEntityHelper.filterInfraTags(azureInfrastructureOutcome.getTags()))
+          .tags(sshEntityHelper.filterInfraTags(azureInfrastructureOutcome.getHostTags()))
           .hostConnectionType(azureInfrastructureOutcome.getHostConnectionType())
           .build();
     }

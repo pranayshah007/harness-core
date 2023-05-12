@@ -57,7 +57,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
 import dev.morphia.UpdateOptions;
+import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
 import java.io.IOException;
@@ -536,7 +538,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       timeSeriesRecordsQuery = timeSeriesRecordsQuery.filter(TimeSeriesRecordKeys.metricName, metricName);
     }
     // TODO: filter values that are outside of given time range.
-    return timeSeriesRecordsQuery.asList();
+    return timeSeriesRecordsQuery.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override
@@ -659,7 +661,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
                                       + TimeSeriesGroupValue.TimeSeriesValueKeys.riskScore)
                                   .greaterThan(0);
     }
-    return timeSeriesRecordQuery.asList();
+    return timeSeriesRecordQuery.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
 
   @Override

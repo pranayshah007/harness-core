@@ -94,7 +94,7 @@ public class AwsDataCollectionRequestTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void tesddd() {
+  public void testHeaders_areEmpty() {
     Map<String, String> collectionHeaders = awsDataCollectionRequest.collectionHeaders();
     assertThat(collectionHeaders).isEmpty();
   }

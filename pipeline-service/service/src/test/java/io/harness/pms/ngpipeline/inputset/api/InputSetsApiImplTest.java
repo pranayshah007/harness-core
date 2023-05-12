@@ -30,8 +30,11 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.InputSetCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetImportRequestBody;
+import io.harness.spec.server.pipeline.v1.model.InputSetImportRequestDTO;
 import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetMoveConfigResponseBody;
 import io.harness.spec.server.pipeline.v1.model.InputSetResponseBody;
@@ -259,6 +262,24 @@ public class InputSetsApiImplTest extends PipelineServiceTestBase {
         .moveConfig(any(), any(), any(), any(), any());
     Response response =
         inputSetsApiImpl.inputSetsMoveConfig(org, project, inputSet, inputSetMoveConfigRequestBody, account);
+    InputSetMoveConfigResponseBody responseBody = (InputSetMoveConfigResponseBody) response.getEntity();
+    assertEquals(inputSet, responseBody.getInputSetIdentifier());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testInputSetImportFlow() {
+    GitImportInfo gitImportInfo = new GitImportInfo();
+    gitImportInfo.isForceImport(false);
+    InputSetImportRequestBody inputSetImportRequestBody = new InputSetImportRequestBody();
+    inputSetImportRequestBody.setInputSetImportRequest(new InputSetImportRequestDTO());
+    inputSetImportRequestBody.setGitImportInfo(gitImportInfo);
+    doReturn(InputSetEntity.builder().identifier(inputSet).build())
+        .when(pmsInputSetService)
+        .importInputSetFromRemote(any(), any(), any(), any(), any(), any(), anyBoolean());
+    Response response =
+        inputSetsApiImpl.importInputSetFromGit(pipeline, org, project, inputSet, inputSetImportRequestBody, account);
     InputSetMoveConfigResponseBody responseBody = (InputSetMoveConfigResponseBody) response.getEntity();
     assertEquals(inputSet, responseBody.getInputSetIdentifier());
   }

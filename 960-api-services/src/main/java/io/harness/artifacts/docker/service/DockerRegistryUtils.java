@@ -46,7 +46,7 @@ import retrofit2.Response;
 @Slf4j
 public class DockerRegistryUtils {
   protected static final String GITHUB_CONTAINER_REGISTRY = "ghcr.io";
-  protected static final String ACR_CONTAINER_REGISTRY = ".azurecr.io";
+  protected static final String ACR_CONTAINER_REGISTRY = ".azurecr.";
   private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
       "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
 
@@ -58,23 +58,31 @@ public class DockerRegistryUtils {
   public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,
       String imageName, String tag, boolean shouldFetchDockerV2DigestSHA256) {
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
     try {
       Response<DockerImageManifestResponse> response =
           getImageManifestResponse(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
-      ArtifactMetaInfo artifactMetaInfo = parseArtifactMetaInfoResponse(response, imageName);
-      if (artifactMetaInfo != null && shouldFetchDockerV2DigestSHA256) {
-        Response<DockerImageManifestResponse> responseV2 =
-            getImageManifestResponseV2(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
-        ArtifactMetaInfo artifactMetaInfoV2 = parseArtifactMetaInfoResponse(responseV2, imageName);
-        if (artifactMetaInfoV2 != null) {
-          artifactMetaInfo.setShaV2(artifactMetaInfoV2.getSha());
-        }
+      ArtifactMetaInfo artifactMetaInfoSchemaVersion1 = parseArtifactMetaInfoResponse(response, imageName);
+      if (artifactMetaInfoSchemaVersion1 != null) {
+        artifactMetaInfo = artifactMetaInfoSchemaVersion1;
       }
-      return artifactMetaInfo;
     } catch (Exception e) {
       log.error("Unable to fetch artifact metainfo", e);
-      return null;
     }
+
+    if (shouldFetchDockerV2DigestSHA256) {
+      try {
+        Response<DockerImageManifestResponse> responseV2 =
+            getImageManifestResponseV2(dockerConfig, registryRestClient, getTokenFn, authHeader, imageName, tag);
+        ArtifactMetaInfo artifactMetaInfoSchemaVersion2 = parseArtifactMetaInfoResponse(responseV2, imageName);
+        if (artifactMetaInfoSchemaVersion2 != null) {
+          artifactMetaInfo.setShaV2(artifactMetaInfoSchemaVersion2.getSha());
+        }
+      } catch (Exception e) {
+        log.error("Unable to fetch artifact metainfo", e);
+      }
+    }
+    return artifactMetaInfo;
   }
 
   public List<Map<String, String>> getLabels(DockerInternalConfig dockerConfig,
@@ -170,6 +178,38 @@ public class DockerRegistryUtils {
       return ImmutablePair.of(new HashMap<>(), authHeader);
     }
     return ImmutablePair.of(dockerImageManifestResponse.fetchLabels(), authHeader);
+  }
+
+  public static void verifyImageTag(DockerInternalConfig dockerConfig, DockerRegistryRestClient registryRestClient,
+      Function<Headers, String> getTokenFn, String authHeader, String imageName, String tag) throws IOException {
+    Response<DockerImageManifestResponse> response =
+        registryRestClient.verifyImage(authHeader, imageName, tag).execute();
+    if (DockerRegistryUtils.fallbackToTokenAuth(response.code(), dockerConfig)) { // unauthorized
+      if (getTokenFn == null) {
+        // We don't want to retry if getTokenFn is null.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+      String token = getTokenFn.apply(response.headers());
+      authHeader = "Bearer " + token;
+      response = registryRestClient.verifyImage(authHeader, imageName, tag).execute();
+      if (response.code() == 401) {
+        // Unauthorized even after retry.
+        throw NestedExceptionUtils.hintWithExplanationException("Invalid Credentials",
+            "Check if the provided credentials are correct",
+            new InvalidArtifactServerException("Invalid Docker Registry credentials", USER));
+      }
+    }
+
+    if (!isSuccessful(response)) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Failed to fetch tags for image. Check if the image details are correct",
+          "Check if the image exists, the permissions are scoped for the authenticated user & check if the right connector chosen for fetching tags for the image",
+          new InvalidArtifactServerException(response.message(), USER));
+    }
+
+    checkValidImage(imageName, response);
   }
 
   static void checkValidImage(String imageName, Response response) {
@@ -280,7 +320,7 @@ public class DockerRegistryUtils {
     return response;
   }
 
-  private ArtifactMetaInfo parseArtifactMetaInfoResponse(
+  public ArtifactMetaInfo parseArtifactMetaInfoResponse(
       Response<DockerImageManifestResponse> response, String imageName) {
     if (!isSuccessful(response)) {
       throw NestedExceptionUtils.hintWithExplanationException(

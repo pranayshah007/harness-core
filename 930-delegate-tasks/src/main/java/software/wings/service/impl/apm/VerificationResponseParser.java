@@ -14,6 +14,7 @@ import io.harness.expression.RegexFunctor;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,6 +106,8 @@ public class VerificationResponseParser {
         return ((Double) val).longValue();
       } else if (val instanceof Integer) {
         return ((Integer) val).longValue();
+      } else if (val instanceof BigDecimal) {
+        return ((BigDecimal) val).longValue();
       } else if (val instanceof String) {
         try {
           return Long.parseLong((String) val);
@@ -122,6 +125,8 @@ public class VerificationResponseParser {
         return ((Integer) val).doubleValue();
       } else if (val instanceof Long) {
         return ((Long) val).doubleValue();
+      } else if (val instanceof BigDecimal) {
+        return ((BigDecimal) val).doubleValue();
       } else if (val instanceof String) {
         try {
           return Double.parseDouble((String) val);

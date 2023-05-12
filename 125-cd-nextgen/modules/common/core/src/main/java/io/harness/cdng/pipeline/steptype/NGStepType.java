@@ -280,6 +280,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.AWS_SAM_DEPLOY)
   AWS_SAM_DEPLOY(
       "AWS SAM Deploy", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.AWS_SAM_BUILD)
+  AWS_SAM_BUILD(
+      "AWS SAM Build", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM", StepSpecTypeConstants.AWS_SAM_BUILD),
   @JsonProperty(StepSpecTypeConstants.AWS_SAM_ROLLBACK)
   AWS_SAM_ROLLBACK("AWS SAM Rollback", Arrays.asList(ServiceDefinitionType.AWS_SAM), "AWS SAM",
       StepSpecTypeConstants.AWS_SAM_ROLLBACK),
@@ -291,7 +294,15 @@ public enum NGStepType {
       "Bamboo Build", Arrays.asList(ServiceDefinitionType.values()), "Builds", StepSpecTypeConstants.BAMBOO_BUILD),
   @JsonProperty(StepSpecTypeConstants.TAS_ROUTE_MAPPING)
   TAS_ROUTE_MAPPING(
-      "Route Mapping", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROUTE_MAPPING);
+      "Route Mapping", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROUTE_MAPPING),
+  @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY)
+  GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY("Google Cloud Functions Deploy",
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY),
+  @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
+  GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK("Google Cloud Functions Rollback",
+      Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

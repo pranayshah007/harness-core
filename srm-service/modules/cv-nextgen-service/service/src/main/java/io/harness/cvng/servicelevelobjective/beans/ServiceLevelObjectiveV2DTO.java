@@ -54,7 +54,7 @@ public class ServiceLevelObjectiveV2DTO implements YamlDTO {
   @Valid
   @NotNull
   ServiceLevelObjectiveSpec spec;
-  List<NotificationRuleRefDTO> notificationRuleRefs;
+  @Valid List<NotificationRuleRefDTO> notificationRuleRefs;
 
   public List<NotificationRuleRefDTO> getNotificationRuleRefs() {
     if (notificationRuleRefs == null) {

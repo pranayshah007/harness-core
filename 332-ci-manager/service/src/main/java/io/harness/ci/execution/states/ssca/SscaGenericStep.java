@@ -11,7 +11,6 @@ import static io.harness.beans.steps.outcome.StepArtifacts.StepArtifactsBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.outcome.PublishedSbomArtifact;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.ci.states.AbstractStepExecutable;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -23,8 +22,9 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.ssca.beans.SBOMArtifactResponse;
 import io.harness.ssca.client.SSCAServiceClient;
+import io.harness.ssca.client.beans.SBOMArtifactResponse;
+import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -49,10 +49,10 @@ public class SscaGenericStep extends AbstractStepExecutable {
       throw new CIStageExecutionException("Could not fetch stage details");
     }
 
-    String stageIdentifier = stageLevel.get().getIdentifier();
-    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfo(AmbianceUtils.obtainCurrentRuntimeId(ambiance),
-        stageIdentifier, stepIdentifier, AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
-        AmbianceUtils.getProjectIdentifier(ambiance));
+    String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    Call<SBOMArtifactResponse> call =
+        sscaServiceClient.getArtifactInfoV2(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
 
     Response<SBOMArtifactResponse> response = null;
     try {
@@ -76,7 +76,7 @@ public class SscaGenericStep extends AbstractStepExecutable {
                                                  .isSbomAttested(sbomArtifactResponse.getAttestation().isAttested())
                                                  .sbomName(sbomArtifactResponse.getSbom().getName())
                                                  .sbomUrl(sbomArtifactResponse.getSbom().getUrl())
-                                                 .stepExecutionId(sbomArtifactResponse.getStepExecutionId())
+                                                 .stepExecutionId(stepExecutionId)
                                                  .build())
                                        .build());
   }

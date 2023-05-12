@@ -219,6 +219,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.AggregationOptions;
 import com.mongodb.DuplicateKeyException;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.aggregation.Group;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
@@ -1784,11 +1785,17 @@ public class InfrastructureDefinitionServiceImpl implements InfrastructureDefini
                                                 .filter(InfrastructureDefinitionKeys.appId, appId)
                                                 .field(InfrastructureDefinitionKeys.envId)
                                                 .in(envIds);
-    wingsPersistence.getDatastore(InfrastructureDefinition.class)
-        .createAggregation(InfrastructureDefinition.class)
-        .match(query)
-        .group(Group.id(grouping("envId")), grouping("count", accumulator("$sum", 1)))
-        .project(projection("envId", "_id.envId"), projection("count"))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(InfrastructureDefinition.class)
+            .createAggregation(InfrastructureDefinition.class)
+            .match(query)
+            .group(Group.id(grouping("envId")), grouping("count", accumulator("$sum", 1)))
+            .project(projection("envId", "_id.envId"), projection("count"));
+    int limit = wingsPersistence.getMaxDocumentLimit(InfrastructureDefinition.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(EnvInfraDefStats.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(InfrastructureDefinition.class), TimeUnit.MILLISECONDS)

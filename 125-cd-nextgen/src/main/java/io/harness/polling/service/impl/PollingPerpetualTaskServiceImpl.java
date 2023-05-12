@@ -7,16 +7,20 @@
 
 package io.harness.polling.service.impl;
 
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.perpetualtask.PerpetualTaskType.ARTIFACT_COLLECTION_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.GITPOLLING_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.MANIFEST_COLLECTION_NG;
 
+import io.harness.NgAutoLogContext;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitpolling.bean.GitPollingConfig;
 import io.harness.delegate.AccountId;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgPollingAutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -49,55 +53,62 @@ public class PollingPerpetualTaskServiceImpl implements PollingPerpetualTaskServ
 
   @Override
   public void createPerpetualTask(PollingDocument pollingDocument) {
-    String pollingDocId = pollingDocument.getUuid();
-    PollingType pollingType = pollingDocument.getPollingType();
-    PerpetualTaskExecutionBundle executionBundle;
-    String perpetualTaskType;
-    PerpetualTaskSchedule schedule;
-    switch (pollingType) {
-      case MANIFEST:
-        executionBundle = manifestPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
-        perpetualTaskType = MANIFEST_COLLECTION_NG;
-        schedule = PerpetualTaskSchedule.newBuilder()
-                       .setInterval(Durations.fromMinutes(2))
-                       .setTimeout(Durations.fromMinutes(3))
-                       .build();
-        break;
-      case ARTIFACT:
-        executionBundle = artifactPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
-        perpetualTaskType = ARTIFACT_COLLECTION_NG;
-        schedule = PerpetualTaskSchedule.newBuilder()
-                       .setInterval(Durations.fromMinutes(1))
-                       .setTimeout(Durations.fromMinutes(2))
-                       .build();
-        break;
-      case WEBHOOK_POLLING:
-        executionBundle = gitPollingPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
-        GitPollingInfo gitPollingInfo = (GitPollingInfo) pollingDocument.getPollingInfo();
-        GitPollingConfig pollingConfig = gitPollingInfo.toGitPollingConfig();
-        int pollInterval = pollingConfig.getPollInterval();
+    try (AutoLogContext ignore1 = new NgAutoLogContext(pollingDocument.getProjectIdentifier(),
+             pollingDocument.getOrgIdentifier(), pollingDocument.getAccountId(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new NgPollingAutoLogContext(pollingDocument.getUuid(), OVERRIDE_ERROR);) {
+      String pollingDocId = pollingDocument.getUuid();
+      PollingType pollingType = pollingDocument.getPollingType();
+      PerpetualTaskExecutionBundle executionBundle;
+      String perpetualTaskType;
+      PerpetualTaskSchedule schedule;
+      switch (pollingType) {
+        case MANIFEST:
+          executionBundle = manifestPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
+          perpetualTaskType = MANIFEST_COLLECTION_NG;
+          schedule = PerpetualTaskSchedule.newBuilder()
+                         .setInterval(Durations.fromMinutes(2))
+                         .setTimeout(Durations.fromMinutes(3))
+                         .build();
+          break;
+        case ARTIFACT:
+          executionBundle = artifactPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
+          perpetualTaskType = ARTIFACT_COLLECTION_NG;
+          schedule = PerpetualTaskSchedule.newBuilder()
+                         .setInterval(Durations.fromMinutes(1))
+                         .setTimeout(Durations.fromMinutes(2))
+                         .build();
+          break;
+        case WEBHOOK_POLLING:
+          executionBundle = gitPollingPerpetualTaskHelperNg.createPerpetualTaskExecutionBundle(pollingDocument);
+          GitPollingInfo gitPollingInfo = (GitPollingInfo) pollingDocument.getPollingInfo();
+          GitPollingConfig pollingConfig = gitPollingInfo.toGitPollingConfig();
+          int pollInterval = pollingConfig.getPollInterval();
 
-        perpetualTaskType = GITPOLLING_NG;
-        schedule = PerpetualTaskSchedule.newBuilder()
-                       .setInterval(Durations.fromMinutes(pollInterval))
-                       .setTimeout(Durations.fromMinutes(pollInterval + 1))
-                       .build();
-        break;
-      default:
-        throw new InvalidRequestException(String.format("Unsupported category %s for polling", pollingType));
-    }
+          perpetualTaskType = GITPOLLING_NG;
+          schedule = PerpetualTaskSchedule.newBuilder()
+                         .setInterval(Durations.fromMinutes(pollInterval))
+                         .setTimeout(Durations.fromMinutes(pollInterval + 1))
+                         .build();
+          break;
+        default:
+          throw new InvalidRequestException(String.format("Unsupported category %s for polling", pollingType));
+      }
 
-    PerpetualTaskClientContextDetails taskContext =
-        PerpetualTaskClientContextDetails.newBuilder().setExecutionBundle(executionBundle).build();
+      PerpetualTaskClientContextDetails taskContext =
+          PerpetualTaskClientContextDetails.newBuilder().setExecutionBundle(executionBundle).build();
 
-    AccountId accountId = AccountId.newBuilder().setId(pollingDocument.getAccountId()).build();
+      AccountId accountId = AccountId.newBuilder().setId(pollingDocument.getAccountId()).build();
 
-    PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(accountId, perpetualTaskType,
-        schedule, taskContext, false, pollingType.name() + " Collection Task", pollingDocId);
+      PerpetualTaskId perpetualTaskId = delegateServiceGrpcClient.createPerpetualTask(accountId, perpetualTaskType,
+          schedule, taskContext, false, pollingType.name() + " Collection Task", pollingDocId);
 
-    if (!pollingService.attachPerpetualTask(pollingDocument.getAccountId(), pollingDocId, perpetualTaskId.getId())) {
-      log.error("Unable to attach perpetual task {} to pollingDocId {}", perpetualTaskId, pollingDocId);
-      deletePerpetualTask(perpetualTaskId.getId(), pollingDocument.getAccountId());
+      log.info("Perpetual task created with id {}  for perpetualTaskType {} and pollingDocumentId {}",
+          perpetualTaskId.getId(), perpetualTaskType, pollingDocId);
+
+      if (!pollingService.attachPerpetualTask(pollingDocument.getAccountId(), pollingDocId, perpetualTaskId.getId())) {
+        log.error("Unable to attach perpetual task {} to pollingDocId {}", perpetualTaskId, pollingDocId);
+        deletePerpetualTask(perpetualTaskId.getId(), pollingDocument.getAccountId());
+      }
     }
   }
 

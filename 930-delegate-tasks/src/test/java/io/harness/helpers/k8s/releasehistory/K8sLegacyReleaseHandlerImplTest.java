@@ -24,6 +24,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
+import io.harness.delegate.task.k8s.k8sbase.K8sLegacyReleaseHandlerImpl;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.releasehistory.K8SLegacyReleaseHistory;
 import io.harness.k8s.releasehistory.K8sReleasePersistDTO;

@@ -36,6 +36,15 @@ public class FileUtils {
     }
   }
 
+  public static void writeStringInFile(String str, String filePath) {
+    try {
+      Path file = Paths.get(filePath);
+      Files.write(file, Collections.singletonList(str), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new UnexpectedException("Error writing string in file");
+    }
+  }
+
   public static void writeObjectAsYamlInFile(Object object, String filePath) {
     try {
       String yaml = YamlPipelineUtils.writeString(object);
@@ -52,7 +61,6 @@ public class FileUtils {
         org.apache.commons.io.FileUtils.deleteDirectory(new File(dir));
       } catch (IOException e) {
         log.error("Error in cleaning up directories. Exception = {}", e.getMessage(), e);
-        throw new UnexpectedException("Error while cleaning up directories");
       }
     }
   }

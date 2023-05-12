@@ -15,7 +15,6 @@ java_library(
         "//950-delegate-tasks-beans:module",
         "//980-commons/src/main/java/io/harness/exception:module",
         "//980-commons/src/main/java/io/harness/exception/exceptionmanager:module",
-        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_google_inject_guice",
     ],
 )

@@ -16,6 +16,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.expression.DelegateExpressionEvaluator;
 import io.harness.delegate.task.artifacts.mappers.CustomRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -25,6 +27,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.eraro.Level;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.expression.RegexFunctor;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.DelegateDecryptionService;
@@ -60,6 +63,9 @@ public class CustomArtifactService {
 
   public ArtifactTaskExecutionResponse getBuilds(
       CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
+    if (executionLogCallback == null) {
+      executionLogCallback = new NGDelegateLogCallback(null, "", false, CommandUnitsProgress.builder().build());
+    }
     List<BuildDetails> buildDetails = getBuildDetails(attributesRequest, executionLogCallback);
     List<CustomArtifactDelegateResponse> customArtifactDelegateResponseList =
         buildDetails.stream()
@@ -71,6 +77,9 @@ public class CustomArtifactService {
 
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(
       CustomArtifactDelegateRequest attributesRequest, LogCallback executionLogCallback) {
+    if (executionLogCallback == null) {
+      executionLogCallback = new NGDelegateLogCallback(null, "", false, CommandUnitsProgress.builder().build());
+    }
     List<BuildDetails> buildDetails = getBuildDetails(attributesRequest, executionLogCallback);
     if (filterVersion(buildDetails, attributesRequest) != null
         && EmptyPredicate.isNotEmpty(filterVersion(buildDetails, attributesRequest))) {
@@ -193,8 +202,16 @@ public class CustomArtifactService {
 
   private List<BuildDetails> filterVersion(
       List<BuildDetails> buildDetails, CustomArtifactDelegateRequest attributesRequest) {
+    if (isNotEmpty(attributesRequest.getVersionRegex())) {
+      buildDetails =
+          buildDetails.stream()
+              .filter(build -> new RegexFunctor().match(attributesRequest.getVersionRegex(), build.getNumber()))
+              .collect(Collectors.toList());
+      return buildDetails;
+    }
     return buildDetails.stream()
         .filter(build -> build.getNumber().equals(attributesRequest.getVersion()))
+        .sorted(new BuildDetailsComparatorDescending())
         .collect(Collectors.toList());
   }
 }

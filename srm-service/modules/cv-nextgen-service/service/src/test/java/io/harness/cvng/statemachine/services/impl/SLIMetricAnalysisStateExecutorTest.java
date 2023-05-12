@@ -7,12 +7,13 @@
 
 package io.harness.cvng.statemachine.services.impl;
 
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.when;
 
@@ -36,12 +37,19 @@ import io.harness.cvng.downtime.beans.OnetimeDowntimeSpec;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
+import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.impl.SLIDataUnavailabilityInstancesHandlerServiceImpl;
@@ -57,6 +65,7 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,6 +90,8 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Mock VerificationTaskService verificationTaskService;
 
   @Inject EntityUnavailabilityStatusesService entityUnavailabilityStatusesService;
+
+  @Inject SLIConsecutiveMinutesProcessorService sliConsecutiveMinutesProcessorService;
 
   @Inject DowntimeService downtimeService;
   @Mock SLIDataUnavailabilityInstancesHandlerServiceImpl sliDataUnavailabilityInstancesHandlerService;
@@ -147,6 +158,59 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
         builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
     assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(99.94212962962963);
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testExecuteWithConsecutiveMinutes() {
+    serviceLevelObjective.setIdentifier("identifier2");
+    SimpleServiceLevelObjectiveSpec spec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec();
+    WindowBasedServiceLevelIndicatorSpec windowBasedServiceLevelIndicatorSpec =
+        WindowBasedServiceLevelIndicatorSpec.builder()
+            .sliMissingDataType(SLIMissingDataType.GOOD)
+            .type(SLIMetricType.RATIO)
+            .spec(RatioSLIMetricSpec.builder()
+                      .thresholdType(ThresholdType.GREATER_THAN)
+                      .thresholdValue(20.0)
+                      .eventType(RatioSLIMetricEventType.GOOD)
+                      .metric1("metric1")
+                      .metric2("metric2")
+                      .considerConsecutiveMinutes(6)
+                      .considerAllConsecutiveMinutesFromStartAsBad(true)
+                      .build())
+            .build();
+    spec.getServiceLevelIndicators().get(0).setSpec(windowBasedServiceLevelIndicatorSpec);
+    spec.getServiceLevelIndicators().get(0).setIdentifier("sli_identifier");
+
+    serviceLevelObjective.setSpec(spec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjective);
+    serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjective.getSpec())
+            .getServiceLevelIndicators()
+            .get(0)
+            .getIdentifier());
+    verificationTaskId = serviceLevelIndicator.getUuid();
+    AnalysisInput input =
+        AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
+
+    when(verificationTaskService.getSliId(any())).thenReturn(verificationTaskId);
+    sliMetricAnalysisState = SLIMetricAnalysisState.builder().build();
+    sliMetricAnalysisState.setInputs(input);
+
+    sliMetricAnalysisState = (SLIMetricAnalysisState) sliMetricAnalysisStateExecutor.execute(sliMetricAnalysisState);
+    List<SLIRecord> sliRecordList = hPersistence.createQuery(SLIRecord.class)
+                                        .filter(SLIRecordKeys.sliId, serviceLevelIndicator.getUuid())
+                                        .field(SLIRecordKeys.timestamp)
+                                        .greaterThanOrEq(startTime)
+                                        .field(SLIRecordKeys.timestamp)
+                                        .lessThan(endTime)
+                                        .order(SLIRecordKeys.timestamp)
+                                        .asList();
+    assertThat(sliMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sliRecordList.size()).isEqualTo(5);
+    assertThat(sliRecordList.get(0).getSliState()).isEqualTo(SLIRecord.SLIState.BAD);
+    assertThat(sliRecordList.get(4).getRunningGoodCount()).isEqualTo(5);
+    assertThat(sliRecordList.get(4).getRunningBadCount()).isEqualTo(0);
   }
 
   @Test
@@ -219,9 +283,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.ONE_TIME), "clock", clock, true);
     FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
-    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(startTime.minus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
-        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+        .setEndDateTime(dtf.format(endTime.plus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
     clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
@@ -255,9 +320,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   public void testExecuteWithNoImpactBecauseOfDowntimeDisabled() throws IllegalAccessException {
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
     downtimeDTO.setEnabled(false);
-    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(startTime.minus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
-        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+        .setEndDateTime(dtf.format(endTime.plus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
@@ -294,9 +360,10 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
     FieldUtils.writeField(downtimeTransformerMap.get(DowntimeType.RECURRING), "clock", clock, true);
     DowntimeDTO downtimeDTO = builderFactory.getOnetimeEndTimeBasedDowntimeDTO();
     downtimeDTO.setEntitiesRule(AllEntitiesRule.builder().build());
-    downtimeDTO.getSpec().getSpec().setStartTime(startTime.minus(10, ChronoUnit.MINUTES).getEpochSecond());
+    downtimeDTO.getSpec().getSpec().setStartDateTime(
+        dtf.format(startTime.minus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     ((OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) ((OnetimeDowntimeSpec) downtimeDTO.getSpec().getSpec()).getSpec())
-        .setEndTime(endTime.plus(10, ChronoUnit.MINUTES).getEpochSecond());
+        .setEndDateTime(dtf.format(endTime.plus(10, ChronoUnit.MINUTES).atZone(ZoneId.of("UTC")).toLocalDateTime()));
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
     clock = CVNGTestConstants.FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);

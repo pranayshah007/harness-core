@@ -22,6 +22,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanEx
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.steps.StepSpecTypeConstants;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
@@ -123,5 +124,11 @@ public class ExecutionSummaryUpdateUtils {
     update.set(
         String.format(LayoutNodeGraphConstants.BASE_KEY + "." + GraphLayoutNodeDTOKeys.isRollbackStageNode, stageUuid),
         isRollbackStageNode);
+  }
+
+  public void updateNextIdOfStageBeforePipelineRollback(
+      Update update, String pipelineRollbackStagePlanNodeId, String previousStagePlanNodeId) {
+    update.set(String.format(LayoutNodeGraphConstants.NEXT_IDS, previousStagePlanNodeId),
+        Collections.singletonList(pipelineRollbackStagePlanNodeId));
   }
 }

@@ -128,7 +128,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                                             .get();
 
     assertThat(orchestrator).isNull();
-    orchestrationService.queueAnalysis(cvConfigId, clock.instant(), clock.instant().minus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(cvConfigId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                        .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
@@ -146,7 +150,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     Instant startTime = clock.instant();
     AnalysisOrchestrator orchestrator = orchestrationService.getAnalysisOrchestrator(verificationTaskId);
     assertThat(orchestrator).isNull();
-    orchestrationService.queueAnalysis(verificationTaskId, startTime.minus(5, ChronoUnit.MINUTES), startTime);
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .endTime(startTime)
+                                           .startTime(startTime.minus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     for (int i = 0; i < 8; i++) {
       updateLearningEngineTask();
@@ -156,7 +164,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     }
     assertThat(orchestrationService.getAnalysisOrchestrator(verificationTaskId).getStatus())
         .isEqualTo(AnalysisOrchestratorStatus.WAITING);
-    orchestrationService.queueAnalysis(verificationTaskId, startTime.minus(5, ChronoUnit.MINUTES), startTime);
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime)
+                                           .endTime(startTime.minus(5, ChronoUnit.MINUTES))
+                                           .build());
     assertThat(orchestrationService.getAnalysisOrchestrator(verificationTaskId).getStatus())
         .isEqualTo(AnalysisOrchestratorStatus.RUNNING);
   }
@@ -167,7 +179,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   public void testQueueAnalysis_multiple() {
     for (Instant startTime = clock.instant(); startTime.isBefore(clock.instant().plus(Duration.ofMinutes(30)));
          startTime = startTime.plus(Duration.ofMinutes(5))) {
-      orchestrationService.queueAnalysis(verificationTaskId, startTime, startTime.plus(5, ChronoUnit.MINUTES));
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(startTime)
+                                             .endTime(startTime.plus(5, ChronoUnit.MINUTES))
+                                             .build());
     }
     List<AnalysisOrchestrator> orchestrator =
         hPersistence.createQuery(AnalysisOrchestrator.class)
@@ -179,7 +195,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     orchestrationService.orchestrate(orchestrator.get(0));
     for (Instant startTime = clock.instant(); startTime.isBefore(clock.instant().plus(Duration.ofMinutes(15)));
          startTime = startTime.plus(Duration.ofMinutes(5))) {
-      orchestrationService.queueAnalysis(verificationTaskId, startTime, startTime.plus(5, ChronoUnit.MINUTES));
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(startTime)
+                                             .endTime(startTime.plus(5, ChronoUnit.MINUTES))
+                                             .build());
     }
     orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                        .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
@@ -194,8 +214,16 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testRetryLogic() {
     Instant startTime = clock.instant();
-    orchestrationService.queueAnalysis(verificationTaskId, startTime.minus(5, ChronoUnit.MINUTES), startTime);
-    orchestrationService.queueAnalysis(verificationTaskId, startTime, startTime.plus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime.minus(5, ChronoUnit.MINUTES))
+                                           .endTime(startTime)
+                                           .build());
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime)
+                                           .endTime(startTime.plus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     List<AnalysisOrchestrator> orchestrator =
         hPersistence.createQuery(AnalysisOrchestrator.class)
@@ -220,8 +248,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                    .filter(analysisStateMachine -> analysisStateMachine.getStatus().equals(AnalysisStatus.IGNORED))
                    .filter(analysisStateMachine -> analysisStateMachine.getCurrentState().getRetryCount() == 2))
         .isNotEmpty();
-    orchestrationService.queueAnalysis(
-        verificationTaskId, startTime.plus(1, ChronoUnit.DAYS), startTime.plus(2, ChronoUnit.DAYS));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(startTime.plus(1, ChronoUnit.DAYS))
+                                           .endTime(startTime.plus(2, ChronoUnit.DAYS))
+                                           .build());
     orchestrationService.orchestrate(orchestrationService.getAnalysisOrchestrator(verificationTaskId));
     analysisStateMachines = hPersistence.createQuery(AnalysisStateMachine.class)
                                 .filter(AnalysisStateMachineKeys.verificationTaskId, verificationTaskId)
@@ -249,7 +280,12 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     assertThat(orchestrator).isNull();
 
-    assertThatThrownBy(() -> orchestrationService.queueAnalysis(cvConfigId, clock.instant(), null))
+    assertThatThrownBy(()
+                           -> orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                                                     .verificationTaskId(verificationTaskId)
+                                                                     .startTime(clock.instant())
+                                                                     .endTime(null)
+                                                                     .build()))
         .isInstanceOf(NullPointerException.class);
   }
 
@@ -517,7 +553,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
 
     assertThat(orchestrator).isNull();
 
-    orchestrationService.queueAnalysis(cvConfigId, clock.instant(), clock.instant().minus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
     AnalysisOrchestrator dbOrchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                                               .filter(AnalysisOrchestratorKeys.verificationTaskId, cvConfigId)
                                               .get();
@@ -554,7 +594,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                                             .get();
 
     assertThat(orchestrator).isNull();
-    orchestrationService.queueAnalysis(sliId, clock.instant(), clock.instant().minus(5, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(sliId)
+                                           .startTime(clock.instant())
+                                           .endTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                                           .build());
 
     orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                        .filter(AnalysisOrchestratorKeys.verificationTaskId, sliId)
@@ -572,7 +616,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testQueueAnalysis_withFailFast() {
     createDeploymentTimeSeriesAnalysisRecords(verificationTaskId);
-    orchestrationService.queueAnalysis(verificationTaskId, Instant.now(), Instant.now().plus(2, ChronoUnit.MINUTES));
+    orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                           .verificationTaskId(verificationTaskId)
+                                           .startTime(Instant.now())
+                                           .endTime(Instant.now().plus(2, ChronoUnit.MINUTES))
+                                           .build());
 
     AnalysisOrchestrator orchestrator = hPersistence.createQuery(AnalysisOrchestrator.class)
                                             .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)

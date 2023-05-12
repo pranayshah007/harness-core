@@ -11,7 +11,7 @@ import static io.harness.connector.ConnectivityStatus.SUCCESS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,8 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -110,12 +110,12 @@ public class ArtifactoryConnectionValidatorTest extends CategoryTest {
     on(artifactoryValidationHandler).set("artifactoryService", artifactoryService);
     on(artifactoryValidationHandler).set("artifactoryRequestMapper", artifactoryRequestMapper);
     when(artifactoryValidationHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Artifactory")))
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Artifactory")))
         .thenReturn(artifactoryValidationHandler);
 
     ArtifactoryValidationParamsProvider artifactoryValidationParamsProvider = new ArtifactoryValidationParamsProvider();
     on(artifactoryValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Artifactory")))
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Artifactory")))
         .thenReturn(artifactoryValidationParamsProvider);
 
     ConnectorValidationResult validationResult = artifactoryConnectionValidator.validate(

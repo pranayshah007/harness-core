@@ -14,7 +14,6 @@ import static io.harness.gitsync.common.beans.GitSyncSettings.IS_EXECUTE_ON_DELE
 import static io.harness.gitsync.common.beans.GitSyncSettings.IS_GIT_SIMPLIFICATION_ENABLED;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
@@ -200,7 +199,7 @@ public class GitSyncSettingsServiceImpl implements GitSyncSettingsService {
   }
 
   private boolean isGitSimplificationDisabledOnAccount(String accountId) {
-    return ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.USE_OLD_GIT_SYNC);
+    return false;
   }
 
   private void sendEventForInvalidatingGitSDKCache(Scope scope) {

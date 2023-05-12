@@ -12,8 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
-import static java.util.Collections.emptyList;
-
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ProjectResponse;
@@ -34,7 +33,7 @@ public class ProjectMapper {
         .color(Optional.ofNullable(createProjectDTO.getColor()).orElse(HARNESS_BLUE))
         .tags(convertToList(createProjectDTO.getTags()))
         .version(createProjectDTO.getVersion())
-        .modules(Optional.ofNullable(createProjectDTO.getModules()).orElse(emptyList()))
+        .modules(ModuleType.getModules())
         .build();
   }
 
@@ -46,7 +45,6 @@ public class ProjectMapper {
         .description(project.getDescription())
         .color(project.getColor())
         .tags(convertToMap(project.getTags()))
-        .modules(project.getModules())
         .build();
   }
 
