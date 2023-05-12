@@ -110,11 +110,6 @@ public class MongoPersistentLocker implements PersistentLocker, HealthMonitor, M
   }
 
   @Override
-  public AcquiredLock tryToAcquireEphemeralLock(Class entityClass, String entityId, Duration timeout) {
-    return tryToAcquireEphemeralLock(entityClass.getName() + "-" + entityId, timeout);
-  }
-
-  @Override
   public AcquiredLock tryToAcquireLock(String name, Duration timeout) {
     try {
       return acquireLock(name, timeout);
@@ -129,10 +124,11 @@ public class MongoPersistentLocker implements PersistentLocker, HealthMonitor, M
   }
 
   @Override
-  public AcquiredLock tryToAcquireEphemeralLock(String name, Duration timeout) {
+  public AcquiredLock waitToAcquireLockOptional(String name, Duration lockTimeout, Duration waitTimeout) {
     try {
-      return acquireEphemeralLock(name, timeout);
-    } catch (WingsException exception) {
+      return waitToAcquireLock(name, lockTimeout, waitTimeout);
+    } catch (WingsException ex) {
+      log.error("Failed to acquire a Mongo lock {} ", ex);
       return null;
     }
   }

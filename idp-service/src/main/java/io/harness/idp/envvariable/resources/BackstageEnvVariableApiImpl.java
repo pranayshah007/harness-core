@@ -7,6 +7,11 @@
 
 package io.harness.idp.envvariable.resources;
 
+import static io.harness.idp.common.Constants.IDP_PERMISSION;
+import static io.harness.idp.common.Constants.IDP_RESOURCE_TYPE;
+
+import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
@@ -53,8 +58,9 @@ public class BackstageEnvVariableApiImpl implements BackstageEnvVariableApi {
   }
 
   @Override
-  public Response createBackstageEnvVariables(@Valid BackstageEnvVariableBatchRequest body, String harnessAccount) {
-    idpCommonService.checkUserAuthorization();
+  @NGAccessControlCheck(resourceType = IDP_RESOURCE_TYPE, permission = IDP_PERMISSION)
+  public Response createBackstageEnvVariables(
+      @Valid BackstageEnvVariableBatchRequest body, @AccountIdentifier String harnessAccount) {
     List<BackstageEnvVariable> responseSecrets;
     try {
       responseSecrets = backstageEnvVariableService.createOrUpdate(body.getEnvVariables(), harnessAccount);

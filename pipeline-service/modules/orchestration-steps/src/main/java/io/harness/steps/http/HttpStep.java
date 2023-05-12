@@ -303,7 +303,7 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
         URI uri = new URI(url.getProtocol(), url.getUserInfo(), IDN.toASCII(url.getHost()), url.getPort(),
             url.getPath(), url.getQuery(), url.getRef());
         String encodedUrl = uri.toASCIIString();
-        logCallback.saveExecutionLog(String.format("Encoded URL: %s .", url));
+        logCallback.saveExecutionLog(String.format("Encoded URL: %s", encodedUrl));
         return encodedUrl;
       } catch (MalformedURLException | URISyntaxException e) {
         logCallback.saveExecutionLog(String.format("Failed to encode URL: %s", e.getMessage()));

@@ -73,7 +73,7 @@ public class PipelineMetadataServiceImpl implements PipelineMetadataService {
     String lockName =
         String.format("pipelineMetadata/%s/%s/%s/%s", accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
       if (lock == null) {
         log.error("Count not acquire lock");
         throw new InvalidRequestException("Unable to update build sequence, please retry the execution");
