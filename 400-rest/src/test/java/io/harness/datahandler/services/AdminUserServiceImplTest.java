@@ -29,6 +29,7 @@ import io.harness.ng.core.user.AddUsersResponse;
 import io.harness.rule.Owner;
 
 import software.wings.beans.User;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserService;
 
 import java.io.IOException;
@@ -43,12 +44,13 @@ public class AdminUserServiceImplTest extends CategoryTest {
   private UserService userService;
   private NgInviteClient ngInviteClient;
   private AdminUserServiceImpl adminUserService;
+  private WingsPersistence wingsPersistence;
 
   @Before
   public void doSetup() throws IOException {
     userService = mock(UserService.class);
     ngInviteClient = mock(NgInviteClient.class, RETURNS_DEEP_STUBS);
-    adminUserService = new AdminUserServiceImpl(userService, ngInviteClient);
+    adminUserService = new AdminUserServiceImpl(userService, ngInviteClient, wingsPersistence);
     Call<ResponseDTO<AddUsersResponse>> request = mock(Call.class);
     doReturn(request).when(ngInviteClient).addUsers(any(), any(), any(), any());
     when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(AddUsersResponse.builder().build())));
