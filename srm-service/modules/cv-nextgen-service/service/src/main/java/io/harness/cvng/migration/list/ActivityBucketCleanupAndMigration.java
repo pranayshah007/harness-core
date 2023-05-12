@@ -12,13 +12,9 @@ import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
-import io.harness.persistence.UuidAware;
 
 import com.google.inject.Inject;
-import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,19 +24,13 @@ public class ActivityBucketCleanupAndMigration extends CVNGBaseMigration {
 
   @Override
   public void migrate() {
-    log.info("Starting cleanup for older activities and creating bucket for newer activities");
-    Query<ActivityBucket> queryToDeleteOlderRecords =
-        hPersistence.createQuery(ActivityBucket.class).project(UuidAware.UUID_KEY, true);
-    while (true) {
-      List<ActivityBucket> recordsToBeDeleted = queryToDeleteOlderRecords.find(new FindOptions().limit(1000)).toList();
-      List<String> uuidsToBeDeleted =
-          recordsToBeDeleted.stream().map(ActivityBucket::getUuid).collect(Collectors.toList());
-      if (uuidsToBeDeleted.size() == 0) {
-        break;
-      }
-      hPersistence.delete(
-          hPersistence.createQuery(ActivityBucket.class).field(UuidAware.UUID_KEY).in(uuidsToBeDeleted));
+    log.info("Starting cleanup for older activity bucket and creating newer bucket");
+    try {
+      hPersistence.delete(hPersistence.createQuery(ActivityBucket.class));
+    } catch (Exception ex) {
+      log.error(ex.toString());
     }
+    log.info("All older activity buckets deleted");
 
     Query<Activity> queryToAddToBucket = hPersistence.createQuery(Activity.class);
     try (HIterator<Activity> iterator = new HIterator<>(queryToAddToBucket.fetch())) {
