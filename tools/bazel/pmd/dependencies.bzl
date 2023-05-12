@@ -19,6 +19,6 @@ def rules_pmd_dependencies():
     maybe(
         repo_rule = http_archive,
         name = "rules_java",
-        url = "http://jfrogdev.dev.harness.io:80/artifactory/rules-java-github/download/{v}/rules_java-{v}.tar.gz".format(v = rules_java_version),
+        url = "https://harness-artifactory.harness.io/artifactory/rules-java-github/download/{v}/rules_java-{v}.tar.gz".format(v = rules_java_version),
         sha256 = rules_java_sha,
     )
