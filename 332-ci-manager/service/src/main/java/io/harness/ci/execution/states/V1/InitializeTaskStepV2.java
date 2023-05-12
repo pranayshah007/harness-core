@@ -395,15 +395,14 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
     validateFeatureFlags(initializeStepInfo, accountIdentifier);
-
+    populateStrategyExpansion(initializeStepInfo, ambiance);
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
 
     if (EmptyPredicate.isEmpty(principal)) {
+      log.info("principal info is null");
       return;
     }
-
-    populateStrategyExpansion(initializeStepInfo, ambiance);
 
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
