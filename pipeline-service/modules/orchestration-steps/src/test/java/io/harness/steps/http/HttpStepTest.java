@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
@@ -456,10 +457,13 @@ public class HttpStepTest extends CategoryTest {
     String expected2 =
         "https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview";
     assertThat(httpStep.encodeURL(url2, logCallback)).isEqualTo(expected2);
+    verify(logCallback)
+        .saveExecutionLog(eq(
+            "Encoded URL: https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview"));
 
     String url3 = "https://www.example.com/@user?param=value";
-    String expected3 = "https://www.example.com/@user?param=value";
-    assertThat(httpStep.encodeURL(url3, logCallback)).isEqualTo(expected3);
+    assertThat(httpStep.encodeURL(url3, logCallback)).isEqualTo(url3);
+    verify(logCallback).saveExecutionLog(eq("Encoded URL: https://www.example.com/@user?param=value"));
 
     String url4 = "https://www.example.com/already%20encoded?param=value";
     assertThat(httpStep.encodeURL(url4, logCallback)).isEqualTo(url4);
