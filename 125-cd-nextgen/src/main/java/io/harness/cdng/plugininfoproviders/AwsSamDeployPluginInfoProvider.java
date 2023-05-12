@@ -10,6 +10,7 @@ package io.harness.cdng.plugininfoproviders;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import com.google.inject.name.Named;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -47,6 +48,10 @@ import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import io.harness.utils.IdentifierRefHelper;
+import io.harness.yaml.utils.NGVariablesUtils;
+import org.jooq.tools.StringUtils;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -95,6 +100,8 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
     pluginDetailsBuilder.setImageDetails(imageDetails);
 
     pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(request.getAmbiance(), awsSamDeployStepInfo));
+
+    pluginDetailsBuilder.setPortUsed(0, 20008);
 
     return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
@@ -148,19 +155,17 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         if (!StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())) {
           awsAccessKey = awsManualConfigSpecDTO.getAccessKey();
         } else {
-          awsAccessKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
-              awsManualConfigSpecDTO.getAccessKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+          awsAccessKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(awsManualConfigSpecDTO.getAccessKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
         }
 
-        awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
-            awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+        awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(),ambiance.getExpressionFunctorToken());
       }
+
     }
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
-    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "");
-    samDeployEnvironmentVariablesMap.put(
-        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "Sainath-Test/SAM/sam-helloworld-nodejs18-zip/");
+    samDeployEnvironmentVariablesMap.put("PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());
 
     if (awsAccessKey != null) {

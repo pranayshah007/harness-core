@@ -12,6 +12,10 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
+import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+
+import com.google.inject.name.Named;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.sam.AwsSamBuildStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -31,6 +35,7 @@ import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginDetails;
+import io.harness.pms.contracts.plan.*;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.yaml.ParameterField;
@@ -87,6 +92,7 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
 
     pluginDetailsBuilder.putAllEnvVariables(getEnvironmentVariables(request.getAmbiance(), awsSamBuildStepInfo));
 
+    pluginDetailsBuilder.setPortUsed(0, 20007);
     return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
   }
 
@@ -148,11 +154,10 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
     }
 
     // Resolve Expressions
-    // cdExpressionResolver.updateExpressions(ambiance, buildCommandOptions);
+    //cdExpressionResolver.updateExpressions(ambiance, buildCommandOptions);
 
-    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "");
-    samBuildEnvironmentVariablesMap.put(
-        "PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
+    samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "Sainath-Test/SAM/sam-helloworld-nodejs18-zip/");
+    samBuildEnvironmentVariablesMap.put("PLUGIN_BUILD_COMMAND_OPTIONS", String.join(" ", buildCommandOptions.getValue()));
 
     if (envVariables != null && envVariables.getValue() != null) {
       samBuildEnvironmentVariablesMap.putAll(envVariables.getValue());
