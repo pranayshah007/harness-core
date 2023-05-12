@@ -34,6 +34,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
+import io.harness.cvng.utils.MongoUtils;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -55,7 +56,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.types.ObjectId;
 
 @Singleton
 @Slf4j
@@ -130,7 +130,7 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
     if (numberOfRecordsToBeDeleted > 0) {
       Set<?> recordIdsTobeDeleted = recordsToBeDeleted.stream()
                                         .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
-                                        .map(VerificationTaskCleanupSideKickExecutor::convertToObjectIdIfRequired)
+                                        .map(MongoUtils::convertToObjectIdIfRequired)
                                         .collect(Collectors.toSet());
       Query<? extends PersistentEntity> queryToFindRecordsToBeDeleted =
           hPersistence.createQuery(entity).field(UuidAware.UUID_KEY).in(recordIdsTobeDeleted);
@@ -161,19 +161,7 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
         cvConfig.getProjectIdentifier(), cvConfig.getFullyQualifiedIdentifier(), cvConfig.getConnectorIdentifier());
   }
 
-  private static Object convertToObjectIdIfRequired(final String uuid) {
-    if (ObjectId.isValid(uuid)) {
-      ObjectId objectIdFromGivenUuid = new ObjectId(uuid);
-      String uuidFromNewObjectId = objectIdFromGivenUuid.toString();
-      if (uuidFromNewObjectId.equals(uuid)) {
-        return objectIdFromGivenUuid;
-      } else {
-        return uuid;
-      }
-    } else {
-      return uuid;
-    }
-  }
+
 
   @VisibleForTesting
   <T extends PersistentEntity> int deleteRecords(Query<T> query) {

@@ -10,6 +10,7 @@ package io.harness.cvng.migration.list;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.ActivityBucket;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.utils.MongoUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -33,8 +34,8 @@ public class ActivityBucketCleanupAndMigration extends CVNGBaseMigration {
         hPersistence.createQuery(ActivityBucket.class).project(UuidAware.UUID_KEY, true);
     while (true) {
       List<ActivityBucket> recordsToBeDeleted = queryToDeleteOlderRecords.find(new FindOptions().limit(1000)).toList();
-      List<String> uuidsToBeDeleted =
-          recordsToBeDeleted.stream().map(ActivityBucket::getUuid).collect(Collectors.toList());
+      List<?> uuidsToBeDeleted =
+          recordsToBeDeleted.stream().map(ActivityBucket::getUuid).map(MongoUtils::convertToObjectIdIfRequired).collect(Collectors.toList());
       if (uuidsToBeDeleted.size() == 0) {
         break;
       }
