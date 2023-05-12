@@ -28,6 +28,7 @@ import io.harness.rest.RestResponse;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 
 import java.util.List;
@@ -109,7 +110,7 @@ public interface UserClient {
   @POST(USER_SIGNUP_MARKETPLACE)
   Call<RestResponse<UserInfo>> createMarketplaceUserAndCompleteSignup(@Query("inviteId") String inviteId,
       @Query("marketPlaceToken") String marketPlaceToken, @Query("email") String email,
-      @Query("password") String password, @Body AccountDTO account);
+      @Query("password") String password, @Body SignupDTO dto);
 
   @POST(USER_SIGNUP_COMMUNITY)
   Call<RestResponse<UserInfo>> createCommunityUserAndCompleteSignup(@Body SignupInviteDTO userRequest);
