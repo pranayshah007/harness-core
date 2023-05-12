@@ -109,6 +109,7 @@ import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
@@ -4330,13 +4331,13 @@ public class UserServiceImpl implements UserService {
       // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
 
-      licenseService.updateCeLicense(accountId,
-          CeLicenseInfo.builder()
-              .expiryTime(marketPlace.getExpirationDate().getTime())
-              .licenseType(ceLicenseType)
-              .build());
+      // licenseService.updateCeLicense(accountId,
+      //     CeLicenseInfo.builder()
+      //         .expiryTime(marketPlace.getExpirationDate().getTime())
+      //         .licenseType(ceLicenseType)
+      //         .build());
 
-      adminLicenseHttpClient.createAccountLicense(accountId,
+      ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           CEModuleLicenseDTO.builder()
               .spendLimit(spendLimit)
               .accountIdentifier(accountId)
@@ -4347,7 +4348,10 @@ public class UserServiceImpl implements UserService {
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
-              .build());
+              .build()));
+      log.info("CEModuleLicense {} created", response.getId());
+      log.info("CEModuleLicense {} response", response);
+
     } else if (marketPlace.getProductCode().equals(
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
