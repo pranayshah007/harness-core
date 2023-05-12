@@ -2826,10 +2826,14 @@ public class DelegateServiceImpl implements DelegateService {
 
     // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
     if (registeredDelegate != null) {
-      boolean isDelegateReconnectingAfterLongPause = now() > (existingDelegate.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
-      if (existingDelegate != null && isDelegateReconnectingAfterLongPause) {
-        log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(), existingDelegate.getLastHeartBeat());
-        subject.fireInform(DelegateObserver::onReconnected, delegate);
+      if (existingDelegate != null) {
+        boolean isDelegateReconnectingAfterLongPause =
+            now() > (existingDelegate.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
+        if (isDelegateReconnectingAfterLongPause) {
+          log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(),
+              existingDelegate.getLastHeartBeat());
+          subject.fireInform(DelegateObserver::onReconnected, delegate);
+        }
       }
     }
 
