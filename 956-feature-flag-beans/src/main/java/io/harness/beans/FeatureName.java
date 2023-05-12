@@ -757,7 +757,9 @@ public enum FeatureName {
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
   CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
-  CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE);
+  CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE),
+  PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE(
+      "This is to regenerate acls for default account viewer roles", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
