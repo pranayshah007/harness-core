@@ -152,6 +152,7 @@ public class RecommendationsOverviewQueryV2 {
   private static final Set<String> CLOUD_SERVICE_INSTANCE_TYPES =
       ImmutableSet.of(ECS_TASK_EC2.name(), ECS_TASK_FARGATE.name());
   private static final String DEFAULT_CLUSTER_VIEW_NAME = "Cluster";
+  private static final String DEFAULT_AZURE_VIEW_NAME = "Azure";
   public static final long ONE_DAY_MILLIS = 86400000;
 
   private static final Gson GSON = new Gson();
@@ -162,8 +163,10 @@ public class RecommendationsOverviewQueryV2 {
       K8sRecommendationFilterDTO filter, @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     final HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives;
-    final String perspectiveId;
-    final String perspectiveName;
+    final String clusterPerspectiveId;
+    final String clusterPerspectiveName;
+    final String azurePerspectiveId;
+    final String azurePerspectiveName;
 
     Condition condition = null;
 
@@ -171,17 +174,31 @@ public class RecommendationsOverviewQueryV2 {
     boolean accessToAllPerspectives = rbacHelper.hasPerspectiveViewOnAllResources(accountId, null, null);
     if (accessToAllPerspectives) {
       List<QLCEView> defaultPerspectives =
-          ceViewService.getAllViews(accountId, ceViewService.getSampleFolderId(accountId), true, null)
-              .stream()
+          ceViewService.getAllViews(accountId, ceViewService.getSampleFolderId(accountId), true, null);
+      QLCEView clusterPerspective =
+          defaultPerspectives.stream()
               .filter(qlceView -> qlceView.getName().equalsIgnoreCase(DEFAULT_CLUSTER_VIEW_NAME))
-              .collect(Collectors.toList());
-      perspectiveId = Lists.isNullOrEmpty(defaultPerspectives) ? null : defaultPerspectives.get(0).getId();
-      perspectiveName = Lists.isNullOrEmpty(defaultPerspectives) ? null : defaultPerspectives.get(0).getName();
+              .collect(Collectors.toList())
+              .stream()
+              .findFirst()
+              .get();
+      QLCEView azurePerspective = defaultPerspectives.stream()
+                                      .filter(qlceView -> qlceView.getName().equalsIgnoreCase(DEFAULT_AZURE_VIEW_NAME))
+                                      .collect(Collectors.toList())
+                                      .stream()
+                                      .findFirst()
+                                      .get();
+      clusterPerspectiveId = clusterPerspective.getId();
+      clusterPerspectiveName = clusterPerspective.getName();
+      azurePerspectiveId = azurePerspective.getId();
+      azurePerspectiveName = azurePerspective.getName();
       allowedRecommendationsIdAndPerspectives = null;
       condition = applyAllFilters(filter, accountId);
     } else {
-      perspectiveId = null;
-      perspectiveName = null;
+      clusterPerspectiveId = null;
+      clusterPerspectiveName = null;
+      azurePerspectiveId = null;
+      azurePerspectiveName = null;
       allowedRecommendationsIdAndPerspectives = listAllowedRecommendationsIdAndPerspectives(accountId);
       K8sRecommendationFilterDTO appliedAllowedPerspectiveFilter =
           applyAllowedPerspectiveFilter(accountId, filter, allowedRecommendationsIdAndPerspectives);
@@ -195,47 +212,28 @@ public class RecommendationsOverviewQueryV2 {
         recommendationService.listAll(accountId, condition, filter.getOffset(), filter.getLimit());
     items = items.stream()
                 .map(item
-                    -> item.getRecommendationDetails() != null
-                        ? RecommendationItemDTO.builder()
-                              .id(item.getId())
-                              .clusterName(item.getClusterName())
-                              .namespace(item.getNamespace())
-                              .resourceName(item.getResourceName())
-                              .monthlyCost(item.getMonthlyCost())
-                              .monthlySaving(item.getMonthlySaving())
-                              .resourceType(item.getResourceType())
-                              .recommendationState(item.getRecommendationState())
-                              .jiraConnectorRef(item.getJiraConnectorRef())
-                              .jiraIssueKey(item.getJiraIssueKey())
-                              .jiraStatus(item.getJiraStatus())
-                              .recommendationDetails(item.getRecommendationDetails())
-                              .perspectiveId(accessToAllPerspectives
-                                      ? perspectiveId
-                                      : allowedRecommendationsIdAndPerspectives.get(item.getId()).getUuid())
-                              .perspectiveName(accessToAllPerspectives
-                                      ? perspectiveName
-                                      : allowedRecommendationsIdAndPerspectives.get(item.getId()).getName())
-                              .build()
-                        : RecommendationItemDTO.builder()
-                              .id(item.getId())
-                              .resourceName(item.getResourceName())
-                              .clusterName(item.getClusterName())
-                              .namespace(item.getNamespace())
-                              .resourceType(item.getResourceType())
-                              .recommendationDetails(getRecommendationDetails(item, env))
-                              .monthlyCost(item.getMonthlyCost())
-                              .monthlySaving(item.getMonthlySaving())
-                              .recommendationState(item.getRecommendationState())
-                              .jiraConnectorRef(item.getJiraConnectorRef())
-                              .jiraIssueKey(item.getJiraIssueKey())
-                              .jiraStatus(item.getJiraStatus())
-                              .perspectiveId(accessToAllPerspectives
-                                      ? perspectiveId
-                                      : allowedRecommendationsIdAndPerspectives.get(item.getId()).getUuid())
-                              .perspectiveName(accessToAllPerspectives
-                                      ? perspectiveName
-                                      : allowedRecommendationsIdAndPerspectives.get(item.getId()).getName())
-                              .build())
+                    -> RecommendationItemDTO.builder()
+                           .id(item.getId())
+                           .clusterName(item.getClusterName())
+                           .namespace(item.getNamespace())
+                           .resourceName(item.getResourceName())
+                           .monthlyCost(item.getMonthlyCost())
+                           .monthlySaving(item.getMonthlySaving())
+                           .resourceType(item.getResourceType())
+                           .recommendationState(item.getRecommendationState())
+                           .jiraConnectorRef(item.getJiraConnectorRef())
+                           .jiraIssueKey(item.getJiraIssueKey())
+                           .jiraStatus(item.getJiraStatus())
+                           .recommendationDetails(item.getRecommendationDetails() != null
+                                   ? item.getRecommendationDetails()
+                                   : getRecommendationDetails(item, env))
+                           .perspectiveId(getPerspectiveIdForRecommendation(accessToAllPerspectives,
+                               clusterPerspectiveId, azurePerspectiveId, allowedRecommendationsIdAndPerspectives,
+                               item.getResourceType(), item.getId()))
+                           .perspectiveName(getPerspectiveNameForRecommendation(accessToAllPerspectives,
+                               clusterPerspectiveName, azurePerspectiveName, allowedRecommendationsIdAndPerspectives,
+                               item.getResourceType(), item.getId()))
+                           .build())
                 .collect(Collectors.toList());
     return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();
   }
@@ -890,5 +888,29 @@ public class RecommendationsOverviewQueryV2 {
     LocalDate today = LocalDate.now(zoneId);
     ZonedDateTime zdtStart = today.atStartOfDay(zoneId);
     return (zdtStart.toEpochSecond() * 1000) - 30 * ONE_DAY_MILLIS;
+  }
+
+  private String getPerspectiveIdForRecommendation(boolean accessToAllPerspectives, String clusterPerspectiveId,
+      String azurePerspectiveId, HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives,
+      ResourceType resourceType, String id) {
+    if (accessToAllPerspectives) {
+      if (resourceType.equals(ResourceType.AZURE_INSTANCE)) {
+        return azurePerspectiveId;
+      }
+      return clusterPerspectiveId;
+    }
+    return allowedRecommendationsIdAndPerspectives.get(id).getUuid();
+  }
+
+  private String getPerspectiveNameForRecommendation(boolean accessToAllPerspectives, String clusterPerspectiveName,
+      String azurePerspectiveName, HashMap<String, CEViewShortHand> allowedRecommendationsIdAndPerspectives,
+      ResourceType resourceType, String id) {
+    if (accessToAllPerspectives) {
+      if (resourceType.equals(ResourceType.AZURE_INSTANCE)) {
+        return azurePerspectiveName;
+      }
+      return clusterPerspectiveName;
+    }
+    return allowedRecommendationsIdAndPerspectives.get(id).getName();
   }
 }
