@@ -8,7 +8,6 @@
 package io.harness.signup.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
-import static io.harness.beans.FeatureName.AUTO_FREE_MODULE_LICENSE;
 import static io.harness.configuration.DeployMode.DEPLOY_MODE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.exception.WingsException.USER;
@@ -334,13 +333,11 @@ public class SignupServiceImpl implements SignupService {
       log.info("Waiting on RBAC setup for the account with id {}", userInfo.getDefaultAccountId());
       waitForRbacSetup(userInfo.getDefaultAccountId(), userInfo.getUuid(), userInfo.getEmail());
 
-      if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
-        enableModuleLicense(
-            !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
-            userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
-            userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
-            userInfo.getDefaultAccountId(), referer, gaClientId);
-      }
+      enableModuleLicense(
+          !userInfo.getIntent().equals("") ? ModuleType.valueOf(userInfo.getIntent().toUpperCase()) : null,
+          userInfo.getEdition() != null ? Edition.valueOf(userInfo.getEdition()) : null,
+          userInfo.getSignupAction() != null ? SignupAction.valueOf(userInfo.getSignupAction()) : null,
+          userInfo.getDefaultAccountId(), referer, gaClientId);
 
       log.info("Completed NG signup for {}", userInfo.getEmail());
       return userInfo;
@@ -493,10 +490,9 @@ public class SignupServiceImpl implements SignupService {
       }
     });
 
-    if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
-      enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(),
-          dto.getReferer(), dto.getGaClientId());
-    }
+    enableModuleLicense(dto.getIntent(), dto.getEdition(), dto.getSignupAction(), account.getIdentifier(),
+        dto.getReferer(), dto.getGaClientId());
+
     waitForRbacSetup(oAuthUser.getDefaultAccountId(), oAuthUser.getUuid(), oAuthUser.getEmail());
     return oAuthUser;
   }

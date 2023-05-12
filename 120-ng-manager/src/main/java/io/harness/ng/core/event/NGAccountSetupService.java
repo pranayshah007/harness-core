@@ -124,14 +124,12 @@ public class NGAccountSetupService {
     Scope accountScope = Scope.of(accountIdentifier, null, null);
     defaultUserGroupService.create(accountScope, emptyList());
     Organization defaultOrg = createDefaultOrg(accountIdentifier);
-    if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
-      log.info(String.format("[NGAccountSetupService]: Setting up default project for account %s", accountIdentifier));
-      Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());
-      log.info(String.format("[NGAccountSetupService]: Setting up all levels rbac for account %s", accountIdentifier));
-      setupAllLevelRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier(), defaultProject.getIdentifier());
-    } else {
-      setupRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier());
-    }
+
+    log.info(String.format("[NGAccountSetupService]: Setting up default project for account %s", accountIdentifier));
+    Project defaultProject = createDefaultProject(accountIdentifier, defaultOrg.getIdentifier());
+    log.info(String.format("[NGAccountSetupService]: Setting up all levels rbac for account %s", accountIdentifier));
+    setupAllLevelRBAC(defaultOrg.getAccountIdentifier(), defaultOrg.getIdentifier(), defaultProject.getIdentifier());
+
     log.info("[NGAccountSetupService]: Creating global SM for account{}", accountIdentifier);
     harnessSMManager.createGlobalSecretManager();
     log.info("[NGAccountSetupService]: Global SM Created Successfully for account{}", accountIdentifier);
@@ -232,38 +230,6 @@ public class NGAccountSetupService {
                                              .orgIdentifier(orgIdentifier)
                                              .projectIdentifier(projectIdentifier)
                                              .build());
-    }
-    log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
-  }
-
-  private void setupRBAC(String accountIdentifier, String orgIdentifier) {
-    Collection<UserInfo> cgUsers = getCGUsers(accountIdentifier);
-    Collection<String> cgAdmins =
-        cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
-
-    Scope accountScope = Scope.of(accountIdentifier, null, null);
-    if (!hasAdmin(accountScope)) {
-      if (featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, accountIdentifier)) {
-        cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
-      } else {
-        cgAdmins.forEach(user -> upsertUserMembership(accountScope, user));
-      }
-      assignAdminRoleToUsers(accountScope, cgAdmins);
-      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
-        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
-      }
-      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
-    }
-
-    Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
-    if (!hasAdmin(orgScope)) {
-      cgAdmins.forEach(user -> upsertUserMembership(orgScope, user));
-      assignAdminRoleToUsers(orgScope, cgAdmins);
-      if (shouldAssignAdmins && !hasAdmin(orgScope)) {
-        throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
-      }
-      accessControlMigrationService.save(
-          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
     log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }

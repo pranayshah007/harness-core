@@ -195,11 +195,9 @@ public class ProjectServiceImpl implements ProjectService {
     } catch (Exception ex) {
       log.error("Default User Group Creation failed for Project: " + scope.toString(), ex);
     }
-    if (featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)) {
-      if (DEFAULT_PROJECT_IDENTIFIER.equals(scope.getProjectIdentifier())) {
-        // Default project is a special case. That is handled by ng account setup service
-        return;
-      }
+    if (DEFAULT_PROJECT_IDENTIFIER.equals(scope.getProjectIdentifier())) {
+      // Default project is a special case. That is handled by ng account setup service
+      return;
     }
     String principalId = null;
     PrincipalType principalType = PrincipalType.USER;
