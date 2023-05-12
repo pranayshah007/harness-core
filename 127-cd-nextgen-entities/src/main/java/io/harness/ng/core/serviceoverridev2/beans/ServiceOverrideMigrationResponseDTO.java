@@ -26,7 +26,8 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "ServiceOverrideMigrationResponseDTO", description = "This is the Service Override Migration Response")
 public class ServiceOverrideMigrationResponseDTO {
   boolean isSuccessful;
-  List<AccountLevelOverrideMigrationResponseDTO> accountLevelMigrationInfo;
+  String accountId;
+  AccountLevelOverrideMigrationResponseDTO accountLevelMigrationInfo;
   List<OrgLevelOverrideMigrationResponseDTO> orgLevelMigrationInfo;
   List<ProjectLevelOverrideMigrationResponseDTO> projectLevelMigrationInfo;
 }

@@ -30,6 +30,8 @@ public class OrgLevelOverrideMigrationResponseDTO {
   String orgIdentifier;
   int migratedEnvironmentsCount;
   int migratedServiceOverridesCount;
+  int totalEnvironmentsCount;
+  int totalServiceOverridesCount;
   List<String> environmentsInfo;
   List<SingleServiceOverrideMigrationResponse> serviceOverridesInfo;
 }

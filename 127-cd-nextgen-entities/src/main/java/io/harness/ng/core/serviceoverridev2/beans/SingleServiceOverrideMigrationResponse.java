@@ -27,4 +27,5 @@ import lombok.experimental.FieldDefaults;
 public class SingleServiceOverrideMigrationResponse {
   String serviceRef;
   String envRef;
+  boolean isSuccessful;
 }

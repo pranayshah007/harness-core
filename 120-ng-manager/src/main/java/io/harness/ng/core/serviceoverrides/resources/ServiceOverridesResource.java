@@ -23,6 +23,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
@@ -112,6 +113,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class ServiceOverridesResource {
   @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Inject ServiceOverrideV2MigrationService serviceOverrideV2MigrationService;
   @Inject private EnvironmentService environmentService;
   @Inject private AccessControlClient accessControlClient;
   @Inject private ServiceOverrideValidatorService overrideValidatorService;
@@ -283,6 +285,7 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(ServiceOverrideMigrationResponseDTO.builder().build());
   }
 }

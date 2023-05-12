@@ -31,6 +31,6 @@ public class ProjectLevelOverrideMigrationResponseDTO {
   String accountId;
   int migratedEnvironmentsCount;
   int migratedServiceOverridesCount;
-  List<String> environmentsInfo;
-  List<SingleServiceOverrideMigrationResponse> serviceOverridesInfo;
+  List<String> migratedEnvironmentsInfo;
+  List<SingleServiceOverrideMigrationResponse> migratedServiceOverridesInfo;
 }
