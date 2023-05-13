@@ -227,7 +227,7 @@ public class CIStepInfoUtils {
     if (!featureFlagService.isEnabled(FeatureName.CI_HOSTED_CONTAINERLESS_OOTB_STEP_ENABLED, accountId)) {
       return false;
     }
-    if (ciStepInfoType == CIStepInfoType.DOCKER
+    if ((ciStepInfoType == CIStepInfoType.DOCKER || ciStepInfoType == CIStepInfoType.ECR)
         && !featureFlagService.isEnabled(FeatureName.CIE_USE_DOCKER_BUILDX, accountId)) {
       return false;
     }
