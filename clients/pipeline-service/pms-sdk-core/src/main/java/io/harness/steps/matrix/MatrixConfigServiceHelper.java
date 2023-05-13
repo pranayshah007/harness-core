@@ -18,7 +18,9 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -85,6 +87,53 @@ public class MatrixConfigServiceHelper {
     }
 
     return children;
+  }
+
+  // This is used by CI during the CIInitStep. CI expands the steps YAML having strategy and the expanded YAML is then
+  // executed.
+  public StrategyInfo expandJsonNodeFromClass(List<String> keys, Map<String, AxisConfig> axes,
+      Map<String, ExpressionAxisConfig> expressionAxes, ParameterField<List<ExcludeConfig>> exclude,
+      ParameterField<Integer> maxConcurrencyParameterField, JsonNode jsonNode, Optional<Integer> maxExpansionLimit,
+      Class cls) {
+    List<Map<String, String>> combinations = new ArrayList<>();
+    List<List<Integer>> matrixMetadata = new ArrayList<>();
+    fetchCombinations(new LinkedHashMap<>(), axes, expressionAxes, combinations,
+        ParameterField.isBlank(exclude) ? null : exclude.getValue(), matrixMetadata, keys, 0, new LinkedList<>());
+    int totalCount = combinations.size();
+    if (totalCount == 0) {
+      throw new InvalidRequestException(
+          "Total number of iterations found to be 0 for this strategy. Please check pipeline yaml");
+    }
+
+    if (maxExpansionLimit.isPresent()) {
+      if (totalCount > maxExpansionLimit.get()) {
+        throw new InvalidYamlException("Iteration count is beyond the supported limit of " + maxExpansionLimit.get());
+      }
+    }
+
+    List<JsonNode> jsonNodes = new ArrayList<>();
+    int currentIteration = 0;
+    for (List<Integer> matrixData : matrixMetadata) {
+      Object o;
+      try {
+        o = RecastOrchestrationUtils.toMap(YamlUtils.read(jsonNode.toString(), cls));
+      } catch (Exception e) {
+        throw new InvalidRequestException("Unable to read yaml.", e);
+      }
+      // TODO(CI): Use the CIAbstractStepNode object here instead of JsonNode.
+      StrategyUtils.replaceExpressions(o, combinations.get(currentIteration), currentIteration, totalCount, null);
+      JsonNode resolvedJsonNode =
+          JsonPipelineUtils.asTree(RecastOrchestrationUtils.fromMap((Map<String, Object>) o, cls));
+      StrategyUtils.modifyJsonNode(
+          resolvedJsonNode, matrixData.stream().map(String::valueOf).collect(Collectors.toList()));
+      jsonNodes.add(resolvedJsonNode);
+      currentIteration++;
+    }
+    int maxConcurrency = jsonNodes.size();
+    if (!ParameterField.isBlank(maxConcurrencyParameterField)) {
+      maxConcurrency = Double.valueOf(String.valueOf(maxConcurrencyParameterField.getValue())).intValue();
+    }
+    return StrategyInfo.builder().expandedJsonNodes(jsonNodes).maxConcurrency(maxConcurrency).build();
   }
 
   // This is used by CI during the CIInitStep. CI expands the steps YAML having strategy and the expanded YAML is then

@@ -149,7 +149,16 @@ public class Recaster {
         continue;
       }
       Object o = recasterMap.get(entry.getKey());
-      entityMap.put(entry.getKey(), (o instanceof Map) ? fromMap(RecasterMap.cast((Map<String, Object>) o)) : o);
+      try {
+        entityMap.put(entry.getKey(), (o instanceof Map) ? fromMap(RecasterMap.cast((Map<String, Object>) o)) : o);
+      } catch (RecasterException ex) {
+        log.warn(
+            String.format(
+                "RecasterKey not present in the RecasterMap for KEY %s. So putting the original recasterMap as the value inside EntityMap",
+                entry.getKey()),
+            ex);
+        entityMap.put(entry.getKey(), o);
+      }
     }
   }
 
