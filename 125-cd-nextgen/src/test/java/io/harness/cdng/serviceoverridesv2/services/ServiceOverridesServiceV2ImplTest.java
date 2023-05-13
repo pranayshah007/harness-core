@@ -22,10 +22,6 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
-<<<<<<< HEAD
-=======
-import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
->>>>>>> c98d05ab2a7726f84ac3853898c48683066be09a
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.outbox.api.OutboxService;
@@ -186,18 +182,6 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-<<<<<<< HEAD
-  public void testUpdateNoIdentifierGiven() {
-    basicOverrideEntity.setIdentifier(null);
-    assertThatThrownBy(() -> serviceOverridesServiceV2.update(basicOverrideEntity))
-        .hasMessageContaining("One of the required fields is null.");
-  }
-
-  @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-=======
->>>>>>> c98d05ab2a7726f84ac3853898c48683066be09a
   public void testDelete() {
     serviceOverridesServiceV2.create(basicOverrideEntity);
     boolean isDeleted =
@@ -245,13 +229,10 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     // project level with type
     Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
-<<<<<<< HEAD
+
     Pageable pageRequest = PageRequest.of(
         0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntity.NGServiceOverridesEntityKeys.lastModifiedAt));
-=======
-    Pageable pageRequest =
-        PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
->>>>>>> c98d05ab2a7726f84ac3853898c48683066be09a
+
     List<NGServiceOverridesEntity> overridesEntities =
         serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());
     assertThat(overridesEntities).hasSize(1);
