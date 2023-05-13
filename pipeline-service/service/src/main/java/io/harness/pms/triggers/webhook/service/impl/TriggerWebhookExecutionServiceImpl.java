@@ -86,6 +86,7 @@ public class TriggerWebhookExecutionServiceImpl
   @Override
   public void handle(TriggerWebhookEvent event) {
     try {
+      log.info("Received webhook event to fire triggers via V1 flow");
       updateTriggerEventProcessingStatus(event, true); // start processing
       WebhookEventProcessingResult result;
 

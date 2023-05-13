@@ -57,6 +57,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +81,12 @@ public class GovernanceRecommendationService {
     List<String> getAccounts = accountShardService.getCeEnabledAccountIds();
     for (String account : getAccounts) {
       log.info("generateRecommendationForAccount: {}", account);
-      generateRecommendationForAccount(account);
+      try {
+        generateRecommendationForAccount(account);
+        TimeUnit.SECONDS.sleep(configuration.getGovernanceConfig().getSleepTime());
+      } catch (InterruptedException e) {
+        log.error("error which generating recommendation for {}", account);
+      }
     }
   }
 

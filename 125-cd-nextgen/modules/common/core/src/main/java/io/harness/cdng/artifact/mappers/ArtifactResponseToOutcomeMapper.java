@@ -17,6 +17,7 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactConfigHelper;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
@@ -319,21 +320,7 @@ public class ArtifactResponseToOutcomeMapper {
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
     Map<String, String> metadata = null;
     String displayName = null;
-    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
-        && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
-      metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
-      if (dockerConfig.getDigest() != null && isNotEmpty(dockerConfig.getDigest().getValue())) {
-        // If user explicitly passes a digest for the image, we validate it against available image's SHA256 digests.
-        String digest = dockerConfig.getDigest().getValue();
-        String sha256V1 = metadata.get(ArtifactMetadataKeys.SHA);
-        String sha256V2 = metadata.get(ArtifactMetadataKeys.SHAV2);
-        if (!digest.equals(sha256V1) && !digest.equals(sha256V2)) {
-          throw new ArtifactServerException(
-              "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: " + digest
-              + "\nAvailable digests:\n" + sha256V1 + " (V1)\n" + sha256V2 + " (V2)");
-        }
-      }
-    }
+    checkSHAEquality(dockerDelegateResponse, dockerConfig.getDigest(), useDelegateResponse);
     if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
         && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
       displayName = dockerDelegateResponse.getBuildDetails().getUiDisplayName();
@@ -620,7 +607,7 @@ public class ArtifactResponseToOutcomeMapper {
 
   private AcrArtifactOutcome getAcrArtifactOutcome(AcrArtifactConfig acrArtifactConfig,
       AcrArtifactDelegateResponse acrArtifactDelegateResponse, boolean useDelegateResponse) {
-    checkSHAEquality(acrArtifactDelegateResponse, acrArtifactConfig.getDigest(), true);
+    checkSHAEquality(acrArtifactDelegateResponse, acrArtifactConfig.getDigest(), useDelegateResponse);
     return AcrArtifactOutcome.builder()
         .subscription(acrArtifactConfig.getSubscriptionId().getValue())
         .registry(getRegistryHostnameValue(acrArtifactDelegateResponse))
@@ -784,8 +771,8 @@ public class ArtifactResponseToOutcomeMapper {
 
   private void checkSHAEquality(ArtifactDelegateResponse artifactDelegateResponse, ParameterField<String> digestField,
       boolean useDelegateResponse) {
-    if (digestField != null && EmptyPredicate.isNotEmpty(digestField.getValue())) {
-      String digest = digestField.getValue();
+    if (!ArtifactConfigHelper.checkNullOrInput(digestField)) {
+      String digest = (String) digestField.fetchFinalValue();
       Map<String, String> metaData = getMetadata(artifactDelegateResponse);
       if (useDelegateResponse && EmptyPredicate.isNotEmpty(metaData)) {
         String sha = metaData.get(ArtifactMetadataKeys.SHA);

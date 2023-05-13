@@ -51,7 +51,7 @@ import org.springframework.guice.annotation.GuiceModule;
 
 @Configuration
 @GuiceModule
-@EnableMongoRepositories(basePackages = {"io.harness.idp.*.repositories"},
+@EnableMongoRepositories(basePackages = {"io.harness.idp.*.repositories", "io.harness.repositories"},
     includeFilters = @ComponentScan.Filter(HarnessRepo.class), mongoTemplateRef = "primary")
 @EnableMongoAuditing
 @OwnedBy(HarnessTeam.IDP)

@@ -12,6 +12,7 @@ proto_library(
     srcs = [
         "delegate_service.proto",
         "delegate_task.proto",
+        "execution_infra.proto",
         "progress.proto",
         "task.proto",
     ],

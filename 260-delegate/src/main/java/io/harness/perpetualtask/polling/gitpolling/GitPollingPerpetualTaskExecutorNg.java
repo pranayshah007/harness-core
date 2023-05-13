@@ -30,7 +30,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -43,10 +42,9 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor {
+  private final KryoSerializer kryoSerializer;
   private final GitPollingServiceImpl gitPollingService;
   private final PollingResponsePublisher pollingResponsePublisher;
-  private final KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private final KryoSerializer referenceFalseKryoSerializer;
 
   private final @Getter Cache<String, GitPollingCache> cache = Caffeine.newBuilder().build();
   private static final long TIMEOUT_IN_MILLIS = 90L * 1000;
@@ -58,25 +56,22 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
     String pollingDocId = taskParams.getPollingDocId();
     String perpetualTaskId = taskId.getId();
     GitPollingTaskParameters gitPollingTaskParameters =
-        (GitPollingTaskParameters) getKryoSerializer(params.getReferenceFalseKryoSerializer())
-            .asObject(taskParams.getGitpollingWebhookParams().toByteArray());
+        (GitPollingTaskParameters) kryoSerializer.asObject(taskParams.getGitpollingWebhookParams().toByteArray());
     GitPollingCache gitPollingCache = cache.get(pollingDocId, id -> new GitPollingCache());
 
     if (!gitPollingCache.needsToPublish()) {
-      getWebhookEvents(gitPollingCache, gitPollingTaskParameters, perpetualTaskId, pollingDocId,
-          params.getReferenceFalseKryoSerializer());
+      getWebhookEvents(gitPollingCache, gitPollingTaskParameters, perpetualTaskId, pollingDocId);
     }
 
     if (gitPollingCache.needsToPublish()) {
-      publishFromCache(perpetualTaskId, pollingDocId, gitPollingTaskParameters, gitPollingCache,
-          params.getReferenceFalseKryoSerializer());
+      publishFromCache(perpetualTaskId, pollingDocId, gitPollingTaskParameters, gitPollingCache);
     }
 
     return PerpetualTaskResponse.builder().responseCode(200).responseMessage("success").build();
   }
 
   private void publishFromCache(String perpetualTaskId, String pollingDocId, GitPollingTaskParameters taskParams,
-      GitPollingCache gitPollingCache, boolean referenceFalseSerializer) {
+      GitPollingCache gitPollingCache) {
     List<GitPollingWebhookData> unpublishedWebhooks = gitPollingCache.getUnpublishedWebhooks();
     Set<String> toBeDeletedIds = gitPollingCache.getToBeDeletedWebookDeliveryIds();
     if (isEmpty(unpublishedWebhooks) && isEmpty(toBeDeletedIds)) {
@@ -95,7 +90,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
                                      .build())
             .build();
 
-    if (pollingResponsePublisher.publishToManger(perpetualTaskId, response, referenceFalseSerializer)) {
+    if (pollingResponsePublisher.publishToManger(perpetualTaskId, response)) {
       gitPollingCache.setFirstCollectionOnDelegate(false);
       gitPollingCache.clearUnpublishedWebhooks(unpublishedWebhooks);
       gitPollingCache.removeDeletedWebhookIds(toBeDeletedIds);
@@ -103,7 +98,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
   }
 
   private void getWebhookEvents(GitPollingCache gitPollingCache, GitPollingTaskParameters gitPollingTaskParameters,
-      String taskId, String pollingDocId, boolean referenceFalseSerializer) {
+      String taskId, String pollingDocId) {
     try {
       GitPollingTaskExecutionResponse response =
           gitPollingService.getWebhookRecentDeliveryEvents(gitPollingTaskParameters);
@@ -128,8 +123,7 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(e.getMessage())
               .pollingDocId(pollingDocId)
-              .build(),
-          referenceFalseSerializer);
+              .build());
     }
   }
 
@@ -140,9 +134,5 @@ public class GitPollingPerpetualTaskExecutorNg implements PerpetualTaskExecutor 
   @Override
   public boolean cleanup(PerpetualTaskId taskId, PerpetualTaskExecutionParams params) {
     return true;
-  }
-
-  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
-    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
   }
 }

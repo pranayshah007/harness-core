@@ -85,8 +85,13 @@ public class CustomDeploymentTemplateService implements NgTemplateService {
     List<CustomDeploymentInstanceAttributes> attributes = new ArrayList<>();
     attributes.add(CustomDeploymentInstanceAttributes.builder().name("instancename").jsonPath(PLEASE_FIX_ME).build());
     if (isNotEmpty(customDeploymentTypeTemplate.getHostAttributes())) {
-      customDeploymentTypeTemplate.getHostAttributes().forEach(
-          (k, v) -> { attributes.add(CustomDeploymentInstanceAttributes.builder().name(k).jsonPath(v).build()); });
+      customDeploymentTypeTemplate.getHostAttributes()
+          .entrySet()
+          .stream()
+          .filter(e -> StringUtils.isNoneBlank(e.getKey(), e.getValue()))
+          .forEach(e
+              -> attributes.add(
+                  CustomDeploymentInstanceAttributes.builder().name(e.getKey()).jsonPath(e.getValue()).build()));
     }
 
     Builder<String, Object> infrastructureSpec =

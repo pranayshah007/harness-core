@@ -7,13 +7,20 @@
 
 package io.harness.cdlicense.impl;
 
+import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.TIME_PERIOD;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.PERCENTILE;
+
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -24,8 +31,10 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,7 +49,7 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
   @Mock CgCdLicenseUsageQueryHelper cdLicenseUsageQueryHelper;
   @InjectMocks @Inject private CgCdLicenseUsageServiceImpl cgCdLicenseUsageService;
 
-  private static final String accountIdentifier = "ACCOUNT_ID";
+  private static final String ACCOUNT_ID = "ACCOUNT_ID";
 
   @Before
   public void setup() {
@@ -56,7 +65,7 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
         .thenCallRealMethod();
     when(cdLicenseUsageQueryHelper.fetchServicesNames(anyString(), anyList())).thenCallRealMethod();
     CgActiveServicesUsageInfo activeServiceLicenseUsage =
-        cgCdLicenseUsageService.getActiveServiceLicenseUsage(accountIdentifier);
+        cgCdLicenseUsageService.getActiveServiceLicenseUsage(ACCOUNT_ID);
     assertThat(activeServiceLicenseUsage.getActiveServiceUsage()).isEmpty();
     assertThat(activeServiceLicenseUsage.getServiceLicenseConsumed()).isZero();
     assertThat(activeServiceLicenseUsage.getServicesConsumed()).isZero();
@@ -75,7 +84,7 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
     svcNames.put("svc2", Pair.of("name2", "app2"));
     when(cdLicenseUsageQueryHelper.fetchServicesNames(anyString(), anyList())).thenReturn(svcNames);
     CgActiveServicesUsageInfo activeServiceLicenseUsage =
-        cgCdLicenseUsageService.getActiveServiceLicenseUsage(accountIdentifier);
+        cgCdLicenseUsageService.getActiveServiceLicenseUsage(ACCOUNT_ID);
     assertThat(activeServiceLicenseUsage.getActiveServiceUsage()).isNotEmpty();
     assertServiceIdAndName(activeServiceLicenseUsage);
     assertThat(activeServiceLicenseUsage.getServiceLicenseConsumed()).isEqualTo(2);
@@ -101,7 +110,7 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
     when(cdLicenseUsageQueryHelper.fetchServicesNames(anyString(), anyList())).thenReturn(svcNames);
 
     CgActiveServicesUsageInfo activeServiceLicenseUsage =
-        cgCdLicenseUsageService.getActiveServiceLicenseUsage(accountIdentifier);
+        cgCdLicenseUsageService.getActiveServiceLicenseUsage(ACCOUNT_ID);
     assertThat(activeServiceLicenseUsage.getActiveServiceUsage()).isNotEmpty();
     assertServiceIdAndName(activeServiceLicenseUsage);
     assertThat(activeServiceLicenseUsage.getActiveServiceUsage()
@@ -111,6 +120,58 @@ public class CgCdLicenseUsageServiceImplTest extends CategoryTest {
         .containsExactlyInAnyOrder(1L, 1L);
     assertThat(activeServiceLicenseUsage.getServiceLicenseConsumed()).isEqualTo(2);
     assertThat(activeServiceLicenseUsage.getServicesConsumed()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldNoSliceWhenQueryPercentileInstanceForServices() {
+    List<String> svcIds = createServiceIds(3);
+    cgCdLicenseUsageService.queryPercentileInstanceForServices(ACCOUNT_ID, svcIds);
+
+    verify(cdLicenseUsageQueryHelper).getPercentileInstanceForServices(ACCOUNT_ID, svcIds, TIME_PERIOD, PERCENTILE);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldUseTwoSlicesWhenQueryPercentileInstanceForServices() {
+    List<String> svcIds = createServiceIds(210);
+    final List<String> slice1 = svcIds.subList(0, 200);
+    final List<String> slice2 = svcIds.subList(200, svcIds.size());
+
+    cgCdLicenseUsageService.queryPercentileInstanceForServices(ACCOUNT_ID, svcIds);
+
+    verify(cdLicenseUsageQueryHelper, times(2))
+        .getPercentileInstanceForServices(eq(ACCOUNT_ID), any(), eq(TIME_PERIOD), eq(PERCENTILE));
+    verify(cdLicenseUsageQueryHelper).getPercentileInstanceForServices(ACCOUNT_ID, slice1, TIME_PERIOD, PERCENTILE);
+    verify(cdLicenseUsageQueryHelper).getPercentileInstanceForServices(ACCOUNT_ID, slice2, TIME_PERIOD, PERCENTILE);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldUseThreeSlicesWhenQueryPercentileInstanceForServices() {
+    List<String> svcIds = createServiceIds(420);
+    final List<String> slice1 = svcIds.subList(0, 200);
+    final List<String> slice2 = svcIds.subList(200, 400);
+    final List<String> slice3 = svcIds.subList(400, svcIds.size());
+
+    cgCdLicenseUsageService.queryPercentileInstanceForServices(ACCOUNT_ID, svcIds);
+
+    verify(cdLicenseUsageQueryHelper, times(3))
+        .getPercentileInstanceForServices(eq(ACCOUNT_ID), any(), eq(TIME_PERIOD), eq(PERCENTILE));
+    verify(cdLicenseUsageQueryHelper).getPercentileInstanceForServices(ACCOUNT_ID, slice1, TIME_PERIOD, PERCENTILE);
+    verify(cdLicenseUsageQueryHelper).getPercentileInstanceForServices(ACCOUNT_ID, slice2, TIME_PERIOD, PERCENTILE);
+    verify(cdLicenseUsageQueryHelper).getPercentileInstanceForServices(ACCOUNT_ID, slice3, TIME_PERIOD, PERCENTILE);
+  }
+
+  private List<String> createServiceIds(int max) {
+    List<String> ids = new ArrayList<>();
+    for (int i = 0; i < max; i++) {
+      ids.add("S" + i);
+    }
+    return ids;
   }
 
   private void assertServiceIdAndName(CgActiveServicesUsageInfo activeServiceLicenseUsage) {

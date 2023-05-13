@@ -34,6 +34,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -151,5 +152,10 @@ public class AzureRepoStore implements GitStoreConfig, Visitable, WithConnectorR
       resultantAzureRepoStore = resultantAzureRepoStore.withRepoName(azureRepoStore.getRepoName());
     }
     return resultantAzureRepoStore;
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    return StoreConfigHelper.validateGitStoreType(connectorRef, folderPath, paths, branch, commitId, gitFetchType);
   }
 }

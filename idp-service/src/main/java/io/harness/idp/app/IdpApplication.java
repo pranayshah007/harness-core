@@ -44,6 +44,9 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.service.impl.DelegateAsyncServiceImpl;
+import io.harness.service.impl.DelegateProgressServiceImpl;
+import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -69,6 +72,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -154,6 +158,12 @@ public class IdpApplication extends Application<IdpConfiguration> {
     environment.lifecycle().manage(injector.getInstance(UserSyncJob.class));
     environment.lifecycle().manage(injector.getInstance(ConfigPurgeJob.class));
     environment.lifecycle().manage(injector.getInstance(DefaultAccountIdToNamespaceMappingForPrEnv.class));
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+        .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
   private void registerQueueListeners(Injector injector) {

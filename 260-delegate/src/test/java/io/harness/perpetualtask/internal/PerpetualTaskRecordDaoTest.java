@@ -67,7 +67,7 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
     perpetualTaskRecord.setClientContext(clientContext);
 
     String taskId = perpetualTaskRecordDao.save(perpetualTaskRecord);
-    perpetualTaskRecordDao.resetDelegateIdForTask(ACCOUNT_ID, taskId, null, false);
+    perpetualTaskRecordDao.resetDelegateIdForTask(ACCOUNT_ID, taskId, null);
     PerpetualTaskRecord task = perpetualTaskRecordDao.getTask(taskId);
 
     assertThat(task).isNotNull();
@@ -85,7 +85,7 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
 
     String taskId = perpetualTaskRecordDao.save(perpetualTaskRecord);
 
-    perpetualTaskRecordDao.resetDelegateIdForTask(ACCOUNT_ID, taskId, null, false);
+    perpetualTaskRecordDao.resetDelegateIdForTask(ACCOUNT_ID, taskId, null);
     PerpetualTaskRecord task = perpetualTaskRecordDao.getTask(taskId);
     assertThat(task).isNotNull();
     assertThat(task.getDelegateId()).isEqualTo("");
@@ -95,7 +95,7 @@ public class PerpetualTaskRecordDaoTest extends WingsBaseTest {
         PerpetualTaskExecutionBundle.newBuilder()
             .setTaskParams(Any.pack(AwsSshInstanceSyncPerpetualTaskParams.getDefaultInstance()))
             .build();
-    perpetualTaskRecordDao.resetDelegateIdForTask(ACCOUNT_ID, taskId, executionBundle, false);
+    perpetualTaskRecordDao.resetDelegateIdForTask(ACCOUNT_ID, taskId, executionBundle);
 
     task = perpetualTaskRecordDao.getTask(taskId);
     assertThat(task).isNotNull();

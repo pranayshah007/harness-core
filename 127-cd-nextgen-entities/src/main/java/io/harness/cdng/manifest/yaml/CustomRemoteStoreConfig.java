@@ -23,12 +23,15 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -39,6 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ManifestStoreType.CUSTOM_REMOTE)
 @TypeAlias("CustomRemoteStoreConfig")
 @RecasterAlias("io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig")
+@FieldNameConstants(innerTypeName = "CustomRepoStoreConfigKeys")
 public class CustomRemoteStoreConfig implements StoreConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -86,5 +90,17 @@ public class CustomRemoteStoreConfig implements StoreConfig {
     }
 
     return resultantStoreConfig;
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkStringParameterNullOrInput(extractionScript)) {
+      invalidParameters.add(CustomRepoStoreConfigKeys.extractionScript);
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(filePath)) {
+      invalidParameters.add(CustomRepoStoreConfigKeys.filePath);
+    }
+    return invalidParameters;
   }
 }

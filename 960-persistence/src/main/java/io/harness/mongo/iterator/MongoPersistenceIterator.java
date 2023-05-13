@@ -14,6 +14,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_DELAY;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_ERROR;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_PROCESSING_TIME;
+import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_REDIS_LOCK_ACQUIRE_FAIL;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_WORKING_ON_ENTITY;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
@@ -362,6 +363,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         // Update the documents next iteration field
         updateDocumentNextIteration(docIds, base);
 
+      } catch (Exception ex) {
+        log.error("Received an exception in redisBatchProcess {} ", ex);
       } finally {
         // Release the distributed lock - acquiredLock cannot be null
         releaseLock(acquiredLock);
@@ -453,15 +456,20 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
    * @return AcquiredLock
    */
   private AcquiredLock acquireLock() {
+    String lockName = MongoPersistenceIterator.class.getName() + "-" + iteratorName;
     while (true) {
       // Hardcoding the lockTimeout and waitTimeout for the lock to 5 secs.
-      try (AcquiredLock acquiredLock = persistentLocker.waitToAcquireLock(MongoPersistenceIterator.class, iteratorName,
-               ofSeconds(redisLockTimeout), ofSeconds(LOCK_WAIT_TIMEOUT_SECONDS))) {
+      // Note - The Redis distributed lock framework is supposed to return Null
+      // if it was unable to acquire a lock and not throw an exception.
+      try (AcquiredLock acquiredLock = persistentLocker.waitToAcquireLockOptional(
+               lockName, ofSeconds(redisLockTimeout), ofSeconds(LOCK_WAIT_TIMEOUT_SECONDS))) {
         if (acquiredLock != null) {
           // Got the lock, proceed further.
           return acquiredLock;
         } else {
-          log.warn("Failed to acquire distributed lock - attempting to reacquire");
+          log.debug("Failed to acquire distributed lock - attempting to reacquire after 5 secs");
+          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_REDIS_LOCK_ACQUIRE_FAIL);
+          sleep(ofSeconds(REDIS_BATCH_PAUSE_DURATION));
         }
       }
     }

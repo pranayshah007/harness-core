@@ -7,7 +7,11 @@
 
 package io.harness.k8s.model.kubeconfig;
 
+import static io.harness.k8s.K8sConstants.AZURE_AUTH_PLUGIN_BINARY;
+import static io.harness.k8s.K8sConstants.AZURE_AUTH_PLUGIN_DOCS;
 import static io.harness.k8s.K8sConstants.EKS_AUTH_PLUGIN_BINARY;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_BINARY;
+import static io.harness.k8s.K8sConstants.GCP_AUTH_PLUGIN_DOCS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -51,8 +55,8 @@ public class KubeConfigAuthPluginHelper {
       return false;
     } catch (Exception e) {
       if (logCallback != null) {
-        saveLogs(String.format(
-                     "Unable to execute command: %s %n %s", command, ExceptionMessageSanitizer.sanitizeException(e)),
+        saveLogs(String.format("Unable to execute command: %s %n %s %n %s", command,
+                     ExceptionMessageSanitizer.sanitizeException(e), getDocsLink(command)),
             logCallback, LogLevel.WARN);
       }
       return false;
@@ -70,8 +74,9 @@ public class KubeConfigAuthPluginHelper {
 
     final ProcessResult result = processExecutor.execute();
     if (result.getExitValue() != 0) {
-      saveLogs(String.format("Unable to execute command: %s %n %s", command, result.outputUTF8()), logCallback,
-          LogLevel.WARN);
+      saveLogs(String.format(
+                   "Unable to execute command: %s %n %s %n %s", command, result.outputUTF8(), getDocsLink(command)),
+          logCallback, LogLevel.WARN);
       return false;
     }
     return true;
@@ -94,5 +99,15 @@ public class KubeConfigAuthPluginHelper {
       return " version";
     }
     return " --version";
+  }
+
+  private static String getDocsLink(String command) {
+    if (command.contains(AZURE_AUTH_PLUGIN_BINARY)) {
+      return AZURE_AUTH_PLUGIN_DOCS;
+    }
+    if (command.contains(GCP_AUTH_PLUGIN_BINARY)) {
+      return GCP_AUTH_PLUGIN_DOCS;
+    }
+    return "";
   }
 }

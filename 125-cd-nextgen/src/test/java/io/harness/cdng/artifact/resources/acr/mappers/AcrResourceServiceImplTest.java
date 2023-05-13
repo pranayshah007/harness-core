@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -63,6 +64,29 @@ public class AcrResourceServiceImplTest extends CategoryTest {
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
 
   private static String SUBSCRIPTION = "SUBSCRIPTION";
+
+  private static final String REGISTRY = "registry";
+
+  private static final String REPOSITORY = "repository";
+
+  private static final String TAG = "tag";
+
+  private static final String IDENTIFIER = "identifier";
+
+  private static final String INPUT = "<+input>-abc";
+
+  private static final IdentifierRef IDENTIFIER_REF = IdentifierRef.builder()
+                                                          .accountIdentifier(ACCOUNT_ID)
+                                                          .identifier(IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .build();
+  private static final AcrRequestDTO ACR_REQUEST_DTO = AcrRequestDTO.builder().build();
+
+  private static final String REGISTRY_MESSAGE = "value for registry is empty or not provided";
+  private static final String SUBSCRIPTION_MESSAGE = "value for subscriptionId is empty or not provided";
+  private static final String REPOSITORY_MESSAGE = "value for repository is empty or not provided";
+  private static final String TAG_TAG_REGEX_MESSAGE = "value for tag, tagRegex is empty or not provided";
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock ConnectorService connectorService;
@@ -126,20 +150,13 @@ public class AcrResourceServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild() {
     AzureConnectorDTO azureArtifactsConnectorDTO = AzureConnectorDTO.builder().build();
-
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     BaseNGAccess baseNGAccess = BaseNGAccess.builder()
                                     .accountIdentifier(ACCOUNT_ID)
                                     .orgIdentifier(ORG_IDENTIFIER)
                                     .projectIdentifier(PROJECT_IDENTIFIER)
                                     .build();
 
-    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
+    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number(TAG).build();
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
 
     AcrArtifactDelegateResponse ecrArtifactDelegateResponse =
@@ -157,7 +174,7 @@ public class AcrResourceServiceImplTest extends CategoryTest {
                         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                         .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
                         .build());
-    doReturn(azureArtifactsConnectorDTO).when(azureHelperService).getConnector(identifierRef);
+    doReturn(azureArtifactsConnectorDTO).when(azureHelperService).getConnector(IDENTIFIER_REF);
     when(azureHelperService.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER)).thenReturn(baseNGAccess);
 
     AcrBuildDetailsDTO acrBuildDetailsDTO = AcrBuildDetailsDTO.builder().build();
@@ -166,8 +183,9 @@ public class AcrResourceServiceImplTest extends CategoryTest {
 
     when(azureHelperService.getAcrResponseDTO(artifactTaskExecutionResponse)).thenReturn(acrResponseDTO);
 
-    AcrBuildDetailsDTO acrBuildDetailsDTOResult = acrResourceService.getLastSuccessfulBuild(identifierRef, SUBSCRIPTION,
-        "registry", "repository", ORG_IDENTIFIER, PROJECT_IDENTIFIER, AcrRequestDTO.builder().build());
+    AcrBuildDetailsDTO acrBuildDetailsDTOResult =
+        acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPOSITORY, ORG_IDENTIFIER,
+            PROJECT_IDENTIFIER, AcrRequestDTO.builder().tag(TAG).build());
 
     assertThat(acrBuildDetailsDTO).isSameAs(acrBuildDetailsDTOResult);
     verify(azureHelperService).getAcrResponseDTO(artifactTaskExecutionResponse);
@@ -252,5 +270,107 @@ public class AcrResourceServiceImplTest extends CategoryTest {
         acrResourceService.getRegistries(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SUBSCRIPTION);
 
     assertThat(acrRegistriesDTO.getRegistries().get(0).getRegistry()).isEqualTo("first");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Subscription_Null() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, null, REGISTRY, REPOSITORY,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(SUBSCRIPTION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Subscription_Input() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, INPUT, REGISTRY, REPOSITORY,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(SUBSCRIPTION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Registry_Null() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, null, REPOSITORY,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(REGISTRY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Registry_Input() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, INPUT, REPOSITORY,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(REGISTRY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Repository_Null() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, null,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Repository_Input() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, INPUT,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Tag_Null() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY,
+                               REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Tag_Input() {
+    assertThatThrownBy(
+        ()
+            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPOSITORY,
+                ORG_IDENTIFIER, PROJECT_IDENTIFIER, AcrRequestDTO.builder().tag(INPUT).build()))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_TagRegex_Null() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY,
+                               REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_TagRegex_Input() {
+    assertThatThrownBy(
+        ()
+            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPOSITORY,
+                ORG_IDENTIFIER, PROJECT_IDENTIFIER, AcrRequestDTO.builder().tagRegex(INPUT).build()))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 }

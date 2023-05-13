@@ -354,6 +354,7 @@ public enum FeatureName {
   ENABLE_DEFAULT_NG_EXPERIENCE_FOR_ONPREM,
   NG_SETTINGS("Enable Settings at various scopes in NG", HarnessTeam.PL),
   QUEUED_COUNT_FOR_QUEUEKEY("Used to display the count of the queue in CG git sync", HarnessTeam.SPG),
+  USE_OLD_GIT_SYNC("Used for enabling old Git Experience on projects", HarnessTeam.PL),
   DISABLE_PIPELINE_SCHEMA_VALIDATION(
       "Used to disable pipeline yaml schema as We saw some intermittent issue in Schema Validation due to invalid schema generation. Will keep this FF until root cause is found and fixed.",
       HarnessTeam.PIPELINE),
@@ -461,8 +462,6 @@ public enum FeatureName {
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
-  SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING_GRAPHQL(
-      "Make the workflowExecutions listing better providing appId for children ids on graphql", HarnessTeam.SPG),
   SPG_OPTIMIZE_ENVIRONMENT_VIEW_BUILDER(
       "Optimizes environment view builder queries for workflowExecutions", HarnessTeam.SPG),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
@@ -753,9 +752,14 @@ public enum FeatureName {
   CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
+  SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC(
+      "Will fire the all the triggers to be fired by a single webhook event asyncrounouly", HarnessTeam.SPG),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
-  CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP);
+  CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
+  CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE),
+  PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE(
+      "This is to regenerate acls for default account viewer roles", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

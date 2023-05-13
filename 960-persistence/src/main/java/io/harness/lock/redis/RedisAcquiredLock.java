@@ -28,10 +28,14 @@ public class RedisAcquiredLock implements AcquiredLock<RLock> {
 
   @Override
   public void release() {
-    if (isSentinelMode) {
-      unlockAsync();
-    } else {
-      unlock();
+    try {
+      if (isSentinelMode) {
+        unlockAsync();
+      } else {
+        unlock();
+      }
+    } catch (Exception ex) {
+      log.error(" Received a exception while releasing Redis lock {} ", ex);
     }
   }
 

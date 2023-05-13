@@ -209,6 +209,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
                                               .namespace(managedWorkload.getResourceId().getNamespace())
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
+                                              .kubernetesConfig(kubernetesConfig)
                                               .build();
 
     K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sBGDeployRequest.isUseK8sApiForSteadyStateCheck());

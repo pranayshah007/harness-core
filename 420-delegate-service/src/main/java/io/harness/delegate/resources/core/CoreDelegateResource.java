@@ -19,11 +19,11 @@ import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionEnvironment;
 import io.harness.delegate.core.beans.ExecutionMode;
 import io.harness.delegate.core.beans.ExecutionPriority;
+import io.harness.delegate.core.beans.InputData;
 import io.harness.delegate.core.beans.PluginSource;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecretConfig;
 import io.harness.delegate.core.beans.TaskDescriptor;
-import io.harness.delegate.core.beans.TaskInput;
 import io.harness.delegate.core.beans.TaskSecret;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
@@ -95,7 +95,7 @@ public class CoreDelegateResource {
               .setMode(ExecutionMode.MODE_ONCE)
               .setPriority(delegateTaskPackage.getData().isAsync() ? ExecutionPriority.PRIORITY_DEFAULT
                                                                    : ExecutionPriority.PRIORITY_HIGH)
-              .setInput(TaskInput.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
+              .setInput(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
               .addAllInputSecrets(protoSecrets)
               .setRuntime(ExecutionEnvironment.newBuilder()
                               .setType(delegateTaskPackage.getData().getTaskType())
@@ -135,7 +135,7 @@ public class CoreDelegateResource {
 
     return TaskSecret.newBuilder()
         .setConfig(SecretConfig.newBuilder().setBinaryData(ByteString.copyFrom(configBytes)).build())
-        .setSecrets(TaskInput.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
+        .setSecrets(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
         .setRuntime(ExecutionEnvironment.newBuilder()
                         .setType("SECRET") // Fixme: Secret type doesn't exist right now
                         .setSource(PluginSource.SOURCE_IMAGE)

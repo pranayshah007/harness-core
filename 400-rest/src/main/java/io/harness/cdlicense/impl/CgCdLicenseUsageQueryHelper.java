@@ -76,11 +76,12 @@ public class CgCdLicenseUsageQueryHelper {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries";
-          throw new CgLicenseUsageException(errorLog, exception);
+          log.error(String.format("Failed to fetch service instance usage for accountId %s after %d retries", accountId,
+                        MAX_RETRY),
+              exception);
+          throw new CgLicenseUsageException(
+              "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries", exception);
         }
-        log.error(
-            "Failed to fetch service instance usage for accountId : [{}] , retry : [{}]", accountId, retry, exception);
         retry++;
       }
     }
@@ -106,12 +107,14 @@ public class CgCdLicenseUsageQueryHelper {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE : Failed to fetch serviceIds within interval";
-          throw new CgLicenseUsageException(errorLog, exception);
+          log.error(
+              String.format(
+                  "Failed to fetch serviceIds within interval for last [%d days] deployments for accountId %s after %d retries",
+                  timePeriod, accountId, MAX_RETRY),
+              exception);
+          throw new CgLicenseUsageException(
+              "MAX RETRY FAILURE : Failed to fetch serviceIds within interval", exception);
         }
-        log.error(
-            "Failed to fetch serviceIds within interval for last [{} days] deployments for accountId : [{}] , retry : [{}]",
-            timePeriod, accountId, retry, exception);
         retry++;
       }
     }
@@ -152,10 +155,13 @@ public class CgCdLicenseUsageQueryHelper {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          String errorLog = "MAX RETRY FAILURE : Failed to fetch service usage within interval";
-          throw new CgLicenseUsageException(errorLog, exception);
+          log.error(
+              String.format("Failed to fetch percentile instance count for services of accountId %s after %d retries",
+                  accountId, MAX_RETRY),
+              exception);
+          throw new CgLicenseUsageException(
+              "MAX RETRY FAILURE : Failed to fetch percentile instance count for services", exception);
         }
-        log.error("Failed to fetch service usage for accountId : [{}] , retry : [{}]", accountId, retry, exception);
         retry++;
       }
     }

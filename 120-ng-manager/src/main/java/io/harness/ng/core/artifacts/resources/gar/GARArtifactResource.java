@@ -13,6 +13,7 @@ import static io.harness.cdng.artifact.resources.googleartifactregistry.service.
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
@@ -105,9 +106,11 @@ public class GARArtifactResource {
   @ApiOperation(value = "Gets google artifact registry last successful build",
       nickname = "getLastSuccessfulBuildForGoogleArtifactRegistry")
   public ResponseDTO<GARBuildDetailsDTO>
-  getLastSuccessfulBuild(@QueryParam("connectorRef") String GCPConnectorIdentifier, @QueryParam("region") String region,
-      @QueryParam("repositoryName") String repositoryName, @QueryParam("project") String project,
-      @QueryParam("package") String pkg, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+  getLastSuccessfulBuild(@QueryParam(NGArtifactConstants.CONNECTOR_REF) String GCPConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.REGION) String region,
+      @QueryParam(NGArtifactConstants.REPOSITORY_NAME) String repositoryName,
+      @QueryParam(NGArtifactConstants.PROJECT) String project, @QueryParam(NGArtifactConstants.PACKAGE) String pkg,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @NotNull GarRequestDTO garRequestDTO) {
     IdentifierRef connectorRef =
@@ -122,9 +125,10 @@ public class GARArtifactResource {
   @ApiOperation(value = "Gets google artifact registry last successful build v2",
       nickname = "getLastSuccessfulBuildForGoogleArtifactRegistryV2")
   public ResponseDTO<GARBuildDetailsDTO>
-  getLastSuccessfulBuildV2(@QueryParam("connectorRef") String gcpConnectorIdentifier,
-      @QueryParam("region") String region, @QueryParam("repositoryName") String repositoryName,
-      @QueryParam("project") String project, @QueryParam("package") String pkg,
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.CONNECTOR_REF) String gcpConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.REGION) String region,
+      @QueryParam(NGArtifactConstants.REPOSITORY_NAME) String repositoryName,
+      @QueryParam(NGArtifactConstants.PROJECT) String project, @QueryParam(NGArtifactConstants.PACKAGE) String pkg,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

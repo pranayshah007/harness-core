@@ -106,9 +106,6 @@ public class PdcPerpetualTaskExecutorNgTest extends DelegateTestBase {
                                            .setPort(1234)
                                            .build();
 
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(message))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();
   }
 }

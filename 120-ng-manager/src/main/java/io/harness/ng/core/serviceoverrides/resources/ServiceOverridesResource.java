@@ -121,7 +121,7 @@ public class ServiceOverridesResource {
 
   @GET
   @Path("/{identifier}")
-  @ApiOperation(value = "Gets Service Overrides by Identifier", nickname = "getServiceOverrides")
+  @ApiOperation(value = "Gets Service Overrides by Identifier", nickname = "getServiceOverridesV2")
   @Operation(operationId = "getServiceOverrides", summary = "Gets Service Overrides by Identifier",
       responses =
       {
@@ -162,7 +162,7 @@ public class ServiceOverridesResource {
   }
 
   @POST
-  @ApiOperation(value = "Create an ServiceOverride Entity", nickname = "createServiceOverride")
+  @ApiOperation(value = "Create an ServiceOverride Entity", nickname = "createServiceOverrideV2")
   @Operation(operationId = "createServiceOverride", summary = "Create an ServiceOverride Entity",
       responses =
       {
@@ -182,7 +182,7 @@ public class ServiceOverridesResource {
   }
 
   @PUT
-  @ApiOperation(value = "Update an ServiceOverride Entity", nickname = "updateServiceOverride")
+  @ApiOperation(value = "Update an ServiceOverride Entity", nickname = "updateServiceOverrideV2")
   @Operation(operationId = "updateServiceOverride", summary = "Update an ServiceOverride Entity",
       responses =
       {
@@ -203,7 +203,7 @@ public class ServiceOverridesResource {
 
   @DELETE
   @Path("/{identifier}")
-  @ApiOperation(value = "Delete a Service Override entity", nickname = "deleteServiceOverride")
+  @ApiOperation(value = "Delete a Service Override entity", nickname = "deleteServiceOverrideV2")
   @Operation(operationId = "deleteServiceOverride", summary = "Delete a ServiceOverride entity",
       responses =
       {
@@ -237,8 +237,9 @@ public class ServiceOverridesResource {
 
   @GET
   @Path("/list")
-  @ApiOperation(value = "Gets Service list ", nickname = "getServiceList")
-  @Operation(operationId = "getServiceList", summary = "Gets Service list",
+  @Hidden
+  @ApiOperation(value = "Gets Service Override List", nickname = "getServiceOverrideListV2")
+  @Operation(operationId = "getServiceOverrideListV2", summary = "Gets Service Override List",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Services for a Project")
