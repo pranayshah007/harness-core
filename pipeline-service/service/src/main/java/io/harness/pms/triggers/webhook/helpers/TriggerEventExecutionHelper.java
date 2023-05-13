@@ -37,6 +37,8 @@ import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
+import io.harness.eventsframework.webhookpayloads.webhookdata.TriggerExecutionDTO;
+import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.execution.PlanExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.NgTriggerAutoLogContext;
@@ -122,6 +124,7 @@ public class TriggerEventExecutionHelper {
   private final PmsFeatureFlagService pmsFeatureFlagService;
   private final TriggerExecutionHelper triggerExecutionHelper;
   private final WebhookEventMapperHelper webhookEventMapperHelper;
+  private final TriggerWebhookEventPublisher triggerWebhookEventPublisher;
   @Inject @Named("TriggerAuthenticationExecutorService") ExecutorService triggerAuthenticationExecutor;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
@@ -159,37 +162,29 @@ public class TriggerEventExecutionHelper {
                   triggerWebhookEvent, triggerDetails, triggerDetails.getNgTriggerEntity()));
               continue;
             }
-            long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
-                ? 3
-                : triggerDetails.getNgTriggerEntity().getYmlVersion();
-            NGTriggerEntity triggerEntity = triggerDetails.getNgTriggerEntity();
-            Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
-                                    .is(triggerEntity.getAccountId())
-                                    .and(NGTriggerEntityKeys.orgIdentifier)
-                                    .is(triggerEntity.getOrgIdentifier())
-                                    .and(NGTriggerEntityKeys.projectIdentifier)
-                                    .is(triggerEntity.getProjectIdentifier())
-                                    .and(NGTriggerEntityKeys.targetIdentifier)
-                                    .is(triggerEntity.getTargetIdentifier())
-                                    .and(NGTriggerEntityKeys.identifier)
-                                    .is(triggerEntity.getIdentifier())
-                                    .and(NGTriggerEntityKeys.deleted)
-                                    .is(false);
-            if (triggerEntity.getVersion() != null) {
-              criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
+            if (pmsFeatureFlagService.isEnabled(triggerDetails.getNgTriggerEntity().getAccountId(),
+                    FeatureName.SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)
+                && mappingRequestData.getWebhookDTO() != null) {
+              // Added condition for webhookDTO to be not null as the flow should not go to redis if it comes via V1
+              // flow.
+              WebhookDTO webhookDTO = mappingRequestData.getWebhookDTO();
+              TriggerExecutionDTO triggerExecutionDTO =
+                  TriggerExecutionDTO.newBuilder()
+                      .setWebhookDto(webhookDTO)
+                      .setAccountId(triggerDetails.getNgTriggerEntity().getAccountId())
+                      .setOrgIdentifier(triggerDetails.getNgTriggerEntity().getOrgIdentifier())
+                      .setProjectIdentifier(triggerDetails.getNgTriggerEntity().getProjectIdentifier())
+                      .setTargetIdentifier(triggerDetails.getNgTriggerEntity().getTargetIdentifier())
+                      .setTriggerIdentifier(triggerDetails.getNgTriggerEntity().getIdentifier())
+                      .setAuthenticated(
+                          triggerDetails.getAuthenticated() != null ? triggerDetails.getAuthenticated() : Boolean.TRUE)
+                      .build();
+              triggerWebhookEventPublisher.publishTriggerWebhookEvent(triggerExecutionDTO);
+            } else {
+              updateWebhookRegistrationStatusAndTriggerPipelineExecution(
+                  webhookEventMappingResponse.getParseWebhookResponse(), triggerWebhookEvent, eventResponses,
+                  triggerDetails);
             }
-            try {
-              TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
-                  WebhookAutoRegistrationStatus.builder()
-                      .registrationResult(WebhookRegistrationStatus.SUCCESS)
-                      .build());
-            } catch (Exception ex) {
-              log.error("Webhook registration status update failed", ex);
-            }
-            ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
-            eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
-                getTriggerPayloadForWebhookTrigger(webhookEventMappingResponse, triggerWebhookEvent, yamlVersion),
-                triggerWebhookEvent.getPayload()));
           }
         }
       } else {
@@ -201,9 +196,43 @@ public class TriggerEventExecutionHelper {
     }
   }
 
+  public void updateWebhookRegistrationStatusAndTriggerPipelineExecution(ParseWebhookResponse parseWebhookResponse,
+      TriggerWebhookEvent triggerWebhookEvent, List<TriggerEventResponse> eventResponses,
+      TriggerDetails triggerDetails) {
+    long yamlVersion = triggerDetails.getNgTriggerEntity().getYmlVersion() == null
+        ? 3
+        : triggerDetails.getNgTriggerEntity().getYmlVersion();
+    NGTriggerEntity triggerEntity = triggerDetails.getNgTriggerEntity();
+    Criteria criteria = Criteria.where(NGTriggerEntityKeys.accountId)
+                            .is(triggerEntity.getAccountId())
+                            .and(NGTriggerEntityKeys.orgIdentifier)
+                            .is(triggerEntity.getOrgIdentifier())
+                            .and(NGTriggerEntityKeys.projectIdentifier)
+                            .is(triggerEntity.getProjectIdentifier())
+                            .and(NGTriggerEntityKeys.targetIdentifier)
+                            .is(triggerEntity.getTargetIdentifier())
+                            .and(NGTriggerEntityKeys.identifier)
+                            .is(triggerEntity.getIdentifier())
+                            .and(NGTriggerEntityKeys.deleted)
+                            .is(false);
+    if (triggerEntity.getVersion() != null) {
+      criteria.and(NGTriggerEntityKeys.version).is(triggerEntity.getVersion());
+    }
+    try {
+      TriggerHelper.stampWebhookRegistrationInfo(triggerEntity,
+          WebhookAutoRegistrationStatus.builder().registrationResult(WebhookRegistrationStatus.SUCCESS).build());
+    } catch (Exception ex) {
+      log.error("Webhook registration status update failed", ex);
+    }
+    ngTriggerRepository.updateValidationStatus(criteria, triggerEntity);
+    eventResponses.add(triggerPipelineExecution(triggerWebhookEvent, triggerDetails,
+        getTriggerPayloadForWebhookTrigger(parseWebhookResponse, triggerWebhookEvent, yamlVersion),
+        triggerWebhookEvent.getPayload()));
+  }
+
   @VisibleForTesting
   TriggerPayload getTriggerPayloadForWebhookTrigger(
-      WebhookEventMappingResponse webhookEventMappingResponse, TriggerWebhookEvent triggerWebhookEvent, long version) {
+      ParseWebhookResponse parseWebhookResponse, TriggerWebhookEvent triggerWebhookEvent, long version) {
     Builder builder = TriggerPayload.newBuilder().setType(Type.WEBHOOK);
 
     if (CUSTOM.getEntityMetadataName().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
@@ -220,7 +249,6 @@ public class TriggerEventExecutionHelper {
       builder.setSourceType(SourceType.BITBUCKET_REPO);
     }
 
-    ParseWebhookResponse parseWebhookResponse = webhookEventMappingResponse.getParseWebhookResponse();
     if (parseWebhookResponse != null) {
       if (parseWebhookResponse.hasPr()) {
         builder.setParsedPayload(ParsedPayload.newBuilder().setPr(parseWebhookResponse.getPr()).build()).build();

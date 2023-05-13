@@ -95,6 +95,7 @@ import io.harness.pms.event.entitycrud.AccountEntityCrudStreamListener;
 import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
+import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
@@ -165,8 +166,10 @@ import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.servicenow.ServiceNowStepHelperServiceImpl;
 import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.pms.template.service.PipelineRefreshServiceImpl;
+import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
+import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookEventExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImplV2;
 import io.harness.pms.wait.WaitStepResource;
@@ -419,6 +422,7 @@ public class PipelineServiceModule extends AbstractModule {
         .toInstance(new ManagedScheduledExecutorService("ProgressUpdateServiceExecutor-Thread"));
     bind(TriggerWebhookExecutionService.class).to(TriggerWebhookExecutionServiceImpl.class);
     bind(TriggerWebhookExecutionServiceV2.class).to(TriggerWebhookExecutionServiceImplV2.class);
+    bind(TriggerWebhookEventExecutionService.class).to(TriggerWebhookEventExecutionServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("telemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -518,6 +522,10 @@ public class PipelineServiceModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.POLLING_EVENTS_STREAM))
         .to(PollingEventStreamListener.class);
+
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
+        .to(TriggerExecutionEventStreamListener.class);
   }
 
   @Provides
