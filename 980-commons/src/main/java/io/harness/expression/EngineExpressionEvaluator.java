@@ -23,6 +23,7 @@ import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExcepti
 import io.harness.expression.common.ExpressionConstants;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.DateTimeFunctor;
+import io.harness.serializer.JsonUtils;
 import io.harness.text.resolver.ExpressionResolver;
 import io.harness.text.resolver.StringReplacer;
 import io.harness.text.resolver.TrackingExpressionResolver;
@@ -30,6 +31,7 @@ import io.harness.text.resolver.TrackingExpressionResolver;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +59,7 @@ public class EngineExpressionEvaluator {
 
   private static final Pattern VALID_VARIABLE_FIELD_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   private static final Pattern ALIAS_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
+  public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
 
   private static final int MAX_DEPTH = 15;
 
@@ -637,6 +640,16 @@ public class EngineExpressionEvaluator {
         Object value = engineExpressionEvaluator.evaluateExpressionBlock(expression, ctx, depth, expressionMode);
         if (value == null) {
           unresolvedExpressions.add(expression);
+        }
+        if (ctx.getOriginalMap().containsKey(ENABLED_FEATURE_FLAGS_KEY)
+            && ctx.getOriginalMap()
+                   .get(ENABLED_FEATURE_FLAGS_KEY)
+                   .toString()
+                   .contains("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
+          // Use the asJson only when the FF is enabled.
+          if (value instanceof Collection) {
+            return JsonUtils.asJson(value);
+          }
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {

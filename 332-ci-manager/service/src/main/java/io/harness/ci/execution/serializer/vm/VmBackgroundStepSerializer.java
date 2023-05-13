@@ -12,12 +12,14 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -39,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 public class VmBackgroundStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
+  @Inject CIFeatureFlagService featureFlagService;
 
   public VmBackgroundStep serialize(
       BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier, List<CIRegistry> registries) {
@@ -71,8 +74,13 @@ public class VmBackgroundStepSerializer {
       command = null;
     }
 
-    Map<String, String> envVars =
-        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+    boolean fVal = featureFlagService.isEnabled(
+        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
+
+    Map<String, String> envVars = resolveMapParameterV2(
+        "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
+        ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     if (!isEmpty(command)) {
       String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell());

@@ -585,7 +585,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
             ambiance);
       case BACKGROUND:
         return backgroundStepProtobufSerializer.serializeStepWithStepParameters(
-            (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName);
+            (BackgroundStepInfo) ciStepInfo, port, taskId, logKey, stepIdentifier, accountId, stepName, ambiance);
       case PLUGIN:
         return pluginStepProtobufSerializer.serializeStepWithStepParameters((PluginStepInfo) ciStepInfo, port, taskId,
             logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName,
@@ -610,7 +610,7 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
       case RUN_TESTS:
         return runTestsStepProtobufSerializer.serializeStepWithStepParameters((RunTestsStepInfo) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
-            stepName);
+            stepName, ambiance);
       case CLEANUP:
       case TEST:
       case BUILD:

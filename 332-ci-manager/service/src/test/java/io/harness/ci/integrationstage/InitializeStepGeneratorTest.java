@@ -18,6 +18,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.rule.Owner;
 
@@ -29,6 +30,7 @@ import org.junit.experimental.categories.Category;
 public class InitializeStepGeneratorTest extends CIExecutionTestBase {
   @Inject InitializeStepGenerator initializeStepGenerator;
   @Inject CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
+  @Inject CIFeatureFlagService featureFlagService;
 
   @Test
   @Owner(developers = ALEKSANDAR)
