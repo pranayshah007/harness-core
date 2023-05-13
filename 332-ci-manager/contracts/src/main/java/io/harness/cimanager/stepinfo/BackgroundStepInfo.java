@@ -155,9 +155,7 @@ public class BackgroundStepInfo implements CIStepInfo, WithConnectorRef {
   @Override
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
-    if (connectorRef.getValue() != null) {
-      connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
-    }
+    connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
 
