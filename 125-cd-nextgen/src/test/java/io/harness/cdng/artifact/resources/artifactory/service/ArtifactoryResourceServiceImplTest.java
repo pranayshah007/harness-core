@@ -9,6 +9,7 @@ package io.harness.cdng.artifact.resources.artifactory.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.artifactory.ArtifactoryTaskParams.TaskType.FETCH_IMAGE_PATHS;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -85,6 +86,21 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
   private static String IMAGE_PATH = "imagePath";
   private static String ORG_IDENTIFIER = "orgIdentifier";
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final String IDENTIFIER = "identifier";
+  private static final String INPUT = "<+input>-abc";
+  private static final String TAG = "tag";
+
+  private static final IdentifierRef IDENTIFIER_REF = IdentifierRef.builder()
+                                                          .accountIdentifier(ACCOUNT_ID)
+                                                          .identifier(IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .build();
+  private static final ArtifactoryRequestDTO ARTIFACTORY_REQUEST_DTO = ArtifactoryRequestDTO.builder().build();
+
+  private static final String REPOSITORY_MESSAGE = "value for repository is empty or not provided";
+  private static final String REPOSITORY_FORMAT_MESSAGE = "value for repositoryFormat is empty or not provided";
+  private static final String TAG_TAG_REGEX_MESSAGE = "value for tag, tagRegex is empty or not provided";
 
   @Mock private ConnectorService connectorService;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -319,15 +335,9 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testGetSuccessfulBuild() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
-    ArtifactoryRequestDTO artifactoryRequestDTO = ArtifactoryRequestDTO.builder().build();
+    ArtifactoryRequestDTO artifactoryRequestDTO = ArtifactoryRequestDTO.builder().tag(TAG).build();
     ConnectorResponseDTO connectorDTO = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -345,12 +355,12 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
                 .build());
 
     ArtifactoryBuildDetailsDTO dockerBuildDetailsDTO =
-        artifactoryResourceService.getSuccessfulBuild(identifierRef, REPO_NAME, IMAGE_PATH,
+        artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
             RepositoryFormat.docker.name(), null, artifactoryRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(dockerBuildDetailsDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -429,5 +439,92 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactoryTaskParams artifactTaskParameters = (ArtifactoryTaskParams) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getTaskType()).isEqualTo(FETCH_IMAGE_PATHS);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryNull() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, null, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryInput() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, INPUT, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryFormatNull() {
+    assertThatThrownBy(()
+                           -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH, null,
+                               null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_FORMAT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryFormatInput() {
+    assertThatThrownBy(()
+                           -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_NAME, INPUT,
+                               null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_FORMAT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagNull() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagInput() {
+    assertThatThrownBy(()
+                           -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ArtifactoryRequestDTO.builder().tag(INPUT).build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegexNull() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegexInput() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ArtifactoryRequestDTO.builder().tagRegex(INPUT).build(),
+                ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 }
