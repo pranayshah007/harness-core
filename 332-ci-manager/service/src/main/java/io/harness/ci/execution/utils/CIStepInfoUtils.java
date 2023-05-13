@@ -31,6 +31,10 @@ import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.common.NGExpressionUtils;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.sto.config.STOImageConfig;
 import io.harness.sto.config.STOStepConfig;
@@ -38,7 +42,9 @@ import io.harness.sto.utils.STOSettingsUtils;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -227,5 +233,45 @@ public class CIStepInfoUtils {
     }
     String pluginName = ciExecutionConfigService.getContainerlessPluginNameForVM(ciStepInfoType);
     return isNotEmpty(pluginName);
+  }
+
+  public static Map<String, String> injectAndResolveLoopingVariables(
+      Ambiance ambiance, String accountId, CIFeatureFlagService featureFlagService, Map<String, String> envs) {
+    if (featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId)) {
+      if (isEmpty(envs)) {
+        envs = new HashMap<>();
+      }
+      Optional<Level> optionalStageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
+      Level stepLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
+      if (optionalStageLevel.isPresent() && stepLevel != null) {
+        StrategyMetadata stageStrategyMetadata = optionalStageLevel.get().getStrategyMetadata();
+        StrategyMetadata stepStrategyMetadata = stepLevel.getStrategyMetadata();
+        int stageCurrentIteration = stageStrategyMetadata.getCurrentIteration();
+        int stageTotalIterations =
+            stageStrategyMetadata.getTotalIterations() > 0 ? stageStrategyMetadata.getTotalIterations() : 1;
+        int stepCurrentIteration = stepStrategyMetadata.getCurrentIteration();
+        int stepTotalIterations =
+            stepStrategyMetadata.getTotalIterations() > 0 ? stepStrategyMetadata.getTotalIterations() : 1;
+        int harnessNodeIndex = 0;
+        int harnessNodeTotal = 1;
+
+        // Currently <+strategy.iteration> takes precedence in this manner -> step > sg > stage
+        if (stepTotalIterations > 1) {
+          harnessNodeIndex = stepCurrentIteration;
+          harnessNodeTotal = stepTotalIterations;
+        } else if (stageTotalIterations > 1) {
+          harnessNodeIndex = stageCurrentIteration;
+          harnessNodeTotal = stageTotalIterations;
+        }
+
+        envs.putIfAbsent("HARNESS_STAGE_INDEX", String.valueOf(stageCurrentIteration));
+        envs.putIfAbsent("HARNESS_STAGE_TOTAL", String.valueOf(stageTotalIterations));
+        envs.putIfAbsent("HARNESS_STEP_INDEX", String.valueOf(stepCurrentIteration));
+        envs.putIfAbsent("HARNESS_STEP_TOTAL", String.valueOf(stepTotalIterations));
+        envs.putIfAbsent("HARNESS_NODE_INDEX", String.valueOf(harnessNodeIndex));
+        envs.putIfAbsent("HARNESS_NODE_TOTAL", String.valueOf(harnessNodeTotal));
+      }
+    }
+    return envs;
   }
 }
