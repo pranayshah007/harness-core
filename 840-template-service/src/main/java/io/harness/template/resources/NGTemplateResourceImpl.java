@@ -522,7 +522,7 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     templateService.updateGitDetails(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier,
         versionLabel,
-        UpdateGitDetailsParams.builder().filepath(request.getFilepath()).repoName(request.getRepoName()).build());
+        UpdateGitDetailsParams.builder().filePath(request.getFilepath()).repoName(request.getRepoName()).build());
     return ResponseDTO.newResponse(TemplateUpdateGitMetadataResponse.builder().status(true).build());
   }
 }

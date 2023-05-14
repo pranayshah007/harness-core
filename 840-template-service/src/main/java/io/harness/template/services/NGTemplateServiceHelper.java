@@ -625,8 +625,8 @@ public class NGTemplateServiceHelper {
     if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
       update.set(TemplateEntityKeys.repo, updateGitDetailsParams.getRepoName());
     }
-    if (isNotEmpty(updateGitDetailsParams.getFilepath())) {
-      update.set(TemplateEntityKeys.filePath, updateGitDetailsParams.getFilepath());
+    if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
+      update.set(TemplateEntityKeys.filePath, updateGitDetailsParams.getFilePath());
     }
     return update;
   }

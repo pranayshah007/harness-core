@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template.resources.beans;
+package io.harness.pms.pipeline.gitsync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,7 +16,8 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-public class UpdateGitDetailsParams {
+public class PMSUpdateGitDetailsParams {
+  String connectorRef;
   String filePath;
   String repoName;
 }

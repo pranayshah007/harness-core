@@ -78,6 +78,7 @@ import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
 import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
@@ -908,6 +909,22 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, moveConfigDTO, pipeline);
 
     return PipelineCRUDResult.builder().pipelineEntity(movedPipelineEntity).build();
+  }
+
+  @Override
+  public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
+    Update update = PMSPipelineFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
+
+    PipelineEntity pipelineAfterUpdate = pmsPipelineRepository.updateEntity(criteria, update);
+    if (pipelineAfterUpdate == null) {
+      throw new EntityNotFoundException(
+          format("Pipeline with id [%s] is not present or has been deleted", pipelineIdentifier));
+    }
+
+    return pipelineAfterUpdate.getIdentifier();
   }
 
   @VisibleForTesting
