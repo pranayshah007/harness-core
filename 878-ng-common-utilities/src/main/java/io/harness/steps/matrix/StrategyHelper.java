@@ -43,8 +43,8 @@ public class StrategyHelper {
   @Inject ForLoopStrategyConfigService forLoopStrategyConfigService;
   @Inject ParallelismStrategyConfigService parallelismStrategyConfigService;
 
-  public StrategyInfo expandJsonNodesFromClass(
-      JsonNode nodeWithStrategy, Optional<Integer> maxExpansionLimit, Class cls) throws IOException {
+  public StrategyInfo expandJsonNodesFromClass(JsonNode nodeWithStrategy, Optional<Integer> maxExpansionLimit,
+      boolean isStepGroup, Class cls) throws IOException {
     JsonNode node = nodeWithStrategy.get("strategy");
     if (node == null || node.isNull()) {
       JsonNode clonedNode = JsonPipelineUtils.asTree(JsonUtils.asMap(
@@ -57,7 +57,8 @@ public class StrategyHelper {
       if (strategyConfig.getMatrixConfig().isExpression()) {
         throw new InvalidRequestException("Expression for matrix at runtime could not be resolved!");
       } else {
-        return matrixConfigService.expandJsonNodeFromClass(strategyConfig, nodeWithStrategy, maxExpansionLimit, cls);
+        return matrixConfigService.expandJsonNodeFromClass(
+            strategyConfig, nodeWithStrategy, maxExpansionLimit, isStepGroup, cls);
       }
     }
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
@@ -175,7 +176,8 @@ public class StrategyHelper {
       ExecutionWrapperConfig executionWrapperConfig, Optional<Integer> maxExpansionLimit, Class cls) {
     try {
       if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
-        StrategyInfo strategyInfo = expandJsonNodesFromClass(executionWrapperConfig.getStep(), maxExpansionLimit, cls);
+        StrategyInfo strategyInfo =
+            expandJsonNodesFromClass(executionWrapperConfig.getStep(), maxExpansionLimit, false, cls);
         List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();
         Map<String, StrategyExpansionData> uuidToStrategyExpansionData = new HashMap<>();
         String uuid = EmptyPredicate.isEmpty(executionWrapperConfig.getUuid()) ? UUIDGenerator.generateUuid()
@@ -225,7 +227,7 @@ public class StrategyHelper {
         }
         stepGroupElementConfig.setSteps(executionWrapperConfigs);
         JsonNode stepGroupNode = JsonPipelineUtils.asTree(stepGroupElementConfig);
-        StrategyInfo strategyInfo = expandJsonNodesFromClass(stepGroupNode, maxExpansionLimit, cls);
+        StrategyInfo strategyInfo = expandJsonNodesFromClass(stepGroupNode, maxExpansionLimit, true, cls);
         List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();
         String uuid = EmptyPredicate.isEmpty(executionWrapperConfig.getUuid()) ? UUIDGenerator.generateUuid()
                                                                                : executionWrapperConfig.getUuid();
