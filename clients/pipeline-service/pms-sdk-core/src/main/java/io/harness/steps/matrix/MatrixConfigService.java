@@ -37,13 +37,13 @@ public class MatrixConfigService implements StrategyConfigService {
         keys, matrixConfig.getAxes(), matrixConfig.getExpressionAxes(), matrixConfig.getExclude(), childNodeId);
   }
 
-  public StrategyInfo expandJsonNodeFromClass(
-      StrategyConfig strategyConfig, JsonNode jsonNode, Optional<Integer> maxExpansionLimit, Class cls) {
+  public StrategyInfo expandJsonNodeFromClass(StrategyConfig strategyConfig, JsonNode jsonNode,
+      Optional<Integer> maxExpansionLimit, boolean isStepGroup, Class cls) {
     MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig().getValue();
     List<String> keys = getKeys(matrixConfig);
     return matrixConfigServiceHelper.expandJsonNodeFromClass(keys, matrixConfig.getAxes(),
         matrixConfig.getExpressionAxes(), matrixConfig.getExclude(), matrixConfig.getMaxConcurrency(), jsonNode,
-        maxExpansionLimit, cls);
+        maxExpansionLimit, isStepGroup, cls);
   }
 
   public StrategyInfo expandJsonNode(
