@@ -26,11 +26,14 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "ProjectLevelOverrideMigrationResponseDTO",
     description = "This is the Project Level Service Override Migration Response")
 public class ProjectLevelOverrideMigrationResponseDTO {
-  String projectIdentifier;
-  String orgIdentifier;
   String accountId;
-  int migratedEnvironmentsCount;
-  int migratedServiceOverridesCount;
+  String orgIdentifier;
+  String projectIdentifier;
+  boolean isSuccessFul;
+  long migratedEnvironmentsCount;
+  long migratedServiceOverridesCount;
+  long totalServiceOverrides;
+  long totalEnvironments;
   List<String> migratedEnvironmentsInfo;
-  List<SingleServiceOverrideMigrationResponse> migratedServiceOverridesInfo;
+  List<SingleServiceOverrideMigrationResponse> serviceOverridesInfos;
 }

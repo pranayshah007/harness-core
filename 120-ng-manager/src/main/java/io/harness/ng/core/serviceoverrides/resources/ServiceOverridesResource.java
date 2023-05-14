@@ -285,7 +285,8 @@ public class ServiceOverridesResource {
           NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(ServiceOverrideMigrationResponseDTO.builder().build());
+    ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
+        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 }

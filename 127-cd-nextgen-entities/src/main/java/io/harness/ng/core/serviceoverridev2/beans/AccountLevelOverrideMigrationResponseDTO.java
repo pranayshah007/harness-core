@@ -27,8 +27,11 @@ import lombok.experimental.FieldDefaults;
     description = "This is the Account Level Service Override Migration Response")
 public class AccountLevelOverrideMigrationResponseDTO {
   String accountId;
-  int migratedEnvironmentsCount;
-  int migratedServiceOverridesCount;
+  boolean isSuccessful;
+  long totalEnvironmentsCount;
+  long totalServiceOverridesCount;
+  long migratedEnvironmentsCount;
+  long migratedServiceOverridesCount;
   List<String> environmentsInfo;
   List<SingleServiceOverrideMigrationResponse> serviceOverridesInfo;
 }
