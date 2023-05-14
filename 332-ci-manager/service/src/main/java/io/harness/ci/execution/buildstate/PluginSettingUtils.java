@@ -169,7 +169,8 @@ public class PluginSettingUtils {
       long timeout, Ambiance ambiance, Type infraType, boolean isMandatory, boolean isContainerizedPlugin) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case ECR:
-        return getECRStepInfoEnvVariables(ambiance, (ECRStepInfo) stepInfo, identifier, infraType);
+        return getECRStepInfoEnvVariables(
+            ambiance, (ECRStepInfo) stepInfo, identifier, infraType, isContainerizedPlugin);
       case ACR:
         return getACRStepInfoEnvVariables((ACRStepInfo) stepInfo, identifier, infraType);
       case GCR:
@@ -420,7 +421,7 @@ public class PluginSettingUtils {
   }
 
   private Map<String, String> getECRStepInfoEnvVariables(
-      Ambiance ambiance, ECRStepInfo stepInfo, String identifier, Type infraType) {
+      Ambiance ambiance, ECRStepInfo stepInfo, String identifier, Type infraType, boolean isContainerizedPlugin) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     Map<String, String> map = new HashMap<>();
     String account = resolveStringParameter("account", "BuildAndPushECR", identifier, stepInfo.getAccount(), true);
@@ -501,6 +502,23 @@ public class PluginSettingUtils {
       setOptionalEnvironmentVariable(map, PLUGIN_ARTIFACT_FILE, PLUGIN_ARTIFACT_FILE_VALUE);
     } else if (infraType == Type.VM) {
       setMandatoryEnvironmentVariable(map, PLUGIN_DAEMON_OFF, "true");
+      if (!isContainerizedPlugin) {
+        // Only populate cache-from and cache-to if we're using the buildx plugin
+        List<String> cacheFromList =
+            resolveListParameter("cacheFrom", "BuildAndPushECR", identifier, stepInfo.getCacheFrom(), false);
+        if (!isEmpty(cacheFromList)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_FROM, listToCustomStringSlice(cacheFromList));
+        }
+        String cacheTo =
+            resolveStringParameterV2("cacheTo", "BuildAndPushECR", identifier, stepInfo.getCacheTo(), false);
+        if (!isEmpty(cacheTo)) {
+          setOptionalEnvironmentVariable(map, PLUGIN_CACHE_TO, cacheTo);
+        }
+        if (resolveBooleanParameter(stepInfo.getCaching(), false)) {
+          setOptionalEnvironmentVariable(
+              map, PLUGIN_BUILDER_DRIVER_OPTS, String.format("image=%s", DOCKER_BUILDKIT_IMAGE));
+        }
+      }
     }
 
     return map;
@@ -1033,6 +1051,8 @@ public class PluginSettingUtils {
         DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
         return resolveBooleanParameter(dockerStepInfo.getCaching(), false);
       case ECR:
+        ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
+        return resolveBooleanParameter(ecrStepInfo.getCaching(), false);
       case ACR:
       case GCR:
       default:
@@ -1041,14 +1061,16 @@ public class PluginSettingUtils {
   }
 
   public String getDlcPrefix(String accountId, String identifier, PluginCompatibleStep stepInfo) {
+    String repo;
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
         DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
-
-        String repo =
-            resolveStringParameter("repo", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getRepo(), true);
+        repo = resolveStringParameter("repo", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getRepo(), true);
         return String.format("%s/%s/", accountId, repo);
       case ECR:
+        ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
+        repo = resolveStringParameter("imageName", "BuildAndPushECR", identifier, ecrStepInfo.getImageName(), true);
+        return String.format("%s/%s/", accountId, repo);
       case ACR:
       case GCR:
       default:
@@ -1057,12 +1079,13 @@ public class PluginSettingUtils {
   }
 
   public void setupDlcArgs(PluginCompatibleStep stepInfo, String identifier, String cacheFromArg, String cacheToArg) {
+    List<String> cacheFrom;
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
         DockerStepInfo dockerStepInfo = (DockerStepInfo) stepInfo;
 
         // Append cacheFromArg to the list
-        List<String> cacheFrom = resolveListParameter(
+        cacheFrom = resolveListParameter(
             "cacheFrom", "BuildAndPushDockerRegistry", identifier, dockerStepInfo.getCacheFrom(), false);
         if (isEmpty(cacheFrom)) {
           cacheFrom = new ArrayList<>();
@@ -1076,6 +1099,21 @@ public class PluginSettingUtils {
         dockerStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
         return;
       case ECR:
+        ECRStepInfo ecrStepInfo = (ECRStepInfo) stepInfo;
+
+        // Append cacheFromArg to the list
+        cacheFrom = resolveListParameter("cacheFrom", "BuildAndPushECR", identifier, ecrStepInfo.getCacheFrom(), false);
+        if (isEmpty(cacheFrom)) {
+          cacheFrom = new ArrayList<>();
+        } else {
+          cacheFrom = new ArrayList(cacheFrom);
+        }
+        cacheFrom.add(cacheFromArg);
+        ecrStepInfo.setCacheFrom(ParameterField.createValueField(cacheFrom));
+
+        // Overwrite cacheTo with cacheToArg
+        ecrStepInfo.setCacheTo(ParameterField.createValueField(cacheToArg));
+        return;
       case ACR:
       case GCR:
       default:

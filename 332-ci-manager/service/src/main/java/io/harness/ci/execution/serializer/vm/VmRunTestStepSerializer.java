@@ -12,12 +12,14 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParamete
 import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -45,6 +47,7 @@ import org.apache.commons.lang3.StringUtils;
 public class VmRunTestStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
+  @Inject CIFeatureFlagService featureFlagService;
   String NULL_STR = "null";
 
   public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
@@ -103,8 +106,13 @@ public class VmRunTestStepSerializer {
 
     boolean runOnlySelectedTests = resolveBooleanParameter(runTestsStepInfo.getRunOnlySelectedTests(), true);
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
+
+    boolean fVal = featureFlagService.isEnabled(
+        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
     Map<String, String> envVars =
-        resolveMapParameterV2("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false, fVal);
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
+        ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
     preCommand = earlyExitCommand + preCommand;

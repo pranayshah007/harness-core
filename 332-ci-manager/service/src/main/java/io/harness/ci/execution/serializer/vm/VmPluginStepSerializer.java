@@ -119,7 +119,14 @@ public class VmPluginStepSerializer {
         envVars.put(key, SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
       }
     }
-    envVars.putAll(resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
+
+    boolean fVal = featureFlagService.isEnabled(
+        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
+
+    envVars.putAll(
+        resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false, fVal));
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
+        ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);

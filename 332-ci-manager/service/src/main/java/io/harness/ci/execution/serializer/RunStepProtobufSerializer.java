@@ -23,6 +23,7 @@ import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -81,8 +82,10 @@ public class RunStepProtobufSerializer implements ProtobufStepSerializer<RunStep
     runStepBuilder.setCommand(gitSafeCMD + command);
 
     runStepBuilder.setContainerPort(port);
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
     Map<String, String> envvars =
-        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
+    envvars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envvars);
     if (!isEmpty(envvars)) {
       runStepBuilder.putAllEnvironment(envvars);
     }

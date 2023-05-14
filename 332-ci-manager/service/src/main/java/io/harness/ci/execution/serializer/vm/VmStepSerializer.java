@@ -103,10 +103,10 @@ public class VmStepSerializer {
       Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails, String identifier) {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case DOCKER:
+      case ECR:
         return vmPluginCompatibleStepSerializer.preProcessStep(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier);
       case GCR:
-      case ECR:
       case ACR:
       default:
         return new HashSet<>();
