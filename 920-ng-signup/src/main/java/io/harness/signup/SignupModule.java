@@ -48,16 +48,19 @@ public class SignupModule extends AbstractModule {
   private final String clientId;
   private final SignupNotificationConfiguration notificationConfiguration;
   private final AccessControlClientConfiguration accessControlClientConfiguration;
+  private final SignupDomainBlacklistConfiguration signupDomainBlacklistConfiguration;
   private static final int NUMBER_OF_NOTIFICATION_THREADS = 10;
 
   public SignupModule(ServiceHttpClientConfig serviceHttpClientConfig, String managerServiceSecret, String clientId,
       SignupNotificationConfiguration notificationConfiguration,
-      AccessControlClientConfiguration accessControlClientConfiguration) {
+      AccessControlClientConfiguration accessControlClientConfiguration,
+      SignupDomainBlacklistConfiguration signupDomainBlacklistConfiguration) {
     this.serviceHttpClientConfig = serviceHttpClientConfig;
     this.managerServiceSecret = managerServiceSecret;
     this.clientId = clientId;
     this.notificationConfiguration = notificationConfiguration;
     this.accessControlClientConfiguration = accessControlClientConfiguration;
+    this.signupDomainBlacklistConfiguration = signupDomainBlacklistConfiguration;
   }
 
   @Override
@@ -100,5 +103,11 @@ public class SignupModule extends AbstractModule {
   @Singleton
   public SignupNotificationConfiguration notificationConfiguration() {
     return notificationConfiguration;
+  }
+
+  @Provides
+  @Singleton
+  public SignupDomainBlacklistConfiguration signupDomainBlacklistConfiguration() {
+    return signupDomainBlacklistConfiguration;
   }
 }

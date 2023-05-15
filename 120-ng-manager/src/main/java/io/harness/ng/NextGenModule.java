@@ -655,7 +655,8 @@ public class NextGenModule extends AbstractModule {
     install(new InviteModule(appConfig.isNgAuthUIEnabled()));
     install(new SignupModule(this.appConfig.getManagerClientConfig(),
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId(),
-        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration()));
+        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration(),
+        appConfig.getSignupDomainBlacklistConfiguration()));
     install(GitopsModule.getInstance());
     install(new AbstractWaiterModule() {
       @Override
