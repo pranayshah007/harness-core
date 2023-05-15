@@ -9,10 +9,12 @@ package io.harness.aggregator;
 
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +52,6 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   private ScopeService scopeService;
   private ACLRepository aclRepository;
   ACLGeneratorService aclGeneratorService;
-  private int count;
 
   @Before
   public void setup() {
@@ -67,10 +68,10 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   @Owner(developers = JIMIT_GANDHI)
   @Category(UnitTests.class)
   public void createACLs_LessThanBufferSize() {
-    count = 10;
-    Set<String> principals = getRandomStrings();
-    Set<String> permissions = getRandomStrings();
-    Set<ResourceSelector> resourceSelectors = getResourceSelector();
+    int count = 10;
+    Set<String> principals = getRandomStrings(count);
+    Set<String> permissions = getRandomStrings(count);
+    Set<ResourceSelector> resourceSelectors = getResourceSelector(count);
     RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
     when(aclRepository.insertAllIgnoringDuplicates(any())).thenReturn(1000L);
     long aclCount = aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
@@ -82,10 +83,10 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
   @Owner(developers = JIMIT_GANDHI)
   @Category(UnitTests.class)
   public void createACLs_MoreThanBufferSize_CallsRepositoryMultipleTimes() {
-    count = 50;
-    Set<String> principals = getRandomStrings();
-    Set<String> permissions = getRandomStrings();
-    Set<ResourceSelector> resourceSelectors = getResourceSelector();
+    int count = 50;
+    Set<String> principals = getRandomStrings(count);
+    Set<String> permissions = getRandomStrings(count);
+    Set<ResourceSelector> resourceSelectors = getResourceSelector(count);
     RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
     when(aclRepository.insertAllIgnoringDuplicates(any())).thenReturn(125000L);
     long aclCount = aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
@@ -93,7 +94,38 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     verify(aclRepository, times(3)).insertAllIgnoringDuplicates(any());
   }
 
-  private Set<String> getRandomStrings() {
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void createACLs_MoreThanAllowed_ReturnsZeroCreated() {
+    int count = 500;
+    Set<String> principals = getRandomStrings(count);
+    Set<ResourceSelector> resourceSelectors = getResourceSelector(count);
+    count = 10;
+    Set<String> permissions = getRandomStrings(count);
+    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
+    long aclCount = aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+    assertEquals(0, aclCount);
+    verify(aclRepository, never()).insertAllIgnoringDuplicates(any());
+  }
+
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void createACLs_TillMaxAllowed_ReturnsCreated() {
+    int count = 500;
+    Set<String> principals = getRandomStrings(count);
+    Set<ResourceSelector> resourceSelectors = getResourceSelector(count);
+    count = 8;
+    Set<String> permissions = getRandomStrings(count);
+    RoleAssignmentDBO roleAssignmentDBO = getRoleAssignment(PrincipalType.USER_GROUP);
+    when(aclRepository.insertAllIgnoringDuplicates(any())).thenReturn(50000L);
+    long aclCount = aclGeneratorService.createACLs(roleAssignmentDBO, principals, permissions, resourceSelectors);
+    assertEquals(2000000, aclCount);
+    verify(aclRepository, times(40)).insertAllIgnoringDuplicates(any());
+  }
+
+  private Set<String> getRandomStrings(int count) {
     Set<String> randomStrings = new HashSet<>();
     for (int i = 0; i < count; i++) {
       randomStrings.add(randomAlphabetic(10));
@@ -101,7 +133,7 @@ public class ACLGeneratorServiceImplTest extends AggregatorTestBase {
     return randomStrings;
   }
 
-  private Set<ResourceSelector> getResourceSelector() {
+  private Set<ResourceSelector> getResourceSelector(int count) {
     Set<ResourceSelector> resourceSelectors = new HashSet<>();
     for (int i = 0; i < count; i++) {
       resourceSelectors.add(ResourceSelector.builder().selector(randomAlphabetic(10)).conditional(false).build());
