@@ -699,4 +699,6 @@ public interface UserService extends OwnedByAccount {
   void removeAllUserGroupsFromUser(User user, String accountId);
 
   void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
+
+  boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged);
 }

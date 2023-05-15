@@ -7,7 +7,10 @@
 
 package io.harness.datahandler.services;
 
+import io.harness.ng.core.common.beans.Generation;
+
 public interface AdminUserService {
   boolean enableOrDisableUser(String accountId, String userIdOrEmail, boolean enabled);
   boolean assignAdminRoleToUserInNG(String accountId, String userIdOrEmail);
+  boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged);
 }
