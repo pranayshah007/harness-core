@@ -14,6 +14,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.advisers.retry.RetrySGStartAdvisor;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -139,6 +140,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    adviserObtainments.add(AdviserObtainment.newBuilder().setType(RetrySGStartAdvisor.ADVISER_TYPE).build());
     if (checkForStrategy) {
       return adviserObtainments;
     }

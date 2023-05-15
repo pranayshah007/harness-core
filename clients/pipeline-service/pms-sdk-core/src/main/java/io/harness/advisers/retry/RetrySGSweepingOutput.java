@@ -21,5 +21,5 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("retrySGSweepingOutput")
 @RecasterAlias("io.harness.advisers.retry.RetrySGSweepingOutput")
 public class RetrySGSweepingOutput implements ExecutionSweepingOutput {
-  int waitInterval;
+  RetryAdviserRollbackParameters retryAdviserRollbackParameters;
 }

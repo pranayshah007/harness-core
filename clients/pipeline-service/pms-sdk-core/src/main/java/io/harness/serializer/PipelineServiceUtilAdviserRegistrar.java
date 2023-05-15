@@ -15,6 +15,7 @@ import io.harness.advisers.nextstep.NextStepAdviser;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
 import io.harness.advisers.retry.RetryAdviserWithRollback;
 import io.harness.advisers.retry.RetrySGAdviserWithRollback;
+import io.harness.advisers.retry.RetrySGStartAdvisor;
 import io.harness.advisers.rollback.OnFailRollbackAdviser;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -38,6 +39,7 @@ public class PipelineServiceUtilAdviserRegistrar {
     advisersMap.put(ProceedWithDefaultValueAdviser.ADVISER_TYPE, ProceedWithDefaultValueAdviser.class);
     advisersMap.put(OnFailPipelineRollbackAdviser.ADVISER_TYPE, OnFailPipelineRollbackAdviser.class);
     advisersMap.put(RetrySGAdviserWithRollback.ADVISER_TYPE, RetrySGAdviserWithRollback.class);
+    advisersMap.put(RetrySGStartAdvisor.ADVISER_TYPE, RetrySGStartAdvisor.class);
 
     return advisersMap;
   }

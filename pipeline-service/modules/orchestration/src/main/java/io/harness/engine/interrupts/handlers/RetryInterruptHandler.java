@@ -56,9 +56,6 @@ public class RetryInterruptHandler implements InterruptHandler {
       throw new InvalidRequestException("This Node is already Retried");
     }
 
-    if (ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
-      throw new InvalidRequestException("Node Retry is supported only for Leaf Nodes");
-    }
     interrupt.setState(State.PROCESSING);
     List<Interrupt> activeInterrupts = interruptService.fetchActiveInterruptsForNodeExecutionByType(
         interrupt.getPlanExecutionId(), interrupt.getNodeExecutionId(), InterruptType.RETRY);
