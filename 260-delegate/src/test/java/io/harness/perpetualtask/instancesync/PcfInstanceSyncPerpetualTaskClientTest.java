@@ -121,7 +121,7 @@ public class PcfInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
   public void testGetTaskParams() {
     PerpetualTaskClientContext clientContext = getPerpetualTaskClientContext();
 
-    Message taskParams = pcfInstanceSyncPerpetualTaskClient.getTaskParams(clientContext);
+    Message taskParams = pcfInstanceSyncPerpetualTaskClient.getTaskParams(clientContext, true);
 
     assertThat(taskParams).isNotNull();
     assertThat(taskParams instanceof PcfInstanceSyncPerpetualTaskParams).isTrue();

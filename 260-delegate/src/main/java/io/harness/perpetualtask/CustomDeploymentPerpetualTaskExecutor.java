@@ -55,8 +55,14 @@ public class CustomDeploymentPerpetualTaskExecutor implements PerpetualTaskExecu
     response.setStatus(response.getExecutionStatus());
 
     try {
-      execute(
-          delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), taskParams.getAccountId(), response));
+      if (params.getReferenceFalseKryoSerializer()) {
+        execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
+            taskId.getId(), taskParams.getAccountId(), response));
+      } else {
+        execute(
+            delegateAgentManagerClient.publishInstanceSyncResult(taskId.getId(), taskParams.getAccountId(), response));
+      }
+
     } catch (Exception e) {
       log.error(String.format("Failed to publish instance sync result for custom deployment. PerpetualTaskId [%s]",
                     taskId.getId()),

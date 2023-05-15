@@ -18,7 +18,6 @@ import io.harness.grpc.utils.AnyUtils;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.aws.model.AwsCodeDeployListDeploymentInstancesResponse;
@@ -36,26 +35,28 @@ import org.eclipse.jetty.server.Response;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class AwsCodeDeployInstanceSyncExecutor implements PerpetualTaskExecutor {
+public class AwsCodeDeployInstanceSyncExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   @Inject private AwsEc2HelperServiceDelegate ec2ServiceDelegate;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Override
   public PerpetualTaskResponse runOnce(
       PerpetualTaskId taskId, PerpetualTaskExecutionParams params, Instant heartbeatTime) {
     final AwsCodeDeployInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsCodeDeployInstanceSyncPerpetualTaskParams.class);
-    final List<Filter> filters = (List<Filter>) kryoSerializer.asObject(taskParams.getFilter().toByteArray());
-    final AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(taskParams.getAwsConfig().toByteArray());
+    final List<Filter> filters = (List<Filter>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                     .asObject(taskParams.getFilter().toByteArray());
+    final AwsConfig awsConfig = (AwsConfig) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                    .asObject(taskParams.getAwsConfig().toByteArray());
     final List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(taskParams.getEncryptedData().toByteArray());
 
     AwsCodeDeployListDeploymentInstancesResponse instancesListResponse =
         getCodeDeployResponse(taskParams.getRegion(), filters, awsConfig, encryptedDataDetails);
 
     try {
-      execute(delegateAgentManagerClient.publishInstanceSyncResult(
+      execute(delegateAgentManagerClient.publishInstanceSyncResultV2(
           taskId.getId(), awsConfig.getAccountId(), instancesListResponse));
     } catch (Exception ex) {
       log.error("Failed to publish instance sync result for task {}", taskId.getId(), ex);

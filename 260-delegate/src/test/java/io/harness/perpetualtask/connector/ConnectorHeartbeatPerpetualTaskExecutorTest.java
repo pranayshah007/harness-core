@@ -46,6 +46,7 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -68,7 +69,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
   private final String ERROR_MSG = "error";
 
   @InjectMocks ConnectorHeartbeatPerpetualTaskExecutor connectorHeartbeatPerpetualTaskExecutor;
-  @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock KubernetesValidationHandler KubernetesValidationHandler;
   @Mock AwsValidationHandler awsValidationHandler;
   @Mock DelegateAgentManagerClient delegateAgentManagerClient;
@@ -79,7 +80,11 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
   @Before
   public void setup() throws IllegalAccessException, IOException {
     MockitoAnnotations.initMocks(this);
-    FieldUtils.writeField(connectorHeartbeatPerpetualTaskExecutor, "kryoSerializer", kryoSerializer, true);
+    doReturn(KubernetesValidationHandler)
+        .when(connectorTypeToConnectorValidationHandlerMap)
+        .get(ArgumentMatchers.any());
+    FieldUtils.writeField(
+        connectorHeartbeatPerpetualTaskExecutor, "referenceFalseKryoSerializer", referenceFalseKryoSerializer, true);
     doReturn(KubernetesValidationHandler)
         .when(connectorTypeToConnectorValidationHandlerMap)
         .get(ArgumentMatchers.any());
@@ -116,7 +121,8 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
             .connectorValidationParams(awsValidationParams)
             .isInvalid(false)
             .build();
-    ByteString connectorConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(connectorValidationParameterResponse));
+    ByteString connectorConfigBytes =
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams connectorHeartbeatTaskParams =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier("accountIdentifier")
@@ -146,7 +152,8 @@ public class ConnectorHeartbeatPerpetualTaskExecutorTest extends DelegateTestBas
             .connectorValidationParams(k8sValidationParams)
             .isInvalid(false)
             .build();
-    ByteString connectorConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(connectorValidationParameterResponse));
+    ByteString connectorConfigBytes =
+        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams connectorHeartbeatTaskParams =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier("accountIdentifier")

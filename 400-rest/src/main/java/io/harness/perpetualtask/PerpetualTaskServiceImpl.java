@@ -19,6 +19,8 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASK_
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_NON_ASSIGNABLE;
 import static io.harness.perpetualtask.PerpetualTaskState.TASK_UNASSIGNED;
 
+import static software.wings.beans.TaskType.PT_SERIALIZATION_SUPPORT;
+
 import static java.lang.System.currentTimeMillis;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -36,6 +38,7 @@ import io.harness.observer.Subject;
 import io.harness.perpetualtask.internal.PerpetualTaskRecord;
 import io.harness.perpetualtask.internal.PerpetualTaskRecordDao;
 import io.harness.reflection.ReflectionUtils;
+import io.harness.service.intfc.DelegateTaskService;
 import io.harness.service.intfc.PerpetualTaskStateObserver;
 
 import software.wings.app.MainConfiguration;
@@ -79,7 +82,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   @Inject private MainConfiguration mainConfiguration;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
-
+  @Inject private DelegateTaskService delegateTaskService;
   @Inject
   public PerpetualTaskServiceImpl(PerpetualTaskRecordDao perpetualTaskRecordDao,
       PerpetualTaskServiceClientRegistry clientRegistry, BroadcasterFactory broadcasterFactory,
@@ -149,17 +152,20 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         }
       }
 
-      PerpetualTaskRecord record = PerpetualTaskRecord.builder()
-                                       .accountId(accountId)
-                                       .perpetualTaskType(perpetualTaskType)
-                                       .clientContext(clientContext)
-                                       .timeoutMillis(Durations.toMillis(schedule.getTimeout()))
-                                       .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
-                                       .delegateId("")
-                                       .state(PerpetualTaskState.TASK_UNASSIGNED)
-                                       .assignIteration(currentTimeMillis())
-                                       .taskDescription(taskDescription)
-                                       .build();
+      PerpetualTaskRecord record =
+          PerpetualTaskRecord.builder()
+              .accountId(accountId)
+              .perpetualTaskType(perpetualTaskType)
+              .clientContext(clientContext)
+              .timeoutMillis(Durations.toMillis(schedule.getTimeout()))
+              .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
+              .delegateId("")
+              .state(PerpetualTaskState.TASK_UNASSIGNED)
+              .assignIteration(currentTimeMillis())
+              .taskDescription(taskDescription)
+              .referenceFalseKryoSerializer(
+                  delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name()))
+              .build();
 
       perpetualTaskCrudSubject.fireInform(PerpetualTaskCrudObserver::onPerpetualTaskCreated);
       remoteObserverInformer.sendEvent(
@@ -184,7 +190,10 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         log.info("Resetting the perpetual task {}, type: {}", taskId, perpetualTaskType);
         delegateMetricsService.recordPerpetualTaskMetrics(accountId, perpetualTaskType, PERPETUAL_TASK_RESET);
       }
-      return perpetualTaskRecordDao.resetDelegateIdForTask(accountId, taskId, taskExecutionBundle);
+      boolean useReferenceFalseKryoSerializer = taskExecutionBundle != null
+          && delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name());
+      return perpetualTaskRecordDao.resetDelegateIdForTask(
+          accountId, taskId, taskExecutionBundle, useReferenceFalseKryoSerializer);
     }
   }
 
@@ -274,13 +283,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   }
 
   @Override
-  public PerpetualTaskExecutionContext perpetualTaskContext(String taskId) {
+  public PerpetualTaskExecutionContext perpetualTaskContext(String taskId, boolean referenceFalseKryoSerializer) {
     log.info("Getting perpetual task context for task with id: {}", taskId);
     PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
 
     PerpetualTaskExecutionParams params = null;
     try {
-      params = getTaskParams(perpetualTaskRecord);
+      params = getTaskParams(perpetualTaskRecord, referenceFalseKryoSerializer);
     } catch (Exception e) {
       log.error("Error while fetching perpetual task context task params ", e);
       perpetualTaskRecordDao.updateInvalidStateWithExceptions(
@@ -300,12 +309,13 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         .build();
   }
 
-  private PerpetualTaskExecutionParams getTaskParams(PerpetualTaskRecord perpetualTaskRecord) throws Exception {
+  private PerpetualTaskExecutionParams getTaskParams(
+      PerpetualTaskRecord perpetualTaskRecord, boolean referenceFalseKryoSerializer) throws Exception {
     Message perpetualTaskParams = null;
 
     if (perpetualTaskRecord.getClientContext().getClientParams() != null) {
       PerpetualTaskServiceClient client = clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType());
-      perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext());
+      perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext(), referenceFalseKryoSerializer);
 
       return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(perpetualTaskParams)).build();
     } else {
@@ -319,6 +329,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
       }
 
       return PerpetualTaskExecutionParams.newBuilder()
+          .setReferenceFalseKryoSerializer(perpetualTaskRecord.isReferenceFalseKryoSerializer())
           .setCustomizedParams(perpetualTaskExecutionBundle.getTaskParams())
           .build();
     }

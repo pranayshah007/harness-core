@@ -23,10 +23,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
+import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsLambdaInfraStructureMapping;
@@ -52,7 +52,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._360_CG_MANAGER)
-public class AwsLambdaInstanceSyncPerpetualTaskClient implements PerpetualTaskServiceClient {
+public class AwsLambdaInstanceSyncPerpetualTaskClient
+    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
   public static final String FUNCTION_NAME = "functionName";
   public static final String QUALIFIER = "qualifier";
   public static final String START_DATE = "startDate";
@@ -60,15 +61,15 @@ public class AwsLambdaInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
   @Inject SecretManager secretManager;
   @Inject SettingsService settingsService;
   @Inject InfrastructureMappingService infraMappingService;
-  @Inject private KryoSerializer kryoSerializer;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
     final PerpetualTaskData perpetualTaskData = getPerpetualTaskData(clientContext);
 
-    ByteString awsConfigBytes = ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getAwsConfig()));
+    ByteString awsConfigBytes =
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getAwsConfig()));
     ByteString encryptedAwsConfigBytes =
-        ByteString.copyFrom(kryoSerializer.asBytes(perpetualTaskData.getEncryptedDataDetails()));
+        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(perpetualTaskData.getEncryptedDataDetails()));
 
     return AwsLambdaInstanceSyncPerpetualTaskParams.newBuilder()
         .setAwsConfig(awsConfigBytes)
