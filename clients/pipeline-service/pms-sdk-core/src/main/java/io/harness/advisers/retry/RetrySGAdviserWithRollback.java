@@ -62,7 +62,11 @@ public class RetrySGAdviserWithRollback implements Adviser {
     int retryCount = advisingEvent.getRetryCount();
 
     if (retryCount < parameters.getRetryCount()) {
-      // publish sweeping output
+      int waitInterval = calculateWaitInterval(parameters.getWaitIntervalList(), retryCount);
+      executionSweepingOutputService.consumeOptional(advisingEvent.getAmbiance(),
+          YAMLFieldNameConstants.RETRY_STEP_GROUP, RetrySGSweepingOutput.builder().waitInterval(waitInterval).build(),
+          StepOutcomeGroup.STEP_GROUP.name());
+      return AdviserResponse.newBuilder().setNextStepAdvise(NextStepAdvise.newBuilder().build()).build();
     }
     return handlePostRetry(parameters, advisingEvent.getAmbiance(), advisingEvent.getToStatus());
   }
@@ -146,5 +150,13 @@ public class RetrySGAdviserWithRollback implements Adviser {
   private RetryAdviserRollbackParameters extractParameters(AdvisingEvent advisingEvent) {
     return (RetryAdviserRollbackParameters) Preconditions.checkNotNull(
         kryoSerializer.asObject(advisingEvent.getAdviserParameters()));
+  }
+
+  private int calculateWaitInterval(List<Integer> waitIntervalList, int retryCount) {
+    if (isEmpty(waitIntervalList)) {
+      return 0;
+    }
+    return waitIntervalList.size() <= retryCount ? waitIntervalList.get(waitIntervalList.size() - 1)
+                                                 : waitIntervalList.get(retryCount);
   }
 }
