@@ -520,8 +520,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
 
     List<String> delegateGroupIds = getDelegateGroupIds(accountId, orgId, projectId, filterProperties, searchTerm);
 
-    List<Delegate> delegateList =
-        getFilteredDelegateList(accountId, orgId, projectId, filterProperties, delegateGroupIds);
+    List<Delegate> delegateList = getFilteredDelegateList(accountId, filterProperties, delegateGroupIds);
 
     final Map<String, List<Delegate>> delegatesByGroup =
         delegateList.stream().collect(groupingBy(Delegate::getDelegateGroupId));
@@ -546,13 +545,18 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     return DelegateGroupListing.builder().delegateGroupDetails(delegateGroupDetails).build();
   }
 
-  private List<Delegate> getFilteredDelegateList(String accountId, String orgId, String projectId,
-      DelegateFilterPropertiesDTO filterProperties, List<String> delegateGroupIds) {
-    List<Delegate> delegateList = persistence.createQuery(Delegate.class)
-                                      .filter(DelegateKeys.accountId, accountId)
-                                      .field(DelegateKeys.delegateGroupId)
-                                      .in(delegateGroupIds)
-                                      .asList();
+  private List<Delegate> getFilteredDelegateList(
+      String accountId, DelegateFilterPropertiesDTO filterProperties, List<String> delegateGroupIds) {
+    List<Delegate> delegateList;
+    Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
+                                        .filter(DelegateKeys.accountId, accountId)
+                                        .field(DelegateKeys.delegateGroupId)
+                                        .in(delegateGroupIds);
+
+    if (filterProperties != null && filterProperties.getHostName() != null) {
+      delegateQuery.filter(DelegateKeys.hostName, filterProperties.getHostName());
+    }
+    delegateList = delegateQuery.asList();
 
     // filter delegates if filtering by delegateInstanceConnectivityStatus is enabled
     if (filterProperties != null) {
@@ -571,8 +575,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
       String accountId, String orgId, String projectId, DelegateFilterPropertiesDTO filterProperties) {
     List<String> delegateGroupIds = getDelegateGroupIds(accountId, orgId, projectId, filterProperties, null);
 
-    List<Delegate> delegateList =
-        getFilteredDelegateList(accountId, orgId, projectId, filterProperties, delegateGroupIds);
+    List<Delegate> delegateList = getFilteredDelegateList(accountId, filterProperties, delegateGroupIds);
 
     final Map<String, List<Delegate>> delegatesByGroup =
         delegateList.stream().collect(groupingBy(Delegate::getDelegateGroupId));
