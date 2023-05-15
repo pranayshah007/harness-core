@@ -111,7 +111,6 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   private ProjectLevelOverrideMigrationResponseDTO doProjectLevelMigration(
       String accountId, String orgId, String projectId) {
     boolean isOverrideMigrationSuccessFul = true;
-
     OverridesGroupMigrationResult overrideResult = OverridesGroupMigrationResult.builder().build();
 
     try {
@@ -212,6 +211,9 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
                             .is(projectId)
                             .and(EnvironmentKeys.isMigratedToOverride)
                             .is(false);
+
+    criteria.andOperator(new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
+        Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false)));
 
     return criteria.andOperator(new Criteria().andOperator(
         Criteria.where(EnvironmentKeys.yaml).exists(true), Criteria.where(EnvironmentKeys.yaml).isNull().not()));
@@ -367,6 +369,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       Query query = new org.springframework.data.mongodb.core.query.Query(criteria);
       Update update = new Update();
       update.set(NGServiceOverridesEntityKeys.spec, spec);
+      update.set(NGServiceOverridesEntityKeys.isV2, true);
       mongoTemplate.updateFirst(query, update, NGServiceOverridesEntity.class);
       return SingleServiceOverrideMigrationResponse.builder()
           .isSuccessful(true)
@@ -433,7 +436,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   @Data
   @Builder
   @FieldDefaults(level = AccessLevel.PRIVATE)
-  private class OverridesGroupMigrationResult {
+  private static class OverridesGroupMigrationResult {
     long migratedServiceOverridesCount;
     long totalServiceOverrideCount;
     long targetServiceOverridesCount;
@@ -444,7 +447,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   @Data
   @Builder
   @FieldDefaults(level = AccessLevel.PRIVATE)
-  private class EnvsMigrationResult {
+  private static class EnvsMigrationResult {
     long migratedEnvCount;
     long targetEnvCount;
     boolean isSuccessFul;
@@ -465,6 +468,10 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       if (totalServiceOverride > 0L) {
         criteria.andOperator(new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.spec).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.spec).isNull()));
+
+        criteria.andOperator(new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
+            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(false)));
+
         Query queryForEntitiesToBeUpdated = new Query(criteria);
         targetServiceOverrides = mongoTemplate.count(queryForEntitiesToBeUpdated, NGServiceOverridesEntity.class);
         if (targetServiceOverrides > 0L) {
@@ -484,6 +491,9 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
           }
           if (targetServiceOverrides != migratedServiceOverridesCount) {
             isSuccessFul = false;
+            log.error(String.format(DEBUG_LINE
+                    + "Migrated count [%d] and Target count [%d] does not match, projectId: [%s], orgId: [%s], accountId: [%s]",
+                migratedServiceOverridesCount, targetServiceOverrides, projectId, orgId, accountId));
           }
         }
       }
