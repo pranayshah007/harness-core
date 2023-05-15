@@ -13,10 +13,6 @@ import static io.harness.cvng.beans.DataSourceType.Constants.DEMO_TEMPLATE_SPLUN
 
 import io.harness.cvng.models.VerificationType;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-
 public enum DataSourceType {
   APP_DYNAMICS("Appdynamics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_APPDYNAMICS, false),
   SPLUNK("Splunk", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, false),
@@ -60,12 +56,6 @@ public enum DataSourceType {
   public VerificationType getVerificationType() {
     return verificationType;
   }
-
-  public static List<DataSourceType> getTimeSeriesTypes() {
-    return new ArrayList<>(EnumSet.of(APP_DYNAMICS, STACKDRIVER, NEW_RELIC, PROMETHEUS, DATADOG_METRICS, DYNATRACE,
-        CUSTOM_HEALTH_METRIC, CLOUDWATCH_METRICS, SUMOLOGIC_METRICS));
-  }
-
   public boolean isNextGenSpec() {
     return isNextGenSpec;
   }
