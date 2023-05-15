@@ -133,9 +133,10 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCdProductCode());
     awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCcmProductCode());
 
+    // TODO: REMOVE false
     if (!marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)
         && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)
-        && !awsMarketPlaceV2ProductCodes.contains(productCode)) {
+        && (false && !awsMarketPlaceV2ProductCodes.contains(productCode))) {
       final String message =
           "Customer order from AWS could not be resolved, please contact Harness at support@harness.io";
       log.error("Invalid AWS productcode received:[{}],", productCode);
@@ -169,7 +170,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
     }
 
-    if (awsMarketPlaceV2ProductCodes.contains(productCode)) {
+    // TODO: REMOVE true
+    if (true || awsMarketPlaceV2ProductCodes.contains(productCode)) {
       orderQuantity = getDimensionQuantity(dimension);
 
       if (!isDimensionV2Provisionable(dimension, orderQuantity)) {
@@ -375,7 +377,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
       UTMUrlParam =
           "&module=ff&utm_campaign=23-4-6-ff-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
-    } else if (marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+    } else if (true || marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+      // TODO: REMOVE true
       UTMUrlParam =
           "&module=ce&utm_campaign=23-4-6-ccm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
     } else if (marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)) {

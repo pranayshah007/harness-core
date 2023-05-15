@@ -196,6 +196,8 @@ public class SignupServiceImpl implements SignupService {
     UserInfo userInfo = null;
     String email = dto.getEmail().toLowerCase();
     String password = dto.getPassword();
+    AccountDTO account = AccountDTO.builder().name(dto.getName()).companyName(dto.getCompanyName()).build();
+
     try {
       userInfo = getResponse(
           userClient.createMarketplaceUserAndCompleteSignup(inviteId, marketPlaceToken, email, password, dto),

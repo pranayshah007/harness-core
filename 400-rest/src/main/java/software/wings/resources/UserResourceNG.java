@@ -233,7 +233,8 @@ public class UserResourceNG {
     //   throw new GeneralException(String.format(
     //       "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
     // }
-
+    // ! remove after testing PR env fixed marketPlaceId
+    // String marketPlaceID = "VZqcTgVnTQ61iVf3T4qrqg";
     String marketPlaceID = claims.get(MarketPlaceConstants.MARKETPLACE_ID_CLAIM_KEY).asString();
     marketPlace = wingsPersistence.get(MarketPlace.class, marketPlaceID);
     if (marketPlace == null) {
@@ -660,17 +661,16 @@ public class UserResourceNG {
       String passwordHash = hashpw(password, BCrypt.gensalt());
       List<Account> accountList = new ArrayList<>();
 
-      String name = account.getName();
-
+      String name = dto.getName();
+      // !TODO: Need Default account identifier for User?
       return User.Builder.anUser()
           .email(email)
           .name(name)
           .passwordHash(passwordHash)
-          .accountName(account.getName())
-          .companyName(account.getCompanyName())
+          .accountName(dto.getName())
+          .companyName(dto.getCompanyName())
           .accounts(accountList)
           .emailVerified(true)
-          .defaultAccountId(account.getIdentifier())
           .build();
     } catch (Exception e) {
       throw new InvalidRequestException("Unable to convert Marketplace Request to User", e);

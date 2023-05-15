@@ -4319,8 +4319,9 @@ public class UserServiceImpl implements UserService {
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
-    } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
+    } else if (true
+        || marketPlace.getProductCode().equals(
+            configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
       CeLicenseType ceLicenseType = CeLicenseType.PAID;
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         ceLicenseType = CeLicenseType.FULL_TRIAL;
