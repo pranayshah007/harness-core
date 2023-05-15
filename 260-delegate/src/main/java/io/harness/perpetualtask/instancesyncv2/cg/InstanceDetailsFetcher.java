@@ -12,5 +12,6 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 
 // instance sync v2
 public interface InstanceDetailsFetcher {
-  InstanceSyncData fetchRunningInstanceDetails(String perpetualTaskId, CgDeploymentReleaseDetails releaseDetails);
+  InstanceSyncData fetchRunningInstanceDetails(
+      String perpetualTaskId, CgDeploymentReleaseDetails releaseDetails, boolean useReferenceFalseKryoSerializer);
 }

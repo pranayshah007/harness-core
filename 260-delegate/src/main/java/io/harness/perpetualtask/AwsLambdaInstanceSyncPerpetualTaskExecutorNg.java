@@ -55,9 +55,9 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNg
   }
 
   public PerpetualTaskResponse executeAwsLambdaInstanceSyncTask(PerpetualTaskId taskId,
-      AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams, boolean referenceFalseKryoSerializer) {
+      AwsLambdaInstanceSyncPerpetualTaskParamsNg taskParams, boolean useReferenceFalseKryoSerializer) {
     List<AwsLambdaDeploymentReleaseData> deploymentReleaseDataList =
-        getAwsLambdaDeploymentReleaseData(taskParams, referenceFalseKryoSerializer);
+        getAwsLambdaDeploymentReleaseData(taskParams, useReferenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos = deploymentReleaseDataList.stream()
                                                        .map(this::getServerInstanceInfoList)

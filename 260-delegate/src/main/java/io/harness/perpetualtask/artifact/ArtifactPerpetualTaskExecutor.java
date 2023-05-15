@@ -19,6 +19,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskResponse;
 import io.harness.serializer.KryoSerializer;
@@ -46,7 +47,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class ArtifactPerpetualTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   // Deadline until we try to publish parts of build details to the manager. This should be considerably less than than
   // the task timeout. Right now, timeout is 2 minutes, and this value is 1.5 minutes.
   private static final long INTERNAL_TIMEOUT_IN_MS = 90L * 1000;
@@ -77,8 +78,9 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
     String artifactStreamId = artifactCollectionTaskParams.getArtifactStreamId();
     log.info("Running artifact collection for artifactStreamId: {}", artifactStreamId);
 
-    final BuildSourceParameters buildSourceParameters = (BuildSourceParameters) referenceFalseKryoSerializer.asObject(
-        artifactCollectionTaskParams.getBuildSourceParams().toByteArray());
+    final BuildSourceParameters buildSourceParameters =
+        (BuildSourceParameters) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(artifactCollectionTaskParams.getBuildSourceParams().toByteArray());
     String accountId = buildSourceParameters.getAccountId();
 
     // Fetch artifacts published cache for this artifactStreamId.
@@ -86,14 +88,16 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
         getArtifactsPublishedCached(artifactStreamId, buildSourceParameters);
     Instant startTime = Instant.now();
     if (!currCache.needsToPublish()) {
-      collectArtifacts(accountId, artifactStreamId, taskId, buildSourceParameters, currCache);
+      collectArtifacts(accountId, artifactStreamId, taskId, buildSourceParameters, currCache,
+          params.getReferenceFalseKryoSerializer());
     }
 
     // This condition is true if we initially had unpublished artifacts, or if artifact collection happened and we got
     // some new unique artifacts after deduplication.
     if (currCache.needsToPublish()) {
       Instant deadline = startTime.plusMillis(INTERNAL_TIMEOUT_IN_MS);
-      publishFromCache(accountId, taskId, artifactCollectionTaskParams, currCache, deadline);
+      publishFromCache(accountId, taskId, artifactCollectionTaskParams, currCache, deadline,
+          params.getReferenceFalseKryoSerializer());
     }
 
     log.info("Published artifact successfully");
@@ -101,14 +105,16 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
   }
 
   private void collectArtifacts(String accountId, String artifactStreamId, PerpetualTaskId taskId,
-      BuildSourceParameters buildSourceParameters, ArtifactsPublishedCache<BuildDetails> currCache) {
+      BuildSourceParameters buildSourceParameters, ArtifactsPublishedCache<BuildDetails> currCache,
+      boolean useReferenceFalseKryoSerializer) {
     // Fetch new build details if there are no unpublished build details in the cache.
     final BuildSourceExecutionResponse buildSourceExecutionResponse =
         artifactRepositoryService.publishCollectedArtifacts(buildSourceParameters, currCache);
 
     // Return early if the artifact collection is unsuccessful.
     if (buildSourceExecutionResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      publishToManager(accountId, artifactStreamId, taskId, buildSourceExecutionResponse);
+      publishToManager(
+          accountId, artifactStreamId, taskId, buildSourceExecutionResponse, useReferenceFalseKryoSerializer);
       log.info("Published unsuccessful artifact collection result");
       return;
     }
@@ -124,19 +130,20 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
   }
 
   private void publishFromCache(String accountId, PerpetualTaskId taskId, ArtifactCollectionTaskParams taskParams,
-      ArtifactsPublishedCache currCache, Instant deadline) {
+      ArtifactsPublishedCache currCache, Instant deadline, boolean useReferenceFalseKryoSerializer) {
     // If deadline (which was conservative) has passed, don't try to make any more publish calls to manager.
     if (deadline.isBefore(Instant.now())) {
       return;
     }
 
     String artifactStreamId = taskParams.getArtifactStreamId();
-    if (!publishDeletedArtifactKeys(accountId, artifactStreamId, taskId, currCache)) {
+    if (!publishDeletedArtifactKeys(accountId, artifactStreamId, taskId, currCache, useReferenceFalseKryoSerializer)) {
       return;
     }
-    if (publishUnpublishedBuildDetails(accountId, artifactStreamId, taskId, currCache)) {
+    if (publishUnpublishedBuildDetails(
+            accountId, artifactStreamId, taskId, currCache, useReferenceFalseKryoSerializer)) {
       // Try to republish artifacts until deadline is reached or we have no more unpublished artifacts left.
-      publishFromCache(accountId, taskId, taskParams, currCache, deadline);
+      publishFromCache(accountId, taskId, taskParams, currCache, deadline, useReferenceFalseKryoSerializer);
     }
   }
 
@@ -144,8 +151,8 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
    * publishDeletedArtifactKeys publishes artifact keys to the manager that need to be deleted. It returns false if the
    * operation failed unexpectedly.
    */
-  private boolean publishDeletedArtifactKeys(
-      String accountId, String artifactStreamId, PerpetualTaskId taskId, ArtifactsPublishedCache currCache) {
+  private boolean publishDeletedArtifactKeys(String accountId, String artifactStreamId, PerpetualTaskId taskId,
+      ArtifactsPublishedCache currCache, boolean useReferenceFalseKryoSerializer) {
     Set<String> toBeDeletedArtifactKeys = currCache.getToBeDeletedArtifactKeys();
     if (isEmpty(toBeDeletedArtifactKeys)) {
       log.info(
@@ -162,7 +169,8 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
             .artifactStreamId(artifactStreamId)
             .build();
 
-    boolean published = publishToManager(accountId, artifactStreamId, taskId, buildSourceExecutionResponse);
+    boolean published = publishToManager(
+        accountId, artifactStreamId, taskId, buildSourceExecutionResponse, useReferenceFalseKryoSerializer);
     if (!published) {
       return false;
     }
@@ -176,7 +184,7 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
    * returns true if the operation succeeds and there are more build details left after the current batch.
    */
   private boolean publishUnpublishedBuildDetails(String accountId, String artifactStreamId, PerpetualTaskId taskId,
-      ArtifactsPublishedCache<BuildDetails> currCache) {
+      ArtifactsPublishedCache<BuildDetails> currCache, boolean useReferenceFalseKryoSerializer) {
     ImmutablePair<List<BuildDetails>, Boolean> resp = currCache.getLimitedUnpublishedBuildDetails();
     List<BuildDetails> builds = resp.getLeft();
     if (isEmpty(builds)) {
@@ -194,7 +202,8 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
             .artifactStreamId(artifactStreamId)
             .build();
 
-    boolean published = publishToManager(accountId, artifactStreamId, taskId, buildSourceExecutionResponse);
+    boolean published = publishToManager(
+        accountId, artifactStreamId, taskId, buildSourceExecutionResponse, useReferenceFalseKryoSerializer);
     if (!published) {
       return false;
     }
@@ -204,9 +213,10 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
   }
 
   private boolean publishToManager(String accountId, String artifactStreamId, PerpetualTaskId taskId,
-      BuildSourceExecutionResponse buildSourceExecutionResponse) {
+      BuildSourceExecutionResponse buildSourceExecutionResponse, boolean useReferenceFalseKryoSerializer) {
     try {
-      byte[] responseSerialized = referenceFalseKryoSerializer.asBytes(buildSourceExecutionResponse);
+      byte[] responseSerialized =
+          getKryoSerializer(useReferenceFalseKryoSerializer).asBytes(buildSourceExecutionResponse);
 
       executeWithExceptions(delegateAgentManagerClient.publishArtifactCollectionResultV2(taskId.getId(), accountId,
           RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));

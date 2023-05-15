@@ -102,13 +102,13 @@ public class NativeHelmInstanceSyncPerpetualTaskExcecutor
   }
 
   private NativeHelmDeploymentReleaseData toNativeHelmDeploymentReleaseData(
-      NativeHelmDeploymentRelease nativeHelmDeploymentRelease, boolean referenceFalseKryoSerializerb) {
+      NativeHelmDeploymentRelease nativeHelmDeploymentRelease, boolean referenceFalseKryoSerializer) {
     return NativeHelmDeploymentReleaseData.builder()
         .releaseName(nativeHelmDeploymentRelease.getReleaseName())
         .namespaces(new LinkedHashSet<>(nativeHelmDeploymentRelease.getNamespacesList()))
-        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializerb)
+        .k8sInfraDelegateConfig((K8sInfraDelegateConfig) getKryoSerializer(referenceFalseKryoSerializer)
                                     .asObject(nativeHelmDeploymentRelease.getK8SInfraDelegateConfig().toByteArray()))
-        .helmChartInfo((HelmChartInfo) getKryoSerializer(referenceFalseKryoSerializerb)
+        .helmChartInfo((HelmChartInfo) getKryoSerializer(referenceFalseKryoSerializer)
                            .asObject(nativeHelmDeploymentRelease.getHelmChartInfo().toByteArray()))
         .build();
   }

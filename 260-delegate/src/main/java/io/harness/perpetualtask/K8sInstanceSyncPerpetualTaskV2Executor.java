@@ -49,7 +49,6 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
   private static final String NAMESPACE_RELEASE_NAME_KEY_PATTERN = "namespace:%s_releaseName:%s";
   private static final String DEFAULT_NAMESPACE = "default";
 
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private K8sInstanceSyncV2Helper k8sInstanceSyncV2Helper;
 
@@ -73,8 +72,8 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     K8sInstanceSyncPerpetualTaskParamsV2 taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class);
     List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
-    ConnectorInfoDTO connectorInfoDTO =
-        (ConnectorInfoDTO) kryoSerializer.asObject(taskParams.getConnectorInfoDto().toByteArray());
+    ConnectorInfoDTO connectorInfoDTO = (ConnectorInfoDTO) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                                            .asObject(taskParams.getConnectorInfoDto().toByteArray());
 
     Set<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList =
         details.getDeploymentDetailsList()
@@ -89,8 +88,8 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
       return emptyList();
     }
     for (K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails : k8sDeploymentReleaseDetailsList) {
-      Set<PodDetailsRequest> distinctPodDetailsRequestList =
-          getDistinctPodDetailsRequestList(connectorInfoDTO, k8sDeploymentReleaseDetails, taskParams);
+      Set<PodDetailsRequest> distinctPodDetailsRequestList = getDistinctPodDetailsRequestList(
+          connectorInfoDTO, k8sDeploymentReleaseDetails, taskParams, params.getReferenceFalseKryoSerializer());
       serverInstanceInfos.addAll(distinctPodDetailsRequestList.stream()
                                      .map(k8sInstanceSyncV2Helper::getServerInstanceInfoList)
                                      .flatMap(Collection::stream)
@@ -107,10 +106,12 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
   }
 
   private Set<PodDetailsRequest> getDistinctPodDetailsRequestList(ConnectorInfoDTO connectorDTO,
-      K8sDeploymentReleaseDetails releaseDetails, K8sInstanceSyncPerpetualTaskParamsV2 taskParams) {
+      K8sDeploymentReleaseDetails releaseDetails, K8sInstanceSyncPerpetualTaskParamsV2 taskParams,
+      boolean useReferenceFalseKryoSerializer) {
     Set<String> distinctNamespaceReleaseNameKeys = new HashSet<>();
     List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
+        (List<EncryptedDataDetail>) getKryoSerializer(useReferenceFalseKryoSerializer)
+            .asObject(taskParams.getEncryptedData().toByteArray());
     return populatePodDetailsRequest(connectorDTO, releaseDetails, encryptedDataDetails)
         .stream()
         .filter(requestData -> distinctNamespaceReleaseNameKeys.add(generateNamespaceReleaseNameKey(requestData)))

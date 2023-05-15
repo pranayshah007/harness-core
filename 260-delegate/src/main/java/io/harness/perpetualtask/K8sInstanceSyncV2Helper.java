@@ -38,7 +38,6 @@ import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -54,7 +53,6 @@ public class K8sInstanceSyncV2Helper {
   public static final String CLASS_CAST_EXCEPTION_ERROR = "Unsupported Connector provided is of type: [%s]";
   private static final int DEFAULT_GET_K8S_POD_DETAILS_STEADY_STATE_TIMEOUT = 5;
 
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerBaseHelper;
 

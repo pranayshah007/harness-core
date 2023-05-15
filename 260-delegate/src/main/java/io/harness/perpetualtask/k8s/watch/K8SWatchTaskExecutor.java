@@ -29,6 +29,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
@@ -68,7 +69,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CE)
-public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
+public class K8SWatchTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String MESSAGE_PROCESSOR_TYPE = "EXCEPTION";
   private final Map<String, String> taskWatchIdMap = new ConcurrentHashMap<>();
   private final Map<String, K8sMetricCollector> metricCollectors = new ConcurrentHashMap<>();
@@ -103,7 +104,8 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
     K8sWatchTaskParams watchTaskParams = AnyUtils.unpack(params.getCustomizedParams(), K8sWatchTaskParams.class);
     try (AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId.getId(), OVERRIDE_ERROR)) {
       try {
-        KubernetesConfig kubernetesConfig = getKubernetesConfig(watchTaskParams);
+        KubernetesConfig kubernetesConfig =
+            getKubernetesConfig(watchTaskParams, params.getReferenceFalseKryoSerializer());
 
         String watchId = k8sWatchServiceDelegate.create(watchTaskParams, kubernetesConfig);
         log.info("Ensured watch exists with id {}.", watchId);
@@ -235,17 +237,18 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
     }
   }
 
-  private KubernetesConfig getKubernetesConfig(K8sWatchTaskParams watchTaskParams) {
+  private KubernetesConfig getKubernetesConfig(
+      K8sWatchTaskParams watchTaskParams, boolean useReferenceFalseKryoSerializer) {
     if (watchTaskParams.getK8SClusterConfig().size() != 0) {
       // Supporting deprecated K8sWatchTaskParams field
-      K8sClusterConfig k8sClusterConfig =
-          (K8sClusterConfig) referenceFalseKryoSerializer.asObject(watchTaskParams.getK8SClusterConfig().toByteArray());
+      K8sClusterConfig k8sClusterConfig = (K8sClusterConfig) getKryoSerializer(useReferenceFalseKryoSerializer)
+                                              .asObject(watchTaskParams.getK8SClusterConfig().toByteArray());
 
       return containerDeploymentDelegateHelper.getKubernetesConfig(k8sClusterConfig, false);
     }
 
-    K8sClusterInfo k8sClusterInfo =
-        (K8sClusterInfo) referenceFalseKryoSerializer.asObject(watchTaskParams.getK8SClusterInfo().toByteArray());
+    K8sClusterInfo k8sClusterInfo = (K8sClusterInfo) getKryoSerializer(useReferenceFalseKryoSerializer)
+                                        .asObject(watchTaskParams.getK8SClusterInfo().toByteArray());
 
     return k8sConnectorHelper.getKubernetesConfig(
         (KubernetesClusterConfigDTO) k8sClusterInfo.getConnectorConfigDTO(), k8sClusterInfo.getEncryptedDataDetails());

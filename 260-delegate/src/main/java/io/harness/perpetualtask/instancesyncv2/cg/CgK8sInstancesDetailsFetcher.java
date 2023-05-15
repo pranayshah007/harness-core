@@ -29,6 +29,7 @@ import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
@@ -61,7 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDP)
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
-public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
+public class CgK8sInstancesDetailsFetcher extends PerpetualTaskExecutorBase implements InstanceDetailsFetcher {
   private final ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   private final KubernetesContainerService kubernetesContainerService;
   private final KryoSerializer kryoSerializer;
@@ -70,7 +71,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
   @Override
   public InstanceSyncData fetchRunningInstanceDetails(
-      String perpetualTaskId, CgDeploymentReleaseDetails releaseDetails) {
+      String perpetualTaskId, CgDeploymentReleaseDetails releaseDetails, boolean useReferenceFalseKryoSerializer) {
     DirectK8sInstanceSyncTaskDetails instanceSyncTaskDetails;
     try {
       instanceSyncTaskDetails =
@@ -80,8 +81,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       return InstanceSyncData.newBuilder().setTaskDetailsId(releaseDetails.getTaskDetailsId()).build();
     }
     try {
-      K8sClusterConfig config = (K8sClusterConfig) referenceFalseKryoSerializer.asObject(
-          instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
+      K8sClusterConfig config = (K8sClusterConfig) getKryoSerializer(useReferenceFalseKryoSerializer)
+                                    .asObject(instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
       KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
 
       DelegateTaskNotifyResponseData taskResponseData = instanceSyncTaskDetails.getIsHelm()
@@ -90,7 +91,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
-          .setTaskResponse(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(taskResponseData)))
+          .setTaskResponse(
+              ByteString.copyFrom(getKryoSerializer(useReferenceFalseKryoSerializer).asBytes(taskResponseData)))
           .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
                                           .setReleaseName(instanceSyncTaskDetails.getReleaseName())
                                           .setNamespace(instanceSyncTaskDetails.getNamespace())

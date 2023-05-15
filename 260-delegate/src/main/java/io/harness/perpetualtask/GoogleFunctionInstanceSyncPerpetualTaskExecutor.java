@@ -82,10 +82,10 @@ public class GoogleFunctionInstanceSyncPerpetualTaskExecutor
   }
 
   private List<GoogleFunctionDeploymentReleaseData> getGoogleFunctionDeploymentReleaseData(
-      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams, boolean referenceFalseKryoSerializer) {
+      GoogleFunctionInstanceSyncPerpetualTaskParams taskParams, boolean useReferenceFalseKryoSerializer) {
     return taskParams.getGoogleFunctionsDeploymentReleaseListList()
         .stream()
-        .map(data -> toGoogleFunctionDeploymentReleaseData(data, referenceFalseKryoSerializer))
+        .map(data -> toGoogleFunctionDeploymentReleaseData(data, useReferenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 

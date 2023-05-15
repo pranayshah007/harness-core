@@ -39,6 +39,7 @@ import io.harness.grpc.utils.HTimestamps;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
@@ -89,7 +90,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class EcsPerpetualTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String MESSAGE_PROCESSOR_TYPE = "EXCEPTION";
   private static final String INSTANCE_TERMINATED_NAME = "terminated";
   private static final String ECS_OS_TYPE = "ecs.os-type";
@@ -131,8 +132,9 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
         log.info("Task params cluster name {} region {} ", clusterName, region);
         AwsConfig awsConfig =
             (AwsConfig) referenceFalseKryoSerializer.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
-        List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
-            ecsPerpetualTaskParams.getEncryptionDetail().toByteArray());
+        List<EncryptedDataDetail> encryptionDetails =
+            (List<EncryptedDataDetail>) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                .asObject(ecsPerpetualTaskParams.getEncryptionDetail().toByteArray());
         Instant now = Instant.now(clock);
 
         Instant lastProcessedTime = fetchLastProcessedTimestamp(clusterId);

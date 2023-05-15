@@ -40,7 +40,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(HarnessTeam.CDP)
-public class AwsSamInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class AwsSamInstanceSyncPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
   @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -52,12 +53,13 @@ public class AwsSamInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExe
     log.info("Running the AwsSam InstanceSync perpetual task executor for task id: {}", taskId);
     AwsSamInstanceSyncPerpetualTaskParams taskParams =
         AnyUtils.unpack(params.getCustomizedParams(), AwsSamInstanceSyncPerpetualTaskParams.class);
-    return executeAwsSamInstanceSyncTask(taskId, taskParams);
+    return executeAwsSamInstanceSyncTask(taskId, taskParams, params.getReferenceFalseKryoSerializer());
   }
 
-  private PerpetualTaskResponse executeAwsSamInstanceSyncTask(
-      PerpetualTaskId taskId, AwsSamInstanceSyncPerpetualTaskParams taskParams) {
-    List<AwsSamDeploymentReleaseData> deploymentReleaseDataList = getAwsSamDeploymentReleaseData(taskParams);
+  private PerpetualTaskResponse executeAwsSamInstanceSyncTask(PerpetualTaskId taskId,
+      AwsSamInstanceSyncPerpetualTaskParams taskParams, boolean useReferenceFalseKryoSerializer) {
+    List<AwsSamDeploymentReleaseData> deploymentReleaseDataList =
+        getAwsSamDeploymentReleaseData(taskParams, useReferenceFalseKryoSerializer);
 
     List<ServerInstanceInfo> serverInstanceInfos =
         deploymentReleaseDataList.stream()
@@ -82,17 +84,18 @@ public class AwsSamInstanceSyncPerpetualTaskExecutor implements PerpetualTaskExe
   }
 
   private List<AwsSamDeploymentReleaseData> getAwsSamDeploymentReleaseData(
-      AwsSamInstanceSyncPerpetualTaskParams taskParams) {
+      AwsSamInstanceSyncPerpetualTaskParams taskParams, boolean useReferenceFalseKryoSerializer) {
     return taskParams.getAwsSamDeploymentReleaseListList()
         .stream()
-        .map(this::toAwsSamDeploymentReleaseData)
+        .map(data -> toAwsSamDeploymentReleaseData(data, useReferenceFalseKryoSerializer))
         .collect(Collectors.toList());
   }
 
-  private AwsSamDeploymentReleaseData toAwsSamDeploymentReleaseData(AwsSamDeploymentRelease awsSamDeploymentRelease) {
+  private AwsSamDeploymentReleaseData toAwsSamDeploymentReleaseData(
+      AwsSamDeploymentRelease awsSamDeploymentRelease, boolean useReferenceFalseSerializer) {
     return AwsSamDeploymentReleaseData.builder()
-        .awsSamInfraConfig(
-            (AwsSamInfraConfig) kryoSerializer.asObject(awsSamDeploymentRelease.getAwsSamInfraConfig().toByteArray()))
+        .awsSamInfraConfig((AwsSamInfraConfig) getKryoSerializer(useReferenceFalseSerializer)
+                               .asObject(awsSamDeploymentRelease.getAwsSamInfraConfig().toByteArray()))
         .functions(awsSamDeploymentRelease.getFunctionsList())
         .region(awsSamDeploymentRelease.getRegion())
         .build();

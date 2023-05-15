@@ -25,7 +25,6 @@ import io.harness.perpetualtask.instancesync.InstanceSyncData;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncStatus;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
-import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -42,12 +41,11 @@ import org.apache.commons.collections4.CollectionUtils;
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
+abstract class AbstractInstanceSyncV2TaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
   private static final String FAILURE_RESPONSE_MSG =
       "Failed to fetch InstanceSyncTaskDetails for perpetual task Id: [%s], accountId [%s]";
 
-  @Inject private KryoSerializer kryoSerializer;
   @Inject private DelegateAgentManagerClient delegateAgentManagerClient;
 
   @Override
@@ -106,7 +104,9 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
       DeploymentReleaseDetails deploymentReleaseDetails, String accountId, InstanceSyncData.Builder instanceSyncData) {
     try {
       List<ServerInstanceInfo> serverInstanceInfos = retrieveServiceInstances(taskId, params, deploymentReleaseDetails);
-      instanceSyncData.setServerInstanceInfo(ByteString.copyFrom(kryoSerializer.asBytes(serverInstanceInfos)))
+      instanceSyncData
+          .setServerInstanceInfo(ByteString.copyFrom(
+              getKryoSerializer(params.getReferenceFalseKryoSerializer()).asBytes(serverInstanceInfos)))
           .setStatus(InstanceSyncStatus.newBuilder()
                          .setIsSuccessful(true)
                          .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())

@@ -85,7 +85,8 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
         return;
       }
 
-      InstanceSyncData instanceData = instanceFetcher.fetchRunningInstanceDetails(taskId.getId(), trackedDeployment);
+      InstanceSyncData instanceData = instanceFetcher.fetchRunningInstanceDetails(
+          taskId.getId(), trackedDeployment, params.getReferenceFalseKryoSerializer());
       responseBuilder.addInstanceData(instanceData);
       batchInstanceCount.addAndGet(instanceData.getInstanceCount());
       batchReleaseDetailsCount.incrementAndGet();

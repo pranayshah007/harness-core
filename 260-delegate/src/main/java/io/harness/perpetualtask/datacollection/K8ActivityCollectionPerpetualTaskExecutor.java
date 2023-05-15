@@ -21,6 +21,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.AutoLogContext;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
@@ -45,7 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public class K8ActivityCollectionPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class K8ActivityCollectionPerpetualTaskExecutor
+    extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private final Map<String, WatcherGroup> watchMap = new ConcurrentHashMap<>();
   @Inject private K8InfoDataService k8InfoDataService;
 
@@ -62,8 +64,9 @@ public class K8ActivityCollectionPerpetualTaskExecutor implements PerpetualTaskE
           AnyUtils.unpack(params.getCustomizedParams(), K8ActivityCollectionPerpetualTaskParams.class);
       log.info("Executing for !! changeSourceId: {}", taskParams.getDataCollectionWorkerId());
       watchMap.computeIfAbsent(taskId.getId(), id -> {
-        CVDataCollectionInfo dataCollectionInfo = (CVDataCollectionInfo) referenceFalseKryoSerializer.asObject(
-            taskParams.getDataCollectionInfo().toByteArray());
+        CVDataCollectionInfo dataCollectionInfo =
+            (CVDataCollectionInfo) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+                .asObject(taskParams.getDataCollectionInfo().toByteArray());
         log.info("for {} DataCollectionInfo {} ", taskParams.getDataCollectionWorkerId(), dataCollectionInfo);
 
         KubernetesClusterConfigDTO kubernetesClusterConfig =

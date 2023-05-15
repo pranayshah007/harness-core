@@ -317,7 +317,10 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
       PerpetualTaskServiceClient client = clientRegistry.getClient(perpetualTaskRecord.getPerpetualTaskType());
       perpetualTaskParams = client.getTaskParams(perpetualTaskRecord.getClientContext(), referenceFalseKryoSerializer);
 
-      return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(perpetualTaskParams)).build();
+      return PerpetualTaskExecutionParams.newBuilder()
+          .setReferenceFalseKryoSerializer(perpetualTaskRecord.isReferenceFalseKryoSerializer())
+          .setCustomizedParams(Any.pack(perpetualTaskParams))
+          .build();
     } else {
       PerpetualTaskExecutionBundle perpetualTaskExecutionBundle = null;
       try {

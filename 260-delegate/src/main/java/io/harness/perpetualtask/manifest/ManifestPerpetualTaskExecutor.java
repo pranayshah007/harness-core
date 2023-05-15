@@ -22,6 +22,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.PerpetualTaskExecutionParams;
 import io.harness.perpetualtask.PerpetualTaskExecutor;
+import io.harness.perpetualtask.PerpetualTaskExecutorBase;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.PerpetualTaskLogContext;
 import io.harness.perpetualtask.PerpetualTaskResponse;
@@ -54,7 +55,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 @Slf4j
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
-public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
+public class ManifestPerpetualTaskExecutor extends PerpetualTaskExecutorBase implements PerpetualTaskExecutor {
   private static final long INTERNAL_TIMEOUT_IN_MS = 120L * 1000;
 
   private final DelegateAgentManagerClient delegateAgentManagerClient;
@@ -82,8 +83,8 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
     String appManifestId = manifestParams.getAppManifestId();
     log.info("Started manifest collection for appManifestId:{}", appManifestId);
     ManifestCollectionParams manifestCollectionParams =
-        (ManifestCollectionParams) referenceFalseKryoSerializer.asObject(
-            manifestParams.getManifestCollectionParams().toByteArray());
+        (ManifestCollectionParams) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(manifestParams.getManifestCollectionParams().toByteArray());
 
     ArtifactsPublishedCache<HelmChart> appManifestCache = cache.get(appManifestId,
         id
@@ -95,12 +96,13 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
              appManifestId, manifestCollectionParams.getServiceId(), OVERRIDE_ERROR)) {
       Instant startTime = Instant.now();
       if (!appManifestCache.needsToPublish()) {
-        collectManifests(appManifestCache, manifestCollectionParams, perpetualTaskId);
+        collectManifests(
+            appManifestCache, manifestCollectionParams, perpetualTaskId, params.getReferenceFalseKryoSerializer());
       }
 
       if (appManifestCache.needsToPublish()) {
-        publishFromCache(
-            appManifestCache, startTime.plusMillis(INTERNAL_TIMEOUT_IN_MS), manifestCollectionParams, perpetualTaskId);
+        publishFromCache(appManifestCache, startTime.plusMillis(INTERNAL_TIMEOUT_IN_MS), manifestCollectionParams,
+            perpetualTaskId, params.getReferenceFalseKryoSerializer());
         log.info("Published manifest successfully");
       }
     } catch (Exception e) {
@@ -111,7 +113,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
   }
 
   private void publishFromCache(ArtifactsPublishedCache<HelmChart> appManifestCache, Instant expiryTime,
-      ManifestCollectionParams params, String taskId) {
+      ManifestCollectionParams params, String taskId, boolean useReferenceFalseKryoSerializer) {
     if (expiryTime.isBefore(Instant.now())) {
       log.warn("Manifest Collection timed out after {} seconds",
           Instant.now().compareTo(expiryTime.minusMillis(INTERNAL_TIMEOUT_IN_MS)));
@@ -139,18 +141,19 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
                                             .build())
             .build();
 
-    if (publishToManager(params.getAccountId(), taskId, response)) {
+    if (publishToManager(params.getAccountId(), taskId, response, useReferenceFalseKryoSerializer)) {
       appManifestCache.removeDeletedArtifactKeys(toBeDeletedVersions);
       appManifestCache.addPublishedBuildDetails(unpublishedVersions);
-      publishFromCache(appManifestCache, expiryTime, params, taskId);
+      publishFromCache(appManifestCache, expiryTime, params, taskId, useReferenceFalseKryoSerializer);
       log.info("Published {} manifest versions to manager",
           unpublishedVersions.stream().map(HelmChart::getVersion).collect(Collectors.joining(",")));
     }
   }
 
-  private boolean publishToManager(String accountId, String taskId, ManifestCollectionExecutionResponse response) {
+  private boolean publishToManager(String accountId, String taskId, ManifestCollectionExecutionResponse response,
+      boolean useReferenceFalseSerializer) {
     try {
-      byte[] responseSerialized = referenceFalseKryoSerializer.asBytes(response);
+      byte[] responseSerialized = getKryoSerializer(useReferenceFalseSerializer).asBytes(response);
 
       executeWithExceptions(delegateAgentManagerClient.publishManifestCollectionResultV2(
           taskId, accountId, RequestBody.create(MediaType.parse("application/octet-stream"), responseSerialized)));
@@ -163,7 +166,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
   }
 
   private void collectManifests(ArtifactsPublishedCache<HelmChart> appManifestCache, ManifestCollectionParams params,
-      String taskId) throws Exception {
+      String taskId, boolean useReferenceFalseSerializer) throws Exception {
     try {
       List<HelmChart> collectedManifests = manifestRepositoryService.collectManifests(params);
       if (isEmpty(collectedManifests)) {
@@ -180,7 +183,8 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
               .appId(params.getAppId())
               .commandExecutionStatus(CommandExecutionStatus.FAILURE)
               .errorMessage(e.getMessage())
-              .build());
+              .build(),
+          useReferenceFalseSerializer);
       throw e;
     }
   }
@@ -190,8 +194,8 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
     ManifestCollectionTaskParams manifestParams = getTaskParams(params);
     cache.invalidate(manifestParams.getAppManifestId());
     ManifestCollectionParams manifestCollectionParams =
-        (ManifestCollectionParams) referenceFalseKryoSerializer.asObject(
-            manifestParams.getManifestCollectionParams().toByteArray());
+        (ManifestCollectionParams) getKryoSerializer(params.getReferenceFalseKryoSerializer())
+            .asObject(manifestParams.getManifestCollectionParams().toByteArray());
     try {
       manifestRepositoryService.cleanup(manifestCollectionParams);
       log.info("Cleanup completed successfully for perpetual task: {}, app manifest: {}", taskId.getId(),
