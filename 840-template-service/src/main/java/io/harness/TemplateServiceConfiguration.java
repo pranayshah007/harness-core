@@ -25,6 +25,8 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Singleton;
 import io.dropwizard.Configuration;
@@ -211,5 +213,23 @@ public class TemplateServiceConfiguration extends Configuration {
       dbAliases.add(mongoConfig.getAliasDBName());
     }
     return dbAliases;
+  }
+
+  /**
+   * Gets allowed origins.
+   * @return the allowed origins
+   */
+  @JsonProperty(defaultValue = "")
+  public String getAllowedOrigins() {
+    return Joiner.on(",").join(allowedOrigins);
+  }
+
+  /**
+   * Sets allowed orgins.
+   *
+   * @param allowedOrigins
+   */
+  public void setAllowedOrigins(String allowedOrigins) {
+    this.allowedOrigins = Splitter.on(",").trimResults().omitEmptyStrings().splitToList(allowedOrigins);
   }
 }

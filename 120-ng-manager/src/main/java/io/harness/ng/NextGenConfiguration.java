@@ -58,6 +58,8 @@ import software.wings.security.authentication.oauth.GitlabConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import io.dropwizard.Configuration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
@@ -367,5 +369,23 @@ public class NextGenConfiguration extends Configuration {
       dbAliases.add(mongoConfig.getAliasDBName());
     }
     return dbAliases;
+  }
+
+  /**
+   * Gets allowed origins.
+   * @return the allowed origins
+   */
+  @JsonProperty(defaultValue = "")
+  public String getAllowedOrigins() {
+    return Joiner.on(",").join(allowedOrigins);
+  }
+
+  /**
+   * Sets allowed orgins.
+   *
+   * @param allowedOrigins
+   */
+  public void setAllowedOrigins(String allowedOrigins) {
+    this.allowedOrigins = Splitter.on(",").trimResults().omitEmptyStrings().splitToList(allowedOrigins);
   }
 }
