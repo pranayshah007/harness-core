@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.beans.source.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
@@ -48,6 +49,9 @@ public class MultiArtifactTriggerConfig implements NGTriggerSpecV2, BuildAware {
 
   @Override
   public String fetchBuildType() {
+    if (isEmpty(this.sources)) {
+      return null;
+    }
     return this.sources.get(0).fetchBuildType();
   }
 }
