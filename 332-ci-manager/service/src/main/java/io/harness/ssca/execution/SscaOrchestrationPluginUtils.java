@@ -17,6 +17,8 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.OrchestrationStepEnvVariables;
 import io.harness.ssca.beans.OrchestrationStepSecretVariables;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.CosignAttestation;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
@@ -63,11 +65,12 @@ public class SscaOrchestrationPluginUtils {
 
   public static Map<String, SecretNGVariable> getSscaOrchestrationSecretVars(SscaOrchestrationStepInfo stepInfo) {
     Map<String, SecretNGVariable> secretNGVariableMap = new HashMap<>();
-    if (stepInfo.getAttestation() != null && stepInfo.getAttestation().getPrivateKey() != null) {
-      OrchestrationStepSecretVariables secretVariables =
-          OrchestrationStepSecretVariables.builder()
-              .attestationPrivateKey(stepInfo.getAttestation().getPrivateKey())
-              .build();
+    if (stepInfo.getAttestation() != null && AttestationType.COSIGN.equals(stepInfo.getAttestation().getType())) {
+      CosignAttestation cosignAttestation = (CosignAttestation) stepInfo.getAttestation().getAttestationSpec();
+      OrchestrationStepSecretVariables secretVariables = OrchestrationStepSecretVariables.builder()
+                                                             .attestationPrivateKey(cosignAttestation.getPrivateKey())
+                                                             .cosignPassword(cosignAttestation.getPassword())
+                                                             .build();
       return SscaOrchestrationStepPluginUtils.getSscaOrchestrationSecretVars(secretVariables);
     }
     return secretNGVariableMap;
