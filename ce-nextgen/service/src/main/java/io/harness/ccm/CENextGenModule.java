@@ -67,6 +67,8 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.graphql.core.msp.impl.ManagedAccountDataServiceImpl;
+import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
 import io.harness.ccm.msp.service.impl.MarginDetailsServiceImpl;
@@ -89,7 +91,6 @@ import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
 import io.harness.ccm.service.impl.GCPEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.LicenseUsageInterfaceImpl;
-import io.harness.ccm.service.impl.MSPManagedAccountDataServiceImpl;
 import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.service.intf.AnomalyService;
@@ -100,7 +101,6 @@ import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.service.intf.CEYamlService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
-import io.harness.ccm.service.intf.MSPManagedAccountDataService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountServiceImpl;
 import io.harness.ccm.serviceAccount.GcpResourceManagerService;
@@ -418,7 +418,7 @@ public class CENextGenModule extends AbstractModule {
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
     bind(MarginDetailsService.class).to(MarginDetailsServiceImpl.class);
-    bind(MSPManagedAccountDataService.class).to(MSPManagedAccountDataServiceImpl.class);
+    bind(ManagedAccountDataService.class).to(ManagedAccountDataServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);

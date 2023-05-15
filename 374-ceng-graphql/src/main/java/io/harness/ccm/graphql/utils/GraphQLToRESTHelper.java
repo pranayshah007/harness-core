@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.remote.utils;
+package io.harness.ccm.graphql.utils;
 
 import static io.harness.ccm.graphql.utils.GraphQLUtils.DEFAULT_LIMIT;
 import static io.harness.ccm.graphql.utils.GraphQLUtils.DEFAULT_OFFSET;

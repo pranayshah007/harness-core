@@ -44,6 +44,7 @@ public class ClusterTableKeys {
   public static final String WORKLOAD_TYPE = "workloadtype";
   public static final String BILLING_AMOUNT = "billingamount";
   public static final String COST = "cost";
+  public static final String MARKUP_AMOUNT = "markup";
   public static final String CPU_BILLING_AMOUNT = "cpubillingamount";
   public static final String MEMORY_BILLING_AMOUNT = "memorybillingamount";
   public static final String USAGE_DURATION_SECONDS = "usagedurationseconds";

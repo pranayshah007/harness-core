@@ -12,10 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.CCMField;
+import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
+import io.harness.ccm.msp.entities.ManagedAccountStats;
 import io.harness.ccm.msp.entities.ManagedAccountTimeSeriesData;
-import io.harness.ccm.msp.entities.ManagedAccountsOverview;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
-import io.harness.ccm.service.intf.MSPManagedAccountDataService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -26,7 +26,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,7 +44,7 @@ import org.springframework.stereotype.Service;
 @Service
 @OwnedBy(CE)
 public class ManagedAccountDataResource {
-  @Inject MSPManagedAccountDataService mspManagedAccountDataService;
+  @Inject ManagedAccountDataService mspManagedAccountDataService;
   @Inject MarginDetailsService marginDetailsService;
 
   @GET
@@ -56,32 +60,20 @@ public class ManagedAccountDataResource {
   }
 
   @GET
-  @Path("total-markup-and-spend")
+  @Path("stats")
   @ApiOperation(value = "Get total markup and spend", nickname = "getTotalMarkupAndSpend")
   @Operation(operationId = "getTotalMarkupAndSpend", summary = "Get total markup and spend for MSP managed accounts",
-      responses = { @ApiResponse(description = "Returns margin details for given uuid") })
-  public ResponseDTO<ManagedAccountsOverview>
+      responses = { @ApiResponse(description = "Returns spend stats for MSP managed accounts") })
+  public ResponseDTO<ManagedAccountStats>
   getTotalMarkupAndSpend(@Parameter(description = "Account id of the msp account") @QueryParam(
-      "accountIdentifier") @AccountIdentifier String accountIdentifier) {
-    return ResponseDTO.newResponse(marginDetailsService.getTotalMarkupAndSpend(accountIdentifier));
+                             "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true, description = "Unique identifier for the managed account") @QueryParam(
+          "managedAccountId") String managedAccountId,
+      @QueryParam("startTime") @Parameter(required = true, description = "Start time of the period") long startTime,
+      @QueryParam("endTime") @Parameter(required = true, description = "End time of the period") long endTime) {
+    return ResponseDTO.newResponse(
+        mspManagedAccountDataService.getManagedAccountStats(accountIdentifier, managedAccountId, startTime, endTime));
   }
-
-  //  @GET
-  //  @Path("stats")
-  //  @ApiOperation(value = "Get total markup and spend", nickname = "getTotalMarkupAndSpend")
-  //  @Operation(operationId = "getTotalMarkupAndSpend", summary = "Get total markup and spend for MSP managed
-  //  accounts",
-  //      responses = { @ApiResponse(description = "Returns spend stats for MSP managed accounts") })
-  //  public ResponseDTO<ManagedAccountsOverview>
-  //  getTotalMarkupAndSpend(@Parameter(description = "Account id of the msp account") @QueryParam(
-  //                             "accountIdentifier") @AccountIdentifier String accountIdentifier,
-  //      @Parameter(required = true, description = "Unique identifier for the managed account") @QueryParam(
-  //          "managedAccountId") String managedAccountId,
-  //      @QueryParam("startTime") @Parameter(required = true, description = "Start time of the period") long startTime,
-  //      @QueryParam("endTime") @Parameter(required = true, description = "End time of the period") long endTime) {
-  //    return ResponseDTO.newResponse(marginDetailsService.getTotalMarkupAndSpend(managedAccountId,
-  //    accountIdentifier));
-  //  }
 
   @GET
   @Path("timeseries")
@@ -96,6 +88,7 @@ public class ManagedAccountDataResource {
           "managedAccountId") String managedAccountId,
       @QueryParam("startTime") @Parameter(required = true, description = "Start time of the period") long startTime,
       @QueryParam("endTime") @Parameter(required = true, description = "End time of the period") long endTime) {
-    return ResponseDTO.newResponse(marginDetailsService.getManagedAccountTimeSeriesData(managedAccountId));
+    return ResponseDTO.newResponse(mspManagedAccountDataService.getManagedAccountTimeSeriesData(
+        accountIdentifier, managedAccountId, startTime, endTime));
   }
 }
