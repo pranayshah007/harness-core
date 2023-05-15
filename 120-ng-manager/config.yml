@@ -61,13 +61,7 @@ enableAudit: false
 
 exportMetricsToStackDriver: false
 
-allowedOrigins:
-  - https://localhost:8181
-  - https://127.0.0.1:8181
-  - http://localhost:8000
-  - http://127.0.0.1:8000
-  - https://localhost:8000
-  - https://127.0.0.1:8000
+allowedOrigins: https://localhost:8181, https://127.0.0.1:8181, http://localhost:8000, http://127.0.0.1:8000, https://localhost:8000, https://127.0.0.1:8000
 
 logging:
   level: INFO
