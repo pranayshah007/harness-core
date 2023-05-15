@@ -61,28 +61,33 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   @Inject MongoTemplate mongoTemplate;
   @Inject ServiceOverridesRepositoryV2 serviceOverridesRepositoryV2;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
+  private final static String COLLECTION_NAME = "serviceOverridesNG";
   private final static String DEBUG_LINE = "[ServiceOverrideV2MigrationServiceImpl]: ";
   @Override
   @NonNull
-  public ServiceOverrideMigrationResponseDTO migrateToV2(@NonNull String accountId, String orgId, String projectId) {
+  public ServiceOverrideMigrationResponseDTO migrateToV2(
+      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren) {
     ServiceOverrideMigrationResponseDTOBuilder responseDTOBuilder =
         ServiceOverrideMigrationResponseDTO.builder().accountId(accountId);
+    List<ProjectLevelOverrideMigrationResponseDTO> projectLevelResponseDTOs = new ArrayList<>();
+    List<OrgLevelOverrideMigrationResponseDTO> orgLevelResponseDTOs = new ArrayList<>();
     if (isNotEmpty(projectId)) {
       log.info(String.format(
           DEBUG_LINE + "Starting project level migration for orgId: [%s], project :[%s]", orgId, projectId));
-      ProjectLevelOverrideMigrationResponseDTO projectLevelResponseDTOs =
-          doProjectLevelMigration(accountId, orgId, projectId);
+      projectLevelResponseDTOs = List.of(doProjectLevelMigration(accountId, orgId, projectId));
       log.info(
           String.format(DEBUG_LINE + "Successfully finished project level migration for orgId: [%s], project :[%s]",
               orgId, projectId));
-      return responseDTOBuilder.projectLevelMigrationInfo(List.of(projectLevelResponseDTOs)).build();
+      return responseDTOBuilder.projectLevelMigrationInfo(projectLevelResponseDTOs).build();
     }
 
     if (isNotEmpty(orgId)) {
       log.info(String.format(DEBUG_LINE + "Starting org level migration for orgId: [%s]", orgId));
       OrgLevelOverrideMigrationResponseDTO orgLevelResponseDTO = doOrgLevelMigration(accountId, orgId);
-      List<ProjectLevelOverrideMigrationResponseDTO> projectLevelResponseDTOs =
-          doChildProjectsMigration(accountId, orgId);
+      if (migrateChildren) {
+        projectLevelResponseDTOs = doChildProjectsMigration(accountId, orgId);
+      }
+
       log.info(String.format(DEBUG_LINE + "Successfully finished org level migration for orgId: [%s]", orgId));
       return responseDTOBuilder.orgLevelMigrationInfo(List.of(orgLevelResponseDTO))
           .projectLevelMigrationInfo(projectLevelResponseDTOs)
@@ -92,17 +97,18 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     log.info(String.format(DEBUG_LINE + "Starting account level migration for orgId: [%s]", accountId));
 
     AccountLevelOverrideMigrationResponseDTO accountLevelResponseDTO = doAccountLevelMigration(accountId);
-    List<OrgLevelOverrideMigrationResponseDTO> orgLevelResponseDTO = doChildLevelOrgMigration(accountId);
-    List<ProjectLevelOverrideMigrationResponseDTO> projectLevelResponseDTOs = new ArrayList<>();
-    List<String> orgIdsInAccount = orgLevelResponseDTO.stream()
-                                       .map(OrgLevelOverrideMigrationResponseDTO::getOrgIdentifier)
-                                       .collect(Collectors.toList());
-    for (String localOrgId : orgIdsInAccount) {
-      projectLevelResponseDTOs.addAll(doChildProjectsMigration(accountId, localOrgId));
+    if(migrateChildren){
+      orgLevelResponseDTOs = doChildLevelOrgMigration(accountId);
+      List<String> orgIdsInAccount = orgLevelResponseDTOs.stream()
+              .map(OrgLevelOverrideMigrationResponseDTO::getOrgIdentifier)
+              .collect(Collectors.toList());
+      for (String localOrgId : orgIdsInAccount) {
+        projectLevelResponseDTOs.addAll(doChildProjectsMigration(accountId, localOrgId));
+      }
     }
     log.info(String.format(DEBUG_LINE + "Successfully finished account level migration for account: [%s]", accountId));
     return responseDTOBuilder.accountLevelMigrationInfo(accountLevelResponseDTO)
-        .orgLevelMigrationInfo(orgLevelResponseDTO)
+        .orgLevelMigrationInfo(orgLevelResponseDTOs)
         .projectLevelMigrationInfo(projectLevelResponseDTOs)
         .build();
   }
@@ -520,7 +526,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       }
 
       NGServiceOverridesEntity overridesEntity = convertEnvToOverrideEntity(envEntity, envNGConfig);
-      serviceOverridesRepositoryV2.save(overridesEntity);
+      mongoTemplate.save(overridesEntity);
       boolean isEnvUpdateSuccessful = updateEnvironmentForMigration(envEntity);
 
       return Optional.of(SingleEnvMigrationResponse.builder()
