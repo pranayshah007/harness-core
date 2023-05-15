@@ -30,10 +30,9 @@ public class ProjectLevelOverrideMigrationResponseDTO {
   String orgIdentifier;
   String projectIdentifier;
   boolean isSuccessFul;
-  long migratedEnvironmentsCount;
+  long totalEnvironmentsCount;
   long migratedServiceOverridesCount;
-  long totalServiceOverrides;
-  long totalEnvironments;
-  List<String> migratedEnvironmentsInfo;
+  long totalServiceOverridesCount;
+  List<SingleEnvMigrationResponse> migratedEnvironmentsInfo;
   List<SingleServiceOverrideMigrationResponse> serviceOverridesInfos;
 }

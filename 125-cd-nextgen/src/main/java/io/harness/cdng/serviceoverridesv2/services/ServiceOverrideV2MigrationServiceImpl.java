@@ -7,12 +7,20 @@
 
 package io.harness.cdng.serviceoverridesv2.services;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
+import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
+import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
@@ -23,11 +31,16 @@ import io.harness.ng.core.serviceoverridev2.beans.ProjectLevelOverrideMigrationR
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO.ServiceOverrideMigrationResponseDTOBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ng.core.serviceoverridev2.beans.SingleEnvMigrationResponse;
 import io.harness.ng.core.serviceoverridev2.beans.SingleServiceOverrideMigrationResponse;
+import io.harness.repositories.serviceoverridesv2.spring.ServiceOverridesRepositoryV2;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -35,6 +48,7 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -45,6 +59,8 @@ import org.springframework.data.util.CloseableIterator;
 @Slf4j
 public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2MigrationService {
   @Inject MongoTemplate mongoTemplate;
+  @Inject ServiceOverridesRepositoryV2 serviceOverridesRepositoryV2;
+  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final static String DEBUG_LINE = "[ServiceOverrideV2MigrationServiceImpl]: ";
   @Override
   @NonNull
@@ -95,12 +111,12 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   private ProjectLevelOverrideMigrationResponseDTO doProjectLevelMigration(
       String accountId, String orgId, String projectId) {
     boolean isSuccessFul = true;
-    OverridesGroupMigrationResult result = OverridesGroupMigrationResult.builder().build();
+    OverridesGroupMigrationResult overrideResult = OverridesGroupMigrationResult.builder().build();
 
     try {
       Criteria criteria = getCriteriaForProjectServiceOverrides(accountId, orgId, projectId);
-      result = doLevelScopedOverridesMigration(accountId, orgId, projectId, criteria);
-      isSuccessFul = result.isSuccessFul();
+      overrideResult = doLevelScopedOverridesMigration(accountId, orgId, projectId, criteria);
+      isSuccessFul = overrideResult.isSuccessFul();
     } catch (Exception e) {
       log.error(
           String.format(DEBUG_LINE + "Migration failed for project with orgId: [%s], project :[%s]", orgId, projectId),
@@ -108,15 +124,94 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       isSuccessFul = false;
     }
 
+    EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
+    try {
+      Criteria criteria = getCriteriaForProjectEnvironments(accountId, orgId, projectId);
+      envResult= doLevelScopedEnvMigration(accountId, orgId, projectId, criteria);
+    } catch (Exception e) {
+      log.error(
+              String.format(DEBUG_LINE + "Migration failed for project with orgId: [%s], project :[%s]", orgId, projectId),
+              e);
+      isSuccessFul = false;
+    }
+ // Todo : start from here
+    /*
+    set env count+ info
+    create new env successful
+     */
     return ProjectLevelOverrideMigrationResponseDTO.builder()
         .accountId(accountId)
         .orgIdentifier(orgId)
         .projectIdentifier(projectId)
         .isSuccessFul(isSuccessFul)
-        .totalServiceOverrides(result.getTotalServiceOverrideCount())
-        .migratedServiceOverridesCount(result.getMigratedServiceOverridesCount())
-        .serviceOverridesInfos(result.getMigratedServiceOverridesInfos())
+        .totalServiceOverridesCount(overrideResult.getTotalServiceOverrideCount())
+        .migratedServiceOverridesCount(overrideResult.getMigratedServiceOverridesCount())
+        .serviceOverridesInfos(overrideResult.getMigratedServiceOverridesInfos())
         .build();
+  }
+
+  private EnvsMigrationResult doLevelScopedEnvMigration(
+      String accountId, String orgId, String projectId, Criteria criteria) {
+    long migratedEnvCount = 0L;
+    long totalEnvCount = 0L;
+    boolean isSuccessFul = true;
+    List<SingleEnvMigrationResponse> migratedEnvInfos = new ArrayList<>();
+
+    try {
+      Query queryForTargetedEnvs = new Query(criteria);
+      totalEnvCount = mongoTemplate.count(queryForTargetedEnvs, Environment.class);
+
+      if (totalEnvCount > 0L) {
+        try (CloseableIterator<Environment> iterator = mongoTemplate.stream(queryForTargetedEnvs, Environment.class)) {
+          while (iterator.hasNext()) {
+            Environment envEntity = iterator.next();
+            Optional<SingleEnvMigrationResponse> singleMigrationResponseOp = doMigrationForSingleEnvironment(envEntity);
+            if (singleMigrationResponseOp.isEmpty()) {
+              migratedEnvCount++;
+            } else {
+              SingleEnvMigrationResponse singleMigrationResponse = singleMigrationResponseOp.get();
+              if (!singleMigrationResponse.isSuccessful()) {
+                isSuccessFul = false;
+              } else {
+                migratedEnvCount++;
+              }
+            }
+          }
+        }
+        if (totalEnvCount != migratedEnvCount) {
+          isSuccessFul = false;
+        }
+      }
+
+    } catch (Exception e) {
+      log.error(String.format(DEBUG_LINE
+                        + "Migration failed for env in scoped defined by projectId: [%s], orgId: [%s], accountId: [%s]",
+                    projectId, orgId, accountId),
+          e);
+      isSuccessFul = false;
+    }
+
+    return EnvsMigrationResult.builder()
+        .isSuccessFul(isSuccessFul)
+        .targetEnvCount(totalEnvCount)
+        .migratedEnvCount(migratedEnvCount)
+        .migratedEnvInfos(migratedEnvInfos)
+        .build();
+  }
+
+  private Criteria getCriteriaForProjectEnvironments(String accountId, String orgId, String projectId) {
+    Criteria criteria = new Criteria()
+                            .and(EnvironmentKeys.accountId)
+                            .is(accountId)
+                            .and(EnvironmentKeys.orgIdentifier)
+                            .is(orgId)
+                            .and(EnvironmentKeys.projectIdentifier)
+                            .is(projectId)
+                            .and(EnvironmentKeys.isMigratedToOverride)
+                            .is(false);
+
+    return criteria.andOperator(new Criteria().andOperator(
+        Criteria.where(EnvironmentKeys.yaml).exists(true), Criteria.where(EnvironmentKeys.yaml).isNull().not()));
   }
 
   @NonNull
@@ -136,7 +231,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     return OrgLevelOverrideMigrationResponseDTO.builder()
         .accountId(accountId)
         .orgIdentifier(orgId)
-        .isSuccessful(isSuccessFul)
+        .isSuccessFul(isSuccessFul)
         .totalServiceOverridesCount(result.getTotalServiceOverrideCount())
         .migratedServiceOverridesCount(result.getMigratedServiceOverridesCount())
         .serviceOverridesInfo(result.getMigratedServiceOverridesInfos())
@@ -159,7 +254,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
 
     return AccountLevelOverrideMigrationResponseDTO.builder()
         .accountId(accountId)
-        .isSuccessful(isSuccessFul)
+        .isSuccessFul(isSuccessFul)
         .totalServiceOverridesCount(result.getTotalServiceOverrideCount())
         .migratedServiceOverridesCount(result.getMigratedServiceOverridesCount())
         .serviceOverridesInfo(result.getMigratedServiceOverridesInfos())
@@ -244,6 +339,9 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
           .isSuccessful(true)
           .serviceRef(overridesEntity.getServiceRef())
           .envRef(overridesEntity.getEnvironmentRef())
+          .projectId(overridesEntity.getProjectIdentifier())
+          .orgId(overridesEntity.getOrgIdentifier())
+          .accountId(overridesEntity.getAccountId())
           .build();
     } catch (Exception e) {
       log.error(
@@ -257,6 +355,9 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
           .isSuccessful(false)
           .serviceRef(overridesEntity.getServiceRef())
           .envRef(overridesEntity.getEnvironmentRef())
+          .projectId(overridesEntity.getProjectIdentifier())
+          .orgId(overridesEntity.getOrgIdentifier())
+          .accountId(overridesEntity.getAccountId())
           .build();
     }
   }
@@ -307,6 +408,15 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     List<SingleServiceOverrideMigrationResponse> migratedServiceOverridesInfos;
   }
 
+  @Data
+  @Builder
+  @FieldDefaults(level = AccessLevel.PRIVATE)
+  private class EnvsMigrationResult {
+    long migratedEnvCount;
+    long targetEnvCount;
+    boolean isSuccessFul;
+    List<SingleEnvMigrationResponse> migratedEnvInfos;
+  }
   private OverridesGroupMigrationResult doLevelScopedOverridesMigration(
       String accountId, String orgId, String projectId, Criteria criteria) {
     long migratedServiceOverridesCount = 0L;
@@ -358,5 +468,102 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         .migratedServiceOverridesCount(migratedServiceOverridesCount)
         .migratedServiceOverridesInfos(migratedServiceOverridesInfos)
         .build();
+  }
+
+  @NonNull
+  private Optional<SingleEnvMigrationResponse> doMigrationForSingleEnvironment(Environment envEntity) {
+    try {
+      NGEnvironmentInfoConfig envNGConfig =
+          EnvironmentMapper.toNGEnvironmentConfig(envEntity.getYaml()).getNgEnvironmentInfoConfig();
+      if (isEmpty(envNGConfig.getVariables()) && isNoOverridesPresent(envNGConfig.getNgEnvironmentGlobalOverride())) {
+        return Optional.empty();
+      }
+
+      NGServiceOverridesEntity overridesEntity = convertEnvToOverrideEntity(envEntity, envNGConfig);
+      serviceOverridesRepositoryV2.save(overridesEntity);
+      boolean isEnvUpdateSuccessful = updateEnvironmentForMigration(envEntity);
+
+      return Optional.of(SingleEnvMigrationResponse.builder()
+                             .isSuccessful(isEnvUpdateSuccessful)
+                             .envIdentifier(overridesEntity.getEnvironmentRef())
+                             .projectId(overridesEntity.getProjectIdentifier())
+                             .orgId(overridesEntity.getOrgIdentifier())
+                             .accountId(overridesEntity.getAccountId())
+                             .build());
+    } catch (Exception e) {
+      log.error(
+          String.format(DEBUG_LINE
+                  + "Env to ServiceOverride migration failed for envId: [%s], projectId: [%s], orgId: [%s], accountId: [%s]",
+              envEntity.getIdentifier(), envEntity.getProjectIdentifier(), envEntity.getOrgIdentifier(),
+              envEntity.getAccountId()),
+          e);
+    }
+    return Optional.of(SingleEnvMigrationResponse.builder()
+                           .isSuccessful(false)
+                           .envIdentifier(envEntity.getIdentifier())
+                           .projectId(envEntity.getProjectIdentifier())
+                           .orgId(envEntity.getOrgIdentifier())
+                           .accountId(envEntity.getAccountId())
+                           .build());
+  }
+
+  private NGServiceOverridesEntity convertEnvToOverrideEntity(
+      Environment envEntity, NGEnvironmentInfoConfig envNGConfig) {
+    NGEnvironmentGlobalOverride ngEnvOverride = envNGConfig.getNgEnvironmentGlobalOverride();
+
+    ServiceOverridesSpec spec = ServiceOverridesSpec.builder()
+                                    .variables(envNGConfig.getVariables())
+                                    .manifests(ngEnvOverride.getManifests())
+                                    .configFiles(ngEnvOverride.getConfigFiles())
+                                    .applicationSettings(ngEnvOverride.getApplicationSettings())
+                                    .connectionStrings(ngEnvOverride.getConnectionStrings())
+                                    .build();
+
+    String scopedEnvRef = IdentifierRefHelper.getRefFromIdentifierOrRef(envEntity.getAccountId(),
+        envEntity.getOrgIdentifier(), envEntity.getProjectIdentifier(), envEntity.getIdentifier());
+    IdentifierRef envIdentifierRef = IdentifierRefHelper.getIdentifierRef(
+        scopedEnvRef, envEntity.getAccountId(), envEntity.getOrgIdentifier(), envEntity.getProjectIdentifier());
+
+    return NGServiceOverridesEntity.builder()
+        .identifier(generateEnvOverrideIdentifier(scopedEnvRef))
+        .environmentRef(scopedEnvRef)
+        .projectIdentifier(envIdentifierRef.getProjectIdentifier())
+        .orgIdentifier(envIdentifierRef.getOrgIdentifier())
+        .accountId(envIdentifierRef.getAccountIdentifier())
+        .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+        .spec(spec)
+        .isV2(true)
+        .build();
+  }
+
+  private boolean updateEnvironmentForMigration(Environment envEntity) {
+    try {
+      Criteria criteria = new Criteria().and(EnvironmentKeys.id).is(envEntity.getId());
+      Query query = new Query(criteria);
+      Update update = new Update();
+      update.set(EnvironmentKeys.isMigratedToOverride, true);
+      mongoTemplate.updateFirst(query, update, NGServiceOverridesEntity.class);
+      return true;
+    } catch (Exception e) {
+      log.error(String.format(DEBUG_LINE
+                        + "Environment update failed for envId: [%s], projectId: [%s], orgId: [%s], accountId: [%s]",
+                    envEntity.getIdentifier(), envEntity.getProjectIdentifier(), envEntity.getOrgIdentifier(),
+                    envEntity.getAccountId()),
+          e);
+    }
+    return false;
+  }
+
+  private boolean isNoOverridesPresent(NGEnvironmentGlobalOverride ngEnvironmentGlobalOverride) {
+    if (ngEnvironmentGlobalOverride == null) {
+      return true;
+    }
+    return isEmpty(ngEnvironmentGlobalOverride.getManifests()) && isEmpty(ngEnvironmentGlobalOverride.getConfigFiles())
+        && ngEnvironmentGlobalOverride.getConnectionStrings() == null
+        && ngEnvironmentGlobalOverride.getApplicationSettings() == null;
+  }
+
+  public String generateEnvOverrideIdentifier(String envRef) {
+    return String.join("_", envRef).replace(".", "_");
   }
 }
