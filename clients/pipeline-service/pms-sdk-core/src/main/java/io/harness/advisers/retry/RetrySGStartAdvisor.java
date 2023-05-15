@@ -9,6 +9,8 @@ package io.harness.advisers.retry;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
+import static io.harness.pms.execution.utils.StatusUtils.retryableStatuses;
 
 import io.harness.advisers.CommonAdviserTypes;
 import io.harness.advisers.pipelinerollback.OnFailPipelineRollbackAdviser;
@@ -77,6 +79,11 @@ public class RetrySGStartAdvisor implements Adviser {
 
   @Override
   public boolean canAdvise(AdvisingEvent advisingEvent) {
+    boolean canAdvise = retryableStatuses().contains(advisingEvent.getToStatus())
+        && advisingEvent.getFromStatus() != INTERVENTION_WAITING;
+    if (!canAdvise) {
+      return false;
+    }
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(advisingEvent.getAmbiance(),
             RefObjectUtils.getSweepingOutputRefObject(YAMLFieldNameConstants.RETRY_STEP_GROUP));
