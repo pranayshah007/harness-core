@@ -214,25 +214,40 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       wingsPersistence.save(marketPlace);
     }
 
-    if (existingCustomer
+    if (existingCustomer && !marketPlace.getProductCode().equals(productCode)) {
+      log.info(
+          "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. This is an existing customer:[{}], purchasing another module. Existing product code [{}], adding product code [{}]. Desired dimension: [{}]",
+          customerIdentifierCode, marketPlace.getProductCode(), productCode, dimension);
+      final String message = String.format("License details: Quantity: %d, License expiration: %s", orderQuantity,
+          DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
+      return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+
+    } else if (existingCustomer
         && (!marketPlace.getOrderQuantity().equals(orderQuantity)
             || (!marketPlace.getExpirationDate().equals(expirationDate)))) {
       log.info(
           "This is an existing customer:[{}], updating orderQuantity from [{}] to [{}], updating expirationDate from [{}] to [{}]",
           customerIdentifierCode, marketPlace.getOrderQuantity(), orderQuantity, marketPlace.getExpirationDate(),
           expirationDate);
-      /**
-       * This is an update to an existing order, treat this as an update
-       */
-      licenseService.updateLicenseForProduct(
-          marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime(), dimension);
 
-      marketPlace.setOrderQuantity(orderQuantity);
-      wingsPersistence.save(marketPlace);
-
-      final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      final String message = String.format(
+          "Looks like you already have a license. Please reach out to harness@support.io to update the existing license. License details: Quantity: %d, License expiration: %s.",
           orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
       return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      // TODO: Add update license once license provisioning works
+      // /**
+      //  * This is an update to an existing order, treat this as an update
+      //  */
+      // licenseService.updateLicenseForProduct(
+      //     marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime(),
+      //     dimension);
+
+      // marketPlace.setOrderQuantity(orderQuantity);
+      // wingsPersistence.save(marketPlace);
+
+      // final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      //     orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
+      // return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
 
     } else if (!existingCustomer) {
       /**
