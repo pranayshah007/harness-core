@@ -67,8 +67,8 @@ public class HelmChartVersionResource {
   @ApiOperation(value = "Gets helm chart version details", nickname = "getHelmChartVersionDetails")
   public ResponseDTO<HelmChartResponseDTO> getHelmChartVersionDetails(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @QueryParam("fqnPath") String fqnPath,
       @QueryParam("connectorRef") String connectorIdentifier, @QueryParam("chartName") String chartName,
       @QueryParam("region") String region, @QueryParam("bucketName") String bucketName,
@@ -84,8 +84,8 @@ public class HelmChartVersionResource {
   @ApiOperation(value = "Gets helm chart version details", nickname = "getHelmChartVersionDetailsV1")
   public ResponseDTO<HelmChartResponseDTO> getHelmChartVersionDetailsV1(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam("connectorRef") String connectorIdentifier,
       @NotNull @QueryParam("chartName") String chartName, @QueryParam("region") String region,
       @QueryParam("bucketName") String bucketName, @QueryParam("folderPath") String folderPath,
@@ -103,8 +103,8 @@ public class HelmChartVersionResource {
       nickname = "getHelmChartVersionDetailsWithYaml")
   public ResponseDTO<HelmChartResponseDTO>
   getHelmChartVersionDetailsWithYaml(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @NotNull @QueryParam("fqnPath") String fqnPath, @QueryParam("connectorRef") String connectorIdentifier,
