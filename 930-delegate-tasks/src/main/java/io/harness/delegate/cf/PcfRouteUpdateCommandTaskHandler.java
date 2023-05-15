@@ -30,6 +30,8 @@ import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
+import io.harness.delegate.cf.retry.RetryAbleTaskExecutorForEnvVariables;
+import io.harness.delegate.cf.retry.RetryAbleTaskForVerfication;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.request.CfCommandRouteUpdateRequest;
@@ -424,7 +426,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
       LogCallback executionLogCallback, String appName, List<String> routeList) throws PivotalClientApiException {
     pcfCommandTaskBaseHelper.unmapRouteMaps(appName, routeList, cfRequestConfig, executionLogCallback);
     cfRequestConfig.setApplicationName(appName);
-    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     RetryPolicy retryPolicy =
             RetryPolicy.builder()
                     .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
@@ -438,7 +440,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
     retryAbleTaskExecutor.execute(
             ()
                     -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-            executionLogCallback, log, retryPolicy);
+            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatusNG(cfRequestConfig, executionLogCallback));
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
@@ -491,7 +493,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
   private void updateEnvVariableForApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
       String appName, boolean isActiveApplication) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(appName);
-    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     RetryPolicy retryPolicy =
             RetryPolicy.builder()
                     .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
@@ -505,7 +507,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
     retryAbleTaskExecutor.execute(
             ()
                     -> pcfDeploymentManager.setEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback),
-            executionLogCallback, log, retryPolicy);
+            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkSettingEnvironmentVariableForAppStatusNG(cfRequestConfig, isActiveApplication, executionLogCallback));
   }
 
   private void updateRoutesForNewApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

@@ -718,6 +718,23 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         cfRequestConfig, executionLogCallback);
   }
 
+  @Override
+  public boolean checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
+                                                   LogCallback executionLogCallback) throws PivotalClientApiException {
+    ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
+    if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
+      Map<String, Object> userProvided = applicationEnvironments.getUserProvided();
+      if (userProvided.containsKey(HARNESS__STATUS__INDENTIFIER)) {
+        if(activeStatus) {
+          return userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER);
+        } else {
+          userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__INACTIVE__IDENTIFIER);
+        }
+      }
+    }
+    return false;
+  }
+
   private void removeOldStatusVariableIfExist(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
       throws PivotalClientApiException {
     ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(pcfRequestConfig);
@@ -744,6 +761,21 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         }
       }
     }
+  }
+
+  @Override
+  public boolean checkUnsettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig,
+                                                               LogCallback executionLogCallback) throws PivotalClientApiException {
+    ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
+    if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
+      Map<String, Object> userProvided = applicationEnvironments.getUserProvided();
+      for (String statusKey : STATUS_ENV_VARIABLES) {
+        if (userProvided.containsKey(statusKey)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   @Override

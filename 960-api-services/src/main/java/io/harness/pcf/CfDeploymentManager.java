@@ -105,4 +105,10 @@ public interface CfDeploymentManager {
 
   List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
       throws PivotalClientApiException;
+
+  boolean checkUnsettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig,
+                                                                 LogCallback executionLogCallback) throws PivotalClientApiException;
+
+  boolean checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
+                                                        LogCallback executionLogCallback) throws PivotalClientApiException;
 }

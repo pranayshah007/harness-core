@@ -371,7 +371,7 @@ public class TasBGSetupTaskHandlerTest extends CategoryTest {
                                               .build();
 
     doReturn(false).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
-    doNothing().when(cfDeploymentManager).renameApplication(any(), any());
+    doThrow(new PivotalClientApiException("error")).when(cfDeploymentManager).renameApplication(any(), any());
     doThrow(new PivotalClientApiException("error")).when(cfDeploymentManager).deleteApplication(any());
     doReturn(null).when(cfDeploymentManager).resizeApplication(any());
     doReturn(applicationDetail).when(cfDeploymentManager).createApplication(any(), any());
@@ -390,7 +390,7 @@ public class TasBGSetupTaskHandlerTest extends CategoryTest {
             cfBlueGreenSetupRequestNG, logStreamingTaskClient, CommandUnitsProgress.builder().build());
 
     assertThat(cfBlueGreenSetupResponseNG.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
-    verify(cfDeploymentManager, times(1)).deleteApplication(any());
+    verify(cfDeploymentManager, times(1)).renameApplication(any(), any());
   }
 
   @Test

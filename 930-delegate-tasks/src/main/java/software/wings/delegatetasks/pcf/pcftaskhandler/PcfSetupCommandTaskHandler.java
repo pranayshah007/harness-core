@@ -43,6 +43,7 @@ import io.harness.delegate.beans.pcf.CfInternalConfig;
 import io.harness.delegate.cf.PcfCommandTaskHandler;
 import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
+import io.harness.delegate.cf.retry.RetryAbleTaskExecutorForEnvVariables;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
@@ -796,6 +797,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
                                               .toString());
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     if (cfCommandSetupRequest.isUseAppAutoscalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -807,7 +809,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     cfRequestConfig.setDesiredCount(0);
 
     unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
-    unsetEnvVariables(cfRequestConfig, cfCommandSetupRequest, executionLogCallback, retryAbleTaskExecutor);
+    unsetEnvVariables(cfRequestConfig, cfCommandSetupRequest, executionLogCallback, retryAbleTaskExecutorForEnvVariables);
     downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
   }
 
@@ -837,7 +839,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   }
 
   private void unsetEnvVariables(CfRequestConfig cfRequestConfig, CfCommandSetupRequest cfCommandSetupRequest,
-      LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
+      LogCallback executionLogCallback, RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor) {
     if (!cfCommandSetupRequest.isBlueGreen()) {
       return;
     }
@@ -856,7 +858,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     retryAbleTaskExecutor.execute(
         ()
             -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy);
+        executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatusNG(cfRequestConfig, executionLogCallback));
   }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
