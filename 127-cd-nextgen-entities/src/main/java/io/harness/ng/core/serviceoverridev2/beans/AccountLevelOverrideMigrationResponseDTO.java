@@ -28,7 +28,8 @@ import lombok.experimental.FieldDefaults;
 public class AccountLevelOverrideMigrationResponseDTO {
   String accountId;
   boolean isSuccessFul;
-  long totalEnvironmentsCount;
+  boolean isEnvsMigrationSuccessful;
+  long targetEnvironmentsCount;
   long totalServiceOverridesCount;
   long migratedEnvironmentsCount;
   long migratedServiceOverridesCount;

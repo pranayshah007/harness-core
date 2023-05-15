@@ -28,8 +28,10 @@ import lombok.experimental.FieldDefaults;
 public class OrgLevelOverrideMigrationResponseDTO {
   String accountId;
   String orgIdentifier;
-  boolean isSuccessFul;
+  boolean isOverridesMigrationSuccessFul;
+  boolean isEnvsMigrationSuccessful;
   long totalEnvironmentsCount;
+  long migratedEnvironmentCount;
   long totalServiceOverridesCount;
   long migratedEnvironmentsCount;
   long migratedServiceOverridesCount;

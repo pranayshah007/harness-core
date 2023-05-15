@@ -110,43 +110,46 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   @NonNull
   private ProjectLevelOverrideMigrationResponseDTO doProjectLevelMigration(
       String accountId, String orgId, String projectId) {
-    boolean isSuccessFul = true;
+    boolean isOverrideMigrationSuccessFul = true;
+
     OverridesGroupMigrationResult overrideResult = OverridesGroupMigrationResult.builder().build();
 
     try {
       Criteria criteria = getCriteriaForProjectServiceOverrides(accountId, orgId, projectId);
       overrideResult = doLevelScopedOverridesMigration(accountId, orgId, projectId, criteria);
-      isSuccessFul = overrideResult.isSuccessFul();
+      isOverrideMigrationSuccessFul = overrideResult.isSuccessFul();
     } catch (Exception e) {
-      log.error(
-          String.format(DEBUG_LINE + "Migration failed for project with orgId: [%s], project :[%s]", orgId, projectId),
+      log.error(String.format(DEBUG_LINE + "Override Migration failed for project with orgId: [%s], project :[%s]",
+                    orgId, projectId),
           e);
-      isSuccessFul = false;
+      isOverrideMigrationSuccessFul = false;
     }
 
+    boolean isEnvMigrationSuccessful = true;
     EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
     try {
       Criteria criteria = getCriteriaForProjectEnvironments(accountId, orgId, projectId);
-      envResult= doLevelScopedEnvMigration(accountId, orgId, projectId, criteria);
+      envResult = doLevelScopedEnvMigration(accountId, orgId, projectId, criteria);
+      isEnvMigrationSuccessful = envResult.isSuccessFul();
     } catch (Exception e) {
-      log.error(
-              String.format(DEBUG_LINE + "Migration failed for project with orgId: [%s], project :[%s]", orgId, projectId),
-              e);
-      isSuccessFul = false;
+      log.error(String.format(
+                    DEBUG_LINE + "Env Migration failed for project with orgId: [%s], project :[%s]", orgId, projectId),
+          e);
+      isEnvMigrationSuccessful = false;
     }
- // Todo : start from here
-    /*
-    set env count+ info
-    create new env successful
-     */
+
     return ProjectLevelOverrideMigrationResponseDTO.builder()
         .accountId(accountId)
         .orgIdentifier(orgId)
         .projectIdentifier(projectId)
-        .isSuccessFul(isSuccessFul)
+        .isOverridesMigrationSuccessFul(isOverrideMigrationSuccessFul)
         .totalServiceOverridesCount(overrideResult.getTotalServiceOverrideCount())
         .migratedServiceOverridesCount(overrideResult.getMigratedServiceOverridesCount())
         .serviceOverridesInfos(overrideResult.getMigratedServiceOverridesInfos())
+        .isEnvMigrationSuccessful(isEnvMigrationSuccessful)
+        .totalEnvironmentsCount(envResult.getTargetEnvCount())
+        .migratedEnvCount(envResult.getMigratedEnvCount())
+        .migratedEnvironmentsInfo(envResult.getMigratedEnvInfos())
         .build();
   }
 
@@ -224,17 +227,32 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       result = doLevelScopedOverridesMigration(accountId, orgId, null, criteria);
       isSuccessFul = result.isSuccessFul();
     } catch (Exception e) {
-      log.error(String.format(DEBUG_LINE + "Migration failed for project with orgId: [%s]", orgId), e);
+      log.error(String.format(DEBUG_LINE + "Override Migration failed for project with orgId: [%s]", orgId), e);
       isSuccessFul = false;
+    }
+
+    boolean isEnvMigrationSuccessful = true;
+    EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
+    try {
+      Criteria criteria = getCriteriaForProjectEnvironments(accountId, orgId, null);
+      envResult = doLevelScopedEnvMigration(accountId, orgId, null, criteria);
+      isEnvMigrationSuccessful = envResult.isSuccessFul();
+    } catch (Exception e) {
+      log.error(String.format(DEBUG_LINE + "Env Migration failed for project with orgId: [%s]", orgId), e);
+      isEnvMigrationSuccessful = false;
     }
 
     return OrgLevelOverrideMigrationResponseDTO.builder()
         .accountId(accountId)
         .orgIdentifier(orgId)
-        .isSuccessFul(isSuccessFul)
+        .isOverridesMigrationSuccessFul(isSuccessFul)
         .totalServiceOverridesCount(result.getTotalServiceOverrideCount())
         .migratedServiceOverridesCount(result.getMigratedServiceOverridesCount())
         .serviceOverridesInfo(result.getMigratedServiceOverridesInfos())
+        .isEnvsMigrationSuccessful(isEnvMigrationSuccessful)
+        .totalEnvironmentsCount(envResult.getTargetEnvCount())
+        .migratedEnvironmentCount(envResult.getMigratedEnvCount())
+        .environmentsInfo(envResult.getMigratedEnvInfos())
         .build();
   }
 
@@ -249,7 +267,18 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       isSuccessFul = result.isSuccessFul();
     } catch (Exception e) {
       isSuccessFul = false;
-      log.error(String.format(DEBUG_LINE + "Migration failed for project with accountId: [%s]", accountId), e);
+      log.error(String.format(DEBUG_LINE + "Override Migration failed for project with accountId: [%s]", accountId), e);
+    }
+
+    boolean isEnvMigrationSuccessful = true;
+    EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
+    try {
+      Criteria criteria = getCriteriaForProjectEnvironments(accountId, null, null);
+      envResult = doLevelScopedEnvMigration(accountId, null, null, criteria);
+      isEnvMigrationSuccessful = envResult.isSuccessFul();
+    } catch (Exception e) {
+      log.error(String.format(DEBUG_LINE + "Env Migration failed for project with accountId: [%s]", accountId), e);
+      isEnvMigrationSuccessful = false;
     }
 
     return AccountLevelOverrideMigrationResponseDTO.builder()
@@ -258,6 +287,10 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         .totalServiceOverridesCount(result.getTotalServiceOverrideCount())
         .migratedServiceOverridesCount(result.getMigratedServiceOverridesCount())
         .serviceOverridesInfo(result.getMigratedServiceOverridesInfos())
+        .isEnvsMigrationSuccessful(isEnvMigrationSuccessful)
+        .targetEnvironmentsCount(envResult.getTargetEnvCount())
+        .migratedEnvironmentsCount(envResult.getMigratedEnvCount())
+        .environmentsInfo(envResult.getMigratedEnvInfos())
         .build();
   }
 
