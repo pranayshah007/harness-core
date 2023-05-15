@@ -81,12 +81,7 @@ public class GovernanceRecommendationService {
     List<String> getAccounts = accountShardService.getCeEnabledAccountIds();
     for (String account : getAccounts) {
       log.info("generateRecommendationForAccount: {}", account);
-      try {
-        generateRecommendationForAccount(account);
-        TimeUnit.SECONDS.sleep(configuration.getGovernanceConfig().getSleepTime());
-      } catch (InterruptedException e) {
-        log.error("error which generating recommendation for {}", account);
-      }
+      generateRecommendationForAccount(account);
     }
   }
 
@@ -139,6 +134,11 @@ public class GovernanceRecommendationService {
       }
       // enqueue call
       enqueueRecommendationForAccount(recommendatioAdhocDTOListFinal, ruleList, regions, accountId);
+      try {
+        TimeUnit.SECONDS.sleep(configuration.getGovernanceConfig().getSleepTime());
+      } catch (InterruptedException e) {
+        log.error("error which generating recommendation for {}", accountId);
+      }
     } else {
       log.info("No connector found for {}", accountId);
     }
