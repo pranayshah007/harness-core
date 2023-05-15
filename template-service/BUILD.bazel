@@ -11,7 +11,6 @@ shared_dependencies = [
     "@maven//:com_google_guava_guava",
     "@maven//:io_netty_netty_all",
 ] + [
-    "//840-template-service/contracts:module",
     "//878-ng-common-utilities:module",
     "//884-pms-commons:module",
     "//890-sm-core:module",
@@ -35,6 +34,7 @@ shared_dependencies = [
     "//clients/access-control/sdk:module",
     "//clients/audit:module",
     "//clients/pipeline-service/pms-client:module",
+    "//template-service/contracts:module",
     "@maven//:ch_qos_logback_logback_access",
     "@maven//:ch_qos_logback_logback_classic",
     "@maven//:ch_qos_logback_logback_core",
@@ -93,7 +93,7 @@ java_binary(
     data = ["//:resource"],
     main_class = "io.harness.TemplateServiceApplication",
     resources = [
-        "//840-template-service/src/main/resources:resource",
+        "//template-service/src/main/resources:resource",
     ],
     visibility = ["//visibility:public"],
     runtime_deps = [
@@ -106,7 +106,7 @@ java_library(
     name = "tests",
     testonly = True,
     srcs = glob(["src/test/**/*.java"]),
-    resources = ["//840-template-service/src/test/resources:resource"],
+    resources = ["//template-service/src/test/resources:resource"],
     visibility = ["//visibility:public"],
     deps = shared_dependencies + [
         ":module",

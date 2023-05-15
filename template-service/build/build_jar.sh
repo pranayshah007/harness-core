@@ -13,4 +13,4 @@ fi
 
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
-bazel ${bazelrc} build //840-template-service:module_deploy.jar ${BAZEL_ARGUMENTS}
+bazel ${bazelrc} build //template-service:module_deploy.jar ${BAZEL_ARGUMENTS}
