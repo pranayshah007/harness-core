@@ -10,6 +10,7 @@ package io.harness.cvng.migration;
 import io.harness.cvng.migration.timescale.CreateSLOHealthIndicator;
 import io.harness.cvng.migration.timescale.CreateSLOHistoryTable;
 import io.harness.cvng.migration.timescale.CreateSLOPeriodicSummary;
+import io.harness.cvng.migration.timescale.CreateVerifyStepExecutionTables;
 import io.harness.cvng.migration.timescale.MigrateSLOtoTimeScaleDb;
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
@@ -37,6 +38,7 @@ public class SRMTimescaleMigrationList implements MigrationDetails {
         .add(Pair.of(2, CreateSLOPeriodicSummary.class))
         .add(Pair.of(3, CreateSLOHistoryTable.class))
         .add(Pair.of(4, MigrateSLOtoTimeScaleDb.class))
+        .add(Pair.of(5, CreateVerifyStepExecutionTables.class))
         .build();
   }
 }
