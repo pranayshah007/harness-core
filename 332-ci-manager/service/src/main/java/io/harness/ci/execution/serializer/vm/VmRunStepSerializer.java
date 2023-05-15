@@ -50,7 +50,7 @@ public class VmRunStepSerializer {
   @Inject private CIFeatureFlagService featureFlagService;
 
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries, String delegateId) {
     String command =
         RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     String image =
@@ -76,6 +76,10 @@ public class VmRunStepSerializer {
         resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
+
+    if (StringUtils.isNotEmpty(delegateId)) {
+      envVars.put("HARNESS_DELEGATE_ID", delegateId);
+    }
 
     List<String> outputVarNames = new ArrayList<>();
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {

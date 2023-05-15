@@ -51,20 +51,21 @@ public class VmStepSerializer {
 
   public VmStepInfo serialize(Ambiance ambiance, CIStepInfo stepInfo, StageInfraDetails stageInfraDetails,
       String identifier, ParameterField<Timeout> parameterFieldTimeout, List<CIRegistry> registries,
-      ExecutionSource executionSource) {
+      ExecutionSource executionSource, String delegateId) {
     String stepName = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return vmRunStepSerializer.serialize(
-            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName, registries);
+            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName, registries, delegateId);
       case BACKGROUND:
-        return vmBackgroundStepSerializer.serialize((BackgroundStepInfo) stepInfo, ambiance, identifier, registries);
+        return vmBackgroundStepSerializer.serialize(
+            (BackgroundStepInfo) stepInfo, ambiance, identifier, registries, delegateId);
       case RUN_TESTS:
         return vmRunTestStepSerializer.serialize(
-            (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance, registries);
+            (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance, registries, delegateId);
       case PLUGIN:
         return vmPluginStepSerializer.serialize((PluginStepInfo) stepInfo, stageInfraDetails, identifier,
-            parameterFieldTimeout, stepName, ambiance, registries, executionSource);
+            parameterFieldTimeout, stepName, ambiance, registries, executionSource, delegateId);
       case GCR:
       case DOCKER:
       case ECR:
