@@ -226,13 +226,12 @@ public class UserResourceNG {
     userService.verifyRegisteredOrAllowed(email);
 
     User user = convertMarketplaceRequestToUser(email, password, dto);
-    // ! Add back in after testing
-    // Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
-    // String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
-    // if (!userInviteID.equals(inviteId)) {
-    //   throw new GeneralException(String.format(
-    //       "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
-    // }
+    Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
+    String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
+    if (!userInviteID.equals(inviteId)) {
+      throw new GeneralException(String.format(
+          "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
+    }
     // ! remove after testing PR env fixed marketPlaceId
     // String marketPlaceID = "VZqcTgVnTQ61iVf3T4qrqg";
     String marketPlaceID = claims.get(MarketPlaceConstants.MARKETPLACE_ID_CLAIM_KEY).asString();
