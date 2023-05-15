@@ -232,12 +232,6 @@ public class NGTriggerElementMapper {
     }
 
     if (newEntity.getType() == MULTI_ARTIFACT) {
-      /* MultiRegionArtifact triggers need different handling here, since we can't just copy the list of BuildMetadata
-      from the previously existing entity (e.g.: The number of artifacts it is listening for could have changed in
-      the update). So we only copy the previously existing signatures to `ngTriggerEntity.metadata.signatures`.
-      These will be used to unsubscribe from the previously subscribed poolingDocuments.
-      At a later step (in NGTriggerServiceImpl:stampPollingInfoForMultiArtifactTrigger) we reset the signatures
-      with the actual new signatures for this trigger. */
       copyFieldsForMultiArtifactTrigger(existingEntity, newEntity);
     }
 
