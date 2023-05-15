@@ -466,7 +466,6 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       totalServiceOverride = mongoTemplate.count(queryForAllOverrides, NGServiceOverridesEntity.class);
 
       if (totalServiceOverride > 0L) {
-
         criteria.andOperator(new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.isV2).is(false)));
 
