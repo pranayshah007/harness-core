@@ -9,6 +9,7 @@
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
   ha: false
+  stackDriverLoggingEnabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -30,7 +31,7 @@ global:
       installed: true
       protocol: mongodb
       # --  provide default values if mongo.installed is set to false
-      hosts: [ ]
+      hosts: []
       secretName: ""
       userKey: ""
       passwordKey: ""
@@ -71,6 +72,10 @@ global:
       gateways:
       hosts:
   imagePullSecrets: []
+
+# --mongoHosts List of mongo hosts
+mongoHosts: []
+
 # --replicaCount Number of pods
 ##
 replicaCount: 1
@@ -442,3 +447,9 @@ nodeSelector: {}
 ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ##
 tolerations: []
+
+mongoSSL:
+  enabled: false
+
+# -- additionalConfigs Additional configurations for the deployment
+additionalConfigs: {}

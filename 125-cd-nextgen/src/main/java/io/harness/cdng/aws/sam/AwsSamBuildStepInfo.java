@@ -69,9 +69,10 @@ public class AwsSamBuildStepInfo extends AwsSamBaseStepInfo implements CDAbstrac
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
-      ParameterField<List<String>> buildCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef) {
+      ParameterField<List<String>> buildCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
+      ParameterField<String> samVersion) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy);
+        imagePullPolicy, samVersion);
     this.buildCommandOptions = buildCommandOptions;
     this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
   }

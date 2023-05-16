@@ -69,10 +69,10 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   private static final String CONFIG_NAME = "backstage-override-config";
 
-  private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid plugin config provided for Plugin id - %s";
+  private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid config provided for Plugin id - %s";
   private static final String MERGED_APP_CONFIG_JSON_SCHEMA_PATH = "configs/json-schemas/merged-app-config-schema.json";
 
-  private static final String INVALID_CONFIG_ID_PROVIDED = "Error in reading schema - Invalid config id provided";
+  private static final String INVALID_CONFIG_ID_PROVIDED = "Error in reading schema - Invalid config id provided - %s";
 
   private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
       "Invalid schema for merged app-config.yaml for account - %s";
@@ -271,7 +271,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   public void validateSchemaForPlugin(String config, String configId) throws Exception {
     String pluginSchema = ConfigManagerUtils.getPluginConfigSchema(configId);
     if (pluginSchema == null) {
-      throw new UnsupportedOperationException(INVALID_CONFIG_ID_PROVIDED);
+      throw new UnsupportedOperationException(String.format(INVALID_CONFIG_ID_PROVIDED, configId));
     }
     if (!ConfigManagerUtils.isValidSchema(config, pluginSchema)) {
       throw new InvalidRequestException(String.format(INVALID_PLUGIN_CONFIG_PROVIDED, configId));

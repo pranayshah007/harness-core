@@ -25,6 +25,7 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
@@ -384,23 +385,28 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     String projectName = getProjectName(projectParams.getAccountIdentifier(), simpleSLOProjectParams.getOrgIdentifier(),
         simpleSLOProjectParams.getProjectIdentifier());
     String orgName = getOrgName(projectParams.getAccountIdentifier(), simpleSLOProjectParams.getOrgIdentifier());
-    return SLOConsumptionBreakdown.builder()
-        .sloIdentifier(sloDetail.getSloIdentifier())
-        .sloName(sloDetail.getName())
-        .monitoredServiceIdentifier(sloDetail.getMonitoredServiceIdentifier())
-        .serviceName(sloDetail.getServiceName())
-        .environmentIdentifier(sloDetail.getEnvironmentIdentifier())
-        .sliType(sloDetail.getSliType())
-        .weightagePercentage(weightPercentage)
-        .sloTargetPercentage(sloDetail.getSloTargetPercentage())
-        .sliStatusPercentage(sloGraphData.getSliStatusPercentage())
-        .errorBudgetBurned(sloGraphData.getErrorBudgetBurned())
-        .contributedErrorBudgetBurned((int) ((weightPercentage / 100) * sloGraphData.getErrorBudgetBurned()))
-        .projectParams(simpleSLOProjectParams)
-        .projectName(projectName)
-        .orgName(orgName)
-        .sloError(sloDetail.getSloError())
-        .build();
+    SLOConsumptionBreakdown sloConsumptionBreakdown =
+        SLOConsumptionBreakdown.builder()
+            .sloIdentifier(sloDetail.getSloIdentifier())
+            .sloName(sloDetail.getName())
+            .monitoredServiceIdentifier(sloDetail.getMonitoredServiceIdentifier())
+            .serviceName(sloDetail.getServiceName())
+            .environmentIdentifier(sloDetail.getEnvironmentIdentifier())
+            .sliType(sloDetail.getSliType())
+            .weightagePercentage(weightPercentage)
+            .sloTargetPercentage(sloDetail.getSloTargetPercentage())
+            .sliStatusPercentage(sloGraphData.getSliStatusPercentage())
+            .errorBudgetBurned(sloGraphData.getErrorBudgetBurned())
+            .projectParams(simpleSLOProjectParams)
+            .projectName(projectName)
+            .orgName(orgName)
+            .sloError(sloDetail.getSloError())
+            .build();
+    if (compositeServiceLevelObjective.getCompositeSLOFormulaType().equals(CompositeSLOFormulaType.WEIGHTED_AVERAGE)) {
+      sloConsumptionBreakdown.setContributedErrorBudgetBurned(
+          (int) ((weightPercentage / 100) * sloGraphData.getErrorBudgetBurned()));
+    }
+    return sloConsumptionBreakdown;
   }
 
   @Override

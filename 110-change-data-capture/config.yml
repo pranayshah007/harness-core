@@ -58,6 +58,10 @@ ng-harness:
   uri: mongodb://localhost:27017/ng-harness
   aliasDBName: ng-harness
 
+cvng:
+  uri: mongodb://localhost:27017/cvng
+  aliasDBName: cvng
+
 timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
   timescaledbUsername: "postgres"

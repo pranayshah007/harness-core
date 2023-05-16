@@ -8,7 +8,6 @@
 package io.harness.ccm.views.helper;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,5 +25,5 @@ public class OverviewExecutionDetails {
   @Schema(description = "Total Rules") int totalRules;
   @Schema(description = "Total Enforcements") int totalRuleEnforcements;
   @Schema(description = "ResourceTypeExecution") Map<String, Integer> topResourceTypeExecution;
-  @Schema(description = "monthlyRealizedSavings") List<Map> monthlyRealizedSavings;
+  @Schema(description = "monthlyRealizedSavings") Map<String, String> monthlyRealizedSavings;
 }

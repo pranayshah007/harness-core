@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GithubPackagesArtifactConfig;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
@@ -244,13 +245,15 @@ public class GithubPackagesArtifactResource {
   @Path("lastSuccessfulVersion")
   @ApiOperation(value = "Gets Last Successful Version for the Package", nickname = "getLastSuccessfulVersion")
   public ResponseDTO<BuildDetails> getLastSuccessfulVersion(
-      @NotNull @QueryParam("connectorRef") String gitConnectorIdentifier,
+      @NotNull @QueryParam(NGArtifactConstants.CONNECTOR_REF) String gitConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam("packageName") String packageName, @NotNull @QueryParam("packageType") String packageType,
-      @QueryParam("version") String version, @QueryParam("versionRegex") String versionRegex,
-      @QueryParam("org") String org, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+      @NotNull @QueryParam(NGArtifactConstants.PACKAGE_NAME) String packageName,
+      @NotNull @QueryParam(NGArtifactConstants.PACKAGE_TYPE) String packageType,
+      @QueryParam(NGArtifactConstants.VERSION) String version,
+      @QueryParam(NGArtifactConstants.VERSION_REGEX) String versionRegex,
+      @QueryParam(NGArtifactConstants.ORG) String org, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     if (StringUtils.isBlank(gitConnectorIdentifier)) {
       throw new InvalidRequestException("Connector reference cannot be empty");
     }
@@ -270,10 +273,13 @@ public class GithubPackagesArtifactResource {
   @ApiOperation(
       value = "Gets Last Successful Version for the Package", nickname = "getLastSuccessfulVersionWithServiceV2")
   public ResponseDTO<BuildDetails>
-  getLastSuccessfulVersionWithServiceV2(@QueryParam("connectorRef") String gitConnectorIdentifier,
-      @QueryParam("packageName") String packageName, @QueryParam("packageType") String packageType,
-      @QueryParam("version") String version, @QueryParam("versionRegex") String versionRegex,
-      @QueryParam("org") String org, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+  getLastSuccessfulVersionWithServiceV2(@QueryParam(NGArtifactConstants.CONNECTOR_REF) String gitConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.PACKAGE_NAME) String packageName,
+      @QueryParam(NGArtifactConstants.PACKAGE_TYPE) String packageType,
+      @QueryParam(NGArtifactConstants.VERSION) String version,
+      @QueryParam(NGArtifactConstants.VERSION_REGEX) String versionRegex,
+      @QueryParam(NGArtifactConstants.ORG) String org,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,

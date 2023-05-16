@@ -66,6 +66,10 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
     Integer trustLevel = AccountTrustLevel.BASIC_USER;
     try {
       LicensesWithSummaryDTO ciLicense = ciLicenseService.getLicenseSummary(accountId);
+      if (ciLicense == null) {
+        throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+      }
+
       if (ciLicense != null) {
         if (ciLicense.getEdition() == Edition.ENTERPRISE || ciLicense.getEdition() == Edition.TEAM
             || ciLicense.getLicenseType() == LicenseType.PAID) {
@@ -110,6 +114,9 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
   @Override
   public long getMaxBuildPerDay(String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
 
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() != Edition.FREE) {
       throw new IllegalArgumentException("Got max Max builds per day check for non free license");

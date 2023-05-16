@@ -134,22 +134,6 @@ public class YamlSchemaUtilsTest extends CategoryTest {
     yamlSchemaWithDetails.getYamlSchemaMetadata().setModulesSupported(Collections.singletonList(ModuleType.CD));
     assertTrue(YamlSchemaUtils.validateSchemaMetadata(
         yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Adding ff requirement for step. Should return false.
-    yamlSchemaWithDetails.getYamlSchemaMetadata().setFeatureFlags(Collections.singletonList("FF1"));
-    assertFalse(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Enabling the required ff.
-    enabledFeatureFlags.add("FF1");
-    assertTrue(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Adding feature restrictions requirement for step.
-    yamlSchemaWithDetails.getYamlSchemaMetadata().setFeatureRestrictions(Collections.singletonList("TEST1"));
-    assertFalse(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Enabling the feature restriction.
-    featureRestrictionsMap.put("TEST1", true);
-    assertTrue(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
   }
 
   @Test

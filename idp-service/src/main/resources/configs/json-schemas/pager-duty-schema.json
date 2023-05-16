@@ -13,6 +13,7 @@
       "$id": "#root/proxy",
       "title": "Proxy",
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "/pagerduty"
       ],
@@ -21,6 +22,7 @@
           "$id": "#root/proxy//pagerduty",
           "title": "/pagerduty",
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "target",
             "pathRewrite",
@@ -32,12 +34,13 @@
               "title": "Target",
               "type": "string",
               "default": "",
-              "pattern": "^.*$"
+              "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
             },
             "pathRewrite": {
               "$id": "#root/proxy//pagerduty/pathRewrite",
               "title": "Pathrewrite",
               "type": "object",
+              "additionalProperties": false,
               "required": [
                 "api/proxy/pagerduty/?"
               ],
@@ -56,6 +59,7 @@
               "$id": "#root/proxy//pagerduty/headers",
               "title": "Headers",
               "type": "object",
+              "additionalProperties": false,
               "required": [
                 "Authorization"
               ],

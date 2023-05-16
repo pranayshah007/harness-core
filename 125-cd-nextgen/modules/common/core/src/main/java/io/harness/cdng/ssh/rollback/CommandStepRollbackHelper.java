@@ -20,24 +20,28 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoKeyOutput;
+import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
+import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.cdng.ssh.SshWinRmArtifactHelper;
 import io.harness.cdng.ssh.SshWinRmConfigFileHelper;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -61,7 +65,7 @@ public class CommandStepRollbackHelper extends CDStepHelper {
   @Inject private SshWinRmConfigFileHelper sshWinRmConfigFileHelper;
   @Inject private SshWinRmArtifactHelper sshWinRmArtifactHelper;
 
-  public Optional<SshWinRmRollbackData> getRollbackData(Ambiance ambiance, Map<String, String> builtInEnvVariables) {
+  public ExecutionInfoKey getExecutionInfoKey(Ambiance ambiance) {
     OptionalSweepingOutput executionInfoKeyOptional = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.EXECUTION_INFO_KEY_OUTPUT_NAME));
     if (!executionInfoKeyOptional.isFound()) {
@@ -72,20 +76,50 @@ public class CommandStepRollbackHelper extends CDStepHelper {
     }
 
     ExecutionInfoKeyOutput executionInfoKeyOutput = (ExecutionInfoKeyOutput) executionInfoKeyOptional.getOutput();
-    ExecutionInfoKey executionInfoKey = executionInfoKeyOutput.getExecutionInfoKey();
-    log.info("Found execution info key for rollback, executionInfoKey: {}, stageExecutionId: {}", executionInfoKey,
-        ambiance.getStageExecutionId());
-    Optional<ExecutionDetails> latestSuccessfulStageExecutionDetails =
-        stageExecutionHelper.getLatestSuccessfulStageExecutionDetails(executionInfoKey, ambiance.getStageExecutionId());
-    if (!latestSuccessfulStageExecutionDetails.isPresent()) {
+    return executionInfoKeyOutput.getExecutionInfoKey();
+  }
+
+  public Optional<StageExecutionInfo> getLatestSuccessfulStageExecutionInfo(
+      Ambiance ambiance, ExecutionInfoKey executionInfoKey) {
+    return stageExecutionHelper.getLatestSuccessfulStageExecutionInfo(executionInfoKey, ambiance.getStageExecutionId());
+  }
+
+  public Optional<SshWinRmRollbackData> getRollbackData(
+      Ambiance ambiance, Map<String, String> builtInEnvVariables, CommandStepParameters commandStepParameters) {
+    OptionalSweepingOutput optionalPrepareRollback = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(commandStepParameters.getCommandDeployFqn() + "."
+            + OutcomeExpressionConstants.SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME));
+
+    if (!optionalPrepareRollback.isFound()) {
       return Optional.empty();
+    }
+
+    SshWinRmPrepareRollbackDataOutcome sshWinRmPrepareRollbackDataOutcome =
+        (SshWinRmPrepareRollbackDataOutcome) optionalPrepareRollback.getOutput();
+
+    Optional<StageExecutionInfo> stageExecutionInfoOptional =
+        stageExecutionInfoService.findById(sshWinRmPrepareRollbackDataOutcome.getStageExecutionInfoId());
+
+    if (!stageExecutionInfoOptional.isPresent()) {
+      throw new InvalidRequestException(format(
+          "No stage execution info found with uuid: %s", sshWinRmPrepareRollbackDataOutcome.getStageExecutionInfoId()));
+    }
+
+    SshWinRmStageExecutionDetails sshWinRmExecutionDetails =
+        (SshWinRmStageExecutionDetails) stageExecutionInfoOptional.get().getExecutionDetails();
+
+    // if pipeline rollback happens then need to update the executionDetails with one from prepared for rollback
+    ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
+    boolean isPipelineRollbackModeExecution = ExecutionModeUtils.isRollbackMode(executionMode);
+    if (isPipelineRollbackModeExecution
+        && cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_ROLLBACK)) {
+      stageExecutionHelper.saveStageExecutionDetails(
+          ambiance, sshWinRmPrepareRollbackDataOutcome.getExecutionInfoKey(), sshWinRmExecutionDetails);
     }
 
     boolean shouldRenderConfigFiles =
         cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_NG_CONFIG_FILE_EXPRESSION);
 
-    SshWinRmStageExecutionDetails sshWinRmExecutionDetails =
-        (SshWinRmStageExecutionDetails) latestSuccessfulStageExecutionDetails.get();
     List<ArtifactOutcome> artifactsOutcome = sshWinRmExecutionDetails.getArtifactsOutcome();
     SshWinRmArtifactDelegateConfig artifactDelegateConfig = isNotEmpty(artifactsOutcome)
         ? sshWinRmArtifactHelper.getArtifactDelegateConfigConfig(artifactsOutcome.get(0), ambiance)

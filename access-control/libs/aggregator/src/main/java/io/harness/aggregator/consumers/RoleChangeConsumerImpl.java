@@ -7,16 +7,10 @@
 
 package io.harness.aggregator.consumers;
 
-import static io.harness.accesscontrol.principals.PrincipalType.USER;
-import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
-import static io.harness.aggregator.ACLUtils.buildACL;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.accesscontrol.acl.api.Principal;
-import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
-import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
@@ -30,7 +24,6 @@ import io.harness.logging.DelayLogContext;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -55,10 +48,10 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final RoleRepository roleRepository;
   private final ExecutorService executorService;
-  private final ChangeConsumerService changeConsumerService;
+  private final ACLGeneratorService aclGeneratorService;
 
   public RoleChangeConsumerImpl(ACLRepository aclRepository, RoleAssignmentRepository roleAssignmentRepository,
-      RoleRepository roleRepository, String executorServiceSuffix, ChangeConsumerService changeConsumerService) {
+      RoleRepository roleRepository, String executorServiceSuffix, ACLGeneratorService aclGeneratorService) {
     this.aclRepository = aclRepository;
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.roleRepository = roleRepository;
@@ -66,7 +59,7 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
     // Number of threads = Number of Available Cores * (1 + (Wait time / Service time) )
     this.executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
         new ThreadFactoryBuilder().setNameFormat(changeConsumerThreadFactory).build());
-    this.changeConsumerService = changeConsumerService;
+    this.aclGeneratorService = aclGeneratorService;
   }
 
   @Override
@@ -91,7 +84,7 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
             .stream()
             .map((RoleAssignmentDBO roleAssignment)
                      -> new ReProcessRoleAssignmentOnRoleUpdateTask(
-                         aclRepository, changeConsumerService, roleAssignment, role.get()))
+                         aclRepository, aclGeneratorService, roleAssignment, role.get()))
             .collect(Collectors.toList());
 
     long numberOfACLsCreated = 0;
@@ -132,12 +125,12 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
     private final ACLRepository aclRepository;
     private final RoleAssignmentDBO roleAssignmentDBO;
     private final RoleDBO updatedRole;
-    private final ChangeConsumerService changeConsumerService;
+    private final ACLGeneratorService aclGeneratorService;
 
     private ReProcessRoleAssignmentOnRoleUpdateTask(ACLRepository aclRepository,
-        ChangeConsumerService changeConsumerService, RoleAssignmentDBO roleAssignment, RoleDBO updatedRole) {
+        ACLGeneratorService aclGeneratorService, RoleAssignmentDBO roleAssignment, RoleDBO updatedRole) {
       this.aclRepository = aclRepository;
-      this.changeConsumerService = changeConsumerService;
+      this.aclGeneratorService = aclGeneratorService;
       this.roleAssignmentDBO = roleAssignment;
       this.updatedRole = updatedRole;
     }
@@ -159,25 +152,17 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
           aclRepository.getDistinctResourceSelectorsInACLs(roleAssignmentDBO.getId());
       Set<String> existingPrincipals =
           Sets.newHashSet(aclRepository.getDistinctPrincipalsInACLsForRoleAssignment(roleAssignmentDBO.getId()));
-      PrincipalType principalType =
-          USER_GROUP.equals(roleAssignmentDBO.getPrincipalType()) ? USER : roleAssignmentDBO.getPrincipalType();
 
       long numberOfACLsCreated = 0;
-      List<ACL> aclsToCreate = new ArrayList<>();
 
       if (existingResourceSelectors.isEmpty() || existingPrincipals.isEmpty()) {
-        aclsToCreate.addAll(changeConsumerService.getAClsForRoleAssignment(roleAssignmentDBO));
+        numberOfACLsCreated += aclGeneratorService.createACLsForRoleAssignment(roleAssignmentDBO);
       } else {
-        permissionsAddedToRole.forEach(permissionIdentifier
-            -> existingPrincipals.forEach(principalIdentifier
-                -> existingResourceSelectors.forEach(resourceSelector
-                    -> aclsToCreate.add(buildACL(permissionIdentifier, Principal.of(principalType, principalIdentifier),
-                        roleAssignmentDBO, resourceSelector, false)))));
+        numberOfACLsCreated += aclGeneratorService.createACLs(
+            roleAssignmentDBO, existingPrincipals, permissionsAddedToRole, existingResourceSelectors);
       }
-      numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
-      numberOfACLsCreated +=
-          aclRepository.insertAllIgnoringDuplicates(changeConsumerService.getImplicitACLsForRoleAssignment(
-              roleAssignmentDBO, new HashSet<>(), permissionsAddedToRole));
+      numberOfACLsCreated += aclGeneratorService.createImplicitACLsForRoleAssignment(
+          roleAssignmentDBO, new HashSet<>(), permissionsAddedToRole);
 
       return new Result(numberOfACLsCreated, numberOfACLsDeleted);
     }

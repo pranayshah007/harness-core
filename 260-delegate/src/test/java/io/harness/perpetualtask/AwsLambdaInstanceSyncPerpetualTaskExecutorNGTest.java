@@ -35,7 +35,6 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -71,7 +70,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNGTest extends DelegateTe
   private final String VERSION = "function-867";
   private final long TIME = 74987321;
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject private KryoSerializer kryoSerializer;
   @Mock private AwsLambdaTaskHelperBase awsLambdaTaskHelperBase;
   @Mock private Call<RestResponse<Boolean>> call;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
@@ -82,7 +81,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNGTest extends DelegateTe
 
   @Before
   public void setUp() throws IOException {
-    on(awsLambdaInstanceSyncPerpetualTaskExecutor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(awsLambdaInstanceSyncPerpetualTaskExecutor).set("kryoSerializer", kryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
         .processInstanceSyncNGResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
@@ -97,7 +96,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNGTest extends DelegateTe
         AwsLambdaFunctionsInfraConfig.builder().awsConnectorDTO(AwsConnectorDTO.builder().build()).build();
     AwsLambdaDeploymentRelease deploymentRelease =
         AwsLambdaDeploymentRelease.newBuilder()
-            .setAwsLambdaInfraConfig(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsLambdaInfraConfig)))
+            .setAwsLambdaInfraConfig(ByteString.copyFrom(kryoSerializer.asBytes(awsLambdaInfraConfig)))
             .setFunction(FUNCTION)
             .setRegion(REGION)
             .build();
@@ -107,10 +106,8 @@ public class AwsLambdaInstanceSyncPerpetualTaskExecutorNGTest extends DelegateTe
                                                                 .addAwsLambdaDeploymentReleaseList(deploymentRelease)
                                                                 .build();
 
-    PerpetualTaskExecutionParams perpetualTaskExecutionParams = PerpetualTaskExecutionParams.newBuilder()
-                                                                    .setCustomizedParams(Any.pack(taskParams))
-                                                                    .setReferenceFalseKryoSerializer(true)
-                                                                    .build();
+    PerpetualTaskExecutionParams perpetualTaskExecutionParams =
+        PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
     PerpetualTaskId taskId = PerpetualTaskId.newBuilder().setId(PERPETUAL_TASK_ID).build();
     AwsLambdaDeploymentReleaseData deploymentReleaseData = AwsLambdaDeploymentReleaseData.builder()
                                                                .function(FUNCTION)

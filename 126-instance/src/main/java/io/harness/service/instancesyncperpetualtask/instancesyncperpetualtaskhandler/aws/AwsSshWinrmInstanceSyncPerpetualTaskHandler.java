@@ -102,8 +102,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
             .setServiceType(serviceType)
             .addAllHosts(hosts)
             .setInfrastructureKey(infrastructure.getInfrastructureKey())
-            .setInfraDelegateConfig(ByteString.copyFrom(
-                getKryoSerializer(infrastructure.getAccountIdentifier()).asBytes(awsInfraDelegateConfig)))
+            .setInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(awsInfraDelegateConfig)))
             .setHostConnectionType(awsInfrastructureOutcome.getHostConnectionType())
             .build();
 
@@ -111,8 +110,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(awsConnector);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
-        infrastructure.getAccountIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
   }
 
   private Secret findSecret(
@@ -143,7 +141,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
           .awsConnectorDTO(awsConnectorDTO)
           .region(awsInfrastructureOutcome.getRegion())
           .connectorEncryptionDataDetails(encryptedData)
-          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getHostTags()))
           .build();
     } else if (secretSpecDTO instanceof WinRmCredentialsSpecDTO) {
       return AwsWinrmInfraDelegateConfig.winrmAwsBuilder()
@@ -151,7 +149,7 @@ public class AwsSshWinrmInstanceSyncPerpetualTaskHandler extends InstanceSyncPer
           .awsConnectorDTO(awsConnectorDTO)
           .connectorEncryptionDataDetails(encryptedData)
           .region(awsInfrastructureOutcome.getRegion())
-          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getTags()))
+          .tags(sshEntityHelper.filterInfraTags(awsInfrastructureOutcome.getHostTags()))
           .build();
     }
     throw new InvalidArgumentsException(format("Invalid subclass %s provided for %s",

@@ -98,7 +98,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
     List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
     BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
     batchRequest.setEnvVariables(envVariables);
-    when(backstageEnvVariableService.createMulti(envVariables, TEST_ACCOUNT_IDENTIFIER)).thenReturn(envVariables);
+    when(backstageEnvVariableService.createOrUpdate(envVariables, TEST_ACCOUNT_IDENTIFIER)).thenReturn(envVariables);
     Response response = backstageEnvVariableApiImpl.createBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.CREATED.getStatusCode(), response.getStatus());
     List<BackstageEnvVariableResponse> responseList = (List<BackstageEnvVariableResponse>) response.getEntity();
@@ -117,7 +117,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
     List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
     BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
     batchRequest.setEnvVariables(envVariables);
-    when(backstageEnvVariableService.createMulti(envVariables, TEST_ACCOUNT_IDENTIFIER))
+    when(backstageEnvVariableService.createOrUpdate(envVariables, TEST_ACCOUNT_IDENTIFIER))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE, USER));
     Response response = backstageEnvVariableApiImpl.createBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
@@ -292,7 +292,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
     List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
     BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
     batchRequest.setEnvVariables(envVariables);
-    when(backstageEnvVariableService.updateMulti(envVariables, TEST_ACCOUNT_IDENTIFIER)).thenReturn(envVariables);
+    when(backstageEnvVariableService.createOrUpdate(envVariables, TEST_ACCOUNT_IDENTIFIER)).thenReturn(envVariables);
     Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     List<BackstageEnvVariableResponse> responseList = (List<BackstageEnvVariableResponse>) response.getEntity();
@@ -311,7 +311,7 @@ public class BackstageEnvVariableApiImplTest extends CategoryTest {
     List<BackstageEnvVariable> envVariables = Arrays.asList(envVariable1, envVariable2);
     BackstageEnvVariableBatchRequest batchRequest = new BackstageEnvVariableBatchRequest();
     batchRequest.setEnvVariables(envVariables);
-    when(backstageEnvVariableService.updateMulti(envVariables, TEST_ACCOUNT_IDENTIFIER))
+    when(backstageEnvVariableService.createOrUpdate(envVariables, TEST_ACCOUNT_IDENTIFIER))
         .thenThrow(new InvalidRequestException(ERROR_MESSAGE, USER));
     Response response = backstageEnvVariableApiImpl.updateBackstageEnvVariables(batchRequest, TEST_ACCOUNT_IDENTIFIER);
     assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());

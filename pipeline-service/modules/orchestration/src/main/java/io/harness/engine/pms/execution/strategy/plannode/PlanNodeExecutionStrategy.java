@@ -13,6 +13,7 @@ import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.ExecutionCheck;
 import io.harness.engine.OrchestrationEngine;
@@ -40,6 +41,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.execution.expansion.PlanExpansionService;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -70,6 +72,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -141,8 +144,17 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
   void resolveParameters(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     log.info("Starting to Resolve step parameters");
-    Object resolvedStepParameters =
-        pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), planNode.getExpressionMode());
+    ExpressionMode expressionMode = planNode.getExpressionMode();
+    Object resolvedStepParameters;
+    if (pmsFeatureFlagService.isEnabled(
+            AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
+      // Passing the FeatureFlag.
+      resolvedStepParameters = pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(),
+          expressionMode, Collections.singletonList(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION.name()));
+    } else {
+      resolvedStepParameters =
+          pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode);
+    }
     PmsStepParameters resolvedParameters = PmsStepParameters.parse(
         OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedStepParameters));
 

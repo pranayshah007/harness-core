@@ -200,6 +200,11 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       try {
         LicensesWithSummaryDTO licensesWithSummaryDTO =
             ciLicenseService.getLicenseSummary(baseNGAccess.getAccountIdentifier());
+
+        if (licensesWithSummaryDTO == null) {
+          throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+        }
+
         if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getLicenseType() != null) {
           licenseType = licensesWithSummaryDTO.getLicenseType() != null
               ? licensesWithSummaryDTO.getLicenseType().toString()

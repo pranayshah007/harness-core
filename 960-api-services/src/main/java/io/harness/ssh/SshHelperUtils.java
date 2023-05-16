@@ -13,6 +13,7 @@ import static io.harness.logging.LogLevel.ERROR;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
@@ -43,16 +44,20 @@ public class SshHelperUtils {
     logCallback.saveExecutionLog("Generating Ticket Granting Ticket(TGT) for principal: " + userPrincipal);
     String commandString = !StringUtils.isEmpty(password) ? format("echo \"%s\" | kinit %s", password, userPrincipal)
                                                           : format("kinit -k -t %s %s", keyTabFilePath, userPrincipal);
-    boolean ticketGenerated;
+    WinRmCommandResult winRmCommandResult;
     synchronized (SshHelperUtils.class) {
-      ticketGenerated = executeLocalCommand(commandString, logCallback, null, false, env);
+      winRmCommandResult = executeLocalCommand(commandString, logCallback, null, false, env);
     }
-    if (ticketGenerated) {
+    if (winRmCommandResult != null && winRmCommandResult.isSuccess()) {
       logCallback.saveExecutionLog("Ticket Granting Ticket(TGT) generated successfully for " + userPrincipal);
       log.info("Ticket Granting Ticket(TGT) generated successfully for " + userPrincipal);
     } else {
-      log.error("Failure: could not generate Ticket Granting Ticket(TGT)");
-      throw new JSchException("Failure: could not generate Ticket Granting Ticket(TGT)");
+      StringBuilder errorMessage = new StringBuilder("Error: ");
+      if (winRmCommandResult != null && EmptyPredicate.isNotEmpty(winRmCommandResult.getErrorMessage())) {
+        errorMessage.append(winRmCommandResult.getErrorMessage());
+      }
+      log.error("Failure: could not generate Ticket Granting Ticket(TGT). " + errorMessage);
+      throw new JSchException("Failure: could not generate Ticket Granting Ticket(TGT). " + errorMessage);
     }
   }
 
@@ -69,10 +74,11 @@ public class SshHelperUtils {
     return true;
   }
 
-  public static boolean executeLocalCommand(
+  public static WinRmCommandResult executeLocalCommand(
       String cmdString, LogCallback logCallback, Writer output, boolean isOutputWriter, Map<String, String> env) {
     String[] commandList = new String[] {"/bin/bash", "-c", cmdString};
     ProcessResult processResult = null;
+    StringBuilder errorMessage = new StringBuilder();
     try {
       ProcessExecutor processExecutor = new ProcessExecutor()
                                             .command(commandList)
@@ -97,6 +103,7 @@ public class SshHelperUtils {
                                               @Override
                                               protected void processLine(String line) {
                                                 logCallback.saveExecutionLog(line, ERROR);
+                                                errorMessage.append(line);
                                               }
                                             });
 
@@ -104,6 +111,8 @@ public class SshHelperUtils {
     } catch (IOException | InterruptedException | TimeoutException e) {
       log.error("Failed to execute command ", e);
     }
-    return processResult != null && processResult.getExitValue() == 0;
+    return processResult != null && processResult.getExitValue() == 0
+        ? WinRmCommandResult.builder().success(true).build()
+        : WinRmCommandResult.builder().success(false).errorMessage(errorMessage.toString()).build();
   }
 }

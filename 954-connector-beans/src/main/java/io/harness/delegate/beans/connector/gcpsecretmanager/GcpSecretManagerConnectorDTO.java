@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -33,6 +34,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Data
 @Builder
@@ -71,5 +73,17 @@ public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements 
         .delegateSelectors(delegateSelectors)
         .assumeCredentialsOnDelegate(assumeCredentialsOnDelegate)
         .build();
+  }
+
+  @Override
+  public void validate() {
+    if (BooleanUtils.isTrue(assumeCredentialsOnDelegate)) {
+      if (this.delegateSelectors == null) {
+        throw new InvalidRequestException("delegateSelectors cannot be null");
+      }
+      if (this.delegateSelectors.isEmpty()) {
+        throw new InvalidRequestException("delegateSelectors cannot be empty");
+      }
+    }
   }
 }

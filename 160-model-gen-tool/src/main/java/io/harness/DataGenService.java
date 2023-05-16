@@ -225,6 +225,8 @@ public class DataGenService {
     wingsPersistence.getDatastore(DEFAULT_STORE).getDB().dropDatabase();
     wingsPersistence.getDatastore(Store.builder().name(DMS).build()).getDatabase().drop();
     indexManager.ensureIndexes(AUTO, primaryDatastore, morphia, null);
+    indexManager.ensureIndexes(AUTO, wingsPersistence.getDatastore(Store.builder().name(DMS).build()), morphia,
+        Store.builder().name(DMS).build());
   }
 
   private void createGlobalSettings(Account account) {

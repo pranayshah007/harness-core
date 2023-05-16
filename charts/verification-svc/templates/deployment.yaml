@@ -114,6 +114,6 @@ spec:
       {{ if .Values.global.mongoSSL }}
       volumes:
       - name: mongo-ssl-certs
-          secret:
-            secretName: mongodb-replicaset-ssl-cert
+        secret:
+          secretName: mongodb-replicaset-ssl-cert
       {{ end }}

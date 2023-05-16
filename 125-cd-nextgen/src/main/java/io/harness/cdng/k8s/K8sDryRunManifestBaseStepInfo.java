@@ -8,7 +8,7 @@
 package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -34,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("K8sDryRunManifestBaseStepInfo")
 @FieldNameConstants(innerTypeName = "K8sDryRunManifestBaseStepInfoKeys")
 public class K8sDryRunManifestBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String canaryStepFqn;

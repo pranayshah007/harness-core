@@ -74,6 +74,9 @@ ticketServiceRestClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+webhookConfig:
+  webhookBaseUrl: http://localhost:6457/cv/api/
+
 enforcementClientConfiguration:
   enforcementCheckEnabled: true
 

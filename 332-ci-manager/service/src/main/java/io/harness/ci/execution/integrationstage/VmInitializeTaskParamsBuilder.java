@@ -558,6 +558,11 @@ public class VmInitializeTaskParamsBuilder {
 
     if ((isLinux && isSplitLinuxPool(arch)) || (isWindowsAmd && isSplitWindowsPool())) {
       LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+      if (licensesWithSummaryDTO == null) {
+        throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+      }
+
       if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
         pool = format("%s-free-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());
       }

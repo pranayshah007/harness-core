@@ -105,8 +105,23 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private static final Long DEFAULT_FORCE_EXECUTE_TIMEOUT = Duration.ofSeconds(5).toMillis();
   public static final Long DELEGATE_QUEUE_TIMEOUT = Duration.ofSeconds(6).toMillis();
 
+  /**
+   * New Delegate architecture params
+   */
+  private String runnerType;
+  private byte[] taskData;
+  private byte[] runnerData;
+  private String resourceUri;
+  private String resourceMethod;
+  // moved from TaskData to here
+  private long executionTimeout;
+  private boolean async;
+  // --------------------------------------
+
+  // Will be marked deprecated after tasks are containerized
   private TaskData data;
 
+  // Will be marked deprecated after tasks are containerized
   private TaskDataV2 taskDataV2;
 
   private List<ExecutionCapability> executionCapabilities;

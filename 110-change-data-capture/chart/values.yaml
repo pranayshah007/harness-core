@@ -9,6 +9,7 @@
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
   loadbalancerURL: ""
+  stackDriverLoggingEnabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -336,3 +337,5 @@ nodeSelector: {}
 ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
 ##
 tolerations: []
+
+additionalConfigs: {}

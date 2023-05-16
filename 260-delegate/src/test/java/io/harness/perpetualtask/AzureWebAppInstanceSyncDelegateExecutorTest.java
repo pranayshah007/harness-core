@@ -41,7 +41,6 @@ import software.wings.delegatetasks.azure.appservice.webapp.taskhandler.AzureWeb
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -66,12 +65,11 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   @InjectMocks private AzureWebAppInstanceSyncDelegateExecutor executor;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Before
   public void setUp() throws IOException {
-    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
-    when(mockDelegateAgentManagerClient.publishInstanceSyncResultV2(
+    on(executor).set("kryoSerializer", kryoSerializer);
+    when(mockDelegateAgentManagerClient.publishInstanceSyncResult(
              anyString(), anyString(), any(DelegateResponseData.class)))
         .thenReturn(mockCall);
     doReturn(retrofit2.Response.success("success")).when(mockCall).execute();
@@ -106,7 +104,7 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
         PerpetualTaskId.newBuilder().setId("task-id").build(), getPerpetualTaskParams(), Instant.now());
 
     verify(mockDelegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("task-id"), eq("acct-id"), argumentCaptor.capture());
+        .publishInstanceSyncResult(eq("task-id"), eq("acct-id"), argumentCaptor.capture());
 
     AzureTaskExecutionResponse response = argumentCaptor.getValue();
     assertThat(response).isNotNull();
@@ -154,7 +152,7 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
         PerpetualTaskId.newBuilder().setId("task-id").build(), getPerpetualTaskParams(), Instant.now());
 
     verify(mockDelegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("task-id"), eq("acct-id"), argumentCaptor.capture());
+        .publishInstanceSyncResult(eq("task-id"), eq("acct-id"), argumentCaptor.capture());
 
     AzureTaskExecutionResponse response = argumentCaptor.getValue();
     assertThat(response).isNotNull();
@@ -164,9 +162,8 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString azureConfigBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AzureConfig.builder().accountId("acct-id").build()));
-    ByteString azureEncryptedDetailsBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializer.asBytes(AzureConfig.builder().accountId("acct-id").build()));
+    ByteString azureEncryptedDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
     AzureWebAppInstanceSyncPerpetualProtoTaskParams taskParams =
         AzureWebAppInstanceSyncPerpetualProtoTaskParams.newBuilder()
             .setAzureConfig(azureConfigBytes)
@@ -176,9 +173,6 @@ public class AzureWebAppInstanceSyncDelegateExecutorTest extends DelegateTestBas
             .setAppName("appName")
             .setSlotName("slotName")
             .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(taskParams))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(taskParams)).build();
   }
 }

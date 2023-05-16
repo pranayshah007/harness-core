@@ -13,8 +13,6 @@ import static io.harness.idp.common.Constants.PROXY_ENV_NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.connector.DelegateSelectable;
-import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
@@ -28,6 +26,7 @@ import io.harness.idp.gitintegration.mappers.ConnectorDetailsMapper;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
+import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.spec.server.idp.v1.model.AppConfig;
@@ -37,12 +36,10 @@ import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -60,6 +57,9 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
 
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
+  private static final String SUFFIX_FOR_BITBUCKET_SERVER_PAT = "_Server_Pat";
+  private static final String SUFFIX_FOR_BITBUCKET_SERVER_AUTH = "_Server_Auth";
+  private static final String SUFFIX_FOR_BITBUCKET_CLOUD = "_Cloud";
 
   private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
       "Invalid json schema for integrations config for account - %s";
@@ -70,11 +70,11 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         connectorProcessorFactory.getConnectorProcessor(connectorInfoDTO.getConnectorType());
     Map<String, BackstageEnvVariable> connectorEnvSecrets =
         connectorProcessor.getConnectorAndSecretsInfo(accountIdentifier, connectorInfoDTO);
-    backstageEnvVariableService.createMulti(new ArrayList<>(connectorEnvSecrets.values()), accountIdentifier);
+    backstageEnvVariableService.createOrUpdate(new ArrayList<>(connectorEnvSecrets.values()), accountIdentifier);
   }
 
   @Override
-  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws ExecutionException {
+  public void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws Exception {
     String accountIdentifier = entityChangeDTO.getAccountIdentifier().getValue();
     String connectorIdentifier = entityChangeDTO.getIdentifier().getValue();
     Optional<CatalogConnectorEntity> catalogConnector =
@@ -97,34 +97,30 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   }
 
   @Override
-  public void createConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
-      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) {
-    try {
-      createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
-      createOrUpdateConnectorConfigEnvVariable(
-          accountIdentifier, connectorInfoDTO.getConnectorType(), catalogConnectorEntityType);
-      createAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
-    } catch (Exception e) {
-      log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
-    }
+  public void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) throws Exception {
+    createConnectorSecretsEnvVariable(accountIdentifier, connectorInfoDTO);
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
+    createOrUpdateConnectorConfigEnvVariable(accountIdentifier, host, catalogConnectorEntityType);
+    createOrUpdateAppConfigForGitIntegrations(accountIdentifier, connectorInfoDTO);
   }
 
   @VisibleForTesting
   void createOrUpdateConnectorConfigEnvVariable(
-      String accountIdentifier, ConnectorType connectorType, CatalogInfraConnectorType catalogConnectorEntityType) {
+      String accountIdentifier, String host, CatalogInfraConnectorType catalogConnectorEntityType) {
     Optional<BackstageEnvVariable> envVariableOpt =
         backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, accountIdentifier);
     if (envVariableOpt.isPresent()) {
       BackstageEnvConfigVariable envVariable = (BackstageEnvConfigVariable) envVariableOpt.get();
       String hostProxyString = envVariable.getValue();
       JSONObject hostProxyObj = new JSONObject(hostProxyString);
-      hostProxyObj.put(connectorType.toString(), catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
+      hostProxyObj.put(host, catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
       envVariable.setValue(hostProxyObj.toString());
       backstageEnvVariableService.update(envVariable, accountIdentifier);
     } else {
       BackstageEnvConfigVariable envVariable = new BackstageEnvConfigVariable();
       JSONObject proxyIntegrationObj = new JSONObject();
-      proxyIntegrationObj.put(connectorType.toString(), catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
+      proxyIntegrationObj.put(host, catalogConnectorEntityType == CatalogInfraConnectorType.PROXY);
       envVariable.setType(BackstageEnvVariable.TypeEnum.CONFIG);
       envVariable.setEnvName(PROXY_ENV_NAME);
       envVariable.setValue(proxyIntegrationObj.toString());
@@ -145,7 +141,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
 
   @Override
   public CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
-      throws ExecutionException {
+      throws Exception {
     connectorDetails.setIdentifier(
         GitIntegrationUtils.replaceAccountScopeFromConnectorId(connectorDetails.getIdentifier()));
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
@@ -168,7 +164,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
         accountIdentifier, connectorIdentifier);
   }
 
-  public void createAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO)
+  public void createOrUpdateAppConfigForGitIntegrations(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO)
       throws Exception {
     ConnectorType connectorType = connectorInfoDTO.getConnectorType();
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
@@ -176,6 +172,21 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     if (connectorType == ConnectorType.GITHUB && GitIntegrationUtils.checkIfGithubAppConnector(connectorInfoDTO)) {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
     }
+
+    if (connectorType == ConnectorType.BITBUCKET
+        && GitIntegrationUtils.checkIfApiAccessEnabledForBitbucketConnector(connectorInfoDTO)
+        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_PAT;
+    }
+    if (connectorType == ConnectorType.BITBUCKET
+        && !GitIntegrationUtils.checkIfApiAccessEnabledForBitbucketConnector(connectorInfoDTO)
+        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_AUTH;
+    }
+    if (connectorType == ConnectorType.BITBUCKET && host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_CLOUD;
+    }
+
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
@@ -187,21 +198,18 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     }
 
     AppConfig appConfig = new AppConfig();
-    appConfig.setConfigId(connectorTypeAsString);
+    appConfig.setConfigId(connectorType.toString());
     appConfig.setConfigs(integrationConfigs);
     appConfig.setEnabled(true);
 
-    try {
-      configManagerService.saveConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
-      configManagerService.mergeAndSaveAppConfig(accountIdentifier);
-    } catch (Exception e) {
-      log.error(e.getMessage());
-    }
+    configManagerService.saveOrUpdateConfigForAccount(appConfig, accountIdentifier, ConfigType.INTEGRATION);
+    configManagerService.mergeAndSaveAppConfig(accountIdentifier);
+
     log.info("Merging for git integration completed for connector - {}", connectorTypeAsString);
   }
 
-  private CatalogConnectorEntity saveOrUpdateConnector(ConnectorInfoDTO connectorInfoDTO, String accountIdentifier,
-      String catalogInfraConnectorType) throws ExecutionException {
+  private CatalogConnectorEntity saveOrUpdateConnector(
+      ConnectorInfoDTO connectorInfoDTO, String accountIdentifier, String catalogInfraConnectorType) throws Exception {
     Set<String> delegateSelectors = GitIntegrationUtils.extractDelegateSelectors(connectorInfoDTO);
     String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     CatalogConnectorEntity catalogConnectorEntity =
@@ -210,7 +218,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     CatalogConnectorEntity savedCatalogConnectorEntity =
         catalogConnectorRepository.saveOrUpdate(catalogConnectorEntity);
     delegateSelectorsCache.put(accountIdentifier, host, delegateSelectors);
-    createConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
+    createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO, catalogConnectorEntity.getType(),
         catalogConnectorEntity.getConnectorIdentifier());
     return savedCatalogConnectorEntity;
   }

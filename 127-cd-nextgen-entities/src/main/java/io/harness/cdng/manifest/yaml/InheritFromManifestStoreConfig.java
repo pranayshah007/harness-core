@@ -20,10 +20,13 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -34,6 +37,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ManifestStoreType.InheritFromManifest)
 @TypeAlias("InheritFromManifestStoreConfig")
 @RecasterAlias("io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig")
+@FieldNameConstants(innerTypeName = "InheritFromManifestStoreConfigKeys")
 public class InheritFromManifestStoreConfig implements StoreConfig {
   @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
@@ -68,5 +72,14 @@ public class InheritFromManifestStoreConfig implements StoreConfig {
     }
 
     return resultantInheritFromManifestStoreConfig;
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkListOfStringsParameterNullOrInput(paths)) {
+      invalidParameters.add(InheritFromManifestStoreConfigKeys.paths);
+    }
+    return invalidParameters;
   }
 }

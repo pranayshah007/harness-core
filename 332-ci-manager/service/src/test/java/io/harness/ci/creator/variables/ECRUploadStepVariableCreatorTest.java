@@ -96,7 +96,10 @@ public class ECRUploadStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.name",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.remoteCacheImage",
             "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.baseImageConnectorRefs",
-            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.when");
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.when",
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.cacheFrom",
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.cacheTo",
+            "pipeline.stages.ecr_build_push.spec.execution.steps.pushECR.spec.caching");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

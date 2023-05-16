@@ -113,6 +113,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
       "users/refresh-token",
       "harness-api-keys",
       "users/set-default-account",
+      "users/update-externally-managed",
       "account/new",
   };
   private static final String[] NO_FILTERING_URIS_SUFFIXES = new String[] {"/logout"};

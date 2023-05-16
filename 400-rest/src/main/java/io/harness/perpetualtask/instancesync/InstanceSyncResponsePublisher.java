@@ -30,8 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 public class InstanceSyncResponsePublisher {
   @Inject private InstanceSyncResourceClient instanceSyncResourceClient;
 
-  public void publishInstanceSyncResponseToNG(String accountIdentifier, String perpetualTaskId,
-      DelegateResponseData instanceSyncPerpetualTaskResponse, boolean referenceFalseKryoSerializer) {
+  public void publishInstanceSyncResponseToNG(
+      String accountIdentifier, String perpetualTaskId, DelegateResponseData instanceSyncPerpetualTaskResponse) {
     if (instanceSyncPerpetualTaskResponse == null) {
       log.error("Instance sync perpetual task response is null for accountIdentifier : {} and perpetualTaskId : {}",
           accountIdentifier, perpetualTaskId);
@@ -40,14 +40,8 @@ public class InstanceSyncResponsePublisher {
     int retry = 0;
     while (!response && retry < 3) {
       try {
-        if (referenceFalseKryoSerializer) {
-          response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponseV2(
-              accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
-        } else {
-          response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
-              accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
-        }
-
+        response = NGRestUtils.getResponse(instanceSyncResourceClient.sendPerpetualTaskResponse(
+            accountIdentifier, perpetualTaskId, instanceSyncPerpetualTaskResponse));
       } catch (Exception exception) {
         log.error(
             "Error occured while sending instance sync perpetual task response from CG to NG for accountIdentifier : {} and perpetualTaskId : {}",

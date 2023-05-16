@@ -91,7 +91,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
       + "  /harness/prod:\n"
       + "    target: https://app.harness.io/\n"
       + "    pathRewrite:\n"
-      + "      api/proxy/harness/prod/?: /\n"
+      + "      /api/proxy/harness/prod/?: /\n"
       + "    allowedHeaders:\n"
       + "    - authorization\n"
       + "kafka:\n"

@@ -36,6 +36,8 @@ public class RuleExecutionFilter {
   @Schema(description = "Time") List<CCMTimeFilter> time;
   @Schema(description = "limit") int limit;
   @Schema(description = "offset") int offset;
+  @Schema(description = "savings") Double savings;
+  @Schema(description = "sortByCost") Boolean sortByCost;
 
   @Builder
   public RuleExecutionFilter(String accountId, List<String> accountName, List<String> region, List<String> rulesId,

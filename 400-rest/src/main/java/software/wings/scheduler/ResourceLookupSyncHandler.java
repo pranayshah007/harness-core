@@ -8,6 +8,7 @@
 package software.wings.scheduler;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.time.Duration.ofMinutes;
@@ -132,6 +133,7 @@ public class ResourceLookupSyncHandler extends IteratorPumpAndRedisModeHandler i
     try (HIterator<HarnessTagLink> tagLinksHIterator =
              new HIterator<>(wingsPersistence.createQuery(HarnessTagLink.class)
                                  .filter(HarnessTagLinkKeys.accountId, accountId)
+                                 .limit(NO_LIMIT)
                                  .fetch())) {
       while (tagLinksHIterator.hasNext()) {
         HarnessTagLink tagLink = tagLinksHIterator.next();

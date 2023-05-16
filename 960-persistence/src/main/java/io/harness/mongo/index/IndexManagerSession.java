@@ -27,6 +27,7 @@ import static java.time.Duration.ofHours;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotation.IgnoreUnusedIndex;
+import io.harness.annotations.SecondaryStoreIn;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.StoreInMultiple;
 import io.harness.annotations.dev.HarnessTeam;
@@ -176,7 +177,9 @@ public class IndexManagerSession {
   private static Set<String> processIndexesInternal(
       AdvancedDatastore datastore, Morphia morphia, Store store, IndexesProcessor processor) {
     Set<String> processedCollections = new HashSet<>();
+
     Collection<MappedClass> mappedClasses = morphia.getMapper().getMappedClasses();
+
     mappedClasses.forEach(mc -> {
       Entity entity = mc.getEntityAnnotation();
       if (entity == null) {
@@ -216,12 +219,16 @@ public class IndexManagerSession {
   private static void addStoreInInSet(MappedClass mc, Set<String> storeInSet) {
     final StoreIn storeIn = mc.getClazz().getAnnotation(StoreIn.class);
     final StoreInMultiple storeInMultiple = mc.getClazz().getAnnotation(StoreInMultiple.class);
+    final SecondaryStoreIn secondaryStoreIn = mc.getClazz().getAnnotation(SecondaryStoreIn.class);
     if (storeIn != null) {
       storeInSet.add(storeIn.value());
     }
     if (storeInMultiple != null) {
       storeInSet.addAll(
           emptyIfNull(Arrays.stream(storeInMultiple.value()).map(StoreIn::value).collect(Collectors.toList())));
+    }
+    if (secondaryStoreIn != null) {
+      storeInSet.add(secondaryStoreIn.value());
     }
   }
 

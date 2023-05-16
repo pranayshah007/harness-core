@@ -9,6 +9,7 @@ package io.harness.cdng.infra.steps;
 
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -19,6 +20,7 @@ import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.infra.InfraSectionStepParameters;
 import io.harness.cdng.infra.InfraStepUtils;
+import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.eraro.Level;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -40,6 +42,8 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -76,6 +80,7 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   @Inject NotificationHelper notificationHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject NgExpressionHelper ngExpressionHelper;
+  @Inject OutcomeService outcomeService;
   public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
   public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 
@@ -92,6 +97,8 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
         environmentService, ambiance, stepParameters.getEnvironment(), stepParameters.getEnvironmentRef());
     executionSweepingOutputResolver.consume(
         ambiance, OutputExpressionConstants.ENVIRONMENT, environmentOutcome, StepOutcomeGroup.STAGE.name());
+    ServiceStepOutcome serviceStepOutcome = (ServiceStepOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(AmbianceUtils.getOrgIdentifier(ambiance)));
     entityMap.put(FreezeEntityType.PROJECT, Lists.newArrayList(AmbianceUtils.getProjectIdentifier(ambiance)));
@@ -100,6 +107,9 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
             getEnviromentRef(stepParameters.getEnvironment(), stepParameters.getEnvironmentRef(), environmentOutcome)));
     entityMap.put(FreezeEntityType.ENV_TYPE, Lists.newArrayList(environmentOutcome.getType().name()));
     entityMap.put(FreezeEntityType.PIPELINE, Lists.newArrayList(AmbianceUtils.getPipelineIdentifier(ambiance)));
+    if (!isNull(serviceStepOutcome)) {
+      entityMap.put(FreezeEntityType.SERVICE, Lists.newArrayList(serviceStepOutcome.getIdentifier()));
+    }
     StepResponse stepResponse = executeFreezePart(ambiance, entityMap);
     if (stepResponse != null) {
       return stepResponse;

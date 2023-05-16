@@ -28,6 +28,10 @@ import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.CommandType.ENABLE;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
+import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -45,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -68,6 +73,7 @@ import software.wings.api.AwsAmiSetupExecutionData;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.beans.Activity;
+import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
@@ -189,6 +195,16 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     String userData = "userData";
     UserDataSpecification userDataSpecification = UserDataSpecification.builder().data(userData).build();
     doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(any(), any());
+    doReturn("10").when(mockContext).renderExpression(eq(BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_BACKOFF_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_ERROR_RETRY_ACCOUNT_VARIABLE));
+    AmazonClientSDKDefaultBackoffStrategy sdkDefaultBackoffStrategy = AmazonClientSDKDefaultBackoffStrategy.builder()
+                                                                          .baseDelayInMs(10)
+                                                                          .throttledBaseDelayInMs(10)
+                                                                          .maxBackoffInMs(10)
+                                                                          .maxErrorRetry(10)
+                                                                          .build();
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockDelegateService).queueTaskV2(captor.capture());
@@ -207,6 +223,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     assertThat(params.getMaxInstances()).isEqualTo(2);
     assertThat(params.getDesiredInstances()).isEqualTo(1);
     assertThat(params.getArtifactRevision()).isEqualTo(revision);
+    assertThat(params.getAwsConfig().getAmazonClientSDKDefaultBackoffStrategy()).isEqualTo(sdkDefaultBackoffStrategy);
 
     // ASG Name blank, should generate app.name__service.name__env.name
     state.setAutoScalingGroupName(null);

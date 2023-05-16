@@ -2,6 +2,6 @@ proxy:
   '/harness/qa':
     target: 'https://qa.harness.io/'
     pathRewrite:
-      'api/proxy/harness/qa/?': '/'
+      '/api/proxy/harness/qa/?': '/'
     allowedHeaders:
       - authorization

@@ -32,6 +32,7 @@ public final class ExecutionEnforcementDetails {
   @Schema(description = "rules pack ids and list of enforcement") HashMap<String, String> ruleSetIds;
   @Schema(description = "isDryRun") Boolean isDryRun;
   @Schema(description = "isEnabled") Boolean isEnabled;
+  @Schema(description = "executionTimezone") String executionTimezone;
 
   public ExecutionEnforcementDetails toDTO() {
     return ExecutionEnforcementDetails.builder()
@@ -42,6 +43,7 @@ public final class ExecutionEnforcementDetails {
         .description(getDescription())
         .isDryRun(getIsDryRun())
         .isEnabled(getIsEnabled())
+        .executionTimezone(getExecutionTimezone())
         .build();
   }
 }

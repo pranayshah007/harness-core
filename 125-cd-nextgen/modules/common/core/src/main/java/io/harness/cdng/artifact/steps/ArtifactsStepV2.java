@@ -49,6 +49,7 @@ import io.harness.logging.LogLevel;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -116,6 +117,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
+  @Inject ServiceEntityService serviceEntityService;
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -145,8 +147,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
-      mergedServiceYaml =
-          resolveArtifactSourceTemplateRefs(accountId, orgIdentifier, projectIdentifier, processedServiceYaml);
+      mergedServiceYaml = serviceEntityService.resolveArtifactSourceTemplateRefs(
+          accountId, orgIdentifier, projectIdentifier, processedServiceYaml);
       ngServiceConfig = YamlUtils.read(mergedServiceYaml, NGServiceConfig.class);
     } catch (IOException ex) {
       throw new InvalidRequestException("Failed to read Service yaml into config - ", ex);
@@ -237,17 +239,6 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   }
 
   enum ACTION { CREATE_DELEGATE_TASK, RUN_SYNC, SKIP }
-
-  private void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
-    Set<EntityDetailProtoDTO> entityDetailsProto = artifactListConfig == null
-        ? Set.of()
-        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
-
-    List<EntityDetail> entityDetails =
-        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
-
-    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
-  }
   public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";
@@ -273,6 +264,16 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     return yaml;
   }
 
+  private void checkForAccessOrThrow(Ambiance ambiance, ArtifactListConfig artifactListConfig) {
+    Set<EntityDetailProtoDTO> entityDetailsProto = artifactListConfig == null
+        ? Set.of()
+        : entityReferenceExtractorUtils.extractReferredEntities(ambiance, artifactListConfig);
+
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(emptyIfNull(entityDetailsProto)));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+  }
   private void resolveExpressions(Ambiance ambiance, ArtifactListConfig artifacts) {
     final List<Object> toResolve = new ArrayList<>();
     if (artifacts.getPrimary() != null) {

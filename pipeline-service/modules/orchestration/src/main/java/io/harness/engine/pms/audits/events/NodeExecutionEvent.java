@@ -55,7 +55,7 @@ public abstract class NodeExecutionEvent implements Event {
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, pipelineIdentifier);
     return Resource.builder()
         .identifier(pipelineIdentifier)
-        .type(ResourceTypeConstants.PIPELINE_EXECUTION)
+        .type(ResourceTypeConstants.PIPELINE)
         .labels(labels)
         .build();
   }

@@ -108,8 +108,8 @@ managerAuthority: localhost
 onboardingModuleConfig:
   descriptionForEntitySelected: A YAML file will be created for each service inside your GitHub repository. An example of what the files will look like is shown below
   descriptionForSampleEntity: Because you didn't choose any Harness services to import in the previous step, an example Harness service catalog-info.yaml will be created inside your GitHub repository as shown below
-  useGitServiceGrpcForSingleEntityPush: false
-  tmpPathForCatalogInfoYamlStore: /tmp
+  useGitServiceGrpcForSingleEntityPush: true
+  tmpPathForCatalogInfoYamlStore: /tmp/idp-catalog-onboarding
   catalogInfoLocationDefaultPath: /.harness-idp-entities
   sampleEntities:
     - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/one.yaml
