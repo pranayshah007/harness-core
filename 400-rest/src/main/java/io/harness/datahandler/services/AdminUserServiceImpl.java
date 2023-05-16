@@ -14,35 +14,43 @@ import static io.harness.NGConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOUR
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.invites.remote.NgInviteClient;
+import io.harness.ng.core.common.beans.Generation;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.AddUsersDTO;
 import io.harness.remote.client.NGRestUtils;
 
 import software.wings.beans.User;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
+@Slf4j
 public class AdminUserServiceImpl implements AdminUserService {
   private UserService userService;
   private NgInviteClient ngInviteClient;
+  private WingsPersistence wingsPersistence;
 
   @Inject
-  public AdminUserServiceImpl(UserService userService, @Named("PRIVILEGED") NgInviteClient ngInviteClient) {
+  public AdminUserServiceImpl(
+      UserService userService, @Named("PRIVILEGED") NgInviteClient ngInviteClient, WingsPersistence wingsPersistence) {
     this.userService = userService;
     this.ngInviteClient = ngInviteClient;
+    this.wingsPersistence = wingsPersistence;
   }
 
   @Override
   public boolean enableOrDisableUser(String accountId, String userIdOrEmail, boolean enabled) {
     User user = userService.getUserByEmail(userIdOrEmail);
-    if (Objects.isNull(user)) {
+    if (isNull(user)) {
       user = userService.get(userIdOrEmail);
     }
     return userService.enableUser(accountId, user.getUuid(), enabled);
@@ -51,11 +59,11 @@ public class AdminUserServiceImpl implements AdminUserService {
   @Override
   public boolean assignAdminRoleToUserInNG(String accountId, String userIdOrEmail) {
     User user = userService.getUserByEmail(userIdOrEmail);
-    if (Objects.isNull(user)) {
+    if (isNull(user)) {
       user = userService.getUserByUserId(accountId, userIdOrEmail);
     }
     String email = userIdOrEmail;
-    if (!Objects.isNull(user)) {
+    if (!isNull(user)) {
       email = user.getEmail();
     }
     AddUsersDTO addUsersDTO =
@@ -72,5 +80,15 @@ public class AdminUserServiceImpl implements AdminUserService {
             .build();
     NGRestUtils.getResponse(ngInviteClient.addUsers(accountId, null, null, addUsersDTO));
     return true;
+  }
+
+  @Override
+  public boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged) {
+    try {
+      return userService.updateExternallyManaged(userId, generation, externallyManaged);
+    } catch (Exception ex) {
+      throw new InvalidRequestException(String.format(
+          "Failed to updated externallyManaged to %s for the user- %s for %s", externallyManaged, userId, generation));
+    }
   }
 }

@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitsync.GitMetadataUpdateRequestInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -43,6 +44,7 @@ import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetGitUpdateResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
@@ -63,6 +65,7 @@ import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
@@ -419,5 +422,19 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     return ResponseDTO.newResponse(
         pmsInputSetService.getListOfRepos(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier));
+  }
+
+  @Override
+  public ResponseDTO<InputSetGitUpdateResponseDTO> updateGitMetadataForInputSet(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String inputSetIdentifier,
+      GitMetadataUpdateRequestInfoDTO gitMetadataUpdateRequestInfo) {
+    String inputSetAfterUpdate = pmsInputSetService.updateGitMetadata(accountIdentifier, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, inputSetIdentifier,
+        PMSUpdateGitDetailsParams.builder()
+            .connectorRef(gitMetadataUpdateRequestInfo.getConnectorRef())
+            .repoName(gitMetadataUpdateRequestInfo.getRepoName())
+            .filePath(gitMetadataUpdateRequestInfo.getFilePath())
+            .build());
+    return ResponseDTO.newResponse(InputSetGitUpdateResponseDTO.builder().identifier(inputSetAfterUpdate).build());
   }
 }

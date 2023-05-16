@@ -57,6 +57,7 @@ import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserInfoUpdateDTO;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.UserAggregateDTO;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -743,5 +744,27 @@ public class UserResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     return ResponseDTO.newResponse(ngUserService.getUsersCount(
         Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), startInterval, endInterval));
+  }
+
+  @PUT
+  @Hidden
+  @Path("update-user-metadata/{userId}")
+  @ApiOperation(value = "update user metadata", nickname = "updateUserMetadata")
+  @Operation(operationId = "updateUserMetadata", summary = "Update User Metadata",
+      description = "Update User Metadata for a user",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns user information")
+      })
+  @InternalApi
+  public ResponseDTO<UserMetadata>
+  updateUserMetadata(@Parameter(description = "user Identifier") @NotNull @PathParam("userId") String userId,
+      @Body UserMetadataDTO userMetadataDTO) {
+    if (!userId.equals(userMetadataDTO.getUuid())) {
+      throw new InvalidRequestException(
+          "UserMetadata passed in the request body does not belong to the userId passed in the path");
+    }
+    return ResponseDTO.newResponse(ngUserService.updateUserMetadataInternal(userMetadataDTO));
   }
 }

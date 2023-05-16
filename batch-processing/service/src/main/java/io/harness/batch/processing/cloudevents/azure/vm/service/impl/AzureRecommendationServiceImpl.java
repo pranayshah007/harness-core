@@ -30,6 +30,7 @@ import static io.harness.batch.processing.cloudevents.azure.vm.service.utils.Azu
 import io.harness.azure.utility.AzureUtils;
 import io.harness.batch.processing.cloudevents.azure.vm.service.AzureRecommendationService;
 import io.harness.batch.processing.config.BatchMainConfig;
+import io.harness.ccm.azurevmpricing.AzureVmItemDTO;
 import io.harness.ccm.azurevmpricing.AzureVmPricingClient;
 import io.harness.ccm.azurevmpricing.AzureVmPricingResponseDTO;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation;
@@ -83,8 +84,8 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
     for (PagedResponse<ResourceRecommendationBase> recommendationsInBatch :
         advisorManager.recommendations().list().iterableByPage(BATCH_SIZE)) {
       for (ResourceRecommendationBase recommendation : recommendationsInBatch.getValue()) {
-        AzureRecommendation azureRecommendation =
-            createAzureRecommendation(accountId, tenantId, recommendation, vmSizeClient, vmStoredDetails);
+        AzureRecommendation azureRecommendation = createAzureRecommendation(accountId, tenantId, recommendation,
+            vmSizeClient, vmStoredDetails, request.getConnectorId(), request.getConnectorName());
         if (azureRecommendation != null) {
           allRecommendations.add(azureRecommendation);
         }
@@ -121,7 +122,8 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
 
   private AzureRecommendation createAzureRecommendation(String accountId, String tenantId,
       ResourceRecommendationBase recommendation, VirtualMachineSizesClient vmSizeClient,
-      HashMap<String, PagedIterable<VirtualMachineSizeInner>> vmStoredDetails) {
+      HashMap<String, PagedIterable<VirtualMachineSizeInner>> vmStoredDetails, String connectorId,
+      String connectorName) {
     Map<String, String> extendedProperties = getExtendedProperties(recommendation);
     String recommendationType = extendedProperties.getOrDefault(RECOMMENDATION_TYPE, "");
     if (!recommendationType.equals(SHUTDOWN) && !recommendationType.equals(SKU_CHANGE)) {
@@ -151,7 +153,9 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
             .subscriptionId(extendedProperties.get(SUBSCRIPTION_ID))
             .duration(duration)
             .tenantId(tenantId)
-            .vmId(vmId);
+            .vmId(vmId)
+            .connectorId(connectorId)
+            .connectorName(connectorName);
 
     PagedIterable<VirtualMachineSizeInner> virtualMachineSizeInners =
         getVirtualMachineSizes(regionName, vmStoredDetails, vmSizeClient);
@@ -216,10 +220,11 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
       Call<AzureVmPricingResponseDTO> azurePricingCall = azureVmPricingClient.getAzureVmPrice(filter);
       Response<AzureVmPricingResponseDTO> pricingInfo = azurePricingCall.execute();
       if (null != pricingInfo.body() && null != pricingInfo.body().getItems()) {
-        if (pricingInfo.body().getItems().size() > 0) {
-          // Multiply with 730.5 since API returns price of 1 hour, and we need price for a month
-          price = pricingInfo.body().getItems().get(0).getRetailPrice() * 730.5;
-        }
+        // This API return list of potential prices for the VM, we get average of it
+        price =
+            pricingInfo.body().getItems().stream().mapToDouble(AzureVmItemDTO::getRetailPrice).average().orElse(0.0);
+        // Multiply with 730.5 since API returns price of 1 hour, and we need price for a month
+        price *= 730.5;
       }
     } catch (Exception e) {
       log.info(
@@ -230,11 +235,11 @@ public class AzureRecommendationServiceImpl implements AzureRecommendationServic
 
   private Double getTargetAverageAzureVmCpuUtilisation(
       int currentNumberOfCores, int targetNumberOfCores, Double currentSkuAvgCpuUtilisation) {
-    if (targetNumberOfCores == 0) {
-      return 0.0;
-    }
     if (currentSkuAvgCpuUtilisation == null) {
       return null;
+    }
+    if (targetNumberOfCores == 0) {
+      return 0.0;
     }
     return (currentSkuAvgCpuUtilisation * currentNumberOfCores) / targetNumberOfCores;
   }

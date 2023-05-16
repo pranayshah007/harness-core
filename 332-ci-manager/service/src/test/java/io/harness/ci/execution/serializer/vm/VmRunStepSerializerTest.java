@@ -65,7 +65,7 @@ public class VmRunStepSerializerTest extends CategoryTest {
             .envVariables(ParameterField.createValueField(Map.of(
                 "key1", ParameterField.createValueField("val1"), "key2", ParameterField.createValueField("val2"))))
             .build();
-    VmRunStep vmRunStep = vmRunStepSerializer.serialize(runStepInfo, ambiance, "id", null, null, null);
+    VmRunStep vmRunStep = vmRunStepSerializer.serialize(runStepInfo, ambiance, "id", null, null, null, null);
     assertThat(vmRunStep.isPrivileged()).isTrue();
     assertThat(vmRunStep.getImage()).isEqualTo("image");
     assertThat(vmRunStep.getCommand()).isEqualTo("set -xe; echo hello");

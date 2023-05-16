@@ -10,6 +10,7 @@ package io.harness.ci.serializer.vm;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
 import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.FeatureName;
@@ -38,6 +39,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,7 +53,8 @@ public class VmRunTestStepSerializer {
   String NULL_STR = "null";
 
   public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
+      String delegateId) {
     String buildTool = RunTimeInputHandler.resolveBuildTool(runTestsStepInfo.getBuildTool());
     if (buildTool == null) {
       throw new CIStageExecutionException("Build tool cannot be null");
@@ -113,6 +116,13 @@ public class VmRunTestStepSerializer {
         resolveMapParameterV2("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false, fVal);
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
+
+    if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HARNESS_DELEGATE_ID", delegateId);
+    }
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
     preCommand = earlyExitCommand + preCommand;

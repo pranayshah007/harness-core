@@ -70,4 +70,6 @@ public class AwsSamBaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
+
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
 }

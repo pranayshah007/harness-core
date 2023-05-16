@@ -26,6 +26,7 @@ import io.harness.idp.gitintegration.mappers.ConnectorDetailsMapper;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
 import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
+import io.harness.idp.gitintegration.utils.GitIntegrationConstants;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
 import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.spec.server.idp.v1.model.AppConfig;
@@ -56,6 +57,9 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
   private static final String TARGET_TO_REPLACE_IN_CONFIG = "HOST_VALUE";
 
   private static final String SUFFIX_FOR_GITHUB_APP_CONNECTOR = "_App";
+  private static final String SUFFIX_FOR_BITBUCKET_SERVER_PAT = "_Server_Pat";
+  private static final String SUFFIX_FOR_BITBUCKET_SERVER_AUTH = "_Server_Auth";
+  private static final String SUFFIX_FOR_BITBUCKET_CLOUD = "_Cloud";
 
   private static final String INVALID_SCHEMA_FOR_INTEGRATIONS =
       "Invalid json schema for integrations config for account - %s";
@@ -168,6 +172,21 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     if (connectorType == ConnectorType.GITHUB && GitIntegrationUtils.checkIfGithubAppConnector(connectorInfoDTO)) {
       connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_GITHUB_APP_CONNECTOR;
     }
+
+    if (connectorType == ConnectorType.BITBUCKET
+        && GitIntegrationUtils.checkIfApiAccessEnabledForBitbucketConnector(connectorInfoDTO)
+        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_PAT;
+    }
+    if (connectorType == ConnectorType.BITBUCKET
+        && !GitIntegrationUtils.checkIfApiAccessEnabledForBitbucketConnector(connectorInfoDTO)
+        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_SERVER_AUTH;
+    }
+    if (connectorType == ConnectorType.BITBUCKET && host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      connectorTypeAsString = connectorTypeAsString + SUFFIX_FOR_BITBUCKET_CLOUD;
+    }
+
     String integrationConfigs = ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(connectorTypeAsString);
     log.info("Connector chosen in git integration is  - {} ", connectorTypeAsString);
     integrationConfigs = integrationConfigs.replace(TARGET_TO_REPLACE_IN_CONFIG, host);
@@ -179,7 +198,7 @@ public class GitIntegrationServiceImpl implements GitIntegrationService {
     }
 
     AppConfig appConfig = new AppConfig();
-    appConfig.setConfigId(connectorTypeAsString);
+    appConfig.setConfigId(connectorType.toString());
     appConfig.setConfigs(integrationConfigs);
     appConfig.setEnabled(true);
 

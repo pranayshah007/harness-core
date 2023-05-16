@@ -544,6 +544,16 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   }
 
   @Override
+  public Iterator<SamlSettings> getSamlSettingsIteratorByAccountId(@NotNull String accountId) {
+    Query<SamlSettings> query = wingsPersistence.createQuery(SamlSettings.class, excludeAuthority)
+                                    .field("accountId")
+                                    .equal(accountId)
+                                    .field("type")
+                                    .equal(SSOType.SAML);
+    return new HIterator(query.fetch());
+  }
+
+  @Override
   @RestrictedApi(LdapFeature.class)
   public LdapSettings createLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
