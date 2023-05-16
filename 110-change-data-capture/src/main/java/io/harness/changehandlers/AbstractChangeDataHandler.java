@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,43 +38,19 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
     if (!changeEventHandled(changeEvent.getChangeType())) {
       return true;
     }
-    Map<String, String> columnValueMapping = null;
-    List<String> primaryKeys = null;
+    List<Map<String, String>> columnValueMappings;
     try {
-      primaryKeys = getPrimaryKeys();
-      columnValueMapping = getColumnValueMapping(changeEvent, fields);
+      List<String> primaryKeys = getPrimaryKeys();
+      columnValueMappings = getColumnValueMappings(changeEvent, fields);
+      if (Objects.nonNull(columnValueMappings)) {
+        for (Map<String, String> columnValueMapping : columnValueMappings) {
+          processColumnValueMapping(changeEvent, tableName, primaryKeys, columnValueMapping);
+        }
+      } else {
+        processColumnValueMapping(changeEvent, tableName, primaryKeys, null);
+      }
     } catch (Exception e) {
       log.info(String.format("Not able to parse this event %s", changeEvent), e);
-    }
-
-    if (!tableName.equals("pipeline_execution_summary_ci") && columnValueMapping != null) {
-      columnValueMapping.remove("moduleinfo_is_private");
-      columnValueMapping.remove("pr");
-    }
-
-    switch (changeEvent.getChangeType()) {
-      case INSERT:
-        if (columnValueMapping != null) {
-          dbOperation(insertSQL(tableName, columnValueMapping));
-        }
-        break;
-      case UPDATE:
-        if (columnValueMapping != null) {
-          dbOperation(updateSQL(
-              tableName, columnValueMapping, Collections.singletonMap("id", changeEvent.getUuid()), primaryKeys));
-        }
-        break;
-      case DELETE:
-        if (shouldDelete()) {
-          dbOperation(deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));
-        } else {
-          if (columnValueMapping != null) {
-            dbOperation(updateDeletedFieldsSQL(tableName, getColumnValueMappingForDelete(), changeEvent.getUuid()));
-          }
-        }
-        break;
-      default:
-        log.info("Change Event Type not Handled: {}", changeEvent.getChangeType());
     }
     return true;
   }
@@ -107,6 +84,11 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
   }
 
   public abstract Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields);
+
+  public List<Map<String, String>> getColumnValueMappings(ChangeEvent<?> changeEvent, String[] fields) {
+    Map<String, String> columnMapping = getColumnValueMapping(changeEvent, fields);
+    return Objects.nonNull(columnMapping) ? List.of(columnMapping) : null;
+  }
 
   public Map<String, String> getColumnValueMappingForDelete() {
     return Collections.emptyMap();
@@ -288,5 +270,36 @@ public abstract class AbstractChangeDataHandler implements ChangeHandler {
 
     // Returning the generated DELETE SQL Query as a String...
     return deleteSQLBuilder.toString();
+  }
+  private void processColumnValueMapping(
+      ChangeEvent<?> changeEvent, String tableName, List<String> primaryKeys, Map<String, String> columnValueMapping) {
+    if (!tableName.equals("pipeline_execution_summary_ci") && columnValueMapping != null) {
+      columnValueMapping.remove("moduleinfo_is_private");
+      columnValueMapping.remove("pr");
+    }
+    switch (changeEvent.getChangeType()) {
+      case INSERT:
+        if (columnValueMapping != null) {
+          dbOperation(insertSQL(tableName, columnValueMapping));
+        }
+        break;
+      case UPDATE:
+        if (columnValueMapping != null) {
+          dbOperation(updateSQL(
+              tableName, columnValueMapping, Collections.singletonMap("id", changeEvent.getUuid()), primaryKeys));
+        }
+        break;
+      case DELETE:
+        if (shouldDelete()) {
+          dbOperation(deleteSQL(tableName, Collections.singletonMap("id", changeEvent.getUuid())));
+        } else {
+          if (columnValueMapping != null) {
+            dbOperation(updateDeletedFieldsSQL(tableName, getColumnValueMappingForDelete(), changeEvent.getUuid()));
+          }
+        }
+        break;
+      default:
+        log.info("Change Event Type not Handled: {}", changeEvent.getChangeType());
+    }
   }
 }

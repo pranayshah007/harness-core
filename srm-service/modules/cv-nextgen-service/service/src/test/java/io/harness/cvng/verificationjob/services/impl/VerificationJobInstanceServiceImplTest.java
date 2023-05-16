@@ -45,6 +45,7 @@ import io.harness.cvng.beans.DataCollectionTaskDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -753,6 +754,10 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
               .deploymentStartTime(now.minus(Duration.ofMinutes(2)))
               .startTime(now.plusSeconds(i))
               .executionStatus(ExecutionStatus.QUEUED)
+              .planExecutionId("planExecutionId")
+              .nodeExecutionId("nodeExecutionId")
+              .stageStepId("stageStepId")
+              .monitoredServiceType(MonitoredServiceSpecType.DEFAULT)
               .resolvedJob(
                   TestVerificationJob.builder()
                       .accountId(accountId)

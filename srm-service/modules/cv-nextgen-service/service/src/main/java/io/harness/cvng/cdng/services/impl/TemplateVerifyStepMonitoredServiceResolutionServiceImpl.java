@@ -215,7 +215,11 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
                                    .build());
     });
     // TODO: Adding this to enable end-end execution. Check if this is really required.
-    allCvConfigs.forEach(cvConfig -> cvConfig.setUuid(generateUuid()));
+    allCvConfigs.forEach(cvConfig -> {
+      cvConfig.setDataSourceName(cvConfig.getType());
+      cvConfig.setVerificationType(cvConfig.getVerificationType());
+      cvConfig.setUuid(generateUuid());
+    });
     resolvedCVConfigInfoBuilder.cvConfigs(allCvConfigs).healthSources(healthSourceInfoList);
   }
 
