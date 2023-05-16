@@ -2744,7 +2744,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try {
       int retries = 5;
       for (int attempt = 0; attempt < retries; attempt++) {
-        log.info("task response mocking {} {} {} {}", delegateId, taskId, accountId, taskResponse)
+        log.info("task response mocking {} {} {} {}", delegateId, taskId, accountId, taskResponse);
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
           log.info("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
