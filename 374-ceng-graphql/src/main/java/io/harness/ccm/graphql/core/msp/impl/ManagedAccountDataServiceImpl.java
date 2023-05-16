@@ -82,7 +82,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
   @Override
   public ManagedAccountStats getManagedAccountStats(
       String mspAccountId, String managedAccountId, long startTime, long endTime) {
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
 
     return ManagedAccountStats.builder().build();
   }
@@ -90,7 +90,7 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
   @Override
   public ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(
       String mspAccountId, String managedAccountId, long startTime, long endTime) {
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
     QLCEViewPreferences qlCEViewPreferences =
         QLCEViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
     List<TimeSeriesDataPoints> totalSpendStats =
@@ -100,17 +100,14 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
                 (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
             .getStats();
-    List<TimeSeriesDataPoints> totalMarkupStats =
-        perspectivesQuery
-            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
-                RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-                Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
-                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
-            .getStats();
-    return ManagedAccountTimeSeriesData.builder()
-        .totalSpendStats(totalSpendStats)
-        .totalMarkupStats(totalMarkupStats)
-        .build();
+    //    List<TimeSeriesDataPoints> totalMarkupStats =
+    //        perspectivesQuery
+    //            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
+    //                RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+    //                Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
+    //                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
+    //            .getStats();
+    return ManagedAccountTimeSeriesData.builder().totalSpendStats(totalSpendStats).build();
   }
 
   private AmountDetails getTotalMarkupAmountDetails(List<MarginDetails> marginDetailsList) {
