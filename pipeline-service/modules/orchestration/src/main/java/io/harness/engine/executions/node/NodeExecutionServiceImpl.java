@@ -213,7 +213,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   public List<Status> fetchNodeExecutionsStatusesWithoutOldRetries(String planExecutionId) {
     // Uses - planExecutionId_status_idx
     Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false));
+                      .addCriteria(where(NodeExecutionKeys.oldRetry).is(false))
+                      .addCriteria(where(NodeExecutionKeys.oldRetryFromAncestor).is(false));
     // Exclude so that it can use Projection simplified from index without scanning documents.
     query.fields().exclude(NodeExecutionKeys.id).include(NodeExecutionKeys.status);
     List<NodeExecution> nodeExecutions = new LinkedList<>();
@@ -593,12 +594,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
-  public boolean markSelfAndDescendantsRetried(String planExecutionId, String nodeExecutionId) {
-    Set<String> nodeExecIds = findAllChildrenOnlyIds(planExecutionId, nodeExecutionId, true)
+  public boolean markDescendantsRetried(String planExecutionId, String nodeExecutionId) {
+    Set<String> nodeExecIds = findAllChildrenOnlyIds(planExecutionId, nodeExecutionId, false)
                                   .stream()
                                   .map(NodeExecution::getUuid)
                                   .collect(Collectors.toSet());
-    Update ops = new Update().set(NodeExecutionKeys.oldRetry, Boolean.TRUE);
+    Update ops = new Update().set(NodeExecutionKeys.oldRetryFromAncestor, Boolean.TRUE);
     // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecIds));
     UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);

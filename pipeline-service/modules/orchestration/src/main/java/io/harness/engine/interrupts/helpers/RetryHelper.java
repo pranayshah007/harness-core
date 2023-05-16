@@ -99,7 +99,8 @@ public class RetryHelper {
     NodeExecution savedNodeExecution = nodeExecutionService.save(newNodeExecution);
 
     nodeExecutionService.updateRelationShipsForRetryNode(updatedRetriedNode.getUuid(), savedNodeExecution.getUuid());
-    nodeExecutionService.markSelfAndDescendantsRetried(ambiance.getPlanExecutionId(), updatedRetriedNode.getUuid());
+    nodeExecutionService.markRetried(updatedRetriedNode.getUuid());
+    nodeExecutionService.markDescendantsRetried(ambiance.getPlanExecutionId(), updatedRetriedNode.getUuid());
     // Todo: Check with product if we want to stop again for execution time input
     executorService.submit(() -> engine.startNodeExecution(finalAmbiance));
   }

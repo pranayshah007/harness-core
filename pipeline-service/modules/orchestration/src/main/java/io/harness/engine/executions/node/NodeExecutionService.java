@@ -303,7 +303,7 @@ public interface NodeExecutionService {
    */
   boolean markRetried(String nodeExecutionId);
 
-  boolean markSelfAndDescendantsRetried(String planExecutionId, String nodeExecutionId);
+  boolean markDescendantsRetried(String planExecutionId, String nodeExecutionId);
 
   /**
    * Deletes the nodeExecutions and its related metadata

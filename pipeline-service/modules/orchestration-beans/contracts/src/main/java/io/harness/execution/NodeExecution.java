@@ -123,6 +123,7 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   // Retries
   @Singular List<String> retryIds;
   @Builder.Default Boolean oldRetry = false;
+  @Builder.Default Boolean oldRetryFromAncestor = false;
 
   // Timeout
   List<String> timeoutInstanceIds;
