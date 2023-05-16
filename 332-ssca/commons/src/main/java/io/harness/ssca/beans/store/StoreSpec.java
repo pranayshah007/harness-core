@@ -10,5 +10,8 @@ package io.harness.ssca.beans.store;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+
 @OwnedBy(HarnessTeam.SSCA)
+@JsonSubTypes({ @JsonSubTypes.Type(value = HarnessStore.class, name = StoreConstants.HARNESS) })
 public interface StoreSpec {}
