@@ -956,8 +956,7 @@ public class ArtifactServiceImpl implements ArtifactService {
       return artifactQuery;
     }
     artifactQuery.filter(ArtifactKeys.artifactSourceName, artifactStream.getSourceName());
-    if (artifactStream.getAccountId() != null && hitSecondary
-        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, artifactStream.getAccountId())) {
+    if (hitSecondary) {
       artifactQuery.useReadPreference(ReadPreference.secondaryPreferred());
     }
     return artifactQuery;
