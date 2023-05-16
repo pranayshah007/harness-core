@@ -310,7 +310,6 @@ public enum FeatureName {
   STALE_FLAGS_FFM_1510,
   NG_SVC_ENV_REDESIGN,
   HELP_PANEL,
-  CHAOS_ENABLED,
   DEPLOYMENT_SUBFORMIK_APPLICATION_DROPDOWN,
   USAGE_SCOPE_RBAC,
   ALLOW_USER_TYPE_FIELDS_JIRA("used to hide jira userfields input in ui in both cg and ng", HarnessTeam.SPG),
