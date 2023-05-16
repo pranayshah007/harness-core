@@ -411,8 +411,6 @@ pipelineEventConsumersConfig:
     threads: 1
   pollingEvent:
     threads: 1
-  triggerExecutionEvent:
-    threads: 1
 
 delegatePollingConfig:
   syncDelay: 2000
