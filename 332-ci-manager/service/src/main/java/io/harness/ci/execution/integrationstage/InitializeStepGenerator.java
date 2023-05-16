@@ -9,11 +9,13 @@ package io.harness.ci.integrationstage;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -27,13 +29,19 @@ import com.google.inject.Singleton;
 public class InitializeStepGenerator {
   private static final String INITIALIZE_TASK = InitializeStepInfo.STEP_TYPE.getType();
   @Inject private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   InitializeStepInfo createInitializeStepInfo(ExecutionElementConfig executionElement, CodeBase ciCodebase,
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, Infrastructure infrastructure,
       String accountId) {
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageNode);
-    for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      IntegrationStageUtils.injectLoopEnvVariables(config);
+
+    // only inject TI env variables at plan creation is FF is disabled.
+    // TODO: remove injection from here
+    if (!featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId)) {
+      for (ExecutionWrapperConfig config : executionElement.getSteps()) {
+        IntegrationStageUtils.injectLoopEnvVariables(config);
+      }
     }
 
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());

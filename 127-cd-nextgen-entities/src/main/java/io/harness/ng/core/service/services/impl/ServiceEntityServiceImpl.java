@@ -59,6 +59,8 @@ import io.harness.ng.core.service.services.validators.ServiceEntityValidator;
 import io.harness.ng.core.service.services.validators.ServiceEntityValidatorFactory;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.TemplateApplyRequestDTO;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
@@ -807,6 +809,31 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
               primaryArtifactRefValue, serviceIdentifier));
     }
     primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
+  }
+
+  public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
+    if (TemplateRefHelper.hasTemplateRef(yaml)) {
+      String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given service yaml.";
+      long start = System.currentTimeMillis();
+      try {
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
+                null, null, null, null, null, null, null, null, null,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(true)
+                    .getMergedYamlWithTemplateField(false)
+                    .build(),
+                false));
+        return templateMergeResponseDTO.getMergedPipelineYaml();
+      } catch (Exception ex) {
+        throw new InvalidRequestException(TEMPLATE_RESOLVE_EXCEPTION_MSG, ex);
+      } finally {
+        log.info("[NG_MANAGER] template resolution for service took {}ms for projectId {}, orgId {}, accountId {}",
+            System.currentTimeMillis() - start, projectId, orgId, accountId);
+      }
+    }
+    return yaml;
   }
 
   private boolean forceDeleteInternal(String accountId, String orgIdentifier, String projectIdentifier) {

@@ -34,6 +34,7 @@ import static java.util.Collections.singletonList;
 import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -43,6 +44,7 @@ import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
@@ -64,6 +66,7 @@ import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.ci.utils.CIStagePlanCreationUtils;
 import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIYAMLSanitizationService;
+import io.harness.cimanager.stages.IntegrationStageConfigImpl;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.TaskSelector;
@@ -265,7 +268,6 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     ciStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
         AmbianceUtils.getAccountId(ambiance), initializeStepInfo.getInfrastructure());
 
-    populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
@@ -399,7 +401,10 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
 
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
+
+    populateStrategyExpansion(initializeStepInfo, ambiance);
     if (EmptyPredicate.isEmpty(principal)) {
+      log.info("principal info is null");
       return;
     }
 
@@ -568,21 +573,39 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
         && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 
+    boolean classExpansion = ciFeatureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
+      if (classExpansion) {
+        expandedExecutionWrapperInfo =
+            strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      } else {
+        expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      }
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }
 
     initializeStepInfo.setExecutionElementConfig(
         ExecutionElementConfig.builder().steps(expandedExecutionElement).build());
+    IntegrationStageConfigImpl integrationStageConfigImpl =
+        (IntegrationStageConfigImpl) initializeStepInfo.getStageElementConfig();
+    integrationStageConfigImpl.setExecution(ExecutionElementConfig.builder()
+                                                .uuid(integrationStageConfigImpl.getExecution().getUuid())
+                                                .steps(expandedExecutionElement)
+                                                .build());
+    initializeStepInfo.setStageElementConfig(integrationStageConfigImpl);
     initializeStepInfo.setStrategyExpansionMap(strategyExpansionMap);
   }
 

@@ -46,6 +46,7 @@ public class NgManifestFactory {
   @Inject AzureAppServiceLocalStoreService azureAppServiceLocalStoreService;
   @Inject AzureAppServiceRemoteStoreService azureAppServiceRemoteStoreService;
   @Inject AzureAppSettingsOverrideService azureAppSettingsOverrideService;
+  @Inject ValuesYamlFromHelmRepoManifestService valuesYamlFromHelmRepoManifestService;
 
   private static String ERROR_STRING = "%s storetype is currently not supported for %s appManifestKind";
 
@@ -90,6 +91,8 @@ public class NgManifestFactory {
             return valuesManifestRemoteStoreService;
           case Local:
             return valuesManifestLocalStoreService;
+          case VALUES_YAML_FROM_HELM_REPO:
+            return valuesYamlFromHelmRepoManifestService;
           default:
             throw new InvalidRequestException(String.format(ERROR_STRING, storeType, appManifestKind));
         }

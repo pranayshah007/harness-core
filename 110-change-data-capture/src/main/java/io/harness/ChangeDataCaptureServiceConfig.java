@@ -45,6 +45,7 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("changeStreamBatchSize") private int changeStreamBatchSize;
+  @JsonProperty("cvng") private MongoConfig cvngMongo = MongoConfig.builder().build();
 
   public static Collection<Class<?>> getResourceClasses() {
     Reflections reflections = new Reflections(RESOURCE_PACKAGE);
@@ -67,6 +68,9 @@ public class ChangeDataCaptureServiceConfig extends Configuration {
     }
     if (ngMongo != null) {
       dbAliases.add(ngMongo.getAliasDBName());
+    }
+    if (cvngMongo != null) {
+      dbAliases.add(cvngMongo.getAliasDBName());
     }
     return dbAliases;
   }

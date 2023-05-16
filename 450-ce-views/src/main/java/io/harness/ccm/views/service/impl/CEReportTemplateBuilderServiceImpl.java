@@ -16,6 +16,7 @@ import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.entities.ViewQueryParams;
 import io.harness.ccm.views.entities.ViewTimeRangeType;
 import io.harness.ccm.views.graphql.QLCESortOrder;
 import io.harness.ccm.views.graphql.QLCEViewAggregateOperation;
@@ -65,6 +66,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryLabelPositions;
@@ -82,9 +84,9 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   @Inject private ViewsBillingService viewsBillingService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
-  @Inject @Named("clickHouseConfig") ClickHouseConfig clickHouseConfig;
-  @Inject ClickHouseService clickHouseService;
-  @Inject ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
+  @Inject @Named("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
+  @Inject private ClickHouseService clickHouseService;
+  @Inject private ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
   @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
 
   // For table construction
@@ -136,7 +138,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String UPWARD_ARROW = "&uarr;";
   private static final String DOWNWARD_ARROW = "&darr;";
   private static final String PERCENT = "%";
-  private static final Integer DEFAULT_LIMIT = Integer.MAX_VALUE - 1;
+  private static final int DEFAULT_LIMIT = 10_000;
   private static final Integer DEFAULT_OFFSET = 0;
   private static final Color[] COLORS = {new Color(72, 165, 243), new Color(147, 133, 241), new Color(83, 205, 124),
       new Color(255, 188, 9), new Color(243, 92, 97), new Color(55, 214, 203), new Color(236, 97, 181),
@@ -181,14 +183,18 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
       filters.add(getTimeFilter(getStartOfMonth(true), QLCEViewTimeFilterOperator.AFTER));
       filters.add(getTimeFilter(getStartOfMonth(false) - 1000, QLCEViewTimeFilterOperator.BEFORE));
     }
-    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    List<QLCEViewGroupBy> groupBy = getGroupBy(accountId, viewId, view);
 
-    // Todo: Pass default group by to cover cost categories
+    ViewQueryParams viewQueryParams = viewsQueryHelper.buildQueryParams(accountId, false);
+
+    // Group by is only needed in case of business mapping
+    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
+      viewQueryParams = viewsQueryHelper.buildQueryParamsWithSkipGroupBy(viewQueryParams, true);
+    }
+
     // Generating Trend data
-    QLCEViewTrendInfo trendData = viewsBillingService
-                                      .getTrendStatsDataNg(filters, Collections.emptyList(), aggregationFunction,
-                                          viewsQueryHelper.buildQueryParams(accountId, false))
-                                      .getTotalCost();
+    QLCEViewTrendInfo trendData =
+        viewsBillingService.getTrendStatsDataNg(filters, groupBy, aggregationFunction, viewQueryParams).getTotalCost();
     if (trendData == null) {
       throw new InvalidRequestException("Exception while generating report. No data to for cost trend");
     }
@@ -208,7 +214,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     groupBy.add(QLCEViewGroupBy.builder()
                     .timeTruncGroupBy(QLCEViewTimeTruncGroupBy.builder().resolution(QLCEViewTimeGroupType.DAY).build())
                     .build());
-    List<QLCEViewTimeSeriesData> chartData = null;
+    List<QLCEViewTimeSeriesData> chartData;
     if (isClickHouseEnabled) {
       chartData =
           clickHouseViewsBillingService.getClickHouseTimeSeriesStatsNgForReport(filters, groupBy, aggregationFunction,
@@ -254,6 +260,26 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     templatePlaceholders.put(PERSPECTIVE_URL, getPerspectiveUrl(view));
 
     return templatePlaceholders;
+  }
+
+  @NotNull
+  private List<QLCEViewGroupBy> getGroupBy(String accountId, String viewId, CEView view) {
+    List<QLCEViewGroupBy> groupBy = new ArrayList<>();
+    if (Objects.nonNull(view.getViewVisualization()) && Objects.nonNull(view.getViewVisualization().getGroupBy())) {
+      groupBy = viewsQueryHelper.getDefaultViewGroupBy(view);
+    } else {
+      log.warn("GroupBy is not present in view: {} for accountId: {}. Setting to default product groupBy", viewId,
+          accountId);
+      groupBy.add(QLCEViewGroupBy.builder()
+                      .entityGroupBy(QLCEViewFieldInput.builder()
+                                         .fieldId("product")
+                                         .fieldName("Product")
+                                         .identifier(ViewFieldIdentifier.COMMON)
+                                         .identifierName(ViewFieldIdentifier.COMMON.getDisplayName())
+                                         .build())
+                      .build());
+    }
+    return groupBy;
   }
 
   private List<QLCEViewAggregation> getTotalCostAggregation() {

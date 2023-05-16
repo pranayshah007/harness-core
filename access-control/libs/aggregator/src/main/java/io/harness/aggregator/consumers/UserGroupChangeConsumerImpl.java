@@ -11,7 +11,6 @@ import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupRepository;
@@ -50,14 +49,13 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final UserGroupRepository userGroupRepository;
   private final ExecutorService executorService;
-  private final ChangeConsumerService changeConsumerService;
+  private final ACLGeneratorService aclGeneratorService;
   private final ScopeService scopeService;
   private final UserGroupCRUDEventHandler userGroupCRUDEventHandler;
 
   public UserGroupChangeConsumerImpl(ACLRepository aclRepository, RoleAssignmentRepository roleAssignmentRepository,
-      UserGroupRepository userGroupRepository, String executorServiceSuffix,
-      ChangeConsumerService changeConsumerService, ScopeService scopeService,
-      UserGroupCRUDEventHandler userGroupCRUDEventHandler) {
+      UserGroupRepository userGroupRepository, String executorServiceSuffix, ACLGeneratorService aclGeneratorService,
+      ScopeService scopeService, UserGroupCRUDEventHandler userGroupCRUDEventHandler) {
     this.aclRepository = aclRepository;
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.userGroupRepository = userGroupRepository;
@@ -67,7 +65,7 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
     // Number of threads = Number of Available Cores * (1 + (Wait time / Service time) )
     this.executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2,
         new ThreadFactoryBuilder().setNameFormat(changeConsumerThreadFactory).build());
-    this.changeConsumerService = changeConsumerService;
+    this.aclGeneratorService = aclGeneratorService;
   }
 
   @Override
@@ -99,7 +97,7 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
             .stream()
             .map((RoleAssignmentDBO roleAssignment)
                      -> new ReProcessRoleAssignmentOnUserGroupUpdateTask(
-                         aclRepository, changeConsumerService, roleAssignment, userGroup.get()))
+                         aclRepository, aclGeneratorService, roleAssignment, userGroup.get()))
             .collect(Collectors.toList());
 
     long numberOfACLsCreated = 0;
@@ -141,12 +139,12 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
 
   private static class ReProcessRoleAssignmentOnUserGroupUpdateTask implements Callable<Result> {
     private final ACLRepository aclRepository;
-    private final ChangeConsumerService changeConsumerService;
+    private final ACLGeneratorService changeConsumerService;
     private final RoleAssignmentDBO roleAssignmentDBO;
     private final UserGroupDBO updatedUserGroup;
 
     private ReProcessRoleAssignmentOnUserGroupUpdateTask(ACLRepository aclRepository,
-        ChangeConsumerService changeConsumerService, RoleAssignmentDBO roleAssignment, UserGroupDBO updatedUserGroup) {
+        ACLGeneratorService changeConsumerService, RoleAssignmentDBO roleAssignment, UserGroupDBO updatedUserGroup) {
       this.aclRepository = aclRepository;
       this.changeConsumerService = changeConsumerService;
       this.roleAssignmentDBO = roleAssignment;
@@ -175,13 +173,11 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
       }
 
       long numberOfACLsCreated = 0;
-      List<ACL> aclsToCreate =
-          changeConsumerService.getAClsForRoleAssignment(roleAssignmentDBO, principalsAddedToUserGroup);
 
-      numberOfACLsCreated += aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
       numberOfACLsCreated +=
-          aclRepository.insertAllIgnoringDuplicates(changeConsumerService.getImplicitACLsForRoleAssignment(
-              roleAssignmentDBO, principalsAddedToUserGroup, new HashSet<>()));
+          changeConsumerService.createACLsForRoleAssignment(roleAssignmentDBO, principalsAddedToUserGroup);
+      numberOfACLsCreated += changeConsumerService.createImplicitACLsForRoleAssignment(
+          roleAssignmentDBO, principalsAddedToUserGroup, new HashSet<>());
 
       return new Result(numberOfACLsCreated, totalACLsDeleted);
     }

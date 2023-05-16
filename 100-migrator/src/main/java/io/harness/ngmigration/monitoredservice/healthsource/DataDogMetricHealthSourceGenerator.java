@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.monitoredservice.healthsource;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
@@ -19,11 +21,11 @@ import io.harness.ngmigration.utils.MigratorUtility;
 import software.wings.beans.GraphNode;
 import software.wings.sm.states.DatadogState;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DataDogMetricHealthSourceGenerator extends HealthSourceGenerator {
   @Override
@@ -48,39 +50,48 @@ public class DataDogMetricHealthSourceGenerator extends HealthSourceGenerator {
   }
 
   private List<DatadogMetricHealthDefinition> getMetricDefinitions(DatadogState state, GraphNode graphNode) {
-    return Stream
-        .concat(((Map<String, List<Map<String, String>>>) (graphNode.getProperties().get("customMetrics")))
-                    .entrySet()
-                    .stream()
-                    .flatMap(entry
-                        -> entry.getValue().stream().map(cgMetric
+    List<DatadogMetricHealthDefinition> result = new ArrayList<>();
+
+    if (isNotEmpty(graphNode.getProperties()) && null != (graphNode.getProperties().get("customMetrics"))) {
+      result.addAll(((Map<String, List<Map<String, String>>>) (graphNode.getProperties().get("customMetrics")))
+                        .entrySet()
+                        .stream()
+                        .flatMap(entry
+                            -> entry.getValue().stream().map(cgMetric
+                                -> DatadogMetricHealthDefinition.builder()
+                                       .isManualQuery(true)
+                                       .isCustomCreatedMetric(true)
+                                       .identifier(MigratorUtility.generateIdentifier(
+                                           cgMetric.get("displayName"), CaseFormat.LOWER_CASE))
+                                       .metricName(cgMetric.get("metricName"))
+                                       .query("avg:" + cgMetric.get("metricName") + "{*}.rollup(avg, 60)")
+                                       .groupingQuery("avg:" + cgMetric.get("metricName") + "{*} by {" + entry.getKey()
+                                           + "} .rollup(avg, 60)")
+                                       .dashboardName(cgMetric.get("txnName"))
+                                       .analysis(HealthSourceFieldMapper.getAnalysisDTO(
+                                           cgMetric.get("mlMetricType"), entry.getKey()))
+                                       .build()))
+                        .collect(Collectors.toList()));
+    }
+
+    if (isNotEmpty(state.getMetrics())) {
+      result.addAll(Arrays.asList(state.getMetrics().split(","))
+                        .stream()
+                        .map(metricName
                             -> DatadogMetricHealthDefinition.builder()
                                    .isManualQuery(true)
                                    .isCustomCreatedMetric(true)
-                                   .identifier(MigratorUtility.generateIdentifier(
-                                       cgMetric.get("displayName"), CaseFormat.LOWER_CASE))
-                                   .metricName(cgMetric.get("metricName"))
-                                   .query("avg:" + cgMetric.get("metricName") + "{*}.rollup(avg, 60)")
-                                   .groupingQuery("avg:" + cgMetric.get("metricName") + "{*} by {" + entry.getKey()
-                                       + "} .rollup(avg, 60)")
-                                   .dashboardName(cgMetric.get("txnName"))
-                                   .analysis(HealthSourceFieldMapper.getAnalysisDTO(
-                                       cgMetric.get("mlMetricType"), entry.getKey()))
-                                   .build())),
-            Arrays.asList(state.getMetrics().split(","))
-                .stream()
-                .map(metricName
-                    -> DatadogMetricHealthDefinition.builder()
-                           .isManualQuery(true)
-                           .isCustomCreatedMetric(true)
-                           .metric(metricName)
-                           .identifier(MigratorUtility.generateIdentifier(metricName, CaseFormat.LOWER_CASE))
-                           .metricName(metricName)
-                           .query("avg:" + metricName + "{*}.rollup(avg, 60)")
-                           .groupingQuery("avg:" + metricName + "{*} by {pod_name}.rollup(avg, 60)")
-                           .dashboardName("Infrastructure")
-                           .analysis(HealthSourceFieldMapper.getAnalysisDTO("INFRA", "pod_name"))
-                           .build()))
-        .collect(Collectors.toList());
+                                   .metric(metricName)
+                                   .identifier(MigratorUtility.generateIdentifier(metricName, CaseFormat.LOWER_CASE))
+                                   .metricName(metricName)
+                                   .query("avg:" + metricName + "{*}.rollup(avg, 60)")
+                                   .groupingQuery("avg:" + metricName + "{*} by {pod_name}.rollup(avg, 60)")
+                                   .dashboardName("Infrastructure")
+                                   .analysis(HealthSourceFieldMapper.getAnalysisDTO("INFRA", "pod_name"))
+                                   .build())
+                        .collect(Collectors.toList()));
+    }
+
+    return result;
   }
 }

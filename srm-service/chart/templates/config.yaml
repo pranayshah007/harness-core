@@ -10,7 +10,7 @@ data:
   MANAGER_URL: http://harness-manager.{{ .Release.Namespace }}.svc.cluster.local:9090/
   NG_MANAGER_URL: http://ng-manager.{{ .Release.Namespace }}.svc.cluster.local:7090/
   MEMORY: {{ .Values.java.memory | quote }}
-  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.config.STACK_DRIVER_LOGGING_ENABLED | quote }}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.STACK_DRIVER_LOGGING_ENABLED | quote }}
   VERIFICATION_PORT: {{ .Values.config.VERIFICATION_PORT | quote }}
   VERIFICATION_SERVICE_SECRET: {{ .Values.config.VERIFICATION_SERVICE_SECRET | quote }}
   NOTIFICATION_BASE_URL: http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/
@@ -33,3 +33,6 @@ data:
   MOCK_ACCESS_CONTROL_SERVICE: {{ .Values.config.MOCK_ACCESS_CONTROL_SERVICE | quote }}
   ACCESS_CONTROL_BASE_URL:  http://access-control.{{ .Release.Namespace }}.svc.cluster.local:9006/api/
   ACCESS_CONTROL_ENABLED: {{ .Values.config.ACCESS_CONTROL_ENABLED | quote }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

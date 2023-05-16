@@ -66,6 +66,7 @@ import io.harness.evaluators.CDExpressionEvaluator;
 import io.harness.evaluators.CDYamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.custom.CustomScriptInfo;
 import io.harness.ng.core.environment.beans.Environment;
@@ -173,6 +174,7 @@ public class ArtifactResourceUtils {
     return response.getMergedPipelineYaml();
   }
 
+  @Nullable
   public String getResolvedFieldValue(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String runtimeInputYaml, String imagePath, String fqnPath,
       GitEntityFindInfoDTO gitEntityBasicInfo, String serviceId) {
@@ -211,9 +213,16 @@ public class ArtifactResourceUtils {
           getAliasYamlFields(accountId, orgIdentifier, projectIdentifier, serviceId, environmentId);
       CDYamlExpressionEvaluator CDYamlExpressionEvaluator =
           new CDYamlExpressionEvaluator(mergedCompleteYaml, fqnPath, aliasYamlField);
-      imagePath = CDYamlExpressionEvaluator.renderExpression(imagePath);
+      String resolvedImagePath = CDYamlExpressionEvaluator.renderExpression(
+          imagePath, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      final ParameterField<String> imageParameter =
+          RuntimeInputValuesValidator.getInputSetParameterField(resolvedImagePath);
+      if (imageParameter == null || imageParameter.isExpression()) {
+        return null;
+      } else {
+        return imageParameter.getValue();
+      }
     }
-    return imagePath;
   }
 
   @Nullable

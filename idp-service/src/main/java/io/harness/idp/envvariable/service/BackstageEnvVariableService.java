@@ -13,16 +13,14 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 
 public interface BackstageEnvVariableService {
   Optional<BackstageEnvVariable> findByIdAndAccountIdentifier(String identifier, String accountIdentifier);
   Optional<BackstageEnvVariable> findByEnvNameAndAccountIdentifier(String envName, String accountIdentifier);
   List<BackstageEnvVariable> findByAccountIdentifier(String accountIdentifier);
-  BackstageEnvVariable create(BackstageEnvVariable environmentSecret, String accountIdentifier);
-  List<BackstageEnvVariable> createMulti(List<BackstageEnvVariable> requestSecrets, String harnessAccount);
-  BackstageEnvVariable update(BackstageEnvVariable environmentSecret, String accountIdentifier);
-  List<BackstageEnvVariable> updateMulti(List<BackstageEnvVariable> requestSecrets, String accountIdentifier);
+  BackstageEnvVariable create(BackstageEnvVariable envVariable, String accountIdentifier);
+  BackstageEnvVariable update(BackstageEnvVariable envVariable, String accountIdentifier);
+  List<BackstageEnvVariable> createOrUpdate(List<BackstageEnvVariable> requestVariables, String accountIdentifier);
   void deleteMulti(List<String> secretIdentifiers, String accountIdentifier);
   void processSecretUpdate(EntityChangeDTO entityChangeDTO);
   void delete(String secretIdentifier, String harnessAccount);

@@ -86,6 +86,7 @@ public class PipelineExecutionSummaryDtoMapper {
                 ? null
                 : pipelineExecutionSummaryEntity.getConnectorRef())
         .abortedBy(pipelineExecutionSummaryEntity.getAbortedBy())
+        .executionMode(pipelineExecutionSummaryEntity.getExecutionMode())
         .build();
   }
 

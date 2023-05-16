@@ -12,15 +12,18 @@ import static io.harness.cdng.ssh.SshWinRmConstants.FILE_STORE_SCRIPT_ERROR_MSG;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -32,6 +35,10 @@ import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
+import io.harness.cdng.execution.ExecutionDetails;
+import io.harness.cdng.execution.ExecutionInfoKey;
+import io.harness.cdng.execution.StageExecutionInfo;
+import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
@@ -102,6 +109,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -515,6 +523,27 @@ public class SshCommandStepHelperTest extends CategoryTest {
     assertThatThrownBy(() -> helper.getShellScript(ambiance, shellScriptSourceWrapper))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(format(FILE_STORE_SCRIPT_ERROR_MSG, scopedFilePath));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testPrepareSshWinRmRollbackData() {
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKey.builder().build();
+    when(commandStepRollbackHelper.getExecutionInfoKey(ambiance)).thenReturn(executionInfoKey);
+
+    ExecutionDetails executionDetails = SshWinRmStageExecutionDetails.builder().build();
+    StageExecutionInfo stageExecutionInfo =
+        StageExecutionInfo.builder().uuid("someid").executionDetails(executionDetails).build();
+
+    when(commandStepRollbackHelper.getLatestSuccessfulStageExecutionInfo(any(), any()))
+        .thenReturn(Optional.of(stageExecutionInfo));
+
+    helper.prepareSshWinRmRollbackData(ambiance);
+
+    verify(executionSweepingOutputService)
+        .consume(
+            eq(ambiance), eq(OutcomeExpressionConstants.SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME), any(), anyString());
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

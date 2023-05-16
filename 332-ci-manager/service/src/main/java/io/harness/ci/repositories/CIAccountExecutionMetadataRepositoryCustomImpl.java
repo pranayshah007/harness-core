@@ -79,7 +79,7 @@ public class CIAccountExecutionMetadataRepositoryCustomImpl implements CIAccount
   public void updateCIDailyBuilds(String accountId, Long startTS) {
     Criteria criteria = Criteria.where(CIAccountExecutionMetadataKeys.accountId).is(accountId);
     Query query = new Query(criteria);
-    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(
              LOCK_NAME_PREFIX_DAILY + accountId, Duration.ofSeconds(20), Duration.ofSeconds(10))) {
       if (lock == null) {
         throw new InvalidRequestException("Could not acquire lock");

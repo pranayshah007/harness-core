@@ -110,7 +110,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public boolean updateGraphWithWaitLock(String planExecutionId) {
     String lockName = GRAPH_LOCK + planExecutionId;
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
         log.debug(String.format(
             "[PMS_GRAPH_LOCK_TEST] Not able to take lock on graph generation for lockName - %s, returning early.",

@@ -63,7 +63,7 @@ public class InterruptManagerTest extends CategoryTest {
                               .interruptConfig(interruptPackage.getInterruptConfig())
                               .build();
 
-    doReturn(RedisAcquiredLock.builder().build()).when(persistentLocker).waitToAcquireLock(any(), any(), any());
+    doReturn(RedisAcquiredLock.builder().build()).when(persistentLocker).waitToAcquireLockOptional(any(), any(), any());
     doReturn(abortAllInterruptHandler).when(interruptHandlerFactory).obtainHandler(any());
     doReturn(interrupt).when(abortAllInterruptHandler).registerInterrupt(any());
 

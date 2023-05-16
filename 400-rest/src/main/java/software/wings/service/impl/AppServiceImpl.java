@@ -273,9 +273,9 @@ public class AppServiceImpl implements AppService {
    */
   @Override
   public PageResponse<Application> list(
-      PageRequest<Application> req, boolean details, boolean withTags, String tagFilter) {
+      PageRequest<Application> req, boolean details, boolean withTags, String tagFilter, boolean hitSecondary) {
     PageResponse<Application> response =
-        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, false);
+        resourceLookupService.listWithTagFilters(req, tagFilter, EntityType.APPLICATION, withTags, hitSecondary);
 
     List<Application> applicationList = response.getResponse();
     if (isEmpty(applicationList)) {
@@ -335,7 +335,7 @@ public class AppServiceImpl implements AppService {
 
   @Override
   public PageResponse<Application> list(PageRequest<Application> req) {
-    return list(req, false, false, null);
+    return list(req, false, false, null, false);
   }
 
   @Override

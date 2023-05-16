@@ -43,8 +43,10 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
-import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.ngsettings.dto.SettingDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
@@ -96,6 +98,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
+import io.harness.utils.NGPipelineSettingsConstant;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -126,7 +129,6 @@ import retrofit2.Call;
 @Slf4j
 public class ExecutionHelper {
   NGSettingsClient settingsClient;
-
   PMSPipelineService pmsPipelineService;
   PipelineMetadataService pipelineMetadataService;
   PMSPipelineServiceHelper pmsPipelineServiceHelper;
@@ -153,7 +155,7 @@ public class ExecutionHelper {
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
 
-  public static final String ENABLE_MATRIX_FIELD_NAME_SETTING = "enable_matrix_label_by_name";
+  public static final String PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER = "pms_execution_settings";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -335,19 +337,8 @@ public class ExecutionHelper {
     if (pipelineEntity.getConnectorRef() != null) {
       builder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
     }
-    try {
-      Call<ResponseDTO<SettingValueResponseDTO>> setting =
-          settingsClient.getSetting(ENABLE_MATRIX_FIELD_NAME_SETTING, pipelineEntity.getAccountIdentifier(),
-              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-
-      SettingValueResponseDTO response = NGRestUtils.getResponse(setting);
-
-      if (response.getValue().equals("true")) {
-        builder.setUseMatrixFieldName(true);
-      }
-    } catch (Exception e) {
-      log.error("Error in fetching pipeline Setting {} due to {}", ENABLE_MATRIX_FIELD_NAME_SETTING, e.getMessage());
-    }
+    // adding metadata populated by Pipeline NG Settings
+    updateSettingsInExecutionMetadataBuilder(pipelineEntity, builder);
     return builder.build();
   }
 
@@ -358,9 +349,6 @@ public class ExecutionHelper {
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
       YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      pipelineYamlConfigForSchemaValidations = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-          pipelineEntityYamlConfig, runtimeInputYamlConfig, false, true);
-
       /*
       For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
       the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
@@ -587,8 +575,7 @@ public class ExecutionHelper {
       return PlanExecution.builder().build();
     }
     if (isRetry) {
-      Plan newPlan =
-          retryExecutionHelper.transformPlan(plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+      retryExecutionHelper.transformPlan(plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
       return orchestrationService.startExecutionV2(
           planCreationId, abstractions, executionMetadata, planExecutionMetadata);
     }
@@ -693,5 +680,28 @@ public class ExecutionHelper {
         .stagesExecutionInfo(stagesExecutionInfo)
         .filteredPipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
         .build();
+  }
+
+  public void updateSettingsInExecutionMetadataBuilder(
+      PipelineEntity pipelineEntity, ExecutionMetadata.Builder builder) {
+    try {
+      Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall =
+          settingsClient.listSettings(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+              pipelineEntity.getProjectIdentifier(), SettingCategory.PMS, PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER);
+
+      List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
+
+      for (SettingResponseDTO settingDto : response) {
+        SettingDTO setting = settingDto.getSetting();
+        if (setting.getName().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
+            && setting.getValue().equals("true")) {
+          builder.setUseMatrixFieldName(true);
+        } else {
+          builder.putSettingToValueMap(setting.getName(), setting.getValue());
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error in fetching pipeline Settings due to {}", e.getMessage());
+    }
   }
 }

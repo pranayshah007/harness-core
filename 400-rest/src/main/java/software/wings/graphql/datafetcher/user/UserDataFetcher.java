@@ -91,10 +91,10 @@ public class UserDataFetcher extends AbstractObjectDataFetcher<QLUser, QLUserQue
   private Query<User> getSearchByEmailQuery(String accountId, String email) {
     email = email.toLowerCase();
     Query<User> query = persistence.createQuery(User.class, excludeAuthority);
-    CriteriaContainer inviteAccepted =
-        query.and(query.criteria(UserKeys.email).equal(email), query.criteria(UserKeys.accounts).hasThisOne(accountId));
-    CriteriaContainer invitePending = query.and(
-        query.criteria(UserKeys.email).equal(email), query.criteria(UserKeys.pendingAccounts).hasThisOne(accountId));
+    CriteriaContainer inviteAccepted = query.and(
+        query.criteria(UserKeys.email).equalIgnoreCase(email), query.criteria(UserKeys.accounts).hasThisOne(accountId));
+    CriteriaContainer invitePending = query.and(query.criteria(UserKeys.email).equalIgnoreCase(email),
+        query.criteria(UserKeys.pendingAccounts).hasThisOne(accountId));
     query.or(inviteAccepted, invitePending);
     return query;
   }

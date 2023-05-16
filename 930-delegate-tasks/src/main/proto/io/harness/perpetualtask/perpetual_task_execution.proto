@@ -18,7 +18,6 @@ import "955-delegate-beans/src/main/proto/io/harness/perpetualtask/perpetual_tas
 // params are tracked by clients
 message PerpetualTaskExecutionParams {
   google.protobuf.Any customized_params = 1;
-  bool referenceFalseKryoSerializer = 2;
 }
 
 message PerpetualTaskAssignDetails {

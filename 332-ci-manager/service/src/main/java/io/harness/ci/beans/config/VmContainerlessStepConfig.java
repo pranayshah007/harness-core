@@ -25,4 +25,5 @@ public class VmContainerlessStepConfig {
   ContainerlessPluginConfig cacheGCSConfig;
   ContainerlessPluginConfig cacheS3Config;
   ContainerlessPluginConfig dockerBuildxConfig;
+  ContainerlessPluginConfig dockerBuildxEcrConfig;
 }

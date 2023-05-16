@@ -705,6 +705,44 @@ public class InviteServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testUserCreation_withoutName_shouldPopulateEmailInNameField() throws IOException {
+    when(ngUserService.getUserByEmail(eq(emailId), anyBoolean())).thenReturn(Optional.empty());
+    when(inviteRepository.findFirstByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndEmailAndDeletedFalse(
+             any(), any(), any(), any()))
+        .thenReturn(Optional.empty());
+    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
+    when(accountClient.checkAutoInviteAcceptanceEnabledForAccount(any())).thenReturn(ffCall);
+    when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    Invite invite = Invite.builder()
+                        .accountIdentifier("accountId")
+                        .approved(true)
+                        .email("primaryEmail")
+                        .accountIdentifier(accountIdentifier)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .id(inviteId)
+                        .roleBindings(getDummyRoleBinding())
+                        .inviteType(InviteType.ADMIN_INITIATED_INVITE)
+                        .build();
+    when(inviteRepository.save(any())).thenReturn(invite);
+    ArgumentCaptor<UserInviteDTO> argumentCaptor = ArgumentCaptor.forClass(UserInviteDTO.class);
+    ArgumentCaptor<Boolean> argumentCaptor1 = ArgumentCaptor.forClass(Boolean.class);
+    ArgumentCaptor<Boolean> argumentCaptor2 = ArgumentCaptor.forClass(Boolean.class);
+    Call<RestResponse<Boolean>> userCall = mock(Call.class);
+    when(userClient.createUserAndCompleteNGInvite(
+             argumentCaptor.capture(), argumentCaptor1.capture(), argumentCaptor2.capture()))
+        .thenReturn(userCall);
+    when(userCall.execute()).thenReturn(Response.success(new RestResponse<>(true)));
+    inviteService.create(invite, true, false);
+    assertThat(argumentCaptor1.getValue()).isEqualTo(true);
+    assertThat(argumentCaptor2.getValue()).isEqualTo(false);
+    assertThat(argumentCaptor.getValue().getName()).isEqualTo("primaryEmail");
+    assertThat(argumentCaptor.getValue().getEmail()).isEqualTo("primaryEmail");
+  }
+
+  @Test
   @Owner(developers = TEJAS)
   @Category(UnitTests.class)
   public void testGetRedirectUrl_ExistingPasswordUser_shouldSend2fa() throws IOException {

@@ -135,7 +135,7 @@ public class RecentExecutionsInfoHelper {
       Informant0<List<RecentExecutionInfo>> subject, PlanExecution planExecution) {
     String lockName = getLockName(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(1), Duration.ofSeconds(2))) {
       if (lock == null) {
         log.error(String.format(
             "Unable to acquire lock while updating Pipeline Metadata for Pipeline [%s] in Project [%s], Org [%s], Account [%s]",

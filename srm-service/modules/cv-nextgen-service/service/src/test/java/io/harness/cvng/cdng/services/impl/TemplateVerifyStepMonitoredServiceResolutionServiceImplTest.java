@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
@@ -33,6 +34,7 @@ import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask.MonitoringSou
 import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.models.VerificationType;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -128,6 +130,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
         templateService.fetchAndPersistResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
             .getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
+    assertThat(actualCvConfigs.get(0).getDataSourceName()).isEqualTo(DataSourceType.APP_DYNAMICS);
+    assertThat(actualCvConfigs.get(0).getVerificationType()).isEqualTo(VerificationType.TIME_SERIES);
   }
 
   @Test

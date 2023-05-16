@@ -22,9 +22,13 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.SignalFXMetricDataCollectionInfo;
 import io.harness.cvng.beans.signalfx.SignalFXMetricSampleDataRequest;
 import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.NextGenMetricCVConfig;
+import io.harness.cvng.core.entities.NextGenMetricInfo;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
+import io.harness.cvng.core.services.impl.SignalFXMetricDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
@@ -36,6 +40,9 @@ import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Sets;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
@@ -72,6 +79,8 @@ public class SignalFXMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBa
 
   ExecutorService executorService;
   @Inject MetricPackService metricPackService;
+
+  @Inject SignalFXMetricDataCollectionInfoMapper dataCollectionInfoMapper;
   DataCollectionDSLService dataCollectionDSLService;
   SignalFXConnectorDTO signalFXConnectorDTO;
   String name;
@@ -122,6 +131,46 @@ public class SignalFXMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBa
             MetricPack.MetricDefinition.builder().identifier(identifier).name(name).included(true).build()),
         CVNextGenConstants.CUSTOM_PACK_IDENTIFIER, CVMonitoringCategory.ERRORS);
     metricPackService.populateDataCollectionDsl(DataSourceType.SPLUNK_SIGNALFX_METRICS, metricPack);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testExecute_signalfxDSLSLO() throws IOException {
+    Instant instant = Instant.ofEpochMilli(1681702563000L);
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.SPLUNK_SIGNALFX_METRICS);
+
+    NextGenMetricCVConfig nextGenMetricCVConfig =
+        builderFactory.nextGenMetricCVConfigBuilder(DataSourceType.SPLUNK_SIGNALFX_METRICS)
+            .metricInfos(Collections.singletonList(NextGenMetricInfo.builder()
+                                                       .query("data(\"k8s.container.memory_request\")")
+                                                       .identifier("memory_request")
+                                                       .metricName("memory_request")
+                                                       .build()))
+            .build();
+    nextGenMetricCVConfig.setMetricPack(metricPacks.get(0));
+    nextGenMetricCVConfig.setGroupName("default");
+    metricPackService.populateDataCollectionDsl(nextGenMetricCVConfig.getType(), metricPacks.get(0));
+    SignalFXMetricDataCollectionInfo signalFXMetricDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(nextGenMetricCVConfig, VerificationTask.TaskType.SLI);
+    Map<String, Object> params = signalFXMetricDataCollectionInfo.getDslEnvVariables(signalFXConnectorDTO);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.putAll(signalFXMetricDataCollectionInfo.collectionHeaders(signalFXConnectorDTO));
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(Instant.ofEpochMilli(1681699563000L))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl(SIGNALFX_BASE_URL)
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        nextGenMetricCVConfig.getDataCollectionDsl(), runtimeParameters, (CallDetails callDetails) -> {});
+    assertThat(Sets.newHashSet(timeSeriesRecords))
+        .isEqualTo(new Gson().fromJson(readJson("expected-signalfx-metric-sample-dsl-output.json"),
+            new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
   }
 
   @Test

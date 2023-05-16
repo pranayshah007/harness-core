@@ -44,10 +44,4 @@ public interface InstanceSyncResourceClient {
   Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId);
-
-  @POST(INSTANCE_SYNC + "/v2/response")
-  Call<ResponseDTO<Boolean>> sendPerpetualTaskResponseV2(
-      @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotEmpty @Query(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
-      @NotNull @Body DelegateResponseData instanceSyncPerpetualTaskResponse);
 }

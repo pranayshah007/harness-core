@@ -81,12 +81,39 @@ public class NGManagerVaultEncryptor implements VaultEncryptor {
   }
 
   @Override
+  public EncryptedRecord updateSecret(
+      String accountId, SecretText secretText, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
+    UpsertSecretTaskParameters parameters = UpsertSecretTaskParameters.builder()
+                                                .name(secretText.getName())
+                                                .plaintext(secretText.getValue())
+                                                .existingRecord(existingRecord)
+                                                .encryptionConfig(encryptionConfig)
+                                                .additionalMetadata(secretText.getAdditionalMetadata())
+                                                .taskType(UPDATE)
+                                                .build();
+    return upsertSecret(accountId, parameters);
+  }
+
+  @Override
   public EncryptedRecord renameSecret(
       String accountId, String name, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
     UpsertSecretTaskParameters parameters = UpsertSecretTaskParameters.builder()
                                                 .name(name)
                                                 .existingRecord(existingRecord)
                                                 .encryptionConfig(encryptionConfig)
+                                                .taskType(RENAME)
+                                                .build();
+    return upsertSecret(accountId, parameters);
+  }
+
+  @Override
+  public EncryptedRecord renameSecret(
+      String accountId, SecretText secretText, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
+    UpsertSecretTaskParameters parameters = UpsertSecretTaskParameters.builder()
+                                                .name(secretText.getName())
+                                                .existingRecord(existingRecord)
+                                                .encryptionConfig(encryptionConfig)
+                                                .additionalMetadata(secretText.getAdditionalMetadata())
                                                 .taskType(RENAME)
                                                 .build();
     return upsertSecret(accountId, parameters);

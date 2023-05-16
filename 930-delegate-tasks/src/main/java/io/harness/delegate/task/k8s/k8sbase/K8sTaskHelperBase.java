@@ -3276,16 +3276,17 @@ public class K8sTaskHelperBase {
 
   public K8sSteadyStateDTO createSteadyStateCheckRequest(K8sDeployRequest k8sDeployRequest,
       List<KubernetesResourceId> managedWorkloadKubernetesResourceIds, LogCallback waitForeSteadyStateLogCallback,
-      K8sDelegateTaskParams k8sDelegateTaskParams, String namespace, boolean denoteOverallSuccess,
+      K8sDelegateTaskParams k8sDelegateTaskParams, KubernetesConfig kubernetesConfig, boolean denoteOverallSuccess,
       boolean isErrorFrameworkEnabled) {
     return K8sSteadyStateDTO.builder()
         .request(k8sDeployRequest)
         .resourceIds(managedWorkloadKubernetesResourceIds)
         .executionLogCallback(waitForeSteadyStateLogCallback)
         .k8sDelegateTaskParams(k8sDelegateTaskParams)
-        .namespace(namespace)
+        .namespace(kubernetesConfig.getNamespace())
         .denoteOverallSuccess(denoteOverallSuccess)
         .isErrorFrameworkEnabled(isErrorFrameworkEnabled)
+        .kubernetesConfig(kubernetesConfig)
         .build();
   }
 

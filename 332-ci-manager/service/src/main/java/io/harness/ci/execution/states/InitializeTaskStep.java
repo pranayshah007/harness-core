@@ -24,6 +24,7 @@ import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -32,6 +33,7 @@ import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
@@ -379,6 +381,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
+
+    if (licensesWithSummaryDTO == null) {
+      throw new CIStageExecutionException("Please enable CI free plan or reach out to support.");
+    }
+
+    boolean classExpansion = ciFeatureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
         && ciStagePlanCreationUtils.isHostedInfra(initializeStepInfo.getInfrastructure())) {
@@ -386,8 +395,13 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
 
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
+      if (classExpansion) {
+        expandedExecutionWrapperInfo =
+            strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      } else {
+        expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      }
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }

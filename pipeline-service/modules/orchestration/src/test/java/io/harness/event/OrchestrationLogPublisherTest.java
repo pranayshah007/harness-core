@@ -9,10 +9,13 @@ package io.harness.event;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.FERNANDOD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +51,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.redisson.client.RedisException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
@@ -178,6 +182,27 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
     Message message = messageArgumentCaptor.getValue();
     assertThat(message.getData()).isEqualTo(orchestrationLogEvent.toByteString());
     assertThat(message.getMetadataMap()).containsOnly(Map.entry("planExecutionId", planExecutionId));
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void shouldTestExceptionInOrchestrationCache() {
+    NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(getNodeExecution()).build();
+    OrchestrationEventLog orchestrationEventLog =
+        getOrchestrationEventLog(OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
+
+    when(repository.save(any())).thenReturn(orchestrationEventLog);
+
+    doThrow(new RedisException()).when(orchestrationLogCache).get(any());
+    publisher.onNodeStatusUpdate(nodeUpdateInfo);
+    ArgumentCaptor<OrchestrationEventLog> argumentCaptor = ArgumentCaptor.forClass(OrchestrationEventLog.class);
+    verify(repository, times(1)).save(argumentCaptor.capture());
+    OrchestrationEventLog eventLog = argumentCaptor.getValue();
+    assertThat(eventLog.getNodeExecutionId()).isEqualTo(nodeExecutionId);
+    assertThat(eventLog.getPlanExecutionId()).isEqualTo(planExecutionId);
+    assertThat(eventLog.getOrchestrationEventType()).isEqualTo(OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
+    verify(producer, times(0)).send(any());
   }
 
   private void shouldTestOnNodeInternally(OrchestrationEventType eventType) {

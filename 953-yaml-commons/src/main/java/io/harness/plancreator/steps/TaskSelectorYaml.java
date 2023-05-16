@@ -7,12 +7,15 @@
 
 package io.harness.plancreator.steps;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.TaskSelector;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,10 +42,26 @@ public class TaskSelectorYaml {
     }
     return taskSelectorYaml.stream().map(TaskSelectorYaml::toTaskSelector).collect(Collectors.toList());
   }
+
+  public static TaskSelector toTaskSelector(String delegateSelector) {
+    return TaskSelector.newBuilder().setSelector(delegateSelector).setOrigin("default").build();
+  }
   public static List<TaskSelector> toTaskSelector(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    if (delegateSelectors == null) {
+    if (ParameterField.isNull(delegateSelectors)) {
       return Collections.emptyList();
     }
-    return TaskSelectorYaml.toTaskSelector(delegateSelectors.getValue());
+
+    if (isNotEmpty(delegateSelectors.getValue()) && delegateSelectors.getValue().get(0) instanceof TaskSelectorYaml) {
+      return TaskSelectorYaml.toTaskSelector(delegateSelectors.getValue());
+    }
+
+    // Handling the case of entire list of delegate selectors being an expression explicitly as it can't be directly
+    // cast to List<TaskSelectorYaml>
+    List<TaskSelectorYaml> delegateSelectorsValue = delegateSelectors.getValue();
+    List<TaskSelector> taskSelectors = new ArrayList<>();
+    for (int i = 0; i < delegateSelectorsValue.size(); i++) {
+      taskSelectors.add(toTaskSelector(String.valueOf(delegateSelectorsValue.get(i))));
+    }
+    return taskSelectors;
   }
 }

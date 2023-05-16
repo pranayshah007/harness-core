@@ -139,7 +139,8 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   public void shouldIncrementRunSequenceValueFromEntityRepository() {
     when(pipelineMetadataRepository.incCounter(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .thenReturn(null);
-    when(persistentLocker.waitToAcquireLock(anyString(), notNull(), notNull())).thenReturn(mock(AcquiredLock.class));
+    when(persistentLocker.waitToAcquireLockOptional(anyString(), notNull(), notNull()))
+        .thenReturn(mock(AcquiredLock.class));
     when(pipelineMetadataRepository.cloneFromPipelineMetadata(
              ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .thenReturn(Optional.empty());
@@ -173,7 +174,7 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   public void shouldUnableToLock() {
     when(pipelineMetadataRepository.incCounter(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPE_IDENTIFIER))
         .thenReturn(null);
-    when(persistentLocker.waitToAcquireLock(anyString(), notNull(), notNull())).thenReturn(null);
+    when(persistentLocker.waitToAcquireLockOptional(anyString(), notNull(), notNull())).thenReturn(null);
     PipelineEntity entity = PipelineEntity.builder()
                                 .accountId(ACCOUNT_ID)
                                 .orgIdentifier(ORG_IDENTIFIER)
@@ -193,7 +194,7 @@ public class PipelineMetadataServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldEnforceLockNameWhenIncrementExecutionCounter() {
     when(pipelineMetadataRepository.incCounter("A", "B", "C", "D")).thenReturn(null);
-    when(persistentLocker.waitToAcquireLock(eq("pipelineMetadata/A/B/C/D"), notNull(), notNull()))
+    when(persistentLocker.waitToAcquireLockOptional(eq("pipelineMetadata/A/B/C/D"), notNull(), notNull()))
         .thenReturn(mock(AcquiredLock.class));
     when(pipelineMetadataRepository.cloneFromPipelineMetadata("A", "B", "C", "D")).thenReturn(Optional.empty());
 

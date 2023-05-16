@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.filters;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -92,5 +93,20 @@ public class PMSPipelineFilterHelper {
     List<String> fields = new LinkedList<>();
     fields.add(PipelineEntityKeys.yaml);
     return fields;
+  }
+
+  public Update getUpdateWithGitMetadata(PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Update update = new Update();
+
+    if (updateGitDetailsParams.getConnectorRef() != null) {
+      update.set(PipelineEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
+    }
+    if (updateGitDetailsParams.getRepoName() != null) {
+      update.set(PipelineEntityKeys.repo, updateGitDetailsParams.getRepoName());
+    }
+    if (updateGitDetailsParams.getFilePath() != null) {
+      update.set(PipelineEntityKeys.filePath, updateGitDetailsParams.getFilePath());
+    }
+    return update;
   }
 }

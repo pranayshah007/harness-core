@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.entity;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
@@ -34,6 +35,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGSkipDetail;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.YamlGenerationDetails;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
@@ -41,6 +43,7 @@ import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
+import io.harness.ngmigration.expressions.step.ApprovalFunctor;
 import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
 import io.harness.ngmigration.service.MigrationTemplateUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
@@ -95,6 +98,7 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.PipelineService;
 import software.wings.service.intfc.WorkflowService;
 import software.wings.sm.StateType;
+import software.wings.sm.states.ApprovalState;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -299,6 +303,11 @@ public class PipelineMigrationService extends NgMigrationService {
       }
       for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
         StageElementWrapperConfig stage = null;
+        // Render expressions from previous stage output
+        String stageIdentifier =
+            MigratorUtility.generateIdentifier(stageElement.getName(), inputDTO.getIdentifierCaseFormat());
+        MigratorExpressionUtils.render(
+            migrationContext, stageElement, MigratorUtility.getExpressions(stageIdentifier, allFunctors));
         if (StateType.ENV_STATE.name().equals(stageElement.getType())) {
           String workflowId = (String) stageElement.getProperties().get("workflowId");
           if (isNotEmpty(workflowId)) {
@@ -306,11 +315,11 @@ public class PipelineMigrationService extends NgMigrationService {
             if (skipDetail != null) {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
-            stage = buildWorkflowStage(
-                migrationContext, stageElement, inputDTO.getIdentifierCaseFormat(), serviceToStageMap, allFunctors);
+            stage = buildWorkflowStage(migrationContext, stageElement, serviceToStageMap, allFunctors);
           }
         } else {
-          stage = buildApprovalStage(migrationContext, stageElement, inputDTO.getIdentifierCaseFormat());
+          stage = buildApprovalStage(migrationContext, stageElement);
+          allFunctors.addAll(getApprovalStageFunctors(migrationContext, stageIdentifier, stageElement));
         }
         // If the stage cannot be migrated then we skip building the pipeline.
         if (stage == null) {
@@ -385,7 +394,8 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig buildApprovalStage(
-      MigrationContext migrationContext, PipelineStageElement stageElement, CaseFormat caseFormat) {
+      MigrationContext migrationContext, PipelineStageElement stageElement) {
+    CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     AbstractStepNode stepNode = approvalStepMapper.getSpec(migrationContext, stageElement);
     ExecutionWrapperConfig stepWrapper =
         ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(stepNode)).build();
@@ -411,9 +421,30 @@ public class PipelineMigrationService extends NgMigrationService {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(approvalStageNode)).build();
   }
 
+  private List<StepExpressionFunctor> getApprovalStageFunctors(
+      MigrationContext migrationContext, String stageIdentifier, PipelineStageElement stageElement) {
+    CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
+    Map<String, Object> properties = emptyIfNull(stageElement.getProperties());
+    ApprovalState state = new ApprovalState(stageElement.getName());
+    state.parseProperties(properties);
+    String sweepingOutputName = state.getSweepingOutputName();
+    if (StringUtils.isEmpty(sweepingOutputName)) {
+      return Collections.emptyList();
+    }
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), sweepingOutputName)
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(stageIdentifier)
+                   .stepIdentifier(MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat))
+                   .expression(exp)
+                   .build())
+        .map(ApprovalFunctor::new)
+        .collect(Collectors.toList());
+  }
+
   private NGSkipDetail getSkipDetailForWorkflowStage(
       Pipeline pipeline, PipelineStageElement stageElement, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    // TODO: Handle Skip condition
     String workflowId = stageElement.getProperties().get("workflowId").toString();
     // Throw error if the stage is using canary or multi WFs.
     NGYamlFile wfTemplate = migratedEntities.get(CgEntityId.builder().id(workflowId).type(WORKFLOW).build());
@@ -512,12 +543,12 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig buildWorkflowStage(MigrationContext migrationContext,
-      PipelineStageElement stageElement, CaseFormat caseFormat, Map<String, String> serviceToStageMap,
+      PipelineStageElement stageElement, Map<String, String> serviceToStageMap,
       List<StepExpressionFunctor> allExpFunctors) {
+    CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     String stageIdentifier = MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat);
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
-    // TODO: Handle Skip condition
     String workflowId = stageElement.getProperties().get("workflowId").toString();
     // Throw error if the stage is using canary or multi WFs.
     CgEntityId workflowEntityId = CgEntityId.builder().id(workflowId).type(WORKFLOW).build();

@@ -24,5 +24,5 @@ public class AzureVmDetails {
   int memoryInMB;
   double cost;
   String name;
-  double cpuUtilisation;
+  Double cpuUtilisation;
 }

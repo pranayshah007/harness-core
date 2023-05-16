@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.resources.acr.dtos.AcrRegistriesDTO;
@@ -297,8 +298,10 @@ public class AcrArtifactResource {
   @ApiOperation(
       value = "Gets ACR repository last successful build", nickname = "getLastSuccessfulBuildForACRRepository")
   public ResponseDTO<AcrBuildDetailsDTO>
-  getLastSuccessfulBuild(@QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
-      @QueryParam("repository") String repository, @QueryParam("connectorRef") String azureConnectorIdentifier,
+  getLastSuccessfulBuild(@QueryParam(NGCommonEntityConstants.SUBSCRIPTION_ID) String subscriptionId,
+      @QueryParam(NGArtifactConstants.REGISTRY) String registry,
+      @QueryParam(NGArtifactConstants.REPOSITORY) String repository,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, AcrRequestDTO acrRequestDTO) {
@@ -355,8 +358,10 @@ public class AcrArtifactResource {
   @ApiOperation(value = "Gets ACR last successful build with yaml input for expression resolution",
       nickname = "getLastSuccessfulBuildForAcrArtifactWithYaml")
   public ResponseDTO<AcrBuildDetailsDTO>
-  getLastSuccessfulBuildV2(@QueryParam("subscriptionId") String subscriptionId, @QueryParam("registry") String registry,
-      @QueryParam("repository") String repository, @QueryParam("connectorRef") String azureConnectorIdentifier,
+  getLastSuccessfulBuildV2(@QueryParam(NGCommonEntityConstants.SUBSCRIPTION_ID) String subscriptionId,
+      @QueryParam(NGArtifactConstants.REGISTRY) String registry,
+      @QueryParam(NGArtifactConstants.REPOSITORY) String repository,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String azureConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

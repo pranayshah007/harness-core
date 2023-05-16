@@ -1096,7 +1096,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.CHAOS_STEP)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(Arrays.asList("Chaos")).addFolderPaths("Chaos").build())
-            .setFeatureFlag(FeatureName.CHAOS_ENABLED.name())
             .build();
 
     StepInfo elastigroupDeployStep =

@@ -277,6 +277,14 @@ public class StrategyUtils {
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
   }
 
+  public void replaceExpressions(
+      Object jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
+    EngineExpressionEvaluator evaluator =
+        new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue,
+            Map.of(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, "CI_DISABLE_RESOURCE_OPTIMIZATION"));
+    evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+  }
+
   public String replaceExpressions(
       String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator =

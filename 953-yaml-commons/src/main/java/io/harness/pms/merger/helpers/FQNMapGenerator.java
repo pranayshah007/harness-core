@@ -28,9 +28,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
+@Slf4j
 public class FQNMapGenerator {
   public Map<FQN, Object> generateFQNMap(JsonNode yamlMap) {
     return generateFQNMap(yamlMap, false);
@@ -129,16 +131,23 @@ public class FQNMapGenerator {
         Set<String> fieldNames = new LinkedHashSet<>();
         element.fieldNames().forEachRemaining(fieldNames::add);
         String topKey = fieldNames.iterator().next();
-        JsonNode innerMap = element.get(topKey);
-        String identifier = innerMap.get(YAMLFieldNameConstants.IDENTIFIER).asText();
-        FQN currFQN = FQN.duplicateAndAddNode(baseFQN,
-            FQNNode.builder()
-                .nodeType(FQNNode.NodeType.KEY_WITH_UUID)
-                .key(topKey)
-                .uuidKey(YAMLFieldNameConstants.IDENTIFIER)
-                .uuidValue(identifier)
-                .build());
-        generateFQNMap(innerMap, currFQN, res, expressions, keepUuidFields);
+        if (keepUuidFields && topKey.equals(UUID_FIELD_NAME) && fieldNames.size() > 1) {
+          topKey = fieldNames.stream().filter(o -> !o.equals(UUID_FIELD_NAME)).findAny().get();
+        }
+        if (!topKey.equals(UUID_FIELD_NAME)) {
+          JsonNode innerMap = element.get(topKey);
+          String identifier = innerMap.get(YAMLFieldNameConstants.IDENTIFIER).asText();
+          FQN currFQN = FQN.duplicateAndAddNode(baseFQN,
+              FQNNode.builder()
+                  .nodeType(FQNNode.NodeType.KEY_WITH_UUID)
+                  .key(topKey)
+                  .uuidKey(YAMLFieldNameConstants.IDENTIFIER)
+                  .uuidValue(identifier)
+                  .build());
+          generateFQNMap(innerMap, currFQN, res, expressions, keepUuidFields);
+        } else {
+          log.warn("element {} only contains the field {}", element, UUID_FIELD_NAME);
+        }
       }
     });
   }

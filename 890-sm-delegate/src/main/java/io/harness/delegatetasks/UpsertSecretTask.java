@@ -75,8 +75,12 @@ public class UpsertSecretTask extends AbstractDelegateRunnableTask {
               .build(),
           encryptionConfig);
     } else if (parameters.getTaskType() == UpsertSecretTaskType.RENAME) {
-      encryptedRecord = vaultEncryptor.renameSecret(
-          encryptionConfig.getAccountId(), parameters.getName(), existingRecord, encryptionConfig);
+      encryptedRecord = vaultEncryptor.renameSecret(encryptionConfig.getAccountId(),
+          SecretText.builder()
+              .name(parameters.getName())
+              .additionalMetadata(parameters.getAdditionalMetadata())
+              .build(),
+          existingRecord, encryptionConfig);
     } else {
       throw new SecretManagementDelegateException(SECRET_MANAGEMENT_ERROR, "Unknown upsert secret task type", USER);
     }

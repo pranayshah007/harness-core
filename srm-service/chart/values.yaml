@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 global:
   loadbalancerURL: ""
+  stackDriverLoggingEnabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -48,6 +49,8 @@ global:
     tls:
       enabled: true
       secretName: ''
+    objects:
+      annotations: {}
   istio:
     enabled: false
     gateway:
@@ -167,3 +170,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+additionalConfigs: {}

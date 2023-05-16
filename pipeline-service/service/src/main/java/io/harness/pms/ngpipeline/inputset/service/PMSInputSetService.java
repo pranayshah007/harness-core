@@ -17,6 +17,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportRequestDTO;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import java.util.List;
 import java.util.Optional;
@@ -79,4 +80,7 @@ public interface PMSInputSetService {
 
   PMSInputSetListRepoResponse getListOfRepos(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+
+  String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams);
 }

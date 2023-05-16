@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
+import static io.harness.perpetualtask.PerpetualTaskType.CONTAINER_INSTANCE_SYNC;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
@@ -63,7 +64,6 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -82,7 +82,6 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
   @Inject private MorphiaPersistenceRequiredProvider<PerpetualTaskRecord> persistenceProvider;
   @Inject private AccountService accountService;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
   private static final Duration ACCEPTABLE_NO_ALERT_DELAY = ofSeconds(45);
@@ -167,9 +166,15 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
 
         if (response instanceof ErrorNotifyResponseData) {
           log.info("Perpetual validation task {} failed, unable to assign delegate.", validationTask.getUuid());
-          perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
-              PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE,
-              ((ErrorNotifyResponseData) response).getErrorMessage());
+          if (CONTAINER_INSTANCE_SYNC.equals(taskRecord.getPerpetualTaskType())) {
+            perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
+                PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_INVALID,
+                ((ErrorNotifyResponseData) response).getErrorMessage());
+          } else {
+            perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
+                PerpetualTaskUnassignedReason.PT_TASK_FAILED, PerpetualTaskState.TASK_NON_ASSIGNABLE,
+                ((ErrorNotifyResponseData) response).getErrorMessage());
+          }
           return;
         }
 
@@ -194,7 +199,7 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
             log.info("Perpetual validation task {} unable to assign delegate due to missing DelegateMetaInfo.",
                 validationTask.getUuid());
             perpetualTaskService.markStateAndNonAssignedReason_OnAssignTryCount(taskRecord,
-                PerpetualTaskUnassignedReason.NO_DELEGATE_AVAILABLE, PerpetualTaskState.TASK_NON_ASSIGNABLE,
+                PerpetualTaskUnassignedReason.NO_DELEGATE_AVAILABLE, PerpetualTaskState.TASK_INVALID,
                 "Unable to assign to any delegates");
           }
         } else if ((response instanceof RemoteMethodReturnValueData)
@@ -273,12 +278,11 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
     List<ExecutionCapability> executionCapabilityList = new ArrayList<>();
     List<Capability> capabilityList = perpetualTaskExecutionBundle.getCapabilitiesList();
     if (isNotEmpty(capabilityList)) {
-      executionCapabilityList =
-          capabilityList.stream()
-              .map(capability
-                  -> (ExecutionCapability) getKryoSerializer(taskRecord.isReferenceFalseKryoSerializer())
-                         .asInflatedObject(capability.getKryoCapability().toByteArray()))
-              .collect(toList());
+      executionCapabilityList = capabilityList.stream()
+                                    .map(capability
+                                        -> (ExecutionCapability) kryoSerializer.asInflatedObject(
+                                            capability.getKryoCapability().toByteArray()))
+                                    .collect(toList());
     }
 
     return DelegateTask.builder()
@@ -303,8 +307,4 @@ public class PerpetualTaskRecordHandler extends IteratorPumpAndRedisModeHandler 
 
   @Override
   public void onRebalanceRequired() {}
-
-  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
-    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
-  }
 }

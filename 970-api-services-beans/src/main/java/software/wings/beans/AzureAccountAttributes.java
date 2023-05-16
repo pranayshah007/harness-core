@@ -17,6 +17,8 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CE)
 public class AzureAccountAttributes {
+  private String connectorName;
+  private String connectorId;
   private String tenantId;
   private String subscriptionId;
 }

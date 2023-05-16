@@ -18,7 +18,7 @@ import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.entities.Stack;
+import io.harness.beans.entities.Workspace;
 import io.harness.beans.stages.IACMStageConfigImplV1;
 import io.harness.beans.stages.IACMStageNodeV1;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
@@ -124,20 +124,20 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     }
   }
 
-  private CodeBase getIACMCodebase(PlanCreationContext ctx, String stackId) {
+  private CodeBase getIACMCodebase(PlanCreationContext ctx, String workspaceId) {
     try {
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
-      Stack stack = serviceUtils.getIACMStackInfo(
-          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
+      Workspace workspace = serviceUtils.getIACMWorkspaceInfo(
+          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspaceId);
       // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
       // defined
-      if (!Objects.equals(stack.getRepository(), "") && stack.getRepository() != null) {
-        iacmCodeBase.repoName(ParameterField.<String>builder().value(stack.getRepository()).build());
+      if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
+        iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
       } else {
         iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
       }
 
-      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(stack.getRepository_connector()).build());
+      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(workspace.getRepository_connector()).build());
       iacmCodeBase.depth(ParameterField.<Integer>builder().value(50).build());
       iacmCodeBase.prCloneStrategy(ParameterField.<PRCloneStrategy>builder().value(null).build());
       iacmCodeBase.sslVerify(ParameterField.<Boolean>builder().value(null).build());
@@ -147,20 +147,20 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
       // We support 2,
 
       BuildBuilder buildObject = builder();
-      if (!Objects.equals(stack.getRepository_branch(), "") && stack.getRepository_branch() != null) {
+      if (!Objects.equals(workspace.getRepository_branch(), "") && workspace.getRepository_branch() != null) {
         buildObject.type(BuildType.BRANCH);
         buildObject.spec(BranchBuildSpec.builder()
-                             .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
+                             .branch(ParameterField.<String>builder().value(workspace.getRepository_branch()).build())
                              .build());
-      } else if (!Objects.equals(stack.getRepository_commit(), "") && stack.getRepository_commit() != null) {
+      } else if (!Objects.equals(workspace.getRepository_commit(), "") && workspace.getRepository_commit() != null) {
         buildObject.type(BuildType.TAG);
         buildObject.spec(TagBuildSpec.builder()
-                             .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
+                             .tag(ParameterField.<String>builder().value(workspace.getRepository_commit()).build())
                              .build());
       } else {
         throw new IACMStageExecutionException(
-            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the stack "
-            + stackId);
+            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
+            + workspaceId);
       }
 
       return iacmCodeBase.build(ParameterField.<Build>builder().value(buildObject.build()).build()).build();
@@ -168,8 +168,8 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve iacmCodeBase from pipeline");
-      throw new IACMStageExecutionException(
-          "Unexpected error building the connector information from the stack: " + stackId + " ." + ex.getMessage());
+      throw new IACMStageExecutionException("Unexpected error building the connector information from the workspace: "
+          + workspaceId + " ." + ex.getMessage());
     }
   }
 
@@ -216,9 +216,9 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     IACMStageConfigImplV1 stageConfig = stageNode.getStageConfig();
     Infrastructure infrastructure = getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
-    String stackId = specField.getNode().getField("stack").getNode().getCurrJsonNode().asText();
+    String workspaceId = specField.getNode().getField("workspace").getNode().getCurrJsonNode().asText();
 
-    CodeBase codeBase = getIACMCodebase(ctx, stackId);
+    CodeBase codeBase = getIACMCodebase(ctx, workspaceId);
     Optional<Object> optionalOptions =
         getDeserializedObjectFromDependency(ctx.getMetadata().getGlobalDependency(), YAMLFieldNameConstants.OPTIONS);
     Options options = (Options) optionalOptions.orElse(Options.builder().build());
@@ -305,21 +305,19 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     YamlField field = ctx.getCurrentField();
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
-    String stackId = specField.getNode().getField("stack").getNode().getCurrJsonNode().asText();
-    String workflow = specField.getNode().getField("workflow").getNode().getCurrJsonNode().asText();
+    String workspaceId = specField.getNode().getField("workspace").getNode().getCurrJsonNode().asText();
     YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
 
     IACMStageConfigImplV1 stageConfigImpl = stageNode.getStageConfig();
     Infrastructure infrastructure = getInfrastructure(stageConfigImpl.getRuntime(), stageConfigImpl.getPlatform());
-    createPlanForCodebase(ctx, planCreationResponseMap, metadataMap, stepsField.getUuid(), stackId);
+    createPlanForCodebase(ctx, planCreationResponseMap, metadataMap, stepsField.getUuid(), workspaceId);
     dependenciesNodeMap.put(stepsField.getUuid(), stepsField);
     StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
         strategyMetadataMap, getAdvisorObtainments(ctx.getDependency()));
 
     metadataMap.put("stageNode", ByteString.copyFrom(kryoSerializer.asBytes(stageNode)));
     metadataMap.put("infrastructure", ByteString.copyFrom(kryoSerializer.asBytes(infrastructure)));
-    metadataMap.put("stackId", ByteString.copyFrom(kryoSerializer.asBytes(stackId)));
-    metadataMap.put("workflow", ByteString.copyFrom(kryoSerializer.asBytes(workflow)));
+    metadataMap.put("workspaceId", ByteString.copyFrom(kryoSerializer.asBytes(workspaceId)));
 
     planCreationResponseMap.put(stepsField.getUuid(),
         PlanCreationResponse.builder()
@@ -337,8 +335,8 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
 
   private void createPlanForCodebase(PlanCreationContext ctx,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap,
-      String childNodeID, String stackId) {
-    CodeBase codeBase = getIACMCodebase(ctx, stackId);
+      String childNodeID, String workspaceId) {
+    CodeBase codeBase = getIACMCodebase(ctx, workspaceId);
     List<PlanNode> codebasePlanNodes =
         CodebasePlanCreator.buildCodebasePlanNodes(generateUuid(), childNodeID, kryoSerializer, codeBase, null);
     if (isNotEmpty(codebasePlanNodes)) {

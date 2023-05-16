@@ -51,8 +51,7 @@ public class SchemaFetcher {
     log.info("[PMS] Fetching schema for {}", moduleType.name());
     long startTs = System.currentTimeMillis();
     try {
-      SchemaCacheKey schemaCacheKey =
-          SchemaCacheKey.builder().accountIdentifier(accountId).moduleType(moduleType).build();
+      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().moduleType(moduleType).build();
 
       if (schemaCache.containsKey(schemaCacheKey)) {
         log.info("[PMS_SCHEMA] Fetching schema for {} from cache for account {}", moduleType.name(), accountId);
@@ -76,8 +75,7 @@ public class SchemaFetcher {
 
   public YamlSchemaDetailsWrapper fetchSchemaDetail(String accountId, ModuleType moduleType) {
     try {
-      SchemaCacheKey schemaCacheKey =
-          SchemaCacheKey.builder().accountIdentifier(accountId).moduleType(moduleType).build();
+      SchemaCacheKey schemaCacheKey = SchemaCacheKey.builder().moduleType(moduleType).build();
       if (schemaDetailsCache.containsKey(schemaCacheKey)) {
         log.info(
             "[PMS_SCHEMA] Fetching schema information for {} from cache for account {}", moduleType.name(), accountId);

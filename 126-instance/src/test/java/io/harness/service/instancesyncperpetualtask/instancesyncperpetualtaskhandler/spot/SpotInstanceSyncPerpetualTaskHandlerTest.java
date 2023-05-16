@@ -28,7 +28,6 @@ import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.SpotDeploymentInfoDTO;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.rule.Owner;
@@ -53,7 +52,6 @@ public class SpotInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase 
   @Mock KryoSerializer kryoSerializer;
   @Mock SshEntityHelper sshEntityHelper;
   @Mock EncryptionHelper encryptionHelper;
-  @Mock DelegateServiceGrpcClient delegateServiceGrpcClient;
 
   @InjectMocks SpotInstanceSyncPerpetualTaskHandler spotInstanceSyncPerpetualTaskHandler;
 
@@ -90,7 +88,6 @@ public class SpotInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase 
     byte[] bytes = {70};
     when(kryoSerializer.asBytes(any())).thenReturn(bytes);
     when(kryoSerializer.asDeflatedBytes(any())).thenReturn(bytes);
-    when(delegateServiceGrpcClient.isTaskTypeSupported(any(), any())).thenReturn(false);
 
     PerpetualTaskExecutionBundle executionBundle = spotInstanceSyncPerpetualTaskHandler.getExecutionBundle(
         infrastructureMappingDTO, Arrays.asList(getDeploymentInfoDto()), outcome);

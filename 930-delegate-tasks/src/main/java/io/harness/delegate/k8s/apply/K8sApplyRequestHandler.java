@@ -149,6 +149,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
                                                 .namespace(k8sApplyRequest.getK8sInfraDelegateConfig().getNamespace())
                                                 .denoteOverallSuccess(false)
                                                 .isErrorFrameworkEnabled(true)
+                                                .kubernetesConfig(k8sApplyHandlerConfig.getKubernetesConfig())
                                                 .build();
 
       K8sClient k8sClient = k8sTaskHelperBase.getKubernetesClient(k8sApplyRequest.isUseK8sApiForSteadyStateCheck());

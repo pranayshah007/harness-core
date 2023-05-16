@@ -8,10 +8,12 @@
 package io.harness.ccm.graphql.core.recommendation;
 
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
+import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.RecommendationsIgnoreListDAO;
+import io.harness.ccm.commons.entities.recommendations.RecommendationAzureVmId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationEC2InstanceId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationECSServiceId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationNodepoolId;
@@ -36,6 +38,7 @@ public class RecommendationsIgnoreListService {
   @Inject private K8sRecommendationDAO k8sRecommendationDAO;
   @Inject private ECSRecommendationDAO ecsRecommendationDAO;
   @Inject private EC2RecommendationDAO ec2RecommendationDAO;
+  @Inject private AzureRecommendationDAO azureRecommendationDAO;
 
   public RecommendationsIgnoreList getIgnoreList(String accountId) {
     Optional<RecommendationsIgnoreList> ignoreListFromDB = ignoreListDAO.get(accountId);
@@ -46,6 +49,7 @@ public class RecommendationsIgnoreListService {
           .nodepoolIgnoreList(new HashSet<>())
           .ecsServiceIgnoreList(new HashSet<>())
           .ec2InstanceIgnoreList(new HashSet<>())
+          .azureVmIgnoreList(new HashSet<>())
           .build();
     }
     RecommendationsIgnoreList ignoreList = ignoreListFromDB.get();
@@ -53,6 +57,7 @@ public class RecommendationsIgnoreListService {
     ignoreList.setNodepoolIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getNodepoolIgnoreList()));
     ignoreList.setEcsServiceIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getEcsServiceIgnoreList()));
     ignoreList.setEc2InstanceIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getEc2InstanceIgnoreList()));
+    ignoreList.setAzureVmIgnoreList(CollectionUtils.emptyIfNull(ignoreList.getAzureVmIgnoreList()));
     return ignoreList;
   }
 
@@ -67,6 +72,8 @@ public class RecommendationsIgnoreListService {
         ignoreECSServices(accountId, ignoreList.getEcsServiceIgnoreList(), ignoreResourcesDTO.getEcsServices());
     Set<RecommendationEC2InstanceId> ec2InstanceIgnoreList =
         ignoreEC2Instances(accountId, ignoreList.getEc2InstanceIgnoreList(), ignoreResourcesDTO.getEc2Instances());
+    Set<RecommendationAzureVmId> azureVmIgnoreList =
+        ignoreAzureVmInstances(accountId, ignoreList.getAzureVmIgnoreList(), ignoreResourcesDTO.getAzureVmIds());
 
     ignoreListDAO.save(RecommendationsIgnoreList.builder()
                            .accountId(accountId)
@@ -74,6 +81,7 @@ public class RecommendationsIgnoreListService {
                            .nodepoolIgnoreList(nodepoolIgnoreList)
                            .ecsServiceIgnoreList(ecsServiceIgnoreList)
                            .ec2InstanceIgnoreList(ec2InstanceIgnoreList)
+                           .azureVmIgnoreList(azureVmIgnoreList)
                            .build());
     return getIgnoreList(accountId);
   }
@@ -89,6 +97,8 @@ public class RecommendationsIgnoreListService {
         unIgnoreECSServices(accountId, ignoreList.getEcsServiceIgnoreList(), ignoreResourcesDTO.getEcsServices());
     Set<RecommendationEC2InstanceId> ec2InstanceIgnoreList =
         unIgnoreEC2Instances(accountId, ignoreList.getEc2InstanceIgnoreList(), ignoreResourcesDTO.getEc2Instances());
+    Set<RecommendationAzureVmId> azureVmIgnoreList =
+        unIgnoreAzureVmInstances(accountId, ignoreList.getAzureVmIgnoreList(), ignoreResourcesDTO.getAzureVmIds());
 
     ignoreListDAO.save(RecommendationsIgnoreList.builder()
                            .accountId(accountId)
@@ -96,6 +106,7 @@ public class RecommendationsIgnoreListService {
                            .nodepoolIgnoreList(nodepoolIgnoreList)
                            .ecsServiceIgnoreList(ecsServiceIgnoreList)
                            .ec2InstanceIgnoreList(ec2InstanceIgnoreList)
+                           .azureVmIgnoreList(azureVmIgnoreList)
                            .build());
     return getIgnoreList(accountId);
   }
@@ -231,6 +242,21 @@ public class RecommendationsIgnoreListService {
     return ec2InstanceIgnoreList;
   }
 
+  private Set<RecommendationAzureVmId> ignoreAzureVmInstances(
+      String accountId, Set<RecommendationAzureVmId> azureVmIgnoreList, Set<RecommendationAzureVmId> addAzureVms) {
+    if (addAzureVms != null) {
+      List<RecommendationAzureVmId> toIgnore = new ArrayList<>();
+      for (RecommendationAzureVmId azureInstance : addAzureVms) {
+        if (!azureVmIgnoreList.contains(azureInstance)) {
+          toIgnore.add(azureInstance);
+        }
+      }
+      azureVmIgnoreList.addAll(toIgnore);
+      azureRecommendationDAO.ignoreAzureVmRecommendations(accountId, toIgnore);
+    }
+    return azureVmIgnoreList;
+  }
+
   private Set<RecommendationWorkloadId> unIgnoreWorkloads(String accountId,
       Set<RecommendationWorkloadId> workloadIgnoreList, Set<RecommendationWorkloadId> removeWorkloads) {
     if (removeWorkloads != null) {
@@ -289,5 +315,20 @@ public class RecommendationsIgnoreListService {
       ec2RecommendationDAO.unignoreEC2Recommendations(accountId, toUnIgnore);
     }
     return ec2InstanceIgnoreList;
+  }
+
+  private Set<RecommendationAzureVmId> unIgnoreAzureVmInstances(
+      String accountId, Set<RecommendationAzureVmId> azureVmIgnoreList, Set<RecommendationAzureVmId> removeAzureVms) {
+    if (removeAzureVms != null) {
+      List<RecommendationAzureVmId> toUnIgnore = new ArrayList<>();
+      for (RecommendationAzureVmId azureInstance : removeAzureVms) {
+        if (azureVmIgnoreList.contains(azureInstance)) {
+          azureVmIgnoreList.remove(azureInstance);
+          toUnIgnore.add(azureInstance);
+        }
+      }
+      azureRecommendationDAO.unIgnoreAzureVmRecommendations(accountId, toUnIgnore);
+    }
+    return azureVmIgnoreList;
   }
 }

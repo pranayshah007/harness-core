@@ -114,7 +114,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                          .stream()
                          .filter(Objects::nonNull)
                          .filter(ssoSetting -> ssoSetting.getType() == SSOType.SAML)
-                         .noneMatch(setting -> ((SamlSettings) setting).isAuthenticationEnabled());
+                         .anyMatch(setting -> ((SamlSettings) setting).isAuthenticationEnabled());
       }
     }
     if (!updateAuth) {
@@ -178,6 +178,9 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
     for (SSOSettings ssoSetting : ssoSettings) {
       if (ssoSetting.getType().equals(SSOType.SAML)) {
         SamlSettings samlSettings = (SamlSettings) ssoSetting;
+        final String friendlySAMLName = isNotEmpty(samlSettings.getFriendlySamlName())
+            ? samlSettings.getFriendlySamlName()
+            : samlSettings.getDisplayName();
         SAMLSettings samlSettingsBuilt = SAMLSettings.builder()
                                              .identifier(samlSettings.getUuid())
                                              .groupMembershipAttr(samlSettings.getGroupMembershipAttr())
@@ -186,7 +189,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
                                              .displayName(samlSettings.getDisplayName())
                                              .authorizationEnabled(samlSettings.isAuthorizationEnabled())
                                              .entityIdentifier(samlSettings.getEntityIdentifier())
-                                             .friendlySamlName(samlSettings.getFriendlySamlName())
+                                             .friendlySamlName(friendlySAMLName)
                                              .authenticationEnabled(samlSettings.isAuthenticationEnabled())
                                              .build();
 

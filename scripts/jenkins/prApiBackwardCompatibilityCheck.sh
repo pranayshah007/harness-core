@@ -28,7 +28,7 @@ PIPELINE_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //pipeline-service/service:module_deploy.jar || PIPELINE_SERVICE_T=$?
 echo "BUILD TEMPLATE_SERVICE"
 TEMPLATE_SERVICE_T=0
-bazel build ${BAZEL_ARGS} -- //840-template-service:module_deploy.jar || TEMPLATE_SERVICE_T=$?
+bazel build ${BAZEL_ARGS} -- //template-service:module_deploy.jar || TEMPLATE_SERVICE_T=$?
 echo "BUILD PLATFORM_SERVICE"
 PLATFORM_SERVICE_T=0
 bazel build ${BAZEL_ARGS} -- //platform-service/service:module_deploy.jar || PLATFORM_SERVICE_T=$?
@@ -46,7 +46,7 @@ touch target/290_target.json
 touch target/310_target.json
 touch target/340_target.json
 touch target/pipeline_target.json
-touch target/840_target.json
+touch target/template_target.json
 touch target/platform_target.json
 touch target/access_target.json
 touch target/315_target.json
@@ -87,7 +87,7 @@ fi
 if [ $TEMPLATE_SERVICE_T -eq 0 ]
 then
     echo "====Generating Template-Service Target-Branch Api Spec===="
-    java -jar bazel-bin/840-template-service/module_deploy.jar generate-openapi-spec target/840_target.json || TEMPLATE_SERVICE_T=$?
+    java -jar bazel-bin/template-service/module_deploy.jar generate-openapi-spec target/template_target.json || TEMPLATE_SERVICE_T=$?
 fi
 
 if [ $PLATFORM_SERVICE_T -eq 0 ]
@@ -166,7 +166,7 @@ if [ $TEMPLATE_SERVICE_T -eq 0 ]
 then
     echo "BUILD TEMPLATE_SERVICE"
     TEMPLATE_SERVICE_S=0
-    bazel build ${BAZEL_ARGS} -- //840-template-service:module_deploy.jar || TEMPLATE_SERVICE_S=$?
+    bazel build ${BAZEL_ARGS} -- //template-service:module_deploy.jar || TEMPLATE_SERVICE_S=$?
 else
     TEMPLATE_SERVICE_S=1
 fi
@@ -205,7 +205,7 @@ touch target/290_source.json
 touch target/310_source.json
 touch target/340_source.json
 touch target/pipeline_source.json
-touch target/840_source.json
+touch target/template_source.json
 touch target/platform_source.json
 touch target/access_source.json
 touch target/315_source.json
@@ -246,7 +246,7 @@ fi
 if [ $TEMPLATE_SERVICE_S -eq 0 ]
 then
     echo "====Generating Template-Service Source-Branch Api Spec===="
-    java -jar bazel-bin/840-template-service/module_deploy.jar generate-openapi-spec target/840_source.json || TEMPLATE_SERVICE_S=$?
+    java -jar bazel-bin/template-service/module_deploy.jar generate-openapi-spec target/template_source.json || TEMPLATE_SERVICE_S=$?
 fi
 
 if [ $PLATFORM_SERVICE_S -eq 0 ]
@@ -379,24 +379,24 @@ else
 fi
 
 rc=0
-echo 840-TEMPLATE-SERVICE
+echo TEMPLATE-SERVICE
 if [[ $TEMPLATE_SERVICE_S -eq 0 ]] && [[ $TEMPLATE_SERVICE_T -eq 0 ]]
 then
-    java -jar $3 target/840_target.json target/840_source.json --fail-on-incompatible || rc=$?
+    java -jar $3 target/template_target.json target/template_source.json --fail-on-incompatible || rc=$?
     if [ $rc -ne 0 ]
     then
         if [ $rc -eq 1 ]
         then
             exit_code=1
-            issues+="840-TEMPLATE-SERVICE "
+            issues+="TEMPLATE-SERVICE "
         else
-            other+="840-TEMPLATE-SERVICE "
+            other+="TEMPLATE-SERVICE "
         fi
     else
-        success+="840-TEMPLATE-SERVICE "    
+        success+="TEMPLATE-SERVICE "
     fi
 else
-    comp+="840-TEMPLATE-SERVICE "
+    comp+="TEMPLATE-SERVICE "
 fi
 
 rc=0

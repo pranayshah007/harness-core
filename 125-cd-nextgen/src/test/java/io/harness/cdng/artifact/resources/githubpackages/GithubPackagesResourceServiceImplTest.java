@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.resources.githubpackages;
 
 import static io.harness.delegate.task.artifacts.ArtifactSourceType.GITHUB_PACKAGES;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,6 +81,24 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
   private static String ORG_IDENTIFIER = "orgIdentifier";
 
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
+
+  private static final String IDENTIFIER = "identifier";
+
+  private static final String PACKAGE_NAME = "packageName";
+
+  private static final String PACKAGE_TYPE = "packageType";
+
+  private static final String INPUT = "<+input>-abc";
+
+  private static final IdentifierRef IDENTIFIER_REF = IdentifierRef.builder()
+                                                          .accountIdentifier(ACCOUNT_ID)
+                                                          .identifier(IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .build();
+
+  private static final String PACKAGE_NAME_MESSAGE = "value for packageName is empty or not provided";
+  private static final String PACKAGE_TYPE_MESSAGE = "value for packageType is empty or not provided";
 
   @Mock ConnectorService connectorService;
 
@@ -1203,5 +1222,50 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
                            -> githubPackagesResourceService.getVersionsOfPackage(identifierRef, packageName,
                                packageType, versionRegex, org, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(ArtifactServerException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_PackageName_Null() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, null, PACKAGE_TYPE,
+                               null, null, ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_PackageName_Input() {
+    assertThatThrownBy(
+        ()
+            -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, INPUT, PACKAGE_TYPE, null, null,
+                ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_PackageType_Null() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, PACKAGE_NAME, null,
+                               null, null, ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_PackageType_Input() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, PACKAGE_NAME,
+                               INPUT, null, null, ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
   }
 }

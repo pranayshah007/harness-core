@@ -28,7 +28,7 @@ public class SamplePerpetualTaskServiceClient implements PerpetualTaskServiceCli
   static final String COUNTRY_NAME = "countryName";
 
   @Override
-  public SamplePerpetualTaskParams getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public SamplePerpetualTaskParams getTaskParams(PerpetualTaskClientContext clientContext) {
     Map<String, String> clientParams = clientContext.getClientParams();
     final String countryName = clientParams.get(COUNTRY_NAME);
     int population = samplePTaskService.getPopulation(countryName);

@@ -26,13 +26,13 @@ import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class DelegateSelectorsInMemoryCache implements DelegateSelectorsCache {
-  private static final long EXPIRY_IN_DAYS = 1;
+  private static final long EXPIRY_IN_HOURS = 1;
   private static final long MAX_CACHE_SIZE = 1000;
   @Inject private GitIntegrationService gitIntegrationService;
   LoadingCache<String, Map<String, Set<String>>> cache =
       CacheBuilder.newBuilder()
           .maximumSize(MAX_CACHE_SIZE)
-          .expireAfterWrite(EXPIRY_IN_DAYS, TimeUnit.DAYS)
+          .expireAfterWrite(EXPIRY_IN_HOURS, TimeUnit.HOURS)
           .build(new CacheLoader<>() {
             @Override
             public Map<String, Set<String>> load(@NotNull String accountIdentifier) {

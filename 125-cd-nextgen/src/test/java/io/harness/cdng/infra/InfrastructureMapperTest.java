@@ -77,6 +77,8 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
@@ -133,8 +135,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("11f6673d11711af46238bf33972cb99a4a869244")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(k8SDirectInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(k8SDirectInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     InfrastructureOutcomeAbstract infrastructureOutcomeAbstract = (InfrastructureOutcomeAbstract) infrastructureOutcome;
     assertThat(infrastructureOutcomeAbstract.getName()).isEqualTo("infraName");
     assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
@@ -161,8 +164,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("11f6673d11711af46238bf33972cb99a4a869244")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(k8SDirectInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(k8SDirectInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
     assertThat(infrastructureOutcome.getConnector()).isNull();
   }
@@ -188,8 +192,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(k8SGcpInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(k8SGcpInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(k8sGcpInfrastructureOutcome);
   }
 
@@ -215,8 +220,9 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(serverlessAwsLambdaInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(serverlessAwsLambdaInfrastructure, getEmptyProvisionerExpressionEvaluator(),
+            environment, serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
@@ -244,8 +250,9 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(infrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
@@ -265,8 +272,9 @@ public class InfrastructureMapperTest extends CategoryTest {
                             .build())
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(infrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
 
     PdcInfrastructureOutcome outcome =
         PdcInfrastructureOutcome.builder()
@@ -295,19 +303,19 @@ public class InfrastructureMapperTest extends CategoryTest {
             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2", "host3")))
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(infrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .credentialsRef("ssh-key-ref")
+            .hosts(Arrays.asList("host1", "host2", "host3"))
+            .environment(environment)
+            .hostFilter(
+                HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(HostFilterType.ALL).build())
+            .build();
 
-    assertThat(infrastructureOutcome)
-        .isEqualToIgnoringGivenFields(
-            PdcInfrastructureOutcome.builder()
-                .credentialsRef("ssh-key-ref")
-                .hosts(Arrays.asList("host1", "host2", "host3"))
-                .environment(environment)
-                .hostFilter(
-                    HostFilterDTO.builder().spec(AllHostsFilterDTO.builder().build()).type(HostFilterType.ALL).build())
-                .build(),
-            "infrastructureKey");
+    assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(pdcInfrastructureOutcome, "infrastructureKey");
   }
 
   @Test
@@ -324,19 +332,22 @@ public class InfrastructureMapperTest extends CategoryTest {
             .hostConnectionType(ParameterField.createValueField("Hostname"))
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(infrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", Map.of("entityKey", "entityValue"));
 
     SshWinRmAzureInfrastructureOutcome outcome = SshWinRmAzureInfrastructureOutcome.builder()
                                                      .connectorRef("connector-ref")
                                                      .credentialsRef("credentials-ref")
                                                      .resourceGroup("res-group")
                                                      .subscriptionId("sub-id")
-                                                     .tags(Collections.singletonMap("tag", "val"))
+                                                     .hostTags(Collections.singletonMap("tag", "val"))
                                                      .hostConnectionType("Hostname")
                                                      .environment(environment)
                                                      .build();
     outcome.setConnector(Connector.builder().name("my_connector").build());
+    // outcomes contains merged tags from aws and entity
+    outcome.setTags(Map.of("tag", "val", "entityKey", "entityValue"));
     assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
   }
 
@@ -369,7 +380,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .build();
 
     assertThat(infrastructureMapper.toOutcome(k8SAzureInfrastructure, getEmptyProvisionerExpressionEvaluator(),
-                   environment, serviceOutcome, "accountId", "projId", "orgId"))
+                   environment, serviceOutcome, "accountId", "projId", "orgId", new HashMap<>()))
         .isEqualTo(k8sAzureInfrastructureOutcome);
 
     k8SAzureInfrastructure = K8sAzureInfrastructure.builder()
@@ -395,7 +406,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                         .build();
 
     assertThat(infrastructureMapper.toOutcome(k8SAzureInfrastructure, getEmptyProvisionerExpressionEvaluator(),
-                   environment, serviceOutcome, "accountId", "projId", "orgId"))
+                   environment, serviceOutcome, "accountId", "projId", "orgId", new HashMap<>()))
         .isEqualTo(k8sAzureInfrastructureOutcome);
   }
 
@@ -410,8 +421,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(azureWebAppInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(azureWebAppInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     AzureWebAppInfrastructureOutcome outcome = AzureWebAppInfrastructureOutcome.builder()
                                                    .connectorRef("connectorId")
                                                    .subscription("subscriptionId")
@@ -448,8 +460,9 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(tanzuApplicationServiceInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "orgId", "projectId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(tanzuApplicationServiceInfrastructure, getEmptyProvisionerExpressionEvaluator(),
+            environment, serviceOutcome, "accountId", "orgId", "projectId", new HashMap<>());
 
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
@@ -474,8 +487,9 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(ecsInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(ecsInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
@@ -497,8 +511,9 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(asgInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(asgInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
@@ -523,8 +538,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(k8sAwsInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(k8sAwsInfrastructure, getEmptyProvisionerExpressionEvaluator(), environment,
+            serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(k8sAwsInfrastructureOutcome);
   }
 
@@ -548,8 +564,9 @@ public class InfrastructureMapperTest extends CategoryTest {
             .infrastructureKey("9de2869e6ff4a3ec81fa7805b9a6fed5267906fe")
             .build();
 
-    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(googleFunctionsInfrastructure,
-        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(googleFunctionsInfrastructure, getEmptyProvisionerExpressionEvaluator(),
+            environment, serviceOutcome, "accountId", "projId", "orgId", new HashMap<>());
     assertThat(infrastructureOutcome).isEqualTo(googleFunctionsInfrastructureOutcome);
   }
 
@@ -561,6 +578,36 @@ public class InfrastructureMapperTest extends CategoryTest {
     infrastructureMapper.setInfraIdentifierAndName(k8SDirectInfrastructureOutcome, "Identifier", "Name");
     assertThat(k8SDirectInfrastructureOutcome.getInfraIdentifier()).isEqualTo("Identifier");
     assertThat(k8SDirectInfrastructureOutcome.getInfraName()).isEqualTo("Name");
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testK8sGcpInfraMapperWithTags() {
+    Map<String, String> tags = Map.of("type", "k8sGCP", "geo", "india", "prod", "");
+
+    K8sGcpInfrastructure k8SGcpInfrastructure = K8sGcpInfrastructure.builder()
+                                                    .connectorRef(ParameterField.createValueField("connectorId"))
+                                                    .namespace(ParameterField.createValueField("namespace"))
+                                                    .releaseName(ParameterField.createValueField("release"))
+                                                    .cluster(ParameterField.createValueField("cluster"))
+                                                    .build();
+
+    K8sGcpInfrastructureOutcome k8sGcpInfrastructureOutcome =
+        K8sGcpInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .namespace("namespace")
+            .releaseName("release")
+            .cluster("cluster")
+            .environment(environment)
+            .infrastructureKey("54874007d7082ff0ab54cd51865954f5e78c5c88")
+            .build();
+
+    k8sGcpInfrastructureOutcome.setTags(tags);
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(k8SGcpInfrastructure,
+        getEmptyProvisionerExpressionEvaluator(), environment, serviceOutcome, "accountId", "projId", "orgId", tags);
+    assertThat(infrastructureOutcome).isEqualTo(k8sGcpInfrastructureOutcome);
   }
 
   private ProvisionerExpressionEvaluator getEmptyProvisionerExpressionEvaluator() {

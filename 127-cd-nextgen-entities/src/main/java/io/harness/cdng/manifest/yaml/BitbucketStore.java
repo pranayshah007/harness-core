@@ -34,6 +34,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -151,5 +152,10 @@ public class BitbucketStore implements GitStoreConfig, Visitable, WithConnectorR
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    return StoreConfigHelper.validateGitStoreType(connectorRef, folderPath, paths, branch, commitId, gitFetchType);
   }
 }

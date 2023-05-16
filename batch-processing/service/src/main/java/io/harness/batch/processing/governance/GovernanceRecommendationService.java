@@ -57,6 +57,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +134,11 @@ public class GovernanceRecommendationService {
       }
       // enqueue call
       enqueueRecommendationForAccount(recommendatioAdhocDTOListFinal, ruleList, regions, accountId);
+      try {
+        TimeUnit.SECONDS.sleep(configuration.getGovernanceConfig().getSleepTime());
+      } catch (InterruptedException e) {
+        log.error("error which generating recommendation for {}", accountId);
+      }
     } else {
       log.info("No connector found for {}", accountId);
     }

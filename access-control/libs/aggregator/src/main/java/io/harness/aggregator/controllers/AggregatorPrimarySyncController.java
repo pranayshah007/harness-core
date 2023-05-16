@@ -18,8 +18,8 @@ import io.harness.accesscontrol.roles.persistence.repositories.RoleRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.AggregatorConfiguration;
+import io.harness.aggregator.consumers.ACLGeneratorService;
 import io.harness.aggregator.consumers.AccessControlDebeziumChangeConsumer;
-import io.harness.aggregator.consumers.ChangeConsumerService;
 import io.harness.aggregator.consumers.ChangeEventFailureHandler;
 import io.harness.aggregator.consumers.RoleAssignmentCRUDEventHandler;
 import io.harness.aggregator.consumers.UserGroupCRUDEventHandler;
@@ -48,13 +48,13 @@ public class AggregatorPrimarySyncController extends AggregatorBaseSyncControlle
       RoleAssignmentRepository roleAssignmentRepository, RoleRepository roleRepository,
       ResourceGroupRepository resourceGroupRepository, UserGroupRepository userGroupRepository,
       AggregatorConfiguration aggregatorConfiguration, PersistentLocker persistentLocker,
-      ChangeEventFailureHandler changeEventFailureHandler, ChangeConsumerService changeConsumerService,
+      ChangeEventFailureHandler changeEventFailureHandler, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler,
       UserGroupCRUDEventHandler userGroupCRUDEventHandler, ScopeService scopeService,
       AccessControlAdminService accessControlAdminService) {
     super(primaryAclRepository, roleAssignmentRepository, roleRepository, resourceGroupRepository, userGroupRepository,
         aggregatorConfiguration, persistentLocker, changeEventFailureHandler, AggregatorJobType.PRIMARY,
-        changeConsumerService, roleAssignmentCRUDEventHandler, userGroupCRUDEventHandler, scopeService,
+        aclGeneratorService, roleAssignmentCRUDEventHandler, userGroupCRUDEventHandler, scopeService,
         accessControlAdminService);
   }
 

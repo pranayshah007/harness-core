@@ -74,7 +74,8 @@ public class GraphDataServiceImpl implements GraphDataService {
         serviceLevelObjective, startTime, endTime, totalErrorBudgetMinutes, filter, MAX_NUMBER_OF_POINTS);
   }
 
-  private SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective,
+  @Override
+  public SLODashboardWidget.SLOGraphData getGraphData(AbstractServiceLevelObjective serviceLevelObjective,
       Instant startTime, Instant endTime, int totalErrorBudgetMinutes, TimeRangeParams filter,
       long numOfDataPointsInBetween) {
     if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {

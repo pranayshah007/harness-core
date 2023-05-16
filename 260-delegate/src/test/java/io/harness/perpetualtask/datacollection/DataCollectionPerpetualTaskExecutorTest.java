@@ -50,7 +50,6 @@ import io.harness.verificationclient.CVNextGenServiceClient;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -91,12 +90,12 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams perpetualTaskParams;
 
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  @Inject KryoSerializer kryoSerializer;
 
   @Before
   public void setup() throws IllegalAccessException, IOException {
     dataCollector = Mockito.spy(new DataCollectionPerpetualTaskExecutor());
-    on(dataCollector).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(dataCollector).set("kryoSerializer", kryoSerializer);
     cvngRequestExecutor = new CVNGRequestExecutor();
     FieldUtils.writeField(dataCollector, "cvngRequestExecutor", cvngRequestExecutor, true);
     FieldUtils.writeField(cvngRequestExecutor, "executorService", Executors.newFixedThreadPool(1), true);
@@ -162,13 +161,12 @@ public class DataCollectionPerpetualTaskExecutorTest extends DelegateTestBase {
                                                     .connectorConfigDTO(appDynamicsConnectorDTO)
                                                     .encryptedDataDetails(encryptedDataDetailList)
                                                     .build();
-    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(cvDataCollectionInfo));
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo));
     perpetualTaskParams = PerpetualTaskExecutionParams.newBuilder()
                               .setCustomizedParams(Any.pack(DataCollectionPerpetualTaskParams.newBuilder()
                                                                 .setAccountId(accountId)
                                                                 .setDataCollectionInfo(bytes)
                                                                 .build()))
-                              .setReferenceFalseKryoSerializer(true)
                               .build();
   }
 

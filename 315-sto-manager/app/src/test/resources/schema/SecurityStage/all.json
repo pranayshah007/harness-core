@@ -16,7 +16,7 @@
         },
         {
           "type": "string",
-          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "pattern": "(<\\+.+>.*)",
           "minLength": 1
         }
       ]
@@ -470,14 +470,39 @@
     },
     "Attestation": {
       "type": "object",
-      "required": [
-        "privateKey"
-      ],
       "properties": {
         "privateKey": {
           "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AttestationSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "AwsEcrStepInfo": {
@@ -1606,7 +1631,30 @@
             "config": {
               "type": "string",
               "enum": [
-                "default"
+                "default",
+                "never-stop-crawl-due-to-application-errors",
+                "never-stop-audit-due-to-application-errors",
+                "minimize-false-positives",
+                "minimize-false-negatives",
+                "crawl-strategy-most-complete",
+                "crawl-strategy-more-complete",
+                "crawl-strategy-fastest",
+                "crawl-strategy-faster",
+                "crawl-limit-60-minutes",
+                "crawl-limit-30-minutes",
+                "crawl-limit-10-minutes",
+                "crawl-and-audit-lightweight",
+                "crawl-and-audit-fast",
+                "crawl-and-audit-deep",
+                "crawl-and-audit-balanced",
+                "audit-coverage-thorough",
+                "audit-coverage-maximum",
+                "audit-checks-passive",
+                "audit-checks-medium-active",
+                "audit-checks-light-active",
+                "audit-checks-critical-issues-only",
+                "audit-checks-all-except-time-based-detection-methods",
+                "audit-checks-all-except-java-script-analysis"
               ]
             },
             "imagePullPolicy": {
@@ -1693,6 +1741,9 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            },
+            "tool": {
+              "$ref": "#/definitions/STOYamlBurpToolData"
             }
           }
         }
@@ -2487,6 +2538,41 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CosignAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "password": {
+              "type": "string"
+            },
+            "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/VerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "publicKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CustomExecutionSource": {
       "allOf": [
         {
@@ -3122,6 +3208,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -3269,6 +3381,15 @@
         "size": {
           "type": "string",
           "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|<\\+input>$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnforcementPolicy": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/PolicyStore"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4135,6 +4256,25 @@
           ]
         }
       ]
+    },
+    "HarnessStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "files": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HostPathVolume": {
       "allOf": [
@@ -7065,6 +7205,39 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PolicyStore": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "harness"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessStore"
+              }
+            }
+          }
+        }
+      ]
+    },
     "PrismaCloudStepInfo": {
       "allOf": [
         {
@@ -8335,6 +8508,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "STOYamlBurpToolData": {
+      "type": "object",
+      "properties": {
+        "scan_id": {
+          "type": "string"
+        },
+        "site_id": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "STOYamlCheckmarxToolData": {
       "type": "object",
       "properties": {
@@ -8458,13 +8643,10 @@
     "STOYamlInstance": {
       "type": "object",
       "properties": {
-        "access_id": {
-          "type": "string"
-        },
-        "access_token": {
-          "type": "string"
-        },
         "domain": {
+          "type": "string"
+        },
+        "password": {
           "type": "string"
         },
         "path": {
@@ -8484,6 +8666,9 @@
           ]
         },
         "protocol": {
+          "type": "string"
+        },
+        "username": {
           "type": "string"
         }
       },
@@ -9273,7 +9458,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -10073,6 +10258,33 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SscaEnforcementStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "policy",
+            "source",
+            "verifyAttestation"
+          ],
+          "properties": {
+            "policy": {
+              "$ref": "#/definitions/EnforcementPolicy"
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "verifyAttestation": {
+              "$ref": "#/definitions/VerifyAttestation"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SscaOrchestrationStepInfo": {
@@ -11132,6 +11344,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SscaEnforcement"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SscaEnforcementStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "SscaOrchestration"
               }
             }
@@ -11323,7 +11551,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -11451,6 +11679,10 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StoreSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StrategyConfig": {
@@ -12347,6 +12579,40 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "VerifyAttestation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignVerifyAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "VerifyAttestationSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "VmBuildJobInfo": {

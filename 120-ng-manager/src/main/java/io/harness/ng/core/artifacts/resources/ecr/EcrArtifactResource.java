@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
@@ -128,8 +129,9 @@ public class EcrArtifactResource {
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets ecr last successful build", nickname = "getLastSuccessfulBuildForEcr")
-  public ResponseDTO<EcrBuildDetailsDTO> getLastSuccessfulBuild(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrBuildDetailsDTO> getLastSuccessfulBuild(
+      @NotNull @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @NotNull @QueryParam(NGArtifactConstants.CONNECTOR_REF) String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, EcrRequestDTO requestDTO) {
@@ -145,8 +147,8 @@ public class EcrArtifactResource {
   @ApiOperation(
       value = "Gets ecr last successful build with yaml expression", nickname = "getLastSuccessfulBuildForEcrWithYaml")
   public ResponseDTO<EcrBuildDetailsDTO>
-  getLastSuccessfulBuildV2(@QueryParam("imagePath") String imagePath,
-      @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -238,11 +240,11 @@ public class EcrArtifactResource {
   public ResponseDTO<EcrListImagesDTO> getImages(@QueryParam("region") String region,
       @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("fqnPath") String fqnPath,
       String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
