@@ -18,7 +18,7 @@ import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -91,8 +91,8 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
 
     stepParameters.setStepsExecutionConfig(StepsExecutionConfig.builder().steps(expandedExecutionElement).build());
     stepParameters.setStrategyExpansionMap(strategyExpansionMap);
-    Map<StepInfo, PluginCreationResponse> pluginsData =
-        containerStepV2PluginProvider.getPluginsData(stepParameters, ambiance);
+    Map<StepInfo, PluginCreationResponseList> pluginsData =
+        containerStepV2PluginProvider.getPluginsDataV2(stepParameters, ambiance);
     stepParameters.setPluginsData(pluginsData);
 
     CIInitializeTaskParams buildSetupTaskParams = containerStepInitHelper.getK8InitializeTaskParams(

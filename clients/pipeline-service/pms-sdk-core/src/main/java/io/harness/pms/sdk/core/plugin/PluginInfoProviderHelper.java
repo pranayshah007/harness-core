@@ -13,6 +13,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
+import io.harness.pms.contracts.plan.PluginCreationResponseV2;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -26,7 +28,7 @@ public class PluginInfoProviderHelper {
   @Inject private DefaultPluginInfoProvider defaultPluginInfoProvider;
   @Inject(optional = true) private Set<PluginInfoProvider> pluginInfoProviderSet;
 
-  public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseList getPluginInfo(PluginCreationRequest request) {
     Optional<PluginInfoProvider> pluginInfoProvider = emptyIfNull(pluginInfoProviderSet)
                                                           .stream()
                                                           .map(provider -> {
@@ -39,8 +41,16 @@ public class PluginInfoProviderHelper {
                                                           .filter(Objects::nonNull)
                                                           .findFirst();
     if (pluginInfoProvider.isPresent()) {
-      return pluginInfoProvider.get().getPluginInfo(request);
+      if (pluginInfoProvider.get().willReturnMultipleContainers()) {
+        return pluginInfoProvider.get().getPluginInfoList(request);
+      }
+      return convertToList(pluginInfoProvider.get().getPluginInfo(request));
     }
-    return defaultPluginInfoProvider.getPluginInfo(request);
+
+    return convertToList(defaultPluginInfoProvider.getPluginInfo(request));
+  }
+
+  private PluginCreationResponseList convertToList(PluginCreationResponseV2 response) {
+    return PluginCreationResponseList.newBuilder().addResponse(response).build();
   }
 }

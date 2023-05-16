@@ -16,6 +16,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.matrix.StrategyExpansionData;
@@ -32,7 +33,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public abstract class InitMemoryCalculatorService {
   public Pair<Integer, Integer> getRequest(List<ExecutionWrapperConfig> steps, String accountId,
-      Map<String, StrategyExpansionData> strategyExpansionDataMap, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      Map<String, StrategyExpansionData> strategyExpansionDataMap,
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Integer cpuRequest = 0;
     Integer memoryRequest = 0;
 
@@ -49,12 +51,12 @@ public abstract class InitMemoryCalculatorService {
 
   private Integer getStepGroupRequestWithStrategy(List<ExecutionWrapperConfig> steps,
       Map<String, StrategyExpansionData> strategy, String accountId, String resource,
-      Map<StepInfo, PluginCreationResponse> pluginsData) {
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     return getRequestForSerialSteps(steps, strategy, accountId, resource, pluginsData);
   }
 
-  private Integer getExecutionWrapperMemoryRequest(
-      ExecutionWrapperConfig executionWrapper, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+  private Integer getExecutionWrapperMemoryRequest(ExecutionWrapperConfig executionWrapper, String accountId,
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     if (executionWrapper == null) {
       return 0;
     }
@@ -78,7 +80,7 @@ public abstract class InitMemoryCalculatorService {
 
   private Integer getRequestForSerialSteps(List<ExecutionWrapperConfig> steps,
       Map<String, StrategyExpansionData> strategy, String accountId, String resource,
-      Map<StepInfo, PluginCreationResponse> pluginsData) {
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Integer executionWrapperRequest = 0;
 
     Map<String, List<ExecutionWrapperConfig>> uuidStepsMap = getUUIDStepsMap(steps);
@@ -101,7 +103,7 @@ public abstract class InitMemoryCalculatorService {
 
   private Integer getResourceRequestForStepsWithUUID(List<ExecutionWrapperConfig> steps, String uuid,
       Map<String, StrategyExpansionData> strategy, String accountId, String resource,
-      Map<StepInfo, PluginCreationResponse> pluginsData) {
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     List<ExecutionWrapperConfig> sortedSteps = decreasingSortWithResource(steps, accountId, resource, pluginsData);
     Integer maxConcurrency = strategy.get(uuid).getMaxConcurrency();
 
@@ -114,7 +116,7 @@ public abstract class InitMemoryCalculatorService {
 
   private Integer getExecutionWrapperRequestWithStrategy(ExecutionWrapperConfig executionWrapper,
       Map<String, StrategyExpansionData> strategy, String accountId, String resource,
-      Map<StepInfo, PluginCreationResponse> pluginsData) {
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Integer executionWrapperRequest = 0;
 
     if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
@@ -145,7 +147,7 @@ public abstract class InitMemoryCalculatorService {
   }
 
   private List<ExecutionWrapperConfig> decreasingSortWithResource(List<ExecutionWrapperConfig> steps, String accountId,
-      String resource, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      String resource, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     if (resource.equals(MEMORY)) {
       steps = decreasingSortWithMemory(steps, accountId, pluginsData);
     } else if (resource.equals(CPU)) {
@@ -157,7 +159,7 @@ public abstract class InitMemoryCalculatorService {
   }
 
   private List<ExecutionWrapperConfig> decreasingSortWithMemory(
-      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Comparator<ExecutionWrapperConfig> decreasingSortWithMemory = (a, b) -> {
       if (getExecutionWrapperMemoryRequest(a, accountId, pluginsData)
           < getExecutionWrapperMemoryRequest(b, accountId, pluginsData)) {
@@ -172,7 +174,7 @@ public abstract class InitMemoryCalculatorService {
   }
 
   private List<ExecutionWrapperConfig> decreasingSortWithCpu(
-      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Comparator<ExecutionWrapperConfig> decreasingSortWithCpu = (a, b) -> {
       if (getExecutionWrapperCpuRequest(a, accountId, pluginsData)
           < getExecutionWrapperCpuRequest(b, accountId, pluginsData)) {
@@ -200,7 +202,7 @@ public abstract class InitMemoryCalculatorService {
   }
 
   private Integer getStepGroupMemoryRequest(
-      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Integer stepGroupMemoryRequest = 0;
     for (ExecutionWrapperConfig step : steps) {
       Integer executionWrapperMemoryRequest = getExecutionWrapperMemoryRequest(step, accountId, pluginsData);
@@ -210,7 +212,7 @@ public abstract class InitMemoryCalculatorService {
   }
 
   private Integer getCpuRequest(
-      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      List<ExecutionWrapperConfig> steps, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Integer cpuRequest = 0;
     for (ExecutionWrapperConfig step : steps) {
       Integer executionWrapperCpuRequest = getExecutionWrapperCpuRequest(step, accountId, pluginsData);
@@ -219,8 +221,8 @@ public abstract class InitMemoryCalculatorService {
     return cpuRequest;
   }
 
-  private Integer getExecutionWrapperCpuRequest(
-      ExecutionWrapperConfig executionWrapper, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+  private Integer getExecutionWrapperCpuRequest(ExecutionWrapperConfig executionWrapper, String accountId,
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     if (executionWrapper == null) {
       return 0;
     }
@@ -242,10 +244,10 @@ public abstract class InitMemoryCalculatorService {
   }
 
   public abstract Integer getStepCpuLimit(
-      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData);
+      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData);
 
   public abstract Integer getStepMemoryLimit(
-      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData);
+      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData);
 
   private ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {
     try {

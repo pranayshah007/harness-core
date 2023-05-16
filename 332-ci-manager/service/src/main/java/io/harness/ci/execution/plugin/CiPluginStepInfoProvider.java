@@ -23,9 +23,11 @@ import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseV2;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.plan.SecretVariable;
+import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
@@ -46,7 +48,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
 
   @Override
-  public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseV2 getPluginInfo(PluginCreationRequest request) {
     String stepJsonNode = request.getStepJsonNode();
     PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
@@ -105,7 +107,14 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
             ConnectorDetails.newBuilder().setConnectorRef(stepConnectorRef).build());
       }
     }
-    return PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
+    PluginCreationResponse response =
+        PluginCreationResponse.newBuilder().setPluginDetails(pluginDetailsBuilder.build()).build();
+    StepInfoProto stepInfoProto = StepInfoProto.newBuilder()
+                                      .setIdentifier(ciAbstractStepNode.getIdentifier())
+                                      .setName(ciAbstractStepNode.getName())
+                                      .setUuid(ciAbstractStepNode.getUuid())
+                                      .build();
+    return PluginCreationResponseV2.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
   }
 
   private PluginContainerResources getPluginContainerResources(ContainerDefinitionInfo containerDefinitionInfo) {

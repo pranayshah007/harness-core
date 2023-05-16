@@ -7,11 +7,22 @@
 
 package io.harness.pms.sdk.core.plugin;
 
+import io.harness.pms.contracts.plan.PluginCreationBatchRequest;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
+import io.harness.pms.contracts.plan.PluginCreationResponseV2;
 
 public interface PluginInfoProvider {
-  PluginCreationResponse getPluginInfo(PluginCreationRequest request);
+  PluginCreationResponseV2 getPluginInfo(PluginCreationRequest request);
+
+  default PluginCreationResponseList getPluginInfoList(PluginCreationRequest request) {
+    return null;
+  }
 
   boolean isSupported(String stepType);
+
+  default boolean willReturnMultipleContainers() {
+    return false;
+  }
 }
