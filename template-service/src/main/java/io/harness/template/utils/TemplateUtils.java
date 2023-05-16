@@ -172,6 +172,14 @@ public class TemplateUtils {
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
   }
 
+  public static IdentifierRef getGitBranchAwareIdentifierRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String gitBranch) {
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
+        identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
+    identifierRef.setBranch(gitBranch);
+    return identifierRef;
+  }
+
   public boolean isExecutionFlow() {
     USER_FLOW user_flow = ThreadOperationContextHelper.getThreadOperationContextUserFlow();
     if (user_flow != null) {

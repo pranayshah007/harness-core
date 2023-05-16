@@ -22,5 +22,6 @@ public class GetTemplateEntityRequest {
   Scope scope;
   String templateIdentifier;
   String version;
+  String branch;
   boolean loadFromCache;
 }
