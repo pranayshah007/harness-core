@@ -414,10 +414,10 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     RetryPolicy retryPolicy =
             RetryPolicy.builder()
-                    .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
+                    .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
                             encodeColor(cfRequestConfig.getApplicationName())))
                     .finalErrorMessage(String.format(
-                            "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
+                            "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
                             encodeColor(cfRequestConfig.getApplicationName())))
                     .retry(3)
                     .build();

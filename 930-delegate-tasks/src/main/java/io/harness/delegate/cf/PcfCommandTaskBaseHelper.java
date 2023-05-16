@@ -553,7 +553,7 @@ public class PcfCommandTaskBaseHelper {
           activeVersions.add(applicationSummary);
           logPrinted = true;
           executionLogCallback.saveExecutionLog(
-                  String.format("Found current Active App: [%s], as none of them have HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+                  String.format("Found current Active App: [%s], as it has the same name as new active application name",
                           PcfUtils.encodeColor(activeApplication.getName())));
         }
       }
