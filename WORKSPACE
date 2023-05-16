@@ -5330,7 +5330,7 @@ plain_artifacts = [
     "org.xmlunit:xmlunit-matchers:2.3.0",
     "org.yaml:snakeyaml:2.0",
     "org.zeroturnaround:zt-exec:1.9",
-    "ru.vyarus:guice-validator:1.2.0",
+    "ru.vyarus:guice-validator:3.0.2",
     "com.amazonaws:aws-encryption-sdk-java:2.3.3",
     "software.amazon.ion:ion-java:1.0.2",
     "stax:stax-api:1.0.1",
