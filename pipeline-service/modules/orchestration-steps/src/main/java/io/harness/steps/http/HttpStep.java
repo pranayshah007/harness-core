@@ -138,9 +138,6 @@ public class HttpStep extends PipelineTaskExecutable<HttpStepResponse> {
       httpTaskParametersNgBuilder.body((String) httpStepParameters.getRequestBody().fetchFinalValue());
     }
     String accountId = AmbianceUtils.getAccountId(ambiance);
-    boolean shouldAvoidCapabilityUsingHeaders =
-        pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY);
-    httpTaskParametersNgBuilder.shouldAvoidHeadersInCapability(shouldAvoidCapabilityUsingHeaders);
 
     httpTaskParametersNgBuilder.isCertValidationRequired(
         pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.ENABLE_CERT_VALIDATION));

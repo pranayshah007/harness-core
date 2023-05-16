@@ -38,7 +38,6 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   int socketTimeoutMillis;
   boolean useProxy;
   boolean isCertValidationRequired;
-  boolean shouldAvoidHeadersInCapability;
 
   // New type for supporting NG secret resolution
   @Expression(ALLOW_SECRETS) HttpCertificateNG certificateNG;
@@ -46,11 +45,6 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    if (shouldAvoidHeadersInCapability) {
-      return Collections.singletonList(
-          HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-              url, QUERY, maskingEvaluator));
-    }
     List<KeyValuePair> headers = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(requestHeader)) {
       for (HttpHeaderConfig headerConfig : requestHeader) {

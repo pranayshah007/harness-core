@@ -37,30 +37,12 @@ public class HttpTaskParametersNgTest {
   @Test
   @Owner(developers = OwnerRule.HINGER)
   @Category(UnitTests.class)
-  public void testBuildCapabilityWithHeadersWithFFEnabled() {
+  public void testBuildCapabilityWithHeaders() {
     HttpTaskParametersNg httpTaskParametersNg =
         HttpTaskParametersNg.builder()
             .method("GET")
             .url("http://www.abc.xyz")
             .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .shouldAvoidHeadersInCapability(true)
-            .build();
-
-    List<ExecutionCapability> executionCapabilities = httpTaskParametersNg.fetchRequiredExecutionCapabilities(null);
-    HttpConnectionExecutionCapability httpCapability = (HttpConnectionExecutionCapability) executionCapabilities.get(0);
-    assertThat(httpCapability.getHeaders()).isNull();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.HINGER)
-  @Category(UnitTests.class)
-  public void testBuildCapabilityWithHeadersWithFFDisabled() {
-    HttpTaskParametersNg httpTaskParametersNg =
-        HttpTaskParametersNg.builder()
-            .method("GET")
-            .url("http://www.abc.xyz")
-            .requestHeader(Collections.singletonList(HttpHeaderConfig.builder().key("x-api-key").value("test").build()))
-            .shouldAvoidHeadersInCapability(false)
             .build();
 
     List<ExecutionCapability> executionCapabilities = httpTaskParametersNg.fetchRequiredExecutionCapabilities(null);

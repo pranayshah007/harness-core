@@ -608,8 +608,6 @@ public enum FeatureName {
   CDS_GOOGLE_CLOUD_FUNCTION("This flag is to enable the Google Functions Deployment Swimlane for users. "
           + "This flag only works with Service and Environments v2",
       HarnessTeam.CDP),
-  CDS_NOT_USE_HEADERS_FOR_HTTP_CAPABILITY(
-      "FF for disabling headers while doing capability check for HTTP", HarnessTeam.CDC),
   DEL_SELECTION_LOGS_READ_FROM_GOOGLE_DATA_STORE(
       "Enables the fetching of delegate selection records from google data store instead of mongo", HarnessTeam.DEL),
   READ_ENCRYPTED_DELEGATE_TOKEN("Read encrypted delegate token value", HarnessTeam.DEL),
