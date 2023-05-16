@@ -58,6 +58,7 @@ import org.springframework.data.util.CloseableIterator;
 public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2MigrationService {
   @Inject MongoTemplate mongoTemplate;
   private static final String DEBUG_LINE = "[ServiceOverrideV2MigrationServiceImpl]: ";
+
   @Override
   @NonNull
   public ServiceOverrideMigrationResponseDTO migrateToV2(
@@ -656,11 +657,11 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     }
 
     if (isNotEmpty(responseDTO.getOrgLevelMigrationInfo())) {
-      isSuccessful &= checkSuccessInOrgs(responseDTO);
+      isSuccessful = isSuccessful && checkSuccessInOrgs(responseDTO);
     }
 
     if (responseDTO.getAccountLevelMigrationInfo() != null) {
-      isSuccessful &= checkSuccessInAccount(responseDTO);
+      isSuccessful = isSuccessful && checkSuccessInAccount(responseDTO);
     }
 
     return isSuccessful;

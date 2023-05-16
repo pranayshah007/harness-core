@@ -271,6 +271,7 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/migrate")
+  @Hidden
   @ApiOperation(value = "Migrate ServiceOverride to V2", nickname = "migrateServiceOverride")
   @Operation(operationId = "migrateServiceOverride", summary = "Migrate ServiceOverride to V2",
       responses =
@@ -292,22 +293,23 @@ public class ServiceOverridesResource {
 
   @POST
   @Path("/migrateScope")
+  @Hidden
   @ApiOperation(value = "Migrate ServiceOverride to V2 at one scope", nickname = "migrateServiceOverrideScoped")
   @Operation(operationId = "migrateServiceOverrideScoped", summary = "Migrate ServiceOverride to V2 at one cope",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.
-                                  ApiResponse(responseCode = "default", description = "Returns Override Migration Details")
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns Override Migration Details")
+      })
   public ResponseDTO<ServiceOverrideMigrationResponseDTO>
-  migrateServiceOverrideAtAtScope(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-                         @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
-                                 NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-                         @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-                                 NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+  migrateServiceOverrideAtAtScope(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
+                                  @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
-            serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true);
+        serviceOverrideV2MigrationService.migrateToV2(accountId, orgIdentifier, projectIdentifier, true);
     return ResponseDTO.newResponse(serviceOverrideMigrationResponseDTO);
   }
 }
