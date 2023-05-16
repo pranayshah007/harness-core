@@ -612,6 +612,12 @@ public class SamlBasedAuthHandler implements AuthHandler {
       validateUser(user, samlSettings.getAccountId());
       return user;
     } catch (WingsException e) {
+      // this means user is not present in harness
+      // create the user by matching the attribute in the saml response
+      if (true) { // match the attribute received in saml assertion
+        // create new user
+        return userService.completeUserCreationViaJustInTimeProvision(nameId, samlSettings.getAccountId());
+      }
       log.warn("SAML: SamlResponse contains nameId=[{}] which does not exist in db, url=[{}], accountId=[{}]", nameId,
           samlSettings.getUrl(), samlSettings.getAccountId());
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST, e);

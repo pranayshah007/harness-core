@@ -87,6 +87,10 @@ public class SamlClientService {
     return getSamlClient(samlSettings);
   }
 
+  public SamlSettings getSamlSettingByAccountId(String accountId) {
+    return ssoSettingService.getSamlSettingsByAccountId(accountId);
+  }
+
   public SamlClient getSamlClient(SamlSettings samlSettings) throws SamlException {
     if (samlSettings == null) {
       throw new WingsException(ErrorCode.SAML_IDP_CONFIGURATION_NOT_AVAILABLE);

@@ -27,11 +27,16 @@ import retrofit2.http.Query;
 @OwnedBy(PL)
 public interface NgInviteClient {
   String INVITE_POST_SIGNUP_API = "invites/complete/";
+  String INVITE_JIT = "invites/completeJIT/";
   String INVITE_ACCEPT = "invites/accept/";
   String INVITE_GET_API = "invites/invite";
   String ADD_USERS_API = "user/users";
 
   @GET(INVITE_POST_SIGNUP_API) Call<ResponseDTO<Boolean>> completeInvite(@Query("token") String token);
+
+  @POST(INVITE_JIT)
+  Call<ResponseDTO<Boolean>> completeUserCreationForJIT(
+      @Query("email") String email, @Query("accountId") String accountId);
 
   @GET(INVITE_ACCEPT) Call<ResponseDTO<InviteAcceptResponse>> accept(@Query("token") String token);
 

@@ -2124,6 +2124,22 @@ public class UserServiceImpl implements UserService {
     NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
   }
 
+  @Override
+  public User completeUserCreationViaJustInTimeProvision(String email, String accountId) {
+    Account account = accountService.get(accountId);
+    User user = anUser().build();
+    user.setEmail(email.trim().toLowerCase());
+    user.setName(email.trim().toLowerCase());
+    user.setRoles(new ArrayList<>());
+    user.setEmailVerified(true);
+    user.setAppId(GLOBAL_APP_ID);
+    user.setAccounts(new ArrayList<>(Collections.singletonList(account)));
+    user = createUser(user, accountId);
+
+    NGRestUtils.getResponse(ngInviteClient.completeUserCreationForJIT(email, accountId));
+    return user;
+  }
+
   private UserSource getUserSource(boolean isScimInvite, boolean isLDAPInvite) {
     UserSource userSource = MANUAL;
     if (isScimInvite) {

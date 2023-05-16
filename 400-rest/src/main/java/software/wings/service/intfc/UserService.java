@@ -657,6 +657,8 @@ public interface UserService extends OwnedByAccount {
 
   User createUser(User user, String accountId);
 
+  User completeUserCreationViaJustInTimeProvision(String email, String accountId);
+
   String saveUserInvite(UserInvite userInvite);
 
   List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset, Integer pageSize,

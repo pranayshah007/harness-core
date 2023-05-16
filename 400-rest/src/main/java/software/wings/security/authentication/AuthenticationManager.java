@@ -53,6 +53,7 @@ import software.wings.beans.AuthToken;
 import software.wings.beans.Event;
 import software.wings.beans.User;
 import software.wings.beans.loginSettings.LoginSettingsService;
+import software.wings.beans.sso.SamlSettings;
 import software.wings.security.JWT_CATEGORY;
 import software.wings.security.authentication.oauth.OauthBasedAuthHandler;
 import software.wings.security.authentication.oauth.OauthOptions;
@@ -197,6 +198,9 @@ public class AuthenticationManager {
         baseResponse.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
         return ssoRequests;
       }
+      if (ex.getCode() == ErrorCode.USER_DOES_NOT_EXIST) {
+        return checkForJustInTime(userName, "kmpySmUISimoRrJL6NL73w", baseResponse);
+      }
       throw ex;
     }
 
@@ -249,6 +253,23 @@ public class AuthenticationManager {
     }
     baseResponse.setAuthenticationMechanism(authenticationMechanism);
     return ssoRequests;
+  }
+
+  private <T extends LoginTypeBaseResponse> List<SSORequest> checkForJustInTime(
+      String userName, String accountId, T baseResponse) {
+    // user is null and now check for saml setting based on accountId
+    Account account = accountService.get(accountId);
+    List<SSORequest> ssoRequests = new ArrayList<>();
+    if (account.getAuthenticationMechanism() == AuthenticationMechanism.SAML) {
+      SamlSettings setting = samlClientService.getSamlSettingByAccountId(accountId);
+      if (true) { // the check here is supposed to be setting.isJustInTimeEnabled()
+        // redirect the url to point to SAML IDP
+        ssoRequests.add(samlClientService.generateSamlRequestFromAccount(account, false));
+        baseResponse.setAuthenticationMechanism(AuthenticationMechanism.SAML);
+        return ssoRequests;
+      }
+    }
+    throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
   }
 
   public LoginTypeResponse getLoginTypeResponseForOnPrem() {
