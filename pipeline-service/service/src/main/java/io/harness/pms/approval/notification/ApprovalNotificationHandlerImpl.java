@@ -377,7 +377,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
                   + formatTime(harnessApprovalActivity.getApprovedAt()) + "   \\n");
         }
         if (!isEmpty(action)) {
-          // removing last redundant comma
+          // removing last redundant new line character
           action = action.substring(0, action.length() - 2);
         }
       } else {
