@@ -40,6 +40,7 @@ global:
       passwordKey: ""
       extraArgs: ""
   imagePullSecrets: []
+  stackDriverLoggingEnabled: false
   ingress:
     # -- create ingress objects
     enabled: false
@@ -154,3 +155,5 @@ tolerations: []
 affinity: {}
 
 imagePullSecrets: {}
+
+additionalConfigs: {}

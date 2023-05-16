@@ -10,6 +10,7 @@ data:
   CACHE_CONFIG_USE_SENTINEL: "true"
   DEPLOY_MODE: KUBERNETES_ONPREM
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   MEMORY: {{ .Values.java.memory | quote }}
   MANAGER_TARGET: harness-manager:9879
   MANAGER_AUTHORITY: harness-manager:9879
@@ -32,3 +33,6 @@ data:
   PMS_GRPC_AUTHORITY: pipeline-service:12011
   PMS_GRPC_TARGET: pipeline-service:12011
   MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

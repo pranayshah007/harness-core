@@ -17,6 +17,7 @@ data:
   BACKGROUND_SCHEDULER_CLUSTERED: "true"
   CACHE_BACKEND: REDIS
   CAPSULE_JAR: rest-capsule.jar
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.delegate_docker_image" . }}
   IMMUTABLE_DELEGATE_ENABLED: '{{ .Values.global.useImmutableDelegate }}'
   IMMUTABLE_DELEGATE_DOCKER_IMAGE: {{ include "harness-manager.immutable_delegate_docker_image" . }}
@@ -42,7 +43,6 @@ data:
   SERVICE_ACC: /opt/harness/svc/service_acc.json
   VERSION: {{ .Values.version }}
   LOG_STREAMING_SERVICE_TOKEN: c76e567a-b341-404d-a8dd-d9738714eb82
- 
   EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{  .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379'
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_USE_SENTINEL: "true"
@@ -65,6 +65,10 @@ data:
   ENABLE_AUDIT: 'true'
   AUDIT_CLIENT_BASEURL: 'http://platform-service:9005/api/'
  {{- end }}
+ {{- if .Values.additionalConfigs }}
+ {{- toYaml .Values.additionalConfigs | nindent 2 }}
+ {{- end }}
+ {{- include "harnesscommon.monitoring.config" . | nindent 2 }}
 
 ---
 apiVersion: v1
