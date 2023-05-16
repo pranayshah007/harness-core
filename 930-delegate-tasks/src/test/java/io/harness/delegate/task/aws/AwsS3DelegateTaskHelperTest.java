@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VED;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -67,7 +68,10 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private AwsApiHelperService awsApiHelperService;
   @InjectMocks private AwsS3DelegateTaskHelper taskHelper;
+  @InjectMocks private AwsApiHelperService awsApiHelperService1;
 
+  private static final char[] accessKey = "abcd".toCharArray();
+  private static final char[] secretKey = "pqrs".toCharArray();
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -649,5 +653,13 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
     awsPutAuditBatchToBucketTaskResponse = (AwsPutAuditBatchToBucketTaskResponse) responseData;
     assertThat(awsPutAuditBatchToBucketTaskResponse.getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testlistBuildsForInvalidRegex() {
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build();
+    assertThat(awsApiHelperService1.listBuilds(awsInternalConfig, "", "", "helloworld")).hasSize(0);
   }
 }

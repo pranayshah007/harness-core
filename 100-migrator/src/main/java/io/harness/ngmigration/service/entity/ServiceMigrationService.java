@@ -26,6 +26,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE;
+import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -266,6 +267,10 @@ public class ServiceMigrationService extends NgMigrationService {
                          .build())
               .collect(Collectors.toList());
       children.addAll(serviceCommandTemplates);
+    }
+
+    if (isNotEmpty(service.getDeploymentTypeTemplateId())) {
+      children.add(CgEntityId.builder().id(service.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
     }
 
     return DiscoveryNode.builder().entityNode(serviceEntityNode).children(children).build();

@@ -12,6 +12,7 @@ java_library(
     srcs = glob(["src/main/java/**/*.java"]),
     visibility = [
         "//100-migrator:__subpackages__",
+        "//110-change-data-capture:__subpackages__",
         "//pipeline-service:__subpackages__",
     ],
     deps = [

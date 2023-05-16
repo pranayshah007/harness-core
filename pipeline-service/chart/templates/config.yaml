@@ -60,3 +60,7 @@ data:
   {{- end }}
   ENABLE_AUDIT : 'true'
   AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

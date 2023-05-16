@@ -9,6 +9,7 @@ package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -34,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "TasSwapRoutesBaseStepInfoKeys")
 @TypeAlias("TasSwapRoutesBaseStepInfo")
 public class TasSwapRoutesBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

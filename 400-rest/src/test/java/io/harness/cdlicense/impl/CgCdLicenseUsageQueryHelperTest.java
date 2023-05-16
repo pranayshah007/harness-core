@@ -7,6 +7,9 @@
 
 package io.harness.cdlicense.impl;
 
+import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.TATHAGAT;
+
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -17,10 +20,8 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.cdlicense.bean.CgServiceUsage;
 import io.harness.cdlicense.exception.CgLicenseUsageException;
 import io.harness.rule.Owner;
-import io.harness.rule.OwnerRule;
 import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.dl.WingsPersistence;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,7 +65,7 @@ public class CgCdLicenseUsageQueryHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testFetchDistinctSvcIdWithNullResultSet() throws SQLException {
     when(preparedStatement.executeQuery()).thenReturn(null);
@@ -73,7 +75,7 @@ public class CgCdLicenseUsageQueryHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testFetchDistinctSvcIdEmptyResultSet() throws SQLException {
     when(resultSet.next()).thenReturn(false);
@@ -83,19 +85,20 @@ public class CgCdLicenseUsageQueryHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testFetchDistinctSvcIdException() throws SQLException {
     when(preparedStatement.executeQuery()).thenThrow(new SQLException());
     assertThatThrownBy(
         () -> cgCdLicenseUsageQueryHelper.fetchDistinctSvcIdUsedInDeployments(accountIdentifier, timePeriod))
         .isInstanceOf(CgLicenseUsageException.class)
-        .hasMessageContaining("MAX RETRY FAILURE : Failed to fetch serviceIds within interval");
+        .hasMessageContaining(
+            "MAX RETRY FAILURE: Failed to fetch serviceIds within interval for last [30 days] deployments for accountId ACCOUNT_ID after 3 retries");
     verify(preparedStatement, times(4)).executeQuery();
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testFetchDistinctSvcId() throws SQLException {
     when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
@@ -107,55 +110,57 @@ public class CgCdLicenseUsageQueryHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testGetPercentileInstanceWithNoService() {
-    assertThat(cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(
+    assertThat(cgCdLicenseUsageQueryHelper.getServicesPercentileInstanceCountAndLicenseUsage(
                    accountIdentifier, emptyList(), timePeriod, percentile))
         .isEmpty();
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testGetPercentileInstanceWithEmptyResultSet() throws SQLException {
     List<String> svcIds = Arrays.asList("svc1", "svc2");
     when(resultSet.next()).thenReturn(false);
-    assertThat(
-        cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(accountIdentifier, svcIds, timePeriod, percentile))
+    assertThat(cgCdLicenseUsageQueryHelper.getServicesPercentileInstanceCountAndLicenseUsage(
+                   accountIdentifier, svcIds, timePeriod, percentile))
         .isEmpty();
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testGetPercentileInstanceException() throws SQLException {
     List<String> svcIds = Arrays.asList("svc1", "svc2");
     when(preparedStatement.executeQuery()).thenThrow(new SQLException());
     assertThatThrownBy(()
-                           -> cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(
+                           -> cgCdLicenseUsageQueryHelper.getServicesPercentileInstanceCountAndLicenseUsage(
                                accountIdentifier, svcIds, timePeriod, percentile))
         .isInstanceOf(CgLicenseUsageException.class)
-        .hasMessageContaining("MAX RETRY FAILURE : Failed to fetch percentile instance count for services");
+        .hasMessageContaining(
+            "MAX RETRY FAILURE: Failed to fetch services percentile instance count and license usage for accountId ACCOUNT_ID after 3 retries");
   }
 
   @Test
-  @Owner(developers = OwnerRule.TATHAGAT)
+  @Owner(developers = {TATHAGAT, IVAN})
   @Category(UnitTests.class)
   public void testGetPercentileInstance() throws SQLException {
     List<String> svcIds = Arrays.asList("svc1", "svc2");
     when(resultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false);
     when(resultSet.getString(1)).thenReturn("svc1").thenReturn("svc2");
-    when(resultSet.getInt(2)).thenReturn(1).thenReturn(2);
+    when(resultSet.getLong(2)).thenReturn(21L).thenReturn(42L);
+    when(resultSet.getInt(3)).thenReturn(2).thenReturn(3);
 
-    Map<String, CgServiceUsage> percentileInstanceForServices =
-        cgCdLicenseUsageQueryHelper.getPercentileInstanceForServices(accountIdentifier, svcIds, timePeriod, percentile);
+    Map<String, Pair<Long, Integer>> percentileInstanceForServices =
+        cgCdLicenseUsageQueryHelper.getServicesPercentileInstanceCountAndLicenseUsage(
+            accountIdentifier, svcIds, timePeriod, percentile);
     assertThat(percentileInstanceForServices).isNotEmpty();
     assertThat(percentileInstanceForServices.keySet()).containsExactlyInAnyOrder("svc1", "svc2");
-    assertThat(percentileInstanceForServices.values()
-                   .stream()
-                   .map(CgServiceUsage::getInstanceCount)
-                   .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(1L, 2L);
+    assertThat(percentileInstanceForServices.values().stream().map(Pair::getLeft).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(21L, 42L);
+    assertThat(percentileInstanceForServices.values().stream().map(Pair::getRight).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(2, 3);
   }
 }

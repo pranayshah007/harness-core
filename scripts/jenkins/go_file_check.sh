@@ -4,7 +4,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -xe
+set -e
 
 BASE_SHA="$(git merge-base $COMMIT_SHA $BASE_COMMIT_SHA)"
 go_merge_summary=( $(git diff --name-only $COMMIT_SHA..$BASE_SHA) )

@@ -41,6 +41,7 @@ public class ServiceOverrideRequestDTOV2 {
   @Schema(description = NGCommonEntityConstants.SERVICE_REF_PARAM_MESSAGE) String serviceRef;
 
   @Schema(description = NGCommonEntityConstants.INFRA_IDENTIFIER) String infraIdentifier;
+  @Schema(description = NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterIdentifier;
 
   @Schema(description = "Type of the override which is based on source of overrides")
   @NotNull

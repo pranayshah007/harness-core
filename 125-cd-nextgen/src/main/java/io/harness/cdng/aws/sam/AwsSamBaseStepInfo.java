@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsSamBaseStepInfo")
 @FieldNameConstants(innerTypeName = "AwsSamBaseStepInfoKeys")
 public class AwsSamBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

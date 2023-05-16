@@ -15,12 +15,9 @@ import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
-import static io.harness.ci.commonconstants.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_BUILD_MULTIPLIER;
-import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MACOS_BUILD_MULTIPLIER;
-import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.WINDOWS_BUILD_MULTIPLIER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -91,9 +88,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
 import io.harness.jackson.JsonNodeUtils;
@@ -115,6 +110,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.CiIntegrationStageUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -429,34 +425,7 @@ public class IntegrationStageUtils {
   }
 
   public static String getGitURL(String repoName, GitConnectionType connectionType, String url) {
-    String gitUrl = retrieveGenericGitConnectorURL(repoName, connectionType, url);
-
-    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
-      gitUrl += GIT_URL_SUFFIX;
-    }
-    return gitUrl;
-  }
-
-  public static String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
-    String gitUrl = "";
-    if (connectionType == GitConnectionType.REPO) {
-      gitUrl = url;
-    } else if (connectionType == GitConnectionType.PROJECT || connectionType == GitConnectionType.ACCOUNT) {
-      if (isEmpty(repoName)) {
-        throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
-      }
-      if (connectionType == GitConnectionType.PROJECT) {
-        gitUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(url, repoName);
-      } else {
-        gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
-            StringUtils.stripStart(repoName, PATH_SEPARATOR));
-      }
-    } else {
-      throw new InvalidArgumentsException(
-          format("Invalid connection type for git connector: %s", connectionType.toString()), WingsException.USER);
-    }
-
-    return gitUrl;
+    return CiIntegrationStageUtils.getGitURL(repoName, connectionType, url);
   }
 
   public static String getGitURLFromConnector(ConnectorDetails gitConnector, CodeBase ciCodebase) {

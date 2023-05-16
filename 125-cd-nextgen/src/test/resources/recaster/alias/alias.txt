@@ -853,7 +853,6 @@ io.harness.cdng.googlefunctions.trafficShift.GoogleFunctionsTrafficShiftStepPara
 io.harness.cdng.service.beans.ServiceYaml
 io.harness.cdng.gitops.steps.GitOpsEnvOutCome
 io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData
-io.harness.beans.steps.stepinfo.CleanupStepInfo
 io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepParameters
 io.harness.beans.yaml.extended.volumes.V1.HostVolume
 io.harness.beans.sweepingoutputs.ContainerPortDetails
