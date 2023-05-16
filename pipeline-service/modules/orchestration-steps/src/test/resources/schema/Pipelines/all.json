@@ -1169,29 +1169,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "CleanupStepInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object",
-          "required": [
-            "infrastructure",
-            "podName"
-          ],
-          "properties": {
-            "infrastructure": {
-              "$ref": "#/definitions/Infrastructure"
-            },
-            "podName": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "CodeBase": {
       "type": "object",
       "required": [
@@ -1894,47 +1871,6 @@
           }
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DockerInfraSpec": {
-      "type": "object",
-      "required": [
-        "platform"
-      ],
-      "properties": {
-        "platform": {
-          "$ref": "#/definitions/ParameterFieldPlatform"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "DockerInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/DockerInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "DockerStepInfo": {
@@ -2873,47 +2809,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HostedVmInfraSpec": {
-      "type": "object",
-      "required": [
-        "platform"
-      ],
-      "properties": {
-        "platform": {
-          "$ref": "#/definitions/ParameterFieldPlatform"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "HostedVmInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/HostedVmInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "HttpHeaderConfig": {
       "type": "object",
       "properties": {
@@ -3110,22 +3005,6 @@
           }
         }
       ]
-    },
-    "Infrastructure": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "KubernetesDirect",
-            "UseFromStage",
-            "VM",
-            "KubernetesHosted"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "InputSetValidator": {
       "type": "object",
@@ -3371,160 +3250,6 @@
     },
     "JsonNode": {
       "type": "object",
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sDirectInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/K8sDirectInfraYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sDirectInfraYamlSpec": {
-      "type": "object",
-      "required": [
-        "connectorRef",
-        "namespace"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "automountServiceAccountToken": {
-          "type": "boolean"
-        },
-        "connectorRef": {
-          "type": "string"
-        },
-        "containerSecurityContext": {
-          "$ref": "#/definitions/SecurityContext"
-        },
-        "harnessImageConnectorRef": {
-          "type": "string"
-        },
-        "hostNames": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "initTimeout": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "namespace": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 2147483647
-        },
-        "nodeSelector": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "os": {
-          "type": "string",
-          "enum": [
-            "Linux",
-            "MacOS",
-            "Windows"
-          ]
-        },
-        "priorityClassName": {
-          "type": "string"
-        },
-        "runAsUser": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "serviceAccountName": {
-          "type": "string"
-        },
-        "tolerations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Toleration"
-          }
-        },
-        "volumes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CIVolume"
-          }
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sHostedInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/K8sHostedInfraYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "K8sHostedInfraYamlSpec": {
-      "type": "object",
-      "required": [
-        "identifier"
-      ],
-      "properties": {
-        "identifier": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KeyValuesCriteriaSpec": {
@@ -4162,39 +3887,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ParameterFieldPlatform": {
-      "type": "object",
-      "properties": {
-        "defaultValue": {
-          "$ref": "#/definitions/Platform"
-        },
-        "executionInput": {
-          "type": "boolean"
-        },
-        "expression": {
-          "type": "boolean"
-        },
-        "expressionValue": {
-          "type": "string"
-        },
-        "inputSetValidator": {
-          "$ref": "#/definitions/InputSetValidator"
-        },
-        "jsonResponseField": {
-          "type": "boolean"
-        },
-        "responseField": {
-          "type": "string"
-        },
-        "typeString": {
-          "type": "boolean"
-        },
-        "value": {
-          "$ref": "#/definitions/Platform"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "ParameterFieldString": {
       "type": "object",
       "properties": {
@@ -4585,27 +4277,6 @@
         },
         "value": {
           "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "Platform": {
-      "type": "object",
-      "properties": {
-        "arch": {
-          "type": "string",
-          "enum": [
-            "Amd64",
-            "Arm64"
-          ]
-        },
-        "os": {
-          "type": "string",
-          "enum": [
-            "Linux",
-            "MacOS",
-            "Windows"
-          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -8815,25 +8486,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "UseFromStageInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "useFromStage"
-          ],
-          "properties": {
-            "useFromStage": {
-              "type": "string"
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "VariationYamlSpec": {
       "type": "object",
       "required": [
@@ -8847,100 +8499,6 @@
         "weight": {
           "type": "integer",
           "format": "int32"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VmInfraSpec": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "Pool"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VmInfraYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Infrastructure"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/VmInfraSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "KubernetesDirect",
-                "UseFromStage",
-                "VM",
-                "KubernetesHosted"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VmPoolYaml": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/VmInfraSpec"
-        },
-        {
-          "type": "object",
-          "required": [
-            "spec",
-            "type"
-          ],
-          "properties": {
-            "spec": {
-              "$ref": "#/definitions/VmPoolYamlSpec"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "Pool"
-              ]
-            }
-          }
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "VmPoolYamlSpec": {
-      "type": "object",
-      "properties": {
-        "harnessImageConnectorRef": {
-          "type": "string"
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "initTimeout": {
-          "type": "string"
-        },
-        "os": {
-          "type": "string",
-          "enum": [
-            "Linux",
-            "MacOS",
-            "Windows"
-          ]
-        },
-        "poolName": {
-          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
