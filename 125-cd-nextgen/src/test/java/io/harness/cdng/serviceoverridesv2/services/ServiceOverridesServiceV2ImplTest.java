@@ -22,6 +22,7 @@ import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.outbox.api.OutboxService;
@@ -231,7 +232,7 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
 
     Pageable pageRequest = PageRequest.of(
-        0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntity.NGServiceOverridesEntityKeys.lastModifiedAt));
+        0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
 
     List<NGServiceOverridesEntity> overridesEntities =
         serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());

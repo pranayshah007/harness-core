@@ -9,7 +9,6 @@ package io.harness.cdng.serviceoverridesv2.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.entities.Organization;
@@ -48,7 +47,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import net.jodah.failsafe.RetryPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -59,9 +57,7 @@ import org.springframework.data.util.CloseableIterator;
 @Slf4j
 public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2MigrationService {
   @Inject MongoTemplate mongoTemplate;
-  private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
-  private final static String COLLECTION_NAME = "serviceOverridesNG";
-  private final static String DEBUG_LINE = "[ServiceOverrideV2MigrationServiceImpl]: ";
+  private static final String DEBUG_LINE = "[ServiceOverrideV2MigrationServiceImpl]: ";
   @Override
   @NonNull
   public ServiceOverrideMigrationResponseDTO migrateToV2(
