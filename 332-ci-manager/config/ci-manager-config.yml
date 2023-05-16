@@ -179,12 +179,10 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  #delegateServiceEndpointVariableValue: "delegate-service:8080"
-  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:13913"
-  addonImage: harness/ci-addon:1.16.8
-  liteEngineImage: harness/ci-lite-engine:1.16.8
-  #isLocal: false
-  isLocal: true
+  delegateServiceEndpointVariableValue: "delegate-service:8080"
+  addonImage: harness/ci-addon:1.16.13
+  liteEngineImage: harness/ci-lite-engine:1.16.13
+  isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
@@ -372,9 +370,11 @@ ciExecutionServiceConfig:
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.3.6
+        name: github.com/wings-software/drone-git@refs/tags/v1.3.8
       dockerBuildxConfig:
         name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
+      dockerBuildxEcrConfig:
+        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}
@@ -405,7 +405,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 enableDashboardTimescale: false
 

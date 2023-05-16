@@ -55,7 +55,6 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
     StepContext stepContext = StepContext.newBuilder().setExecutionTimeoutSecs(timeout).build();
     Map<String, String> envVarMap = pluginSettingUtils.getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, Type.K8, true, true);
-    envVarMap.put("DRONE_OUTPUT_FILE_PATHS_CONTENT", "/harness/Sainath-Test/SAM/values.yaml");
     PluginStep pluginStep = PluginStep.newBuilder()
                                 .setContainerPort(port)
                                 .setImage(CIStepInfoUtils.getPluginCustomStepImage(
