@@ -492,7 +492,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     UserGroupDTO oldUserGroup = (UserGroupDTO) HObjectMapper.clone(toDTO(existingUserGroup));
 
     if (existingUserGroup.getUsers().stream().noneMatch(userIdentifier::equals)) {
-      log.info("[NGSamlUserGroupSync] Adding member {} to Existing Usergroup: {}", userIdentifier, existingUserGroup);
+      log.info("[NGUserGroupSync] Adding member {} to Existing Usergroup: {}", userIdentifier, existingUserGroup);
       existingUserGroup.getUsers().add(userIdentifier);
     } else {
       throw new InvalidRequestException(
@@ -510,11 +510,11 @@ public class UserGroupServiceImpl implements UserGroupService {
     for (UserGroup userGroup : userGroups) {
       if (!checkMember(accountIdentifier, userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(),
               userGroup.getIdentifier(), userId)) {
-        log.info("[NGSamlUserGroupSync] Trying to add user {} to UserGroup:{}", userId, userGroup);
+        log.info("[NGUserGroupSync] Trying to add user {} to UserGroup:{}", userId, userGroup);
         addMember(accountIdentifier, userGroup.getOrgIdentifier(), userGroup.getProjectIdentifier(),
             userGroup.getIdentifier(), userId);
       } else {
-        log.info("[NGSamlUserGroupSync] Not adding user {} to UserGroup:{} CheckMember failed ", userId, userGroup);
+        log.info("[NGUserGroupSync] Not adding user {} to UserGroup:{} CheckMember failed ", userId, userGroup);
       }
     }
   }
@@ -601,14 +601,14 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private UserGroup updateInternal(UserGroup newUserGroup, UserGroupDTO oldUserGroup) {
-    log.info("[NGSamlUserGroupSync] Old User Group {}", oldUserGroup);
+    log.info("[NGUserGroupSync] Old User Group {}", oldUserGroup);
     validate(newUserGroup);
     sanitizeInternal(newUserGroup);
     try {
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        log.info("[NGSamlUserGroupSync] Saving new User group {}", newUserGroup);
+        log.info("[NGUserGroupSync] Saving new User group {}", newUserGroup);
         UserGroup updatedUserGroup = userGroupRepository.save(newUserGroup);
-        log.info("[NGSamlUserGroupSync] Saved New User Group Successfully");
+        log.info("[NGUserGroupSync] Saved New User Group Successfully");
         outboxService.save(
             new UserGroupUpdateEvent(updatedUserGroup.getAccountIdentifier(), toDTO(updatedUserGroup), oldUserGroup));
         return updatedUserGroup;
