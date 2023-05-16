@@ -34,6 +34,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -84,6 +85,9 @@ public class VmBackgroundStepSerializer {
     Map<String, String> envVars = resolveMapParameterV2(
         "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
     if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
