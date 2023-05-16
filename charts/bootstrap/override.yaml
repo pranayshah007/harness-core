@@ -1,0 +1,30 @@
+global:
+  database:
+    mongo:
+      hosts:
+      - null
+      installed: true
+      passwordKey: password
+      protocol: null
+      secretName: mongodb-default
+      userKey: username
+  ha: true
+  ingress:
+    defaultbackend:
+      create: true
+    enabled: true
+    hosts:
+    - infra-test.pr2.harness.io
+    loadBalancerEnabled: true
+    loadBalancerIP: 34.105.69.42
+    nginx:
+      controller:
+        annotations: {}
+      create: true
+      objects:
+        annotations: {}
+    tls:
+      enabled: false
+      secretName: null
+  loadBalancerURL: http://infra-test.pr2.harness.io
+  useExternalSecrets: true

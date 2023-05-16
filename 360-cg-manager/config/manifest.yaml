@@ -1,0 +1,2 @@
+HELM_CHART_SOURCE_DIRECTORY="360-cg-manager/chart"
+HELM_REPO_NAME="us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts"
