@@ -33,6 +33,8 @@ import io.harness.security.encryption.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +42,7 @@ import javax.validation.executable.ValidateOnExecution;
 
 @ValidateOnExecution
 @Singleton
+@Slf4j
 @OwnedBy(PL)
 public class BaseSecretValidator implements SecretValidator {
   private final String ILLEGAL_CHARACTERS = "[~!@#$%^&*'\"/?<>,;.]";
@@ -166,6 +169,7 @@ public class BaseSecretValidator implements SecretValidator {
 
   @Override
   public void validateSecret(String accountId, HarnessSecret secret, SecretManagerConfig secretManagerConfig) {
+    log.info("[JEN]Secret name is {}", secret.getName());
     validateSecretName(secret.getName());
     checkForDuplicateName(accountId, secret.getName());
     validateScopes(secret);

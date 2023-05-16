@@ -13,6 +13,7 @@ import io.harness.beans.SecretText;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.ff.FeatureFlagService;
 
+import lombok.extern.slf4j.Slf4j;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
@@ -20,6 +21,7 @@ import com.google.inject.Singleton;
 import java.util.UUID;
 
 @Singleton
+@Slf4j
 public class DelegateTokenEncryptDecrypt {
   private FeatureFlagService featureFlagService;
   private SecretManager secretManager;
@@ -47,6 +49,7 @@ public class DelegateTokenEncryptDecrypt {
 
   public String encrypt(String accountId, String tokenValue, String tokenName) {
     String name = String.format("%s_%s", tokenName, UUID.randomUUID());
+    log.info("[JEN]Token NAME is {}", name);
     SecretText secretText = SecretText.builder()
                                 .value(tokenValue)
                                 .hideFromListing(true)

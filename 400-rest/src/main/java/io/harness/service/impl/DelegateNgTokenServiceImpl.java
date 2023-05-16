@@ -193,6 +193,7 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
             .set(DelegateTokenKeys.isNg, true)
             .set(DelegateTokenKeys.value, encodeBase64(Misc.generateSecretKey()));
     String tokenIdentifier = getDefaultTokenName(owner);
+    log.info("[JEN]Token identifier is {}", tokenIdentifier);
     if (owner != null) {
       updateOperations.set(DelegateTokenKeys.owner, owner);
       String orgId = DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(owner.getIdentifier());
