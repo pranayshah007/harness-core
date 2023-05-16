@@ -44,7 +44,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
@@ -137,7 +136,6 @@ public class ProjectServiceImpl implements ProjectService {
   private final ScopeAccessHelper scopeAccessHelper;
   private final ProjectInstrumentationHelper instrumentationHelper;
   private final YamlGitConfigService yamlGitConfigService;
-  private final FeatureFlagService featureFlagService;
   private final DefaultUserGroupService defaultUserGroupService;
 
   @Inject
@@ -145,7 +143,7 @@ public class ProjectServiceImpl implements ProjectService {
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       NgUserService ngUserService, AccessControlClient accessControlClient, ScopeAccessHelper scopeAccessHelper,
       ProjectInstrumentationHelper instrumentationHelper, YamlGitConfigService yamlGitConfigService,
-      FeatureFlagService featureFlagService, DefaultUserGroupService defaultUserGroupService) {
+      DefaultUserGroupService defaultUserGroupService) {
     this.projectRepository = projectRepository;
     this.organizationService = organizationService;
     this.transactionTemplate = transactionTemplate;
@@ -155,7 +153,6 @@ public class ProjectServiceImpl implements ProjectService {
     this.scopeAccessHelper = scopeAccessHelper;
     this.instrumentationHelper = instrumentationHelper;
     this.yamlGitConfigService = yamlGitConfigService;
-    this.featureFlagService = featureFlagService;
     this.defaultUserGroupService = defaultUserGroupService;
   }
 
