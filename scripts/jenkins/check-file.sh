@@ -10,7 +10,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 #Run the TI,FT and other bazel builds based on the commit
-
+#remove me
 # Define colors
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
