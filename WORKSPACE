@@ -5035,7 +5035,7 @@ plain_artifacts = [
     "jakarta.activation:jakarta.activation-api:1.2.2",
     "jakarta.annotation:jakarta.annotation-api:jar:1.3.5",
     "jakarta.servlet:jakarta.servlet-api:4.0.3",
-    "jakarta.validation:jakarta.validation-api:2.0.2",
+    "jakarta.validation:jakarta.validation-api:3.0.2",
     "jakarta.xml.bind:jakarta.xml.bind-api:2.3.3",
     "jakarta.ws.rs:jakarta.ws.rs-api:jar:2.1.6",
     "javax.activation:activation:1.1.1",

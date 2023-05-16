@@ -148,13 +148,13 @@ import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-import javax.validation.Validation;
-import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.parameternameprovider.ReflectionParameterNameProvider;
@@ -181,6 +181,7 @@ public class AccessControlModule extends AbstractModule {
   @Provides
   @Singleton
   DistributedLockImplementation distributedLockImplementation() {
+    System.out.println("Test");
     return config.getDistributedLockImplementation() == null ? MONGO : config.getDistributedLockImplementation();
   }
 
@@ -248,7 +249,8 @@ public class AccessControlModule extends AbstractModule {
         5, 100, 500L, TimeUnit.MILLISECONDS, new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     install(ExecutorModule.getInstance());
     install(PersistentLockModule.getInstance());
-    ValidatorFactory validatorFactory = Validation.byDefaultProvider()
+    System.out.println("Test");
+    ValidatorFactory validatorFactory = Validator.byDefaultProvider()
                                             .configure()
                                             .parameterNameProvider(new ReflectionParameterNameProvider())
                                             .buildValidatorFactory();
