@@ -231,8 +231,8 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     Criteria criteria = ServiceOverrideCriteriaHelper.createCriteriaForGetList(
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ServiceOverridesType.ENV_SERVICE_OVERRIDE);
 
-    Pageable pageRequest = PageRequest.of(
-        0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
+    Pageable pageRequest =
+        PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
 
     List<NGServiceOverridesEntity> overridesEntities =
         serviceOverridesServiceV2.list(criteria, pageRequest).get().collect(Collectors.toList());

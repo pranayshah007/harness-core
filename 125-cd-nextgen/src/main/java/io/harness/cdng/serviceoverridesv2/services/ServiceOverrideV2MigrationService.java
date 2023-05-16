@@ -8,8 +8,11 @@
 package io.harness.cdng.serviceoverridesv2.services;
 
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
+
 import lombok.NonNull;
 
 public interface ServiceOverrideV2MigrationService {
-    @NonNull ServiceOverrideMigrationResponseDTO migrateToV2(@NonNull String accountId,String orgId, String projectId, boolean migrateChildren);
+  @NonNull
+  ServiceOverrideMigrationResponseDTO migrateToV2(
+      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren);
 }

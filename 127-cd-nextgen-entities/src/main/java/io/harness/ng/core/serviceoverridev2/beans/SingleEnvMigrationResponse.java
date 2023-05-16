@@ -24,10 +24,9 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(NON_EMPTY)
 @Schema(name = "SingleEnvMigrationResponse", description = "This is the Single Environment Migration Response")
 public class SingleEnvMigrationResponse {
-    boolean isSuccessful;
-    String envIdentifier;
-    String projectId;
-    String orgId;
-    String accountId;
-
+  boolean isSuccessful;
+  String envIdentifier;
+  String projectId;
+  String orgId;
+  String accountId;
 }
