@@ -28,6 +28,7 @@ import io.harness.pms.contracts.advisers.MarkAsFailureAdvise;
 import io.harness.pms.contracts.advisers.MarkSuccessAdvise;
 import io.harness.pms.contracts.advisers.NextStepAdvise;
 import io.harness.pms.contracts.advisers.RetryAdvise;
+import io.harness.pms.contracts.advisers.RetryTarget;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -71,6 +72,7 @@ public class RetrySGStartAdvisor implements Adviser {
               RetryAdvise.newBuilder()
                   .setRetryNodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(advisingEvent.getAmbiance()))
                   .setWaitInterval(waitInterval)
+                  .setRetryTarget(RetryTarget.STEP_GROUP)
                   .build())
           .build();
     }

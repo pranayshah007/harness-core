@@ -8,6 +8,9 @@
 package io.harness.engine.pms.advise.handlers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.pms.contracts.advisers.RetryTarget.STEP_GROUP;
+import static io.harness.pms.contracts.interrupts.InterruptType.RETRY;
+import static io.harness.pms.contracts.interrupts.InterruptType.RETRY_STEP_GROUP;
 
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,15 +51,17 @@ public class RetryAdviserResponseHandler implements AdviserResponseHandler {
       log.info("Retry Wait Interval : {}", advise.getWaitInterval());
       String resumeId = delayEventHelper.delay(advise.getWaitInterval(), Collections.emptyMap());
       waitNotifyEngine.waitForAllOn(publisherName,
-          new EngineWaitRetryCallback(nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid()),
+          new EngineWaitRetryCallback(nodeExecution.getAmbiance().getPlanExecutionId(), nodeExecution.getUuid(),
+              advise.getRetryTarget().name()),
           resumeId);
       return;
     }
+    InterruptType interruptType = advise.getRetryTarget() == STEP_GROUP ? RETRY_STEP_GROUP : RETRY;
     InterruptPackage interruptPackage =
         InterruptPackage.builder()
             .nodeExecutionId(nodeExecution.getUuid())
             .planExecutionId(nodeExecution.getAmbiance().getPlanExecutionId())
-            .interruptType(InterruptType.RETRY)
+            .interruptType(interruptType)
             .interruptConfig(
                 InterruptConfig.newBuilder()
                     .setIssuedBy(

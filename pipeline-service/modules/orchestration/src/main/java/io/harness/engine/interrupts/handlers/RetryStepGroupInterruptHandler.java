@@ -7,41 +7,19 @@
 
 package io.harness.engine.interrupts.handlers;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.pms.contracts.execution.Status.RUNNING;
 
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.engine.executions.node.NodeExecutionService;
-import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.engine.interrupts.InterruptHandler;
-import io.harness.engine.interrupts.InterruptService;
-import io.harness.engine.interrupts.helpers.RetryHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
-import io.harness.interrupts.Interrupt.State;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
-import com.google.inject.Inject;
 import java.util.List;
 
-@OwnedBy(CDC)
-public class RetryInterruptHandler implements InterruptHandler {
-  @Inject protected RetryHelper retryHelper;
-  @Inject protected NodeExecutionService nodeExecutionService;
-  @Inject protected PlanExecutionService planExecutionService;
-  @Inject protected InterruptService interruptService;
-
+public class RetryStepGroupInterruptHandler extends RetryInterruptHandler {
   @Override
-  public Interrupt registerInterrupt(Interrupt interrupt) {
-    Interrupt savedInterrupt = validateAndSave(interrupt);
-    return handleInterruptForNodeExecution(savedInterrupt, savedInterrupt.getNodeExecutionId());
-  }
-
   protected Interrupt validateAndSave(Interrupt interrupt) {
     if (isEmpty(interrupt.getNodeExecutionId())) {
       throw new InvalidRequestException("NodeExecutionId Cannot be empty for RETRY interrupt");
@@ -56,27 +34,12 @@ public class RetryInterruptHandler implements InterruptHandler {
       throw new InvalidRequestException("This Node is already Retried");
     }
 
-    if (ExecutionModeUtils.isParentMode(nodeExecution.getMode())) {
-      throw new InvalidRequestException("Node Retry is supported only for Leaf Nodes");
-    }
-    interrupt.setState(State.PROCESSING);
+    interrupt.setState(Interrupt.State.PROCESSING);
     List<Interrupt> activeInterrupts = interruptService.fetchActiveInterruptsForNodeExecutionByType(
         interrupt.getPlanExecutionId(), interrupt.getNodeExecutionId(), InterruptType.RETRY);
     if (activeInterrupts.size() > 0) {
       throw new InvalidRequestException("A Retry Interrupt is already in process");
     }
     return interruptService.save(interrupt);
-  }
-
-  @Override
-  public Interrupt handleInterrupt(Interrupt interrupt) {
-    throw new UnsupportedOperationException("Please use handleInterrupt for handling retries");
-  }
-
-  @Override
-  public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
-    retryHelper.retryNodeExecution(interrupt.getNodeExecutionId(), interrupt.getUuid(), interrupt.getInterruptConfig());
-    planExecutionService.updateStatus(interrupt.getPlanExecutionId(), RUNNING);
-    return interrupt;
   }
 }

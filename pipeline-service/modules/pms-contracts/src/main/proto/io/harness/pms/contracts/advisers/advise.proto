@@ -49,6 +49,12 @@ message NextStepAdvise {
 message RetryAdvise {
   string retryNodeExecutionId = 1;
   int64 waitInterval = 2;
+  RetryTarget retryTarget = 3;
+}
+
+enum RetryTarget {
+  LEAF_NODE = 0;
+  STEP_GROUP = 1;
 }
 
 message InterventionWaitAdvise {

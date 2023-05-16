@@ -8,11 +8,16 @@
 package io.harness.engine.pms.resume;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.pms.contracts.advisers.RetryTarget.STEP_GROUP;
+import static io.harness.pms.contracts.interrupts.InterruptType.RETRY;
+import static io.harness.pms.contracts.interrupts.InterruptType.RETRY_STEP_GROUP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.interrupts.InterruptManager;
 import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.pms.contracts.advisers.AdviseType;
+import io.harness.pms.contracts.advisers.RetryAdvise;
+import io.harness.pms.contracts.advisers.RetryTarget;
 import io.harness.pms.contracts.interrupts.AdviserIssuer;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
@@ -35,20 +40,23 @@ public class EngineWaitRetryCallback implements OldNotifyCallback {
 
   @NonNull @Getter String planExecutionId;
   @NonNull @Getter String nodeExecutionId;
+  String retryTarget;
 
   @Builder
-  public EngineWaitRetryCallback(@NonNull String planExecutionId, @NonNull String nodeExecutionId) {
+  public EngineWaitRetryCallback(@NonNull String planExecutionId, @NonNull String nodeExecutionId, String retryTarget) {
     this.planExecutionId = planExecutionId;
     this.nodeExecutionId = nodeExecutionId;
+    this.retryTarget = retryTarget;
   }
 
   @Override
   public void notify(Map<String, ResponseData> response) {
+    InterruptType interruptType = RetryTarget.valueOf(retryTarget) == STEP_GROUP ? RETRY_STEP_GROUP : RETRY;
     interruptManager.register(
         InterruptPackage.builder()
             .planExecutionId(planExecutionId)
             .nodeExecutionId(nodeExecutionId)
-            .interruptType(InterruptType.RETRY)
+            .interruptType(interruptType)
             .interruptConfig(
                 InterruptConfig.newBuilder()
                     .setIssuedBy(

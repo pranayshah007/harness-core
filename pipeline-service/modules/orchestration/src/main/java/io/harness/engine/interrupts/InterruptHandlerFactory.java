@@ -22,6 +22,7 @@ import io.harness.engine.interrupts.handlers.PauseAllInterruptHandler;
 import io.harness.engine.interrupts.handlers.ProceedWithDefaultInterruptHandler;
 import io.harness.engine.interrupts.handlers.ResumeAllInterruptHandler;
 import io.harness.engine.interrupts.handlers.RetryInterruptHandler;
+import io.harness.engine.interrupts.handlers.RetryStepGroupInterruptHandler;
 import io.harness.engine.interrupts.handlers.UserMarkedFailAllInterruptHandler;
 import io.harness.pms.contracts.interrupts.InterruptType;
 
@@ -42,6 +43,7 @@ public class InterruptHandlerFactory {
   @Inject private ExpireAllInterruptHandler expireAllInterruptHandler;
   @Inject private ProceedWithDefaultInterruptHandler proceedWithDefaultInterruptHandler;
   @Inject private UserMarkedFailAllInterruptHandler userMarkedFailAllInterruptHandler;
+  @Inject private RetryStepGroupInterruptHandler retryStepGroupInterruptHandler;
 
   public InterruptHandler obtainHandler(InterruptType interruptType) {
     switch (interruptType) {
@@ -71,6 +73,8 @@ public class InterruptHandlerFactory {
         return proceedWithDefaultInterruptHandler;
       case USER_MARKED_FAIL_ALL:
         return userMarkedFailAllInterruptHandler;
+      case RETRY_STEP_GROUP:
+        return retryStepGroupInterruptHandler;
       default:
         throw new IllegalStateException("No Handler Available for Interrupt Type: " + interruptType);
     }
