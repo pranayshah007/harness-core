@@ -11,8 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
@@ -32,6 +34,8 @@ public class ApprovalSummary {
   String startedAt;
   String expiresAt;
   String triggeredBy;
+  ApprovalStatus status;
+  String action;
   @NonFinal String pipelineExecutionSummary;
   Set<String> finishedStages;
   Set<String> runningStages;
@@ -55,6 +59,8 @@ public class ApprovalSummary {
 
     params.put(ApprovalSummaryKeys.pipelineExecutionLink, pipelineExecutionLink);
     params.put(ApprovalSummaryKeys.timeRemainingForApproval, timeRemainingForApproval);
+    params.put(ApprovalSummaryKeys.action, action);
+    params.put(ApprovalSummaryKeys.status, String.valueOf(status).toLowerCase(Locale.ROOT));
     return params;
   }
 
