@@ -31,6 +31,7 @@ import io.harness.ng.core.serviceoverridev2.beans.ProjectLevelOverrideMigrationR
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO.ServiceOverrideMigrationResponseDTOBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOverridesSpecBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.beans.SingleEnvMigrationResponse;
 import io.harness.ng.core.serviceoverridev2.beans.SingleServiceOverrideMigrationResponse;
@@ -184,8 +185,16 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
             Optional<SingleEnvMigrationResponse> singleMigrationResponseOp = doMigrationForSingleEnvironment(envEntity);
             if (singleMigrationResponseOp.isEmpty()) {
               migratedEnvCount++;
+              migratedEnvInfos.add(SingleEnvMigrationResponse.builder()
+                                       .accountId(envEntity.getAccountId())
+                                       .orgId(envEntity.getOrgIdentifier())
+                                       .projectId(envEntity.getProjectIdentifier())
+                                       .envIdentifier(envEntity.getIdentifier())
+                                       .isSuccessful(true)
+                                       .build());
             } else {
               SingleEnvMigrationResponse singleMigrationResponse = singleMigrationResponseOp.get();
+              migratedEnvInfos.add(singleMigrationResponse);
               if (!singleMigrationResponse.isSuccessful()) {
                 isSuccessFul = false;
               } else {
@@ -587,13 +596,13 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       Environment envEntity, NGEnvironmentInfoConfig envNGConfig) {
     NGEnvironmentGlobalOverride ngEnvOverride = envNGConfig.getNgEnvironmentGlobalOverride();
 
-    ServiceOverridesSpec spec = ServiceOverridesSpec.builder()
-                                    .variables(envNGConfig.getVariables())
-                                    .manifests(ngEnvOverride.getManifests())
-                                    .configFiles(ngEnvOverride.getConfigFiles())
-                                    .applicationSettings(ngEnvOverride.getApplicationSettings())
-                                    .connectionStrings(ngEnvOverride.getConnectionStrings())
-                                    .build();
+    ServiceOverridesSpecBuilder specBuilder = ServiceOverridesSpec.builder().variables(envNGConfig.getVariables());
+    if (ngEnvOverride != null) {
+      specBuilder.manifests(ngEnvOverride.getManifests())
+          .configFiles(ngEnvOverride.getConfigFiles())
+          .applicationSettings(ngEnvOverride.getApplicationSettings())
+          .connectionStrings(ngEnvOverride.getConnectionStrings());
+    }
 
     String scopedEnvRef = IdentifierRefHelper.getRefFromIdentifierOrRef(envEntity.getAccountId(),
         envEntity.getOrgIdentifier(), envEntity.getProjectIdentifier(), envEntity.getIdentifier());
@@ -607,7 +616,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         .orgIdentifier(envIdentifierRef.getOrgIdentifier())
         .accountId(envIdentifierRef.getAccountIdentifier())
         .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
-        .spec(spec)
+        .spec(specBuilder.build())
         .isV2(true)
         .build();
   }
@@ -618,7 +627,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       Query query = new Query(criteria);
       Update update = new Update();
       update.set(EnvironmentKeys.isMigratedToOverride, true);
-      mongoTemplate.updateFirst(query, update, NGServiceOverridesEntity.class);
+      mongoTemplate.updateFirst(query, update, Environment.class);
       return true;
     } catch (Exception e) {
       log.error(String.format(DEBUG_LINE
