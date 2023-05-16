@@ -69,7 +69,7 @@ public class MergedPluginsConfigApiImpl implements MergedPluginsConfigApi {
       mergedPluginConfigResponse.setMergedConfig(mergedEnabledPluginAppConfigsForAccount);
       return Response.status(Response.Status.OK).entity(mergedPluginConfigResponse).build();
     } catch (Exception e) {
-      log.error(e.getMessage());
+      log.error("Exception - ",e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
