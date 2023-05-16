@@ -7,8 +7,12 @@
 
 package io.harness.resourcegroup.event.entitycrud;
 
-import static io.harness.eventsframework.EventsFrameworkMetadataConstants.*;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACCOUNT_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 
 import io.harness.eventHandlers.ResourceGroupCRUDEventHandler;
 import io.harness.eventsframework.consumer.Message;
@@ -61,9 +65,6 @@ public class ResourceGroupEntityCRUDStreamListener implements MessageListener {
     String action = message.getMessage().getMetadataMap().get(ACTION);
     if (action != null) {
       switch (action) {
-        case CREATE_ACTION:
-        case RESTORE_ACTION:
-          break;
         case DELETE_ACTION:
           return processOrganizationDeleteEvent(organizationEntityChangeDTO);
         default:
@@ -88,9 +89,6 @@ public class ResourceGroupEntityCRUDStreamListener implements MessageListener {
     String action = message.getMessage().getMetadataMap().get(ACTION);
     if (action != null) {
       switch (action) {
-        case CREATE_ACTION:
-        case RESTORE_ACTION:
-          break;
         case DELETE_ACTION:
           return processProjectDeleteEvent(projectEntityChangeDTO);
         default:
