@@ -319,11 +319,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
       KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
   private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY = Arrays.asList(
       KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS, ASG, AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
-
-  private static final String BUILD_STEP = "Builds";
-
   private static final List<String> AZURE_RESOURCE_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, AZURE, HELM, AZURE_WEBAPP, COMMANDS);
+  private static final String BUILD_STEP = "Builds";
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
