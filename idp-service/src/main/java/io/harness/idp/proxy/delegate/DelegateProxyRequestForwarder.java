@@ -38,16 +38,6 @@ public class DelegateProxyRequestForwarder {
   private static final long EXECUTION_TIMEOUT_IN_SECONDS = 60;
   private static final int SOCKET_TIMEOUT_IN_MILLISECONDS = 20000;
   DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  WaitNotifyEngine waitNotifyEngine;
-
-  public UriBuilder createUrlWithQueryParameters(String url, MultivaluedMap<String, String> queryParam) {
-    UriBuilder uriBuilder = UriBuilder.fromUri(url);
-
-    for (Map.Entry<String, List<String>> entry : queryParam.entrySet()) {
-      uriBuilder.queryParam(entry.getKey(), entry.getValue());
-    }
-    return uriBuilder;
-  }
 
   public List<HttpHeaderConfig> createHeaderConfig(Map<String, String> headers) {
     List<HttpHeaderConfig> headerList = new ArrayList<>();

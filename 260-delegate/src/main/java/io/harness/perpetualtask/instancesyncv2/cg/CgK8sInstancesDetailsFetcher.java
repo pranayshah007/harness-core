@@ -99,7 +99,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .setExecutionStatus(getExecutionStatus(instanceSyncTaskDetails.getIsHelm(), taskResponseData))
           .build();
     } catch (Exception e) {
-      log.error(
+      log.warn(
           "Exception while fetching running K8s pods for release details: [{}], infra mapping Id: [{}] of type: [{}]",
           releaseDetails.getTaskDetailsId(), releaseDetails.getInfraMappingId(), releaseDetails.getInfraMappingType(),
           e);
@@ -180,8 +180,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .build();
 
     } catch (Exception exception) {
-      log.error(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
-                    instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName()),
+      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
+                   instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName()),
           exception);
       return K8sTaskExecutionResponse.builder()
           .commandExecutionStatus(FAILURE)
@@ -203,8 +203,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .namespace(instanceSyncTaskDetails.getNamespace())
           .build();
     } catch (Exception exception) {
-      log.error(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
-                    instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName()),
+      log.warn(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
+                   instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName()),
           exception);
 
       return ContainerSyncResponse.builder()

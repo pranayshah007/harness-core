@@ -9,7 +9,7 @@ package io.harness.ssca.execution;
 
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars;
-import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.ATTESTATION_PRIVATE_KEY;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PASSWORD;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMSOURCE;
@@ -29,6 +29,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.beans.Attestation;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.CosignAttestation;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
@@ -90,14 +92,19 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetSscaOrchestrationSecretVars() {
     SscaOrchestrationStepInfo stepInfo =
-        SscaOrchestrationStepInfo.builder().attestation(Attestation.builder().privateKey("test").build()).build();
+        SscaOrchestrationStepInfo.builder()
+            .attestation(Attestation.builder()
+                             .type(AttestationType.COSIGN)
+                             .attestationSpec(CosignAttestation.builder().password("test").privateKey("key").build())
+                             .build())
+            .build();
 
     Map<String, SecretNGVariable> secretNGVariableMap = getSscaOrchestrationSecretVars(stepInfo);
-    assertThat(secretNGVariableMap).isNotNull().isNotEmpty().hasSize(1);
-    assertThat(secretNGVariableMap.get(ATTESTATION_PRIVATE_KEY)).isNotNull();
-    SecretNGVariable variable = secretNGVariableMap.get(ATTESTATION_PRIVATE_KEY);
+    assertThat(secretNGVariableMap).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(secretNGVariableMap.get(COSIGN_PASSWORD)).isNotNull();
+    SecretNGVariable variable = secretNGVariableMap.get(COSIGN_PASSWORD);
     assertThat(variable.getType()).isEqualTo(NGVariableType.SECRET);
-    assertThat(variable.getName()).isEqualTo(ATTESTATION_PRIVATE_KEY);
+    assertThat(variable.getName()).isEqualTo(COSIGN_PASSWORD);
     assertThat(variable.getValue()).isNotNull();
     SecretRefData secretRefData = variable.getValue().getValue();
     assertThat(secretRefData).isNotNull();
@@ -106,14 +113,17 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
 
     SscaOrchestrationStepInfo accountLevelSecretStepInfo =
         SscaOrchestrationStepInfo.builder()
-            .attestation(Attestation.builder().privateKey("account.test").build())
+            .attestation(
+                Attestation.builder()
+                    .type(AttestationType.COSIGN)
+                    .attestationSpec(CosignAttestation.builder().password("account.test").privateKey("key").build())
+                    .build())
             .build();
     Map<String, SecretNGVariable> secretVariableMap1 = getSscaOrchestrationSecretVars(accountLevelSecretStepInfo);
-    assertThat(secretVariableMap1).isNotEmpty().hasSize(1);
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY)).isNotNull();
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY).getValue().getValue()).isNotNull();
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY).getValue().getValue().getScope())
-        .isEqualTo(Scope.ACCOUNT);
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY).getValue().getValue().getIdentifier()).isEqualTo("test");
+    assertThat(secretVariableMap1).isNotEmpty().hasSize(2);
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD)).isNotNull();
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD).getValue().getValue()).isNotNull();
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD).getValue().getValue().getScope()).isEqualTo(Scope.ACCOUNT);
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD).getValue().getValue().getIdentifier()).isEqualTo("test");
   }
 }

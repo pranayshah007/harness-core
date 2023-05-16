@@ -121,4 +121,6 @@ public interface NgUserService {
   boolean verifyHarnessSupportGroupUser();
 
   UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
+
+  UserMetadata updateUserMetadataInternal(UserMetadataDTO user);
 }

@@ -1840,6 +1840,18 @@
             "samBuildDockerRegistryConnectorRef": {
               "type": "string"
             },
+            "samVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "settings": {
               "oneOf": [
                 {
@@ -1942,6 +1954,18 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "samVersion": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
                 }
               ]
             },

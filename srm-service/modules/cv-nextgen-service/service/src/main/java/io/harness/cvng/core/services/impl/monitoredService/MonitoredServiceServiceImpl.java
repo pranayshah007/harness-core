@@ -248,6 +248,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                      .build();
 
     validate(monitoredServiceDTO, accountId);
+    filterOutHarnessCDChangeSource(monitoredServiceDTO);
     checkIfAlreadyPresent(accountId, environmentParams, monitoredServiceDTO.getIdentifier(),
         monitoredServiceDTO.getSources(), monitoredServiceDTO.getType());
 
@@ -395,6 +396,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         -> baseMonitoredServiceHandler.beforeUpdate(
             environmentParams, existingMonitoredServiceDTO, monitoredServiceDTO));
     validate(monitoredServiceDTO, accountId);
+    filterOutHarnessCDChangeSource(monitoredServiceDTO);
 
     updateHealthSources(monitoredService, monitoredServiceDTO);
     changeSourceService.update(MonitoredServiceParams.builderWithProjectParams(environmentParams)
@@ -2194,6 +2196,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         notificationRuleRefs.stream().map(NotificationRuleRef::getNotificationRuleRef).collect(Collectors.toList());
     notificationRuleService.deleteNotificationRuleRefs(
         projectParams, existingNotificationRuleRefs, updatedNotificationRuleRefs);
+  }
+
+  private void filterOutHarnessCDChangeSource(MonitoredServiceDTO monitoredServiceDTO) {
+    Sources sources = monitoredServiceDTO.getSources();
+    Set<ChangeSourceDTO> changeSourceDTOList = monitoredServiceDTO.getSources().getChangeSources();
+    sources.setChangeSources(changeSourceDTOList.stream()
+                                 .filter(changeSourceDTO -> changeSourceDTO.getType() != ChangeSourceType.HARNESS_CD)
+                                 .collect(Collectors.toSet()));
+    monitoredServiceDTO.setSources(sources);
   }
 
   @Value

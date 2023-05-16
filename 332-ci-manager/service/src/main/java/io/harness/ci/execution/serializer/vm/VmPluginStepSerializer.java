@@ -126,6 +126,9 @@ public class VmPluginStepSerializer {
     envVars.putAll(
         resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false, fVal));
     if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
       envVars.put("HARNESS_DELEGATE_ID", delegateId);
     }
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(

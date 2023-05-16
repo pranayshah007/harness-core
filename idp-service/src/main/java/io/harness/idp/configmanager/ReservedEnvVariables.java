@@ -17,6 +17,7 @@ public class ReservedEnvVariables {
 
   public static final List<String> reservedEnvVariables =
       new ArrayList<>(List.of(Constants.GITHUB_TOKEN, Constants.GITHUB_APP_ID, Constants.GITHUB_APP_PRIVATE_KEY_REF,
-          Constants.GITLAB_TOKEN, Constants.BITBUCKET_CLOUD_USERNAME, Constants.BITBUCKET_TOKEN,
-          Constants.AZURE_REPO_TOKEN, Constants.BACKEND_SECRET, Constants.PROXY_ENV_NAME));
+          Constants.GITLAB_TOKEN, Constants.BITBUCKET_USERNAME, Constants.BITBUCKET_TOKEN,
+          Constants.BITBUCKET_USERNAME_API_ACCESS, Constants.BITBUCKET_API_ACCESS_TOKEN, Constants.AZURE_REPO_TOKEN,
+          Constants.BACKEND_SECRET, Constants.PROXY_ENV_NAME));
 }

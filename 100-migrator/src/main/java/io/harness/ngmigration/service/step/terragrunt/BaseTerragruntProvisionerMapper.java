@@ -219,6 +219,12 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
   protected List<TerragruntVarFileWrapper> getVarFiles(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, TerragruntProvisionState state) {
     List<TerragruntVarFileWrapper> varFileWrappers = new ArrayList<>();
+
+    TerragruntVarFileWrapper remoteTerragruntVarFile = getRemoteTerragruntVarFile(entities, migratedEntities, state);
+    if (remoteTerragruntVarFile != null) {
+      varFileWrappers.add(remoteTerragruntVarFile);
+    }
+
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       String inlineContent = convertNameValuePairToContent(migratedEntities, state.getVariables());
       TerragruntVarFileWrapper wrapper = new TerragruntVarFileWrapper();
@@ -232,10 +238,11 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       varFileWrappers.add(wrapper);
     }
 
-    if (isEmpty(state.getTfVarFiles()) && state.getTfVarGitFileConfig() == null) {
-      return varFileWrappers;
-    }
+    return varFileWrappers;
+  }
 
+  private TerragruntVarFileWrapper getRemoteTerragruntVarFile(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, TerragruntProvisionState state) {
     TerragruntVarFileWrapper wrapper = new TerragruntVarFileWrapper();
     RemoteTerragruntVarFileSpec remoteTerragruntVarFileSpec = new RemoteTerragruntVarFileSpec();
     GitStore gitStore = null;
@@ -267,9 +274,9 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
                              .type(TerragruntVarFileTypes.Remote)
                              .spec(remoteTerragruntVarFileSpec)
                              .build());
-      varFileWrappers.add(wrapper);
+      return wrapper;
     }
-    return varFileWrappers;
+    return null;
   }
 
   protected ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(TerragruntProvisionState state) {
@@ -392,7 +399,9 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       TerragruntStepConfiguration stepConfiguration = new TerragruntStepConfiguration();
       stepConfiguration.setTerragruntExecutionData(
           getExecutionData(context.getEntities(), context.getMigratedEntities(), state));
-      stepConfiguration.setTerragruntStepConfigurationType(TerragruntStepConfigurationType.INLINE);
+      stepConfiguration.setTerragruntStepConfigurationType(state.isInheritApprovedPlan()
+              ? TerragruntStepConfigurationType.INHERIT_FROM_PLAN
+              : TerragruntStepConfigurationType.INLINE);
       TerragruntApplyStepInfo stepInfo =
           TerragruntApplyStepInfo.infoBuilder()
               .delegateSelectors(getDelegateSelectors(state))

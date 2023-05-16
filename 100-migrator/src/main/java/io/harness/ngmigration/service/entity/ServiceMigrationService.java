@@ -397,11 +397,12 @@ public class ServiceMigrationService extends NgMigrationService {
         migrationContext, service, manifestConfigWrapperList, configFileWrapperList, startupScriptConfigurations);
     if (serviceDefinition == null) {
       return YamlGenerationDetails.builder()
-          .skipDetails(Collections.singletonList(NGSkipDetail.builder()
-                                                     .reason("Unsupported Service")
-                                                     .cgBasicInfo(service.getCgBasicInfo())
-                                                     .type(entityId.getType())
-                                                     .build()))
+          .skipDetails(
+              Collections.singletonList(NGSkipDetail.builder()
+                                            .reason("Unsupported Service or some referenced entities were not migrated")
+                                            .cgBasicInfo(service.getCgBasicInfo())
+                                            .type(entityId.getType())
+                                            .build()))
           .build();
     }
 

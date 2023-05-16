@@ -23,7 +23,7 @@ public class SecretMigratorFunctor implements ExpressionFunctor {
 
   private Scope scope;
 
-  private static Pattern VAR_PATTERN = Pattern.compile("VAR.*VAR.*");
+  private static Pattern VAR_PATTERN = Pattern.compile(".*VAR.*VAR.*");
 
   public SecretMigratorFunctor(Map<String, String> nameToIdentifier, CaseFormat caseFormat, Scope scope) {
     this.caseFormat = caseFormat;

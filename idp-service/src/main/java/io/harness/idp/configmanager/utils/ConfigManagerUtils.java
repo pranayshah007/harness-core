@@ -34,12 +34,19 @@ public class ConfigManagerUtils {
   private static final String GITHUB_CONFIG_FILE = "configs/integrations/github.yaml";
   private static final String GITHUB_APP_CONFIG_FILE = "configs/integrations/github-app.yaml";
   private static final String GITLAB_CONFIG_FILE = "configs/integrations/gitlab.yaml";
-  private static final String BITBUCKET_CONFIG_FILE = "configs/integrations/bitbucket.yaml";
+  private static final String BITBUCKET_CLOUD_CONFIG_FILE = "configs/integrations/bitbucket-cloud.yaml";
+  private static final String BITBUCKET_SERVER_BASIC_AUTH_CONFIG_FILE =
+      "configs/integrations/bitbucket-server-basic-auth.yaml";
+  private static final String BITBUCKET_SERVER_PAT_CONFIG_FILE = "configs/integrations/bitbucket-server-pat.yaml";
   private static final String AZURE_CONFIG_FILE = "configs/integrations/azure.yaml";
   private static final String GITHUB_JSON_SCHEMA_FILE = "configs/integrations/json-schemas/github-schema.json";
   private static final String GITHUB_APP_JSON_SCHEMA_FILE = "configs/integrations/json-schemas/github-app-schema.json";
   private static final String GITLAB_JSON_SCHEMA_FILE = "configs/integrations/json-schemas/gitlab-schema.json";
   private static final String BITBUCKET_JSON_SCHEMA_FILE = "configs/integrations/json-schemas/bitbucket-schema.json";
+  private static final String BITBUCKET_SERVER_BASIC_AUTH_JSON_SCHEMA_FILE =
+      "configs/integrations/json-schemas/bitbucket-server-basic-auth-schema.json";
+  private static final String BITBUCKET_SERVER_PAT_JSON_SCHEMA_FILE =
+      "configs/integrations/json-schemas/bitbucket-server-pat-schema.json";
   private static final String AZURE_JSON_SCHEMA_FILE = "configs/integrations/json-schemas/azure-schema.json";
 
   private static final String KAFKA_PLUGIN_CONFIG_PATH = "configs/kafka.yaml";
@@ -85,8 +92,12 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(GITLAB_CONFIG_FILE);
       case "AzureRepo":
         return readFileFromClassPath(AZURE_CONFIG_FILE);
-      case "Bitbucket":
-        return readFileFromClassPath(BITBUCKET_CONFIG_FILE);
+      case "Bitbucket_Cloud":
+        return readFileFromClassPath(BITBUCKET_CLOUD_CONFIG_FILE);
+      case "Bitbucket_Server_Auth":
+        return readFileFromClassPath(BITBUCKET_SERVER_BASIC_AUTH_CONFIG_FILE);
+      case "Bitbucket_Server_Pat":
+        return readFileFromClassPath(BITBUCKET_SERVER_PAT_CONFIG_FILE);
       default:
         return null;
     }
@@ -119,8 +130,12 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(GITLAB_JSON_SCHEMA_FILE);
       case "AzureRepo":
         return readFileFromClassPath(AZURE_JSON_SCHEMA_FILE);
-      case "Bitbucket":
+      case "Bitbucket_Cloud":
         return readFileFromClassPath(BITBUCKET_JSON_SCHEMA_FILE);
+      case "Bitbucket_Server_Auth":
+        return readFileFromClassPath(BITBUCKET_SERVER_BASIC_AUTH_JSON_SCHEMA_FILE);
+      case "Bitbucket_Server_Pat":
+        return readFileFromClassPath(BITBUCKET_SERVER_PAT_JSON_SCHEMA_FILE);
       default:
         return null;
     }
