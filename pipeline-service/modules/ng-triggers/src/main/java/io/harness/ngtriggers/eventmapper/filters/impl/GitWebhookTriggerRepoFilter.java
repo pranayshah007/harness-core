@@ -159,17 +159,25 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private void evaluateWrapperForProjectLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String accUrl = wrapper.getUrl();
-    accUrl = sanitizeUrl(accUrl);
+    String sanitizedAccUrl = sanitizeUrl(accUrl);
 
     for (TriggerDetails details : wrapper.getTriggers()) {
       try {
         if (wrapper.getConnectorType() == ConnectorType.AZURE_REPO) {
-          final String repoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
-              accUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
-          String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+          final String sanitizedRepoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
+              sanitizedAccUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
+          String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(sanitizedRepoUrl)).findAny().orElse(null);
 
           if (!isBlank(finalUrl)) {
             eligibleTriggers.add(details);
+          } else {
+            final String repoUrl = GitClientHelper.getCompleteUrlForProjectLevelAzureConnector(
+                accUrl, details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName());
+            finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+
+            if (!isBlank(finalUrl)) {
+              eligibleTriggers.add(details);
+            }
           }
         }
       } catch (Exception e) {
@@ -181,21 +189,34 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   private void evaluateWrapperForAccountLevelGitConnector(
       Set<String> urls, List<TriggerDetails> eligibleTriggers, TriggerGitConnectorWrapper wrapper) {
     String accUrl = wrapper.getUrl();
-    accUrl = sanitizeUrl(accUrl);
+    String sanitizedAccUrl = sanitizeUrl(accUrl);
 
     for (TriggerDetails details : wrapper.getTriggers()) {
       try {
-        final String repoUrl =
+        final String sanitizedRepoUrl =
             new StringBuilder(128)
-                .append(accUrl)
-                .append(accUrl.endsWith("/") ? EMPTY : '/')
+                .append(sanitizedAccUrl)
+                .append(sanitizedAccUrl.endsWith("/") ? EMPTY : '/')
                 .append(details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
                 .toString();
 
-        String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+        String finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(sanitizedRepoUrl)).findAny().orElse(null);
 
         if (!isBlank(finalUrl)) {
           eligibleTriggers.add(details);
+        } else {
+          final String repoUrl =
+              new StringBuilder(128)
+                  .append(accUrl)
+                  .append(accUrl.endsWith("/") ? EMPTY : '/')
+                  .append(details.getNgTriggerEntity().getMetadata().getWebhook().getGit().getRepoName())
+                  .toString();
+
+          finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(repoUrl)).findAny().orElse(null);
+
+          if (!isBlank(finalUrl)) {
+            eligibleTriggers.add(details);
+          }
         }
       } catch (Exception e) {
         log.error(getTriggerSkipMessage(details.getNgTriggerEntity()));
@@ -213,6 +234,12 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
 
     if (!isBlank(finalUrl)) {
       eligibleTriggers.addAll(wrapper.getTriggers());
+    } else {
+      finalUrl = urls.stream().filter(u -> u.equalsIgnoreCase(url)).findAny().orElse(null);
+
+      if (!isBlank(finalUrl)) {
+        eligibleTriggers.addAll(wrapper.getTriggers());
+      }
     }
   }
 
@@ -225,10 +252,17 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
   And we allow connector url as http://<something>, http://www.<something>, https://www.<something>
   This method will do the required fix
    */
+  @VisibleForTesting
   String sanitizeUrl(String url) {
     String modifiedUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     modifiedUrl = modifiedUrl.replaceFirst("http://", "https://");
     modifiedUrl = modifiedUrl.replaceFirst("https://www.", "https://");
+
+    if (modifiedUrl.contains("ssh://")) {
+      modifiedUrl = !modifiedUrl.contains("@") ? modifiedUrl.replaceFirst("ssh://", "git@")
+                                               : modifiedUrl.replaceFirst("ssh://", "");
+      modifiedUrl = modifiedUrl.contains(":") ? modifiedUrl : modifiedUrl.replaceFirst("/", ":");
+    }
 
     return modifiedUrl;
   }

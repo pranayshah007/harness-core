@@ -78,6 +78,16 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   }
 
   @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void testAccountLevelClusterDelete() {
+    final String uuid = UUIDGenerator.generateUuid();
+    clusterService.create(getAccountLevelCluster(uuid));
+    clusterService.delete(ACCOUNT_ID, null, null, ENV_ID, uuid, ScopeLevel.PROJECT);
+    assertThat(clusterService.get(ACCOUNT_ID, null, null, ENV_ID, uuid)).isNotPresent();
+  }
+
+  @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testDeleteFromAllEnv() {
@@ -245,6 +255,10 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
         .envRef(ENV_ID)
         .clusterRef(uuid)
         .build();
+  }
+
+  private Cluster getAccountLevelCluster(String uuid) {
+    return Cluster.builder().accountId(ACCOUNT_ID).envRef(ENV_ID).clusterRef(uuid).build();
   }
 
   private Cluster getClusterForEnv(String envRef, String uuid) {

@@ -8,6 +8,7 @@
 package io.harness.migrations.all;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.event.handler.impl.MarketoHelper;
@@ -71,7 +72,8 @@ public class SendInviteUrlForAllUserInvites implements Migration {
       return;
     }
 
-    try (HIterator<UserInvite> userInvites = new HIterator<>(wingsPersistence.createQuery(UserInvite.class).fetch())) {
+    try (HIterator<UserInvite> userInvites =
+             new HIterator<>(wingsPersistence.createQuery(UserInvite.class).limit(NO_LIMIT).fetch())) {
       UserInvite userInvite;
       User user = null;
       while (userInvites.hasNext()) {

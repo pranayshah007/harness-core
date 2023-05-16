@@ -11,5 +11,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public enum EntityUnavailabilityStatus {
   @JsonProperty("MonitoredServiceDisabled") MONITORED_SERVICE_DISABLED,
   @JsonProperty("MaintenanceWindow") MAINTENANCE_WINDOW,
-  @JsonProperty("DataCollectionFailed") DATA_COLLECTION_FAILED
+  @JsonProperty("DataCollectionFailed") DATA_COLLECTION_FAILED,
+
+  @JsonProperty("DataRecollectionPassed") DATA_RECOLLECTION_PASSED,
+
+  @JsonProperty("DataRestored") DATA_RESTORED
 }

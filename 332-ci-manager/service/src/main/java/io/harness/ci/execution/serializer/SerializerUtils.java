@@ -9,7 +9,6 @@ package io.harness.ci.serializer;
 
 import static java.lang.String.format;
 
-import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -55,18 +54,30 @@ public class SerializerUtils {
     return entrypoint;
   }
 
-  public static String getK8sDebugCommand(int timeoutSeconds) {
+  public static String getK8sDebugCommand(String accountId, int timeoutSeconds) {
     return String.format("remote_debug() %n  { %n  if [ "
-        + " \"$?\" -ne \"0\" ]; then %n"
-        + " timeout " + Integer.toString(timeoutSeconds) + "s /addon/bin/tmate -F;  "
-        + " %n fi %n } %n trap remote_debug EXIT");
+            + " \"$?\" -ne \"0\" ]; then %n"
+            + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
+            + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
+            + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
+            + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
+            + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
+            + " timeout " + Integer.toString(timeoutSeconds) + "s /addon/bin/tmate -f tmate.conf -F;  "
+            + " %n fi %n } %n trap remote_debug EXIT",
+        accountId);
   }
 
-  public static String getVmDebugCommand(int timeoutSeconds) {
+  public static String getVmDebugCommand(String accountId, int timeoutSeconds) {
     return String.format("remote_debug() %n  { %n  if [ "
-        + " \"$?\" -ne \"0\" ]; then %n"
-        + "timeout " + Integer.toString(timeoutSeconds) + "s  /addon/tmate -F; "
-        + " %n fi %n } %n trap remote_debug EXIT");
+            + " \"$?\" -ne \"0\" ]; then %n"
+            + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
+            + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
+            + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
+            + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
+            + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
+            + "timeout " + Integer.toString(timeoutSeconds) + "s  /addon/tmate -f tmate.conf -F; "
+            + " %n fi %n } %n trap remote_debug EXIT",
+        accountId);
   }
 
   public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType) {
@@ -147,33 +158,30 @@ public class SerializerUtils {
 
   public static String getSafeGitDirectoryCmd(
       CIShellType shellType, String accountId, CIFeatureFlagService featureFlagService) {
-    // This adds the safe directory to the end of .gitconfig file based on FF
-    if (featureFlagService.isEnabled(FeatureName.CI_DISABLE_GIT_SAFEDIR, accountId)) {
-      return "";
+    // This adds the safe directory to the end of .gitconfig file
+
+    String safeDirScript;
+    if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
+      safeDirScript = "set +x\n"
+          + "if [ -x \"$(command -v git)\" ]; then\n"
+          + "  git config --global --add safe.directory '*' || true \n"
+          + "fi\n"
+          + "set -x\n";
+    } else if (shellType == CIShellType.PYTHON) {
+      safeDirScript = "import subprocess\n"
+          + "try:\n"
+          + "\tsubprocess.run(['git', 'config', '--global', '--add', 'safe.directory', '*'])\n"
+          + "except:\n"
+          + "\tpass\n";
     } else {
-      String safeDirScript;
-      if (shellType == CIShellType.SH || shellType == CIShellType.BASH) {
-        safeDirScript = "set +x\n"
-            + "if [ -x \"$(command -v git)\" ]; then\n"
-            + "  git config --global --add safe.directory '*' || true \n"
-            + "fi\n"
-            + "set -x\n";
-      } else if (shellType == CIShellType.PYTHON) {
-        safeDirScript = "import subprocess\n"
-            + "try:\n"
-            + "\tsubprocess.run(['git', 'config', '--global', '--add', 'safe.directory', '*'])\n"
-            + "except:\n"
-            + "\tpass\n";
-      } else {
-        safeDirScript = "try\n"
-            + "{\n"
-            + "    git config --global --add safe.directory '*' | Out-Null\n"
-            + "}\n"
-            + "catch [System.Management.Automation.CommandNotFoundException]\n"
-            + "{\n }\n";
-      }
-      return safeDirScript;
+      safeDirScript = "try\n"
+          + "{\n"
+          + "    git config --global --add safe.directory '*' | Out-Null\n"
+          + "}\n"
+          + "catch [System.Management.Automation.CommandNotFoundException]\n"
+          + "{\n }\n";
     }
+    return safeDirScript;
   }
 
   public static String getTestSplitStrategy(String splitStrategy) {

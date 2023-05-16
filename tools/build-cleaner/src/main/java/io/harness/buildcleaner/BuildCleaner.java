@@ -382,7 +382,7 @@ public class BuildCleaner {
     // Look up symbol in the maven manifest.
     if (mavenManifest != null) {
       resolvedSymbol = mavenManifest.getTarget(importStatement);
-      if (resolvedSymbol.isPresent()) {
+      if (resolvedSymbol.isPresent() && !resolvedSymbol.get().equals("@maven//:io_harness_ng_license_beans")) {
         return resolvedSymbol;
       }
     }

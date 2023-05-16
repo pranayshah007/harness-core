@@ -10,6 +10,7 @@ package io.harness.nexus;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.nexus.model.DockerImageResponse;
 import io.harness.nexus.model.DockerImageTagResponse;
 import io.harness.nexus.model.Nexus3AssetResponse;
@@ -57,6 +58,33 @@ public interface NexusThreeRestClient {
   @GET("repository/{repoKey}/v2/{imageName}/tags/list")
   Call<DockerImageTagResponse> getDockerTags(@Path(value = "repoKey", encoded = true) String repository,
       @Path(value = "imageName", encoded = true) String imageName);
+
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v1+json, application/vnd.docker.distribution.manifest.v1+prettyjws, application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json")
+  @GET("repository/{repoKey}/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV1(@Header("Authorization") String authorization,
+      @Path(value = "repoKey", encoded = true) String repository,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json")
+  @GET("repository/{repoKey}/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV2(@Header("Authorization") String authorization,
+      @Path(value = "repoKey", encoded = true) String repository,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v1+json, application/vnd.docker.distribution.manifest.v1+prettyjws, application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json")
+  @GET("repository/{repoKey}/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV1(@Path(value = "repoKey", encoded = true) String repository,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v2+prettyjws, application/vnd.oci.image.index.v2+json, application/vnd.oci.image.manifest.v2+json")
+  @GET("repository/{repoKey}/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifestV2(@Path(value = "repoKey", encoded = true) String repository,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
 
   @Headers("Accept: application/json")
   @GET("service/rest/v1/repositories")

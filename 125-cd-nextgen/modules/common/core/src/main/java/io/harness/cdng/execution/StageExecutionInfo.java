@@ -8,6 +8,7 @@
 package io.harness.cdng.execution;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -17,6 +18,7 @@ import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.utils.StageStatus;
 
 import com.google.common.collect.ImmutableList;
@@ -47,6 +49,11 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("stageExecutionInfo")
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.CDP)
+@ChangeDataCapture(table = "stage_execution", dataStore = "ng-harness", fields = {}, handler = "StageExecutionHandler")
+@ChangeDataCapture(
+    table = "cd_stage_execution", dataStore = "ng-harness", fields = {}, handler = "CDStageExecutionHandler")
+@ChangeDataCapture(
+    table = "execution_tags_info_ng", dataStore = "pms-harness", fields = {}, handler = "StageTagsInfoNGCD")
 public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @org.springframework.data.annotation.Id @Id String uuid;
   @CreatedDate private long createdAt;
@@ -55,14 +62,24 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
   @NotNull private String accountIdentifier;
   @NotNull private String orgIdentifier;
   @NotNull private String projectIdentifier;
-  @NotNull private String envIdentifier;
-  @NotNull private String infraIdentifier;
-  @NotNull private String serviceIdentifier;
+  @Nullable private String envIdentifier;
+  @Nullable private String infraIdentifier;
+  @Nullable private String serviceIdentifier;
   @NotNull private String stageExecutionId;
+  private String planExecutionId;
+  private String pipelineIdentifier;
+  private String stageName;
+  private String stageIdentifier;
   @NotNull private StageStatus stageStatus;
+  private Status status;
   @Nullable private String deploymentIdentifier;
+  @Nullable private ExecutionSummaryDetails executionSummaryDetails;
+  @Nullable private Long rollbackDuration;
+  @Nullable private Long startts;
+  @Nullable private Long endts;
 
-  @NotNull private ExecutionDetails executionDetails;
+  @Nullable private String[] tags;
+  @Nullable private ExecutionDetails executionDetails;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -97,6 +114,13 @@ public class StageExecutionInfo implements PersistentEntity, UuidAware {
                  .field(StageExecutionInfoKeys.serviceIdentifier)
                  .field(StageExecutionInfoKeys.deploymentIdentifier)
                  .field(StageExecutionInfoKeys.stageExecutionId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_stage_execution_info_using_stage_execution_id_idx")
+                 .field(StageExecutionInfoKeys.accountIdentifier)
+                 .field(StageExecutionInfoKeys.stageExecutionId)
+                 .field(StageExecutionInfoKeys.orgIdentifier)
+                 .field(StageExecutionInfoKeys.projectIdentifier)
                  .build())
         .build();
   }

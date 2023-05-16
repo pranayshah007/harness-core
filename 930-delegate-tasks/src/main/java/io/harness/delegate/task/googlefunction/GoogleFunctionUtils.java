@@ -16,6 +16,14 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CDP)
 public class GoogleFunctionUtils {
+  public static final String ENVIRONMENT_TYPE_GEN_ONE = "GenOne";
+  public static final String GOOGLE_CLOUD_STORAGE_ARTIFACT_FORMAT = "gs://%s/%s";
+  public static final String GOOGLE_CLOUD_SOURCE_ARTIFACT_COMMIT_FORMAT =
+      "https://source.developers.google.com/projects/%s/repos/%s/revisions/%s/paths/%s";
+  public static final String GOOGLE_CLOUD_SOURCE_ARTIFACT_BRANCH_FORMAT =
+      "https://source.developers.google.com/projects/%s/repos/%s/moveable-aliases/%s/paths/%s";
+  public static final String GOOGLE_CLOUD_SOURCE_ARTIFACT_TAG_FORMAT =
+      "https://source.developers.google.com/projects/%s/repos/%s/fixed-aliases/%s/paths/%s";
   public static final String CREATE_FUNCTION_FAILURE_HINT = "Please check for possible issues in: \n "
       + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
       + "3. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v2#createfunctionrequest \n "
@@ -41,6 +49,10 @@ public class GoogleFunctionUtils {
   public static final String CREATE_FUNCTION_PARSE_FAILURE_HINT = "Please check for possible issues in: \n "
       + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
       + "2. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v2#createfunctionrequest \n ";
+
+  public static final String CREATE_FUNCTION_GEN_ONE_PARSE_FAILURE_HINT = "Please check for possible issues in: \n "
+      + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
+      + "2. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v1#google.cloud.functions.v1.CreateFunctionRequest \n ";
 
   public static final String FIELD_MASK_PARSE_FAILURE_HINT = "Please check for possible issues in: \n "
       + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
@@ -71,4 +83,14 @@ public class GoogleFunctionUtils {
 
   public static final String GET_CLOUD_RUN_REVISION_FAILURE_ERROR =
       "Could not able to retrieve cloud-run service revision details.";
+
+  public static final String CREATE_FUNCTION_GEN_ONE_FAILURE_HINT = "Please check for possible issues in: \n "
+      + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
+      + "3. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v1#google.cloud.functions.v1.CreateFunctionRequest \n "
+      + "4. Refer troubleshooting documentation: https://cloud.google.com/functions/docs/troubleshooting";
+
+  public static final String UPDATE_FUNCTION_GEN_ONE_FAILURE_HINT = "Please check for possible issues in: \n "
+      + "1. Execution logs under deploy section. \n 2. Validate fields in cloud function manifest. \n "
+      + "3. Refer documentation for createFunctionRequest: https://cloud.google.com/functions/docs/reference/rpc/google.cloud.functions.v1#google.cloud.functions.v1.CreateFunctionRequest \n "
+      + "4. Refer troubleshooting documentation: https://cloud.google.com/functions/docs/troubleshooting";
 }

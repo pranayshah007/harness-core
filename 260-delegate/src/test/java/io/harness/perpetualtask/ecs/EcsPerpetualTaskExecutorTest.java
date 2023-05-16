@@ -13,11 +13,11 @@ import static io.harness.rule.OwnerRule.HITESH;
 
 import static java.time.temporal.ChronoUnit.HOURS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
@@ -44,7 +44,6 @@ import com.amazonaws.services.ecs.model.Service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
@@ -77,7 +76,6 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
   @Mock private EcsMetricClient ecsMetricClient;
   @Mock private EventPublisher eventPublisher;
   @Inject KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Parameterized.Parameter public Clock clock;
   @Parameterized.Parameters(name = "{index}: with clock: {0}")
@@ -105,8 +103,8 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    ecsPerpetualTaskExecutor = new EcsPerpetualTaskExecutor(ecsHelperServiceDelegate, ec2ServiceDelegate,
-        ecsMetricClient, eventPublisher, clock, kryoSerializer, referenceFalseKryoSerializer);
+    ecsPerpetualTaskExecutor = new EcsPerpetualTaskExecutor(
+        ecsHelperServiceDelegate, ec2ServiceDelegate, ecsMetricClient, eventPublisher, clock, kryoSerializer);
     cache = Reflect.on(ecsPerpetualTaskExecutor).get("cache");
   }
 
@@ -176,11 +174,11 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
     Instant heartBeatTime = Instant.now(clock);
 
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).build();
-    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsConfig));
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(awsConfig));
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>(Collections.singletonList(encryptedDataDetail));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(encryptionDetails));
+    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails));
 
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterId(CLUSTER_ID)
@@ -208,10 +206,10 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
     Instant metricsCollectedTillHour = now.truncatedTo(HOURS).minus(1, HOURS);
     cache.put(CLUSTER_ID, EcsActiveInstancesCache.builder().metricsCollectedTillHour(metricsCollectedTillHour).build());
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).build();
-    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsConfig));
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(awsConfig));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>(Collections.singletonList(encryptedDataDetail));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(encryptionDetails));
+    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails));
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterId(CLUSTER_ID)
                                                         .setRegion(REGION)
@@ -228,9 +226,9 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
 
     then(ecsMetricClient)
         .should(times(1))
-        .getUtilizationMetrics(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class),
+        .getUtilizationMetrics(any(AwsConfig.class), anyList(),
             eq(Date.from(now.minus(Duration.ofHours(1)).truncatedTo(HOURS))), eq(Date.from(now.truncatedTo(HOURS))),
-            any(Cluster.class), anyListOf(Service.class), any(EcsPerpetualTaskParams.class));
+            any(Cluster.class), anyList(), any(EcsPerpetualTaskParams.class));
   }
 
   @Test
@@ -239,10 +237,10 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
   public void shouldQuery24HoursIfNoLastHeartBeat() throws Exception {
     Instant heartBeatTime = Instant.ofEpochMilli(0);
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).build();
-    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsConfig));
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(awsConfig));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>(Collections.singletonList(encryptedDataDetail));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(encryptionDetails));
+    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails));
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterId(CLUSTER_ID)
                                                         .setRegion(REGION)
@@ -262,7 +260,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
         .should(times(1))
         .getUtilizationMetrics(eq(awsConfig), eq(encryptionDetails),
             eq(Date.from(now.truncatedTo(HOURS).minus(Duration.ofHours(24)))), eq(Date.from(now.truncatedTo(HOURS))),
-            any(Cluster.class), anyListOf(Service.class), any(EcsPerpetualTaskParams.class));
+            any(Cluster.class), anyList(), any(EcsPerpetualTaskParams.class));
   }
 
   @Test
@@ -272,10 +270,10 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
     Instant now = Instant.now(clock);
     Instant heartBeatTime = now.minus(Duration.ofHours(7));
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).build();
-    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsConfig));
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(awsConfig));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>(Collections.singletonList(encryptedDataDetail));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(encryptionDetails));
+    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails));
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterId(CLUSTER_ID)
                                                         .setRegion(REGION)
@@ -293,8 +291,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
     then(ecsMetricClient)
         .should(times(1))
         .getUtilizationMetrics(eq(awsConfig), eq(encryptionDetails), eq(Date.from(heartBeatTime.truncatedTo(HOURS))),
-            eq(Date.from(now.truncatedTo(HOURS))), any(Cluster.class), anyListOf(Service.class),
-            any(EcsPerpetualTaskParams.class));
+            eq(Date.from(now.truncatedTo(HOURS))), any(Cluster.class), anyList(), any(EcsPerpetualTaskParams.class));
   }
 
   @Test
@@ -306,10 +303,10 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
     Instant metricsCollectedTillHour = now.truncatedTo(HOURS);
     cache.put(CLUSTER_ID, EcsActiveInstancesCache.builder().metricsCollectedTillHour(metricsCollectedTillHour).build());
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).build();
-    ByteString bytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(awsConfig));
+    ByteString bytes = ByteString.copyFrom(kryoSerializer.asBytes(awsConfig));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     List<EncryptedDataDetail> encryptionDetails = new ArrayList<>(Collections.singletonList(encryptedDataDetail));
-    ByteString encryptionDetailBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(encryptionDetails));
+    ByteString encryptionDetailBytes = ByteString.copyFrom(kryoSerializer.asBytes(encryptionDetails));
     EcsPerpetualTaskParams ecsPerpetualTaskParams = EcsPerpetualTaskParams.newBuilder()
                                                         .setClusterId(CLUSTER_ID)
                                                         .setRegion(REGION)
@@ -326,7 +323,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
 
     then(ecsMetricClient)
         .should(never())
-        .getUtilizationMetrics(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), any(Date.class),
-            any(Date.class), any(Cluster.class), anyListOf(Service.class), any(EcsPerpetualTaskParams.class));
+        .getUtilizationMetrics(any(AwsConfig.class), anyList(), any(Date.class), any(Date.class), any(Cluster.class),
+            anyList(), any(EcsPerpetualTaskParams.class));
   }
 }

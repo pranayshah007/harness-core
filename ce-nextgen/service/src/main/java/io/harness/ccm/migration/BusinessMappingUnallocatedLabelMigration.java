@@ -11,10 +11,10 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.views.businessMapping.dao.BusinessMappingDao;
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
-import io.harness.ccm.views.businessMapping.entities.UnallocatedCost;
-import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.businessmapping.dao.BusinessMappingDao;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.UnallocatedCost;
+import io.harness.ccm.views.businessmapping.service.intf.BusinessMappingValidationService;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
 
@@ -28,7 +28,7 @@ public class BusinessMappingUnallocatedLabelMigration implements NGMigration {
   private static final String UNATTRIBUTED = "Unattributed";
   @Inject private BusinessMappingDao businessMappingDao;
   @Inject private HPersistence hPersistence;
-  @Inject BusinessMappingService businessMappingService;
+  @Inject private BusinessMappingValidationService businessMappingValidationService;
 
   @Override
   public void migrate() {
@@ -38,7 +38,7 @@ public class BusinessMappingUnallocatedLabelMigration implements NGMigration {
       final List<BusinessMapping> businessMappingList =
           hPersistence.createQuery(BusinessMapping.class, excludeAuthority).asList();
       for (final BusinessMapping businessMapping : businessMappingList) {
-        if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
+        if (businessMappingValidationService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
           try {
             migrateBusinessMappingUnallocatedCostLabel(businessMapping);
           } catch (final Exception e) {

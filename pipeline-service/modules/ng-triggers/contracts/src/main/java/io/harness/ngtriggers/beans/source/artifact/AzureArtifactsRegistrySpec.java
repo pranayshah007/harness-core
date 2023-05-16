@@ -63,6 +63,10 @@ public class AzureArtifactsRegistrySpec implements ArtifactTypeSpec {
    */
   List<TriggerEventDataCondition> eventConditions;
 
+  List<TriggerEventDataCondition> metaDataConditions;
+
+  String jexlCondition;
+
   @Override
   public String fetchConnectorRef() {
     return connectorRef;
@@ -76,5 +80,15 @@ public class AzureArtifactsRegistrySpec implements ArtifactTypeSpec {
   @Override
   public List<TriggerEventDataCondition> fetchEventDataConditions() {
     return eventConditions;
+  }
+
+  @Override
+  public List<TriggerEventDataCondition> fetchMetaDataConditions() {
+    return metaDataConditions;
+  }
+
+  @Override
+  public String fetchJexlArtifactConditions() {
+    return jexlCondition;
   }
 }

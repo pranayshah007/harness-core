@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.userGroup;
 
+import static io.harness.beans.FeatureName.SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -22,7 +23,9 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.ccm.config.CCMSettingService;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.User;
@@ -52,16 +55,19 @@ import software.wings.graphql.schema.type.usergroup.QLSlackNotificationSetting;
 import software.wings.graphql.schema.type.usergroup.QLUserGroup;
 import software.wings.graphql.schema.type.usergroup.QLUserGroup.QLUserGroupBuilder;
 import software.wings.service.intfc.AccountService;
+import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,6 +83,8 @@ public class UserGroupController {
   @Inject private AccountService accountService;
   @Inject private UserGroupPermissionsController userGroupPermissionsController;
   @Inject private CCMSettingService ccmSettingService;
+  @Inject private AppService appService;
+  @Inject private FeatureFlagService featureFlagService;
 
   UserGroup validateAndGetUserGroup(String accountId, String userGroupId) {
     UserGroup userGroup = userGroupService.get(accountId, userGroupId);
@@ -114,6 +122,9 @@ public class UserGroupController {
     if (!ccmSettingService.isCloudCostEnabled(userGroup.getAccountId())) {
       userGroupService.maskCePermissions(userGroup);
     }
+    if (featureFlagService.isEnabled(SPG_GRAPHQL_VERIFY_APPLICATION_FROM_USER_GROUP, userGroup.getAccountId())) {
+      sanitizeAppPermissions(userGroup);
+    }
     QLGroupPermissions permissions = userGroupPermissionsController.populateUserGroupPermissions(userGroup);
     QLNotificationSettings notificationSettings = populateNotificationSettings(userGroup);
     return builder.name(userGroup.getName())
@@ -124,6 +135,21 @@ public class UserGroupController {
         .isSSOLinked(userGroup.isSsoLinked())
         .importedByScim(userGroup.isImportedByScim())
         .notificationSettings(notificationSettings);
+  }
+
+  @VisibleForTesting
+  void sanitizeAppPermissions(final UserGroup userGroup) {
+    try {
+      Predicate<String> notExist = id -> !appService.exist(id);
+
+      CollectionUtils.emptyIfNull(userGroup.getAppPermissions()).forEach(p -> {
+        if (p != null && p.getAppFilter() != null) {
+          CollectionUtils.emptyIfNull(p.getAppFilter().getIds()).removeIf(notExist);
+        }
+      });
+    } catch (RuntimeException e) {
+      log.error(String.format("Unable to sanitize application permissions of user group <%s>", userGroup), e);
+    }
   }
 
   public QLCreateUserGroupPayload populateCreateUserGroupPayload(UserGroup userGroup, String requestId) {

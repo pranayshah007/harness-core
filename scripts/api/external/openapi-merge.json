@@ -22,7 +22,7 @@
       "inputFile": "../../../pipeline-service/contracts/openapi/v1/openapi.yaml"
     },
     {
-      "inputFile": "../../../840-template-service/contracts/openapi/v1/openapi.yaml"
+      "inputFile": "../../../template-service/contracts/openapi/v1/openapi.yaml"
     }
   ],
   "output": "merged.yaml"

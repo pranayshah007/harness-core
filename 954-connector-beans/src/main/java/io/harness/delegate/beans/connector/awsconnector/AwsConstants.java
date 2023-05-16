@@ -15,4 +15,7 @@ public class AwsConstants {
   public static final String INHERIT_FROM_DELEGATE = "InheritFromDelegate";
   public static final String MANUAL_CONFIG = "ManualConfig";
   public static final String IRSA = "Irsa";
+  public static final String FIXED_DELAY_BACKOFF_STRATEGY = "FixedDelayBackoffStrategy";
+  public static final String EQUAL_JITTER_BACKOFF_STRATEGY = "EqualJitterBackoffStrategy";
+  public static final String FULL_JITTER_BACKOFF_STRATEGY = "FullJitterBackoffStrategy";
 }

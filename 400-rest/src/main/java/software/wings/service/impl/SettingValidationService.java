@@ -198,6 +198,7 @@ public class SettingValidationService {
         sshVaultConfig = sshVaultService.getSSHVaultConfig(settingAttribute.getAccountId(),
             ((HostConnectionAttributes) settingAttribute.getValue()).getSshVaultConfigId());
       }
+      settingServiceHelper.setFeatureFlagIfRequired(settingValue, settingAttribute.getAccountId());
       ConnectivityValidationDelegateRequest request = ConnectivityValidationDelegateRequest.builder()
                                                           .encryptedDataDetails(encryptionDetails)
                                                           .settingAttribute(settingAttribute.toDTO())
@@ -296,6 +297,7 @@ public class SettingValidationService {
 
     SettingValue settingValue = settingAttribute.getValue();
     settingServiceHelper.setCertValidationRequired(settingAttribute.getAccountId(), settingValue);
+    settingServiceHelper.setFeatureFlagIfRequired(settingValue, settingAttribute.getAccountId());
     List<EncryptedDataDetail> encryptedDataDetails = fetchEncryptionDetails(settingValue);
 
     if (settingValue instanceof GcpConfig) {

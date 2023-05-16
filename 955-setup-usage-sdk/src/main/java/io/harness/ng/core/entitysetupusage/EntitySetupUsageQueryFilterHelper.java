@@ -69,17 +69,22 @@ public class EntitySetupUsageQueryFilterHelper {
   public Criteria createCriteriaWithTwoFqnsEntityFilter(String accountIdentifier, String referredEntityFQN1,
       String referredEntityFQN2, EntityType referredEntityType, String searchTerm) {
     Criteria criteria = new Criteria();
+    Criteria searchCriteria =
+        new Criteria().orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityName).regex(searchTerm),
+            Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm));
+    Criteria fqnCriteria =
+        new Criteria().orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQN1),
+            Criteria.where(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQN2));
+
     criteria.and(EntitySetupUsageKeys.accountIdentifier).is(accountIdentifier);
-    criteria.orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQN1),
-        Criteria.where(EntitySetupUsageKeys.referredEntityFQN).is(referredEntityFQN2));
     if (referredEntityType != null) {
       criteria.and(EntitySetupUsageKeys.referredEntityType).is(referredEntityType.getYamlName());
     }
     if (isNotBlank(searchTerm)) {
-      criteria.orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityName).regex(searchTerm),
-          Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm));
+      criteria.andOperator(searchCriteria, fqnCriteria);
+    } else {
+      criteria.andOperator(fqnCriteria);
     }
-    populateGitCriteriaForReferredEntity(criteria);
     return criteria;
   }
   private Criteria createCriteriaForDefaultReferredEntity() {

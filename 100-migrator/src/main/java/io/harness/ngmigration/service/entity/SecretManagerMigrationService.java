@@ -135,8 +135,8 @@ public class SecretManagerMigrationService extends NgMigrationService {
   }
 
   @Override
-  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
-      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+  public MigrationImportSummaryDTO migrate(NGClient ngClient, PmsClient pmsClient, TemplateClient templateClient,
+      MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
     if (yamlFile.isExists()) {
       return MigrationImportSummaryDTO.builder()
           .errors(Collections.singletonList(
@@ -150,7 +150,10 @@ public class SecretManagerMigrationService extends NgMigrationService {
       return null;
     }
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
-        ngClient.createConnector(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(yamlFile.getYaml())).execute();
+        ngClient
+            .createConnector(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
+                JsonUtils.asTree(yamlFile.getYaml()))
+            .execute();
     log.info("Secret manager creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);
   }

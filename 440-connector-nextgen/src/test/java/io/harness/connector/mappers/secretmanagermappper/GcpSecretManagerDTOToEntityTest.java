@@ -7,6 +7,7 @@
 
 package io.harness.connector.mappers.secretmanagermappper;
 
+import static io.harness.rule.OwnerRule.RICHA;
 import static io.harness.rule.OwnerRule.SHREYAS;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -115,15 +116,29 @@ public class GcpSecretManagerDTOToEntityTest extends CategoryTest {
   @Test
   @Owner(developers = SHREYAS)
   @Category(UnitTests.class)
-  public void testAllFieldsHaveCorrectValue() throws IllegalAccessException {
+  public void testAllFieldsHaveCorrectValueWithCredentials() throws IllegalAccessException {
     String secretRef = "secretRef";
     GcpSecretManagerConnectorDTO connectorDTO = GcpSecretManagerConnectorDTO.builder()
                                                     .credentialsRef(SecretRefHelper.createSecretRef(secretRef))
+                                                    .assumeCredentialsOnDelegate(false)
                                                     .isDefault(false)
                                                     .build();
     GcpSecretManagerConnector connector = gcpSecretManagerDTOToEntity.toConnectorEntity(connectorDTO);
     assertNotNull(connector);
     assertThat(connector.getIsDefault()).isEqualTo(false);
+    assertThat(connector.getAssumeCredentialsOnDelegate()).isEqualTo(false);
     assertThat(connector.getCredentialsRef()).isEqualTo(secretRef);
+  }
+
+  @Test
+  @Owner(developers = RICHA)
+  @Category(UnitTests.class)
+  public void testAllFieldsHaveCorrectValueWithCredentialsOnDelegate() throws IllegalAccessException {
+    GcpSecretManagerConnectorDTO connectorDTO =
+        GcpSecretManagerConnectorDTO.builder().assumeCredentialsOnDelegate(true).isDefault(false).build();
+    GcpSecretManagerConnector connector = gcpSecretManagerDTOToEntity.toConnectorEntity(connectorDTO);
+    assertNotNull(connector);
+    assertThat(connector.getIsDefault()).isEqualTo(false);
+    assertThat(connector.getAssumeCredentialsOnDelegate()).isEqualTo(true);
   }
 }

@@ -50,6 +50,7 @@ import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.utilities.ResourceConstraintUtility;
@@ -171,7 +172,7 @@ public class InfrastructurePmsPlanCreator {
 
   public LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV1(YamlNode infraSectionNode,
       String infraStepNodeUuid, PipelineInfrastructure pipelineInfrastructure, KryoSerializer kryoSerializer,
-      String infraSectionUuid) {
+      String infraSectionUuid, PlanCreationContext ctx, boolean isProjectScopedResourceConstraintQueue) {
     InfraSectionStepParameters infraSectionStepParameters =
         getInfraSectionStepParams(pipelineInfrastructure, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
@@ -191,8 +192,8 @@ public class InfrastructurePmsPlanCreator {
         pipelineInfrastructure.getAllowSimultaneousDeployments());
 
     if (!allowSimultaneousDeployments) {
-      YamlField rcYamlField =
-          addResourceConstraintDependency(infraSectionNode.getParentNode(), planCreationResponseMap, null);
+      YamlField rcYamlField = addResourceConstraintDependency(
+          infraSectionNode.getParentNode(), planCreationResponseMap, null, ctx, isProjectScopedResourceConstraintQueue);
       adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
     }
 
@@ -206,8 +207,10 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public YamlField addResourceConstraintDependency(YamlNode rcParentNode,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String whenCondition) {
-    YamlField rcYamlField = constructResourceConstraintYamlField(rcParentNode, whenCondition);
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String whenCondition,
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+    YamlField rcYamlField = constructResourceConstraintYamlField(
+        rcParentNode, whenCondition, context, isProjectScopedResourceConstraintQueue);
 
     try {
       YamlUpdates yamlUpdates =
@@ -248,8 +251,18 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
-  private YamlField constructResourceConstraintYamlField(YamlNode specNode, String whenCondition) {
-    final String resourceUnit = "<+INFRA_KEY>";
+  private YamlField constructResourceConstraintYamlField(YamlNode specNode, String whenCondition,
+      PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
+    String resourceUnit = "<+INFRA_KEY>";
+
+    if (isProjectScopedResourceConstraintQueue && context != null) {
+      String accountIdentifier = context.getAccountIdentifier();
+      String orgIdentifier = context.getOrgIdentifier();
+      String projectIdentifier = context.getProjectIdentifier();
+      resourceUnit = String.join("_", resourceUnit,
+          String.valueOf(String.join("_", accountIdentifier, orgIdentifier, projectIdentifier).hashCode()));
+    }
+
     JsonNode resourceConstraintJsonNode =
         ResourceConstraintUtility.getResourceConstraintJsonNode(resourceUnit, whenCondition);
     return new YamlField("step", new YamlNode("step", resourceConstraintJsonNode, specNode));
@@ -394,11 +407,11 @@ public class InfrastructurePmsPlanCreator {
 
   public static List<AdviserObtainment> addResourceConstraintDependency(
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
-      KryoSerializer kryoSerializer) {
+      KryoSerializer kryoSerializer, PlanCreationContext context, boolean isProjectScopedResourceConstraintQueue) {
     final String whenCondition =
         String.format("<+%s.addRcStep> == \"true\"", OutcomeExpressionConstants.INFRA_TASK_EXECUTABLE_STEP_OUTPUT);
-    YamlField rcYamlField =
-        addResourceConstraintDependency(specField.getNode(), planCreationResponseMap, whenCondition);
+    YamlField rcYamlField = addResourceConstraintDependency(
+        specField.getNode(), planCreationResponseMap, whenCondition, context, isProjectScopedResourceConstraintQueue);
     return getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
   }
 }

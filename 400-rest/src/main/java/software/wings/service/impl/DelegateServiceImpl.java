@@ -221,7 +221,6 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
-import com.github.zafarkhaja.semver.Version;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -608,7 +607,9 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isDelegateConnected(Delegate delegate) {
-    return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
+    // for active delegate connection check, use DELEGATE_CACHE directly as it has latest HB updated
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    return delegateFromCache.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 
   @Override
@@ -1319,18 +1320,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     DelegateScripts delegateScripts = DelegateScripts.builder().version(version).doUpgrade(false).build();
     if (isNotEmpty(scriptParams)) {
-      String upgradeToVersion = scriptParams.get(UPGRADE_VERSION);
-      log.info("Upgrading delegate to version: {}", upgradeToVersion);
-      boolean doUpgrade;
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
-        doUpgrade = true;
-      } else {
-        final String delegateVersion = substringBefore(version, "-").trim();
-        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
-        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
-      }
-      delegateScripts.setDoUpgrade(doUpgrade);
-      delegateScripts.setVersion(upgradeToVersion);
       delegateScripts.setStartScript(processTemplate(watcherScriptParams, "start.sh.ftl"));
       delegateScripts.setDelegateScript(processTemplate(scriptParams, "delegate.sh.ftl"));
       delegateScripts.setStopScript(processTemplate(scriptParams, "stop.sh.ftl"));
@@ -1369,18 +1358,6 @@ public class DelegateServiceImpl implements DelegateService {
 
     DelegateScripts delegateScripts = DelegateScripts.builder().version(version).doUpgrade(false).build();
     if (isNotEmpty(scriptParams)) {
-      String upgradeToVersion = scriptParams.get(UPGRADE_VERSION);
-      log.info("Upgrading delegate to version: {}", upgradeToVersion);
-      boolean doUpgrade;
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
-        doUpgrade = true;
-      } else {
-        final String delegateVersion = substringBefore(version, "-").trim();
-        final String expectedVersion = substringBefore(upgradeToVersion, "-").trim();
-        doUpgrade = !(Version.valueOf(delegateVersion).equals(Version.valueOf(expectedVersion)));
-      }
-      delegateScripts.setDoUpgrade(doUpgrade);
-      delegateScripts.setVersion(upgradeToVersion);
       delegateScripts.setStartScript(processTemplate(watcherScriptParams, "start.sh.ftl"));
       delegateScripts.setDelegateScript(processTemplate(scriptParams, "delegate.sh.ftl"));
       delegateScripts.setStopScript(processTemplate(scriptParams, "stop.sh.ftl"));
@@ -1426,32 +1403,6 @@ public class DelegateServiceImpl implements DelegateService {
     final String delegateStorageUrl = getDelegateStorageUrl(cdnConfig, useCDN, delegateMetadataUrl);
     final String delegateCheckLocation = delegateMetadataUrl.substring(delegateMetadataUrl.lastIndexOf('/') + 1);
 
-    String latestVersion = null;
-    String delegateJarDownloadUrl = null;
-
-    try {
-      if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES) {
-        log.info("Multi-Version is enabled");
-        latestVersion = templateParameters.getVersion();
-        final String fullVersion =
-            Optional.ofNullable(getDelegateBuildVersion(templateParameters.getVersion())).orElse(null);
-        delegateJarDownloadUrl =
-            infraDownloadService.getDownloadUrlForDelegate(fullVersion, templateParameters.getAccountId());
-      } else {
-        final String delegateMatadata = delegateVersionCache.get(templateParameters.getAccountId());
-        log.info("Delegate metadata: [{}]", delegateMatadata);
-        latestVersion = substringBefore(delegateMatadata, " ").trim();
-        final String jarRelativePath = substringAfter(delegateMatadata, " ").trim();
-        delegateJarDownloadUrl = delegateStorageUrl + "/" + jarRelativePath;
-      }
-    } catch (ExecutionException e) {
-      log.warn("Unable to fetch delegate version information", e);
-      log.warn("CurrentVersion: [{}], LatestVersion=[{}], delegateJarDownloadUrl=[{}]", templateParameters.getVersion(),
-          latestVersion, delegateJarDownloadUrl);
-    }
-
-    log.info("Current version of delegate :[{}], latest version: [{}] url: [{}]", templateParameters.getVersion(),
-        latestVersion, delegateJarDownloadUrl);
     final String watcherMetadataUrl;
     if (useCDN) {
       watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
@@ -1494,7 +1445,6 @@ public class DelegateServiceImpl implements DelegateService {
             .put("delegateToken", accountSecret)
             .put("base64Secret", base64Secret)
             .put("hexkey", hexkey)
-            .put(UPGRADE_VERSION, latestVersion)
             .put("managerHostAndPort", templateParameters.getManagerHost())
             .put("verificationHostAndPort", templateParameters.getVerificationHost())
             .put("watcherStorageUrl", watcherStorageUrl)
@@ -2541,8 +2491,12 @@ public class DelegateServiceImpl implements DelegateService {
           .build();
     }
 
+    final String hostName = ECS.equals(delegate.getDelegateType())
+        ? getHostNameToBeUsedForECSDelegate(delegate.getHostName(), delegate.getSequenceNum())
+        : delegate.getHostName();
+
     final Delegate existingDelegate = getExistingDelegate(
-        delegate.getAccountId(), delegate.getHostName(), delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
+        delegate.getAccountId(), hostName, delegate.isNg(), delegate.getDelegateType(), delegate.getIp());
 
     if (existingDelegate != null && existingDelegate.getStatus() == DelegateInstanceStatus.DELETED) {
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true)
@@ -2601,8 +2555,10 @@ public class DelegateServiceImpl implements DelegateService {
           .migrateUrl(accountService.get(delegateParams.getAccountId()).getMigratedToClusterUrl())
           .build();
     }
-
-    final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), delegateParams.getHostName(),
+    final String hostName = ECS.equals(delegateParams.getDelegateType())
+        ? getHostNameToBeUsedForECSDelegate(delegateParams.getHostName(), delegateParams.getSequenceNum())
+        : delegateParams.getHostName();
+    final Delegate existingDelegate = getExistingDelegate(delegateParams.getAccountId(), hostName,
         delegateParams.isNg(), delegateParams.getDelegateType(), delegateParams.getIp());
 
     // this code is to mark all the task in running as failed if same delegate registration for immutable
@@ -2758,7 +2714,8 @@ public class DelegateServiceImpl implements DelegateService {
     return calendar.getTimeInMillis();
   }
 
-  private Delegate getExistingDelegate(
+  @VisibleForTesting
+  protected Delegate getExistingDelegate(
       final String accountId, final String hostName, final boolean ng, final String delegateType, final String ip) {
     final Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                               .filter(DelegateKeys.accountId, accountId)
@@ -2806,7 +2763,6 @@ public class DelegateServiceImpl implements DelegateService {
   @VisibleForTesting
   Delegate upsertDelegateOperation(
       Delegate existingDelegate, Delegate delegate, DelegateSetupDetails delegateSetupDetails) {
-    long lastRecordedHeartBeat = existingDelegate != null ? existingDelegate.getLastHeartBeat() : 0L;
     long delegateHeartbeat = delegate.getLastHeartBeat();
     long now = now();
     long skew = Math.abs(now - delegateHeartbeat);
@@ -2836,6 +2792,7 @@ public class DelegateServiceImpl implements DelegateService {
 
       delegateTelemetryPublisher.sendTelemetryTrackEvents(
           delegate.getAccountId(), delegate.getDelegateType(), delegate.isNg(), DELEGATE_REGISTERED_EVENT);
+      subject.fireInform(DelegateObserver::onReconnected, delegate);
     } else {
       log.debug("Delegate exists, updating: {}", delegate.getUuid());
       delegate.setUuid(existingDelegate.getUuid());
@@ -2864,9 +2821,12 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     // for new delegate and delegate reconnecting long pause, trigger delegateObserver::onReconnected event
-    if (registeredDelegate != null) {
-      boolean isDelegateReconnectingAfterLongPause = now > (lastRecordedHeartBeat + HEARTBEAT_EXPIRY_TIME.toMillis());
-      if (existingDelegate == null || isDelegateReconnectingAfterLongPause) {
+    if (registeredDelegate != null && existingDelegate != null) {
+      boolean isDelegateReconnectingAfterLongPause =
+          now > (existingDelegate.getLastHeartBeat() + HEARTBEAT_EXPIRY_TIME.toMillis());
+      if (isDelegateReconnectingAfterLongPause) {
+        log.info("Delegate {} reconnecting after long pause. last HB recorded {}", registeredDelegate.getUuid(),
+            existingDelegate.getLastHeartBeat());
         subject.fireInform(DelegateObserver::onReconnected, delegate);
       }
     }
@@ -3735,7 +3695,8 @@ public class DelegateServiceImpl implements DelegateService {
     return sequenceConfig;
   }
 
-  private String getHostNameToBeUsedForECSDelegate(String hostName, String seqNum) {
+  @VisibleForTesting
+  protected String getHostNameToBeUsedForECSDelegate(String hostName, String seqNum) {
     return hostName + DELIMITER + seqNum;
   }
 

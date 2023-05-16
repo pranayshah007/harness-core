@@ -234,10 +234,8 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
           .downloadArtifacts(configRequest, "repository", requestDetails.toMetadata(),
               ArtifactMetadataKeys.artifactPath, ArtifactMetadataKeys.artifactName);
 
-      TasArtifactDownloadResponse downloadResponse =
-          cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback);
-      assertThat(downloadResponse.getArtifactFile()).isNull();
-      assertThat(downloadResponse.getArtifactType()).isEqualTo(ZIP);
+      assertThatThrownBy(() -> cfCommandTaskHelperNG.downloadPackageArtifact(downloadContext, logCallback))
+          .hasMessage("Use supported artifact registry");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(downloadContext.getWorkingDirectory().getAbsolutePath());
     }
@@ -1455,6 +1453,7 @@ public class CfCommandTaskHelperNGTest extends CategoryTest {
     doReturn(true).when(cfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
+    doReturn(true).when(cfDeploymentManager).checkIfAppHasAutoscalarEnabled(any(), any());
     cfCommandTaskHelperNG.downsizePreviousReleases(request, cfRequestConfig, logCallback, cfServiceDataList, 1,
         pcfInstanceElements,
         CfAppAutoscalarRequestData.builder()

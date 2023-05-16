@@ -10,10 +10,12 @@ package io.harness.gitsync.utils;
 import static io.harness.delegate.beans.connector.ConnectorType.AZURE;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 import static io.harness.gitsync.caching.beans.GitProvider.AZURE_SAAS;
 import static io.harness.gitsync.caching.beans.GitProvider.BITBUCKET_ON_PREM;
 import static io.harness.gitsync.caching.beans.GitProvider.BITBUCKET_SAAS;
 import static io.harness.gitsync.caching.beans.GitProvider.GITHUB_SAAS;
+import static io.harness.gitsync.caching.beans.GitProvider.GITLAB_SAAS;
 import static io.harness.gitsync.caching.beans.GitProvider.UNKNOWN;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -40,6 +42,9 @@ public class GitProviderUtils {
     if (isAzureSaas(scmConnector)) {
       return AZURE_SAAS;
     }
+    if (isGitlabSaas(scmConnector)) {
+      return GITLAB_SAAS;
+    }
     return UNKNOWN;
   }
 
@@ -50,6 +55,9 @@ public class GitProviderUtils {
   private boolean isAzureSaas(ScmConnector scmConnector) {
     return AZURE.equals(scmConnector.getConnectorType());
   }
+  private boolean isGitlabSaas(ScmConnector scmConnector) {
+    return GITLAB.equals(scmConnector.getConnectorType());
+  }
 
   private boolean isBitbucket(ScmConnector scmConnector) {
     return BITBUCKET.equals(scmConnector.getConnectorType());
@@ -59,7 +67,14 @@ public class GitProviderUtils {
     return isBitbucket(scmConnector) && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
   }
 
-  private boolean isBitbucketSaas(ScmConnector scmConnector) {
+  public static boolean isBitbucketSaas(ScmConnector scmConnector) {
     return isBitbucket(scmConnector) && GitClientHelper.isBitBucketSAAS(scmConnector.getUrl());
+  }
+
+  public String buildRepoForGitlab(String namespace, String repoName) {
+    if (!namespace.contains("/")) {
+      return repoName;
+    }
+    return namespace.substring(namespace.indexOf('/') + 1) + "/" + repoName;
   }
 }

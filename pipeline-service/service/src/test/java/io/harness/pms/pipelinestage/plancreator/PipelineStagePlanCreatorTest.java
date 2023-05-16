@@ -12,9 +12,11 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -52,6 +54,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -148,8 +152,11 @@ public class PipelineStagePlanCreatorTest {
 
     PipelineStageNode pipelineStageNode = YamlUtils.read(yamlField, PipelineStageNode.class);
     assertThat(SecurityContextBuilder.getPrincipal()).isNull();
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
     PlanCreationResponse response =
         pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(yamlField, PipelineStageNode.class));
+    mockSettings.close();
     assertThat(SecurityContextBuilder.getPrincipal()).isNotNull();
     assertThat(response.getPlanNode()).isNotNull();
     PlanNode planNode = response.getPlanNode();
@@ -188,7 +195,12 @@ public class PipelineStagePlanCreatorTest {
 
     doReturn(new byte[9]).when(kryoSerializer).asBytes(any());
     PipelineStageNode stageNode = YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class);
+
+    MockedStatic<YamlUtils> mockSettings = Mockito.mockStatic(YamlUtils.class, CALLS_REAL_METHODS);
+    when(YamlUtils.getGivenYamlNodeFromParentPath(any(), any())).thenReturn(pipelineStageYamlField.getNode());
     pipelineStagePlanCreator.createPlanForField(ctx, YamlUtils.read(ignoreFailureYamlField, PipelineStageNode.class));
+    mockSettings.close();
+
     verify(pipelineStageHelper, times(1)).validateFailureStrategy(stageNode.getFailureStrategies());
   }
 

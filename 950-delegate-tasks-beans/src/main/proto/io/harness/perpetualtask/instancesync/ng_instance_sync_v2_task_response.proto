@@ -1,0 +1,32 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.perpetualtask.instancesync;
+
+option java_multiple_files = true;
+
+import "google/protobuf/any.proto";
+
+message InstanceSyncResponseV2 {
+  string perpetual_task_id = 1;
+  string account_id = 2;
+  repeated InstanceSyncData instance_data = 3;
+  InstanceSyncStatus status = 4;
+}
+
+message InstanceSyncStatus {
+  string execution_status = 1;
+  string error_message = 2;
+  bool is_successful = 3;
+}
+
+message InstanceSyncData {
+  string task_info_id = 1;
+  bytes server_instance_info = 2;
+  InstanceSyncStatus status = 3;
+  string deployment_type = 4;
+}

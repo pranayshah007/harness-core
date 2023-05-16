@@ -29,11 +29,12 @@ public class GitSyncLogContextHelper {
   public static final String REPO_NAME_KEY = "repoName";
   public static final String FILEPATH_KEY = "filePath";
   public static final String BRANCH_KEY = "branch";
+  public static final String COMMIT_KEY = "commitId";
   public static final String CONTEXT_KEY = "contextKey";
   private Map<String, String> logContextMap;
 
-  public static Map<String, String> setContextMap(Scope scope, String repoName, String branchName, String filePath,
-      GitOperation operationType, Map<String, String> contextMap) {
+  public static Map<String, String> setContextMap(Scope scope, String repoName, String branchName, String commitId,
+      String filePath, GitOperation operationType, Map<String, String> contextMap) {
     logContextMap = new HashMap<>();
     if (isNotEmpty(contextMap)) {
       logContextMap.putAll(contextMap);
@@ -43,6 +44,7 @@ public class GitSyncLogContextHelper {
     setContextIfNotNull(PROJECT_KEY, scope.getProjectIdentifier());
     setContextIfNotNull(REPO_NAME_KEY, repoName);
     setContextIfNotNull(BRANCH_KEY, branchName);
+    setContextIfNotNull(COMMIT_KEY, commitId);
     setContextIfNotNull(FILEPATH_KEY, filePath);
     setContextIfNotNull(GIT_OPERATION_TYPE, operationType.name());
     setContextIfNotNull(CONTEXT_KEY, String.valueOf(UUID.randomUUID()));

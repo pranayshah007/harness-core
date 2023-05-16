@@ -17,6 +17,7 @@ import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,9 +73,17 @@ public class HostRecordServiceImpl implements HostRecordService {
     return HostRecord.builder()
         .accountId(hostRecordDTOs.getAccountId())
         .verificationTaskId(hostRecordDTOs.getVerificationTaskId())
-        .hosts(hostRecordDTOs.getHosts())
+        .hosts(filterNullHosts(hostRecordDTOs.getHosts()))
         .startTime(hostRecordDTOs.getStartTime())
         .endTime(hostRecordDTOs.getEndTime())
         .build();
+  }
+
+  private Set<String> filterNullHosts(Set<String> hosts) {
+    Set<String> hostSet = new HashSet<>();
+    if (hosts != null) {
+      return hosts.stream().filter(host -> host != null).collect(Collectors.toSet());
+    }
+    return hostSet;
   }
 }

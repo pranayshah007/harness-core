@@ -20,6 +20,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerCredentialOutcomeDTO;
+import io.harness.delegate.beans.connector.awssecretmanager.outcome.AwsSecretManagerOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -81,6 +84,21 @@ public class AwsSecretManagerDTO extends ConnectorConfigDTO implements DelegateS
       decryptableEntities.add(awsKmsManualCredentials);
     }
     return decryptableEntities;
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return AwsSecretManagerOutcomeDTO.builder()
+        .credential(AwsSecretManagerCredentialOutcomeDTO.builder()
+                        .type(credential.getCredentialType())
+                        .config(credential.getConfig())
+                        .build())
+        .region(region)
+        .isDefault(isDefault)
+        .harnessManaged(harnessManaged)
+        .secretNamePrefix(secretNamePrefix)
+        .delegateSelectors(delegateSelectors)
+        .build();
   }
 
   @Override

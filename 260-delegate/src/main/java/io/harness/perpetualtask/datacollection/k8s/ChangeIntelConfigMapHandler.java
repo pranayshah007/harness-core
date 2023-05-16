@@ -79,10 +79,11 @@ public class ChangeIntelConfigMapHandler extends BaseChangeHandler<V1ConfigMap> 
         oldResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(oldMap));
       }
       String newValue = newResource.getMetadata().getAnnotations().get(leaderKey);
-      Map<String, Object> newMap = JsonUtils.asMap(newValue);
-      newMap.remove(renewTokenKey);
-      newResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(newMap));
-
+      if (newValue != null) {
+        Map<String, Object> newMap = JsonUtils.asMap(newValue);
+        newMap.remove(renewTokenKey);
+        newResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(newMap));
+      }
       String updatedOldYaml = k8sHandlerUtils.yamlDump(oldResource);
       String updatedNewYaml = k8sHandlerUtils.yamlDump(newResource);
       if (!updatedNewYaml.equals(updatedOldYaml)) {

@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.AMAN;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 
+import io.harness.agent.sdk.HarnessAlwaysRun;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.rule.Owner;
@@ -30,6 +31,7 @@ public class CIExecutionComponentTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
+  @HarnessAlwaysRun
   public void componentCIExecutionTests() {
     for (Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();

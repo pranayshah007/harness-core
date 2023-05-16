@@ -24,11 +24,17 @@ import lombok.Data;
 @RecasterAlias("io.harness.ngpipeline.pipeline.executions.beans.GoogleCloudSourceArtifactSummary")
 public class GoogleCloudSourceArtifactSummary implements ArtifactSummary {
   String repository;
+  String branch;
+  String commitId;
+  String tag;
   String sourceDirectory;
 
   @Override
   public String getDisplayName() {
-    return repository + ":" + sourceDirectory;
+    return repository + ":" + branch != null ? branch
+        : commitId != null                   ? commitId
+        : tag != null                        ? tag
+                                             : "" + sourceDirectory;
   }
 
   @Override

@@ -1,0 +1,26 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//960-persistence/src/main/java/io/harness/annotation:module",
+        "//960-persistence/src/main/java/io/harness/mongo/index:module",
+        "//960-persistence/src/main/java/io/harness/ng:module",
+        "//960-persistence/src/main/java/io/harness/persistence/api:module",
+        "//980-commons/src/main/java/io/harness/annotations:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:dev_morphia_morphia_core",
+        "@maven//:org_mongodb_bson",
+    ],
+)
+
+run_analysis_per_module()

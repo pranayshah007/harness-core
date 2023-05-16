@@ -76,6 +76,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
         .googleFunctionInfraConfig(googleFunctionInfraConfig)
         .function(deploymentInfoDTO.getFunctionName())
         .region(deploymentInfoDTO.getRegion())
+        .environmentType(deploymentInfoDTO.getEnvironmentType())
         .build();
   }
 
@@ -117,7 +118,8 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
         .setFunction(releaseData.getFunction())
         .setRegion(releaseData.getRegion())
         .setGoogleFunctionsInfraConfig(
-            ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
+            ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getGoogleFunctionInfraConfig())))
+        .setEnvironmentType(releaseData.getEnvironmentType())
         .build();
   }
 
@@ -136,6 +138,7 @@ public class GoogleFunctionInstanceSyncPerpetualTaskHandler extends InstanceSync
     return GoogleFunctionInstanceSyncRequest.builder()
         .googleFunctionInfraConfig(googleFunctionsDeploymentReleaseData.getGoogleFunctionInfraConfig())
         .function(googleFunctionsDeploymentReleaseData.getFunction())
+        .environmentType(googleFunctionsDeploymentReleaseData.getEnvironmentType())
         .build();
   }
 }

@@ -8,8 +8,8 @@
 package io.harness.perpetualtask.polling.manifest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +39,6 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -58,7 +57,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -73,7 +72,6 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   private String polling_doc_id;
 
   @Inject KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private ManifestCollectionService manifestCollectionService;
   @Mock private Call<RestResponse<Boolean>> call;
@@ -81,9 +79,9 @@ public class ManifestPerpetualTaskExecutorNgTest extends DelegateTestBase {
   @Before
   public void setup() {
     PollingResponsePublisher pollingResponsePublisher =
-        new PollingResponsePublisher(kryoSerializer, referenceFalseKryoSerializer, delegateAgentManagerClient);
-    manifestPerpetualTaskExecutor = new ManifestPerpetualTaskExecutorNg(
-        manifestCollectionService, pollingResponsePublisher, kryoSerializer, referenceFalseKryoSerializer);
+        new PollingResponsePublisher(kryoSerializer, delegateAgentManagerClient);
+    manifestPerpetualTaskExecutor =
+        new ManifestPerpetualTaskExecutorNg(kryoSerializer, manifestCollectionService, pollingResponsePublisher);
     perpetualTaskId = PerpetualTaskId.newBuilder().setId(UUIDGenerator.generateUuid()).build();
     polling_doc_id = UUIDGenerator.generateUuid();
   }

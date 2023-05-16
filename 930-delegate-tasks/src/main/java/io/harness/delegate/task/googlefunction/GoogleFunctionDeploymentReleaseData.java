@@ -21,4 +21,5 @@ public class GoogleFunctionDeploymentReleaseData {
   private GoogleFunctionInfraConfig googleFunctionInfraConfig;
   private String function;
   private String region;
+  private String environmentType;
 }

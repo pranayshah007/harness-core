@@ -77,7 +77,7 @@ public class SdkOrchestrationEventHandler extends PmsBaseEventHandler<Orchestrat
              AutoLogContext ignore2 = autoLogContext(event)) {
           handler.handleEvent(buildSdkOrchestrationEvent(event));
         } catch (Exception ex) {
-          log.error("Exception occurred while handling orchestrationEvent", ex);
+          log.warn("Exception occurred while handling orchestrationEvent", ex);
         }
       }));
     }

@@ -1,6 +1,6 @@
 {
     "text" : "*Monitored Service has observed error events.*\n",
-    "text" : "*Monitored Service <${MONITORED_SERVICE_URL}|${MONITORED_SERVICE_NAME}> has detected error events for code errors.*\n",
+    "text" : "*Monitored Service <${MONITORED_SERVICE_URL}|${MONITORED_SERVICE_NAME}> has detected error events.*\n",
     "attachments": [
         {
             "color": "${COLOR}",
@@ -26,7 +26,7 @@
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "Trigger *When ${EVENT_STATUS} with the event type (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed for code errors*"
+                        "text": "Trigger *When ${EVENT_STATUS} with the event type (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed*"
                     }
                 },
                 {

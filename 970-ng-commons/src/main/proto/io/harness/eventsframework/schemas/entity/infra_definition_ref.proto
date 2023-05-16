@@ -17,4 +17,5 @@ message InfraDefinitionReferenceProtoDTO {
   google.protobuf.StringValue envIdentifier = 4;
   google.protobuf.StringValue identifier = 5;
   google.protobuf.StringValue envName = 6;
+  map<string, string> metadata = 7;
 }

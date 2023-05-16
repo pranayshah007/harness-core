@@ -19,7 +19,6 @@ import software.wings.beans.InstanaConfig;
 import software.wings.beans.TaskType;
 import software.wings.delegatetasks.DelegateStateType;
 import software.wings.delegatetasks.cv.DataCollector;
-import software.wings.delegatetasks.cv.InstanaDataCollector;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.service.impl.analysis.DataCollectionInfoV2;
 import software.wings.service.impl.analysis.MetricsDataCollectionInfo;

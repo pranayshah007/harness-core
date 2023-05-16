@@ -18,11 +18,10 @@ import static software.wings.utils.StackDriverUtils.createStackDriverConfig;
 import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -439,7 +438,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(config);
 
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(dConfg, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -449,7 +448,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.APM_24_7_METRIC_DATA_COLLECTION_TASK.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -479,7 +478,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(config);
 
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(appDynamicsConfig, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -489,7 +488,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.APPDYNAMICS_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -518,7 +517,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(config);
 
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(nrConfig, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -528,7 +527,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.NEWRELIC_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -570,7 +569,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(config);
 
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(nrConfig, "appId", null)).thenReturn(new ArrayList<>());
 
     // execute behavior
@@ -580,7 +579,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
 
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.APM_24_7_METRIC_DATA_COLLECTION_TASK.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -606,7 +605,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     config.setStateType(StateType.CLOUD_WATCH);
     wingsPersistence.save(config);
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(awsConfig, "appId", null)).thenReturn(new ArrayList<>());
     when(cloudWatchService.createLambdaFunctionNames(anyList())).thenReturn(new HashMap());
     // execute behavior
@@ -614,7 +613,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // verify
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
     assertThat(TaskType.CLOUD_WATCH_COLLECT_24_7_METRIC_DATA.name())
         .isEqualTo(taskCaptor.getValue().getData().getTaskType());
@@ -640,7 +639,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
                                      .withUuid(cvConfiguration.getConnectorId())
                                      .build();
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(gcpConfig, cvConfiguration.getAppId(), null))
         .thenReturn(new ArrayList<>());
 
@@ -650,7 +649,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // verify
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
 
     assertThat(TaskType.STACKDRIVER_COLLECT_24_7_METRIC_DATA.name())
@@ -671,7 +670,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
                                      .withUuid(cvConfiguration.getConnectorId())
                                      .build();
     when(mockSettingsService.get(any())).thenReturn(attribute);
-    when(mockWaitNotifyEngine.waitForAllOn(any(), anyObject(), any())).thenReturn("waitId");
+    when(mockWaitNotifyEngine.waitForAllOn(any(), any(), any())).thenReturn("waitId");
     when(mockSecretManager.getEncryptionDetails(apmConfig, cvConfiguration.getAppId(), null))
         .thenReturn(new ArrayList<>());
 
@@ -681,7 +680,7 @@ public class APMVerificationServiceImplTest extends WingsBaseTest {
     // verify
     assertThat(response).isTrue();
     ArgumentCaptor<DelegateTask> taskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
-    verify(mockWaitNotifyEngine).waitForAllOn(any(), anyObject(), any());
+    verify(mockWaitNotifyEngine).waitForAllOn(any(), any(), any());
     verify(mockDelegateService).queueTaskV2(taskCaptor.capture());
 
     assertThat(TaskType.CUSTOM_COLLECT_24_7_LOG_DATA.name()).isEqualTo(taskCaptor.getValue().getData().getTaskType());

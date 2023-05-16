@@ -18,7 +18,9 @@ import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitBaseRequest;
 
 import java.io.IOException;
+import java.util.Map;
 import javax.annotation.Nullable;
+import org.eclipse.jgit.lib.Ref;
 
 public interface GitClientV2 {
   void ensureRepoLocallyClonedAndUpdated(GitBaseRequest request);
@@ -49,4 +51,6 @@ public interface GitClientV2 {
    * @return git reference
    */
   @Nullable String cloneRepoAndCopyToDestDir(DownloadFilesRequest request);
+
+  Map<String, Ref> listRemote(GitBaseRequest request);
 }

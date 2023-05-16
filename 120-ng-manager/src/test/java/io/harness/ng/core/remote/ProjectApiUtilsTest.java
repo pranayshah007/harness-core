@@ -152,19 +152,6 @@ public class ProjectApiUtilsTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ASHISHSANODIA)
   @Category(UnitTests.class)
-  public void testProjectDtoMappingValidationForMissingModules() throws JsonProcessingException {
-    CreateProjectRequest projectRequest = objectMapper.readValue(
-        readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);
-    Set<ConstraintViolation<Object>> violations = validator.validate(projectRequest);
-    assertThat(violations.isEmpty()).as(violations.toString()).isTrue();
-
-    projectRequest.getProject().setModules(null);
-    assertThat(projectApiUtils.getProjectDto(projectRequest).getModules()).isEmpty();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.ASHISHSANODIA)
-  @Category(UnitTests.class)
   public void testProjectDtoMappingValidationForMissingColor() throws JsonProcessingException {
     CreateProjectRequest projectRequest = objectMapper.readValue(
         readFileAsString(testFilesBasePath + "create-project-request-1.json"), CreateProjectRequest.class);

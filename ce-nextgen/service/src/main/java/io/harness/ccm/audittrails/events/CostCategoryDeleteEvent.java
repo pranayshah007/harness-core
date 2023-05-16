@@ -7,7 +7,7 @@
 
 package io.harness.ccm.audittrails.events;
 
-import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
+import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

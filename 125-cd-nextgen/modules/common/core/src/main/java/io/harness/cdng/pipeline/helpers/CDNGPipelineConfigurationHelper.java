@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.deploymentmetadata.DeploymentMetadataServiceHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.featureFlag.CdEnumFilter;
 import io.harness.cdng.infra.beans.ProvisionerType;
@@ -43,6 +44,7 @@ public class CDNGPipelineConfigurationHelper {
   @Inject private CdEnumFilter enumFilter;
   @Inject private CDNGPipelineExecutionStrategyHelperV2 cdngPipelineExecutionStrategyHelperV2;
   @Inject private CDFeatureFlagHelper featureFlagHelper;
+  @Inject private DeploymentMetadataServiceHelper deploymentMetadataServiceHelper;
 
   @VisibleForTesting static String LIBRARY = "Library";
 
@@ -61,16 +63,22 @@ public class CDNGPipelineConfigurationHelper {
   }
 
   public String getExecutionStrategyYaml(ServiceDefinitionType serviceDefinitionType,
-      ExecutionStrategyType executionStrategyType, boolean includeVerify) throws IOException {
+      ExecutionStrategyType executionStrategyType, boolean includeVerify, String deploymentMetaDataYaml)
+      throws IOException {
     // Note: Additional condition for GitOps is added because we do not want to show the GitOps Strategy in
     // the UI but also provide the support to UI for default yaml
     ClassLoader classLoader = this.getClass().getClassLoader();
     if (ServiceDefinitionType.getExecutionStrategies(serviceDefinitionType).contains(executionStrategyType)
         || executionStrategyType == ExecutionStrategyType.GITOPS) {
+      String executionStrategyTypeValue = executionStrategyType.getDisplayName().toLowerCase();
+      if (ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS.equals(serviceDefinitionType)) {
+        executionStrategyTypeValue = deploymentMetadataServiceHelper.filterStrategyTypeOnDeploymentMetadata(
+            serviceDefinitionType, deploymentMetaDataYaml, executionStrategyType);
+      }
       return Resources.toString(
           Objects.requireNonNull(classLoader.getResource(
               String.format("executionStrategyYaml/%s-%s%s.yaml", serviceDefinitionType.getYamlName().toLowerCase(),
-                  executionStrategyType.getDisplayName().toLowerCase(), includeVerify ? "-with-verify" : ""))),
+                  executionStrategyTypeValue, includeVerify ? "-with-verify" : ""))),
           StandardCharsets.UTF_8);
     } else {
       throw new GeneralException("Execution Strategy Not supported for given deployment type");
@@ -103,7 +111,7 @@ public class CDNGPipelineConfigurationHelper {
       return cdngPipelineExecutionStrategyHelperV2.generateBasicYaml(
           accountIdentifier, serviceDefinitionType, includeVerify, strategyParameters);
     } else {
-      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify);
+      return getExecutionStrategyYaml(serviceDefinitionType, executionStrategyType, includeVerify, null);
     }
   }
 

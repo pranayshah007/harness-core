@@ -1,0 +1,56 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1679651560.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "integrations"
+  ],
+  "properties": {
+    "integrations": {
+      "$id": "#root/integrations",
+      "title": "Integrations",
+      "type": "object",
+      "required": [
+        "bitbucketCloud"
+      ],
+      "properties": {
+        "bitbucketCloud": {
+          "$id": "#root/integrations/bitbucketCloud",
+          "title": "Bitbucketcloud",
+          "type": "array",
+          "default": [],
+          "items":{
+            "$id": "#root/integrations/bitbucketCloud/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "username",
+              "appPassword"
+            ],
+            "properties": {
+              "username": {
+                "$id": "#root/integrations/bitbucketCloud/items/username",
+                "title": "Username",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "appPassword": {
+                "$id": "#root/integrations/bitbucketCloud/items/appPassword",
+                "title": "Apppassword",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          }
+
+        }
+      }
+    }
+
+  }
+}

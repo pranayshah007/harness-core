@@ -96,6 +96,11 @@ mktPlaceConfig:
   awsMarketPlaceProductCode: awsMktPlaceProductCodePlaceHolder
   awsMarketPlaceCeProductCode: awsMktPlaceCeProductCodePlaceHolder
   awsMarketPlaceFfProductCode: awsMktPlaceFfProductCodePlaceHolder
+  awsMarketPlaceCiProductCode: awsMktPlaceCiProductCodePlaceHolder
+  awsMarketPlaceStoProductCode: awsMktPlaceStoProductCodePlaceHolder
+  awsMarketPlaceSrmProductCode: awsMktPlaceSrmProductCodePlaceHolder
+  awsMarketPlaceCdProductCode: awsMktPlaceCdProductCodePlaceHolder
+  awsMarketPlaceCcmProductCode: awsMktPlaceCcmProductCodePlaceHolder
   azureMarketplaceAccessKey: "ZWRlZDEzMjMtYTk5Zi00MDc0LWJmMjMtOWFhZTYzN2M4ZGQy"
   azureMarketplaceSecretKey: "UmU4QmtxZkdKal9aWWhyTjlCTU5zRnFIcFNAXUI9ODc="
 
@@ -211,6 +216,7 @@ smtp:
   port: 465
   fromAddress: noreply@harness.io
   useSSL: true
+  startTLS: false
   username: smtp_username_placeholder
   password: "smtp_password_placeholder"
 
@@ -321,6 +327,7 @@ mongo:
     mongoTagValue: none
   aliasDBName: harness
   maxOperationTimeInMillis: 300000
+  maxDocumentsToBeFetched: 100000000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -360,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: ef2d02fb
+scmVersion: 9b34bea7
 
 ngAuthUIEnabled: false
 
@@ -694,12 +701,15 @@ eventListenersCountConfig:
   generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 delegateQueueServiceConfig:
-    queueServiceConfig:
-      baseUrl: http://localhost:9091/
-      connectTimeOutSeconds: 15
-      readTimeOutSeconds: 15
     topic: "delegate-service"
     enableQueueAndDequeue: false
+    queueServiceClientConfig:
+      httpClientConfig:
+        baseUrl: http://localhost:9091/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      queueServiceSecret: ThisIsMyUniqueJwtQueueServiceSecret
+      envNamespace: ${EVENTS_FRAMEWORK_ENV_NAMESPACE:-localhost}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
@@ -770,3 +780,4 @@ disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
 redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
 
 lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}
+moveGitPollingToRunnable: ${MOVE_GIT_POLLING_TO_RUNNABLE:-true}

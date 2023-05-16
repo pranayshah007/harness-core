@@ -26,8 +26,14 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConstants;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsEqualJitterBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsFixedDelayBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsFullJitterBackoffStrategySpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategySpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsSdkClientBackoffStrategyType;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
@@ -179,6 +185,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthentication
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
@@ -221,6 +228,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
@@ -336,6 +344,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(BitbucketUsernamePasswordDTO.class, 19530);
     kryo.register(GithubOauthDTO.class, 19552);
     kryo.register(GitlabOauthDTO.class, 19553);
+    kryo.register(BitbucketOAuthDTO.class, 19555);
     kryo.register(LocalConnectorDTO.class, 543237);
     kryo.register(GcpKmsConnectorDTO.class, 543238);
 
@@ -493,5 +502,12 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JiraAuthCredentialsDTO.class, 10000452);
     kryo.register(JiraUserNamePasswordDTO.class, 10000453);
     kryo.register(JiraPATDTO.class, 10000454);
+    kryo.register(AwsFixedDelayBackoffStrategySpecDTO.class, 10000455);
+    kryo.register(AwsEqualJitterBackoffStrategySpecDTO.class, 10000456);
+    kryo.register(AwsFullJitterBackoffStrategySpecDTO.class, 10000457);
+    kryo.register(AwsSdkClientBackoffStrategyDTO.class, 10000458);
+    kryo.register(AwsSdkClientBackoffStrategySpecDTO.class, 10000459);
+    kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
+    kryo.register(SignalFXConnectorDTO.class, 9145);
   }
 }

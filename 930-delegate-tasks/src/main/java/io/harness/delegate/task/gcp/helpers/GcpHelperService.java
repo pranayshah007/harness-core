@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.gcr.exceptions.GcbClientException;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gcp.helpers.GcpCredentialsHelperService;
@@ -292,6 +293,15 @@ public class GcpHelperService {
       ErrorHandlingGlobalContextData globalContextData =
           GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
       if (globalContextData != null && globalContextData.isSupportedErrorFramework()) {
+        if (e.getStatusCode() == 400) {
+          if (e.getContent() != null && e.getContent().contains("invalid_grant")) {
+            log.error(
+                "The provided credentials may be incorrect or expired. Please recheck the details provided, such as the project & image details of the artifact.",
+                e);
+            throw new HintException(
+                "The provided credentials may be incorrect or expired. Please recheck the details provided, such as the project & image details of the artifact.");
+          }
+        }
         throw e;
       }
       throw new InvalidRequestException("407 Proxy Authentication Required");

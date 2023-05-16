@@ -85,6 +85,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
   private K8sReleaseHandler releaseHandler;
 
   private final K8sCanaryHandlerConfig canaryHandlerConfig = new K8sCanaryHandlerConfig();
+  private boolean canaryWorkloadDeployed;
 
   @Override
   public K8sTaskExecutionResponse executeTaskInternal(
@@ -150,6 +151,8 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     if (!success) {
       return getFailureResponse();
     }
+
+    canaryWorkloadDeployed = true;
     success = k8sTaskHelperBase.applyManifests(canaryHandlerConfig.getClient(), canaryHandlerConfig.getResources(),
         k8sDelegateTaskParams, getLogCallBack(k8sCanaryDeployTaskParameters, Apply), true, null);
     if (!success) {
@@ -214,7 +217,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
   private K8sTaskExecutionResponse getFailureResponse() {
     K8sCanaryDeployResponse k8sCanaryDeployResponse = K8sCanaryDeployResponse.builder().build();
     KubernetesResource canaryWorkload = canaryHandlerConfig.getCanaryWorkload();
-    if (canaryWorkload != null && canaryWorkload.getResourceId() != null) {
+    if (canaryWorkloadDeployed && canaryWorkload != null && canaryWorkload.getResourceId() != null) {
       String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
       if (canaryHandlerConfig.isUseDeclarativeRollback()) {
         canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(

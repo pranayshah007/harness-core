@@ -20,13 +20,17 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.swagger.annotations.ApiModelProperty;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -117,10 +121,20 @@ public class MatrixConfig implements MatrixConfigInterface {
     if (NGExpressionUtils.matchesPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, value.toString())) {
       expressionAxes.put(
           key, new ExpressionAxisConfig(ParameterField.createExpressionField(true, (String) value, null, false)));
-    } else {
-      throw new InvalidYamlException(
-          String.format("Value provided for axes [%s] is string. It should either be a List or an Expression.", key));
+      return;
     }
+    try {
+      JsonNode jsonNode = YamlUtils.readTree(value.toString()).getNode().getCurrJsonNode();
+      // Check if the string axis value is actually a list. And handle.
+      if (jsonNode instanceof ArrayNode) {
+        handleList(key, YamlUtils.read(value.toString(), ArrayList.class));
+        return;
+      }
+    } catch (IOException e) {
+      // Ignore this exception. Exception is being thrown in the end of this method.
+    }
+    throw new InvalidYamlException(
+        String.format("Value provided for axes [%s] is string. It should either be a List or an Expression.", key));
   }
 
   @JsonValue

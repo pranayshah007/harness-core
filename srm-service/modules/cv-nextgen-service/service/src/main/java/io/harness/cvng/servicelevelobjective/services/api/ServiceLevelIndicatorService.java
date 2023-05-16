@@ -57,4 +57,6 @@ public interface ServiceLevelIndicatorService {
 
   void enqueueDataCollectionFailureInstanceAndTriggerAnalysis(
       String verificationTaskId, Instant startTime, Instant endTime, ServiceLevelIndicator serviceLevelIndicator);
+
+  String getScopedIdentifier(ServiceLevelIndicator serviceLevelIndicator);
 }

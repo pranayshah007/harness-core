@@ -49,6 +49,7 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
     }
     SLOTarget sloTarget = sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveV2DTO.getSloTarget().getType())
                               .getSLOTarget(serviceLevelObjectiveV2DTO.getSloTarget().getSpec());
+    long currentTime = System.currentTimeMillis();
     return SimpleServiceLevelObjective.builder()
         .accountId(projectParams.getAccountIdentifier())
         .orgIdentifier(projectParams.getOrgIdentifier())
@@ -71,7 +72,13 @@ public class SimpleSLOTransformer implements SLOV2Transformer<SimpleServiceLevel
         .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
         .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
         .type(ServiceLevelObjectiveType.SIMPLE)
-        .startedAt(System.currentTimeMillis())
+        .sliEvaluationType(((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+                               .getServiceLevelIndicators()
+                               .get(0)
+                               .getType())
+        .startedAt(currentTime)
+        .createdAt(currentTime)
+        .lastUpdatedAt(currentTime)
         .build();
   }
 

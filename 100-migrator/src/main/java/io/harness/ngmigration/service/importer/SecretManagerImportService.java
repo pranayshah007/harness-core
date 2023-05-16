@@ -34,7 +34,7 @@ public class SecretManagerImportService implements ImportService {
   @Inject DiscoveryService discoveryService;
   @Inject private SecretFactory secretFactory;
 
-  public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
+  public DiscoveryResult discover(ImportDTO importConnectorDTO) {
     SecretManagerFilter filter = (SecretManagerFilter) importConnectorDTO.getFilter();
     String accountId = importConnectorDTO.getAccountIdentifier();
     List<String> secretManagerIds;

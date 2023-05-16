@@ -35,7 +35,6 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.iterator.ValidationFailedTaskMessageHelper;
 import io.harness.network.LocalhostUtils;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskSchedule;
@@ -84,20 +83,15 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(PersistenceIteratorFactory.class)
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
   @Mock PersistenceIteratorFactory persistenceIteratorFactory;
   @InjectMocks @Inject private DelegateDisconnectDetectorIterator delegateDisconnectDetectorIterator;
   @Mock private AssignDelegateService assignDelegateService;
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @Inject private HPersistence persistence;
-  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   @Mock private LoadingCache<String, List<Delegate>> accountDelegatesCache;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;

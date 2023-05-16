@@ -14,9 +14,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
 import io.harness.gitsync.persistance.EntityKeySource;
+import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(DX)
 @Singleton
@@ -34,6 +37,8 @@ import org.springframework.data.domain.Page;
 public class ConnectorEntityCRUDEventHandler {
   ConnectorService connectorService;
   EntityKeySource entityKeySource;
+
+  private static final int PAGE_SIZE = 10;
 
   @Inject
   public ConnectorEntityCRUDEventHandler(
@@ -73,8 +78,10 @@ public class ConnectorEntityCRUDEventHandler {
     Page<ConnectorResponseDTO> pagedConnectorList = null;
     List<ConnectorResponseDTO> connectorList = new ArrayList<>();
     do {
-      pagedConnectorList = connectorService.list(pagedConnectorList == null ? 0 : pagedConnectorList.getNumber() + 1,
-          10, accountIdentifier, null, orgIdentifier, projectIdentifier, null, null, false, false);
+      pagedConnectorList =
+          connectorService.list(accountIdentifier, null, orgIdentifier, projectIdentifier, null, null, false, false,
+              PageUtils.getPageRequest(pagedConnectorList == null ? 0 : (pagedConnectorList.getNumber() + 1), PAGE_SIZE,
+                  List.of(ConnectorKeys.lastModifiedAt, Sort.Direction.DESC.toString())));
       connectorList.addAll(pagedConnectorList.stream().collect(Collectors.toList()));
     } while (pagedConnectorList.hasNext());
     return connectorList;

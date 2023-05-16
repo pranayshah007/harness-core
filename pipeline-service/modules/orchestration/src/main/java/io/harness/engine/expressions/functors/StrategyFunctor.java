@@ -30,6 +30,7 @@ public class StrategyFunctor implements LateBindingValue {
   public Object bind() {
     List<Level> levelsWithStrategyMetadata =
         ambiance.getLevelsList().stream().filter(Level::hasStrategyMetadata).collect(Collectors.toList());
-    return StrategyUtils.fetchStrategyObjectMap(levelsWithStrategyMetadata);
+    return StrategyUtils.fetchStrategyObjectMap(
+        levelsWithStrategyMetadata, ambiance.getMetadata().getUseMatrixFieldName());
   }
 }

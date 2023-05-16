@@ -7,10 +7,12 @@
 
 package io.harness.ng.core;
 
+import static io.harness.SecretConstants.EXPIRES_ON;
 import static io.harness.SecretConstants.LATEST;
 import static io.harness.SecretConstants.REGIONS;
 import static io.harness.SecretConstants.VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.secretmanagerclient.ValueType.Inline;
 
 import io.harness.exception.InvalidRequestException;
@@ -31,6 +33,20 @@ public class AdditionalMetadataValidationHelper {
       validateAdditionalMetadataInSecretFileSpecDTOForGcpSecretManager((SecretFileSpecDTO) secretSpecDTO);
     } else {
       log.warn(String.format("Additional metadata validation does not exist for %s", secretSpecDTO.getClass()));
+    }
+  }
+
+  public void validateAdditionalMetadataForAzureValue(SecretSpecDTO secretSpecDTO) {
+    AdditionalMetadata additionalMetadata = getAdditionalMetadata(secretSpecDTO);
+    if (additionalMetadata != null && isNotEmpty(additionalMetadata.getValues())
+        && additionalMetadata.getValues().containsKey(EXPIRES_ON)) {
+      try {
+        Long.parseLong(String.valueOf(additionalMetadata.getValues().get(EXPIRES_ON)));
+      } catch (NumberFormatException e) {
+        log.error(String.format("Exception while validating %s value from additionalMetadata", EXPIRES_ON), e);
+        throw new InvalidRequestException(String.format("Value of %s should be a valid epoch timestamp but given: [%s]",
+            EXPIRES_ON, additionalMetadata.getValues().get(EXPIRES_ON)));
+      }
     }
   }
 
@@ -82,6 +98,16 @@ public class AdditionalMetadataValidationHelper {
       }
       validateExpectedKeyInValuesMap(secretTextSpecDTO.getAdditionalMetadata(), VERSION);
       validateVersionInformation(secretTextSpecDTO.getAdditionalMetadata().getValues().get(VERSION));
+    }
+  }
+
+  private AdditionalMetadata getAdditionalMetadata(SecretSpecDTO secretSpecDTO) {
+    if (secretSpecDTO instanceof SecretTextSpecDTO) {
+      return ((SecretTextSpecDTO) secretSpecDTO).getAdditionalMetadata();
+    } else if (secretSpecDTO instanceof SecretFileSpecDTO) {
+      return ((SecretFileSpecDTO) secretSpecDTO).getAdditionalMetadata();
+    } else {
+      return null;
     }
   }
 }

@@ -103,4 +103,7 @@ public class NodeProjectionUtils {
 
   public static final Set<String> fieldsForIdentityNodeCreation =
       Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.stepType, NodeExecutionKeys.uuid);
+
+  public static final Set<String> fieldsForNodeAndAmbiance =
+      Sets.newHashSet(NodeExecutionKeys.planNode, NodeExecutionKeys.ambiance, NodeExecutionKeys.nodeId);
 }

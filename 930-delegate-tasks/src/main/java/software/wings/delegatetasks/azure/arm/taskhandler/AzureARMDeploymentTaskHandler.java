@@ -122,7 +122,7 @@ public class AzureARMDeploymentTaskHandler extends AbstractAzureARMTaskHandler {
   private AzureClientContext getAzureClientContext(
       AzureARMDeploymentParameters deploymentParameters, AzureConfig azureConfig) {
     return new AzureClientContext(
-        azureConfig, deploymentParameters.getSubscriptionId(), deploymentParameters.getResourceGroupName());
+        azureConfig, deploymentParameters.getSubscriptionId(), deploymentParameters.getResourceGroupName(), false);
   }
 
   private AzureARMDeploymentResponse deployAtSubscriptionScope(AzureConfig azureConfig,

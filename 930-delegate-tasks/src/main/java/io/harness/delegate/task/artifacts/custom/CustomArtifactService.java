@@ -27,6 +27,7 @@ import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.eraro.Level;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.expression.RegexFunctor;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.DelegateDecryptionService;
@@ -201,8 +202,16 @@ public class CustomArtifactService {
 
   private List<BuildDetails> filterVersion(
       List<BuildDetails> buildDetails, CustomArtifactDelegateRequest attributesRequest) {
+    if (isNotEmpty(attributesRequest.getVersionRegex())) {
+      buildDetails =
+          buildDetails.stream()
+              .filter(build -> new RegexFunctor().match(attributesRequest.getVersionRegex(), build.getNumber()))
+              .collect(Collectors.toList());
+      return buildDetails;
+    }
     return buildDetails.stream()
         .filter(build -> build.getNumber().equals(attributesRequest.getVersion()))
+        .sorted(new BuildDetailsComparatorDescending())
         .collect(Collectors.toList());
   }
 }

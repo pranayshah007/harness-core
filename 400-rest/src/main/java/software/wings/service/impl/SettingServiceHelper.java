@@ -68,9 +68,11 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedUsageRestrictionsException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
@@ -78,6 +80,7 @@ import software.wings.beans.CGConstants;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
+import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.PcfConfig;
 import software.wings.beans.SettingAttribute;
@@ -116,6 +119,7 @@ public class SettingServiceHelper {
   @Inject private ManagerDecryptionService managerDecryptionService;
   @Inject private UsageRestrictionsService usageRestrictionsService;
   @Inject private AccountService accountService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public boolean hasReferencedSecrets(SettingAttribute settingAttribute) {
     if (settingAttribute == null || settingAttribute.getValue() == null || settingAttribute.getAccountId() == null
@@ -437,6 +441,14 @@ public class SettingServiceHelper {
     if (null != settingValue && SettingVariableTypes.GIT.name().equals(settingValue.getType())) {
       GitConfig gitConfig = (GitConfig) settingValue;
       gitConfig.setSshSettingAttribute(null);
+    }
+  }
+
+  public void setFeatureFlagIfRequired(SettingValue value, String accountId) {
+    if (null != value && isNotEmpty(accountId) && value instanceof HostConnectionAttributes) {
+      HostConnectionAttributes connectionAttributes = (HostConnectionAttributes) value;
+      connectionAttributes.setUseSshClient(featureFlagService.isEnabled(FeatureName.CDS_SSH_CLIENT, accountId));
+      connectionAttributes.setUseSshj(featureFlagService.isEnabled(FeatureName.CDS_SSH_SSHJ, accountId));
     }
   }
 }

@@ -1211,6 +1211,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     service.setServiceVariables(
         serviceVariableService.getServiceVariablesForEntity(appId, service.getUuid(), OBTAIN_VALUE));
     service.setServiceCommands(getServiceCommands(appId, service.getUuid()));
+    service.setTagLinks(harnessTagService.getTagLinksWithEntityId(service.getAccountId(), service.getUuid()));
 
     customDeploymentTypeService.putCustomDeploymentTypeNameIfApplicable(service);
   }
@@ -1874,6 +1875,7 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
       throw new InvalidRequestException("Command Name can only have characters -, _, a-z, A-Z, 0-9 and space");
     }
   }
+
   @VisibleForTesting
   void addServiceCommand(String appId, String serviceId, ServiceCommand serviceCommand, boolean pushToYaml) {
     serviceCommand.setDefaultVersion(1);

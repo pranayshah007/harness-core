@@ -39,6 +39,8 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class NativeHelmInfraDefMapper implements InfraDefMapper {
+  static final String DEFAULT_RELEASE_NAME = "release-<+INFRA_KEY>";
+
   @Override
   public ServiceDefinitionType getServiceDefinition(InfrastructureDefinition infrastructureDefinition) {
     return ServiceDefinitionType.NATIVE_HELM;
@@ -63,6 +65,7 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
       List<ElastigroupConfiguration> elastigroupConfiguration) {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     NgEntityDetail connectorDetail;
+    String releaseName;
     switch (infrastructureDefinition.getCloudProviderType()) {
       case KUBERNETES_CLUSTER:
         DirectKubernetesInfrastructure k8s =
@@ -71,8 +74,7 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(k8s.getCloudProviderId()).build())
                 .getNgEntityDetail();
         return K8SDirectInfrastructure.builder()
-            .releaseName(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.releaseName,
-                k8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
+            .releaseName(ParameterField.createValueField(DEFAULT_RELEASE_NAME))
             .namespace(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.namespace,
                 k8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
@@ -84,8 +86,7 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
                 .getNgEntityDetail();
         return K8sGcpInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
-            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName,
-                gcpK8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
+            .releaseName(ParameterField.createValueField(DEFAULT_RELEASE_NAME))
             .cluster(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.clusterName,
                 gcpK8s.getClusterName(), infrastructureDefinition.getProvisionerId()))
             .namespace(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.namespace,
@@ -96,7 +97,7 @@ public class NativeHelmInfraDefMapper implements InfraDefMapper {
         connectorDetail =
             migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(aks.getCloudProviderId()).build())
                 .getNgEntityDetail();
-        return InfraDefMapperUtils.buildK8sAzureInfrastructure(aks, connectorDetail);
+        return InfraDefMapperUtils.buildK8sAzureInfrastructure(migrationContext, aks, connectorDetail);
       default:
         throw new InvalidRequestException("Unsupported Infra for K8s deployment");
     }

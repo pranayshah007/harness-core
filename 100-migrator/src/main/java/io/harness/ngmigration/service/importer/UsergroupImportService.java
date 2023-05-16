@@ -34,7 +34,7 @@ public class UsergroupImportService implements ImportService {
   @Inject private UserGroupService userGroupService;
 
   @Override
-  public DiscoveryResult discover(String authToken, ImportDTO importDTO) {
+  public DiscoveryResult discover(ImportDTO importDTO) {
     String accountId = importDTO.getAccountIdentifier();
     List<UserGroup> userGroups = userGroupService.listByAccountId(accountId);
     if (EmptyPredicate.isEmpty(userGroups)) {

@@ -23,8 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -45,6 +46,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
@@ -236,6 +238,28 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCreateSshWithExistingIdentifierShouldNotCreateSetupUsage() {
+    String exMessage = "Duplicate identifier, please try again with a new identifier";
+    when(ngSecretServiceV2.create(any(), any(), eq(false))).thenThrow(new DuplicateFieldException(exMessage));
+    SecretDTOV2 secretDTOV2 = SecretDTOV2.builder()
+                                  .type(SecretType.SSHKey)
+                                  .spec(SSHKeySpecDTO.builder().auth(SSHAuthDTO.builder().build()).build())
+                                  .identifier(randomAlphabetic(10))
+                                  .name(randomAlphabetic(10))
+                                  .build();
+    assertThatThrownBy(() -> secretCrudService.create(accountIdentifier, secretDTOV2))
+        .isInstanceOf(DuplicateFieldException.class)
+        .hasMessage(exMessage);
+
+    verify(ngSecretServiceV2).create(any(), any(), eq(false));
+    verify(secretEntityReferenceHelper, times(0))
+        .createSetupUsageForSecretManager(anyString(), any(), any(), anyString(), anyString(), any());
+    verify(secretEntityReferenceHelper, times(0)).createSetupUsageForSecret(anyString(), any());
+  }
+
+  @Test
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testCreateViaYaml() {
@@ -322,6 +346,30 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     assertThat(created).isNotNull();
 
     verify(encryptedDataService, atLeastOnce()).createSecretFile(any(), any(), any());
+    verify(ngSecretServiceV2).create(any(), any(), eq(false));
+    verify(secretEntityReferenceHelper).createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = PHOENIKX)
+  @Category(UnitTests.class)
+  public void testSecretFileMigration_willCreateSecretInNgSecretsDB() {
+    SecretDTOV2 secretDTOV2 =
+        SecretDTOV2.builder().spec(SecretFileSpecDTO.builder().build()).type(SecretType.SecretFile).build();
+    Secret secret = Secret.builder().build();
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder().type(SettingVariableTypes.CONFIG_FILE).build();
+    when(encryptedDataService.createSecretFile(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngSecretServiceV2.create(any(), any(), eq(false))).thenReturn(secret);
+    doNothing()
+        .when(secretEntityReferenceHelper)
+        .createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
+    when(opaSecretService.evaluatePoliciesWithEntity(any(), any(), any(), any(), any(), any())).thenReturn(null);
+
+    SecretResponseWrapper created =
+        secretCrudService.createFile(accountIdentifier, secretDTOV2, "encryptionKey", "encryptedValue");
+    assertThat(created).isNotNull();
+
+    verify(encryptedDataService, atLeastOnce()).createSecretFile(any(), any(), any(), any());
     verify(ngSecretServiceV2).create(any(), any(), eq(false));
     verify(secretEntityReferenceHelper).createSetupUsageForSecretManager(any(), any(), any(), any(), any(), any());
   }
@@ -506,9 +554,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
     when(encryptedDataService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
     when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
-    doNothing()
-        .when(secretEntityReferenceHelper)
-        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    doNothing().when(secretEntityReferenceHelper).deleteExistingSetupUsage(any(), any(), any(), any());
     doNothing().when(secretEntityReferenceHelper).validateSecretIsNotUsedByOthers(any(), any(), any(), any());
     when(ngSecretServiceV2.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(
@@ -519,8 +565,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
     verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
-    verify(secretEntityReferenceHelper, atLeastOnce())
-        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    verify(secretEntityReferenceHelper, atLeastOnce()).deleteExistingSetupUsage(any(), any(), any(), any());
   }
   @Test
   @Owner(developers = MEENAKSHI)
@@ -636,17 +681,14 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     secretIdentifiers.add("identifier1");
     secretIdentifiers.add("identifier2");
     when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
-    doNothing()
-        .when(secretEntityReferenceHelper)
-        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    doNothing().when(secretEntityReferenceHelper).deleteExistingSetupUsage(any(), any(), any(), any());
     when(ngSecretServiceV2.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(
             Secret.builder().type(SecretType.SecretText).secretSpec(SecretTextSpec.builder().build()).build()));
     secretCrudService.deleteBatch(accountIdentifier, "orgId", "projectId", secretIdentifiers);
     verify(encryptedDataService, times(2)).hardDelete(any(), any(), any(), any());
     verify(ngSecretServiceV2, times(2)).get(any(), any(), any(), any());
-    verify(secretEntityReferenceHelper, times(2))
-        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    verify(secretEntityReferenceHelper, times(2)).deleteExistingSetupUsage(any(), any(), any(), any());
   }
 
   @Test(expected = EntityNotFoundException.class)

@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.SHUBHAM;
 import static io.harness.rule.OwnerRule.VISTAAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -44,6 +44,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.stoserviceclient.STOServiceUtils;
 
@@ -73,6 +74,7 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
 
   @Mock private VmInitializeUtils vmInitializeUtils;
   @InjectMocks VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
+  @Mock SSCAServiceUtils sscaServiceUtils;
 
   private Ambiance ambiance;
   private static final String accountId = "test";

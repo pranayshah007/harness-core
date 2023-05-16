@@ -190,6 +190,7 @@ public class HelmRollbackStep extends CdTaskExecutable<HelmCmdExecResponseNG> {
             AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_STEADY_STATE_CHECK_1_16))
         .useLatestKubectlVersion(
             cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NEW_KUBECTL_VERSION))
+        .releaseHistoryPrefix(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
         .shouldOpenFetchFilesLogStream(true);
 
     return nativeHelmStepHelper

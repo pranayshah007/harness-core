@@ -34,6 +34,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -150,5 +151,10 @@ public class GitLabStore implements GitStoreConfig, Visitable, WithConnectorRef 
         .paths(ParameterFieldHelper.getParameterFieldValue(paths))
         .repoName(ParameterFieldHelper.getParameterFieldValue(repoName))
         .build();
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    return StoreConfigHelper.validateGitStoreType(connectorRef, folderPath, paths, branch, commitId, gitFetchType);
   }
 }

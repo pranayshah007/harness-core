@@ -27,6 +27,7 @@ import io.harness.perpetualtask.instancesync.AwsAmiInstanceSyncPerpetualTaskPara
 import io.harness.perpetualtask.instancesync.AwsCodeDeployInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsLambdaInstanceSyncPerpetualTaskParamsNg;
+import io.harness.perpetualtask.instancesync.AwsSamInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.AwsSshInstanceSyncPerpetualTaskParamsNg;
 import io.harness.perpetualtask.instancesync.AzureSshInstanceSyncPerpetualTaskParamsNg;
@@ -146,6 +147,8 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(AsgInstanceSyncPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(GoogleFunctionInstanceSyncPerpetualTaskParams.class.getSimpleName())
         .to(GoogleFunctionInstanceSyncPerpetualTaskExecutor.class);
+    mapBinder.addBinding(AwsSamInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(AwsSamInstanceSyncPerpetualTaskExecutor.class);
     mapBinder.addBinding(AwsLambdaInstanceSyncPerpetualTaskParamsNg.class.getSimpleName())
         .to(AwsLambdaInstanceSyncPerpetualTaskExecutorNg.class);
 

@@ -45,7 +45,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeWiseIds;
@@ -108,7 +108,7 @@ public class EnvironmentInfraFilterHelper {
   public List<io.harness.gitops.models.Cluster> fetchClustersFromGitOps(
       String accountId, String orgId, String projectId, Set<String> clsRefs) {
     List<io.harness.gitops.models.Cluster> clusters = new ArrayList<>();
-    ScopeWiseIds scopeWiseIds = FullyQualifiedIdentifierHelper.getScopeWiseIds(accountId, orgId, projectId, clsRefs);
+    ScopeWiseIds scopeWiseIds = IdentifierRefHelper.getScopeWiseIds(accountId, orgId, projectId, clsRefs);
     clusters.addAll(getClusters(accountId, orgId, projectId, scopeWiseIds.getProjectScopedIds()));
     clusters.addAll(getClusters(accountId, orgId, null, scopeWiseIds.getOrgScopedIds()));
     clusters.addAll(getClusters(accountId, null, null, scopeWiseIds.getAccountScopedIds()));
@@ -296,11 +296,20 @@ public class EnvironmentInfraFilterHelper {
       ServiceDefinitionType deploymentType) {
     List<EnvironmentYamlV2> finalyamlV2List;
     Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new LinkedHashSet<>();
+
     if (ParameterField.isNotNull(filters) && isNotEmpty(filters.getValue())) {
-      List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
-          accountIdentifier, orgIdentifier, projectIdentifier, filters.getValue(), allPossibleEnvs, deploymentType);
-      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
-      return new ArrayList<>(envsLevelEnvironmentYamlV2);
+      // Move filters to the values if both are provided
+      if (ParameterField.isNotNull(envYamls) && isNotEmpty(envYamls.getValue())) {
+        List<EnvironmentYamlV2> environmentYamlV2List = envYamls.getValue();
+        for (EnvironmentYamlV2 environmentYamlV2 : environmentYamlV2List) {
+          environmentYamlV2.setFilters(filters);
+        }
+      } else {
+        List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
+            accountIdentifier, orgIdentifier, projectIdentifier, filters.getValue(), allPossibleEnvs, deploymentType);
+        envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+        return new ArrayList<>(envsLevelEnvironmentYamlV2);
+      }
     }
 
     // Process filtering at individual Environment level

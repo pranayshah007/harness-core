@@ -44,6 +44,7 @@ import io.harness.cdng.infra.beans.K8sAwsInfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
+import io.harness.cdng.infra.beans.K8sRancherInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
@@ -62,6 +63,7 @@ import io.harness.ng.core.ScopeAware;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import java.util.Set;
@@ -94,6 +96,8 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ScopeAware.class);
     set.add(AwsLambdaInfrastructureMapping.class);
     set.add(K8sAwsInfraMapping.class);
+    set.add(K8sRancherInfraMapping.class);
+    set.add(ServiceSequence.class);
   }
 
   @Override

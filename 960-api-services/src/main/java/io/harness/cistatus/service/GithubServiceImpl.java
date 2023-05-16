@@ -19,6 +19,7 @@ import io.harness.gitpolling.github.GitHubPollingWebhookEventDelivery;
 import io.harness.gitpolling.github.GitPollingWebhookData;
 import io.harness.gitpolling.github.GitPollingWebhookEventMetadata;
 import io.harness.network.Http;
+import io.harness.remote.client.NGRestUtils;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -27,6 +28,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
@@ -80,7 +84,7 @@ public class GithubServiceImpl implements GithubService {
                            .createAccessTokenForGithubEnterprise(authToken, githubAppConfig.getInstallationId());
       }
 
-      GithubAppTokenCreationResponse response = executeRestCall(responseCall);
+      GithubAppTokenCreationResponse response = NGRestUtils.getGeneralResponse(responseCall);
       return response.getToken();
     } catch (Exception ex) {
       throw new InvalidRequestException(
@@ -99,6 +103,7 @@ public class GithubServiceImpl implements GithubService {
       Response<StatusCreationResponse> githubStatusCreationResponseResponse =
           getGithubClient(githubAppConfig).createStatus(getAuthToken(token), owner, repo, sha, bodyObjectMap).execute();
       if (!githubStatusCreationResponseResponse.isSuccessful()) {
+        log.error("Please check if your github credentials has proper permissions");
         log.error("Failed to send status for github url {} and sha {} error {}, message {}",
             githubAppConfig.getGithubUrl(), sha, githubStatusCreationResponseResponse.errorBody().string(),
             githubStatusCreationResponseResponse.message());
@@ -228,10 +233,36 @@ public class GithubServiceImpl implements GithubService {
           "Failed to fetch webhook metadata events for github url {}, repo {}, webhookId {}, response {}, headers {}, handshake {}, request {}",
           apiUrl, repoName, webhookId, response, headers, handshake, request);
 
+      List<GitPollingWebhookEventMetadata> unfilteredEvents =
+          getWebhookRecentDeliveryEventsViaCurl(apiUrl, token, repoOwner, webhookId, repoName);
+      if (!unfilteredEvents.isEmpty()) {
+        List<GitPollingWebhookEventMetadata> filteredEvents =
+            unfilteredEvents.stream().filter(filterHttpStatuses).collect(Collectors.toList());
+        log.info("Received {} webhook metadata filtered events successfully from github via curl. "
+                + "Url {}, repo {} and  webhookId {}",
+            filteredEvents.size(), apiUrl, repoName, webhookId);
+        return getWebhookDeliveryFullEvents(filteredEvents, apiUrl, token, repoOwner, repoName, webhookId);
+      }
     } catch (Exception e) {
       log.error("Exception while fetching webhook metadata events from github. "
               + "Url {}, webhookId {} and repo {} ",
           apiUrl, webhookId, repoName, e);
+    }
+    return Collections.emptyList();
+  }
+
+  private List<GitPollingWebhookEventMetadata> getWebhookRecentDeliveryEventsViaCurl(
+      String url, String token, String repoOwner, String webhookId, String repoName) {
+    String apiUrl = url + "repos/" + repoOwner + "/" + repoName + "/hooks/" + webhookId + "/deliveries";
+    log.info("Trying to fetch to recent webhook delivery events for url {}", apiUrl);
+    try {
+      String result = executeCurl(apiUrl, repoOwner, token);
+      log.info("Response received for the curl {}", result);
+      GitPollingWebhookEventMetadata[] gitPollingWebhookEventMetadata =
+          new ObjectMapper().readValue(result, GitPollingWebhookEventMetadata[].class);
+      return List.of(gitPollingWebhookEventMetadata);
+    } catch (Exception e) {
+      log.error("Exception while executing the curl or processing the response for url {}", apiUrl, e);
     }
     return Collections.emptyList();
   }
@@ -266,6 +297,8 @@ public class GithubServiceImpl implements GithubService {
           log.error("Failed to fetch full webhook event github response. "
                   + "Url {}, repo {}, hookId {}, deliveryId {}, error {} ",
               apiUrl, repoName, webhookId, webhookEvent.getId(), fullWebhookResponse.errorBody());
+          getWebhookDeliveryFullEventsViaCurl(
+              apiUrl, token, repoOwner, webhookId, repoName, webhookEvent.getId(), results);
         }
       } catch (Exception e) {
         log.error("Exception while fetching full webhook event from github. "
@@ -278,6 +311,44 @@ public class GithubServiceImpl implements GithubService {
             + "Url {}, repo {}, hookId {} ",
         results.size(), apiUrl, repoName, webhookId);
     return results;
+  }
+
+  private void getWebhookDeliveryFullEventsViaCurl(String url, String token, String repoOwner, String webhookId,
+      String repoName, String webhookEventId, List<GitPollingWebhookData> results) {
+    String apiUrl =
+        url + "repos/" + repoOwner + "/" + repoName + "/hooks/" + webhookId + "/deliveries/" + webhookEventId;
+    log.info("Trying to fetch to full webhook delivery event for url {} and webhookEventId {}", apiUrl, webhookEventId);
+    try {
+      String result = executeCurl(apiUrl, repoOwner, token);
+      ObjectMapper mapper = new ObjectMapper();
+      GitHubPollingWebhookEventDelivery gitHubPollingWebhookEventDelivery =
+          mapper.readValue(result, GitHubPollingWebhookEventDelivery.class);
+      String payload = mapper.writeValueAsString(gitHubPollingWebhookEventDelivery.getRequest().getPayload());
+      JsonNode headers = mapper.valueToTree(gitHubPollingWebhookEventDelivery.getRequest().getHeaders());
+      results.add(GitPollingWebhookData.builder()
+                      .payload(payload)
+                      .deliveryId(gitHubPollingWebhookEventDelivery.getId())
+                      .headers(createHeaders(headers))
+                      .build());
+    } catch (Exception e) {
+      log.error("Exception while executing the curl or processing the response for url {} and webhookEventId {}",
+          apiUrl, webhookEventId, e);
+    }
+  }
+
+  private String executeCurl(String apiUrl, String repoOwner, String token) throws IOException {
+    String[] command = {"curl", "-u", repoOwner + ":" + token, apiUrl, "--insecure"};
+    Process process = Runtime.getRuntime().exec(command);
+    BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+    StringBuilder builder = new StringBuilder();
+    String line;
+    while ((line = reader.readLine()) != null) {
+      builder.append(line);
+      builder.append(System.getProperty("line.separator"));
+    }
+    String result = builder.toString();
+    log.info("Response received for the curl {}", result);
+    return result;
   }
 
   private MultivaluedMap<String, String> createHeaders(JsonNode headers) {

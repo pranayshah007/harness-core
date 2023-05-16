@@ -31,12 +31,12 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -52,7 +52,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.rule.Owner;
 
@@ -268,7 +267,7 @@ public class K8sBlueGreenDeployTest extends CategoryTest {
 
     doReturn(InstanceElementListParam.builder().build())
         .when(k8sBlueGreenDeploy)
-        .fetchInstanceElementListParam(anyListOf(K8sPod.class));
+        .fetchInstanceElementListParam(anyList());
     doReturn(emptyList()).when(k8sBlueGreenDeploy).fetchInstanceStatusSummaries(any(), any());
     doNothing().when(k8sBlueGreenDeploy).saveK8sElement(any(), any());
     doNothing().when(k8sBlueGreenDeploy).saveInstanceInfoToSweepingOutput(any(), any(), any());

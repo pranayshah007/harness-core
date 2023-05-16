@@ -17,6 +17,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -32,5 +33,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class ConfigFileOutcome implements Outcome, WithIdentifier {
   String identifier;
   StoreConfig store;
+  List<ConfigGitFile> gitFiles;
   int order;
 }

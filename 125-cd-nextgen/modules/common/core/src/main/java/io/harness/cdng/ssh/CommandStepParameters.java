@@ -33,6 +33,7 @@ public class CommandStepParameters extends CommandBaseStepInfo implements SshSpe
   Map<String, Object> environmentVariables;
   Map<String, Object> outputVariables;
   @JsonIgnore boolean isRollback;
+  @JsonIgnore String commandDeployFqn;
 
   @Builder(builderMethodName = "infoBuilder")
   public CommandStepParameters(String uuid, ParameterField<Boolean> onDelegate,

@@ -7,6 +7,10 @@
 
 package io.harness.ngmigration.service.step;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
+import static software.wings.ngmigration.NGMigrationEntityType.INFRA_PROVISIONER;
+
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.CollectionUtils;
@@ -23,6 +27,7 @@ import io.harness.ngmigration.service.workflow.WorkflowHandler;
 import io.harness.ngmigration.service.workflow.WorkflowHandlerFactory;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.ngmigration.utils.SecretRefUtils;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
@@ -34,15 +39,19 @@ import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.GraphNode;
+import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
+import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
 import software.wings.sm.states.mixin.SweepingOutputStateMixin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +74,7 @@ public abstract class StepMapper {
   }
 
   public List<CgEntityId> getReferencedEntities(
-      String accountId, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
+      String accountId, Workflow workflow, GraphNode graphNode, Map<String, String> stepIdToServiceIdMap) {
     return secretRefUtils.getSecretRefFromExpressions(accountId, getExpressions(graphNode));
   }
 
@@ -73,7 +82,7 @@ public abstract class StepMapper {
 
   public abstract State getState(GraphNode stepYaml);
 
-  String getSweepingOutputName(GraphNode graphNode) {
+  public String getSweepingOutputName(GraphNode graphNode) {
     State state = getState(graphNode);
     if (state instanceof SweepingOutputStateMixin) {
       return ((SweepingOutputStateMixin) state).getSweepingOutputName();
@@ -122,8 +131,8 @@ public abstract class StepMapper {
           String.format("The template used for step %s was not migrated", graphNode.getName()));
     }
 
-    JsonNode templateInputs =
-        migrationTemplateUtils.getTemplateInputs(template.getNgEntityDetail(), context.getWorkflow().getAccountId());
+    JsonNode templateInputs = migrationTemplateUtils.getTemplateInputs(
+        template.getNgEntityDetail(), migrationContext.getInputDTO().getDestinationAccountIdentifier());
     if (templateInputs != null) {
       baseOverrideTemplateInputs(phaseStep, graphNode, templateInputs, skipCondition);
       overrideTemplateInputs(migrationContext, context, phase, graphNode, template, templateInputs);
@@ -142,7 +151,7 @@ public abstract class StepMapper {
   }
 
   void baseOverrideTemplateInputs(PhaseStep phaseStep, GraphNode step, JsonNode templateInputs, String skipCondition) {
-    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : skipCondition;
+    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : "!(" + skipCondition + ")";
     JsonNode failureStrategies = templateInputs.get("failureStrategies");
     if (failureStrategies != null) {
       List<FailureStrategyConfig> strategies =
@@ -165,12 +174,7 @@ public abstract class StepMapper {
 
     String timeoutString = "10m";
     if (properties.containsKey("timeoutMillis") && properties.get("timeoutMillis") != null) {
-      long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
-      if (t > 60) {
-        timeoutString = (t / 60) + "m";
-      } else {
-        timeoutString = t + "s";
-      }
+      timeoutString = MigratorUtility.toTimeoutString(Long.parseLong(properties.get("timeoutMillis").toString()));
     }
     Object str = properties.getOrDefault("stateTimeoutInMinutes", null);
     if ((str instanceof Integer || str instanceof String) && StringUtils.isNotBlank(String.valueOf(str))) {
@@ -227,5 +231,48 @@ public abstract class StepMapper {
 
   public boolean loopingSupported() {
     return false;
+  }
+
+  protected void overrideTemplateDelegateSelectorInputs(JsonNode templateInputs, List<String> delegateSelectors) {
+    JsonNode delSelectors = templateInputs.at("/spec/delegateSelectors");
+    if (delSelectors instanceof TextNode) {
+      String selectors = delSelectors.asText();
+      if (RUNTIME_INPUT.equals(selectors)) {
+        ((ObjectNode) templateInputs.get("spec"))
+            .putPOJO("delegateSelectors", ListUtils.emptyIfNull(delegateSelectors));
+      }
+    }
+  }
+
+  protected ParameterField<String> getConnectorRef(WorkflowMigrationContext context, String connectorId) {
+    String connectorRef = NGMigrationConstants.RUNTIME_INPUT;
+    if (!context.isTemplatizeStepParams()) {
+      connectorRef = MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), connectorId,
+          NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT);
+    }
+    return ParameterField.createValueField(connectorRef);
+  }
+
+  protected ParameterField<String> getConnectorRef(MigrationContext context, String connectorId) {
+    String connectorRef = NGMigrationConstants.RUNTIME_INPUT;
+    if (!context.isTemplatizeStepParams()) {
+      connectorRef = MigratorUtility.getIdentifierWithScopeDefaults(context.getMigratedEntities(), connectorId,
+          NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT);
+    }
+    return ParameterField.createValueField(connectorRef);
+  }
+
+  protected ParameterField<String> getProvisionerIdentifier(MigrationContext context, String provisionerId) {
+    Map<CgEntityId, CgEntityNode> entities = context.getEntities();
+    CgEntityId provisioner = CgEntityId.builder().id(provisionerId).type(INFRA_PROVISIONER).build();
+    if (!entities.containsKey(provisioner)) {
+      return MigratorUtility.RUNTIME_INPUT;
+    }
+    InfrastructureProvisioner infraProv = (InfrastructureProvisioner) entities.get(provisioner).getEntity();
+    if (infraProv == null || StringUtils.isBlank(infraProv.getName())) {
+      return MigratorUtility.RUNTIME_INPUT;
+    }
+    return ParameterField.createValueField(
+        MigratorUtility.generateIdentifier(infraProv.getName(), CaseFormat.CAMEL_CASE));
   }
 }

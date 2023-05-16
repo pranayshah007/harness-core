@@ -8,6 +8,7 @@
 package io.harness.gitsync.common.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -27,6 +28,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitFileContent;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.UserProfileHelper;
 import io.harness.gitsync.common.service.ScmClientFacilitatorService;
@@ -117,10 +119,16 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     }
   }
 
-  GitFilePathDetails getGitFilePathDetails(String filePath, String branch, String commitId) {
+  GitFilePathDetails getGitFilePathDetails(
+      String filePath, String branch, String commitId, boolean getOnlyFileContent) {
     // If commit id is present, branch is ignored
     branch = isEmpty(commitId) ? branch : null;
-    return GitFilePathDetails.builder().filePath(filePath).branch(branch).ref(commitId).build();
+    return GitFilePathDetails.builder()
+        .filePath(filePath)
+        .branch(branch)
+        .ref(commitId)
+        .getOnlyFileContent(getOnlyFileContent)
+        .build();
   }
 
   GitFileContent validateAndGetGitFileContent(FileContent fileContent) {
@@ -176,21 +184,43 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     return scmUserName;
   }
 
-  GitFileDetails getGitFileDetails(CreateGitFileRequestDTO createGitFileRequestDTO) {
+  GitFileDetails getGitFileDetails(
+      CreateGitFileRequestDTO createGitFileRequestDTO, Optional<UserDetailsResponseDTO> userDTO) {
     final EmbeddedUser currentUser = ScmUserHelper.getCurrentUser();
+    String email = currentUser.getEmail();
+    String userName = currentUser.getName();
+    if (userDTO.isPresent()) {
+      if (isNotEmpty(userDTO.get().getUserEmail())) {
+        email = userDTO.get().getUserEmail();
+      }
+      if (isNotEmpty(userDTO.get().getUserName())) {
+        userName = userDTO.get().getUserName();
+      }
+    }
     return GitFileDetails.builder()
         .branch(createGitFileRequestDTO.getBranchName())
         .commitMessage(isEmpty(createGitFileRequestDTO.getCommitMessage()) ? GitSyncConstants.COMMIT_MSG
                                                                            : createGitFileRequestDTO.getCommitMessage())
         .fileContent(createGitFileRequestDTO.getFileContent())
         .filePath(createGitFileRequestDTO.getFilePath())
-        .userEmail(currentUser.getEmail())
-        .userName(currentUser.getName())
+        .userEmail(email)
+        .userName(userName)
         .build();
   }
 
-  GitFileDetails getGitFileDetails(UpdateGitFileRequestDTO updateGitFileRequestDTO) {
+  GitFileDetails getGitFileDetails(
+      UpdateGitFileRequestDTO updateGitFileRequestDTO, Optional<UserDetailsResponseDTO> userDTO) {
     final EmbeddedUser currentUser = ScmUserHelper.getCurrentUser();
+    String email = currentUser.getEmail();
+    String userName = currentUser.getName();
+    if (userDTO.isPresent()) {
+      if (isNotEmpty(userDTO.get().getUserEmail())) {
+        email = userDTO.get().getUserEmail();
+      }
+      if (isNotEmpty(userDTO.get().getUserName())) {
+        userName = userDTO.get().getUserName();
+      }
+    }
     return GitFileDetails.builder()
         .branch(updateGitFileRequestDTO.getBranchName())
         .commitMessage(isEmpty(updateGitFileRequestDTO.getCommitMessage()) ? GitSyncConstants.COMMIT_MSG
@@ -199,8 +229,8 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
         .filePath(updateGitFileRequestDTO.getFilePath())
         .commitId(updateGitFileRequestDTO.getOldCommitId())
         .oldFileSha(updateGitFileRequestDTO.getOldFileSha())
-        .userEmail(currentUser.getEmail())
-        .userName(currentUser.getName())
+        .userEmail(email)
+        .userName(userName)
         .build();
   }
 }

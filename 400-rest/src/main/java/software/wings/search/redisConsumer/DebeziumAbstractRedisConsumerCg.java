@@ -114,7 +114,7 @@ public class DebeziumAbstractRedisConsumerCg extends RedisTraceConsumer implemen
     String lockName = LOCK_PREFIX + eventKey;
     Long currentTimestamp = debeziumChangeEvent.getTimestamp();
     try (AcquiredLock<?> lock =
-             persistentLocker.waitToAcquireLock(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
+             persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
         log.debug(
             String.format("Not able to take lock on debezium consumer for lockName - %s, returning early.", lockName));

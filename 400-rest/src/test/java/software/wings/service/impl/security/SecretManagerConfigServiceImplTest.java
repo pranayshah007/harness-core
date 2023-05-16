@@ -11,11 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.UTKARSH;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.LocalEncryptionConfig.HARNESS_DEFAULT_SECRET_MANAGER;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
@@ -24,20 +29,32 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
+import io.harness.secrets.SecretService;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.GcpKmsConfig;
+import software.wings.dl.WingsPersistence;
+import software.wings.security.GenericEntityFilter;
+import software.wings.security.UsageRestrictions;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 @OwnedBy(PL)
 public class SecretManagerConfigServiceImplTest extends WingsBaseTest {
   private String accountId = "accountId";
+  private String uuid = "UUID";
   @Inject private SecretManagerConfigService secretManagerConfigService;
+  @Inject WingsPersistence wingsPersistence = mock(WingsPersistence.class);
+  @Mock private SecretService secretService;
 
   @Test(expected = SecretManagementException.class)
   @Owner(developers = DEEPAK)
@@ -121,5 +138,33 @@ public class SecretManagerConfigServiceImplTest extends WingsBaseTest {
     String configId = secretManagerConfigService.save(secretManagerConfig);
     EncryptionType encryptionType = secretManagerConfigService.getEncryptionBySecretManagerId(configId, accountId);
     secretManagerConfigService.getSecretManager(accountId, "randomConfigId", encryptionType, new HashMap<>());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_updateSecretManagerWithoutChangeOfUsageRestrictions_shouldNotCallUpdateConflictingSecrets() {
+    String secretManagerName = "secretManagerName";
+    char[] credentialsOld = "{\"credentialsOld\":\"abc\"}".toCharArray();
+    char[] credentialsNew = "{\"credentialsNew\":\"abc\"}".toCharArray();
+    SecretManagerConfig secretManagerConfigOld = new AwsSecretsManagerConfig(
+        secretManagerName, "accessKey", Arrays.toString(credentialsOld), "region", "", false, false, 0, "", "", null);
+    SecretManagerConfig secretManagerConfigNew = new AwsSecretsManagerConfig(
+        secretManagerName, "accessKey1", Arrays.toString(credentialsNew), "region", "", false, false, 0, "", "", null);
+    secretManagerConfigOld.setAccountId(accountId);
+    secretManagerConfigNew.setAccountId(accountId);
+    secretManagerConfigOld.setUuid(uuid);
+    secretManagerConfigNew.setUuid(uuid);
+    Set<UsageRestrictions.AppEnvRestriction> appEnvRestrictions = new HashSet();
+    appEnvRestrictions.add(
+        UsageRestrictions.AppEnvRestriction.builder()
+            .appFilter(GenericEntityFilter.builder().filterType(GenericEntityFilter.FilterType.ALL).build())
+            .build());
+    UsageRestrictions usageRestrictions = UsageRestrictions.builder().appEnvRestrictions(appEnvRestrictions).build();
+    secretManagerConfigOld.setUsageRestrictions(usageRestrictions);
+    secretManagerConfigNew.setUsageRestrictions(usageRestrictions);
+    wingsPersistence.save(secretManagerConfigOld);
+    secretManagerConfigService.save(secretManagerConfigNew);
+    verify(secretService, times(0)).updateConflictingSecretsToInheritScopes(any(), any());
   }
 }

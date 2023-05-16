@@ -9,7 +9,7 @@ package io.harness.event.grpc;
 
 import static io.harness.rule.OwnerRule.HANTANG;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;

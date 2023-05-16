@@ -7,14 +7,18 @@
 
 package io.harness.delegate.task.artifacts.githubpackages;
 
-import static io.harness.delegate.task.artifacts.ArtifactServiceConstant.ACCEPT_ALL_REGEX;
-
 import io.harness.artifacts.comparator.BuildDetailsComparatorDescending;
 import io.harness.artifacts.githubpackages.service.GithubPackagesRegistryService;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.GithubPackagesRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
@@ -55,12 +59,10 @@ public class GithubPackagesArtifactTaskHandler
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(GithubPackagesArtifactDelegateRequest attributesRequest) {
     BuildDetails lastSuccessfulBuild;
 
-    if (isRegex(attributesRequest) || attributesRequest.getVersion().equals(ACCEPT_ALL_REGEX)) {
-      String versionRegex =
-          isRegex(attributesRequest) ? attributesRequest.getVersionRegex() : attributesRequest.getVersion();
+    if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = githubPackagesRegistryService.getLastSuccessfulBuildFromRegex(
           GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(attributesRequest),
-          attributesRequest.getPackageName(), attributesRequest.getPackageType(), versionRegex,
+          attributesRequest.getPackageName(), attributesRequest.getPackageType(), attributesRequest.getVersionRegex(),
           attributesRequest.getOrg());
 
     } else {
@@ -94,6 +96,20 @@ public class GithubPackagesArtifactTaskHandler
       GithubTokenSpecDTO githubTokenSpecDTO = (GithubTokenSpecDTO) githubApiAccessDTO.getSpec();
 
       secretDecryptionService.decrypt(githubTokenSpecDTO, attributes.getEncryptedDataDetails());
+    }
+    GithubAuthenticationDTO githubAuthenticationDTO = githubConnectorDTO.getAuthentication();
+    if (githubAuthenticationDTO != null && GitAuthType.HTTP.equals(githubAuthenticationDTO.getAuthType())) {
+      GithubHttpCredentialsDTO githubHttpCredentialsDTO =
+          (GithubHttpCredentialsDTO) githubAuthenticationDTO.getCredentials();
+      if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_PASSWORD) {
+        GithubUsernamePasswordDTO githubUsernamePasswordDTO =
+            (GithubUsernamePasswordDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        secretDecryptionService.decrypt(githubUsernamePasswordDTO, attributes.getEncryptedDataDetails());
+      } else if (githubHttpCredentialsDTO.getType() == GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        GithubUsernameTokenDTO githubUsernameTokenDTO =
+            (GithubUsernameTokenDTO) githubHttpCredentialsDTO.getHttpCredentialsSpec();
+        secretDecryptionService.decrypt(githubUsernameTokenDTO, attributes.getEncryptedDataDetails());
+      }
     }
   }
 

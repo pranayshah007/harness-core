@@ -15,7 +15,9 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateEntityOwner;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateSetupDetails;
+import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
@@ -23,6 +25,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
+import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.security.annotations.Scope;
@@ -39,6 +42,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DELETE;
@@ -49,6 +53,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.http.Body;
 
 @Api("/delegate-setup/internal")
 @Path("/delegate-setup/internal")
@@ -61,14 +66,18 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateNgSetupInternalResource {
   private final DelegateService delegateService;
   private final SubdomainUrlHelperIntfc subdomainUrlHelper;
+
+  private final DelegateSetupService delegateSetupService;
   private final DelegateInstallationCommandService delegateInstallationCommandService;
 
   @Inject
   public DelegateNgSetupInternalResource(DelegateService delegateService, SubdomainUrlHelperIntfc subdomainUrlHelper,
-      DelegateInstallationCommandService delegateInstallationCommandService) {
+      DelegateInstallationCommandService delegateInstallationCommandService,
+      DelegateSetupService delegateSetupService) {
     this.delegateService = delegateService;
     this.subdomainUrlHelper = subdomainUrlHelper;
     this.delegateInstallationCommandService = delegateInstallationCommandService;
+    this.delegateSetupService = delegateSetupService;
   }
 
   @POST
@@ -131,6 +140,26 @@ public class DelegateNgSetupInternalResource {
     try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
       return new RestResponse<>(delegateService.deleteDelegateGroupV3(
           accountIdentifier, orgIdentifier, projectIdentifier, delegateGroupIdentifier));
+    }
+  }
+
+  @POST
+  @Path("list")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<List<DelegateListResponse>> listV2(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body @RequestBody(description = "Details of the Delegate filter properties to be applied")
+      DelegateFilterPropertiesDTO delegateFilterPropertiesDTO) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      return new RestResponse<>(delegateSetupService.listDelegates(
+          accountIdentifier, orgIdentifier, projectIdentifier, delegateFilterPropertiesDTO));
     }
   }
 }

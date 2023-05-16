@@ -68,7 +68,6 @@ public class FailDelegateTaskIteratorHelper {
   @Inject private DelegateMetricsService delegateMetricsService;
   @Inject private Clock clock;
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
-  @Inject private ValidationFailedTaskMessageHelper validationFailedTaskMessageHelper;
 
   private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
   private static int MAX_BROADCAST_ROUND = 3;
@@ -217,7 +216,8 @@ public class FailDelegateTaskIteratorHelper {
                 whitelistedDelegates);
             return;
           }
-          final String errorMessage = validationFailedTaskMessageHelper.generateValidationError(delegateTask);
+          final String errorMessage =
+              assignDelegateService.getActiveDelegateAssignmentErrorMessage(EXPIRED, delegateTask);
           log.info("Failing task {} due to validation error, {}", delegateTask.getUuid(), errorMessage);
 
           delegateSelectionLogsService.logTaskValidationFailed(delegateTask, errorMessage);

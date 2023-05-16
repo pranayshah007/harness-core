@@ -43,7 +43,7 @@ public class ElbV2ClientImpl extends AwsClientHelper implements ElbV2Client {
     return ElasticLoadBalancingV2Client.builder()
         .credentialsProvider(getAwsCredentialsProvider(awsConfig))
         .region(Region.of(region))
-        .overrideConfiguration(getClientOverrideConfiguration(awsConfig))
+        .overrideConfiguration(getClientOverrideFromBackoffOverride(awsConfig))
         .build();
   }
 

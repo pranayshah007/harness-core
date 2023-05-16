@@ -27,14 +27,18 @@ import java.util.Collections;
 import java.util.Map;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.With;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Value
-@Builder
+@SuperBuilder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @JsonTypeName(InfrastructureKind.TAS)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("tanzuApplicationServiceInfrastructure")
@@ -99,6 +103,10 @@ public class TanzuApplicationServiceInfrastructure
 
     if (ParameterField.isNotNull(config.getSpace())) {
       resultantInfra = resultantInfra.withOrganization(config.getSpace());
+    }
+
+    if (!ParameterField.isNull(config.getProvisioner())) {
+      resultantInfra.setProvisioner(config.getProvisioner());
     }
 
     return resultantInfra;

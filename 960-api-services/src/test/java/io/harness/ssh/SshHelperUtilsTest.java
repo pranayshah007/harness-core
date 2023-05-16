@@ -12,7 +12,8 @@ import static io.harness.rule.OwnerRule.TMACARI;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import io.harness.ApiServiceTestBase;
 import io.harness.category.element.UnitTests;
@@ -41,14 +42,14 @@ public class SshHelperUtilsTest extends ApiServiceTestBase {
   public void testExecuteLocalCommand() throws IOException {
     SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, false, Collections.emptyMap());
     verify(logCallback, times(1)).saveExecutionLog("test", LogLevel.INFO);
-    verifyZeroInteractions(writer);
+    verifyNoInteractions(writer);
 
     SshHelperUtils.executeLocalCommand("echo test", logCallback, writer, true, Collections.emptyMap());
     verify(writer, times(1)).write("test");
-    verifyZeroInteractions(logCallback);
+    verifyNoMoreInteractions(logCallback);
 
     SshHelperUtils.executeLocalCommand("echo test >&2", logCallback, writer, false, Collections.emptyMap());
     verify(logCallback, times(1)).saveExecutionLog("test", LogLevel.ERROR);
-    verifyZeroInteractions(writer);
+    verifyNoMoreInteractions(writer);
   }
 }

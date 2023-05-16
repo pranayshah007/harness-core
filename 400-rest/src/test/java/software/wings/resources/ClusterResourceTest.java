@@ -10,7 +10,7 @@ package software.wings.resources;
 import static io.harness.rule.OwnerRule.HANTANG;
 
 import static java.lang.String.format;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 

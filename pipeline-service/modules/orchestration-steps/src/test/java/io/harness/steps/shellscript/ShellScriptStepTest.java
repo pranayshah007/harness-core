@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -37,7 +37,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ShellExecutionData;
 import io.harness.steps.StepHelper;
-import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -56,12 +55,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({StepUtils.class, TaskRequestsUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ShellScriptStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -99,12 +96,13 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
-    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
+    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
+      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
 
-    TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
-    assertThat(taskRequest).isNotNull();
+      TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
+      assertThat(taskRequest).isNotNull();
+    }
   }
 
   @Test
@@ -119,12 +117,13 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
-    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(TaskRequest.newBuilder().build());
+    try (MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class)) {
+      aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+          .thenReturn(TaskRequest.newBuilder().build());
 
-    TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
-    assertThat(taskRequest).isNotNull();
+      TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);
+      assertThat(taskRequest).isNotNull();
+    }
   }
 
   @Test

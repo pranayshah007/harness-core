@@ -62,6 +62,8 @@ message RunTestsStep {
   string test_split_strategy = 18;
   bool parallelize_tests = 19;
   string test_globs = 20;  // Comma separated strings which are test globs
+  string pythonVersion = 21;
+  string testRoot = 22;
 }
 
 message RunStep {

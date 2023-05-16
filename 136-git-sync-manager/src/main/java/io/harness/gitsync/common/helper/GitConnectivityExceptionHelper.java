@@ -26,17 +26,16 @@ public class GitConnectivityExceptionHelper {
   public static final String ERROR_MSG_MSVC_DOWN = "Something went wrong, Please contact Harness Support.";
 
   public String getErrorMessage(Exception ex) {
-    if (ex instanceof DelegateServiceDriverException) {
-      return CONNECTIVITY_ERROR + ExceptionUtils.getMessage(ex);
-    } else if (ex instanceof WingsException) {
-      if (ExceptionUtils.cause(ScmException.class, ex) != null
-          || ExceptionUtils.cause(DelegateNotAvailableException.class, ex) != null) {
-        return CONNECTIVITY_ERROR + ExceptionUtils.getMessage(ex);
-      } else {
-        return "Error: " + ExceptionUtils.getMessage(ex);
-      }
-    } else {
+    if (!(ex instanceof WingsException)) {
       return NGErrorHelper.DEFAULT_ERROR_MESSAGE;
     }
+
+    if (ExceptionUtils.cause(ScmException.class, ex) != null
+        || ExceptionUtils.cause(DelegateNotAvailableException.class, ex) != null
+        || ExceptionUtils.cause(DelegateServiceDriverException.class, ex) != null) {
+      return CONNECTIVITY_ERROR + ExceptionUtils.getMessage(ex);
+    }
+
+    return "Error: " + ExceptionUtils.getMessage(ex);
   }
 }

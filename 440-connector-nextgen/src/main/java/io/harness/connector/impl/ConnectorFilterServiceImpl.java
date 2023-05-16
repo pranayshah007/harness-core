@@ -17,6 +17,7 @@ import static io.harness.encryption.Scope.ORG;
 import static io.harness.encryption.Scope.PROJECT;
 import static io.harness.filter.FilterType.CONNECTOR;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+import static io.harness.springdata.SpringDataMongoUtils.populateNotInFilter;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -325,6 +326,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     populateGcpFilters(criteria, ccmConnectorFilter);
     populateK8sFilters(criteria, ccmConnectorFilter);
     populateInFilter(criteria, CEAzureConfigKeys.featuresEnabled, ccmConnectorFilter.getFeaturesEnabled());
+    populateNotInFilter(criteria, CEAzureConfigKeys.featuresEnabled, ccmConnectorFilter.getFeaturesDisabled());
   }
 
   private void populateAwsFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {

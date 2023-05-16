@@ -36,6 +36,7 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.provision.ProvisionerOutputHelper;
 import io.harness.cdng.provision.azure.AzureCreateARMResourceStepScope.AzureCreateARMResourceStepScopeBuilder;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;
 import io.harness.cdng.provision.azure.beans.AzureCreateARMResourcePassThroughData;
@@ -113,6 +114,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
   @Mock private AzureARMConfigDAL azureARMConfigDAL;
   @Mock private AzureCommonHelper azureCommonHelper;
   @Mock private CDExpressionResolver cdExpressionResolver;
+  @Mock private ProvisionerOutputHelper provisionerOutputHelper;
   @Captor ArgumentCaptor<List<EntityDetail>> captor;
   private AzureTestHelper azureHelperTest = new AzureTestHelper();
 
@@ -134,6 +136,7 @@ public class AzureCreateARMResourceStepTest extends CategoryTest {
     doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
     List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
     doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+    doNothing().when(provisionerOutputHelper).saveProvisionerOutputByStepIdentifier(any(), any());
   }
 
   @Test

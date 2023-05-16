@@ -19,6 +19,8 @@ java_library(
         "@maven//:com_google_protobuf_protobuf_java",
         "@maven//:commons_codec_commons_codec",
         "@maven//:javax_annotation_javax_annotation_api",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )
 

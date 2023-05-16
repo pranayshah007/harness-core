@@ -45,15 +45,21 @@ public class JexlRuntimeExceptionHandler implements ExceptionHandler {
 
   public static String getExplanationMessage(Exception ex) {
     String message = ExceptionUtils.getMessage(ex);
+
     if (message.contains("parsing")) {
       return "Expression could not be resolved due to incorrect expression format.";
     } else {
+      if (message.contains("InvalidRequestException")) {
+        return "Failed to evaluate the expression due to " + ex.getCause().getMessage();
+      }
+
       return "Failed to evaluate the expression.";
     }
   }
 
   public static String getHintMessage(Exception ex, String expression) {
     String message = ExceptionUtils.getMessage(ex);
+
     if (message.contains("parsing")) {
       return String.format(
           "Please re-check the expression %s are written in correct format of <+...> as well as for embedded expressions.",

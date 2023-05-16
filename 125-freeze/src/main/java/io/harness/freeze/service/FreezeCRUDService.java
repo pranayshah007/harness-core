@@ -13,6 +13,7 @@ import io.harness.freeze.beans.response.FreezeResponseDTO;
 import io.harness.freeze.beans.response.FreezeResponseWrapperDTO;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.response.FrozenExecutionDetails;
+import io.harness.freeze.entity.FreezeConfigEntity;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -50,4 +51,6 @@ public interface FreezeCRUDService {
   FreezeSummaryResponseDTO getGlobalFreezeSummary(String accountId, String orgId, String projectId);
 
   List<FreezeResponseDTO> getParentGlobalFreezeSummary(String accountId, String orgId, String projectId);
+
+  FreezeConfigEntity updateExistingFreezeConfigEntity(FreezeConfigEntity freezeConfigEntity);
 }

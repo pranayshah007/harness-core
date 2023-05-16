@@ -11,7 +11,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONN
 import static io.harness.ng.core.activityhistory.NGActivityStatus.SUCCESS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;

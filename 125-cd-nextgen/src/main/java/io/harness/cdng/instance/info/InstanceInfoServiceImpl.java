@@ -19,20 +19,17 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -52,8 +49,9 @@ public class InstanceInfoServiceImpl implements InstanceInfoService {
     }
     log.info("Start listing service instances for step type: {}", stepType.getType());
 
-    RefObject sweepingOutputRefObject = RefObjectUtils.getSweepingOutputRefObject(
-        getFQNUsingLevels(ambiance.getLevelsList()) + "." + OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME);
+    RefObject sweepingOutputRefObject =
+        RefObjectUtils.getSweepingOutputRefObject(AmbianceUtils.getFQNUsingLevels(ambiance.getLevelsList()) + "."
+            + OutcomeExpressionConstants.DEPLOYMENT_INFO_OUTCOME);
     OptionalSweepingOutput optionalSweepingOutput =
         executionSweepingOutputService.resolveOptional(ambiance, sweepingOutputRefObject);
     if (!optionalSweepingOutput.isFound()) {
@@ -101,21 +99,5 @@ public class InstanceInfoServiceImpl implements InstanceInfoService {
 
   private DeploymentInfoOutcome buildDeploymentInfoOutcome(List<ServerInstanceInfo> instanceInfoList) {
     return DeploymentInfoOutcome.builder().serverInstanceInfoList(instanceInfoList).build();
-  }
-
-  private String getFQNUsingLevels(@NotNull List<Level> levels) {
-    List<String> fqnList = new ArrayList<>();
-    for (Level level : levels) {
-      if (shouldIncludeInQualifiedName(level.getIdentifier(), level.getSetupId(), level.getSkipExpressionChain())) {
-        fqnList.add(level.getIdentifier());
-      }
-    }
-    return String.join(".", fqnList);
-  }
-
-  private boolean shouldIncludeInQualifiedName(
-      final String identifier, final String setupId, boolean skipExpressionChain) {
-    return !YamlUtils.shouldNotIncludeInQualifiedName(identifier)
-        && !identifier.equals(YAMLFieldNameConstants.PARALLEL + setupId) && !skipExpressionChain;
   }
 }

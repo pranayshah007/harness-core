@@ -29,12 +29,13 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.SSHTaskParams;
 import io.harness.delegate.beans.WinRmTaskParams;
-import io.harness.delegate.beans.secrets.BaseConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
@@ -44,6 +45,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.activityhistory.NGActivityType;
@@ -69,21 +71,18 @@ import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Streams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +106,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Singleton
 @Slf4j
 public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
+  private static final Duration VALIDATION_TASK_EXECUTION_TIMEOUT = Duration.ofSeconds(45);
+  private static final String CREDENTIALS_VALIDATION_FAILED = "Credentials validation failed. Please try again.";
+  private static final String DELEGATES_NOT_AVAILABLE_FOR_CREDENTIALS_VALIDATION =
+      "Delegates are not available for performing SSH/WinRm credentials validation.";
   private final SecretRepository secretRepository;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private final SshKeySpecDTOHelper sshKeySpecDTOHelper;
@@ -117,13 +120,16 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private final AccessControlClient accessControlClient;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final ExceptionManager exceptionManager;
 
   @Inject
   public NGSecretServiceV2Impl(SecretRepository secretRepository, DelegateGrpcClientWrapper delegateGrpcClientWrapper,
       SshKeySpecDTOHelper sshKeySpecDTOHelper, NGSecretActivityService ngSecretActivityService,
       OutboxService outboxService, @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
       TaskSetupAbstractionHelper taskSetupAbstractionHelper,
-      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient) {
+      WinRmCredentialsSpecDTOHelper winRmCredentialsSpecDTOHelper, AccessControlClient accessControlClient,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, ExceptionManager exceptionManager) {
     this.secretRepository = secretRepository;
     this.outboxService = outboxService;
     this.delegateGrpcClientWrapper = delegateGrpcClientWrapper;
@@ -133,6 +139,8 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
     this.winRmCredentialsSpecDTOHelper = winRmCredentialsSpecDTOHelper;
     this.accessControlClient = accessControlClient;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.exceptionManager = exceptionManager;
   }
 
   @Override
@@ -287,6 +295,12 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
       String projectIdentifier, SecretValidationMetaData metadata, Secret secret) {
     SSHKeyValidationMetadata sshKeyValidationMetadata = (SSHKeyValidationMetadata) metadata;
     SSHKeySpecDTO secretSpecDTO = (SSHKeySpecDTO) secret.getSecretSpec().toDTO();
+    if (null != secretSpecDTO.getAuth()) {
+      secretSpecDTO.getAuth().setUseSshClient(
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SSH_CLIENT));
+      secretSpecDTO.getAuth().setUseSshj(
+          ngFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.CDS_SSH_SSHJ));
+    }
     BaseNGAccess baseNGAccess = BaseNGAccess.builder()
                                     .accountIdentifier(accountIdentifier)
                                     .orgIdentifier(orgIdentifier)
@@ -304,28 +318,11 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
                                 .sshKeySpec(secretSpecDTO)
                                 .build())
             .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
-            .executionTimeout(Duration.ofSeconds(45));
+            .executionTimeout(VALIDATION_TASK_EXECUTION_TIMEOUT);
 
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-    try {
-      DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
-      if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-        return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
-      } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
-        return buildBaseConfigValidationTaskResponse((SSHConfigValidationTaskResponse) delegateResponseData);
-      }
-    } catch (DelegateServiceDriverException ex) {
-      log.error("Exception while validating ssh secret", ex);
-      throw buildDelegateNotAvailableHintException("Delegates are not available for performing operation.");
-    }
 
-    return buildFailedValidationResult();
-  }
-
-  private HintException buildDelegateNotAvailableHintException(String delegateDownErrorMessage) {
-    return new HintException(
-        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-        new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
+    return executeSyncTaskV2(delegateTaskRequest);
   }
 
   private SecretValidationResultDTO validateSecretWinRmCredentials(String accountIdentifier, String orgIdentifier,
@@ -352,33 +349,53 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
                                 .spec(secretSpecDTO)
                                 .build())
             .taskSetupAbstractions(buildAbstractions(accountIdentifier, orgIdentifier, projectIdentifier))
-            .executionTimeout(Duration.ofSeconds(45));
+            .executionTimeout(VALIDATION_TASK_EXECUTION_TIMEOUT);
 
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
 
-    if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-      return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
-    } else if (delegateResponseData instanceof WinRmConfigValidationTaskResponse) {
-      return buildBaseConfigValidationTaskResponse((WinRmConfigValidationTaskResponse) delegateResponseData);
-    }
-
-    return buildFailedValidationResult();
+    return executeSyncTaskV2(delegateTaskRequest);
   }
 
-  private SecretValidationResultDTO buildRemoteMethodResponse(RemoteMethodReturnValueData delegateResponseData) {
-    return SecretValidationResultDTO.builder()
-        .success(false)
-        .message(delegateResponseData.getException().getMessage())
-        .build();
+  private SecretValidationResultDTO executeSyncTaskV2(DelegateTaskRequest delegateTaskRequest) {
+    DelegateResponseData delegateResponseData;
+    try {
+      delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+
+      if (delegateResponseData instanceof WinRmConfigValidationTaskResponse) {
+        WinRmConfigValidationTaskResponse winRmValidationResponse =
+            (WinRmConfigValidationTaskResponse) delegateResponseData;
+        return buildBaseConfigValidationTaskResponse(
+            winRmValidationResponse.isConnectionSuccessful(), winRmValidationResponse.getErrorMessage());
+      } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
+        SSHConfigValidationTaskResponse sshValidationResponse = (SSHConfigValidationTaskResponse) delegateResponseData;
+        return buildBaseConfigValidationTaskResponse(
+            sshValidationResponse.isConnectionSuccessful(), sshValidationResponse.getErrorMessage());
+      } else if (delegateResponseData instanceof RemoteMethodReturnValueData) {
+        RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) delegateResponseData;
+        String errorMsg = remoteMethodReturnValueData.getException() != null
+                && isNotEmpty(remoteMethodReturnValueData.getException().getMessage())
+            ? remoteMethodReturnValueData.getException().getMessage()
+            : CREDENTIALS_VALIDATION_FAILED;
+        return buildBaseConfigValidationTaskResponse(false, errorMsg);
+      } else if (delegateResponseData instanceof ErrorNotifyResponseData) {
+        ErrorNotifyResponseData errorResponseData = (ErrorNotifyResponseData) delegateResponseData;
+        return buildBaseConfigValidationTaskResponse(false, errorResponseData.getErrorMessage());
+      } else {
+        return buildBaseConfigValidationTaskResponse(false, CREDENTIALS_VALIDATION_FAILED);
+      }
+    } catch (DelegateServiceDriverException ex) {
+      log.error("Exception while validating SSH/WinRm credentials", ex);
+      throw new HintException(
+          String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+          new DelegateNotAvailableException(DELEGATES_NOT_AVAILABLE_FOR_CREDENTIALS_VALIDATION, WingsException.USER));
+    } catch (Exception ex) {
+      throw exceptionManager.processException(ex, WingsException.ExecutionContext.MANAGER, log);
+    }
   }
 
   private SecretValidationResultDTO buildBaseConfigValidationTaskResponse(
-      BaseConfigValidationTaskResponse delegateResponseData) {
-    return SecretValidationResultDTO.builder()
-        .success(delegateResponseData.isConnectionSuccessful())
-        .message(delegateResponseData.getErrorMessage())
-        .build();
+      boolean connectionSuccessful, String errorMessage) {
+    return SecretValidationResultDTO.builder().success(connectionSuccessful).message(errorMessage).build();
   }
 
   private SecretValidationResultDTO buildFailedValidationResult() {
@@ -394,25 +411,7 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public List<Secret> getPermitted(Collection<Secret> secrets) {
-    return Streams.stream(Iterables.partition(secrets, 1000))
-        .map(this::checkAccess)
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList());
-  }
-
-  @Override
-  public Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size) {
-    if (unpagedSecrets.isEmpty()) {
-      return Page.empty();
-    }
-    List<Secret> secrets = new ArrayList<>(unpagedSecrets);
-    secrets.sort(Comparator.comparing(Secret::getCreatedAt).reversed());
-    // This method is used because here list of secrets have unpaginated results
-    return PageUtils.getPage(secrets, page, size);
-  }
-
-  private Collection<Secret> checkAccess(List<Secret> secrets) {
+  public List<Secret> getPermitted(List<Secret> secrets) {
     Map<SecretResource, List<Secret>> secretsMap = secrets.stream().collect(groupingBy(SecretResource::fromSecret));
     List<PermissionCheckDTO> permissionChecks =
         secrets.stream()
@@ -425,9 +424,9 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
                        .resourceType(SECRET_RESOURCE_TYPE)
                        .build())
             .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
 
-    Collection<Secret> permittedSecrets = new ArrayList<>();
+    List<Secret> permittedSecrets = new ArrayList<>();
     for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
       if (accessControlDTO.isPermitted()) {
         permittedSecrets.add(secretsMap.get(SecretResource.fromAccessControlDTO(accessControlDTO)).get(0));
@@ -435,6 +434,14 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
     }
 
     return permittedSecrets;
+  }
+
+  @Override
+  public Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size) {
+    if (unpagedSecrets.isEmpty()) {
+      return Page.empty();
+    }
+    return PageUtils.getPage(unpagedSecrets, page, size);
   }
 
   @Value

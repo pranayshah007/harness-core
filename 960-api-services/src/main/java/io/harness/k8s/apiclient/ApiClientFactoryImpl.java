@@ -17,6 +17,7 @@ import static okhttp3.Protocol.HTTP_1_1;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
+import io.harness.exception.runtime.utils.KubernetesCertificateType;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.oidc.OidcTokenRetriever;
@@ -25,9 +26,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.util.KubeConfig;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
+import io.kubernetes.client.util.credentials.KubeconfigAuthentication;
 import io.kubernetes.client.util.credentials.UsernamePasswordAuthentication;
+import java.io.StringReader;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +45,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
   @Inject OidcTokenRetriever oidcTokenRetriever;
   private static final long READ_TIMEOUT_IN_SECONDS = 120;
   private static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
+  @Inject private static K8sApiClientHelper k8sApiClientHelper;
 
   static {
     connectionPool = new ConnectionPool(32, 5L, TimeUnit.MINUTES);
@@ -56,9 +61,11 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     try {
       return createNewApiClient(kubernetesConfig, tokenRetriever, false);
     } catch (RuntimeException e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e.getCause());
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e.getCause(), getKubernetesConfigCertificateType(kubernetesConfig));
     } catch (Exception e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e);
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e, getKubernetesConfigCertificateType(kubernetesConfig));
     }
   }
 
@@ -68,9 +75,11 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     try {
       return createNewApiClient(kubernetesConfig, tokenRetriever, true);
     } catch (RuntimeException e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e.getCause());
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e.getCause(), getKubernetesConfigCertificateType(kubernetesConfig));
     } catch (Exception e) {
-      throw new KubernetesApiClientRuntimeException(e.getMessage(), e);
+      throw new KubernetesApiClientRuntimeException(
+          e.getMessage(), e, getKubernetesConfigCertificateType(kubernetesConfig));
     }
   }
 
@@ -85,12 +94,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
       clientBuilder.setCertificateAuthority(decodeIfRequired(kubernetesConfig.getCaCert()));
     }
     if (kubernetesConfig.getServiceAccountTokenSupplier() != null) {
-      if (GCP_OAUTH == kubernetesConfig.getAuthType()) {
-        clientBuilder.setAuthentication(new GkeTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier()));
-      } else {
-        clientBuilder.setAuthentication(
-            new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get().trim()));
-      }
+      addSATokenAuthentication(kubernetesConfig, clientBuilder);
     } else if (kubernetesConfig.getUsername() != null && kubernetesConfig.getPassword() != null) {
       clientBuilder.setAuthentication(new UsernamePasswordAuthentication(
           new String(kubernetesConfig.getUsername()), new String(kubernetesConfig.getPassword())));
@@ -103,6 +107,10 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
       //      clientBuilder.setAuthentication(new
       //      AzureTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
       clientBuilder.setAuthentication(new AccessTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
+    } else if (kubernetesConfig.isUseKubeconfigAuthentication()) {
+      addKubeConfigAuthentication(kubernetesConfig, clientBuilder);
+    } else {
+      // nothing to do here
     }
 
     ApiClient apiClient = clientBuilder.build();
@@ -118,12 +126,34 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     if (isNotEmpty(user)) {
       String password = getProxyPassword();
       builder.proxyAuthenticator((route, response) -> {
+        if (response == null || response.code() == 407) {
+          return null;
+        }
         String credential = Credentials.basic(user, password);
         return response.request().newBuilder().header("Proxy-Authorization", credential).build();
       });
     }
     apiClient.setHttpClient(builder.build());
     return apiClient;
+  }
+
+  private static void addKubeConfigAuthentication(KubernetesConfig kubernetesConfig, ClientBuilder clientBuilder) {
+    String kubeConfigString = k8sApiClientHelper.generateExecFormatKubeconfig(kubernetesConfig);
+    try {
+      KubeConfig kubeConfig = KubeConfig.loadKubeConfig(new StringReader(kubeConfigString));
+      clientBuilder.setAuthentication(new KubeconfigAuthentication(kubeConfig));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static void addSATokenAuthentication(KubernetesConfig kubernetesConfig, ClientBuilder clientBuilder) {
+    if (GCP_OAUTH == kubernetesConfig.getAuthType()) {
+      clientBuilder.setAuthentication(new GkeTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier()));
+    } else {
+      clientBuilder.setAuthentication(
+          new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get().trim()));
+    }
   }
 
   // try catch is used as logic to detect if value is in base64 or not and no need to keep exception context
@@ -134,5 +164,18 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     } catch (IllegalArgumentException ignore) {
       return new String(data).getBytes(UTF_8);
     }
+  }
+
+  private static KubernetesCertificateType getKubernetesConfigCertificateType(KubernetesConfig kubernetesConfig) {
+    if (isNotEmpty(kubernetesConfig.getCaCert()) && isNotEmpty(kubernetesConfig.getClientCert())) {
+      return KubernetesCertificateType.BOTH_CA_AND_CLIENT_CERTIFICATE;
+    }
+    if (isNotEmpty(kubernetesConfig.getCaCert())) {
+      return KubernetesCertificateType.CA_CERTIFICATE;
+    }
+    if (isNotEmpty(kubernetesConfig.getClientCert())) {
+      return KubernetesCertificateType.CLIENT_CERTIFICATE;
+    }
+    return KubernetesCertificateType.NONE;
   }
 }

@@ -88,4 +88,15 @@ public class StageExecutionInfoRepositoryCustomImpl implements StageExecutionInf
     criteria.and(StageExecutionInfoKeys.projectIdentifier).is(scope.getProjectIdentifier());
     return criteria;
   }
+
+  @Override
+  public StageExecutionInfo findByStageExecutionId(String stageExecutionId, Scope scope) {
+    Criteria criteria = new Criteria();
+    criteria.and(StageExecutionInfoKeys.accountIdentifier).is(scope.getAccountIdentifier());
+    criteria.and(StageExecutionInfoKeys.orgIdentifier).is(scope.getOrgIdentifier());
+    criteria.and(StageExecutionInfoKeys.projectIdentifier).is(scope.getProjectIdentifier());
+    criteria.and(StageExecutionInfoKeys.stageExecutionId).is(stageExecutionId);
+    Query query = new Query(criteria);
+    return mongoTemplate.findOne(query, StageExecutionInfo.class);
+  }
 }

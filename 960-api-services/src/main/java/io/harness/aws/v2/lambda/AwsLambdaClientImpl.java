@@ -230,7 +230,7 @@ public class AwsLambdaClientImpl extends AwsClientHelper implements AwsLambdaCli
     return software.amazon.awssdk.services.lambda.LambdaClient.builder()
         .credentialsProvider(getAwsCredentialsProvider(awsConfig))
         .region(Region.of(region))
-        .overrideConfiguration(getClientOverrideConfiguration(awsConfig))
+        .overrideConfiguration(getClientOverrideFromBackoffOverride(awsConfig))
         .build();
   }
 

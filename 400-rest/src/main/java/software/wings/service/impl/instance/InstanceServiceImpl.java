@@ -144,8 +144,8 @@ public class InstanceServiceImpl implements InstanceService {
     InstanceKey instanceKey = addInstanceKeyFilterToQuery(query, instance);
     query.project(InstanceKeys.uuid, true);
 
-    try (AcquiredLock acquiredLock =
-             persistentLocker.waitToAcquireLock(instanceKey.toString(), Duration.ofMinutes(1), Duration.ofMinutes(2))) {
+    try (AcquiredLock acquiredLock = persistentLocker.waitToAcquireLockOptional(
+             instanceKey.toString(), Duration.ofMinutes(1), Duration.ofMinutes(2))) {
       if (acquiredLock == null) {
         String msg = "Unable to acquire lock while trying save or update instance with key " + instanceKey.toString();
         log.warn(msg);

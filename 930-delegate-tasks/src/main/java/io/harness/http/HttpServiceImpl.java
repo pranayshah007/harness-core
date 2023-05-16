@@ -68,6 +68,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -246,7 +247,8 @@ public class HttpServiceImpl implements HttpService {
     }
   }
 
-  private SSLContextBuilder createSslContextBuilder(final HttpInternalConfig config) {
+  @VisibleForTesting
+  protected SSLContextBuilder createSslContextBuilder(final HttpInternalConfig config) {
     SSLContextBuilder builder = new SSLContextBuilder();
 
     final boolean insecure = isInsecure(config);
@@ -277,7 +279,8 @@ public class HttpServiceImpl implements HttpService {
     return !config.isCertValidationRequired();
   }
 
-  private void prepareSslContext(SSLContextBuilder builder, HttpInternalConfig config) {
+  @VisibleForTesting
+  protected void prepareSslContext(SSLContextBuilder builder, HttpInternalConfig config) {
     io.harness.beans.HttpCertificate httpC = config.getCertificate();
     try {
       final KeyStore ks =
@@ -301,7 +304,8 @@ public class HttpServiceImpl implements HttpService {
   /**
    * Trusted certificates for verifying the remote endpoint's certificate
    */
-  private void loadTrustMaterial(SSLContextBuilder builder, KeyStore ks, X509Certificate[] certs, boolean insecure)
+  @VisibleForTesting
+  protected void loadTrustMaterial(SSLContextBuilder builder, KeyStore ks, X509Certificate[] certs, boolean insecure)
       throws KeyStoreException, NoSuchAlgorithmException {
     int i = 1;
     for (X509Certificate cert : certs) {
@@ -311,7 +315,8 @@ public class HttpServiceImpl implements HttpService {
     }
 
     // WHEN INSECURE WE TRUST ALL CERTIFICATE IGNORING THE CA VERIFICATION
-    final TrustStrategy trustStrategy = insecure ? (x509Certificates, s) -> true : null;
+    // To support self-signed certificates set the trustStrategy to TrustSelfSignedStrategy
+    final TrustStrategy trustStrategy = insecure ? (x509Certificates, s) -> true : new TrustSelfSignedStrategy();
     builder.loadTrustMaterial(ks, trustStrategy);
   }
 

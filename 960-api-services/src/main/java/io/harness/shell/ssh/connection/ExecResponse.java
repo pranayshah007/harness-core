@@ -7,6 +7,15 @@
 
 package io.harness.shell.ssh.connection;
 
+import io.harness.logging.CommandExecutionStatus;
+
+import lombok.Builder;
+import lombok.Getter;
+
+@Builder
+@Getter
 public class ExecResponse {
-  private String command;
+  private String output;
+  private int exitCode;
+  private CommandExecutionStatus status;
 }

@@ -34,5 +34,4 @@ public interface Constants {
       "Facing issues while performing required operation on git provider, please try again later";
   int SCM_BAD_RESPONSE_ERROR_CODE = 500;
   int HTTP_SUCCESS_STATUS_CODE = 200;
-  int HTTP_BAD_REQUEST_STATUS_CODE = 400;
 }

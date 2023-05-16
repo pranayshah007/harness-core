@@ -22,8 +22,8 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.MockableTestMixin;
 import io.harness.beans.entities.IACMServiceConfig;
-import io.harness.beans.entities.Stack;
-import io.harness.beans.entities.StackVariables;
+import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.GeneralException;
 import io.harness.rule.LifecycleRule;
@@ -95,102 +95,102 @@ public class IACMServiceUtilsTest extends CategoryTest implements MockableTestMi
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testExceptionsInGetIACMStackInfo() throws IOException {
+  public void testExceptionsInGetIACMWorkspaceInfo() throws IOException {
     Call<JsonObject> connectorCall = mock(Call.class);
-    when(iacmServiceClient.getStackInfo(anyString(), anyString(), anyString(), anyString(), anyString()))
+    when(iacmServiceClient.getWorkspaceInfo(anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(connectorCall);
     when(connectorCall.execute()).thenThrow(new IOException("Got error while trying to process!"));
     IACMServiceUtils iacmServiceUtils = new IACMServiceUtils(iacmServiceClient, createServiceConfig());
-    assertThatThrownBy(() -> iacmServiceUtils.getIACMStackInfo("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIACMWorkspaceInfo("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
-        .hasMessageContaining("Stack Info request to IACM service call failed");
+        .hasMessageContaining("Workspace Info request to IACM service call failed");
 
     Call<JsonObject> connectorCall2 = mock(Call.class);
-    when(iacmServiceClient.getStackInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall2);
+    when(iacmServiceClient.getWorkspaceInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall2);
     Response<JsonObject> response = Response.error(500, getResponse(500));
     when(connectorCall2.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIACMStackInfo("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIACMWorkspaceInfo("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
-        .hasMessageContaining("Could not retrieve IACM stack info from the IACM service. status code");
+        .hasMessageContaining("Could not retrieve IACM workspace info from the IACM service. status code");
 
     Call<JsonObject> connectorCall3 = mock(Call.class);
-    when(iacmServiceClient.getStackInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall3);
+    when(iacmServiceClient.getWorkspaceInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall3);
     response = Response.success(200, null);
     when(connectorCall3.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIACMStackInfo("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIACMWorkspaceInfo("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
-        .hasMessageContaining("Could not retrieve IACM stack info from the IACM service. Response body is null");
+        .hasMessageContaining("Could not retrieve IACM workspace info from the IACM service. Response body is null");
 
     Call<JsonObject> connectorCall5 = mock(Call.class);
-    when(iacmServiceClient.getStackInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
+    when(iacmServiceClient.getWorkspaceInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
     response = Response.success(200, JsonParser.parseString("{name:bar}").getAsJsonObject());
     when(connectorCall5.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIACMStackInfo("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIACMWorkspaceInfo("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
-        .hasMessageContaining("Could not retrieve IACM Connector from the IACM service. The StackID:");
+        .hasMessageContaining("Could not retrieve IACM Connector from the IACM service. The WorkspaceID:");
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testGetIACMStackInfo() throws IOException {
+  public void testGetIACMWorkspaceInfo() throws IOException {
     Call<JsonObject> connectorCall5 = mock(Call.class);
     IACMServiceUtils iacmServiceUtils = new IACMServiceUtils(iacmServiceClient, createServiceConfig());
-    when(iacmServiceClient.getStackInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
+    when(iacmServiceClient.getWorkspaceInfo(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
     Response<JsonObject> response =
         Response.success(200, JsonParser.parseString("{provider_connector:bar}").getAsJsonObject());
     when(connectorCall5.execute()).thenReturn(response);
-    Stack stack = iacmServiceUtils.getIACMStackInfo("a", "b", "c", "d");
-    assertThat(stack.getProvider_connector()).isEqualTo("bar");
+    Workspace workspace = iacmServiceUtils.getIACMWorkspaceInfo("a", "b", "c", "d");
+    assertThat(workspace.getProvider_connector()).isEqualTo("bar");
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testExceptionsInGetIacmStackEnvs() throws IOException {
+  public void testExceptionsInGetIacmWorkspaceEnvs() throws IOException {
     Call<JsonArray> connectorCall = mock(Call.class);
-    when(iacmServiceClient.getStackVariables(anyString(), anyString(), anyString(), anyString(), anyString()))
+    when(iacmServiceClient.getWorkspaceVariables(anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(connectorCall);
     when(connectorCall.execute()).thenThrow(new IOException("Got error while trying to process!"));
     IACMServiceUtils iacmServiceUtils = new IACMServiceUtils(iacmServiceClient, createServiceConfig());
-    assertThatThrownBy(() -> iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIacmWorkspaceEnvs("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
         .hasMessageContaining("Error retrieving the variables from the IACM service. Call failed");
 
     Call<JsonArray> connectorCall2 = mock(Call.class);
-    when(iacmServiceClient.getStackVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall2);
+    when(iacmServiceClient.getWorkspaceVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall2);
     Response<JsonArray> response = Response.error(500, getResponse(500));
     when(connectorCall2.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIacmWorkspaceEnvs("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
         .hasMessageContaining("Could not parse body for the env retrieval response ");
 
     Call<JsonArray> connectorCall3 = mock(Call.class);
-    when(iacmServiceClient.getStackVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall3);
+    when(iacmServiceClient.getWorkspaceVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall3);
     response = Response.success(200, null);
     when(connectorCall3.execute()).thenReturn(response);
-    assertThatThrownBy(() -> iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d"))
+    assertThatThrownBy(() -> iacmServiceUtils.getIacmWorkspaceEnvs("a", "b", "c", "d"))
         .isInstanceOf(GeneralException.class)
         .hasMessageContaining("Could not retrieve IACM variables from the IACM service. Response body is null");
 
     Call<JsonArray> connectorCall5 = mock(Call.class);
-    when(iacmServiceClient.getStackVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
+    when(iacmServiceClient.getWorkspaceVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
     response = Response.success(200, JsonParser.parseString("[]").getAsJsonArray());
     when(connectorCall5.execute()).thenReturn(response);
-    iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d");
+    iacmServiceUtils.getIacmWorkspaceEnvs("a", "b", "c", "d");
   }
 
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testGetIacmStackEnvs() throws IOException {
+  public void testGetIacmWorkspaceEnvs() throws IOException {
     Call<JsonArray> connectorCall5 = mock(Call.class);
     IACMServiceUtils iacmServiceUtils = new IACMServiceUtils(iacmServiceClient, createServiceConfig());
-    when(iacmServiceClient.getStackVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
+    when(iacmServiceClient.getWorkspaceVariables(any(), any(), any(), any(), any())).thenReturn(connectorCall5);
     Response<JsonArray> response =
         Response.success(200, JsonParser.parseString("[{key:\"value\"}, {key:\"value2\"}]").getAsJsonArray());
     when(connectorCall5.execute()).thenReturn(response);
-    StackVariables[] vars = iacmServiceUtils.getIacmStackEnvs("a", "b", "c", "d");
+    WorkspaceVariables[] vars = iacmServiceUtils.getIacmWorkspaceEnvs("a", "b", "c", "d");
     assertThat(vars.length).isEqualTo(2);
   }
 

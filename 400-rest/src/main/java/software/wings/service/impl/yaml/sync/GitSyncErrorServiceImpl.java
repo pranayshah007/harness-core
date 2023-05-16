@@ -85,6 +85,7 @@ import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.AggregationOptions;
+import dev.morphia.aggregation.AggregationPipeline;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
@@ -279,14 +280,21 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
 
     addGitToHarnessErrorFilter(query);
     List<GitToHarnessErrorCommitStats> commitsDetails = new ArrayList<>();
-    wingsPersistence.getDatastore(GitSyncError.class)
-        .createAggregation(GitSyncError.class)
-        .match(query)
-        .group(GitSyncErrorKeys.gitCommitId,
-            grouping(GitToHarnessErrorCommitStatsKeys.errorsForSummaryView,
-                grouping("$push", projection(GitSyncErrorKeys.yamlFilePath, GitSyncErrorKeys.yamlFilePath),
-                    projection(APP_ID_KEY, APP_ID_KEY))))
-        .project(projection("gitCommitId", "_id"), projection(GitToHarnessErrorCommitStatsKeys.errorsForSummaryView))
+    AggregationPipeline aggregationPipeline =
+        wingsPersistence.getDatastore(GitSyncError.class)
+            .createAggregation(GitSyncError.class)
+            .match(query)
+            .group(GitSyncErrorKeys.gitCommitId,
+                grouping(GitToHarnessErrorCommitStatsKeys.errorsForSummaryView,
+                    grouping("$push", projection(GitSyncErrorKeys.yamlFilePath, GitSyncErrorKeys.yamlFilePath),
+                        projection(APP_ID_KEY, APP_ID_KEY))))
+            .project(
+                projection("gitCommitId", "_id"), projection(GitToHarnessErrorCommitStatsKeys.errorsForSummaryView));
+    int limit = wingsPersistence.getMaxDocumentLimit(GitSyncError.class);
+    if (limit > 0) {
+      aggregationPipeline.limit(limit);
+    }
+    aggregationPipeline
         .aggregate(GitToHarnessErrorCommitStats.class,
             AggregationOptions.builder()
                 .maxTime(wingsPersistence.getMaxTimeMs(GitSyncError.class), TimeUnit.MILLISECONDS)

@@ -70,6 +70,9 @@ public class BudgetGroupDao {
     if (budgetGroup.getBudgetGroupMonthlyBreakdown() != null) {
       updateOperations.set(BudgetGroupKeys.budgetGroupMonthlyBreakdown, budgetGroup.getBudgetGroupMonthlyBreakdown());
     }
+    if (budgetGroup.getBudgetGroupHistory() != null) {
+      updateOperations.set(BudgetGroupKeys.budgetGroupHistory, budgetGroup.getBudgetGroupHistory());
+    }
 
     hPersistence.update(query, updateOperations);
   }

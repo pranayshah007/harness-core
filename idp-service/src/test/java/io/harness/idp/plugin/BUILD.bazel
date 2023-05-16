@@ -1,0 +1,26 @@
+# Copyright 2023 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["**/*.java"]),
+    data = [
+        "//idp-service/src/test/resources:resource",
+    ],
+    resources = [
+        "//idp-service/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//990-commons-test:module",
+        "//idp-service/src/main/java/io/harness/idp/plugin:module",
+        "@maven//:org_mockito_mockito_inline",
+    ],
+)
+
+run_tests("**/*Test.java")

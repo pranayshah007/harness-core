@@ -9,14 +9,17 @@ package io.harness.service.instancesync;
 
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ARVIND;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -47,19 +50,29 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.ArtifactDetails;
+import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.helper.InstanceSyncHelper;
 import io.harness.instancesyncmonitoring.service.InstanceSyncMonitoringService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.models.DeploymentEvent;
 import io.harness.models.RollbackInfo;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.InstanceSyncData;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
+import io.harness.perpetualtask.instancesync.InstanceSyncStatus;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
+import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -68,13 +81,16 @@ import io.harness.service.instancesynchandlerfactory.InstanceSyncHandlerFactoryS
 import io.harness.service.instancesyncperpetualtask.InstanceSyncPerpetualTaskService;
 import io.harness.service.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoService;
 
+import com.google.protobuf.Any;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -82,7 +98,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
-import org.mockito.stubbing.Answer;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -101,6 +116,8 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
   @InjectMocks InstanceSyncServiceImpl instanceSyncService;
   @Mock private InstanceSyncMonitoringService instanceSyncMonitoringService;
   @Mock private AccountClient accountClient;
+  @Mock private InstanceSyncPerpetualTaskMappingService instanceSyncPerpetualTaskMappingService;
+  @Mock private KryoSerializer kryoSerializer;
 
   private final String ACCOUNT_IDENTIFIER = "acc";
   private final String PERPETUAL_TASK = "perp";
@@ -142,7 +159,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                                                     .infrastructureMapping(infrastructureMappingDTO)
                                                     .deploymentInfoDTO(deploymentInfoDTO)
                                                     .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
-                                                    .serverInstanceInfoList(Collections.emptyList())
+                                                    .serverInstanceInfoList(emptyList())
                                                     .build();
     RollbackInfo rollbackInfo = RollbackInfo.builder().build();
     InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder().build();
@@ -191,7 +208,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
             .infrastructureMapping(infrastructureMappingDTO)
             .deploymentInfoDTO(deploymentInfoDTO)
             .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
-            .serverInstanceInfoList(Arrays.asList(
+            .serverInstanceInfoList(List.of(
                 AzureSshWinrmServerInstanceInfo.builder().infrastructureKey(INFRASTRUCTURE_KEY).host(HOST3).build()))
             .build();
     doReturn(Optional.of(deploymentSummaryDTO))
@@ -262,13 +279,17 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
       return instanceInfoDTO.prepareInstanceKey();
     });
 
-    doAnswer((Answer<InstanceInfoDTO>) invocation -> {
-      Object[] args = invocation.getArguments();
-      AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) args[0];
-      return AzureSshWinrmInstanceInfoDTO.builder()
-          .host(s.getHost())
-          .infrastructureKey(s.getInfrastructureKey())
-          .build();
+    doAnswer(invocation -> {
+      List<ServerInstanceInfo> instanceInfoList = invocation.getArgument(0, List.class);
+      return instanceInfoList.stream()
+          .map(instanceInfo -> {
+            AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) instanceInfo;
+            return AzureSshWinrmInstanceInfoDTO.builder()
+                .host(s.getHost())
+                .infrastructureKey(s.getInfrastructureKey())
+                .build();
+          })
+          .collect(Collectors.toCollection(ArrayList::new));
     })
         .when(abstractInstanceSyncHandler)
         .getInstanceDetailsFromServerInstances(deploymentSummaryDTO.getServerInstanceInfoList());
@@ -382,13 +403,17 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
       return instanceInfoDTO.prepareInstanceKey();
     });
 
-    doAnswer((Answer<InstanceInfoDTO>) invocation -> {
-      Object[] args = invocation.getArguments();
-      AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) args[0];
-      return AzureSshWinrmInstanceInfoDTO.builder()
-          .host(s.getHost())
-          .infrastructureKey(s.getInfrastructureKey())
-          .build();
+    doAnswer(invocation -> {
+      List<ServerInstanceInfo> instanceInfoList = invocation.getArgument(0, List.class);
+      return instanceInfoList.stream()
+          .map(instanceInfo -> {
+            AzureSshWinrmServerInstanceInfo s = (AzureSshWinrmServerInstanceInfo) instanceInfo;
+            return AzureSshWinrmInstanceInfoDTO.builder()
+                .host(s.getHost())
+                .infrastructureKey(s.getInfrastructureKey())
+                .build();
+          })
+          .collect(Collectors.toCollection(ArrayList::new));
     })
         .when(abstractInstanceSyncHandler)
         .getInstanceDetailsFromServerInstances(deploymentSummaryDTO.getServerInstanceInfoList());
@@ -450,6 +475,211 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     verify(instanceSyncHandlerFactoryService, times(1))
         .getInstanceSyncHandler(
             instanceSyncPerpetualTaskResponse.getDeploymentType(), InfrastructureKind.KUBERNETES_DIRECT);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void processInstanceSyncByPerpetualTaskV2Test() {
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                            .id(ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .envIdentifier(ENV_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .build();
+    InstanceSyncResponseV2 instanceSyncResponseV2 =
+        InstanceSyncResponseV2.newBuilder()
+            .setPerpetualTaskId(PERPETUAL_TASK)
+            .setAccountId(ACCOUNT_IDENTIFIER)
+            .setStatus(InstanceSyncStatus.newBuilder()
+                           .setIsSuccessful(true)
+                           .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                           .build())
+            .addInstanceData(InstanceSyncData.newBuilder()
+                                 .setTaskInfoId("taskInfoId")
+                                 .setStatus(InstanceSyncStatus.newBuilder()
+                                                .setIsSuccessful(true)
+                                                .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                                                .build())
+                                 .setDeploymentType(ServiceSpecType.KUBERNETES)
+                                 .build())
+            .build();
+    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
+        Arrays.asList(InstanceSyncPerpetualTaskInfoDTO.builder()
+                          .id("taskInfoId")
+                          .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+                          .build());
+    when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
+        .thenReturn(instanceSyncPerpetualTaskInfoDTOList);
+    when(infrastructureMappingService.getByInfrastructureMappingId(INFRASTRUCTURE_MAPPING_ID))
+        .thenReturn(Optional.of(infrastructureMappingDTO));
+    when(kryoSerializer.asObject(nullable(byte[].class))).thenReturn(emptyList());
+    when(persistentLocker.waitToAcquireLock(InstanceSyncConstants.INSTANCE_SYNC_PREFIX + INFRASTRUCTURE_MAPPING_ID,
+             InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT))
+        .thenReturn(acquiredLock);
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             ServiceSpecType.KUBERNETES, InfrastructureKind.KUBERNETES_DIRECT))
+        .thenReturn(abstractInstanceSyncHandler);
+
+    instanceSyncService.processInstanceSyncByPerpetualTaskV2(
+        ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncResponseV2);
+
+    verify(instanceSyncHandlerFactoryService, times(1))
+        .getInstanceSyncHandler(ServiceSpecType.KUBERNETES, InfrastructureKind.KUBERNETES_DIRECT);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void processInstanceSyncByPerpetualTaskV2FailedStatusTest() {
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                            .id(ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .envIdentifier(ENV_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .build();
+    InstanceSyncResponseV2 instanceSyncResponseV2 =
+        InstanceSyncResponseV2.newBuilder()
+            .setPerpetualTaskId(PERPETUAL_TASK)
+            .setAccountId(ACCOUNT_IDENTIFIER)
+            .setStatus(InstanceSyncStatus.newBuilder()
+                           .setIsSuccessful(true)
+                           .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                           .build())
+            .addInstanceData(InstanceSyncData.newBuilder()
+                                 .setTaskInfoId("taskInfoId")
+                                 .setStatus(InstanceSyncStatus.newBuilder()
+                                                .setIsSuccessful(false)
+                                                .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
+                                                .build())
+                                 .setDeploymentType(ServiceSpecType.KUBERNETES)
+                                 .build())
+            .build();
+    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
+        Arrays.asList(InstanceSyncPerpetualTaskInfoDTO.builder()
+                          .id("taskInfoId")
+                          .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+                          .build());
+    when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
+        .thenReturn(instanceSyncPerpetualTaskInfoDTOList);
+    when(infrastructureMappingService.getByInfrastructureMappingId(INFRASTRUCTURE_MAPPING_ID))
+        .thenReturn(Optional.of(infrastructureMappingDTO));
+    when(kryoSerializer.asObject(nullable(byte[].class))).thenReturn(emptyList());
+    when(persistentLocker.waitToAcquireLock(InstanceSyncConstants.INSTANCE_SYNC_PREFIX + INFRASTRUCTURE_MAPPING_ID,
+             InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT))
+        .thenReturn(acquiredLock);
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             ServiceSpecType.KUBERNETES, InfrastructureKind.KUBERNETES_DIRECT))
+        .thenReturn(abstractInstanceSyncHandler);
+
+    instanceSyncService.processInstanceSyncByPerpetualTaskV2(
+        ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncResponseV2);
+
+    verify(instanceSyncHandlerFactoryService, times(0))
+        .getInstanceSyncHandler(ServiceSpecType.KUBERNETES, InfrastructureKind.KUBERNETES_DIRECT);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void processInstanceSyncByPerpetualTaskV2SkippedStatusTest() {
+    InstanceSyncResponseV2 instanceSyncResponseV2 =
+        InstanceSyncResponseV2.newBuilder()
+            .setPerpetualTaskId(PERPETUAL_TASK)
+            .setAccountId(ACCOUNT_IDENTIFIER)
+            .setStatus(InstanceSyncStatus.newBuilder()
+                           .setIsSuccessful(true)
+                           .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
+                           .build())
+            .build();
+    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
+        Arrays.asList(InstanceSyncPerpetualTaskInfoDTO.builder()
+                          .id("taskInfoId")
+                          .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+                          .build());
+    when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
+        .thenReturn(instanceSyncPerpetualTaskInfoDTOList);
+
+    when(kryoSerializer.asObject(nullable(byte[].class))).thenReturn(emptyList());
+
+    instanceSyncService.processInstanceSyncByPerpetualTaskV2(
+        ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncResponseV2);
+
+    verify(instanceSyncHandlerFactoryService, times(0))
+        .getInstanceSyncHandler(ServiceSpecType.KUBERNETES, InfrastructureKind.KUBERNETES_DIRECT);
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void fetchTaskDetailsTest() {
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .accountIdentifier(ACCOUNT_IDENTIFIER)
+                                                            .id(ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .envIdentifier(ENV_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .infrastructureKind(InfrastructureKind.KUBERNETES_DIRECT)
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .build();
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add("namespace1");
+    ServerInstanceInfo serverInstanceInfo = K8sServerInstanceInfo.builder().build();
+    InstanceSyncPerpetualTaskResponse instanceSyncPerpetualTaskResponse =
+        K8sInstanceSyncPerpetualTaskResponse.builder().serverInstanceDetails(Arrays.asList(serverInstanceInfo)).build();
+
+    InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
+        InstanceSyncPerpetualTaskInfoDTO.builder()
+            .id("taskInfoId")
+            .infrastructureMappingId(INFRASTRUCTURE_MAPPING_ID)
+            .deploymentInfoDetailsDTOList(Arrays.asList(
+                DeploymentInfoDetailsDTO.builder()
+                    .deploymentInfoDTO(
+                        K8sDeploymentInfoDTO.builder().releaseName("releaseName").namespaces(namespaces).build())
+                    .build()))
+            .build();
+    when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
+        .thenReturn(Arrays.asList(instanceSyncPerpetualTaskInfoDTO));
+
+    when(infrastructureMappingService.getByInfrastructureMappingId(
+             instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId()))
+        .thenReturn(Optional.of(infrastructureMappingDTO));
+    when(persistentLocker.waitToAcquireLock(
+             InstanceSyncConstants.INSTANCE_SYNC_PREFIX + instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId(),
+             InstanceSyncConstants.INSTANCE_SYNC_LOCK_TIMEOUT, InstanceSyncConstants.INSTANCE_SYNC_WAIT_TIMEOUT))
+        .thenReturn(acquiredLock);
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             instanceSyncPerpetualTaskResponse.getDeploymentType(), InfrastructureKind.KUBERNETES_DIRECT))
+        .thenReturn(abstractInstanceSyncHandler);
+
+    when(abstractInstanceSyncHandler.getDeploymentReleaseDetails(
+             instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()))
+        .thenReturn(DeploymentReleaseDetails.newBuilder()
+                        .setTaskInfoId("taskInfoId")
+                        .addDeploymentDetails(Any.pack(K8sDeploymentReleaseDetails.newBuilder()
+                                                           .setReleaseName("releaseName")
+                                                           .addAllNamespaces(namespaces)
+                                                           .build()))
+                        .build());
+    InstanceSyncTaskDetails instanceSyncTaskDetails =
+        instanceSyncService.fetchTaskDetails(ACCOUNT_IDENTIFIER, PERPETUAL_TASK);
+
+    assertThat(instanceSyncTaskDetails).isNotNull();
+    assertThat(instanceSyncTaskDetails.getDetailsCount()).isEqualTo(1);
+    assertThat(instanceSyncTaskDetails.getDetails(0).getTaskInfoId()).isEqualTo("taskInfoId");
+    assertThat(instanceSyncTaskDetails.getDetails(0).getDeploymentDetailsCount()).isEqualTo(1);
   }
 
   @Test

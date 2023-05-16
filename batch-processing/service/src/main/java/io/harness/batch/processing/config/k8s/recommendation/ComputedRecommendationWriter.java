@@ -246,6 +246,13 @@ class ComputedRecommendationWriter implements ItemWriter<K8sWorkloadRecommendati
 
   @VisibleForTesting
   public void setContainerLevelCost(Map<String, ContainerRecommendation> containerRecommendationMap, Cost lastDayCost) {
+    if (containerRecommendationMap.size() == 1) {
+      ContainerRecommendation containerRecommendation =
+          containerRecommendationMap.entrySet().iterator().next().getValue();
+      containerRecommendation.setLastDayCost(lastDayCost);
+      return;
+    }
+
     BigDecimal totalCpu = totalCurrentResourceValue(containerRecommendationMap, CPU);
     BigDecimal totalMemory = totalCurrentResourceValue(containerRecommendationMap, MEMORY);
 

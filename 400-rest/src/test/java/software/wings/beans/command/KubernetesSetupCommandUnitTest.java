@@ -23,9 +23,9 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -171,7 +171,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
                                                                     .addNewPort()
                                                                     .withPort(80)
                                                                     .withNewTargetPort()
-                                                                    .withIntVal(8080)
+                                                                    .withValue(8080)
                                                                     .endTargetPort()
                                                                     .endPort()
                                                                     .addToSelector("app", "testApp")

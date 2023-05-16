@@ -54,6 +54,7 @@ import io.harness.logstreaming.LogStreamingModule;
 import io.harness.logstreaming.LogStreamingServiceConfiguration;
 import io.harness.logstreaming.LogStreamingServiceRestClient;
 import io.harness.logstreaming.NGLogStreamingClientFactory;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -69,6 +70,7 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.plancreator.steps.pluginstep.ContainerStepV2PluginProvider;
 import io.harness.pms.approval.ApprovalResourceService;
 import io.harness.pms.approval.ApprovalResourceServiceImpl;
 import io.harness.pms.approval.custom.CustomApprovalHelperServiceImpl;
@@ -93,6 +95,7 @@ import io.harness.pms.event.entitycrud.AccountEntityCrudStreamListener;
 import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
+import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
@@ -107,7 +110,6 @@ import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetServiceImpl;
 import io.harness.pms.opa.service.PMSOpaService;
 import io.harness.pms.opa.service.PMSOpaServiceImpl;
-import io.harness.pms.outbox.NodeExecutionOutboxEventPublisher;
 import io.harness.pms.outbox.PMSOutboxEventHandler;
 import io.harness.pms.outbox.PipelineOutboxEventHandler;
 import io.harness.pms.pipeline.PipelineResource;
@@ -149,6 +151,7 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.execution.service.PMSExecutionServiceImpl;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryServiceImpl;
+import io.harness.pms.plugin.ContainerStepV2PluginProviderImpl;
 import io.harness.pms.preflight.service.PreflightService;
 import io.harness.pms.preflight.service.PreflightServiceImpl;
 import io.harness.pms.rbac.validator.PipelineRbacService;
@@ -163,8 +166,10 @@ import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.servicenow.ServiceNowStepHelperServiceImpl;
 import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.pms.template.service.PipelineRefreshServiceImpl;
+import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
+import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookEventExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImplV2;
 import io.harness.pms.wait.WaitStepResource;
@@ -184,7 +189,7 @@ import io.harness.service.DelegateServiceDriverModule;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
-import io.harness.ssca.client.SSCAServiceClientModule;
+import io.harness.ssca.client.SSCAServiceClientModuleV2;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
 import io.harness.steps.approval.step.jira.JiraApprovalHelperService;
@@ -311,6 +316,7 @@ public class PipelineServiceModule extends AbstractModule {
             .licenseClientServiceSecret(configuration.getNgManagerServiceSecret())
             .licenseClientConfig(configuration.getNgManagerServiceHttpClientConfig())
             .licenseClientId(PIPELINE_SERVICE.getServiceId())
+            .expandedJsonLockConfig(configuration.getExpandedJsonLockConfig())
             .build()));
     install(OrchestrationStepsModule.getInstance(configuration.getOrchestrationStepConfig()));
     install(FeatureFlagModule.getInstance());
@@ -378,7 +384,7 @@ public class PipelineServiceModule extends AbstractModule {
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new HsqsServiceClientModule(this.configuration.getQueueServiceClientConfig(), BEARER.getServiceId()));
-    install(new SSCAServiceClientModule(this.configuration.getSscaServiceConfig()));
+    install(new SSCAServiceClientModuleV2(this.configuration.getSscaServiceConfig(), PIPELINE_SERVICE.getServiceId()));
 
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
@@ -416,6 +422,7 @@ public class PipelineServiceModule extends AbstractModule {
         .toInstance(new ManagedScheduledExecutorService("ProgressUpdateServiceExecutor-Thread"));
     bind(TriggerWebhookExecutionService.class).to(TriggerWebhookExecutionServiceImpl.class);
     bind(TriggerWebhookExecutionServiceV2.class).to(TriggerWebhookExecutionServiceImplV2.class);
+    bind(TriggerWebhookEventExecutionService.class).to(TriggerWebhookEventExecutionServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("telemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -463,6 +470,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ServiceNowApprovalHelperService.class).to(ServiceNowApprovalHelperServiceImpl.class);
     bind(ServiceNowStepHelperService.class).to(ServiceNowStepHelperServiceImpl.class);
     bind(GithubService.class).to(GithubServiceImpl.class);
+    bind(ContainerStepV2PluginProvider.class).to(ContainerStepV2PluginProviderImpl.class);
     try {
       bind(TimeScaleDBService.class)
           .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
@@ -496,8 +504,6 @@ public class PipelineServiceModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.TRIGGER).to(TriggerOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.PIPELINE).to(PipelineOutboxEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.INPUT_SET).to(PipelineOutboxEventHandler.class);
-    outboxEventHandlerMapBinder.addBinding(ResourceTypeConstants.NODE_EXECUTION)
-        .to(NodeExecutionOutboxEventPublisher.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -516,6 +522,10 @@ public class PipelineServiceModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.POLLING_EVENTS_STREAM))
         .to(PollingEventStreamListener.class);
+
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
+        .to(TriggerExecutionEventStreamListener.class);
   }
 
   @Provides
@@ -737,11 +747,23 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("PipelineAsyncValidationExecutorService")
   public Executor pipelineAsyncValidationExecutorService() {
-    return ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
-        configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
-        configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
-        configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build());
+    return new ManagedExecutorService(
+        ThreadPool.create(configuration.getPipelineAsyncValidationPoolConfig().getCorePoolSize(),
+            configuration.getPipelineAsyncValidationPoolConfig().getMaxPoolSize(),
+            configuration.getPipelineAsyncValidationPoolConfig().getIdleTime(),
+            configuration.getPipelineAsyncValidationPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("PipelineAsyncValidationExecutorService-%d").build()));
+  }
+
+  @Provides
+  @Singleton
+  @Named("TriggerAuthenticationExecutorService")
+  public ExecutorService triggerAuthenticationExecutorService() {
+    return ThreadPool.create(configuration.getTriggerAuthenticationPoolConfig().getCorePoolSize(),
+        configuration.getTriggerAuthenticationPoolConfig().getMaxPoolSize(),
+        configuration.getTriggerAuthenticationPoolConfig().getIdleTime(),
+        configuration.getTriggerAuthenticationPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("TriggerAuthenticationExecutorService-%d").build());
   }
 
   @Provides

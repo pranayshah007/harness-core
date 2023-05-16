@@ -8,6 +8,7 @@
 package software.wings.search.entities.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.persistence.HIterator;
@@ -106,6 +107,7 @@ class ServiceViewBuilder {
                                                                .field(ServiceKeys.createdAt)
                                                                .greaterThanOrEq(startTimestamp)
                                                                .order(Sort.descending(AuditHeaderKeys.createdAt))
+                                                               .limit(NO_LIMIT)
                                                                .fetch())) {
       while (iterator.hasNext()) {
         final AuditHeader auditHeader = iterator.next();

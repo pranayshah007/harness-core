@@ -21,5 +21,6 @@ java_binary(
         "//idp-service/src/main/java/io/harness/idp/plugin:module",
         "//idp-service/src/main/java/io/harness/idp/settings:module",
         "//idp-service/src/main/java/io/harness/idp/status:module",
+        "//idp-service/src/main/java/io/harness/idp/user:module",
     ],
 )

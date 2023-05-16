@@ -7,7 +7,10 @@
 
 package io.harness.aggregator.consumers;
 
+import static io.harness.aggregator.OpType.DELETE;
+
 import io.harness.accesscontrol.AccessControlEntity;
+import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.OpType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,15 +41,17 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
   private final Map<String, ChangeConsumer<? extends AccessControlEntity>> collectionToConsumerMap;
   private final Retry retry;
   private final ChangeEventFailureHandler changeEventFailureHandler;
+  private final AccessControlAdminService accessControlAdminService;
 
   public AccessControlDebeziumChangeConsumer(Deserializer<String> idDeserializer,
       Map<String, Deserializer<? extends AccessControlEntity>> collectionToDeserializerMap,
       Map<String, ChangeConsumer<? extends AccessControlEntity>> collectionToConsumerMap,
-      ChangeEventFailureHandler changeEventFailureHandler) {
+      ChangeEventFailureHandler changeEventFailureHandler, AccessControlAdminService accessControlAdminService) {
     this.idDeserializer = idDeserializer;
     this.collectionToDeserializerMap = collectionToDeserializerMap;
     this.collectionToConsumerMap = collectionToConsumerMap;
     this.changeEventFailureHandler = changeEventFailureHandler;
+    this.accessControlAdminService = accessControlAdminService;
 
     IntervalFunction intervalFunction = IntervalFunction.ofExponentialBackoff(1000, 2);
     RetryConfig retryConfig = RetryConfig.custom()
@@ -60,15 +65,33 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
   private boolean handleEvent(ChangeEvent<String, String> changeEvent) {
     String id = idDeserializer.deserialize(null, changeEvent.key().getBytes());
     Optional<String> collectionName = getCollectionName(changeEvent.destination());
+
     Optional<OpType> opType =
         getOperationType(((EmbeddedEngineChangeEvent<String, String>) changeEvent).sourceRecord());
     if (opType.isPresent() && collectionName.isPresent()) {
       log.info("Handling {} event for entity: {}.{}", opType.get(), collectionName.get(), id);
 
       ChangeConsumer<? extends AccessControlEntity> changeConsumer = collectionToConsumerMap.get(collectionName.get());
+
+      AccessControlEntity accessControlEntity = deserialize(collectionName.get(), changeEvent);
+
+      // For DELETE change event we will skip block/unblock check because
+      // * We do not have deleted entity in change event
+      // * We do not have account information in change event to decide if we should block it
+      // * We can not get entity from db because it was already deleted
+      // * It is ok to process delete change event irrespective of block/unblock now because after unblock it would be
+      // difficult to reconcile these deleted entities
+      if (!DELETE.equals(opType.get()) && isBlocked(accessControlEntity)) {
+        return true;
+      }
       changeConsumer.consumeEvent(opType.get(), id, deserialize(collectionName.get(), changeEvent));
     }
     return true;
+  }
+
+  private boolean isBlocked(AccessControlEntity accessControlEntity) {
+    Optional<String> accountId = accessControlEntity.getAccountId();
+    return accountId.filter(accessControlAdminService::isBlocked).isPresent();
   }
 
   @Override

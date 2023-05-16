@@ -29,8 +29,8 @@ import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
 import io.harness.resourcegroup.v2.model.AttributeFilter;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;

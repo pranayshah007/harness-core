@@ -29,32 +29,62 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.ngpipeline.artifact.bean.DockerArtifactOutcome")
 public class DockerArtifactOutcome implements ArtifactOutcome {
-  /** Docker hub registry connector. */
+  /**
+   * Docker hub registry connector.
+   */
   String connectorRef;
-  /** Images in repos need to be referenced via a path. */
+  /**
+   * Images in repos need to be referenced via a path.
+   */
   String imagePath;
-  /** Tag refers to exact tag number. */
+  /**
+   * Tag refers to exact tag number.
+   */
   String tag;
-  /** Tag regex is used to get latest build from builds matching regex. */
+  /**
+   * Tag regex is used to get latest build from builds matching regex.
+   */
   String tagRegex;
-  /** Identifier for artifact. */
+  /**
+   * Identifier for artifact.
+   */
   String identifier;
-  /** Artifact type. */
+  /**
+   * Artifact type.
+   */
   String type;
-  /** Whether this config corresponds to primary artifact.*/
+  /**
+   * Whether this config corresponds to primary artifact.
+   */
   boolean primaryArtifact;
-  /** domainName/imagePath:tag */
+  /**
+   * domainName/imagePath:tag
+   */
   String image;
-  /** imagePullSecret for docker credentials base encoded.*/
+  /**
+   * imagePullSecret for docker credentials base encoded.
+   */
   String imagePullSecret;
-  /** tag label.*/
+  /**
+   * tag label.
+   */
   Map<String, String> label;
-  /** display Name*/
+  /**
+   * display Name
+   */
   String displayName;
-  /** display Name*/
+  /**
+   * display Name
+   */
   String digest;
-  /** Custom Artifact metadata */
+  /**
+   * Custom Artifact metadata
+   */
   Map<String, String> metadata;
+  /**
+   * dockerConfigJson for docker credentials base encoded.
+   */
+  String dockerConfigJsonSecret;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

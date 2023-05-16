@@ -84,5 +84,7 @@ public interface PluginMetadataResource {
           SIZE_KEY) @DefaultValue("20") int size,
       @Parameter(
           description = "This would be used to filter plugins. Any plugin having the specified string in its Name "
-              + "will be filtered.") @QueryParam(SEARCH_TERM_KEY) String searchTerm);
+              + "will be filtered.") @QueryParam(SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = "This would be used to filter plugins. Any plugin having the specified value of kind "
+              + "will be filtered.") @QueryParam("kind") String kind);
 }

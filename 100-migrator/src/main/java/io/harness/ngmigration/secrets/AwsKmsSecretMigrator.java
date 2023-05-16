@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
-public class AwsKmsSecretMigrator implements SecretMigrator {
+public class AwsKmsSecretMigrator implements io.harness.ngmigration.secrets.SecretMigrator {
   @Override
   public SecretDTOV2Builder getSecretDTOBuilder(
       EncryptedData encryptedData, SecretManagerConfig secretManagerConfig, String secretManagerIdentifier) {
@@ -58,6 +58,16 @@ public class AwsKmsSecretMigrator implements SecretMigrator {
                   .value(PLEASE_FIX_ME)
                   .secretManagerIdentifier(secretManagerIdentifier)
                   .build());
+  }
+
+  @Override
+  public String getEncryptionKey(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
+  }
+
+  @Override
+  public String getEncryptionValue(EncryptedData encryptedData, SecretManagerConfig secretManagerConfig) {
+    return null;
   }
 
   @Override

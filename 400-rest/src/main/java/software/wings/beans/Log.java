@@ -92,6 +92,11 @@ public class Log implements GoogleDataStoreAware, PersistentEntity, AccountDataR
                  .field(LogKeys.activityId)
                  .ascSortField(LogKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_validUntil")
+                 .field(LogKeys.accountId)
+                 .field(LogKeys.validUntil)
+                 .build())
         .build();
   }
 

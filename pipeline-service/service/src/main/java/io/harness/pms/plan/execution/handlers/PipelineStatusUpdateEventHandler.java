@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.handlers;
 
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.events.OrchestrationEventEmitter;
@@ -109,10 +110,12 @@ public class PipelineStatusUpdateEventHandler implements PlanStatusUpdateObserve
       PipelineExecutionSummaryEntity pipelineExecutionSummaryUpdatedEntity =
           pmsExecutionSummaryRepository.update(query, update);
       for (String module : executedModules) {
-        eventEmitter.emitEvent(
-            buildEndEvent(ambiance, module, pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
-                pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
-                pipelineExecutionSummaryUpdatedEntity.getEndTs()));
+        if (!module.equalsIgnoreCase(ModuleType.PMS.name())) {
+          eventEmitter.emitEvent(
+              buildEndEvent(ambiance, module, pipelineExecutionSummaryUpdatedEntity.getStatus().getEngineStatus(),
+                  pipelineExecutionSummaryUpdatedEntity.getModuleInfo().get(module),
+                  pipelineExecutionSummaryUpdatedEntity.getEndTs()));
+        }
       }
     }
   }

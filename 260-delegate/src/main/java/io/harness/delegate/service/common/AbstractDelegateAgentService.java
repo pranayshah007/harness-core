@@ -13,8 +13,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateParams.DelegateParamsBuilder;
 import static io.harness.delegate.beans.DelegateParams.builder;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_CURRENTLY_EXECUTING;
-import static io.harness.delegate.metrics.DelegateMetricsConstants.TASKS_IN_QUEUE;
+import static io.harness.delegate.metrics.DelegateMetric.TASKS_CURRENTLY_EXECUTING;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorCode.REVOKED_TOKEN;
@@ -237,10 +236,9 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
 
   @Override
   public void recordMetrics() {
-    final int tasksInQueueCount = taskExecutor.getQueue().size();
     final long tasksExecutionCount = taskExecutor.getActiveCount();
-    metricRegistry.recordGaugeValue(TASKS_IN_QUEUE, new String[] {DELEGATE_NAME}, tasksInQueueCount);
-    metricRegistry.recordGaugeValue(TASKS_CURRENTLY_EXECUTING, new String[] {DELEGATE_NAME}, tasksExecutionCount);
+    metricRegistry.recordGaugeValue(
+        TASKS_CURRENTLY_EXECUTING.getMetricName(), new String[] {DELEGATE_NAME}, tasksExecutionCount);
   }
 
   @Override

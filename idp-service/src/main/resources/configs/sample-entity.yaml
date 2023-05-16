@@ -1,0 +1,27 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: my-example-service
+  description: |
+    My Example service which has something to do with APIs and database.
+  links:
+    - title: Website
+      url: http://my-internal-website.com
+  annotations:
+    github.com/project-slug: myorg/myrepo
+    backstage.io/techdocs-ref: dir:.
+    lighthouse.com/website-url: https://harness.io
+#  labels:
+#    key1: value1
+#  tags:
+spec:
+  type: service
+  owner: my-team
+  lifecycle: experimental
+  system: my-project
+#  dependsOn:
+#    - resource:default/my-db
+#  consumesApis:
+#    - user-api
+#  providesApis:
+#    - example-api

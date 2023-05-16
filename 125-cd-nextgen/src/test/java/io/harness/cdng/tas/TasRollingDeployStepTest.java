@@ -45,6 +45,7 @@ import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.pcf.request.TasManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfRollingDeployResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -215,6 +216,54 @@ public class TasRollingDeployStepTest extends CDNGTestBase {
 
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(true);
     assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(TasExecutionPassThroughData.class);
+  }
+
+  @Test(expected = InvalidArgumentsException.class)
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void testExecuteTasTaskWhenArtifactOutcomeIsEmpty() {
+    String additionalRoute = "route";
+    TasRollingDeployStepParameters tasRollingDeployStepParameters =
+        TasRollingDeployStepParameters.infoBuilder()
+            .additionalRoutes(ParameterField.createValueField(Arrays.asList(additionalRoute)))
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder()
+                                                      .spec(tasRollingDeployStepParameters)
+                                                      .timeout(ParameterField.createValueField("10m"))
+                                                      .build();
+    InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
+    doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
+    Map<String, String> allFilesFetched = new HashMap<>();
+    CfCliVersionNG cliVersionNG = CfCliVersionNG.V7;
+    CfCliVersion cfCliVersion = CfCliVersion.V7;
+    List<FileData> fileDataList = Collections.emptyList();
+    TasManifestsPackage tasManifestsPackage = TasManifestsPackage.builder().build();
+    TasExecutionPassThroughData tasExecutionPassThroughData = TasExecutionPassThroughData.builder()
+                                                                  .tasManifestsPackage(tasManifestsPackage)
+                                                                  .allFilesFetched(allFilesFetched)
+                                                                  .cfCliVersion(cliVersionNG)
+                                                                  .build();
+    TasInfraConfig tasInfraConfig = TasInfraConfig.builder().build();
+    UnitProgressData unitProgressData = UnitProgressData.builder().build();
+    doReturn(tasInfraConfig).when(cdStepHelper).getTasInfraConfig(infrastructureOutcome, ambiance);
+    doReturn(cfCliVersion).when(tasStepHelper).cfCliVersionNGMapper(cliVersionNG);
+
+    doReturn(Optional.empty()).when(cdStepHelper).resolveArtifactsOutcome(ambiance);
+
+    List<String> routeMaps = Arrays.asList(additionalRoute);
+    doReturn(routeMaps)
+        .when(tasStepHelper)
+        .getRouteMaps(tasExecutionPassThroughData.getTasManifestsPackage().getManifestYml(),
+            getParameterFieldValue(tasRollingDeployStepParameters.getAdditionalRoutes()));
+
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
+
+    TasManifestOutcome tasManifestOutcome = TasManifestOutcome.builder().build();
+    tasRollingDeployStep.executeTasTask(
+        tasManifestOutcome, ambiance, stepElementParameters, tasExecutionPassThroughData, true, unitProgressData);
   }
 
   @Test

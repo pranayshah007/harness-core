@@ -19,6 +19,7 @@ import io.harness.pms.pipeline.service.yamlschema.cache.PartialSchemaDTOWrapperV
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsValue;
 import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.steps.approval.step.ApprovalProgressData;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -35,5 +36,6 @@ public class PipelineServiceKryoRegistrar implements KryoRegistrar {
     kryo.register(YamlSchemaDetailsValue.class, 800007);
     kryo.register(PartialSchemaDTOWrapperValue.class, 800008);
     kryo.register(CustomApprovalCallback.class, 800009);
+    kryo.register(ApprovalProgressData.class, 10000525);
   }
 }

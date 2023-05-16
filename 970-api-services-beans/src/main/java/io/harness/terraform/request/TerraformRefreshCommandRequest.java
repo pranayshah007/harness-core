@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 
@@ -23,4 +24,5 @@ public class TerraformRefreshCommandRequest {
   List<String> varFilePaths;
   String varParams; // Needed to send inline variable values in CG
   String uiLogs; // Needed in CG to prevent printing secrets
+  Map<String, String> additionalCliFlags;
 }

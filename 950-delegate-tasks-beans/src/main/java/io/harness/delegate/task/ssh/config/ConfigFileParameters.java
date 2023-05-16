@@ -7,10 +7,16 @@
 
 package io.harness.delegate.task.ssh.config;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.expression.Expression;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,12 +28,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
-public class ConfigFileParameters {
+public class ConfigFileParameters implements NestedAnnotationResolver {
   private String fileName;
-  private String fileContent;
+  @Expression(ALLOW_SECRETS) private String fileContent;
   private long fileSize;
   private String destinationPath;
   private SecretConfigFile secretConfigFile;
   private boolean isEncrypted;
   List<EncryptedDataDetail> encryptionDataDetails;
+
+  public void calculateFileSize() {
+    this.fileSize = isEmpty(fileContent) ? 0 : fileContent.getBytes(StandardCharsets.UTF_8).length;
+  }
 }

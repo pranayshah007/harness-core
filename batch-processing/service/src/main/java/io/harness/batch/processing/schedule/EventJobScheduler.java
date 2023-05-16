@@ -26,6 +26,7 @@ import io.harness.batch.processing.config.BatchMainConfig;
 import io.harness.batch.processing.config.GcpScheduledQueryTriggerAction;
 import io.harness.batch.processing.connectors.ConnectorsHealthUpdateService;
 import io.harness.batch.processing.events.timeseries.service.intfc.CostEventService;
+import io.harness.batch.processing.governance.GovernanceRecommendationService;
 import io.harness.batch.processing.metrics.ProductMetricsService;
 import io.harness.batch.processing.reports.ScheduledReportServiceImpl;
 import io.harness.batch.processing.service.AccountExpiryCleanupService;
@@ -102,6 +103,7 @@ public class EventJobScheduler {
   @Autowired private CostEventService costEventService;
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private InstanceInfoTimescaleDAO instanceInfoTimescaleDAO;
+  @Autowired private GovernanceRecommendationService governanceRecommendationService;
 
   @PostConstruct
   public void orderJobs() {
@@ -326,7 +328,7 @@ public class EventJobScheduler {
   public void runBudgetAlertsJob() {
     try {
       budgetAlertsService.sendBudgetAndBudgetGroupAlerts();
-      log.info("Budget alerts send");
+      log.info("Budget & Budget Groups alerts sent");
     } catch (Exception ex) {
       log.error("Exception while running budgetAlertsJob", ex);
     }
@@ -336,9 +338,22 @@ public class EventJobScheduler {
   public void runBudgetCostUpdateJob() {
     try {
       budgetCostUpdateService.updateCosts();
-      log.info("Costs updated for budgets");
+      log.info("Costs updated for budgets & budget groups");
     } catch (Exception ex) {
       log.error("Exception while running runBudgetCostUpdateJob", ex);
+    }
+  }
+
+  // Run once a day, midnight
+  @Scheduled(cron = "${scheduler-jobs-config.governanceRecommendationJobCron}")
+  public void runGovernanceRecommendationJob() {
+    try {
+      log.info("generateRecommendation Running");
+      if (batchMainConfig.getRecommendationConfig().isGovernanceRecommendationEnabled()) {
+        governanceRecommendationService.generateRecommendation();
+      }
+    } catch (Exception e) {
+      log.error("Exception while running runGovernanceRecommendationJob", e);
     }
   }
 

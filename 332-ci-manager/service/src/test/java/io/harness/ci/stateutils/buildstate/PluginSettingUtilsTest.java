@@ -25,6 +25,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
 
 import static java.util.Arrays.asList;
@@ -65,6 +66,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.utils.CiCodebaseUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -88,6 +90,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Inject public PluginSettingUtils pluginSettingUtils;
 
   @Mock private CodebaseUtils codebaseUtils;
+  @Mock private CiCodebaseUtils ciCodebaseUtils;
+
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
@@ -95,6 +99,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
     on(pluginSettingUtils).set("connectorUtils", connectorUtils);
+    on(pluginSettingUtils).set("ciCodebaseUtils", ciCodebaseUtils);
     on(pluginSettingUtils).set("sscaOrchestrationPluginUtils", sscaOrchestrationPluginUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
@@ -116,7 +121,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_FLAT", "true");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        uploadToArtifactoryStepInfo, "identifier", 100, ambiance, Type.K8, false);
+        uploadToArtifactoryStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -149,8 +154,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_SNAPSHOT_MODE", "redo");
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(gcrStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        gcrStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -181,8 +186,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_SNAPSHOT_MODE", "redo");
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(acrStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        acrStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -224,8 +229,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     expected.put("PLUGIN_DOCKER_REGISTRY", dockerUrl);
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        ecrStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
 
     when(connectorUtils.getConnectorDetails(any(), eq("docker")))
@@ -233,8 +238,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
                         .connectorType(ConnectorType.DOCKER)
                         .connectorConfig(DockerConnectorDTO.builder().dockerRegistryUrl(DOCKER_REGISTRY_V2).build())
                         .build());
-    actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(ecrStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        ecrStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).containsKey("PLUGIN_DOCKER_REGISTRY");
     assertThat(actual.get("PLUGIN_DOCKER_REGISTRY")).isEqualTo(DOCKER_REGISTRY_V1);
   }
@@ -265,8 +270,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_SNAPSHOT_MODE", "redo");
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
-    Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(dockerStepInfo, "identifier", 100, ambiance, Type.K8, false);
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        dockerStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -294,7 +299,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
+        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -325,7 +330,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
+        restoreCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -356,7 +361,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_OVERRIDE", "false");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
+        saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -389,7 +394,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_OVERRIDE", "true");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
+        saveCacheS3StepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -412,7 +417,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
+        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -438,7 +443,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
+        restoreCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -464,7 +469,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
+        saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -492,7 +497,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_BACKEND_OPERATION_TIMEOUT", "100s");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false);
+        saveCacheGCSStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -516,7 +521,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put("PLUGIN_ARTIFACT_FILE", "/addon/tmp/.plugin/artifact");
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
+        uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -536,7 +541,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
-        uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8, false);
+        uploadToS3StepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -576,7 +581,6 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_TAG, buildValue);
     expected.put(DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(false));
     expected.put("PLUGIN_DEPTH", GIT_CLONE_MANUAL_DEPTH.toString());
     expected.put(DRONE_NETRC_MACHINE, "");
     expected.put(DRONE_COMMIT_BRANCH, "");
@@ -585,7 +589,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -605,10 +609,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -625,14 +632,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
     expected.putAll(gitEnvVars);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, cloneDir);
     expected.put("PLUGIN_DEPTH", depth.toString());
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -653,10 +659,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -672,14 +681,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
     expected.putAll(gitEnvVars);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
     expected.put("PLUGIN_DEPTH", depth.toString());
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -700,10 +708,14 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
+
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -719,14 +731,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
     expected.putAll(gitEnvVars);
-    expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
     expected.put("PLUGIN_DEPTH", depth.toString());
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -746,7 +757,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
                                           .cloneDirectory(ParameterField.createValueField(cloneDir))
                                           .build();
     Ambiance ambiance = Ambiance.newBuilder().build();
-    pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+    pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
   }
 
   @Test(expected = CIStageExecutionException.class)
@@ -765,7 +776,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -798,7 +809,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
-        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false);
+        pluginSettingUtils.getPluginCompatibleEnvVariables(stepInfo, "identifier", 100, ambiance, Type.K8, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -843,5 +854,205 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     String empty = "";
     assertThat(getRepoNameFromRepoUrl(empty)).isEqualTo("repository");
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testDlcSetupRequired() {
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField("harness"))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    assertThat(pluginSettingUtils.dlcSetupRequired(dockerStepInfo)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetDlcPrefix() {
+    String accountId = "test-account-id";
+    String repo = "harness";
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String expectedPrefix = String.format("%s/%s/", accountId, repo);
+    String prefix = pluginSettingUtils.getDlcPrefix(accountId, "identifier", dockerStepInfo);
+    assertThat(expectedPrefix).isEqualTo(prefix);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgs() {
+    String repo = "harness";
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(dockerStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(dockerStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(dockerStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsWithCacheArgs() {
+    String repo = "harness";
+    String inputCacheFrom = "inputCacheFrom";
+    String inputCacheTo = "inputCacheTo";
+    DockerStepInfo dockerStepInfo =
+        DockerStepInfo.builder()
+            .repo(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .cacheFrom(ParameterField.createValueField(asList(inputCacheFrom)))
+            .cacheTo(ParameterField.createValueField(inputCacheTo))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(inputCacheFrom, cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(dockerStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(dockerStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(dockerStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testDlcSetupRequiredEcr() {
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField("harness"))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    assertThat(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetDlcPrefixEcr() {
+    String accountId = "test-account-id";
+    String repo = "harness";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String expectedPrefix = String.format("%s/%s/", accountId, repo);
+    String prefix = pluginSettingUtils.getDlcPrefix(accountId, "identifier", ecrStepInfo);
+    assertThat(expectedPrefix).isEqualTo(prefix);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsEcr() {
+    String repo = "harness";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsWithCacheArgsEcr() {
+    String repo = "harness";
+    String inputCacheFrom = "inputCacheFrom";
+    String inputCacheTo = "inputCacheTo";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .cacheFrom(ParameterField.createValueField(asList(inputCacheFrom)))
+            .cacheTo(ParameterField.createValueField(inputCacheTo))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(inputCacheFrom, cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
   }
 }

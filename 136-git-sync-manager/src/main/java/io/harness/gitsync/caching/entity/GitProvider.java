@@ -16,5 +16,6 @@ public enum GitProvider {
   GITHUB_SAAS,
   BITBUCKET_SAAS,
   BITBUCKET_ON_PREM,
-  AZURE_SAAS;
+  AZURE_SAAS,
+  GITLAB_SAAS;
 }

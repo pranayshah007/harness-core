@@ -134,22 +134,6 @@ public class YamlSchemaUtilsTest extends CategoryTest {
     yamlSchemaWithDetails.getYamlSchemaMetadata().setModulesSupported(Collections.singletonList(ModuleType.CD));
     assertTrue(YamlSchemaUtils.validateSchemaMetadata(
         yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Adding ff requirement for step. Should return false.
-    yamlSchemaWithDetails.getYamlSchemaMetadata().setFeatureFlags(Collections.singletonList("FF1"));
-    assertFalse(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Enabling the required ff.
-    enabledFeatureFlags.add("FF1");
-    assertTrue(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Adding feature restrictions requirement for step.
-    yamlSchemaWithDetails.getYamlSchemaMetadata().setFeatureRestrictions(Collections.singletonList("TEST1"));
-    assertFalse(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
-    // Enabling the feature restriction.
-    featureRestrictionsMap.put("TEST1", true);
-    assertTrue(YamlSchemaUtils.validateSchemaMetadata(
-        yamlSchemaWithDetails, moduleType, enabledFeatureFlags, featureRestrictionsMap));
   }
 
   @Test
@@ -260,7 +244,7 @@ public class YamlSchemaUtilsTest extends CategoryTest {
         yamlSchemaWithDetailsList, ModuleType.CD, Collections.singleton("FF1"),
         Collections.singletonMap("TEST1", true));
     oneOfNode = getOneOfNodeFromSchema(schema);
-    assertEquals(oneOfNode.size(), 2);
+    assertEquals(oneOfNode.size(), 1);
   }
 
   private String getResource(String resource) throws IOException {

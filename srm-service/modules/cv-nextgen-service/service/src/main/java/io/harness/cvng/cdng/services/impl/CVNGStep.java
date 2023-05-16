@@ -176,6 +176,8 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
                 stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier,
                 monitoredServiceTemplateIdentifier, monitoredServiceTemplateVersionLabel, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
+        verificationJobInstanceBuilder.monitoredServiceType(monitoredServiceType);
+        verificationJobInstanceBuilder.nodeExecutionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
       verifyStepCvConfigServiceMap.get(monitoredServiceType)

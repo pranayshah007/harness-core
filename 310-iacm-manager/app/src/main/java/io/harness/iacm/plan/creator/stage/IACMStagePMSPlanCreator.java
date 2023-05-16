@@ -9,13 +9,13 @@ package io.harness.iacm.plan.creator.stage;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
-import static io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
+import static io.harness.yaml.extended.ci.codebase.Build.builder;
 import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
-import io.harness.beans.entities.Stack;
+import io.harness.beans.entities.Workspace;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
@@ -69,6 +69,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.extended.ci.codebase.PRCloneStrategy;
@@ -93,6 +94,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
+@Deprecated
 public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageNode> {
   private static final String TERRAFORM_PLAN_ID = "IACMTerraformPlan";
   private static final String TERRAFORM_APPLY_ID = "IACMTerraformApply";
@@ -103,7 +105,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
-
+  @Inject private CIStagePlanCreationUtils cIStagePlanCreationUtils;
   @Inject private IACMServiceUtils serviceUtils;
 
   /**
@@ -325,7 +327,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
     StageElementParametersBuilder stageParameters =
-        CIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
+        cIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
@@ -489,7 +491,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   private CodeBase getIACMCodebase(PlanCreationContext ctx, String stackId) {
     try {
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
-      Stack stack = serviceUtils.getIACMStackInfo(
+      Workspace stack = serviceUtils.getIACMWorkspaceInfo(
           ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
       // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
       // defined
@@ -508,24 +510,24 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       // Now we need to build the Build type for the Codebase.
       // We support 2,
 
-      BuildBuilder build = Build.builder();
+      BuildBuilder buildObject = builder();
       if (!Objects.equals(stack.getRepository_branch(), "") && stack.getRepository_branch() != null) {
-        build.type(BuildType.BRANCH);
-        build.spec(BranchBuildSpec.builder()
-                       .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
-                       .build());
+        buildObject.type(BuildType.BRANCH);
+        buildObject.spec(BranchBuildSpec.builder()
+                             .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
+                             .build());
       } else if (!Objects.equals(stack.getRepository_commit(), "") && stack.getRepository_commit() != null) {
-        build.type(BuildType.TAG);
-        build.spec(TagBuildSpec.builder()
-                       .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
-                       .build());
+        buildObject.type(BuildType.TAG);
+        buildObject.spec(TagBuildSpec.builder()
+                             .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
+                             .build());
       } else {
         throw new IACMStageExecutionException(
             "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the stack "
             + stackId);
       }
 
-      return iacmCodeBase.build(ParameterField.<Build>builder().value(build.build()).build()).build();
+      return iacmCodeBase.build(ParameterField.<Build>builder().value(buildObject.build()).build()).build();
 
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false

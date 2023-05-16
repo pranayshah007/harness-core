@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2023 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -10,6 +10,7 @@ package io.harness.licensing.helpers;
 import io.harness.ModuleType;
 import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
@@ -18,6 +19,7 @@ import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.beans.summary.CDLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CELicenseSummaryDTO;
+import io.harness.licensing.beans.summary.CETLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CFLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CVLicenseSummaryDTO;
@@ -153,6 +155,20 @@ public class ModuleLicenseSummaryHelper {
           }
         };
         break;
+      case CET:
+        licensesWithSummaryDTO = CETLicenseSummaryDTO.builder().build();
+        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {
+          CETModuleLicenseDTO temp = (CETModuleLicenseDTO) moduleLicenseDTO;
+          CETLicenseSummaryDTO cetLicenseSummaryDTO = (CETLicenseSummaryDTO) summaryDTO;
+          if (current < temp.getExpiryTime()) {
+            if (temp.getNumberOfAgents() != null) {
+              cetLicenseSummaryDTO.setNumberOfAgents(
+                  ModuleLicenseUtils.computeAdd(cetLicenseSummaryDTO.getNumberOfAgents(), temp.getNumberOfAgents()));
+            }
+          }
+        };
+        break;
+
       default:
         throw new UnsupportedOperationException("Unsupported module type");
     }

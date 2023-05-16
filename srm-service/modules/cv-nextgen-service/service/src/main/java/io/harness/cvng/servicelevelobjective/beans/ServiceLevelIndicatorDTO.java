@@ -42,4 +42,13 @@ public class ServiceLevelIndicatorDTO {
       return type.name() + "_" + sliMetricType.name();
     }
   }
+
+  @JsonIgnore
+  public SLIMissingDataType getSLIMissingDataType() {
+    if (type == SLIEvaluationType.WINDOW
+        && ((WindowBasedServiceLevelIndicatorSpec) spec).getSliMissingDataType() != null) {
+      return ((WindowBasedServiceLevelIndicatorSpec) spec).getSliMissingDataType();
+    }
+    return this.sliMissingDataType;
+  }
 }

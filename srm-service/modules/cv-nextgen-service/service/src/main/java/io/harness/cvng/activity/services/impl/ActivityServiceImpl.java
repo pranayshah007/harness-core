@@ -16,6 +16,8 @@ import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
+import io.harness.cvng.activity.entities.ActivityBucket;
+import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
@@ -23,6 +25,7 @@ import io.harness.cvng.activity.services.api.ActivityUpdateHandler;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -30,11 +33,15 @@ import io.harness.persistence.HPersistence;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import com.mongodb.ReadPreference;
+import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +57,7 @@ public class ActivityServiceImpl implements ActivityService {
   @Inject private Map<ActivityType, ActivityUpdatableEntity> activityUpdatableEntityMap;
   @Inject private Map<ActivityType, ActivityUpdateHandler> activityUpdateHandlerMap;
   @Inject private PersistentLocker persistentLocker;
+  @Inject ChangeEventEntityAndDTOTransformer transformer;
 
   @Override
   public Activity get(String activityId) {
@@ -90,6 +98,7 @@ public class ActivityServiceImpl implements ActivityService {
   public String getDeploymentTagFromActivity(String accountId, String verificationJobInstanceId) {
     DeploymentActivity deploymentActivity =
         (DeploymentActivity) hPersistence.createQuery(Activity.class, excludeAuthority)
+            .useReadPreference(ReadPreference.secondaryPreferred())
             .filter(ActivityKeys.accountId, accountId)
             .filter(ActivityKeys.type, ActivityType.DEPLOYMENT)
             .field(ActivityKeys.verificationJobInstanceIds)
@@ -176,6 +185,7 @@ public class ActivityServiceImpl implements ActivityService {
           handler.handleCreate(activity);
         }
         hPersistence.save(activity);
+        saveActivityBucket(activity);
       }
       log.info("Registered an activity of type {} for account {}, project {}, org {}", activity.getType(),
           activity.getAccountId(), activity.getProjectIdentifier(), activity.getOrgIdentifier());
@@ -184,16 +194,37 @@ public class ActivityServiceImpl implements ActivityService {
   }
 
   @Override
+  public void saveActivityBucket(Activity activity) {
+    ActivityBucket activityBucket = transformer.getActivityBucket(activity);
+    Query<ActivityBucket> upsertActivityBucket =
+        hPersistence.createQuery(ActivityBucket.class)
+            .filter(ActivityBucketKeys.accountId, activityBucket.getAccountId())
+            .filter(ActivityBucketKeys.orgIdentifier, activityBucket.getOrgIdentifier())
+            .filter(ActivityBucketKeys.projectIdentifier, activityBucket.getProjectIdentifier())
+            .filter(ActivityBucketKeys.monitoredServiceIdentifiers, activityBucket.getMonitoredServiceIdentifiers())
+            .filter(ActivityBucketKeys.type, activityBucket.getType())
+            .filter(ActivityBucketKeys.bucketTime, activityBucket.getBucketTime())
+            .filter(ActivityKeys.validUntil, Date.from(activityBucket.getBucketTime().plus(180, ChronoUnit.DAYS)));
+    UpdateOperations<ActivityBucket> updateOperations = hPersistence.createUpdateOperations(ActivityBucket.class);
+    updateOperations.inc(ActivityBucketKeys.count);
+    FindAndModifyOptions findAndModifyOptions = new FindAndModifyOptions().upsert(true);
+    hPersistence.upsert(upsertActivityBucket, updateOperations, findAndModifyOptions);
+  }
+
+  @Override
   public boolean deleteByMonitoredServiceIdentifier(MonitoredServiceParams monitoredServiceParams) {
     return hPersistence.delete(createQuery(monitoredServiceParams));
   }
 
   private Query<Activity> createQuery(MonitoredServiceParams monitoredServiceParams) {
-    return hPersistence.createQuery(Activity.class, excludeValidate)
-        .filter(ActivityKeys.accountId, monitoredServiceParams.getAccountIdentifier())
-        .filter(ActivityKeys.orgIdentifier, monitoredServiceParams.getOrgIdentifier())
-        .filter(ActivityKeys.projectIdentifier, monitoredServiceParams.getProjectIdentifier())
-        .filter(ActivityKeys.monitoredServiceIdentifier, monitoredServiceParams.getMonitoredServiceIdentifier());
+    Query<Activity> query =
+        hPersistence.createQuery(Activity.class, excludeValidate)
+            .filter(ActivityKeys.accountId, monitoredServiceParams.getAccountIdentifier())
+            .filter(ActivityKeys.orgIdentifier, monitoredServiceParams.getOrgIdentifier())
+            .filter(ActivityKeys.projectIdentifier, monitoredServiceParams.getProjectIdentifier())
+            .filter(ActivityKeys.monitoredServiceIdentifier, monitoredServiceParams.getMonitoredServiceIdentifier());
+    query.useReadPreference(ReadPreference.secondaryPreferred());
+    return query;
   }
 
   private Optional<Activity> getFromDb(Activity activity) {

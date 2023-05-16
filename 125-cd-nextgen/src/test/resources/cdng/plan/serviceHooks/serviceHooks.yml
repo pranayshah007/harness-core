@@ -1,0 +1,14 @@
+- preHook:
+    identifier: gitServiceHookIdentifierPre
+    actions: 
+      - FetchFiles
+    storetype: Inline
+    store: 
+      content: wwoww 
+- postHook:
+    identifier: gitServiceHookIdentifierPost
+    actions:
+      - TemplateManifest
+    storetype: Inline
+    store:
+      content: wwoww2

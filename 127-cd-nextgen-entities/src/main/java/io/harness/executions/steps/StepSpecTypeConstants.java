@@ -30,6 +30,7 @@ public interface StepSpecTypeConstants {
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
   String K8S_CANARY_DEPLOY = "K8sCanaryDeploy";
   String K8S_DELETE = "K8sDelete";
+  String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
 
   String TERRAFORM_APPLY = "TerraformApply";
   String TERRAFORM_PLAN = "TerraformPlan";
@@ -92,6 +93,8 @@ public interface StepSpecTypeConstants {
   String GOOGLE_CLOUD_FUNCTIONS_DEPLOY_WITHOUT_TRAFFIC = "DeployCloudFunctionWithNoTraffic";
   String GOOGLE_CLOUD_FUNCTIONS_TRAFFIC_SHIFT = "CloudFunctionTrafficShift";
   String GOOGLE_CLOUD_FUNCTIONS_ROLLBACK = "CloudFunctionRollback";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_DEPLOY = "DeployCloudFunctionGenOne";
+  String GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK = "RollbackCloudFunctionGenOne";
 
   String AWS_LAMBDA_DEPLOY = "AwsLambdaDeploy";
   String AWS_LAMBDA = "AwsLambda";
@@ -120,6 +123,7 @@ public interface StepSpecTypeConstants {
 
   // AWS SAM
   String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  String AWS_SAM_BUILD = "AwsSamBuild";
   String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";

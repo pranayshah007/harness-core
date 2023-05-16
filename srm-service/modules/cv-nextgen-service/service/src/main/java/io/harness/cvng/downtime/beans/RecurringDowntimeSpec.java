@@ -23,7 +23,8 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @EqualsAndHashCode(callSuper = true)
 public class RecurringDowntimeSpec extends DowntimeSpec {
-  @ApiModelProperty(required = true) @NotNull private long recurrenceEndTime;
+  @Deprecated private long recurrenceEndTime;
+  private String recurrenceEndDateTime;
   @ApiModelProperty(required = true) @NotNull private DowntimeDuration downtimeDuration;
   @ApiModelProperty(required = true) @NotNull private DowntimeRecurrence downtimeRecurrence;
 

@@ -21,6 +21,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -43,6 +44,7 @@ public interface PMSPipelineService {
   /**
    * Clone pipeline (inline/remote) and do validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param clonePipelineDTO
    * @param accountId
    * @return
@@ -52,6 +54,7 @@ public interface PMSPipelineService {
   /**
    * Get pipeline (inline/remote) and do validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param accountId
    * @param orgIdentifier
    * @param projectIdentifier
@@ -142,4 +145,7 @@ public interface PMSPipelineService {
 
   PipelineCRUDResult moveConfig(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, MoveConfigOperationDTO moveConfigDTO);
+
+  String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams);
 }

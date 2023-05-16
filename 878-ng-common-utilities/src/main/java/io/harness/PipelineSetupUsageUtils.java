@@ -16,8 +16,8 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.utils.ParameterFieldUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -80,12 +80,11 @@ public class PipelineSetupUsageUtils {
       String accountIdentifier, TextNode node, EntitySetupUsageDTO referredUsage, Map<String, String> metadata,
       String fqnForNode) {
     String finalValue = node.asText();
-    if (NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
+    if (EmptyPredicate.isEmpty(finalValue) || NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
       return null;
     }
-    if (ParameterField.containsInputSetValidator(finalValue, fqnForNode)) {
-      finalValue = ParameterField.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
-    }
+    finalValue = ParameterFieldUtils.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
+
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(finalValue, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
     return EntityDetail.builder()

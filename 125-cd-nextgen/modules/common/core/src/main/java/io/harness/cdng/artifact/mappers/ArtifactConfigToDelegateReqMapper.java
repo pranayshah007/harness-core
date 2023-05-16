@@ -40,7 +40,9 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.cdng.expressionEvaluator.NgCustomSecretExpressionEvaluator;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.data.algorithm.HashGenerator;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -67,6 +69,7 @@ import io.harness.delegate.task.artifacts.gar.GarDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.googlecloudsource.GoogleCloudSourceFetchType;
 import io.harness.delegate.task.artifacts.googlecloudstorage.GoogleCloudStorageArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
@@ -80,6 +83,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionConfig;
@@ -98,19 +102,28 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
   private final String ACCEPT_ALL_REGEX = "\\*";
+  private final String LAST_PUBLISHED_EXPRESSION = "<+lastPublished.tag>";
   private final long TIME_OUT = 600000L;
 
   public DockerArtifactDelegateRequest getDockerDelegateRequest(DockerHubArtifactConfig artifactConfig,
       DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
-    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
-    }
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
+
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = getTagRegex(tag);
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getTag())
+        && tagHasInputValidator(artifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = artifactConfig.getTag().getInputSetValidator().getParameters();
+    }
+
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+
     boolean shouldFetchDockerV2DigestSHA256 =
         artifactConfig.getDigest() != null && isNotEmpty(artifactConfig.getDigest().getValue());
     return ArtifactDelegateRequestUtils.getDockerDelegateRequest(artifactConfig.getImagePath().getValue(), tag,
@@ -118,11 +131,40 @@ public class ArtifactConfigToDelegateReqMapper {
         shouldFetchDockerV2DigestSHA256);
   }
 
+  public boolean isLastPublishedExpression(String tag) {
+    if (EmptyPredicate.isNotEmpty(tag) && tag.equals(LAST_PUBLISHED_EXPRESSION)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public boolean tagHasInputValidator(InputSetValidator inputSetValidator, String tag) {
+    if (isLastPublishedExpression(tag) && inputSetValidator != null && isNotEmpty(inputSetValidator.getParameters())) {
+      return true;
+    }
+    return false;
+  }
+
+  public String getTagRegex(String tag) {
+    return tag.equals(LAST_PUBLISHED_EXPRESSION) ? ".*?" : tag;
+  }
+
   public S3ArtifactDelegateRequest getAmazonS3DelegateRequest(AmazonS3ArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     String bucket = artifactConfig.getBucketName().getValue();
     String filePath = artifactConfig.getFilePath().getValue();
     String filePathRegex = artifactConfig.getFilePathRegex().getValue();
+
+    if (isLastPublishedExpression(filePath)) {
+      if (ParameterField.isNotNull(artifactConfig.getFilePath())
+          && tagHasInputValidator(artifactConfig.getFilePath().getInputSetValidator(), filePath)) {
+        filePathRegex = artifactConfig.getFilePath().getInputSetValidator().getParameters();
+      } else {
+        filePathRegex = "*";
+      }
+      filePath = "";
+    }
 
     if (StringUtils.isBlank(bucket)) {
       throw new InvalidRequestException("Please input bucketName.");
@@ -139,7 +181,6 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(filePathRegex)) {
       filePathRegex = "";
     }
-
     return ArtifactDelegateRequestUtils.getAmazonS3DelegateRequest(artifactConfig.getBucketName().getValue(), filePath,
         filePathRegex, null, connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMAZONS3,
         artifactConfig.getRegion() != null ? artifactConfig.getRegion().getValue() : "us-east-1");
@@ -157,8 +198,14 @@ public class ArtifactConfigToDelegateReqMapper {
         ? StringUtils.isBlank(artifactConfig.getVersion().getValue()) ? "" : artifactConfig.getVersion().getValue()
         : "";
 
-    if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
-      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(version)) {
+      versionRegex =
+          version.equals(LAST_PUBLISHED_EXPRESSION) ? version.replace(LAST_PUBLISHED_EXPRESSION, "*") : version;
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getVersion())
+        && tagHasInputValidator(artifactConfig.getVersion().getInputSetValidator(), version)) {
+      versionRegex = artifactConfig.getVersion().getInputSetValidator().getParameters();
     }
 
     // If both version and versionRegex are empty, versionRegex is latest among all versions.
@@ -181,8 +228,8 @@ public class ArtifactConfigToDelegateReqMapper {
 
     String version = artifactConfig.getVersion().getValue();
 
-    if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
-      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(version)) {
+      versionRegex = getTagRegex(version);
     }
 
     if (StringUtils.isBlank(version)) {
@@ -192,6 +239,11 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
       versionRegex = "*";
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getVersion())
+        && tagHasInputValidator(artifactConfig.getVersion().getInputSetValidator(), version)) {
+      versionRegex = artifactConfig.getVersion().getInputSetValidator().getParameters();
     }
 
     String scope = null;
@@ -207,10 +259,10 @@ public class ArtifactConfigToDelegateReqMapper {
 
   public AMIArtifactDelegateRequest getAMIDelegateRequest(AMIArtifactConfig artifactConfig,
       AwsConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
-    String versionRegex = artifactConfig.getVersionRegex().getValue();
+    String versionRegex = "";
 
-    if (StringUtils.isBlank(versionRegex)) {
-      versionRegex = "";
+    if (artifactConfig.getVersionRegex() != null && isNotEmpty(artifactConfig.getVersionRegex().getValue())) {
+      versionRegex = artifactConfig.getVersionRegex().getValue();
     }
 
     if (artifactConfig.getVersionRegex() != null && artifactConfig.getVersionRegex().getInputSetValidator() != null) {
@@ -219,6 +271,10 @@ public class ArtifactConfigToDelegateReqMapper {
 
     String version = artifactConfig.getVersion().getValue();
 
+    if (isLastPublishedExpression(version)) {
+      versionRegex = artifactConfig.getVersion().getValue();
+    }
+
     if (StringUtils.isBlank(version)) {
       version = "";
     }
@@ -226,6 +282,11 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both version and versionRegex are empty, throw exception.
     if (StringUtils.isAllBlank(version, versionRegex)) {
       versionRegex = "*";
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getVersion())
+        && tagHasInputValidator(artifactConfig.getVersion().getInputSetValidator(), version)) {
+      versionRegex = artifactConfig.getVersion().getInputSetValidator().getParameters();
     }
 
     return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags().getValue(),
@@ -238,9 +299,15 @@ public class ArtifactConfigToDelegateReqMapper {
     String artifactPath = artifactConfig.getArtifactPath() != null ? artifactConfig.getArtifactPath().getValue() : "";
     String jobName = artifactConfig.getJobName() != null ? artifactConfig.getJobName().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
-    if (artifactConfig.getBuild().getInputSetValidator() != null) {
-      buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(buildNumber)) {
+      if (ParameterField.isNotNull(artifactConfig.getBuild())
+          && tagHasInputValidator(artifactConfig.getBuild().getInputSetValidator(), buildNumber)) {
+        buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+      } else {
+        buildNumber = buildNumber.equals(LAST_PUBLISHED_EXPRESSION) ? "" : buildNumber;
+      }
     }
+
     return ArtifactDelegateRequestUtils.getJenkinsDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.JENKINS, null, null, jobName, Arrays.asList(artifactPath),
         buildNumber);
@@ -252,8 +319,8 @@ public class ArtifactConfigToDelegateReqMapper {
                                                                           : Collections.emptyList();
     String planKey = artifactConfig.getPlanKey() != null ? artifactConfig.getPlanKey().getValue() : "";
     String buildNumber = artifactConfig.getBuild() != null ? artifactConfig.getBuild().getValue() : "";
-    if (artifactConfig.getBuild().getInputSetValidator() != null) {
-      buildNumber = artifactConfig.getBuild().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(buildNumber)) {
+      buildNumber = getTagRegex(buildNumber);
     }
     return ArtifactDelegateRequestUtils.getBambooDelegateArtifactRequest(connectorRef, connectorDTO,
         encryptedDataDetails, ArtifactSourceType.BAMBOO, planKey, artifactPath, buildNumber);
@@ -262,20 +329,23 @@ public class ArtifactConfigToDelegateReqMapper {
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
     long timeout = TIME_OUT;
+    String version = artifactConfig.getVersion().getValue();
+    String versionRegex = "";
+    if (artifactConfig.getVersionRegex() != null && isNotEmpty(artifactConfig.getVersionRegex().getValue())) {
+      versionRegex = artifactConfig.getVersionRegex().getValue();
+    }
 
     if (artifactConfig.getTimeout() != null && artifactConfig.getTimeout().getValue() != null
         && isNotEmpty(artifactConfig.getTimeout().getValue().toString())) {
       timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
     }
-
-    String versionRegex = artifactConfig.getVersionRegex().getValue();
-
-    if (StringUtils.isBlank(versionRegex)) {
-      versionRegex = "";
+    if (isNotEmpty(version) && isLastPublishedExpression(version)) {
+      versionRegex = getTagRegex(version);
     }
 
-    if (artifactConfig.getVersionRegex().getInputSetValidator() != null) {
-      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    if (ParameterField.isNotNull(artifactConfig.getVersion())
+        && tagHasInputValidator(artifactConfig.getVersion().getInputSetValidator(), version)) {
+      versionRegex = artifactConfig.getVersion().getInputSetValidator().getParameters();
     }
 
     String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
@@ -286,8 +356,7 @@ public class ArtifactConfigToDelegateReqMapper {
         ArtifactSourceType.CUSTOM_ARTIFACT,
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
-        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L),
-        artifactConfig.getVersion().fetchFinalValue().toString(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), version,
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "", timeout,
         AmbianceUtils.getAccountId(ambiance));
   }
@@ -295,19 +364,29 @@ public class ArtifactConfigToDelegateReqMapper {
   public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig, Ambiance ambiance,
       DelegateMetricsService delegateMetricsService, SecretManagerClientService ngSecretService) {
     String versionRegex = artifactConfig.getVersionRegex().getValue();
+    String version = artifactConfig.getVersion().getValue();
 
     if (StringUtils.isBlank(versionRegex)) {
       versionRegex = "";
     }
 
-    if (artifactConfig.getVersionRegex().getInputSetValidator() != null) {
-      versionRegex = artifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    if (isNotEmpty(version) && isLastPublishedExpression(version)) {
+      versionRegex = getTagRegex(version);
     }
+
+    if (ParameterField.isNotNull(artifactConfig.getVersion())
+        && tagHasInputValidator(artifactConfig.getVersion().getInputSetValidator(), version)) {
+      versionRegex = artifactConfig.getVersion().getInputSetValidator().getParameters();
+    }
+
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     int secretFunctorToken = HashGenerator.generateIntegerHash();
     CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
     String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
     script = resolveNGSecretExpression(script, secretFunctorToken);
+    if (isNotEmpty(version) && isLastPublishedExpression(version)) {
+      version = getTagRegex(version);
+    }
     NgCustomSecretExpressionEvaluator ngCustomSecretExpressionEvaluator =
         new NgCustomSecretExpressionEvaluator(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
             ngAccess.getProjectIdentifier(), secretFunctorToken, delegateMetricsService, ngSecretService);
@@ -324,7 +403,7 @@ public class ArtifactConfigToDelegateReqMapper {
         ArtifactSourceType.CUSTOM_ARTIFACT,
         artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
-        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), version,
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "",
         artifactConfig.getTimeout() != null ? artifactConfig.getTimeout().getValue().getTimeoutInMillis() : TIME_OUT,
         AmbianceUtils.getAccountId(ambiance), encryptionConfigs, secretDetails,
@@ -337,6 +416,9 @@ public class ArtifactConfigToDelegateReqMapper {
     String project = artifactConfig.getProject().getValue();
     String repository = artifactConfig.getRepository().getValue();
     String sourceDirectory = artifactConfig.getSourceDirectory().getValue();
+    String branch = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getBranch());
+    String commitId = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getCommitId());
+    String tag = ParameterFieldHelper.getParameterFieldValue(artifactConfig.getTag());
     if (StringUtils.isBlank(project)) {
       throw new InvalidRequestException("Please input project name.");
     }
@@ -346,8 +428,13 @@ public class ArtifactConfigToDelegateReqMapper {
     if (StringUtils.isBlank(sourceDirectory)) {
       throw new InvalidRequestException("Please input sourceDirectory path.");
     }
+    if (StringUtils.isAllBlank(branch, commitId, tag)) {
+      throw new InvalidRequestException("Please input one of these three, branch, commitId, Tag.");
+    }
     return ArtifactDelegateRequestUtils.getGoogleCloudSourceArtifactDelegateRequest(repository, project,
-        sourceDirectory, gcpConnectorDTO, connectorRef, encryptedDataDetails,
+        sourceDirectory,
+        GoogleCloudSourceFetchType.valueOf(StringUtils.upperCase(artifactConfig.getFetchType().getName())), branch,
+        commitId, tag, gcpConnectorDTO, connectorRef, encryptedDataDetails,
         ArtifactSourceType.GOOGLE_CLOUD_SOURCE_ARTIFACT);
   }
 
@@ -391,12 +478,18 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = gcrArtifactConfig.getTagRegex() != null ? gcrArtifactConfig.getTagRegex().getValue() : "";
     String tag = gcrArtifactConfig.getTag() != null ? gcrArtifactConfig.getTag().getValue() : "";
 
-    if (gcrArtifactConfig.getTagRegex() != null && gcrArtifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = gcrArtifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = getTagRegex(tag);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+
+    if (ParameterField.isNotNull(gcrArtifactConfig.getTag())
+        && tagHasInputValidator(gcrArtifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = gcrArtifactConfig.getTag().getInputSetValidator().getParameters();
+    }
+
     return ArtifactDelegateRequestUtils.getGcrDelegateRequest(gcrArtifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, gcrArtifactConfig.getRegistryHostname().getValue(), connectorRef, gcpConnectorDTO,
         encryptedDataDetails, ArtifactSourceType.GCR);
@@ -408,13 +501,20 @@ public class ArtifactConfigToDelegateReqMapper {
         garArtifactConfig.getVersionRegex() != null ? garArtifactConfig.getVersionRegex().getValue() : "";
     String version = garArtifactConfig.getVersion() != null ? garArtifactConfig.getVersion().getValue() : "";
 
-    if (garArtifactConfig.getVersionRegex() != null
-        && garArtifactConfig.getVersionRegex().getInputSetValidator() != null) {
-      versionRegex = garArtifactConfig.getVersionRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(version)) {
+      versionRegex = getTagRegex(version);
+      version = "";
     }
     if (StringUtils.isBlank(version) && StringUtils.isBlank(versionRegex)) {
       versionRegex = "/*";
     }
+    if (ParameterField.isNotNull(garArtifactConfig.getVersion())
+        && tagHasInputValidator(garArtifactConfig.getVersion().getInputSetValidator(),
+            ParameterField.isNotNull(garArtifactConfig.getVersion()) ? garArtifactConfig.getVersion().getValue()
+                                                                     : version)) {
+      versionRegex = garArtifactConfig.getVersion().getInputSetValidator().getParameters();
+    }
+
     return ArtifactDelegateRequestUtils.getGoogleArtifactDelegateRequest(garArtifactConfig.getRegion().getValue(),
         garArtifactConfig.getRepositoryName().getValue(), garArtifactConfig.getProject().getValue(),
         garArtifactConfig.getPkg().getValue(), version, versionRegex, gcpConnectorDTO, encryptedDataDetails,
@@ -426,13 +526,17 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all ecr artifacts.
     String tagRegex = ecrArtifactConfig.getTagRegex() != null ? ecrArtifactConfig.getTagRegex().getValue() : "";
     String tag = ecrArtifactConfig.getTag() != null ? ecrArtifactConfig.getTag().getValue() : "";
-
-    if (ecrArtifactConfig.getTagRegex() != null && ecrArtifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = ecrArtifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = tag.equals(LAST_PUBLISHED_EXPRESSION) ? "*" : tag;
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+    if (ParameterField.isNotNull(ecrArtifactConfig.getTag())
+        && tagHasInputValidator(ecrArtifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = ecrArtifactConfig.getTag().getInputSetValidator().getParameters();
+    }
+
     return ArtifactDelegateRequestUtils.getEcrDelegateRequest(ecrArtifactConfig.getImagePath().getValue(), tag,
         tagRegex, null, ecrArtifactConfig.getRegion().getValue(), connectorRef, awsConnectorDTO, encryptedDataDetails,
         ArtifactSourceType.ECR);
@@ -443,12 +547,16 @@ public class ArtifactConfigToDelegateReqMapper {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
-
-    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = getTagRegex(tag);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getTag())
+        && tagHasInputValidator(artifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = artifactConfig.getTag().getInputSetValidator().getParameters();
     }
 
     String packageName = null;
@@ -504,12 +612,16 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
 
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
-
-    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = getTagRegex(tag);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getTag())
+        && tagHasInputValidator(artifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = artifactConfig.getTag().getInputSetValidator().getParameters();
     }
 
     String packageName = null;
@@ -559,11 +671,16 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
 
-    if (artifactConfig.getTagRegex() != null && artifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = artifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = ACCEPT_ALL_REGEX;
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getTag())
+        && tagHasInputValidator(artifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = artifactConfig.getTag().getInputSetValidator().getParameters();
     }
 
     String artifactRepositoryUrl =
@@ -589,6 +706,15 @@ public class ArtifactConfigToDelegateReqMapper {
         ? null
         : artifactConfig.getArtifactDirectory().getValue();
 
+    if (isLastPublishedExpression(artifactPath)) {
+      artifactPathFilter = artifactPath.equals(ACCEPT_ALL_REGEX) ? "*" : artifactPath;
+    }
+
+    if (ParameterField.isNotNull(artifactConfig.getArtifactPath())
+        && tagHasInputValidator(artifactConfig.getArtifactPath().getInputSetValidator(), artifactPath)) {
+      artifactPathFilter = artifactConfig.getTag().getInputSetValidator().getParameters();
+    }
+
     return ArtifactDelegateRequestUtils.getArtifactoryGenericArtifactDelegateRequest(
         artifactConfig.getRepository().getValue(), artifactConfig.getRepositoryFormat().getValue(), artifactDirectory,
         artifactPath, artifactPathFilter, connectorRef, artifactoryConnectorDTO, encryptedDataDetails,
@@ -601,12 +727,18 @@ public class ArtifactConfigToDelegateReqMapper {
     String tagRegex =
         ParameterField.isNull(acrArtifactConfig.getTagRegex()) ? "" : acrArtifactConfig.getTagRegex().getValue();
     String tag = ParameterField.isNull(acrArtifactConfig.getTag()) ? "" : acrArtifactConfig.getTag().getValue();
-    if (acrArtifactConfig.getTagRegex() != null && acrArtifactConfig.getTagRegex().getInputSetValidator() != null) {
-      tagRegex = acrArtifactConfig.getTagRegex().getInputSetValidator().getParameters();
+    if (isLastPublishedExpression(tag)) {
+      tagRegex = getTagRegex(tag);
     }
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
     }
+
+    if (ParameterField.isNotNull(acrArtifactConfig.getTag())
+        && tagHasInputValidator(acrArtifactConfig.getTag().getInputSetValidator(), tag)) {
+      tagRegex = acrArtifactConfig.getTag().getInputSetValidator().getParameters();
+    }
+
     return ArtifactDelegateRequestUtils.getAcrDelegateRequest(acrArtifactConfig.getSubscriptionId().getValue(),
         acrArtifactConfig.getRegistry().getValue(), acrArtifactConfig.getRepository().getValue(), azureConnectorDTO,
         tag, tagRegex, null, encryptedDataDetails, ArtifactSourceType.ACR);

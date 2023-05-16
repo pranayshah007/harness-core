@@ -10,6 +10,7 @@ package io.harness.cdng.provision.cloudformation;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import java.util.HashMap;
@@ -17,7 +18,8 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.cloudformation.CloudformationCreateStackOutcome")
-public class CloudformationCreateStackOutcome extends HashMap<String, Object> implements Outcome {
+public class CloudformationCreateStackOutcome
+    extends HashMap<String, Object> implements Outcome, ExecutionSweepingOutput {
   public CloudformationCreateStackOutcome(Map<String, ?> m) {
     super(m);
   }

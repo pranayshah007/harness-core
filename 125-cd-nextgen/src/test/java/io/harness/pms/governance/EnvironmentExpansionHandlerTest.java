@@ -37,6 +37,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.JsonUtils;
+import io.harness.serializer.KryoSerializer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
+import org.joor.Reflect;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,18 +60,24 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
   @Mock private EnvironmentService environmentService;
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ConnectorService connectorService;
+  @Mock private KryoSerializer kryoSerializer;
+  private final EnvironmentExpansionUtils utils = new EnvironmentExpansionUtils();
   @InjectMocks private EnvironmentExpansionHandler expansionHandler = new EnvironmentExpansionHandler();
   private AutoCloseable mocks;
 
-  private ExpansionRequestMetadata expansionRequestMetadata = ExpansionRequestMetadata.newBuilder()
-                                                                  .setAccountId("accountId")
-                                                                  .setOrgId("orgId")
-                                                                  .setProjectId("projectId")
-                                                                  .build();
+  private final ExpansionRequestMetadata expansionRequestMetadata = ExpansionRequestMetadata.newBuilder()
+                                                                        .setAccountId("accountId")
+                                                                        .setOrgId("orgId")
+                                                                        .setProjectId("projectId")
+                                                                        .build();
 
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
+
+    Reflect.on(expansionHandler).set("utils", utils);
+    Reflect.on(utils).set("connectorService", connectorService);
+    Reflect.on(utils).set("kryoSerializer", kryoSerializer);
 
     doReturn(Optional.of(
                  ConnectorResponseDTO.builder()
@@ -187,10 +195,10 @@ public class EnvironmentExpansionHandlerTest extends CategoryTest {
 
     InfrastructureExpandedValue value = (InfrastructureExpandedValue) expand.getValue();
 
-    String expectedYaml = IOUtils.resourceToString(
+    String expectedJson = IOUtils.resourceToString(
         "governance/expected/expandExpected.json", StandardCharsets.UTF_8, this.getClass().getClassLoader());
     assertThat(value.getKey()).isEqualTo("infrastructure");
-    assertThat(value.toJson()).isEqualTo(expectedYaml);
+    assertThat(value.toJson()).isEqualTo(expectedJson);
   }
 
   @Test

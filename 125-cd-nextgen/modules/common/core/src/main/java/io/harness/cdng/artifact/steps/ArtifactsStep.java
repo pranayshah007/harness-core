@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder;
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -32,6 +33,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactsStep extends NGForkStep {
   @Inject private ServiceStepsHelper serviceStepsHelper;
+  @Inject private ArtifactStepHelper artifactStepHelper;
 
   @Override
   public StepResponse handleChildrenResponse(
@@ -49,10 +51,13 @@ public class ArtifactsStep extends NGForkStep {
       }
     }
 
+    ArtifactsOutcome artifactsOutcome = builder.build();
+    artifactStepHelper.saveArtifactExecutionDataToStageInfo(ambiance, artifactsOutcome);
+
     StepResponse stepResponse = super.handleChildrenResponse(ambiance, stepParameters, responseDataMap);
     return stepResponse.withStepOutcomes(Collections.singleton(StepResponse.StepOutcome.builder()
                                                                    .name(OutcomeExpressionConstants.ARTIFACTS)
-                                                                   .outcome(builder.build())
+                                                                   .outcome(artifactsOutcome)
                                                                    .group(StepCategory.STAGE.name())
                                                                    .build()));
   }

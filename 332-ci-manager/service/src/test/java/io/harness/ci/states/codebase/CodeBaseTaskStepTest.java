@@ -19,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.BranchWebhookEvent;
+import io.harness.beans.execution.CommitDetails;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.Repository;
@@ -52,6 +53,7 @@ import io.harness.rule.Owner;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
+import java.util.Arrays;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -256,6 +258,9 @@ public class CodeBaseTaskStepTest extends CategoryTest {
                                                   .authorLogin("firstLast")
                                                   .mergeSha("mergeSha")
                                                   .build())
+                              .commitDetailsList(Arrays.asList(
+                                  CommitDetails.builder().message("First commit message").timeStamp(110).build(),
+                                  CommitDetails.builder().message("Last commit message").timeStamp(120).build()))
                               .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
                               .build())
             .build();
@@ -276,6 +281,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
     assertThat(codebaseSweepingOutput.getPullRequestLink()).isEqualTo("http://github.com/octocat/hello-world/pull/1");
     assertThat(codebaseSweepingOutput.getMergeSha()).isEqualTo("mergeSha");
+    assertThat(codebaseSweepingOutput.getCommitMessage()).isEqualTo("Last commit message");
   }
 
   @Test
@@ -284,18 +290,20 @@ public class CodeBaseTaskStepTest extends CategoryTest {
   public void shouldBuildPushWebhookCodebaseSweepingOutput() {
     WebhookExecutionSource webhookExecutionSource =
         WebhookExecutionSource.builder()
-            .webhookEvent(BranchWebhookEvent.builder()
-                              .branchName("main")
-                              .baseAttributes(WebhookBaseAttributes.builder()
-                                                  .after("commitId")
-                                                  .before("commitIdBase")
-                                                  .authorName("First Last")
-                                                  .authorEmail("first.last@email.com")
-                                                  .authorAvatar("http://...")
-                                                  .authorLogin("firstLast")
-                                                  .build())
-                              .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
-                              .build())
+            .webhookEvent(
+                BranchWebhookEvent.builder()
+                    .branchName("main")
+                    .baseAttributes(WebhookBaseAttributes.builder()
+                                        .after("commitId")
+                                        .before("commitIdBase")
+                                        .authorName("First Last")
+                                        .authorEmail("first.last@email.com")
+                                        .authorAvatar("http://...")
+                                        .authorLogin("firstLast")
+                                        .build())
+                    .commitDetailsList(Arrays.asList(CommitDetails.builder().message("Last commit message").build()))
+                    .repository(Repository.builder().link("http://github.com/octocat/hello-world").build())
+                    .build())
             .build();
     CodebaseSweepingOutput codebaseSweepingOutput =
         codeBaseTaskStep.buildWebhookCodebaseSweepingOutput(webhookExecutionSource);
@@ -308,6 +316,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("first.last@email.com");
     assertThat(codebaseSweepingOutput.getGitUserAvatar()).isEqualTo("http://...");
     assertThat(codebaseSweepingOutput.getGitUserId()).isEqualTo("firstLast");
+    assertThat(codebaseSweepingOutput.getCommitMessage()).isEqualTo("Last commit message");
   }
 
   @Test

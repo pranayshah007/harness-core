@@ -25,6 +25,7 @@ import io.harness.dtos.deploymentinfo.PdcDeploymentInfoDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.helper.InstanceSyncHelper;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
@@ -50,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTaskHandler {
   @Inject private NGSecretServiceV2 ngSecretServiceV2;
+  @Inject private InstanceSyncHelper instanceSyncHelper;
 
   @Override
   public PerpetualTaskExecutionBundle getExecutionBundle(InfrastructureMappingDTO infrastructure,
@@ -87,6 +89,7 @@ public class PdcInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         infrastructure.getProjectIdentifier(), pdcInfrastructureOutcome.getCredentialsRef());
 
     SecretSpecDTO secretSpecDTO = secret.getSecretSpec().toDTO();
+    instanceSyncHelper.updateFeatureFlagForSsh(secretSpecDTO, infrastructure.getAccountIdentifier());
     int port;
 
     if (secretSpecDTO instanceof SSHKeySpecDTO) {

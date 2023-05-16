@@ -1,0 +1,17 @@
+{{- if and .Values.pdb.create }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "access-control.name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  {{- if .Values.pdb.minAvailable }}
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  {{- end }}
+  {{- if .Values.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.pdb.maxUnavailable }}
+  {{- end }}
+  selector:
+   matchLabels:
+    app: {{ include "access-control.name" . }}
+{{- end }}

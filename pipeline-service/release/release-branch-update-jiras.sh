@@ -7,14 +7,29 @@
 set -ex
 KEYS=$(git log --pretty=oneline --abbrev-commit |\
       awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
-      grep -o -iE '('PIE')-[0-9]+' | sort | uniq)
+      grep -o -iE '('CDS')-[0-9]+' | sort | uniq)
 
 echo $KEYS
 
 #FIX_PIE_VERSION value to be same as used in release-branch-create-pie-version.sh
 FIX_PIE_VERSION="PIE-""$VERSION"
+FINAL_KEYS=()
+for KEY in ${KEYS[@]}
+  do
+    response=$(curl -X GET -H "Content-Type: application/json" \
+          https://harness.atlassian.net/rest/api/2/issue/${KEY}/?components \
+          --user $JIRA_USERNAME:$JIRA_PASSWORD)
 
-for KEY in ${KEYS}
+    components=$(echo "${response}" | jq -r '.fields.components')
+
+    if name=$(echo "${components}" | jq -r '.[] | select(.name == "Pipeline") | .name'); test -n "${name}"; then
+      FINAL_KEYS+=( "$KEY" )
+    fi
+  done
+
+echo ${FINAL_KEYS[@]}
+
+for KEY in ${FINAL_KEYS[@]}
   do
     echo "$KEY"
     EXCLUDE_PROJECTS=","

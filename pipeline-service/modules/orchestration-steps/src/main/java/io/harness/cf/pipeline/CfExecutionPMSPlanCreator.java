@@ -7,14 +7,11 @@
 
 package io.harness.cf.pipeline;
 
-import static io.harness.advisers.retry.RetryAdviserWithRollback.ADVISER_TYPE;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.SkipType;
@@ -87,7 +84,6 @@ public class CfExecutionPMSPlanCreator extends ChildrenPlanCreator<ExecutionElem
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainment(AdviserObtainment.newBuilder().setType(ADVISER_TYPE).build())
         .skipExpressionChain(false)
         .build();
   }

@@ -14,7 +14,6 @@ import static io.harness.telemetry.Destination.ALL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.core.ci.services.CIOverviewDashboardService;
@@ -45,7 +44,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
   CiTelemetryPublisher telemetryPublisher;
   CIOverviewDashboardService ciOverviewDashboardService = mock(CIOverviewDashboardService.class);
   TelemetryReporter telemetryReporter = mock(TelemetryReporter.class);
-  AccountClient accountClient = mock(AccountClient.class);
+  AccountUtils accountUtils = mock(AccountUtils.class);
   CITelemetryStatusRepository ciTelemetryStatusRepository = mock(CITelemetryStatusRepository.class);
   ModuleLicenseRepository moduleLicenseRepository = mock(ModuleLicenseRepository.class);
 
@@ -54,7 +53,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     telemetryPublisher = spy(CiTelemetryPublisher.class);
     telemetryPublisher.ciOverviewDashboardService = ciOverviewDashboardService;
     telemetryPublisher.telemetryReporter = telemetryReporter;
-    telemetryPublisher.accountClient = accountClient;
+    telemetryPublisher.accountUtils = accountUtils;
     telemetryPublisher.ciTelemetryStatusRepository = ciTelemetryStatusRepository;
     telemetryPublisher.moduleLicenseRepository = moduleLicenseRepository;
   }
@@ -72,7 +71,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     List<String> accountList = new ArrayList<>();
     accountList.add("acc1");
     accountList.add("acc2");
-    doReturn(accountList).when(telemetryPublisher).getAllAccounts();
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
@@ -106,7 +105,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     List<String> accountList = new ArrayList<>();
     accountList.add("acc1");
     accountList.add("acc2");
-    doReturn(accountList).when(telemetryPublisher).getAllAccounts();
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
@@ -140,7 +139,7 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     List<String> accountList = new ArrayList<>();
     accountList.add("acc1");
     accountList.add("acc2");
-    doReturn(accountList).when(telemetryPublisher).getAllAccounts();
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
     HashMap<String, Object> firstAccountExpectedMap = new HashMap<>();
     firstAccountExpectedMap.put("group_type", "Account");
     firstAccountExpectedMap.put("group_id", "acc1");
@@ -175,9 +174,9 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     List<String> accountList = new ArrayList<>();
     accountList.add("acc1");
     accountList.add("acc2");
-    doReturn(accountList).when(telemetryPublisher).getAllAccounts();
+    doReturn(accountList).when(accountUtils).getAllNGAccountIds();
 
     telemetryPublisher.recordTelemetry();
-    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), anyObject(), anyMap(), anyObject());
+    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), any(), anyMap(), any());
   }
 }

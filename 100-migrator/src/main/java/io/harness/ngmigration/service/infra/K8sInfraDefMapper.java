@@ -23,6 +23,7 @@ import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.pms.yaml.ParameterField;
 
@@ -64,6 +65,7 @@ public class K8sInfraDefMapper implements InfraDefMapper {
     Map<CgEntityId, NGYamlFile> migratedEntities = migrationContext.getMigratedEntities();
     NgEntityDetail connectorDetail;
     CgEntityId cgEntityId;
+    String releaseName;
     switch (infrastructureDefinition.getCloudProviderType()) {
       case KUBERNETES_CLUSTER:
         DirectKubernetesInfrastructure k8s =
@@ -73,11 +75,13 @@ public class K8sInfraDefMapper implements InfraDefMapper {
           return null;
         }
         connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
+        releaseName = (String) MigratorExpressionUtils.render(
+            migrationContext, k8s.getReleaseName(), migrationContext.getInputDTO().getCustomExpressions());
         return K8SDirectInfrastructure.builder()
             .namespace(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.namespace,
                 k8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
             .releaseName(getExpression(k8s.getExpressions(), DirectKubernetesInfrastructureKeys.releaseName,
-                k8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
+                releaseName, infrastructureDefinition.getProvisionerId()))
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
             .build();
       case GCP:
@@ -87,14 +91,16 @@ public class K8sInfraDefMapper implements InfraDefMapper {
           return null;
         }
         connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
+        releaseName = (String) MigratorExpressionUtils.render(
+            migrationContext, gcpK8s.getReleaseName(), migrationContext.getInputDTO().getCustomExpressions());
         return K8sGcpInfrastructure.builder()
             .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)))
             .cluster(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.clusterName,
                 gcpK8s.getClusterName(), infrastructureDefinition.getProvisionerId()))
             .namespace(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.namespace,
                 gcpK8s.getNamespace(), infrastructureDefinition.getProvisionerId()))
-            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName,
-                gcpK8s.getReleaseName(), infrastructureDefinition.getProvisionerId()))
+            .releaseName(getExpression(gcpK8s.getExpressions(), GoogleKubernetesEngineKeys.releaseName, releaseName,
+                infrastructureDefinition.getProvisionerId()))
             .build();
       case AZURE:
         // No dynamic provisioning
@@ -104,7 +110,7 @@ public class K8sInfraDefMapper implements InfraDefMapper {
           return null;
         }
         connectorDetail = migratedEntities.get(cgEntityId).getNgEntityDetail();
-        return InfraDefMapperUtils.buildK8sAzureInfrastructure(aks, connectorDetail);
+        return InfraDefMapperUtils.buildK8sAzureInfrastructure(migrationContext, aks, connectorDetail);
       default:
         throw new InvalidRequestException("Unsupported Infra for K8s deployment");
     }

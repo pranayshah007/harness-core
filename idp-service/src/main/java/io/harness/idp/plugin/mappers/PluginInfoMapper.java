@@ -26,6 +26,11 @@ public class PluginInfoMapper {
     pluginInfo.setName(pluginInfoEntity.getName());
     pluginInfo.setCreatedBy(pluginInfoEntity.getCreatedBy());
     pluginInfo.setIconUrl(pluginInfoEntity.getIconUrl());
+    pluginInfo.setImageUrl(pluginInfoEntity.getImageUrl());
+    pluginInfo.setDescription(pluginInfoEntity.getDescription());
+    pluginInfo.setCategory(pluginInfoEntity.getCategory());
+    pluginInfo.setSource(pluginInfoEntity.getSource());
+    pluginInfo.setCore(pluginInfoEntity.isCore());
     pluginInfo.setEnabled(isEnabled);
     return pluginInfo;
   }

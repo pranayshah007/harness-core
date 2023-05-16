@@ -34,11 +34,14 @@ import io.harness.aws.asg.manifest.request.AsgInstanceRefreshManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgLaunchTemplateManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScalingPolicyManifestRequest;
 import io.harness.aws.asg.manifest.request.AsgScheduledActionManifestRequest;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.AsgNGException;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
 import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackRequest;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResponse;
 import io.harness.delegate.task.aws.asg.AsgRollingRollbackResult;
@@ -50,6 +53,7 @@ import io.harness.logging.LogCallback;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.service.impl.AwsUtils;
 
 import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.CreateAutoScalingGroupRequest;
@@ -66,6 +70,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandler {
   @Inject private AsgTaskHelper asgTaskHelper;
+  @Inject private ElbV2Client elbV2Client;
+  @Inject private AwsUtils awsUtils;
 
   @Override
   protected AsgCommandResponse executeTaskInternal(AsgCommandRequest asgCommandRequest,
@@ -86,12 +92,15 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
         iLogStreamingTaskClient, AsgCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
 
     try {
-      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback);
+      AsgSdkManager asgSdkManager = asgTaskHelper.getAsgSdkManager(asgCommandRequest, logCallback, elbV2Client);
+      AsgInfraConfig asgInfraConfig = asgCommandRequest.getAsgInfraConfig();
+      String region = asgInfraConfig.getRegion();
+      AwsInternalConfig awsInternalConfig = awsUtils.getAwsInternalConfig(asgInfraConfig.getAwsConnectorDTO(), region);
 
       asgSdkManager.info("Starting Rolling Rollback");
 
-      AutoScalingGroupContainer autoScalingGroupContainer = executeRollingRollbackWithInstanceRefresh(
-          asgSdkManager, asgManifestsDataForRollback, asgName, skipMatching, useAlreadyRunningInstances);
+      AutoScalingGroupContainer autoScalingGroupContainer = executeRollingRollbackWithInstanceRefresh(asgSdkManager,
+          asgManifestsDataForRollback, asgName, skipMatching, useAlreadyRunningInstances, awsInternalConfig, region);
 
       AsgRollingRollbackResult asgRollingRollbackResult =
           AsgRollingRollbackResult.builder().autoScalingGroupContainer(autoScalingGroupContainer).build();
@@ -113,7 +122,7 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
 
   private AutoScalingGroupContainer executeRollingRollbackWithInstanceRefresh(AsgSdkManager asgSdkManager,
       Map<String, List<String>> asgManifestsDataForRollback, String asgName, Boolean skipMatching,
-      Boolean useAlreadyRunningInstances) {
+      Boolean useAlreadyRunningInstances, AwsInternalConfig awsInternalConfig, String region) {
     if (isNotEmpty(asgManifestsDataForRollback)) {
       asgSdkManager.info("Rolling back to previous version of asg %s", asgName);
 
@@ -144,6 +153,8 @@ public class AsgRollingRollbackCommandTaskHandler extends AsgCommandTaskNGHandle
                   AsgConfigurationManifestRequest.builder()
                       .manifests(Arrays.asList(asgConfigurationContent))
                       .useAlreadyRunningInstances(useAlreadyRunningInstances)
+                      .awsInternalConfig(awsInternalConfig)
+                      .region(region)
                       .build())
               .addHandler(AsgScalingPolicy,
                   AsgScalingPolicyManifestRequest.builder().manifests(asgScalingPolicyContent).build())

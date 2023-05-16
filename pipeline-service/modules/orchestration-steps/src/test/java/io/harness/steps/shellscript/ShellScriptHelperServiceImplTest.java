@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -64,14 +64,12 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @Slf4j
 @OwnedBy(CDC)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({NGRestUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class ShellScriptHelperServiceImplTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -253,26 +251,27 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
                                                    .build();
     ShellScriptTaskParametersNGBuilder taskParamsBuilder = ShellScriptTaskParametersNG.builder();
 
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    aStatic.when(() -> NGRestUtils.getResponse(any(), any())).thenReturn(null);
-    assertThatThrownBy(()
-                           -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
-                               ambiance, stepParameters, taskParamsBuilder))
-        .hasMessageContaining("No secret configured with identifier: cref");
+    try (MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class)) {
+      aStatic.when(() -> NGRestUtils.getResponse(any(), any())).thenReturn(null);
+      assertThatThrownBy(()
+                             -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
+                                 ambiance, stepParameters, taskParamsBuilder))
+          .hasMessageContaining("No secret configured with identifier: cref");
 
-    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
-    Optional<SecretResponseWrapper> secretResponseWrapperOptional =
-        Optional.of(SecretResponseWrapper.builder().secret(SecretDTOV2.builder().spec(sshKeySpecDTO).build()).build());
-    when(NGRestUtils.getResponse(any(), any())).thenReturn(secretResponseWrapperOptional.get());
+      SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+      Optional<SecretResponseWrapper> secretResponseWrapperOptional = Optional.of(
+          SecretResponseWrapper.builder().secret(SecretDTOV2.builder().spec(sshKeySpecDTO).build()).build());
+      when(NGRestUtils.getResponse(any(), any())).thenReturn(secretResponseWrapperOptional.get());
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(EncryptedDataDetail.builder().build());
-    doReturn(encryptedDataDetails)
-        .when(sshKeySpecDTOHelper)
-        .getSSHKeyEncryptionDetails(sshKeySpecDTO, AmbianceUtils.getNgAccess(ambiance));
-    shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(ambiance, stepParameters, taskParamsBuilder);
-    assertThat(taskParamsBuilder.build().getHost()).isEqualTo("host");
-    assertThat(taskParamsBuilder.build().getEncryptionDetails()).hasSize(1);
-    assertThat(taskParamsBuilder.build().getSshKeySpecDTO()).isEqualTo(sshKeySpecDTO);
+      List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(EncryptedDataDetail.builder().build());
+      doReturn(encryptedDataDetails)
+          .when(sshKeySpecDTOHelper)
+          .getSSHKeyEncryptionDetails(sshKeySpecDTO, AmbianceUtils.getNgAccess(ambiance));
+      shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(ambiance, stepParameters, taskParamsBuilder);
+      assertThat(taskParamsBuilder.build().getHost()).isEqualTo("host");
+      assertThat(taskParamsBuilder.build().getEncryptionDetails()).hasSize(1);
+      assertThat(taskParamsBuilder.build().getSshKeySpecDTO()).isEqualTo(sshKeySpecDTO);
+    }
   }
 
   @Test

@@ -7,6 +7,7 @@
 
 package io.harness.cvng.utils;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ResourceParams;
 import io.harness.exception.InvalidArgumentsException;
 
@@ -68,5 +69,17 @@ public class ScopedInformation {
     return scopedIdentifiers.stream()
         .map(ScopedInformation::getResourceParamsFromScopedIdentifier)
         .collect(Collectors.toList());
+  }
+
+  public static String getLowerCaseScope(ProjectParams projectParams) {
+    if (projectParams.getProjectIdentifier() != null) {
+      return "project";
+    } else if (projectParams.getOrgIdentifier() != null) {
+      return "org";
+    } else if (projectParams.getAccountIdentifier() != null) {
+      return "account";
+    } else {
+      throw new InvalidArgumentsException("Invalid Scoped Identifier");
+    }
   }
 }

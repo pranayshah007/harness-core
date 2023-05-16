@@ -18,11 +18,13 @@ import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.RecommendationState;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraUtils;
+import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.jira.JiraIssueNG;
 import io.harness.timescaledb.tables.pojos.CeRecommendations;
 
@@ -46,6 +48,8 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
   @Autowired private K8sRecommendationDAO k8sRecommendationDAO;
   @Autowired private ECSRecommendationDAO ecsRecommendationDAO;
   @Autowired private EC2RecommendationDAO ec2RecommendationDAO;
+  @Autowired private RuleExecutionDAO ruleExecutionDAO;
+  @Autowired private AzureRecommendationDAO azureRecommendationDAO;
   private static final long BATCH_SIZE = 100;
   private static final HashSet<String> APPLIED_CATEGORIES = new HashSet<>(Arrays.asList("done", "complete"));
 
@@ -59,39 +63,60 @@ public class RecommendationJiraStatusTasklet implements Tasklet {
       List<CeRecommendations> ceRecommendationsList = k8sRecommendationDAO.fetchRecommendationsOverview(
           accountId, getValidRecommendationFilter(), offset, BATCH_SIZE);
       for (CeRecommendations recommendation : ceRecommendationsList) {
-        JiraIssueNG jiraIssueNG =
-            jiraHelper.getIssue(accountId, recommendation.getJiraconnectorref(), recommendation.getJiraissuekey());
-        CCMJiraDetails jiraDetails =
-            CCMJiraDetails.builder().connectorRef(recommendation.getJiraconnectorref()).jiraIssue(jiraIssueNG).build();
-        String status = CCMJiraUtils.getStatus(jiraIssueNG);
-        String statusCategory = CCMJiraUtils.getStatusCategory(jiraIssueNG);
-        if (!Objects.equals(recommendation.getJirastatus(), status)) {
-          // updates in timescale
-          k8sRecommendationDAO.updateJiraInTimescale(
-              recommendation.getId(), recommendation.getJiraconnectorref(), recommendation.getJiraissuekey(), status);
-          if (APPLIED_CATEGORIES.contains(statusCategory.toLowerCase())) {
-            k8sRecommendationDAO.updateRecommendationState(recommendation.getId(), RecommendationState.APPLIED);
-            log.info("Recommendation {} APPLIED", recommendation.getId());
-          }
+        JiraIssueNG jiraIssueNG;
+        CCMJiraDetails jiraDetails;
+        try {
+          jiraIssueNG =
+              jiraHelper.getIssue(accountId, recommendation.getJiraconnectorref(), recommendation.getJiraissuekey());
+          jiraDetails = CCMJiraDetails.builder()
+                            .connectorRef(recommendation.getJiraconnectorref())
+                            .jiraIssue(jiraIssueNG)
+                            .build();
+        } catch (Exception e) {
+          log.warn("Couldn't fetch recommendation jira for recommendationId: {}, error: {}", recommendation.getId(), e);
+          continue;
+        }
+        try {
+          String status = CCMJiraUtils.getStatus(jiraIssueNG);
+          String statusCategory = CCMJiraUtils.getStatusCategory(jiraIssueNG);
+          if (!Objects.equals(recommendation.getJirastatus(), status)) {
+            // updates in timescale
+            k8sRecommendationDAO.updateJiraInTimescale(
+                recommendation.getId(), recommendation.getJiraconnectorref(), recommendation.getJiraissuekey(), status);
+            if (APPLIED_CATEGORIES.contains(statusCategory.toLowerCase())) {
+              k8sRecommendationDAO.updateRecommendationState(recommendation.getId(), RecommendationState.APPLIED);
+              log.info("Recommendation {} APPLIED", recommendation.getId());
+            }
 
-          // updates in mongo
-          switch (ResourceType.valueOf(recommendation.getResourcetype())) {
-            case NODE_POOL:
-              k8sRecommendationDAO.updateJiraInNodeRecommendation(accountId, recommendation.getId(), jiraDetails);
-              break;
-            case WORKLOAD:
-              k8sRecommendationDAO.updateJiraInWorkloadRecommendation(accountId, recommendation.getId(), jiraDetails);
-              break;
-            case ECS_SERVICE:
-              ecsRecommendationDAO.updateJiraInECSRecommendation(accountId, recommendation.getId(), jiraDetails);
-              break;
-            case EC2_INSTANCE:
-              ec2RecommendationDAO.updateJiraInEC2Recommendation(accountId, recommendation.getId(), jiraDetails);
-              break;
-            default:
-              log.warn("Unknown resource type {} for recommendation id {}", recommendation.getResourcetype(),
-                  recommendation.getId());
+            // updates in mongo
+            switch (ResourceType.valueOf(recommendation.getResourcetype())) {
+              case NODE_POOL:
+                k8sRecommendationDAO.updateJiraInNodeRecommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case WORKLOAD:
+                k8sRecommendationDAO.updateJiraInWorkloadRecommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case ECS_SERVICE:
+                ecsRecommendationDAO.updateJiraInECSRecommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case EC2_INSTANCE:
+                ec2RecommendationDAO.updateJiraInEC2Recommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case GOVERNANCE:
+                ruleExecutionDAO.updateJiraInGovernanceRecommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              case AZURE_INSTANCE:
+                azureRecommendationDAO.updateJiraInAzureRecommendation(accountId, recommendation.getId(), jiraDetails);
+                break;
+              default:
+                log.warn("Unknown resource type {} for recommendation id {}", recommendation.getResourcetype(),
+                    recommendation.getId());
+            }
           }
+        } catch (Exception e) {
+          log.warn("Error getting status of jira: {}, recommendationId: {}, error: {}",
+              recommendation.getJiraissuekey(), recommendation.getId(), e);
+          log.info("Jira issue fetched: {}", jiraIssueNG);
         }
       }
     }

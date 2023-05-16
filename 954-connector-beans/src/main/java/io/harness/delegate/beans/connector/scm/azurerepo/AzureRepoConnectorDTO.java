@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.azurerepo;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -164,12 +165,14 @@ public class AzureRepoConnectorDTO
 
   @Override
   public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
-    final String FILE_URL_FORMAT = "%s?path=%s&version=GB%s";
-    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    final String fileVersionType = isEmpty(branchName) ? "GC" : "GB";
+    final String FILE_URL_FORMAT = "%s?path=%s&version=%s%s";
+    String pathIdentifier = isEmpty(branchName) ? commitId : branchName;
+    ScmConnectorHelper.validateGetFileUrlParams(pathIdentifier, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     String httpRepoUrl = GitClientHelper.getCompleteHTTPRepoUrlForAzureRepoSaas(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format(FILE_URL_FORMAT, httpRepoUrl, filePath, branchName);
+    return String.format(FILE_URL_FORMAT, httpRepoUrl, filePath, fileVersionType, pathIdentifier);
   }
 
   @Override

@@ -26,6 +26,7 @@ import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.user.UserAccountLevelData;
 
 import software.wings.beans.loginSettings.UserLockoutInfo;
 import software.wings.beans.security.UserGroup;
@@ -47,8 +48,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
@@ -193,6 +196,8 @@ public class User extends Base implements Principal {
   @JsonIgnore private Set<String> reportedMarketoCampaigns = new HashSet<>();
   private Set<String> reportedSegmentTracks = new HashSet<>();
   private UtmInfo utmInfo;
+
+  @Getter @Setter private Map<String, UserAccountLevelData> userAccountLevelDataMap = new HashMap<>();
 
   /**
    * Return partial user object without sensitive information.

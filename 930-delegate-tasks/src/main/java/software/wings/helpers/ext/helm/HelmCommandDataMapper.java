@@ -9,7 +9,7 @@ package software.wings.helpers.ext.helm;
 
 import io.harness.helm.HelmCommandData;
 
-import software.wings.helpers.ext.helm.request.HelmCommandRequest;
+import software.wings.delegatetasks.validation.capabilities.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
 

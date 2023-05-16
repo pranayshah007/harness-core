@@ -23,7 +23,7 @@ public class VmPluginStep implements VmStepInfo {
   private String image;
   private ConnectorDetails imageConnector;
   private ConnectorDetails connector;
-  private Map<EnvVariableEnum, String> connectorSecretEnvMap;
+  @Deprecated private Map<EnvVariableEnum, String> connectorSecretEnvMap;
   private String pullPolicy;
   private boolean privileged;
   private String runAsUser;

@@ -15,6 +15,8 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.api.gax.core.CredentialsProvider;
 import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.cloud.functions.v1.CloudFunctionsServiceClient;
+import com.google.cloud.functions.v1.CloudFunctionsServiceSettings;
 import com.google.cloud.functions.v2.FunctionServiceClient;
 import com.google.cloud.functions.v2.FunctionServiceSettings;
 import com.google.cloud.run.v2.RevisionsClient;
@@ -38,6 +40,14 @@ public class GoogleCloudClientHelper {
     FunctionServiceSettings.Builder functionServiceSettingsBuilder =
         FunctionServiceSettings.newBuilder().setCredentialsProvider(credentialsProvider);
     return FunctionServiceClient.create(functionServiceSettingsBuilder.build());
+  }
+
+  public CloudFunctionsServiceClient getFunctionGenOneClient(GcpInternalConfig gcpInternalConfig) throws IOException {
+    CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(gcpCredentialsHelper.getGoogleCredentials(
+        gcpInternalConfig.getServiceAccountKeyFileContent(), gcpInternalConfig.isUseDelegate));
+    CloudFunctionsServiceSettings.Builder cloudFunctionsServiceSettingsBuilder =
+        CloudFunctionsServiceSettings.newBuilder().setCredentialsProvider(credentialsProvider);
+    return CloudFunctionsServiceClient.create(cloudFunctionsServiceSettingsBuilder.build());
   }
 
   public RevisionsClient getRevisionsClient(GcpInternalConfig gcpInternalConfig) throws IOException {

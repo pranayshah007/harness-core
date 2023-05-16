@@ -25,11 +25,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Respon
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
@@ -43,7 +43,11 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
+  AbstractServiceLevelObjective getEntity(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
   boolean delete(ProjectParams projectParams, String identifier);
+
+  boolean delete(ProjectParams projectParams, String identifier, boolean validateReferencedCompositeSLOForSimpleSLO);
 
   void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoreServiceIdentifier, boolean isEnabled);
@@ -58,14 +62,13 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
 
-  List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
-
   List<AbstractServiceLevelObjective> getAllSLOs(
       ProjectParams projectParams, ServiceLevelObjectiveType serviceLevelObjectiveType);
 
   List<AbstractServiceLevelObjective> get(ProjectParams projectParams, List<String> identifiers);
 
-  List<AbstractServiceLevelObjective> getWithChildResource(ProjectParams projectParams, List<String> identifiers);
+  List<AbstractServiceLevelObjective> getSimpleSLOWithChildResource(
+      ProjectParams projectParams, List<String> identifiers);
 
   List<AbstractServiceLevelObjective> getByMonitoredServiceIdentifier(
       ProjectParams projectParams, String monitoredServiceIdentifier);
@@ -94,8 +97,19 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   void handleNotification(AbstractServiceLevelObjective serviceLevelObjective);
 
-  Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
-      ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
+  SLIEvaluationType getEvaluationType(AbstractServiceLevelObjective serviceLevelObjective);
+
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, Set<ServiceLevelObjectivesDetail> serviceLevelObjectiveDetailDTOList);
+
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, List<CompositeServiceLevelObjective> compositeServiceLevelObjectives);
+
+  String getScopedIdentifier(AbstractServiceLevelObjective abstractServiceLevelObjective);
+
+  String getScopedIdentifier(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
+  String getScopedIdentifierForSLI(SimpleServiceLevelObjective serviceLevelObjective);
 
   List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);

@@ -13,11 +13,12 @@ import static io.harness.rule.OwnerRule.VAIBHAV_KUMAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -35,26 +36,35 @@ import org.cloudfoundry.operations.DefaultCloudFoundryOperations;
 import org.cloudfoundry.reactor.ConnectionContext;
 import org.cloudfoundry.reactor.DefaultConnectionContext;
 import org.cloudfoundry.reactor.ProxyConfiguration;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.CDP)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Http.class)
-@PowerMockIgnore({"javax.net.ssl.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class CloudFoundryOperationsProviderTest extends CategoryTest {
   @Mock private ConnectionContextProvider connectionContextProvider;
   @Mock private CloudFoundryClientProvider cloudFoundryClientProvider;
+  private MockedStatic<Http> httpMockedStatic;
 
   @InjectMocks private CloudFoundryOperationsProvider cloudFoundryOperationsProvider;
+
+  @Before
+  public void setup() {
+    httpMockedStatic = mockStatic(Http.class);
+  }
+
+  @After
+  public void cleanup() {
+    httpMockedStatic.close();
+  }
 
   @Test
   @Owner(developers = {ANSHUL, IVAN})
@@ -122,7 +132,6 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
   @Owner(developers = VAIBHAV_KUMAR)
   @Category(UnitTests.class)
   public void testPcfProxyConfig() throws PivotalClientApiException {
-    PowerMockito.mockStatic(Http.class);
     when(connectionContextProvider.getConnectionContext(any())).thenCallRealMethod();
     when(cloudFoundryClientProvider.getCloudFoundryClient(any(), any())).thenCallRealMethod();
 
@@ -142,10 +151,10 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
 
     // Case 1: Authenticated Proxy
     // Expected behaviour: hostname, port, username, password must be present inside ProxyConfiguration object
-    when(Http.getProxyHostName()).thenAnswer((Answer<String>) invocation -> hostname);
-    when(Http.getProxyPort()).thenAnswer((Answer<String>) invocation -> port);
-    when(Http.getProxyUserName()).thenAnswer((Answer<String>) invocation -> username);
-    when(Http.getProxyPassword()).thenAnswer((Answer<String>) invocation -> password);
+    httpMockedStatic.when(Http::getProxyHostName).thenAnswer((Answer<String>) invocation -> hostname);
+    httpMockedStatic.when(Http::getProxyPort).thenAnswer((Answer<String>) invocation -> port);
+    httpMockedStatic.when(Http::getProxyUserName).thenAnswer((Answer<String>) invocation -> username);
+    httpMockedStatic.when(Http::getProxyPassword).thenAnswer((Answer<String>) invocation -> password);
 
     CloudFoundryOperationsWrapper cloudFoundryOperationsWrapper =
         cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
@@ -161,10 +170,10 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
     // Case 1: Unauthenticated Proxy
     // Expected behaviour: hostname, port must be present inside ProxyConfiguration object
     // username and password must be empty
-    when(Http.getProxyHostName()).thenAnswer((Answer<String>) invocation -> hostname);
-    when(Http.getProxyPort()).thenAnswer((Answer<String>) invocation -> port);
-    when(Http.getProxyUserName()).thenAnswer((Answer<Void>) invocation -> null);
-    when(Http.getProxyPassword()).thenAnswer((Answer<Void>) invocation -> null);
+    httpMockedStatic.when(Http::getProxyHostName).thenAnswer((Answer<String>) invocation -> hostname);
+    httpMockedStatic.when(Http::getProxyPort).thenAnswer((Answer<String>) invocation -> port);
+    httpMockedStatic.when(Http::getProxyUserName).thenAnswer((Answer<Void>) invocation -> null);
+    httpMockedStatic.when(Http::getProxyPassword).thenAnswer((Answer<Void>) invocation -> null);
     cfRequestConfig.setEndpointUrl(endpointUrl2);
 
     cloudFoundryOperationsWrapper = cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
@@ -178,7 +187,7 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
 
     // Case 3: No Proxy
     // Expected behaviour: The ProxyConfiguration object must be empty
-    when(Http.getProxyHostName()).thenAnswer((Answer<Void>) invocation -> null);
+    httpMockedStatic.when(Http::getProxyHostName).thenAnswer((Answer<Void>) invocation -> null);
     cfRequestConfig.setEndpointUrl(endpointUrl3);
     cloudFoundryOperationsWrapper = cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
 
@@ -187,11 +196,11 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
 
     // Case 4: Explicit No Proxy
     // Expected behaviour: The ProxyConfiguration object must be empty
-    when(Http.shouldUseNonProxy(endpointUrl4)).thenAnswer((Answer<Boolean>) invocation -> true);
-    when(Http.getProxyHostName()).thenAnswer((Answer<String>) invocation -> hostname);
-    when(Http.getProxyPort()).thenAnswer((Answer<String>) invocation -> port);
-    when(Http.getProxyUserName()).thenAnswer((Answer<String>) invocation -> username);
-    when(Http.getProxyPassword()).thenAnswer((Answer<String>) invocation -> password);
+    httpMockedStatic.when(() -> Http.shouldUseNonProxy(endpointUrl4)).thenAnswer((Answer<Boolean>) invocation -> true);
+    httpMockedStatic.when(Http::getProxyHostName).thenAnswer((Answer<String>) invocation -> hostname);
+    httpMockedStatic.when(Http::getProxyPort).thenAnswer((Answer<String>) invocation -> port);
+    httpMockedStatic.when(Http::getProxyUserName).thenAnswer((Answer<String>) invocation -> username);
+    httpMockedStatic.when(Http::getProxyPassword).thenAnswer((Answer<String>) invocation -> password);
     cfRequestConfig.setEndpointUrl(endpointUrl4);
 
     cloudFoundryOperationsWrapper = cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);

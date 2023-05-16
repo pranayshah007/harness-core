@@ -11,10 +11,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.IDP)
 public interface AppConfigRepositoryCustom {
   AppConfigEntity updateConfig(AppConfigEntity appConfigEntity, ConfigType configType);
 
   AppConfigEntity updateConfigEnablement(
       String accountIdentifier, String configId, Boolean isEnabled, ConfigType configType);
+
+  List<AppConfigEntity> deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(long baseTimeStamp);
 }

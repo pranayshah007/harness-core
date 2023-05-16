@@ -74,6 +74,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -90,7 +91,13 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorUtility {
-  public static final ParameterField<String> RUNTIME_INPUT = ParameterField.createValueField("<+input>");
+  public static final ParameterField<String> RUNTIME_INPUT =
+      ParameterField.createValueField(NGMigrationConstants.RUNTIME_INPUT);
+  public static final ParameterField<List<TaskSelectorYaml>> RUNTIME_DELEGATE_INPUT =
+      ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
+  public static final ParameterField<Boolean> RUNTIME_BOOLEAN_INPUT =
+      ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
+
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
 
@@ -221,24 +228,36 @@ public class MigratorUtility {
         .build();
   }
 
-  public static String getIdentifierWithScopeDefaults(
-      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+  public static String getIdentifierWithScopeDefaults(Map<CgEntityId, NGYamlFile> migratedEntities, String entityId,
+      NGMigrationEntityType entityType, String defaultValue) {
     NGYamlFile detail = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
     if (detail == null) {
-      return PLEASE_FIX_ME;
+      return defaultValue;
     }
     return getIdentifierWithScope(detail.getNgEntityDetail());
   }
 
+  public static String getIdentifierWithScopeDefaults(
+      Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
+    return getIdentifierWithScopeDefaults(migratedEntities, entityId, entityType, PLEASE_FIX_ME);
+  }
+
   public static String getIdentifierWithScope(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
-    NgEntityDetail detail =
-        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    NGYamlFile yamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (yamlFile == null) {
+      return NGMigrationConstants.RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = yamlFile.getNgEntityDetail();
     return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
     String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    return getScopedIdentifier(scope, identifier);
+  }
+
+  public static String getScopedIdentifier(Scope scope, String identifier) {
     switch (scope) {
       case ACCOUNT:
         return "account." + identifier;
@@ -461,7 +480,15 @@ public class MigratorUtility {
   }
 
   public static boolean containsExpressions(String str) {
-    return ngPattern.matcher(str).find() || cgPattern.matcher(str).find();
+    return containsCgExpressions(str) || containsNgExpressions(str);
+  }
+
+  public static boolean containsCgExpressions(String str) {
+    return cgPattern.matcher(str).find();
+  }
+
+  public static boolean containsNgExpressions(String str) {
+    return ngPattern.matcher(str).find();
   }
 
   public static NgEntityDetail getGitConnector(
@@ -486,9 +513,13 @@ public class MigratorUtility {
   }
 
   public static List<GraphNode> getSteps(Workflow workflow) {
+    List<GraphNode> stepYamls = new ArrayList<>();
+    if (workflow == null || workflow.getOrchestrationWorkflow() == null
+        || !(workflow.getOrchestrationWorkflow() instanceof CanaryOrchestrationWorkflow)) {
+      return stepYamls;
+    }
     CanaryOrchestrationWorkflow orchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
-    List<GraphNode> stepYamls = new ArrayList<>();
     PhaseStep postDeploymentPhaseStep = orchestrationWorkflow.getPostDeploymentSteps();
     if (postDeploymentPhaseStep != null && EmptyPredicate.isNotEmpty(postDeploymentPhaseStep.getSteps())) {
       stepYamls.addAll(postDeploymentPhaseStep.getSteps());
@@ -568,7 +599,7 @@ public class MigratorUtility {
         .build();
   }
 
-  public static MigrationInputDTO getMigrationInput(ImportDTO importDTO) {
+  public static MigrationInputDTO getMigrationInput(String requestAuthToken, ImportDTO importDTO) {
     Map<NGMigrationEntityType, InputDefaults> defaults = new HashMap<>();
     Map<CgEntityId, BaseProvidedInput> overrides = new HashMap<>();
     Map<String, Object> expressions = new HashMap<>();
@@ -591,6 +622,10 @@ public class MigratorUtility {
     }
 
     return MigrationInputDTO.builder()
+        .destinationAccountIdentifier(StringUtils.defaultIfBlank(
+            importDTO.getDestinationDetails().getAccountIdentifier(), importDTO.getAccountIdentifier()))
+        .destinationAuthToken(
+            StringUtils.defaultIfBlank(importDTO.getDestinationDetails().getAuthToken(), requestAuthToken))
         .accountIdentifier(importDTO.getAccountIdentifier())
         .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())
         .projectIdentifier(importDTO.getDestinationDetails().getProjectIdentifier())
@@ -605,10 +640,15 @@ public class MigratorUtility {
 
   public static Map<String, Object> getExpressions(
       WorkflowPhase phase, List<StepExpressionFunctor> functors, CaseFormat caseFormat) {
+    String stageIdentifier = MigratorUtility.generateIdentifier(phase.getName(), caseFormat);
+    return getExpressions(stageIdentifier, functors);
+  }
+
+  public static Map<String, Object> getExpressions(String phaseIdentifier, List<StepExpressionFunctor> functors) {
     Map<String, Object> expressions = new HashMap<>();
 
     for (StepExpressionFunctor functor : functors) {
-      functor.setCurrentStageIdentifier(MigratorUtility.generateIdentifier(phase.getName(), caseFormat));
+      functor.setCurrentStageIdentifier(phaseIdentifier);
       expressions.put(functor.getCgExpression(), functor);
     }
     return expressions;
@@ -656,5 +696,34 @@ public class MigratorUtility {
     } else {
       return val;
     }
+  }
+
+  public static String toTimeoutString(long timestamp) {
+    long tSec = timestamp / 1000;
+    String timeString = "10m";
+
+    long days = TimeUnit.SECONDS.toDays(tSec);
+    if (days > 0) {
+      timeString = days + "d";
+      tSec -= TimeUnit.DAYS.toSeconds(days);
+    }
+
+    long hours = TimeUnit.SECONDS.toHours(tSec);
+    if (hours > 0) {
+      timeString = hours + "h";
+      tSec -= TimeUnit.HOURS.toSeconds(hours);
+    }
+
+    long minutes = TimeUnit.SECONDS.toMinutes(tSec);
+    if (minutes > 0) {
+      timeString = minutes + "m";
+      tSec -= TimeUnit.MINUTES.toSeconds(minutes);
+    }
+
+    long seconds = tSec;
+    if (seconds > 0) {
+      timeString = seconds + "s";
+    }
+    return timeString;
   }
 }

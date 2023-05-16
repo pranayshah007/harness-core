@@ -34,6 +34,9 @@ batchQueryConfig:
   instanceDataBatchSize: 5000
   syncJobDisabled: false
 
+bulkOperationBatchQueryConfig:
+  queryBatchSize: 400
+
 podInfo:
   name: batch-processing-0
   replica: 1
@@ -117,6 +120,7 @@ scheduler-jobs-config:
   budgetCostUpdateJobCron: "0 0 14 * * ?"
   connectorHealthUpdateJobCron: "0 0 14 * * ?"
   awsAccountTagsCollectionJobCron : "0 0 9 * * ?"
+  governanceRecommendationJobCron : "0 0 0 * * *"
 
 cePythonService:
   pythonServiceUrl: "http://0.0.0.0:8081"
@@ -187,3 +191,30 @@ clickHouseConfig:
 deployMode: KUBERNETES
 
 isClickHouseEnabled: false
+
+recommendationConfig:
+  regionsLimit: 5
+  accountLimit: 15
+  governanceRecommendationEnabled: false
+
+governanceConfig:
+  useDkron: true
+  callbackApiEndpoint: http://localhost:7340/ccm/api/governance/enqueue
+  dkronJobEnabled: true
+  awsFaktoryJobType: aws-governance # This should match with worker
+  awsFaktoryQueueName: aws-governance # This should match with worker
+  OOTBAccount: wFHXHD0RRQWoO8tIZT5YVw
+  tagsKey: dc
+  tagsValue: dc1:1
+  policyPerAccountLimit: 300
+  accountLimit: 100
+  regionLimit: 30
+  packsInEnforcement: 30
+  policiesInEnforcement: 30
+  policiesInPack: 30
+  sleepTime: 60
+
+azureVmPricingConfig:
+  baseUrl: https://prices.azure.com/api/retail/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15

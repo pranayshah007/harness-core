@@ -6,6 +6,7 @@
  */
 package io.harness.execution.expansion;
 
+import io.harness.OrchestrationModuleConfig;
 import io.harness.beans.FeatureName;
 import io.harness.execution.PlanExecutionExpansion;
 import io.harness.plancreator.strategy.StrategyUtils;
@@ -41,6 +42,7 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
   @Inject PlanExecutionExpansionRepository planExecutionExpansionRepository;
 
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject OrchestrationModuleConfig moduleConfig;
 
   @Override
   public void addStepInputs(Ambiance ambiance, PmsStepParameters stepInputs) {
@@ -53,7 +55,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     update.set(stepInputsKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs.clone())));
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (currentLevel != null && currentLevel.hasStrategyMetadata()) {
-      Map<String, Object> strategyMap = StrategyUtils.fetchStrategyObjectMap(currentLevel);
+      Map<String, Object> strategyMap =
+          StrategyUtils.fetchStrategyObjectMap(currentLevel, ambiance.getMetadata().getUseMatrixFieldName());
       for (Map.Entry<String, Object> entry : strategyMap.entrySet()) {
         String strategyKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), entry.getKey());
         if (ClassUtils.isPrimitiveOrWrapper(entry.getValue().getClass())) {
@@ -63,7 +66,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
         }
       }
     }
-    planExecutionExpansionRepository.update(ambiance.getPlanExecutionId(), update);
+    planExecutionExpansionRepository.update(
+        ambiance.getPlanExecutionId(), update, moduleConfig.getExpandedJsonLockConfig().getLockTimeOutInMinutes());
   }
 
   @Override
@@ -75,7 +79,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     update.set(getExpansionPathUsingLevels(ambiance) + String.format(".%s.", PlanExpansionConstants.OUTCOME) + name,
         Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(outcome.clone())));
 
-    planExecutionExpansionRepository.update(ambiance.getPlanExecutionId(), update);
+    planExecutionExpansionRepository.update(
+        ambiance.getPlanExecutionId(), update, moduleConfig.getExpandedJsonLockConfig().getLockTimeOutInMinutes());
   }
 
   @Override
@@ -108,7 +113,8 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     }
     Update update = new Update();
     update.set(getExpansionPathUsingLevels(ambiance) + String.format(".%s", PlanExpansionConstants.STATUS), status);
-    planExecutionExpansionRepository.update(ambiance.getPlanExecutionId(), update);
+    planExecutionExpansionRepository.update(
+        ambiance.getPlanExecutionId(), update, moduleConfig.getExpandedJsonLockConfig().getLockTimeOutInMinutes());
   }
 
   @VisibleForTesting

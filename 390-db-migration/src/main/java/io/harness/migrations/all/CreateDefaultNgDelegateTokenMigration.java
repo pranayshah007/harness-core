@@ -52,14 +52,14 @@ public class CreateDefaultNgDelegateTokenMigration implements Migration {
       log.info("Starting migration for creating default ng delegate tokens for account {}", accountId);
       delegateNgTokenService.upsertDefaultToken(accountId, null, true);
       List<DelegateEntityOwner> ownerList = new ArrayList<>();
-      NGRestUtils.getResponse(orgclient.listAllOrganizations(accountId, Collections.emptyList()))
+      NGRestUtils.getResponse(orgclient.listAllOrganizations(accountId, Collections.emptyList(), null))
           .map(organizationResponse
               -> ownerList.add(
                   DelegateEntityOwnerHelper.buildOwner(organizationResponse.getOrganization().getIdentifier(), null)));
       for (DelegateEntityOwner owner : ownerList) {
         upsertDefaultDelegateToken(accountId, owner);
       }
-      NGRestUtils.getResponse(projectClient.getProjectList(accountId))
+      NGRestUtils.getResponse(projectClient.getProjectList(accountId, null))
           .forEach(projectDTO
               -> upsertDefaultDelegateToken(accountId,
                   DelegateEntityOwnerHelper.buildOwner(projectDTO.getOrgIdentifier(), projectDTO.getIdentifier())));

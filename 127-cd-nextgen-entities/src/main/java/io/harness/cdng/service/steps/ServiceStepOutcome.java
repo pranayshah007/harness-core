@@ -18,7 +18,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
-import io.harness.utils.FullyQualifiedIdentifierHelper;
+import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Collections;
@@ -77,8 +77,8 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
   public static ServiceStepOutcome fromServiceStepV2(
       ServiceEntity service, NGServiceV2InfoConfig ngServiceV2InfoConfig) {
     return ServiceStepOutcome.builder()
-        .identifier(FullyQualifiedIdentifierHelper.getRefFromIdentifierOrRef(service.getAccountId(),
-            service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier()))
+        .identifier(IdentifierRefHelper.getRefFromIdentifierOrRef(service.getAccountId(), service.getOrgIdentifier(),
+            service.getProjectIdentifier(), service.getIdentifier()))
         .name(ngServiceV2InfoConfig.getName())
         .description(ngServiceV2InfoConfig.getDescription())
         .type(ngServiceV2InfoConfig.getServiceDefinition().getType().getYamlName())

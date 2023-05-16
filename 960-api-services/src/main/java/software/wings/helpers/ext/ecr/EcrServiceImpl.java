@@ -14,8 +14,11 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.beans.BuildDetailsInternal.BuildDetailsInternalMetadataKeys;
+import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.gar.service.GARUtils;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.context.MdcGlobalContextData;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
@@ -31,24 +34,64 @@ import com.amazonaws.services.ecr.model.DescribeImagesRequest;
 import com.amazonaws.services.ecr.model.DescribeImagesResult;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesRequest;
 import com.amazonaws.services.ecr.model.DescribeRepositoriesResult;
+import com.amazonaws.services.ecr.model.ImageDetail;
+import com.amazonaws.services.ecr.model.ImageIdentifier;
+import com.amazonaws.services.ecr.model.ListImagesRequest;
+import com.amazonaws.services.ecr.model.ListImagesResult;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Created by brett on 7/15/17
  */
 @OwnedBy(CDC)
 @Singleton
+@Slf4j
 public class EcrServiceImpl implements EcrService {
   @Inject private AwsApiHelperService awsApiHelperService;
 
+  @VisibleForTesting
+  List<BuildDetailsInternal> getBuildsFallback(
+      AwsInternalConfig awsConfig, String imageUrl, String region, String imageName, int maxNumberOfBuilds) {
+    List<BuildDetailsInternal> buildDetailsInternals = new ArrayList<>();
+    try {
+      ListImagesResult listImageResult;
+      ListImagesRequest listImagesRequest = new ListImagesRequest().withRepositoryName(imageName);
+      do {
+        listImageResult = awsApiHelperService.listEcrImages(awsConfig, region, listImagesRequest);
+        listImageResult.getImageIds()
+            .stream()
+            .filter(imageIdentifier -> imageIdentifier != null && isNotEmpty(imageIdentifier.getImageTag()))
+            .forEach(imageIdentifier -> {
+              Map<String, String> metadata = new HashMap();
+              metadata.put(BuildDetailsInternalMetadataKeys.image, imageUrl + ":" + imageIdentifier.getImageTag());
+              metadata.put(BuildDetailsInternalMetadataKeys.tag, imageIdentifier.getImageTag());
+              buildDetailsInternals.add(BuildDetailsInternal.builder()
+                                            .number(imageIdentifier.getImageTag())
+                                            .metadata(metadata)
+                                            .uiDisplayName("Tag# " + imageIdentifier.getImageTag())
+                                            .build());
+            });
+        listImagesRequest.setNextToken(listImageResult.getNextToken());
+      } while (listImagesRequest.getNextToken() != null);
+    } catch (Exception e) {
+      throw new GeneralException(ExceptionUtils.getMessage(e), USER);
+    }
+    // Sorting at build tag for docker artifacts.
+    return buildDetailsInternals.stream()
+        .sorted(new BuildDetailsInternalComparatorAscending())
+        .collect(Collectors.toList());
+  }
   @Override
   public List<BuildDetailsInternal> getBuilds(
       AwsInternalConfig awsConfig, String imageUrl, String region, String imageName, int maxNumberOfBuilds) {
@@ -81,7 +124,7 @@ public class EcrServiceImpl implements EcrService {
         describeImagesRequest.setNextToken(describeImagesResult.getNextToken());
       } while (describeImagesRequest.getNextToken() != null);
     } catch (Exception e) {
-      throw new GeneralException(ExceptionUtils.getMessage(e), USER);
+      return getBuildsFallback(awsConfig, imageUrl, region, imageName, maxNumberOfBuilds);
     }
     // Sorting at build tag for docker artifacts.
     return buildDetailsInternals;
@@ -122,6 +165,16 @@ public class EcrServiceImpl implements EcrService {
     return Collections.singletonList(awsApiHelperService.fetchLabels(awsConfig, imageName, region, tags));
   }
 
+  private String getSHA(DescribeImagesResult describeImagesResult) {
+    if (describeImagesResult != null && EmptyPredicate.isNotEmpty(describeImagesResult.getImageDetails())) {
+      ImageDetail imageDetail = describeImagesResult.getImageDetails().get(0);
+      if (imageDetail != null) {
+        return imageDetail.getImageDigest();
+      }
+    }
+    return null;
+  }
+
   @Override
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tagRegex) {
@@ -146,7 +199,7 @@ public class EcrServiceImpl implements EcrService {
           "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
     }
 
-    return buildsResponse.get(0);
+    return verifyBuildNumber(awsInternalConfig, imageUrl, region, imageName, buildsResponse.get(0).getNumber());
   }
 
   @Override
@@ -172,10 +225,17 @@ public class EcrServiceImpl implements EcrService {
   @Override
   public BuildDetailsInternal verifyBuildNumber(
       AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tag) {
-    List<BuildDetailsInternal> builds =
-        getBuilds(awsInternalConfig, imageUrl, region, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
-    builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
-    if (builds.size() != 1) {
+    boolean isSHA = GARUtils.isSHA(tag);
+    ImageIdentifier imageIdentifier;
+    if (isSHA) {
+      imageIdentifier = new ImageIdentifier().withImageDigest(tag);
+    } else {
+      imageIdentifier = new ImageIdentifier().withImageTag(tag);
+    }
+    DescribeImagesResult describeImagesResult = awsApiHelperService.describeEcrImages(awsInternalConfig, region,
+        new DescribeImagesRequest().withRepositoryName(imageName).withImageIds(imageIdentifier));
+    String sha = getSHA(describeImagesResult);
+    if (EmptyPredicate.isEmpty(sha)) {
       Map<String, String> imageDataMap = new HashMap<>();
       imageDataMap.put(ExceptionMetadataKeys.IMAGE_NAME.name(), imageName);
       imageDataMap.put(ExceptionMetadataKeys.IMAGE_TAG.name(), tag);
@@ -189,6 +249,22 @@ public class EcrServiceImpl implements EcrService {
       exception.setServiceName("AmazonECR");
       throw exception;
     }
-    return builds.get(0);
+    Map<String, String> label = null;
+    List<Map<String, String>> labels = getLabels(awsInternalConfig, imageName, region, Collections.singletonList(tag));
+    if (EmptyPredicate.isNotEmpty(labels)) {
+      label = labels.get(0);
+    }
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().sha(sha).shaV2(sha).labels(label).build();
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put(BuildDetailsInternalMetadataKeys.image, imageUrl + (isSHA ? "@" : ":") + tag);
+    metadata.put(BuildDetailsInternalMetadataKeys.tag, tag);
+    Date date = describeImagesResult.getImageDetails().get(0).getImagePushedAt();
+    return BuildDetailsInternal.builder()
+        .number(tag)
+        .metadata(metadata)
+        .uiDisplayName("Tag# " + tag)
+        .artifactMetaInfo(artifactMetaInfo)
+        .imagePushedAt(date)
+        .build();
   }
 }

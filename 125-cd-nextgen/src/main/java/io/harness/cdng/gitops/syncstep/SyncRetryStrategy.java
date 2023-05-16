@@ -7,7 +7,6 @@
 
 package io.harness.cdng.gitops.syncstep;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -17,7 +16,6 @@ import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
@@ -28,22 +26,14 @@ public class SyncRetryStrategy {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @Min(0)
-  @NotNull
   public ParameterField<Integer> limit;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @NotNull
-  public ParameterField<String> baseBackoffDuration;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) public ParameterField<String> baseBackoffDuration;
 
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
   @Min(0)
-  @NotNull
   public ParameterField<Integer> increaseBackoffByFactor;
 
-  @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @NotNull
-  public ParameterField<String> maxBackoffDuration;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) public ParameterField<String> maxBackoffDuration;
 }

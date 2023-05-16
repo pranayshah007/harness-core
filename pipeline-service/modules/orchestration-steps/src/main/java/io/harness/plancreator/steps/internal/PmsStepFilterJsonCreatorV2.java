@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filters.GenericStepPMSFilterJsonCreatorV2;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.container.ContainerStepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -22,10 +23,9 @@ public class PmsStepFilterJsonCreatorV2 extends GenericStepPMSFilterJsonCreatorV
   public Set<String> getSupportedStepTypes() {
     return Sets.newHashSet(StepSpecTypeConstants.HTTP, StepSpecTypeConstants.JIRA_CREATE,
         StepSpecTypeConstants.CUSTOM_APPROVAL, StepSpecTypeConstants.JIRA_UPDATE, StepSpecTypeConstants.JIRA_APPROVAL,
-        StepSpecTypeConstants.SHELL_SCRIPT, StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER,
-        StepSpecTypeConstants.POLICY_STEP, StepSpecTypeConstants.SERVICENOW_CREATE,
-        StepSpecTypeConstants.SERVICENOW_UPDATE, StepSpecTypeConstants.SERVICENOW_IMPORT_SET,
-        StepSpecTypeConstants.QUEUE, StepSpecTypeConstants.EMAIL, StepSpecTypeConstants.WAIT_STEP,
-        StepSpecTypeConstants.CONTAINER_STEP);
+        StepSpecTypeConstants.SERVICENOW_APPROVAL, StepSpecTypeConstants.BARRIER, StepSpecTypeConstants.POLICY_STEP,
+        StepSpecTypeConstants.SERVICENOW_CREATE, StepSpecTypeConstants.SERVICENOW_UPDATE,
+        StepSpecTypeConstants.SERVICENOW_IMPORT_SET, StepSpecTypeConstants.QUEUE, StepSpecTypeConstants.EMAIL,
+        StepSpecTypeConstants.WAIT_STEP, ContainerStepSpecTypeConstants.CONTAINER_STEP);
   }
 }

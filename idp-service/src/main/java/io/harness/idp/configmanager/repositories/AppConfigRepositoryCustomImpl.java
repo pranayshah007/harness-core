@@ -13,6 +13,7 @@ import io.harness.idp.configmanager.beans.entity.AppConfigEntity;
 import io.harness.idp.configmanager.beans.entity.AppConfigEntity.AppConfigEntityKeys;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -50,7 +51,19 @@ public class AppConfigRepositoryCustomImpl implements AppConfigRepositoryCustom 
     return mongoTemplate.findAndModify(query, update, options, AppConfigEntity.class);
   }
 
-  private Criteria getCriteriaForConfig(String accountIdentifier, String configId, ConfigType configType) {
+  @Override
+  public List<AppConfigEntity> deleteDisabledPluginsConfigBasedOnTimestampsForEnabledDisabledTime(long baseTimeStamp) {
+    Criteria criteria = Criteria.where(AppConfigEntityKeys.enabledDisabledAt)
+                            .lte(baseTimeStamp)
+                            .and(AppConfigEntityKeys.configType)
+                            .is(ConfigType.PLUGIN)
+                            .and(AppConfigEntityKeys.enabled)
+                            .is(false);
+    Query query = new Query(criteria);
+    return mongoTemplate.findAllAndRemove(query, AppConfigEntity.class);
+  }
+
+  protected Criteria getCriteriaForConfig(String accountIdentifier, String configId, ConfigType configType) {
     return Criteria.where(AppConfigEntityKeys.accountIdentifier)
         .is(accountIdentifier)
         .and(AppConfigEntityKeys.configId)

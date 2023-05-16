@@ -36,6 +36,8 @@ import io.harness.delegate.beans.connector.pagerduty.PagerDutyCapabilityHelper;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusCapabilityHelper;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXCapabilityHelper;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkCapabilityHelper;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
@@ -84,6 +86,8 @@ public class CVConnectorCapabilitiesHelper extends ConnectorTaskParams {
       return ELKCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
     } else if (connectorDTO instanceof AwsConnectorDTO) {
       return AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorDTO, maskingEvaluator);
+    } else if (connectorDTO instanceof SignalFXConnectorDTO) {
+      return SignalFXCapabilityHelper.fetchRequiredExecutionCapabilities(maskingEvaluator, connectorDTO);
     } else {
       throw new InvalidRequestException("Connector capability not found for " + connectorDTO);
     }

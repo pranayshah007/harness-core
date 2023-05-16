@@ -152,6 +152,15 @@ public class BambooArtifactTaskHandlerTest extends CategoryTest {
                         .withArtifactPath("artifactPath")
                         .build());
 
+    when(bambooBuildService.getBuilds(null, artifactStreamAttributes,
+             BambooRequestResponseMapper.toBambooConfig(bambooArtifactDelegateRequest),
+             bambooArtifactDelegateRequest.getEncryptedDataDetails()))
+        .thenReturn(Collections.singletonList(BuildDetails.Builder.aBuildDetails()
+                                                  .withBuildUrl("https://bamboo.com/test")
+                                                  .withArtifactPath("artifactPath")
+                                                  .withNumber("45")
+                                                  .build()));
+
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
         bambooArtifactTaskHandler.getLastSuccessfulBuild(bambooArtifactDelegateRequest);
     assertThat(artifactTaskExecutionResponse).isNotNull();

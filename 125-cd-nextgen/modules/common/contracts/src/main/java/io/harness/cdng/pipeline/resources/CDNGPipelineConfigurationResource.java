@@ -79,9 +79,10 @@ public class CDNGPipelineConfigurationResource {
       @NotNull @QueryParam("strategyType") ExecutionStrategyType executionStrategyType,
       @QueryParam("includeVerify") boolean includeVerify,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) throws IOException {
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam("deploymentMetadataYaml") String deploymentMetaDataYaml) throws IOException {
     return ResponseDTO.newResponse(cdngPipelineConfigurationHelper.getExecutionStrategyYaml(
-        serviceDefinitionType, executionStrategyType, includeVerify));
+        serviceDefinitionType, executionStrategyType, includeVerify, deploymentMetaDataYaml));
   }
 
   @GET

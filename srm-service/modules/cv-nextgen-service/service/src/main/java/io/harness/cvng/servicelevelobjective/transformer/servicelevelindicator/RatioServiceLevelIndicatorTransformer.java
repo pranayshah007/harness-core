@@ -27,8 +27,7 @@ public class RatioServiceLevelIndicatorTransformer
         .orgIdentifier(projectParams.getOrgIdentifier())
         .projectIdentifier(projectParams.getProjectIdentifier())
         .identifier(serviceLevelIndicatorDTO.getIdentifier())
-        .sliMissingDataType(
-            ((WindowBasedServiceLevelIndicatorSpec) serviceLevelIndicatorDTO.getSpec()).getSliMissingDataType())
+        .sliMissingDataType(serviceLevelIndicatorDTO.getSLIMissingDataType())
         .name(serviceLevelIndicatorDTO.getName())
         .metric1(ratioSLIMetricSpec.getMetric1())
         .metric2(ratioSLIMetricSpec.getMetric2())

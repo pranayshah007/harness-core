@@ -66,9 +66,8 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.spy;
@@ -228,7 +227,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
     when(wingsPersistence.createQuery(InfrastructureMapping.class)).thenReturn(query);
     when(wingsPersistence.createUpdateOperations(InfrastructureMapping.class)).thenReturn(updateOperations);
     when(query.filter(any(), any())).thenReturn(query);
-    when(secretManager.getEncryptionDetails(anyObject(), any(), any())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(Collections.emptyList());
     FieldUtils.writeField(infrastructureMappingService, "secretManager", secretManager, true);
 
     when(appService.get(APP_ID)).thenReturn(app);

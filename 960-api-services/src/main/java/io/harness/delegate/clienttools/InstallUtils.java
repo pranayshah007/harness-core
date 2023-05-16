@@ -256,7 +256,7 @@ public class InstallUtils {
   @VisibleForTesting
   static boolean validateToolExists(final Path toolPath, final ClientTool tool) {
     if (!Files.exists(toolPath)) {
-      log.error("{} does not exist", toolPath);
+      log.info("{} does not exist", toolPath);
       return false;
     }
     return runToolCommand(toolPath, tool.getValidateCommandArgs());

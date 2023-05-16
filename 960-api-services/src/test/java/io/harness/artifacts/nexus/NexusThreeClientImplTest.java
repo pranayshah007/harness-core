@@ -7,6 +7,8 @@
 
 package io.harness.artifacts.nexus;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SHIVAM;
 
@@ -21,6 +23,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
 import io.harness.artifacts.beans.BuildDetailsInternal;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
@@ -36,6 +39,7 @@ import software.wings.utils.RepositoryFormat;
 import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -51,6 +55,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDP)
 public class NexusThreeClientImplTest {
@@ -63,6 +68,14 @@ public class NexusThreeClientImplTest {
 
   private static String url;
   private static String artifactRepoUrl;
+  private static final String USERNAME = "username";
+  private static final String PASSWORD = "password";
+  private static final String VERSION_3 = "3.x";
+  private static final String REPO_KEY = "TestRepoKey1";
+  private static final String ARTIFACT = "test/artifact";
+  private static final String LATEST = "latest";
+  private static final String DOCKER_CONTENT_DIGEST = "Docker-Content-Digest";
+  private static final String SHA = "sha256:12345";
 
   @Before
   public void before() {
@@ -77,11 +90,11 @@ public class NexusThreeClientImplTest {
   public void testGetRepositories() {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
@@ -117,11 +130,11 @@ public class NexusThreeClientImplTest {
   public void testIsServerValid() {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     wireMockRule.stubFor(get(urlEqualTo("/service/rest/v1/repositories"))
@@ -169,11 +182,11 @@ public class NexusThreeClientImplTest {
   public void testGetArtifactsVersionsInvalidPort() {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(url)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     assertThatThrownBy(()
@@ -192,11 +205,11 @@ public class NexusThreeClientImplTest {
   public void testGetArtifactsVersionsSuccess() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -304,11 +317,11 @@ public class NexusThreeClientImplTest {
   public void testGetBuildDetails() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey2";
@@ -394,11 +407,11 @@ public class NexusThreeClientImplTest {
   public void testGetBuildDetailException() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey2";
@@ -482,11 +495,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersion() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey2";
@@ -532,11 +545,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersionsSuccess() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -632,10 +645,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
 
   @Test
@@ -644,11 +657,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersionsForClassifierNotFound() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -707,11 +720,11 @@ public class NexusThreeClientImplTest {
   public void testGetVersionsNoCredentials() throws UnsupportedEncodingException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(false)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -807,10 +820,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
   @Test
   @Owner(developers = SHIVAM)
@@ -818,11 +831,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageVersionsSuccess() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -915,10 +928,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
 
   @Test
@@ -927,11 +940,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageVersionsNoCredentials() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(false)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1024,10 +1037,10 @@ public class NexusThreeClientImplTest {
 
     assertThat(response).isNotNull();
     assertThat(response).size().isEqualTo(2);
-    assertThat(response.get(0).getNumber()).isEqualTo("a1new");
-    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# a1new");
+    assertThat(response.get(0).getNumber()).isEqualTo("latest2");
+    assertThat(response.get(0).getUiDisplayName()).isEqualTo("Version# latest2");
     assertThat(response.get(0).getBuildUrl())
-        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/a1new");
+        .isEqualTo("https://nexus3.dev.harness.io/repository/todolist/v2/todolist/manifests/latest2");
   }
 
   @Test
@@ -1036,11 +1049,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageVersionsNotFound() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1142,11 +1155,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageNameBuildDetails() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1251,11 +1264,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageNameBuildDetailsNoCredentials() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(false)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1360,11 +1373,11 @@ public class NexusThreeClientImplTest {
   public void testGetPackageNameBuildDetailsExceptions() throws IOException {
     NexusRequest nexusConfig = NexusRequest.builder()
                                    .nexusUrl(url)
-                                   .username("username")
-                                   .password("password".toCharArray())
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
                                    .hasCredentials(true)
                                    .artifactRepositoryUrl(artifactRepoUrl)
-                                   .version("3.x")
+                                   .version(VERSION_3)
                                    .build();
 
     String repoKey = "TestRepoKey1";
@@ -1458,5 +1471,185 @@ public class NexusThreeClientImplTest {
     } catch (InvalidArtifactServerException exception) {
       assertThat(exception.getMessage()).isEqualTo("INVALID_ARTIFACT_SERVER");
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testFetchImageManifest() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
+                                   .hasCredentials(false)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version(VERSION_3)
+                                   .build();
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/repository/TestRepoKey1/v2/test/artifact/manifests/latest"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader(DOCKER_CONTENT_DIGEST, SHA)
+                    .withBody("{\n"
+                        + "    \"name\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/tags/latest10\",\n"
+                        + "    \"version\": \"projects/cd-play/locations/us-south1/repositories/vivek-repo/packages/mongo/versions/sha256:38cd16441be083f00bf2c3e0e307292531b6d98eb77c09271cf43f2b58ce9f9e\"\n"
+                        + "}")));
+
+    Response<DockerImageManifestResponse> response =
+        nexusThreeService.fetchImageManifest(nexusConfig, REPO_KEY, ARTIFACT, true, LATEST);
+
+    assertThat(response).isNotNull();
+    assertThat(response.code()).isEqualTo(200);
+    assertThat(response.headers().get(DOCKER_CONTENT_DIGEST)).isEqualTo(SHA);
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void testGetPackageNameBuildDetailsWithLastUpdatedAr() throws IOException {
+    NexusRequest nexusConfig = NexusRequest.builder()
+                                   .nexusUrl(url)
+                                   .username(USERNAME)
+                                   .password(PASSWORD.toCharArray())
+                                   .hasCredentials(true)
+                                   .artifactRepositoryUrl(artifactRepoUrl)
+                                   .version(VERSION_3)
+                                   .build();
+
+    String repoKey = "TestRepoKey1";
+    String artifactPath = "test/artifact";
+
+    wireMockRule.stubFor(
+        get(urlEqualTo("/service/rest/v1/search?sort=version&direction=desc&repository=" + repoKey + "&group=group"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"items\": [\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOmYxMGJkMDU5M2RlM2I1ZTRkMmY2OTViNGZhODFlNTFi\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v4.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v4.json\",\n"
+                + "                    \"path\": \"hello-world/v4.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOmY4OThiMzkwM2NiOTljNTk2ODM1OTdlZGM1YWZmOWJj\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"a62a5724d6d71acc7fa02640b7a1d5e812d8a17c\",\n"
+                + "                        \"sha256\": \"edf078aeadbe4701be97a64cd60eccf11f3679a1672c11acc89e961794072821\",\n"
+                + "                        \"sha512\": \"533e589c9f5b5243b91e26eb40592a520eb224fdb208a4866a3a64d428845a239635f20f3ba0f849f9b8e1431e35a21d81087a58f884007553cb8a04d243a022\",\n"
+                + "                        \"md5\": \"31ef97ef67cf3461bdc345c35711f9e6\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T05:20:39.016+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOjQwMjkyYWNkZWJjMDFiODMxMDMwY2Q1MjdlZDZmNDRj\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v1.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v1.json\",\n"
+                + "                    \"path\": \"hello-world/v1.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOjIxMDMxZGZhZjQ1ZTViNTgzNjE1NGJhYTBkYzIxZjBj\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"885a76c040184933d4e7efbe6c7c7c1648ed8f60\",\n"
+                + "                        \"sha256\": \"c4ca054baad24321c897016b70be0456a4781112940c350d7b01d6a768a72bb3\",\n"
+                + "                        \"sha512\": \"ddb4c6f4f993b2023dc8a9dfce0c505726f38d287270084f9a603f0e352916b85f4bd2101e008d58e49eff0e47f597af4167584fd2dde115c0b23323632c2027\",\n"
+                + "                        \"md5\": \"a6667dc31a2a68a3dab4537d14ea6433\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T05:20:57.843+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOjJlNDdkZGEwZjFiNTU1ZTA3MTU5ZGM5ZjlkZDNmZWY0\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v0.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v0.json\",\n"
+                + "                    \"path\": \"hello-world/v0.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOjU4MTgwMDVkZTJlYjJiZDEwODFmYjVlMWRkYWFmMjNj\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"885a76c040184933d4e7efbe6c7c7c1648ed8f60\",\n"
+                + "                        \"sha256\": \"c4ca054baad24321c897016b70be0456a4781112940c350d7b01d6a768a72bb3\",\n"
+                + "                        \"sha512\": \"ddb4c6f4f993b2023dc8a9dfce0c505726f38d287270084f9a603f0e352916b85f4bd2101e008d58e49eff0e47f597af4167584fd2dde115c0b23323632c2027\",\n"
+                + "                        \"md5\": \"a6667dc31a2a68a3dab4537d14ea6433\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T07:07:04.503+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        },\n"
+                + "        {\n"
+                + "            \"id\": \"Z2VuZXJpYy1yZXBvOjc3MGIyMDQ3NDZmMjRhOTE3M2FjNzhjZDA3OTRiMzcw\",\n"
+                + "            \"repository\": \"generic-repo\",\n"
+                + "            \"format\": \"raw\",\n"
+                + "            \"group\": \"/hello-world\",\n"
+                + "            \"name\": \"hello-world/v5.json\",\n"
+                + "            \"version\": null,\n"
+                + "            \"assets\": [\n"
+                + "                {\n"
+                + "                    \"downloadUrl\": \"http://localhost:8081/repository/generic-repo/hello-world/v5.json\",\n"
+                + "                    \"path\": \"hello-world/v5.json\",\n"
+                + "                    \"id\": \"Z2VuZXJpYy1yZXBvOmJiNmM2ZWY5Nzk2ZGFjODM4MWNjOWI2OTliZTRmMGJl\",\n"
+                + "                    \"repository\": \"generic-repo\",\n"
+                + "                    \"format\": \"raw\",\n"
+                + "                    \"checksum\": {\n"
+                + "                        \"sha1\": \"a62a5724d6d71acc7fa02640b7a1d5e812d8a17c\",\n"
+                + "                        \"sha256\": \"edf078aeadbe4701be97a64cd60eccf11f3679a1672c11acc89e961794072821\",\n"
+                + "                        \"sha512\": \"533e589c9f5b5243b91e26eb40592a520eb224fdb208a4866a3a64d428845a239635f20f3ba0f849f9b8e1431e35a21d81087a58f884007553cb8a04d243a022\",\n"
+                + "                        \"md5\": \"31ef97ef67cf3461bdc345c35711f9e6\"\n"
+                + "                    },\n"
+                + "                    \"contentType\": \"application/json\",\n"
+                + "                    \"lastModified\": \"2023-04-28T07:07:19.699+00:00\",\n"
+                + "                    \"lastDownloaded\": null,\n"
+                + "                    \"uploader\": \"admin\",\n"
+                + "                    \"uploaderIp\": \"172.17.0.1\",\n"
+                + "                    \"fileSize\": 0\n"
+                + "                }\n"
+                + "            ]\n"
+                + "        }\n"
+                + "    ],\n"
+                + "    \"continuationToken\": null\n"
+                + "}")));
+    List<BuildDetailsInternal> response = nexusThreeService.getPackageNamesBuildDetails(nexusConfig, repoKey, "group");
+
+    assertThat(response).isNotNull();
+    assertThat(response).size().isEqualTo(4);
+    assertThat(response.stream().map(BuildDetailsInternal::getNumber).collect(Collectors.toList()))
+        .isEqualTo(Lists.newArrayList(
+            "hello-world/v5.json", "hello-world/v0.json", "hello-world/v1.json", "hello-world/v4.json"));
   }
 }

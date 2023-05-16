@@ -9,7 +9,6 @@ package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.app.CIManagerConfiguration.HARNESS_RESOURCE_CLASSES;
-import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.OBSERVER_EVENT_CHANNEL;
@@ -80,7 +79,7 @@ import io.harness.plugin.PluginMetadataRecordsJob;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
-import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
+import io.harness.pms.listener.NgOrchestrationNotifyEventListenerNonVersioned;
 import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
@@ -287,7 +286,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(new CIPersistenceModule());
     addGuiceValidationModule(modules);
-    modules.add(new CIManagerServiceModule(CI_MANAGER, "ci", configuration));
+    modules.add(new CIManagerServiceModule(configuration, new CIManagerConfigurationOverride()));
     modules.add(new CacheModule(configuration.getCacheConfig()));
 
     modules.add(YamlSdkModule.getInstance());
@@ -345,7 +344,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private void registerQueueListener(Injector injector) {
     log.info("Initializing queue listeners...");
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
-    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListener.class), 1);
+    queueListenerController.register(injector.getInstance(NgOrchestrationNotifyEventListenerNonVersioned.class), 1);
   }
 
   @Override

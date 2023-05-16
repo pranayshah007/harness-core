@@ -195,27 +195,26 @@ public interface K8sConstants {
   String KUBECFG_VALUE = "value";
 
   String AZURE_AUTH_PLUGIN_BINARY = "kubelogin";
+  String AZURE_AUTH_PLUGIN_DOCS = "Please refer to Harness Docs to install it on the delegate using following: \n"
+      + "https://developer.harness.io/docs/platform/connectors/cloud-providers/add-a-microsoft-azure-connector/#install-the-kubelogin-client-go-credential-exec-plugin-on-the-delegate";
   String GCP_AUTH_PLUGIN_BINARY = "gke-gcloud-auth-plugin";
-
-  String GCP_AUTH_PLUGIN_INSTALL_HINT = "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n"
-      + "It can be installed on the delegate using following command from:\n"
-      + "https://cloud.google.com/sdk/docs/install#rpm\n"
+  String GOOGLE_APPLICATION_CREDENTIALS_FLAG = "--use_application_default_credentials";
+  String GCP_AUTH_PLUGIN_DOCS = "Please refer to Harness Docs to install it on the delegate using following: \n"
+      + "https://developer.harness.io/docs/platform/connectors/cloud-providers/connect-to-google-cloud-platform-gcp/#install-the-gke-gcloud-auth-plugin-on-the-delegate";
+  String GCP_AUTH_PLUGIN_INSTALL_HINT =
+      "gke-gcloud-auth-plugin is required to authenticate to the current cluster.\n" + GCP_AUTH_PLUGIN_DOCS;
+  String EKS_AUTH_PLUGIN_BINARY = "aws-iam-authenticator";
+  String EKS_AUTH_PLUGIN_INSTALL_HINT = "aws-iam-authenticator is required to authenticate to the current cluster.\n"
+      + "It can be installed on the delegate by creating an immutable delegate and updating the following commands in INIT_SCRIPT\n"
+      + "Reference: https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html\n"
       + "\n"
-      + "tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM\n"
-      + "[google-cloud-cli]\n"
-      + "name=Google Cloud CLI\n"
-      + "baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64\n"
-      + "enabled=1\n"
-      + "gpgcheck=1\n"
-      + "repo_gpgcheck=0\n"
-      + "gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg\n"
-      + "EOM\n"
+      + "// Download aws-iam-authenticator\n"
+      + "curl -Lo aws-iam-authenticator https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.9/aws-iam-authenticator_0.5.9_linux_amd64\n"
+      + "chmod +x ./aws-iam-authenticator\n"
       + "\n"
-      + "// Download gke-gcloud-auth-plugin\n"
-      + "microdnf install google-cloud-cli\n"
-      + "microdnf install google-cloud-cli-gke-gcloud-auth-plugin\n"
+      + "// Add the binary to PATH\n"
+      + "mv ./aws-iam-authenticator /usr/local/bin\n"
       + "\n"
-      + "// USE_GKE_GCLOUD_AUTH_PLUGIN=True for kubernetes version <1.26\n"
-      + "echo \"export USE_GKE_GCLOUD_AUTH_PLUGIN=True\" >> ~/.bashrc\n"
-      + "source ~/.bashrc\n";
+      + "// Verify the binary\n"
+      + "aws-iam-authenticator version";
 }

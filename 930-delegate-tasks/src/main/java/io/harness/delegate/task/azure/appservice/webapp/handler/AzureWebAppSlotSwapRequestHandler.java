@@ -34,7 +34,7 @@ public class AzureWebAppSlotSwapRequestHandler extends AzureWebAppRequestHandler
     String targetSlot = taskRequest.getTargetSlot();
     azureAppServiceResourceUtilities.validateSlotSwapParameters(webAppName, sourceSlot, targetSlot);
 
-    AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig);
+    AzureWebClientContext webClientContext = buildAzureWebClientContext(infrastructure, azureConfig, true);
     azureAppServiceResourceUtilities.swapSlots(
         webClientContext, logCallbackProvider, infrastructure.getDeploymentSlot(), targetSlot, timeoutIntervalInMin);
 

@@ -10,8 +10,8 @@ package software.wings.scheduler.account;
 import static io.harness.rule.OwnerRule.MEHUL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -30,13 +30,9 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PersistenceIteratorFactory.class})
-@PowerMockIgnore({"javax.security.*", "javax.crypto.*", "javax.net.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class DeleteAccountHandlerTest extends WingsBaseTest {
   @InjectMocks @Inject private DeleteAccountHandler deleteAccountHandler;
   @Mock private PersistenceIteratorFactory persistenceIteratorFactory;

@@ -1,0 +1,13 @@
+{
+  "kind": "docker/v1",
+  "data": {
+    "registryType": "ECR",
+    "registryUrl": "accountId.dkr.ecr.us-east-1.amazonaws.com",
+    "images": [
+      {
+        "image": "accountId.dkr.ecr.us-east-1.amazonaws.com/test:1.0",
+        "digest": "sha256:digest"
+      }
+    ]
+  }
+}

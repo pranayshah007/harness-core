@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
+import io.harness.cdng.manifest.yaml.StoreConfigHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
@@ -28,7 +29,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -93,5 +96,17 @@ public class HelmRepoOverrideManifest implements ManifestAttributes, Visitable, 
   @Value
   public static class HelmRepoOverrideManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkStringParameterNullOrInput(connectorRef)) {
+      invalidParameters.add(HelmRepoOverrideManifestKeys.connectorRef);
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(ParameterField.createValueField(type))) {
+      invalidParameters.add(HelmRepoOverrideManifestKeys.type);
+    }
+    return invalidParameters;
   }
 }

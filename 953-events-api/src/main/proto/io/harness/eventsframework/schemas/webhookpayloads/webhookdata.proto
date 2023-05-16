@@ -11,6 +11,16 @@ package io.harness.eventsframework.webhookpayloads.webhookdata;
 option java_multiple_files = true;
 option go_package = "953_events_api";
 
+message TriggerExecutionDTO {
+  string accountId = 1;
+  string orgIdentifier = 2;
+  string projectIdentifier = 3;
+  string targetIdentifier = 4;
+  string triggerIdentifier = 5;
+  bool authenticated = 6;
+  WebhookDTO webhookDto = 7;
+}
+
 message WebhookDTO {
   string jsonPayload = 1;
   WebhookTriggerType webhookTriggerType = 2;

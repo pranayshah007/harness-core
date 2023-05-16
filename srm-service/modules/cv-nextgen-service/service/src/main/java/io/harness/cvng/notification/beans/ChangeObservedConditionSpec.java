@@ -7,12 +7,13 @@
 
 package io.harness.cvng.notification.beans;
 
+import io.harness.cvng.beans.change.ChangeCategory;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
@@ -22,7 +23,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChangeObservedConditionSpec extends NotificationRuleConditionSpec {
-  @NonNull List<MonitoredServiceChangeEventType> changeEventTypes;
+  @Deprecated List<MonitoredServiceChangeEventType> changeEventTypes;
+  List<ChangeCategory> changeCategories;
 
   @Override
   public NotificationRuleConditionType getType() {

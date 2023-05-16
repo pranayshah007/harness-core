@@ -16,6 +16,7 @@ import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -23,6 +24,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.git.GitClientHelper;
 import io.harness.ngtriggers.conditionchecker.ConditionEvaluator;
 import io.harness.product.ci.scm.proto.CompareCommitsResponse;
 import io.harness.product.ci.scm.proto.FindFilesInPRResponse;
@@ -36,9 +38,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
   private static final ScmPathFilterEvaluationTaskResponse NOT_A_MATCH =
       ScmPathFilterEvaluationTaskResponse.builder().matched(false).build();
@@ -107,16 +111,33 @@ public class ScmPathFilterEvaluationTask extends AbstractDelegateRunnableTask {
       }
       return filepaths;
     } else {
-      // push case
-      CompareCommitsResponse compareCommitsResponse = scmDelegateClient.processScmRequest(c
-          -> scmServiceClient.compareCommits(
-              connector, params.getPreviousCommit(), params.getLatestCommit(), SCMGrpc.newBlockingStub(c)));
-
+      CompareCommitsResponse compareCommitsResponse;
+      if (isBitBucketOnPrem(connector)) {
+        // push case
+        compareCommitsResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.compareCommits(
+                connector, params.getLatestCommit(), params.getPreviousCommit(), SCMGrpc.newBlockingStub(c)));
+      } else {
+        // push case
+        compareCommitsResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.compareCommits(
+                connector, params.getPreviousCommit(), params.getLatestCommit(), SCMGrpc.newBlockingStub(c)));
+      }
       Set<String> filepaths = emptySet();
       if (compareCommitsResponse.getFilesCount() > 0) {
         filepaths = compareCommitsResponse.getFilesList().stream().map(prFile -> prFile.getPath()).collect(toSet());
       }
+
+      if (filepaths.isEmpty()) {
+        log.warn("there were 0 changedFiles for previous commit hash {} latest commit hash {} and  repo {}",
+            params.getPreviousCommit(), params.getLatestCommit(), connector.getUrl());
+      }
       return filepaths;
     }
+  }
+
+  private boolean isBitBucketOnPrem(ScmConnector connector) {
+    return ConnectorType.BITBUCKET.equals(connector.getConnectorType())
+        && !GitClientHelper.isBitBucketSAAS(connector.getUrl());
   }
 }

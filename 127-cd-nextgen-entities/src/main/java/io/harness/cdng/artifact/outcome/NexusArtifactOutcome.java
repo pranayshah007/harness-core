@@ -59,8 +59,12 @@ public class NexusArtifactOutcome implements ArtifactOutcome {
 
   String displayName;
 
+  String digest;
+
   /** Artifact Metadata. */
   Map<String, String> metadata;
+
+  Map<String, String> label;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

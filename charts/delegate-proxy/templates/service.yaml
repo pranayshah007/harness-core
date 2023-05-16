@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: delegate-proxy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "delegate-proxy.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "delegate-proxy.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: 80
+      targetPort: {{.Values.service.port}}

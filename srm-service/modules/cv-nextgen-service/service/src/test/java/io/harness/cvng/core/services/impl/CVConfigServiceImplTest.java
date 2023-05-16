@@ -387,6 +387,7 @@ public class CVConfigServiceImplTest extends CvNextGenTestBase {
     assertThat(actual.getType()).isEqualTo(expected.getType());
     assertThat(actual.getIdentifier()).isEqualTo(expected.getIdentifier());
     assertThat(actual.getMonitoringSourceName()).isEqualTo(expected.getMonitoringSourceName());
+    assertThat(actual.getDataSourceName()).isEqualTo(expected.getType());
   }
 
   public List<CVConfig> createCVConfigs(int n) {

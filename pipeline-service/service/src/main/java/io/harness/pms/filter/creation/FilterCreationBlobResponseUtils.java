@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.yaml.YamlField;
@@ -83,6 +84,10 @@ public class FilterCreationBlobResponseUtils {
       response.getDeps().getDependenciesMap().forEach((key, value) -> {
         if (!builder.getResolvedDeps().containsDependencies(key)) {
           builder.setDeps(builder.getDeps().toBuilder().putDependencies(key, value));
+          Dependency dependency = response.getDeps().getDependencyMetadataMap().get(key);
+          if (dependency != null) {
+            builder.setDeps(builder.getDeps().toBuilder().putDependencyMetadata(key, dependency));
+          }
         }
       });
     }

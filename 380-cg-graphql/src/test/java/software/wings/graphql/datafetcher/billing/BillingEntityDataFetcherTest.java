@@ -14,11 +14,10 @@ import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyDouble;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -164,9 +163,9 @@ public class BillingEntityDataFetcherTest extends AbstractDataFetcherTestBase {
         .thenAnswer(
             i -> Math.round(resultSet.getDouble(BillingDataMetaDataFields.NETWORKCOST.getFieldName()) * 100D) / 100D);
     when(billingDataHelper.getRoundedDoubleValue(anyDouble())).thenAnswer(i -> i.getArguments()[0]);
-    doCallRealMethod().when(billingDataHelper).calculateEfficiencyScore(anyObject());
+    doCallRealMethod().when(billingDataHelper).calculateEfficiencyScore(any());
     doCallRealMethod().when(billingDataHelper).calculateTrendPercentage(anyDouble(), anyDouble());
-    doCallRealMethod().when(billingDataHelper).calculateTrendPercentage((BigDecimal) anyObject(), anyObject());
+    doCallRealMethod().when(billingDataHelper).calculateTrendPercentage((BigDecimal) any(), any());
     doNothing().when(accountChecker).checkIsCeEnabled(anyString());
   }
 

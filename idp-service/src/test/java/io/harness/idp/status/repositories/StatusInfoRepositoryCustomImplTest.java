@@ -7,6 +7,8 @@
 
 package io.harness.idp.status.repositories;
 
+import static io.harness.rule.OwnerRule.VIGNESWARA;
+
 import static junit.framework.TestCase.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.idp.status.beans.StatusInfoEntity;
 import io.harness.idp.status.enums.StatusType;
+import io.harness.rule.Owner;
 import io.harness.spec.server.idp.v1.model.StatusInfo;
 
 import org.junit.Before;
@@ -40,6 +43,7 @@ public class StatusInfoRepositoryCustomImplTest {
   }
 
   @Test
+  @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
   public void testSaveOrUpdateStatusInfo() {
     StatusInfoEntity statusInfoEntity = initializeStatusInfoEntity();

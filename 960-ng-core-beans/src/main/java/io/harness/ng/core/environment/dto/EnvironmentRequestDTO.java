@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -45,6 +46,7 @@ public class EnvironmentRequestDTO {
   @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
   @Schema(description = "Color of the Environment.") String color;
   @Schema(description = "Specify the environment type whether production or Preproduction. ")
+  @NotNull
   @ApiModelProperty(required = true)
   EnvironmentType type;
   @Schema(description = "Yaml of this entity.") String yaml;

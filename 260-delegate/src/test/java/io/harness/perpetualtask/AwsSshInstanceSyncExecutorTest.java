@@ -11,10 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -39,7 +39,6 @@ import software.wings.service.intfc.aws.delegate.AwsEc2HelperServiceDelegate;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -52,12 +51,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -67,7 +66,6 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
   @Mock private DelegateAgentManagerClient delegateAgentManagerClient;
   @Mock private Call<RestResponse<Boolean>> call;
   @Inject KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @InjectMocks private AwsSshInstanceSyncExecutor executor;
 
@@ -76,7 +74,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
 
   @Before
   public void setup() {
-    on(executor).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
+    on(executor).set("kryoSerializer", kryoSerializer);
     MockitoAnnotations.initMocks(executor);
   }
 
@@ -92,17 +90,16 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
         .listEc2Instances(any(AwsConfig.class), anyList(), anyString(), anyList(), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), perpetualTaskParams, Instant.now());
 
     verify(ec2ServiceDelegate, Mockito.times(1))
-        .listEc2Instances(any(AwsConfig.class), anyList(), Matchers.eq("us-east-1"), anyList(), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), ArgumentMatchers.eq("us-east-1"), anyList(), eq(true));
 
-    verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
 
     AwsEc2ListInstancesResponse response = captor.getValue();
     verifySuccessResponse(instance, perpetualTaskResponse, response);
@@ -135,17 +132,16 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
         .listEc2Instances(any(AwsConfig.class), anyList(), anyString(), anyList(), eq(true));
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResultV2(anyString(), anyString(), any(DelegateResponseData.class));
+        .publishInstanceSyncResult(anyString(), anyString(), any(DelegateResponseData.class));
     doReturn(retrofit2.Response.success("success")).when(call).execute();
 
     perpetualTaskResponse =
         executor.runOnce(PerpetualTaskId.newBuilder().setId("id").build(), perpetualTaskParams, Instant.now());
 
     verify(ec2ServiceDelegate, Mockito.times(1))
-        .listEc2Instances(any(AwsConfig.class), anyList(), Matchers.eq("us-east-1"), anyList(), eq(true));
+        .listEc2Instances(any(AwsConfig.class), anyList(), ArgumentMatchers.eq("us-east-1"), anyList(), eq(true));
 
-    verify(delegateAgentManagerClient, times(1))
-        .publishInstanceSyncResultV2(eq("id"), eq("accountId"), captor.capture());
+    verify(delegateAgentManagerClient, times(1)).publishInstanceSyncResult(eq("id"), eq("accountId"), captor.capture());
 
     AwsEc2ListInstancesResponse response = captor.getValue();
     verifyFailureResponse(perpetualTaskResponse, response);
@@ -168,9 +164,9 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
 
   private PerpetualTaskExecutionParams getPerpetualTaskParams() {
     ByteString configBytes =
-        ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
-    ByteString filterBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(Arrays.asList(new Filter())));
-    ByteString encryptionDetailsBytes = ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(new ArrayList<>()));
+        ByteString.copyFrom(kryoSerializer.asBytes(AwsConfig.builder().accountId("accountId").build()));
+    ByteString filterBytes = ByteString.copyFrom(kryoSerializer.asBytes(Arrays.asList(new Filter())));
+    ByteString encryptionDetailsBytes = ByteString.copyFrom(kryoSerializer.asBytes(new ArrayList<>()));
 
     AwsSshInstanceSyncPerpetualTaskParams params = AwsSshInstanceSyncPerpetualTaskParams.newBuilder()
                                                        .setAwsConfig(configBytes)
@@ -178,10 +174,7 @@ public class AwsSshInstanceSyncExecutorTest extends DelegateTestBase {
                                                        .setEncryptedData(encryptionDetailsBytes)
                                                        .setRegion("us-east-1")
                                                        .build();
-    return PerpetualTaskExecutionParams.newBuilder()
-        .setCustomizedParams(Any.pack(params))
-        .setReferenceFalseKryoSerializer(true)
-        .build();
+    return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(params)).build();
   }
 
   @Test

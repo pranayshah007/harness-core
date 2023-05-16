@@ -41,6 +41,11 @@ logging:
       target: STDOUT
       stackdriverLogEnabled: false
 
+segmentConfiguration:
+  enabled: true #segmentConfigEnable
+  url: "segment_url_place_holder"
+  apiKey: "segment_api_key"
+  certValidationRequired: false
 
 distributedLockImplementation: NOOP
 
@@ -63,6 +68,14 @@ ngManagerClientConfig:
   baseUrl: http://localhost:7457/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+ticketServiceRestClientConfig:
+  baseUrl: http://localhost:4444/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+webhookConfig:
+  webhookBaseUrl: http://localhost:6457/cv/api/
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: true

@@ -29,9 +29,9 @@ import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.utils.ExecutionLogWriter;
 
-import com.google.common.collect.Lists;
 import com.google.common.primitives.Bytes;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
@@ -39,6 +39,7 @@ import org.apache.commons.lang3.NotImplementedException;
 @OwnedBy(CDP)
 @Slf4j
 public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
+  private static final String NEW_LINE = "\n";
   private final SecretDecryptionService secretDecryptionService;
   private final ArtifactoryRequestMapper artifactoryRequestMapper;
 
@@ -88,8 +89,23 @@ public class FileBasedWinRmExecutorNG extends FileBasedAbstractWinRmExecutor {
 
   CommandExecutionStatus splitFileAndTransfer(ConfigFileParameters configFileParameters, WinRmSession session,
       ExecutionLogWriter outputWriter, ExecutionLogWriter errorWriter) throws IOException {
-    final List<List<Byte>> partitions =
-        Lists.partition(Bytes.asList(configFileParameters.getFileContent().getBytes()), BATCH_SIZE_BYTES);
+    final List<List<Byte>> partitions = new ArrayList<>();
+    String[] fileContentByLines = configFileParameters.getFileContent().split(NEW_LINE);
+    int chunkSize = 0;
+    StringBuilder chunkString = new StringBuilder();
+    for (int lineNumber = 0; lineNumber < fileContentByLines.length; lineNumber++) {
+      String line = fileContentByLines[lineNumber];
+      chunkSize += line.getBytes().length;
+      chunkString.append(line).append(NEW_LINE);
+      if (chunkSize >= BATCH_SIZE_BYTES || lineNumber == (fileContentByLines.length - 1)) {
+        partitions.add(Bytes.asList(chunkString.toString().getBytes()));
+        if (lineNumber != (fileContentByLines.length - 1)) {
+          chunkSize = 0;
+          chunkString = new StringBuilder();
+        }
+      }
+    }
+
     clearTargetFile(session, outputWriter, errorWriter, configFileParameters.getDestinationPath(),
         configFileParameters.getFileName());
     logFileSizeAndOtherMetadata(

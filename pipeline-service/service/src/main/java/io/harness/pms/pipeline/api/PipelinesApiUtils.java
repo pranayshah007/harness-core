@@ -44,6 +44,7 @@ import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
+import io.harness.spec.server.pipeline.v1.model.GitImportInfo;
 import io.harness.spec.server.pipeline.v1.model.GitMoveDetails;
 import io.harness.spec.server.pipeline.v1.model.GitUpdateDetails;
 import io.harness.spec.server.pipeline.v1.model.NodeInfo;
@@ -57,6 +58,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
+import io.harness.spec.server.pipeline.v1.model.TemplateValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 import io.harness.utils.ApiUtils;
 
@@ -378,6 +380,17 @@ public class PipelinesApiUtils {
         .repoName(gitDetails.getRepoName())
         .build();
   }
+  public static GitEntityInfo populateGitImportDetails(GitImportInfo gitDetails) {
+    if (gitDetails == null) {
+      return GitEntityInfo.builder().build();
+    }
+    return GitEntityInfo.builder()
+        .branch(gitDetails.getBranchName())
+        .filePath(gitDetails.getFilePath())
+        .connectorRef(gitDetails.getConnectorRef())
+        .repoName(gitDetails.getRepoName())
+        .build();
+  }
 
   public static GitEntityInfo populateGitMoveDetails(GitMoveDetails gitDetails) {
     if (gitDetails == null) {
@@ -450,6 +463,10 @@ public class PipelinesApiUtils {
                 ? null
                 : buildGovernanceMetadataFromProto(event.getResult().getGovernanceMetadata()))
         .startTs(event.getStartTs())
+        .templateValidationResponse(
+            new TemplateValidationResponseBody()
+                .validYaml(event.getResult().getTemplateValidationResponse().isValidYaml())
+                .exceptionMessage(event.getResult().getTemplateValidationResponse().getExceptionMessage()))
         .endTs(event.getEndTs());
   }
 

@@ -13,7 +13,11 @@ import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 
 public interface HelmChartService {
-  HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId, String serviceRef,
+  HelmChartResponseDTO getHelmChartVersionDetails(String accountId, String orgId, String projectId, String connectorId,
+      String chartName, String region, String bucketName, String folderPath, String lastTag, String storeType,
+      String helmVersion);
+
+  HelmChartResponseDTO getHelmChartVersionDetailsV2(String accountId, String orgId, String projectId, String serviceRef,
       String manifestPath, String connectorId, String chartName, String region, String bucketName, String folderPath,
       String lastTag);
 

@@ -60,6 +60,7 @@ public class ArtifactoryGenericArtifactOutcome implements ArtifactOutcome {
     return ArtifactoryGenericArtifactSummary.builder()
         .artifactPath(getArtifactPath())
         .artifactDirectory(getArtifactDirectory())
+        .tag(tag)
         .build();
   }
 

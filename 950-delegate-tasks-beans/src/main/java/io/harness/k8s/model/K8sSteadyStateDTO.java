@@ -24,4 +24,5 @@ public class K8sSteadyStateDTO {
   String namespace;
   boolean denoteOverallSuccess;
   boolean isErrorFrameworkEnabled;
+  KubernetesConfig kubernetesConfig;
 }

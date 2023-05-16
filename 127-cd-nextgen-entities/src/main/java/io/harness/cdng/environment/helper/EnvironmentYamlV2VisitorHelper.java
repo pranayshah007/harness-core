@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.preflight.PreFlightCheckMetadata;
@@ -56,6 +57,9 @@ public class EnvironmentYamlV2VisitorHelper implements ConfigValidator, EntityRe
         new HashMap<>(Collections.singletonMap(PreFlightCheckMetadata.FQN, fullQualifiedDomainName));
     if (!environmentYamlV2.getEnvironmentRef().isExpression()) {
       String environmentRefString = environmentYamlV2.getEnvironmentRef().getValue();
+      if (EmptyPredicate.isEmpty(environmentRefString)) {
+        return result;
+      }
       IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
           environmentRefString, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
       EntityDetailProtoDTO entityDetail =

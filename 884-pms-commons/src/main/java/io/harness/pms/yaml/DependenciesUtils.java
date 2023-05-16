@@ -11,6 +11,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.RollbackModeBehaviour;
 
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -25,6 +27,20 @@ public class DependenciesUtils {
 
     Dependencies.Builder builder = Dependencies.newBuilder();
     fields.forEach((k, v) -> builder.putDependencies(k, v.getYamlPath()));
+    return builder.build();
+  }
+
+  public Dependencies toDependenciesProtoWithRollbackMode(
+      Map<String, YamlField> fields, RollbackModeBehaviour behaviour) {
+    if (EmptyPredicate.isEmpty(fields)) {
+      return Dependencies.newBuilder().build();
+    }
+
+    Dependencies.Builder builder = Dependencies.newBuilder();
+    fields.forEach((k, v) -> {
+      builder.putDependencies(k, v.getYamlPath());
+      builder.putDependencyMetadata(k, Dependency.newBuilder().setRollbackModeBehaviour(behaviour).build());
+    });
     return builder.build();
   }
 }

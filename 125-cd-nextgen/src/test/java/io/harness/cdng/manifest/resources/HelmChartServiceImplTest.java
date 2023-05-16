@@ -149,7 +149,7 @@ public class HelmChartServiceImplTest extends CategoryTest {
 
     doReturn(true).when(delegateServiceGrpcClient).isTaskTypeSupported(any(), any());
 
-    HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetails(
+    HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetailsV2(
         accountId, orgId, projId, serviceRef, manifestPath, "", "", "", "", "", null);
     assertThat(helmChartResponseDTO.getHelmChartVersions()).contains("0.1.0", "0.1.1");
   }
@@ -211,7 +211,7 @@ public class HelmChartServiceImplTest extends CategoryTest {
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(eq(accountId), any());
     doReturn(true).when(delegateServiceGrpcClient).isTaskTypeSupported(any(), any());
 
-    HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetails(
+    HelmChartResponseDTO helmChartResponseDTO = helmChartServiceImpl.getHelmChartVersionDetailsV2(
         accountId, orgId, projId, serviceRef, manifestPath, connectorId, chartName, "", "", "", null);
     assertThat(helmChartResponseDTO.getHelmChartVersions()).contains("0.1.0", "0.1.1");
     assertThat(helmChartResponseDTO.getLastTag()).isEqualTo("0.1.1");

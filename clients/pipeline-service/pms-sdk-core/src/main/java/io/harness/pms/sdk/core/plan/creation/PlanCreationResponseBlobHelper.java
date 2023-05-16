@@ -56,6 +56,9 @@ public class PlanCreationResponseBlobHelper {
       finalBlobResponseBuilder.addAllPreservedNodesInRollbackMode(
           planCreationResponse.getPreservedNodesInRollbackMode());
     }
+    if (planCreationResponse.getServiceAffinityMap() != null) {
+      finalBlobResponseBuilder.putAllServiceAffinity(planCreationResponse.getServiceAffinityMap());
+    }
     return finalBlobResponseBuilder.build();
   }
 }

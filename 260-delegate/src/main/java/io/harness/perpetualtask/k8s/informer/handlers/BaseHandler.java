@@ -26,6 +26,7 @@ import com.google.protobuf.Timestamp;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1CronJob;
 import io.kubernetes.client.openapi.models.V1DaemonSet;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -36,7 +37,6 @@ import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1StatefulSet;
-import io.kubernetes.client.openapi.models.V1beta1CronJob;
 import io.kubernetes.client.util.ModelMapper;
 import io.kubernetes.client.util.Yaml;
 import java.time.Instant;
@@ -73,7 +73,7 @@ public abstract class BaseHandler<ApiType extends KubernetesObject> implements R
       ModelMapper.addModelMap("apps", "v1", "StatefulSet", "statefulsets", true, V1StatefulSet.class);
       ModelMapper.addModelMap("apps", "v1", "DaemonSet", "daemonsets", true, V1DaemonSet.class);
       ModelMapper.addModelMap("batch", "v1", "Job", "jobs", true, V1Job.class);
-      ModelMapper.addModelMap("batch", "v1beta1", "CronJob", "cronjobs", true, V1beta1CronJob.class);
+      ModelMapper.addModelMap("batch", "v1beta1", "CronJob", "cronjobs", true, V1CronJob.class);
     } catch (Exception e) {
       log.error("Unexpected exception while loading classes", e);
     }

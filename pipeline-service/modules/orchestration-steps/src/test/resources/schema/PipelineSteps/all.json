@@ -234,6 +234,21 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CIVolume": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "EmptyDir",
+            "PersistentVolumeClaim",
+            "HostPath"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Capabilities": {
       "type": "object",
       "properties": {
@@ -398,6 +413,24 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
+        "hostNames": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -491,7 +524,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/ContainerVolume"
+                "$ref": "#/definitions/CIVolume"
               }
             },
             {
@@ -690,21 +723,6 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "ContainerVolume": {
-      "type": "object",
-      "discriminator": "type",
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "EmptyDir",
-            "PersistentVolumeClaim",
-            "HostPath"
-          ]
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "CriteriaSpec": {
       "type": "object",
       "discriminator": "type",
@@ -789,7 +807,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -942,7 +960,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -961,7 +979,7 @@
     "EmptyDirYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -1091,6 +1109,16 @@
                   "type": "string"
                 }
               ]
+            },
+            "isAutoRejectEnabled": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
@@ -1116,7 +1144,7 @@
     "HostPathYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -1187,6 +1215,12 @@
             "assertion": {
               "type": "string"
             },
+            "certificate": {
+              "type": "string"
+            },
+            "certificateKey": {
+              "type": "string"
+            },
             "delegateSelectors": {
               "oneOf": [
                 {
@@ -1197,7 +1231,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1206,6 +1240,22 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/HttpHeaderConfig"
+              }
+            },
+            "inputVariables": {
+              "type": "array",
+              "items": {
+                "oneOf": [
+                  {
+                    "$ref": "#/definitions/NumberNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/SecretNGVariable"
+                  },
+                  {
+                    "$ref": "#/definitions/StringNGVariable"
+                  }
+                ]
               }
             },
             "method": {
@@ -1358,7 +1408,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1406,7 +1456,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1469,7 +1519,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -1771,7 +1821,7 @@
     "PersistentVolumeClaimYaml": {
       "allOf": [
         {
-          "$ref": "#/definitions/ContainerVolume"
+          "$ref": "#/definitions/CIVolume"
         },
         {
           "type": "object",
@@ -2164,7 +2214,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2225,7 +2275,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2292,7 +2342,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2335,7 +2385,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]
@@ -2631,7 +2681,7 @@
                 },
                 {
                   "type": "string",
-                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "pattern": "(<\\+.+>.*)",
                   "minLength": 1
                 }
               ]

@@ -571,4 +571,14 @@ public class BudgetUtils {
         .disableCurrencyWarning(budget.getDisableCurrencyWarning())
         .build();
   }
+
+  public static Double[] getBudgetAmountMonthlyDifference(
+      List<ValueDataPoint> newBudgetMonthlyAmount, List<ValueDataPoint> oldBudgetMonthlyAmount) {
+    Double[] amountMonthlyDiff = new Double[MONTHS];
+    for (int month = 0; month < MONTHS; month++) {
+      amountMonthlyDiff[month] =
+          newBudgetMonthlyAmount.get(month).getValue() - oldBudgetMonthlyAmount.get(month).getValue();
+    }
+    return amountMonthlyDiff;
+  }
 }

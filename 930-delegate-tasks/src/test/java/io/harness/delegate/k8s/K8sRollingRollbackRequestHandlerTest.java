@@ -18,12 +18,12 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -80,6 +80,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
   private final Integer releaseNumber = 2;
   private final Integer timeoutIntervalInMin = 10;
   private final String releaseName = "releaseName";
+  private final String workingDirectory = "/tmp";
 
   @Before
   public void setUp() {
@@ -89,7 +90,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
         .getLogCallback(eq(logStreamingTaskClient), anyString(), anyBoolean(), any());
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
-        .createKubernetesConfig(k8sInfraDelegateConfig, logCallback);
+        .createKubernetesConfig(k8sInfraDelegateConfig, workingDirectory, logCallback);
 
     rollbackHandlerConfig = k8sRollingRollbackRequestHandler.getRollbackHandlerConfig();
     k8sRollingRollbackDeployRequest = K8sRollingRollbackDeployRequest.builder()
@@ -98,7 +99,7 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
                                           .releaseNumber(releaseNumber)
                                           .timeoutIntervalInMin(timeoutIntervalInMin)
                                           .build();
-    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().build();
+    k8sDelegateTaskParams = K8sDelegateTaskParams.builder().workingDirectory(workingDirectory).build();
   }
 
   @Test
@@ -193,13 +194,12 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
                                                         .build();
     doThrow(new KubernetesTaskException("error"))
         .when(k8sRollingRollbackBaseHandler)
-        .recreatePrunedResources(any(K8sRollingRollbackHandlerConfig.class), anyInt(),
-            anyListOf(KubernetesResourceId.class), any(LogCallback.class), any(K8sDelegateTaskParams.class), any());
+        .recreatePrunedResources(any(K8sRollingRollbackHandlerConfig.class), anyInt(), anyList(),
+            any(LogCallback.class), any(K8sDelegateTaskParams.class), any());
 
     k8sRollingRollbackRequestHandler.executeTaskInternal(
         deployRequest, k8sDelegateTaskParams, logStreamingTaskClient, null);
-    verify(k8sRollingRollbackBaseHandler)
-        .getResourcesRecreated(anyListOf(KubernetesResourceId.class), eq(RESOURCE_CREATION_FAILED));
+    verify(k8sRollingRollbackBaseHandler).getResourcesRecreated(anyList(), eq(RESOURCE_CREATION_FAILED));
   }
 
   @Test
@@ -220,8 +220,8 @@ public class K8sRollingRollbackRequestHandlerTest extends CategoryTest {
                                                         .build();
     doReturn(RESOURCE_CREATION_SUCCESSFUL)
         .when(k8sRollingRollbackBaseHandler)
-        .recreatePrunedResources(any(K8sRollingRollbackHandlerConfig.class), anyInt(),
-            anyListOf(KubernetesResourceId.class), any(LogCallback.class), any(K8sDelegateTaskParams.class), any());
+        .recreatePrunedResources(any(K8sRollingRollbackHandlerConfig.class), anyInt(), anyList(),
+            any(LogCallback.class), any(K8sDelegateTaskParams.class), any());
 
     doReturn(new HashSet<>(prunedResourceIds))
         .when(k8sRollingRollbackBaseHandler)

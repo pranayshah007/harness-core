@@ -7,8 +7,11 @@
 
 package io.harness.ngmigration.template;
 
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
+
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationContext;
+import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.StepSpecTypeConstants;
 
@@ -34,6 +37,7 @@ public class HttpTemplateService implements NgTemplateService {
 
     templateSpec.put("url", httpTemplate.getUrl());
     templateSpec.put("method", httpTemplate.getMethod());
+    templateSpec.put("delegateSelectors", RUNTIME_INPUT);
     if (EmptyPredicate.isNotEmpty(httpTemplate.getBody())) {
       templateSpec.put("requestBody", httpTemplate.getBody());
     }
@@ -54,6 +58,7 @@ public class HttpTemplateService implements NgTemplateService {
   @Override
   public String getTimeoutString(Template template) {
     HttpTemplate httpTemplate = (HttpTemplate) template.getTemplateObject();
-    return httpTemplate.getTimeoutMillis() < 10000 ? "10s" : httpTemplate.getTimeoutMillis() / 1000 + "s";
+    return httpTemplate.getTimeoutMillis() < 10000 ? "10s"
+                                                   : MigratorUtility.toTimeoutString(httpTemplate.getTimeoutMillis());
   }
 }

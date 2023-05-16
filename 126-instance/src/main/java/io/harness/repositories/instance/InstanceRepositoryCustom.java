@@ -110,4 +110,7 @@ public interface InstanceRepositoryCustom {
 
   List<Instance> getActiveInstancesByServiceId(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, String agentIdentifier);
+
+  List<Instance> getInstancesCreatedBefore(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceIdentifier, long timestamp);
 }

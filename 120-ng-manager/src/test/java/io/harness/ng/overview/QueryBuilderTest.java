@@ -266,7 +266,7 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testQueryBuilderServiceDeployments() {
     String expectedQueryResult =
-        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and sii.service_id='service_id' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
+        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket(86400000, service_startts) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and sii.service_id='service_id' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceDeployments(
         "account", "org", "project", 1620000000000L, 1620950400000L, 1, "service_id");
     assertThat(queryResult).isEqualTo(expectedQueryResult);
@@ -277,7 +277,7 @@ public class QueryBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testQueryBuilderServiceDeployments_withoutServiceId() {
     String expectedQueryResult =
-        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620950400000) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
+        "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, time_bucket(86400000, service_startts) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and pesi.accountid='account' and pesi.orgidentifier='org' and pesi.projectidentifier='project' and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=1620000000000 and sii.service_startts<1620950400000) as service where status != '' group by status, time_entity;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderServiceDeployments(
         "account", "org", "project", 1620000000000L, 1620950400000L, 1, null);
     assertThat(queryResult).isEqualTo(expectedQueryResult);

@@ -65,6 +65,8 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
           ThresholdServiceLevelIndicatorKeys.thresholdValue, thresholdServiceLevelIndicator.getThresholdValue());
       updateOperations.set(
           ThresholdServiceLevelIndicatorKeys.thresholdType, thresholdServiceLevelIndicator.getThresholdType());
+      updateOperations.set(
+          ServiceLevelIndicatorKeys.sliMissingDataType, thresholdServiceLevelIndicator.getSliMissingDataType());
       if (thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
         updateOperations.set(ThresholdServiceLevelIndicatorKeys.considerConsecutiveMinutes,
             thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes());
@@ -95,15 +97,23 @@ public class ThresholdServiceLevelIndicator extends ServiceLevelIndicator {
   @Override
   public boolean shouldReAnalysis(ServiceLevelIndicator serviceLevelIndicator) {
     try {
+      Preconditions.checkArgument(this.getSliMissingDataType().equals(serviceLevelIndicator.getSliMissingDataType()));
       ThresholdServiceLevelIndicator thresholdServiceLevelIndicator =
           (ThresholdServiceLevelIndicator) serviceLevelIndicator;
       Preconditions.checkArgument(this.getThresholdValue().equals(thresholdServiceLevelIndicator.getThresholdValue()));
       Preconditions.checkArgument(this.getThresholdType().equals(thresholdServiceLevelIndicator.getThresholdType()));
-      if (this.getConsiderConsecutiveMinutes() != null) {
+      if (this.getConsiderConsecutiveMinutes() != null
+          || thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null) {
+        Preconditions.checkArgument(this.getConsiderConsecutiveMinutes() != null);
+        Preconditions.checkArgument(thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes() != null);
         Preconditions.checkArgument(this.getConsiderConsecutiveMinutes().equals(
             thresholdServiceLevelIndicator.getConsiderConsecutiveMinutes()));
       }
-      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+      if (this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null
+          || this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null) {
+        Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad() != null);
+        Preconditions.checkArgument(
+            thresholdServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad() != null);
         Preconditions.checkArgument(this.getConsiderAllConsecutiveMinutesFromStartAsBad().equals(
             thresholdServiceLevelIndicator.getConsiderAllConsecutiveMinutesFromStartAsBad()));
       }

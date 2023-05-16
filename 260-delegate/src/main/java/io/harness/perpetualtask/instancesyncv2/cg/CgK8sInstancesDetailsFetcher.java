@@ -65,7 +65,6 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
   private final KubernetesContainerService kubernetesContainerService;
   private final KryoSerializer kryoSerializer;
   private final K8sTaskHelperBase k8sTaskHelperBase;
-  private final KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public InstanceSyncData fetchRunningInstanceDetails(
@@ -79,8 +78,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
       return InstanceSyncData.newBuilder().setTaskDetailsId(releaseDetails.getTaskDetailsId()).build();
     }
     try {
-      K8sClusterConfig config = (K8sClusterConfig) referenceFalseKryoSerializer.asObject(
-          instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
+      K8sClusterConfig config =
+          (K8sClusterConfig) kryoSerializer.asObject(instanceSyncTaskDetails.getK8SClusterConfig().toByteArray());
       KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(config, true);
 
       DelegateTaskNotifyResponseData taskResponseData = instanceSyncTaskDetails.getIsHelm()
@@ -89,7 +88,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
 
       return InstanceSyncData.newBuilder()
           .setTaskDetailsId(releaseDetails.getTaskDetailsId())
-          .setTaskResponse(ByteString.copyFrom(referenceFalseKryoSerializer.asBytes(taskResponseData)))
+          .setTaskResponse(ByteString.copyFrom(kryoSerializer.asBytes(taskResponseData)))
           .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
                                           .setReleaseName(instanceSyncTaskDetails.getReleaseName())
                                           .setNamespace(instanceSyncTaskDetails.getNamespace())
@@ -100,7 +99,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .setExecutionStatus(getExecutionStatus(instanceSyncTaskDetails.getIsHelm(), taskResponseData))
           .build();
     } catch (Exception e) {
-      log.error(
+      log.warn(
           "Exception while fetching running K8s pods for release details: [{}], infra mapping Id: [{}] of type: [{}]",
           releaseDetails.getTaskDetailsId(), releaseDetails.getInfraMappingId(), releaseDetails.getInfraMappingType(),
           e);
@@ -114,7 +113,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
                                           .build()))
           .setErrorMessage("Exception while fetching running K8s pods. Exception message: " + e.getMessage())
           .setTaskResponse(ByteString.copyFrom(
-              referenceFalseKryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
+              kryoSerializer.asBytes(createFailedTaskResponse(instanceSyncTaskDetails.getIsHelm(), e))))
           .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
           .build();
     }
@@ -181,8 +180,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .build();
 
     } catch (Exception exception) {
-      log.error(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
-                    instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName()),
+      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
+                   instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getReleaseName()),
           exception);
       return K8sTaskExecutionResponse.builder()
           .commandExecutionStatus(FAILURE)
@@ -204,8 +203,8 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
           .namespace(instanceSyncTaskDetails.getNamespace())
           .build();
     } catch (Exception exception) {
-      log.error(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
-                    instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName()),
+      log.warn(String.format("Failed to fetch containers info for namespace: [%s] and svc:[%s] ",
+                   instanceSyncTaskDetails.getNamespace(), instanceSyncTaskDetails.getContainerServiceName()),
           exception);
 
       return ContainerSyncResponse.builder()
