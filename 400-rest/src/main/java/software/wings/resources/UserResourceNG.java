@@ -51,6 +51,7 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.user.remote.UserFilterNG;
 
@@ -212,23 +213,19 @@ public class UserResourceNG {
   @Path("/signup-invite/marketplace")
   public RestResponse<UserInfo> createMarketplaceUserAndCompleteSignup(@QueryParam("inviteId") String inviteId,
       @QueryParam("marketPlaceToken") String marketPlaceToken, @QueryParam("email") String email,
-      @QueryParam("password") String password, @Body AccountDTO account) {
+      @QueryParam("password") String password, @Body SignupDTO dto) {
     MarketPlace marketPlace;
     UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
-    if (existingInvite.isCompleted()) {
-      log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
-      throw new UserRegistrationException(
-          EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
-    }
-
-    // String email = dto.getEmail().toLowerCase();
+    // ! Add back in after testing
+    // if (existingInvite.isCompleted()) {
+    //   log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
+    //   throw new UserRegistrationException(
+    //       EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
+    // }
 
     userService.verifyRegisteredOrAllowed(email);
 
-    // dto.setEmail(dto.getEmail().toLowerCase());
-
-    User user = convertMarketplaceRequestToUser(email, password, account);
-
+    User user = convertMarketplaceRequestToUser(email, password, dto);
     Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
     String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
     if (!userInviteID.equals(inviteId)) {
@@ -248,10 +245,18 @@ public class UserResourceNG {
     }
     // account passed in args does not yet have an identifier
     String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
+    User newAccount = wingsPersistence.get(Account.class, accountId);
+    List<Account> newAccountsList = new ArrayList<>();
+    newAccountsList.add(newAccount);
+    user.setAccounts(newAccountsList);
     User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
+
+    log.info("Successfully setup account accountId: {}", accountId);
+    log.info("Successfully created user createdUser: {}", createdUser);
 
     marketPlace.setAccountId(accountId);
     wingsPersistence.save(marketPlace);
+    log.info("Successfully saved marketplace: {}", createdUser);
 
     return new RestResponse<>(convertUserToNgUser(createdUser));
   }
@@ -649,7 +654,7 @@ public class UserResourceNG {
         .build();
   }
 
-  private User convertMarketplaceRequestToUser(String email, String password, AccountDTO account) {
+  private User convertMarketplaceRequestToUser(String email, String password, SignupDTO dto) {
     if (email == null || password == null) {
       return null;
     }
@@ -657,26 +662,27 @@ public class UserResourceNG {
     try {
       String passwordHash = hashpw(password, BCrypt.gensalt());
       List<Account> accountList = new ArrayList<>();
-      accountList.add(AccountMapper.fromAccountDTO(account));
 
-      String name = account.getName();
-
+      String name = dto.getName();
+      // !TODO: Need Default account identifier for User?
       return User.Builder.anUser()
           .email(email)
           .name(name)
           .passwordHash(passwordHash)
-          .accountName(account.getName())
-          .companyName(account.getCompanyName())
+          .accountName(dto.getCompanyName())
+          .companyName(dto.getCompanyName())
           .accounts(accountList)
           .emailVerified(true)
-          .defaultAccountId(account.getIdentifier())
           .build();
     } catch (Exception e) {
       throw new InvalidRequestException("Unable to convert Marketplace Request to User", e);
     }
   }
 
-  private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {
+  private User addAccountToAccounts
+
+      private User
+      convertNgUserToUserWithNameUpdated(UserInfo userInfo) {
     if (userInfo == null) {
       return null;
     }

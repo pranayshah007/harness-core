@@ -193,14 +193,14 @@ public class SignupServiceImpl implements SignupService {
    */
   @Override
   public UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException {
-    AccountDTO account = createAccount(dto);
-
     UserInfo userInfo = null;
     String email = dto.getEmail().toLowerCase();
     String password = dto.getPassword();
+    AccountDTO account = AccountDTO.builder().name(dto.getName()).companyName(dto.getCompanyName()).build();
+
     try {
       userInfo = getResponse(
-          userClient.createMarketplaceUserAndCompleteSignup(inviteId, marketPlaceToken, email, password, account),
+          userClient.createMarketplaceUserAndCompleteSignup(inviteId, marketPlaceToken, email, password, dto),
           getRetryPolicy("SignupServiceImpl-Request failed", INITIAL_DELAY, MAX_DELAY, ChronoUnit.SECONDS));
     } catch (InvalidRequestException e) {
       if (e.getMessage().contains("User with this email is already registered")) {
