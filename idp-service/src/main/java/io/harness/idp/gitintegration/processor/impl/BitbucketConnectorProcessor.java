@@ -13,8 +13,10 @@ import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALO
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCredentialsOutcomeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
@@ -42,6 +44,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
   public Map<String, BackstageEnvVariable> getConnectorAndSecretsInfo(
       String accountIdentifier, ConnectorInfoDTO connectorInfoDTO) {
     String connectorIdentifier = connectorInfoDTO.getIdentifier();
+    String host = GitIntegrationUtils.getHostForConnector(connectorInfoDTO);
     if (!connectorInfoDTO.getConnectorType().toString().equals(GitIntegrationConstants.BITBUCKET_CONNECTOR_TYPE)) {
       throw new InvalidRequestException(
           String.format("Connector with id - [%s] is not bitbucket connector for accountId: [%s]", connectorIdentifier,
@@ -49,6 +52,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     }
 
     BitbucketConnectorDTO config = (BitbucketConnectorDTO) connectorInfoDTO.getConnectorConfig();
+    BitbucketApiAccessDTO apiAccess = config.getApiAccess();
     BitbucketHttpCredentialsOutcomeDTO outcome =
         (BitbucketHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     if (!outcome.getType().toString().equals(GitIntegrationConstants.USERNAME_PASSWORD_AUTH_TYPE)) {
@@ -57,6 +61,8 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
           connectorIdentifier, accountIdentifier));
     }
 
+    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
+
     BitbucketUsernamePasswordDTO spec = (BitbucketUsernamePasswordDTO) outcome.getSpec();
     String pwdSecretIdentifier = spec.getPasswordRef().getIdentifier();
     if (pwdSecretIdentifier.isEmpty()) {
@@ -64,15 +70,41 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
           "Secret identifier not found for connector: [%s], accountId: [%s]", connectorIdentifier, accountIdentifier));
     }
 
-    Map<String, BackstageEnvVariable> secrets = new HashMap<>();
+    if (spec.getUsernameRef() == null) {
+      secrets.put(Constants.BITBUCKET_USERNAME,
+          new BackstageEnvConfigVariable()
+              .value(spec.getUsername())
+              .envName(Constants.BITBUCKET_USERNAME)
+              .type(BackstageEnvVariable.TypeEnum.CONFIG));
+    } else {
+      secrets.put(Constants.BITBUCKET_USERNAME,
+          GitIntegrationUtils.getBackstageEnvSecretVariable(
+              spec.getUsernameRef().getIdentifier(), Constants.BITBUCKET_USERNAME));
+    }
 
-    secrets.put(Constants.BITBUCKET_CLOUD_USERNAME,
-        new BackstageEnvConfigVariable()
-            .value(spec.getUsername())
-            .envName(Constants.BITBUCKET_CLOUD_USERNAME)
-            .type(BackstageEnvVariable.TypeEnum.CONFIG));
     secrets.put(Constants.BITBUCKET_TOKEN,
         GitIntegrationUtils.getBackstageEnvSecretVariable(pwdSecretIdentifier, Constants.BITBUCKET_TOKEN));
+
+    if (apiAccess != null && apiAccess.getType().toString().equals(GitIntegrationConstants.BITBUCKET_API_ACCESS_TYPE)
+        && !host.equals(GitIntegrationConstants.HOST_FOR_BITBUCKET_CLOUD)) {
+      BitbucketUsernameTokenApiAccessDTO bitbucketUsernameTokenApiAccessDTO =
+          (BitbucketUsernameTokenApiAccessDTO) apiAccess.getSpec();
+      if (bitbucketUsernameTokenApiAccessDTO.getUsernameRef() == null) {
+        secrets.put(Constants.BITBUCKET_USERNAME_API_ACCESS,
+            new BackstageEnvConfigVariable()
+                .value(bitbucketUsernameTokenApiAccessDTO.getUsername())
+                .envName(Constants.BITBUCKET_USERNAME_API_ACCESS)
+                .type(BackstageEnvVariable.TypeEnum.CONFIG));
+      } else {
+        secrets.put(Constants.BITBUCKET_USERNAME_API_ACCESS,
+            GitIntegrationUtils.getBackstageEnvSecretVariable(
+                bitbucketUsernameTokenApiAccessDTO.getUsernameRef().getIdentifier(),
+                Constants.BITBUCKET_USERNAME_API_ACCESS));
+      }
+      secrets.put(Constants.BITBUCKET_API_ACCESS_TOKEN,
+          GitIntegrationUtils.getBackstageEnvSecretVariable(
+              bitbucketUsernameTokenApiAccessDTO.getTokenRef().getIdentifier(), Constants.BITBUCKET_API_ACCESS_TOKEN));
+    }
     return secrets;
   }
 

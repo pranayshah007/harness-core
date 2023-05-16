@@ -23,9 +23,11 @@ public class GitIntegrationConstants {
   public static final String GITHUB_APP_CONNECTOR_TYPE = "GithubApp";
   public static final String GITLAB_CONNECTOR_TYPE = "Gitlab";
   public static final String BITBUCKET_CONNECTOR_TYPE = "Bitbucket";
+  public static final String BITBUCKET_API_ACCESS_TYPE = "UsernameToken";
   public static final String AZURE_REPO_CONNECTOR_TYPE = "AzureRepo";
   public static final String AZURE_HOST = "dev.azure.com";
   public static final String CATALOG_INFRA_CONNECTOR_TYPE_DIRECT = "DIRECT";
   public static final String CATALOG_INFRA_CONNECTOR_TYPE_PROXY = "PROXY";
   public static final String HARNESS_ENTITIES_IMPORT_COMMIT_MESSAGE = "Importing Harness Entities to IDP";
+  public static final String HOST_FOR_BITBUCKET_CLOUD = "bitbucket.org";
 }
