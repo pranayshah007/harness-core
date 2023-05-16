@@ -310,7 +310,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   // Provisioners
   private static final List<String> CLOUDFORMATION_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA,
-          ASG, AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
+          ASG, AWS_LAMBDA);
   private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(
       KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
   private static final List<String> TERRAGRUNT_CATEGORY = Arrays.asList(
