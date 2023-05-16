@@ -140,7 +140,6 @@ public class NGAccountSetupServiceTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDefaultProjectIsEnabledAndAllCGUsersMigratedToNG() {
-    when(featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)).thenReturn(true);
     when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
         .thenReturn(true);
     ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
@@ -158,7 +157,6 @@ public class NGAccountSetupServiceTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDefaultProjectIsEnabledAndOnlyCGAdminsMigratedToNG() {
-    when(featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)).thenReturn(true);
     when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
         .thenReturn(false);
     ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
@@ -175,7 +173,6 @@ public class NGAccountSetupServiceTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDefaultProjectIsDisabledAndAllCGUsersMigratedToNG() {
-    when(featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)).thenReturn(false);
     when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
         .thenReturn(true);
     ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
@@ -194,7 +191,6 @@ public class NGAccountSetupServiceTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testDefaultProjectIsDisabledAndOnlyCGAdminsMigratedToNG() {
-    when(featureFlagService.isGlobalEnabled(FeatureName.CREATE_DEFAULT_PROJECT)).thenReturn(false);
     when(featureFlagService.isNotEnabled(FeatureName.PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG, ACCOUNT_ID))
         .thenReturn(false);
     ngAccountSetupService.setupAccountForNG(ACCOUNT_ID);
