@@ -33,12 +33,6 @@ public class IdpBGMigrationDetails implements MigrationDetails {
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, PluginInfoMigration.class))
-        .add(Pair.of(2, PluginInfoDeleteMigration.class))
-        .add(Pair.of(3, PluginInfoMigration.class))
-        .add(Pair.of(4, PluginInfoMigration.class))
-        .add(Pair.of(5, PluginInfoMigration.class))
-        .add(Pair.of(6, PluginInfoMigration.class))
-        .add(Pair.of(7, PluginInfoMigration.class))
         .build();
   }
 }
