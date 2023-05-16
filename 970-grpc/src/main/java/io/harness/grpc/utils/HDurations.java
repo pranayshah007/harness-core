@@ -16,13 +16,21 @@ import org.joda.time.format.PeriodFormatterBuilder;
 @UtilityClass
 public class HDurations {
   private static final PeriodFormatter formatter = new PeriodFormatterBuilder()
+                                                       .appendHours()
+                                                       .appendSuffix("h")
                                                        .appendMinutes()
                                                        .appendSuffix("m")
                                                        .appendSecondsWithOptionalMillis()
                                                        .appendSuffix("s")
+                                                       .appendMillis()
+                                                       .appendSuffix("ms")
                                                        .toFormatter();
 
   public Duration parse(String duration) {
+    if (duration.contains(".")) {
+      duration = duration.replaceAll("(\\.\\d{3})\\d+", "$1");
+    }
+
     return Durations.fromSeconds(formatter.parsePeriod(duration).toStandardDuration().getStandardSeconds());
   }
 }
