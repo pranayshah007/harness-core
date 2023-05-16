@@ -16,6 +16,7 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.AccountLevelOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.OrgLevelOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ProjectLevelOverrideMigrationResponseDTO;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideMigrationResponseDTO;
@@ -168,8 +169,49 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testAccountScopeMigration() {
-    ServiceOverrideMigrationResponseDTO serviceOverrideMigrationResponseDTO =
+    createOverrideTestData();
+    ServiceOverrideMigrationResponseDTO responseDTO =
         v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, false);
+
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.isSuccessful()).isTrue();
+    assertThat(responseDTO.getProjectLevelMigrationInfo()).isEmpty();
+    assertThat(responseDTO.getOrgLevelMigrationInfo()).isEmpty();
+
+    AccountLevelOverrideMigrationResponseDTO accountResponseDto = responseDTO.getAccountLevelMigrationInfo();
+    assertThat(accountResponseDto).isNotNull();
+
+    assertThat(accountResponseDto.isOverridesMigrationSuccessFul()).isTrue();
+    assertThat(accountResponseDto.isEnvsMigrationSuccessful()).isTrue();
+
+    assertThat(accountResponseDto.getTotalServiceOverridesCount()).isEqualTo(2L);
+    assertThat(accountResponseDto.getMigratedServiceOverridesCount()).isEqualTo(2L);
+
+    assertThat(accountResponseDto.getServiceOverridesInfo().get(0).getProjectId()).isBlank();
+    assertThat(accountResponseDto.getServiceOverridesInfo().get(0).getOrgId()).isBlank();
+
+    assertThat(accountResponseDto.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getAccountId)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(ACCOUNT_IDENTIFIER, ACCOUNT_IDENTIFIER);
+    assertThat(accountResponseDto.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getServiceRef)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(accountSvcRefs.get(0), accountSvcRefs.get(1));
+    assertThat(accountResponseDto.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getEnvRef)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(accountEnvRefs.get(0), accountEnvRefs.get(1));
+    assertThat(accountResponseDto.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::isSuccessful)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(true, true);
+    assertThat(accountResponseDto.getMigratedEnvironmentsCount()).isEqualTo(0L);
+    assertThat(accountResponseDto.getEnvironmentsInfo()).isEmpty();
   }
 
   private void createOverrideTestData() {

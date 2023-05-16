@@ -443,10 +443,9 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   @NotNull
   private static Criteria getCriteriaForAccountServiceOverrides(String accountId) {
     Criteria criteria = new Criteria().and(NGServiceOverridesEntityKeys.accountId).is(accountId);
-    criteria.andOperator(
-        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.orgIdentifier).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.orgIdentifier).is(null)));
     return criteria.andOperator(
+        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.orgIdentifier).exists(false),
+            Criteria.where(NGServiceOverridesEntityKeys.orgIdentifier).is(null)),
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).is(null)),
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
