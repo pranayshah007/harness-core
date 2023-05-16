@@ -179,7 +179,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  public void testgetChangeSummary() {
+  public void testGetChangeSummary() {
     ChangeSummaryDTO changeSummaryDTO = ChangeSummaryDTO.builder().build();
     when(changeEventService.getChangeSummary(eq(builderFactory.getContext().getMonitoredServiceParams()),
              eq(new ArrayList<>()), eq(Instant.ofEpochSecond(100)), eq(Instant.ofEpochSecond(100))))
