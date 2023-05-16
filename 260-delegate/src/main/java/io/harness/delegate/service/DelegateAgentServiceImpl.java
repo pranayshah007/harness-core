@@ -2047,7 +2047,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         DelegateTaskPackage delegateTaskPackage = executeAcquireCallWithRetry(
             acquireCall, String.format("Failed acquiring delegate task %s by delegate %s", delegateTaskId, delegateId));
-
+        log.info("delegateTaskPackage mocking {}",delegateTaskPackage);
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
             log.warn("Delegate task package is null");
@@ -2744,9 +2744,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     try {
       int retries = 5;
       for (int attempt = 0; attempt < retries; attempt++) {
+        log.info("task response mocking {} {} {} {}", delegateId, taskId, accountId, taskResponse)
         response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (response != null && response.code() >= 200 && response.code() <= 299) {
-          log.debug("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
+          log.info("Task {} type {},  response sent to manager", taskId, taskResponse.getTaskTypeName());
           metricRegistry.recordCounterInc(
               TASK_COMPLETED.getMetricName(), new String[] {DELEGATE_NAME, taskResponse.getTaskTypeName()});
           break;
