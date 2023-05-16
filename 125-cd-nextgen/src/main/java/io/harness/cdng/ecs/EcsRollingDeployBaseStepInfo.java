@@ -7,6 +7,7 @@
 
 package io.harness.cdng.ecs;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ecsRollingDeployBaseStepInfo")
 @FieldNameConstants(innerTypeName = "EcsRollingDeployBaseStepInfoKeys")
 public class EcsRollingDeployBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
