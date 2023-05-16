@@ -239,11 +239,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     InstanceSyncPerpetualTaskMappingDTO instanceSyncPerpetualTaskMappingDTO;
     if (connectorDTO.isPresent()) {
       ConnectorInfoDTO connectorInfoDTO = connectorDTO.get().getConnector();
-      Optional<InstanceSyncPerpetualTaskMapping> instanceSyncPerpetualTaskMappingOptional =
-          instanceSyncPerpetualTaskMappingService.findByConnectorRef(infrastructureMappingDTO.getAccountIdentifier(),
-              connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
-              infrastructureMappingDTO.getConnectorRef());
-      if (instanceSyncPerpetualTaskMappingOptional.isEmpty()) {
+      instanceSyncPerpetualTaskMappingDTO = instanceSyncPerpetualTaskMappingService.findByConnectorRef(
+          infrastructureMappingDTO.getAccountIdentifier(), connectorInfoDTO.getOrgIdentifier(),
+          connectorInfoDTO.getProjectIdentifier(), infrastructureMappingDTO.getConnectorRef());
+      if (instanceSyncPerpetualTaskMappingDTO == null) {
         instanceSyncPerpetualTaskMappingDTO = instanceSyncPerpetualTaskMappingService.save(
             InstanceSyncPerpetualTaskMappingDTO.builder()
                 .accountId(infrastructureMappingDTO.getAccountIdentifier())
@@ -253,9 +252,6 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
                     abstractInstanceSyncHandler, infrastructureMappingDTO, connectorInfoDTO))
                 .connectorIdentifier(infrastructureMappingDTO.getConnectorRef())
                 .build());
-      } else {
-        instanceSyncPerpetualTaskMappingDTO =
-            InstanceSyncPerpetualTaskMappingMapper.toDTO(instanceSyncPerpetualTaskMappingOptional.get());
       }
 
       Optional<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOOptional =
