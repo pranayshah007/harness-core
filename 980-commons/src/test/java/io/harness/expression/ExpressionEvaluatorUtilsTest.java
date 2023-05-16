@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HINGER;
 
 import static java.util.Arrays.asList;
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -20,6 +21,8 @@ import io.harness.rule.Owner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -173,14 +176,27 @@ public class ExpressionEvaluatorUtilsTest extends CategoryTest {
     String resolvedKey = "updated_key";
 
     // this map has 1 entry with key as expression, 1 entry with value as expression, 1 constant entry
-    Map<String, Object> map = new HashMap<>(ImmutableMap.of(originalKey, "constantValue", "constantKey", originalValue,
-        "constA", "constB", "<+non_familiar_key>", "non_familiar_value"));
+    Map<String, Object> map = new LinkedHashMap<>(ImmutableMap.of(originalKey, "constantValue", "constantKey",
+        originalValue, "constA", "constB", "<+non_familiar_key>", "non_familiar_value"));
     DummyB dummyB = DummyB.builder().map(map).build();
 
     // context knows how to resolve both the key and value
     Map<String, String> context = ImmutableMap.of(originalKey, resolvedKey, originalValue, resolvedValue);
 
     ExpressionEvaluatorUtils.updateExpressions(dummyB, DummyMapFunctor.builder().context(context).build());
+
+    Map<String, Object> updatedMap = new LinkedHashMap<>(ImmutableMap.of(resolvedKey, "constantValue", "constantKey",
+        resolvedValue, "constA", "constB", "<+non_familiar_key>", "non_familiar_value"));
+    Iterator<Map.Entry<String, Object>> expectedIterator = map.entrySet().iterator();
+    Iterator<Map.Entry<String, Object>> actualIterator = updatedMap.entrySet().iterator();
+
+    while (expectedIterator.hasNext() && actualIterator.hasNext()) {
+      Map.Entry<String, Object> expectedEntry = expectedIterator.next();
+      Map.Entry<String, Object> actualEntry = actualIterator.next();
+
+      assertEquals(expectedEntry.getKey(), actualEntry.getKey());
+      assertEquals(expectedEntry.getValue(), actualEntry.getValue());
+    }
 
     // value is updated to <+updated_value>
     assertThat(map.get("constantKey")).isEqualTo(resolvedValue);
