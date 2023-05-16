@@ -339,7 +339,6 @@ public enum FeatureName {
   SRM_SLO_TOGGLE,
   SERVICE_DASHBOARD_V2,
   CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
-  CDC_DASHBOARD_ENHANCEMENT_NG("New APIs added to send trend object in response for change rates", HarnessTeam.CDC),
   CDC_SERVICE_DASHBOARD_REVAMP_NG("Service Dashboard Revamp is behind this FF", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   USE_CDC_FOR_PIPELINE_HANDLER,
@@ -447,8 +446,6 @@ public enum FeatureName {
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
-  NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
-  NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
   NEW_EXECUTION_LIST_VIEW(
       "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
   SPG_FIX_APPROVAL_WAITING_FOR_INPUTS(
@@ -557,7 +554,6 @@ public enum FeatureName {
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE),
-  CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
   DISABLE_CDS_SERVICE_ENV_SCHEMA_VALIDATION(
       "Used to disable Schema validation for Service Env for new service env redesign", HarnessTeam.CDC),
   PL_SIMPLIFY_ACL_CHECK("Evaluate access using role assignments instead of ACL's.", HarnessTeam.PL),
