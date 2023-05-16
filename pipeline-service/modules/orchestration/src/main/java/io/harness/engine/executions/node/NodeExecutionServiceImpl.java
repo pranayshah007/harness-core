@@ -593,6 +593,19 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public boolean markSelfAndDescendantsRetried(String planExecutionId, String nodeExecutionId) {
+    Set<String> nodeExecIds = findAllChildrenOnlyIds(planExecutionId, nodeExecutionId, true)
+                                  .stream()
+                                  .map(NodeExecution::getUuid)
+                                  .collect(Collectors.toSet());
+    Update ops = new Update().set(NodeExecutionKeys.oldRetry, Boolean.TRUE);
+    // Uses - id index
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecIds));
+    UpdateResult updateResult = mongoTemplate.updateMulti(query, ops, NodeExecution.class);
+    return updateResult.wasAcknowledged();
+  }
+
+  @Override
   public void deleteAllNodeExecutionAndMetadata(String planExecutionId) {
     // Fetches all nodeExecutions from analytics for given planExecutionId
     List<NodeExecution> batchNodeExecutionList = new LinkedList<>();

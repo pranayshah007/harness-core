@@ -8,6 +8,7 @@
 package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
@@ -41,5 +42,13 @@ public class RetryStepGroupInterruptHandler extends RetryInterruptHandler {
       throw new InvalidRequestException("A Retry Interrupt is already in process");
     }
     return interruptService.save(interrupt);
+  }
+
+  @Override
+  public Interrupt handleInterruptForNodeExecution(Interrupt interrupt, String nodeExecutionId) {
+    retryHelper.retryNodeExecutionForSGRetry(
+        interrupt.getNodeExecutionId(), interrupt.getUuid(), interrupt.getInterruptConfig());
+    planExecutionService.updateStatus(interrupt.getPlanExecutionId(), RUNNING);
+    return interrupt;
   }
 }

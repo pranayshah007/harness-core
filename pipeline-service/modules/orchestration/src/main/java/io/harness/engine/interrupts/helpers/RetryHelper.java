@@ -77,6 +77,33 @@ public class RetryHelper {
     executorService.submit(() -> engine.startNodeExecution(finalAmbiance));
   }
 
+  public void retryNodeExecutionForSGRetry(
+      String nodeExecutionId, String interruptId, InterruptConfig interruptConfig) {
+    NodeExecution nodeExecution = Preconditions.checkNotNull(nodeExecutionService.get(nodeExecutionId));
+    Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
+    String newUuid = generateUuid();
+
+    Ambiance oldAmbiance = nodeExecution.getAmbiance();
+    NodeExecution updatedRetriedNode = updateRetriedNodeMetadata(nodeExecution);
+
+    Level currentLevel = AmbianceUtils.obtainCurrentLevel(oldAmbiance);
+    Ambiance ambiance = AmbianceUtils.cloneForFinish(oldAmbiance);
+    int newRetryIndex = currentLevel != null ? currentLevel.getRetryIndex() + 1 : 0;
+    Ambiance finalAmbiance =
+        ambiance.toBuilder()
+            .addLevels(PmsLevelUtils.buildLevelFromNode(newUuid, newRetryIndex, node,
+                currentLevel.getStrategyMetadata(), ambiance.getMetadata().getUseMatrixFieldName()))
+            .build();
+    NodeExecution newNodeExecution =
+        cloneForRetry(updatedRetriedNode, newUuid, finalAmbiance, interruptConfig, interruptId);
+    NodeExecution savedNodeExecution = nodeExecutionService.save(newNodeExecution);
+
+    nodeExecutionService.updateRelationShipsForRetryNode(updatedRetriedNode.getUuid(), savedNodeExecution.getUuid());
+    nodeExecutionService.markSelfAndDescendantsRetried(ambiance.getPlanExecutionId(), updatedRetriedNode.getUuid());
+    // Todo: Check with product if we want to stop again for execution time input
+    executorService.submit(() -> engine.startNodeExecution(finalAmbiance));
+  }
+
   private NodeExecution updateRetriedNodeMetadata(NodeExecution nodeExecution) {
     NodeExecution updatedNodeExecution = updateRetriedNodeStatusIfInterventionWaiting(nodeExecution);
     if (updatedNodeExecution != null && updatedNodeExecution.getEndTs() == null) {
