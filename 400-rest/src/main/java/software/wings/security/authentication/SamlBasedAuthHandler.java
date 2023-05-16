@@ -759,10 +759,11 @@ public class SamlBasedAuthHandler implements AuthHandler {
   }
 
   private User getUser(String samlResponseString, SamlSettings samlSettings) throws SamlException {
+    String nameId = null;
     try {
       SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
       SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
-      String nameId = samlResponse.getNameID();
+      nameId = samlResponse.getNameID();
       User user = authenticationUtils.getUser(nameId);
       validateUser(user, samlSettings.getAccountId());
       return user;
@@ -770,7 +771,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
       log.warn("SAML: SamlResponse cannot be validated for saml settings id=[{}], url=[{}], accountId=[{}]",
           samlSettings.getUuid(), samlSettings.getUrl(), samlSettings.getAccountId());
     } catch (WingsException e) {
-      log.warn("SAML: SamlResponse contains nameId which does not exist in db, url=[{}], accountId=[{}]",
       // this means user is not present in harness
       // create the user by matching the attribute in the saml response
       if (true) { // match the attribute received in saml assertion
