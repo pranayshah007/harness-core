@@ -7,7 +7,7 @@
 FILES_WITHOUT_STMTS=()
 
 HARNESS_INC="Copyright [0-9]{4} Harness Inc. All rights reserved."
-EXCLUSION_LIST='\.pem\|\.tgz\|\.tpl\|\.lock\|\.helmignore\|\.mod\|\.sum\|\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|\.jfc\|\.MD\|\.factories\|exclusion-file\|project/bazelproject\|scripts/jenkins/bazelignore\|resources/mockito-extensions\|\.bazelignore\|\.datacollection\|\.tf\|\.ftl\|\.gitignore\|^\.'
+EXCLUSION_LIST='\.pem\|\.tgz\|\.tpl\|\.lock\|\.helmignore\|\.mod\|\.sum\|\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|\.jfc\|\.MD\|\.factories\|exclusion-file\|project/bazelproject\|scripts/jenkins/bazelignore\|scripts/jenkins/sonarIgnore\|resources/mockito-extensions\|\.bazelignore\|\.datacollection\|\.tf\|\.ftl\|\.gitignore\|^\.'
 
 MERGE_SUMMARY=($(git diff --name-only $COMMIT_SHA..$BASE_SHA | grep -v ${EXCLUSION_LIST}))
 
@@ -21,9 +21,9 @@ done
 len=${#FILES_WITHOUT_STMTS[@]}
 
 if [ $len -eq 0 ]; then
-  echo "INFO: All files have copyright statement..."
+  echo -e "\e[1;34mINFO:\e[0m All files have a copyright statement..."
 else
-  echo "ERROR: Following ${len} files do not have the Copyright statements. please update and re-trigger the execution..."
+  echo -e "\e[1;31mERROR:\e[0m Following ${len} files do not have the Copyright statements. Please update and re-trigger the execution..."
   for file in ${FILES_WITHOUT_STMTS[@]}
   do
     echo "-> $file"
