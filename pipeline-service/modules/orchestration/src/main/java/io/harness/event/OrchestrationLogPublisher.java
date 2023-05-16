@@ -32,9 +32,11 @@ import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import javax.cache.Cache;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
+@Slf4j
 public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, StepDetailsUpdateObserver {
   @Inject private OrchestrationEventLogRepository orchestrationEventLogRepository;
   @Inject @Named(EventsFrameworkConstants.ORCHESTRATION_LOG) private Producer producer;
@@ -71,16 +73,21 @@ public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, Step
   }
 
   private void batchAndSendLogEventIfRequired(String planExecutionId) {
-    Long currentValue = orchestrationLogCache.get(planExecutionId);
-    if (currentValue != null) {
-      if (currentValue >= orchestrationLogConfiguration.getOrchestrationLogBatchSize()) {
-        sendLogEvent(planExecutionId);
-        orchestrationLogCache.put(planExecutionId, 1L);
+    try {
+      Long currentValue = orchestrationLogCache.get(planExecutionId);
+      if (currentValue != null) {
+        if (currentValue >= orchestrationLogConfiguration.getOrchestrationLogBatchSize()) {
+          sendLogEvent(planExecutionId);
+          orchestrationLogCache.put(planExecutionId, 1L);
+        } else {
+          orchestrationLogCache.put(planExecutionId, currentValue + 1);
+        }
       } else {
-        orchestrationLogCache.put(planExecutionId, currentValue + 1);
+        orchestrationLogCache.put(planExecutionId, 1L);
       }
-    } else {
-      orchestrationLogCache.put(planExecutionId, 1L);
+    } catch (Exception ex) {
+      log.error(
+          "Exception occurred while publishing orchestrationLogEvent for planExecutionId: {}", planExecutionId, ex);
     }
   }
 
