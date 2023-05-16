@@ -630,12 +630,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         }
         deleteSingleTemplateHelper(accountId, orgIdentifier, projectIdentifier, templateEntity.getIdentifier(),
             templateEntity, version, canDeleteStableTemplate, comments, forceDelete);
+      } catch (ReferencedEntityException referencedEntityException) {
         if (!canDeleteStableTemplate && lastUpdatedTemplateDeleted) {
           makeGivenTemplateLastUpdatedTemplateTrue(stableTemplate);
         }
+        throw referencedEntityException;
       }
     }
-
     return true;
   }
 

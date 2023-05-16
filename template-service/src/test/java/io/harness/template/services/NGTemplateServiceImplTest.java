@@ -37,6 +37,7 @@ import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -68,10 +69,15 @@ import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.project.remote.ProjectClient;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -112,6 +118,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -135,7 +143,13 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock GitXSettingsHelper gitXSettingsHelper;
 
   @InjectMocks NGTemplateServiceImpl templateService;
+
   @Mock private NGTemplateFeatureFlagHelperService ngTemplateFeatureFlagHelperService;
+
+  @Mock private AccountClient accountClient;
+  @Mock private NGSettingsClient settingsClient;
+
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
@@ -232,6 +246,11 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
         .when(ngManagerReconcileCall)
         .execute();
     doReturn(true).when(accessControlClient).hasAccess(any(), any(), any());
+
+    when(settingsClient.getSetting(SettingIdentifiers.ENABLE_FORCE_DELETE, ACCOUNT_ID, null, null)).thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
   }
 
   @Test
@@ -464,7 +483,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     Page<TemplateEntity> templateEntities =
         templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(2);
+    assertThat(templateEntities.getContent().size()).isEqualTo(1);
 
     // Deleting a non last update template version
     delete =
@@ -472,7 +491,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(delete).isTrue();
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
-    assertThat(templateEntities.getContent().size()).isEqualTo(2);
+    assertThat(templateEntities.getContent().size()).isEqualTo(1);
 
     // Deleting complete templateIdentifier
     delete = templateService.deleteTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER,
@@ -492,6 +511,48 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertThat(templateEntities.getContent()).isNotNull();
     assertThat(templateEntities.getContent().size()).isEqualTo(1);
+
+    TemplateEntity createdEntity3 =
+        templateService.create(entity.withVersionLabel("version1").withIdentifier("template3"), false, "", false);
+    assertThat(createdEntity3.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion3_2 =
+        templateService.create(entity.withVersionLabel("version2").withIdentifier("template3"), true, "", false);
+    assertThat(entityVersion3_2.isStableTemplate()).isTrue();
+
+    TemplateEntity entityVersion3_3 =
+        templateService.create(entity.withVersionLabel("version3").withIdentifier("template3"), false, "", false);
+    assertThat(entityVersion3_3.isStableTemplate()).isFalse();
+    assertThat(entityVersion3_3.isLastUpdatedTemplate()).isTrue();
+
+    Call<ResponseDTO<Boolean>> request1 = mock(Call.class);
+    try {
+      when(request1.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
+    } catch (IOException ex) {
+    }
+    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request1);
+
+    // test referenced entity exception is true
+    assertThatThrownBy(()
+                           -> templateService.delete(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template3", "version3", null, "", false))
+        .isInstanceOf(ReferencedEntityException.class);
+
+    MockedStatic<CGRestUtils> mockCGRestUtils = Mockito.mockStatic(CGRestUtils.class);
+    mockCGRestUtils.when(() -> CGRestUtils.getResponse(any())).thenReturn(true);
+
+    // test force delete
+    delete =
+        templateService.delete(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "template3", "version3", null, "", true);
+    assertThat(delete).isTrue();
+
+    criteria =
+        templateServiceHelper.formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "", false);
+    criteria.and(TemplateEntityKeys.isLastUpdatedTemplate).is(true);
+    pageRequest = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.lastUpdatedAt));
+    templateEntities = templateService.list(criteria, pageRequest, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
+    assertThat(templateEntities.getContent()).isNotNull();
+    assertThat(templateEntities.getContent().size()).isEqualTo(2);
   }
 
   @Test
