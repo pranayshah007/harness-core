@@ -51,7 +51,6 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.beans.PageRequest;
