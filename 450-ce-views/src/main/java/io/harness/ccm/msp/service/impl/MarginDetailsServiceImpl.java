@@ -8,6 +8,7 @@
 package io.harness.ccm.msp.service.impl;
 
 import io.harness.ccm.msp.dao.MarginDetailsDao;
+import io.harness.ccm.msp.entities.AmountDetails;
 import io.harness.ccm.msp.entities.ManagedAccountDetails;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
@@ -68,5 +69,15 @@ public class MarginDetailsServiceImpl implements MarginDetailsService {
                                          .accountName(marginDetails.getAccountName())
                                          .build()));
     return managedAccountDetails;
+  }
+
+  @Override
+  public void updateMarkupAmount(String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails) {
+    marginDetailsDao.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails);
+  }
+
+  @Override
+  public void updateTotalSpend(String mspAccountId, String managedAccountId, AmountDetails totalSpendDetails) {
+    marginDetailsDao.updateTotalSpend(mspAccountId, managedAccountId, totalSpendDetails);
   }
 }

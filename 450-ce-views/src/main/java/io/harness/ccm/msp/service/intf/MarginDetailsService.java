@@ -7,6 +7,7 @@
 
 package io.harness.ccm.msp.service.intf;
 
+import io.harness.ccm.msp.entities.AmountDetails;
 import io.harness.ccm.msp.entities.ManagedAccountDetails;
 import io.harness.ccm.msp.entities.MarginDetails;
 
@@ -21,4 +22,6 @@ public interface MarginDetailsService {
   MarginDetails get(String mspAccountId, String managedAccountId);
   List<MarginDetails> list(String mspAccountId);
   List<ManagedAccountDetails> listManagedAccountDetails(String mspAccountId);
+  void updateMarkupAmount(String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails);
+  void updateTotalSpend(String mspAccountId, String managedAccountId, AmountDetails totalSpendDetails);
 }
