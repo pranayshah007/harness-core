@@ -19,6 +19,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.exception.InvalidRequestException;
@@ -161,5 +162,14 @@ public class DelegateNgTokenServiceTest extends WingsBaseTest {
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
     delegateNgTokenService.createToken(TEST_ACCOUNT_ID, null, tokenName1, null);
     assertThat(delegateNgTokenService.getDelegateTokenValue(TEST_ACCOUNT_ID, tokenName1)).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void UpsertDefaultToken() {
+    DelegateTokenDetails result = delegateNgTokenService.upsertDefaultToken(
+        TEST_ACCOUNT_ID, DelegateEntityOwner.builder().identifier("default_project_default/p4").build(), false);
+    assertThat(result).isNotNull();
   }
 }
