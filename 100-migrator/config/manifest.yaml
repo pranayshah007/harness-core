@@ -1,2 +1,3 @@
+ARTIFACT_REPO: harness/feature-migrator-openjdk-8u242
 HELM_CHART_SOURCE_DIRECTORY: 100-migrator/chart
 HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
