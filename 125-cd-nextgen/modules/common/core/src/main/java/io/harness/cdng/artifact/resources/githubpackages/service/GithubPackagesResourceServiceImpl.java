@@ -13,6 +13,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.githubpackages.dtos.GithubPackagesResponseDTO;
 import io.harness.cdng.artifact.resources.githubpackages.mappers.GithubPackagesResourceMapper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
@@ -66,6 +67,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Slf4j
 public class GithubPackagesResourceServiceImpl implements GithubPackagesResourceService {
@@ -155,6 +157,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     if (EmptyPredicate.isEmpty(versionRegex) && EmptyPredicate.isEmpty(version)) {
       versionRegex = "*";
     }
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.PACKAGE_NAME, packageName),
+        MutablePair.of(NGArtifactConstants.PACKAGE_TYPE, packageType));
 
     GithubConnectorDTO githubConnector = getConnector(connectorRef);
 

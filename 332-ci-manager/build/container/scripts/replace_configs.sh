@@ -140,43 +140,43 @@ if [[ "" != "$CACHE_SERVICE_KEY" ]]; then
 fi
 
 if [[ "" != "$DLC_S3_ENDPOINT" ]]; then
-  export DLC_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.endpoint=env(DLC_S3_ENDPOINT)' $CONFIG_FILE
+  export DLC_S3_ENDPOINT; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.endpoint=env(DLC_S3_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_S3_BUCKET" ]]; then
-  export DLC_S3_BUCKET; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.bucket=env(DLC_S3_BUCKET)' $CONFIG_FILE
+  export DLC_S3_BUCKET; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.bucket=env(DLC_S3_BUCKET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_S3_ACCESS_KEY" ]]; then
-  export DLC_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.accessKey=env(DLC_S3_ACCESS_KEY)' $CONFIG_FILE
+  export DLC_S3_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.accessKey=env(DLC_S3_ACCESS_KEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_S3_SECRET_KEY" ]]; then
-  export DLC_S3_SECRET_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.secretKey=env(DLC_S3_SECRET_KEY)' $CONFIG_FILE
+  export DLC_S3_SECRET_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.secretKey=env(DLC_S3_SECRET_KEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_S3_REGION" ]]; then
-  export DLC_S3_REGION; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingConfig.region=env(DLC_S3_REGION)' $CONFIG_FILE
+  export DLC_S3_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingConfig.region=env(DLC_S3_REGION)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_GCS_ENDPOINT" ]]; then
-  export DLC_GCS_ENDPOINT; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.endpoint=env(DLC_GCS_ENDPOINT)' $CONFIG_FILE
+  export DLC_GCS_ENDPOINT; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.endpoint=env(DLC_GCS_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_GCS_BUCKET" ]]; then
-  export DLC_GCS_BUCKET; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.bucket=env(DLC_GCS_BUCKET)' $CONFIG_FILE
+  export DLC_GCS_BUCKET; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.bucket=env(DLC_GCS_BUCKET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_GCS_ACCESS_KEY" ]]; then
-  export DLC_GCS_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.accessKey=env(DLC_GCS_ACCESS_KEY)' $CONFIG_FILE
+  export DLC_GCS_ACCESS_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.accessKey=env(DLC_GCS_ACCESS_KEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_GCS_SECRET_KEY" ]]; then
-  export DLC_GCS_SECRET_KEY; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.secretKey=env(DLC_GCS_SECRET_KEY)' $CONFIG_FILE
+  export DLC_GCS_SECRET_KEY; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.secretKey=env(DLC_GCS_SECRET_KEY)' $CONFIG_FILE
 fi
 
 if [[ "" != "$DLC_GCS_REGION" ]]; then
-  export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.ciDockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
+  export DLC_GCS_REGION; yq -i '.ciExecutionServiceConfig.dockerLayerCachingGCSConfig.region=env(DLC_GCS_REGION)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HOSTED_VM_SPLIT_LINUX_AMD64_POOL" ]]; then

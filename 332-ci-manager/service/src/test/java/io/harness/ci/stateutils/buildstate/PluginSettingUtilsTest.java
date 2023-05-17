@@ -66,6 +66,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.utils.CiCodebaseUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -89,6 +90,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Inject public PluginSettingUtils pluginSettingUtils;
 
   @Mock private CodebaseUtils codebaseUtils;
+  @Mock private CiCodebaseUtils ciCodebaseUtils;
+
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
@@ -96,6 +99,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
     on(pluginSettingUtils).set("connectorUtils", connectorUtils);
+    on(pluginSettingUtils).set("ciCodebaseUtils", ciCodebaseUtils);
     on(pluginSettingUtils).set("sscaOrchestrationPluginUtils", sscaOrchestrationPluginUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
@@ -605,10 +609,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -652,10 +659,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -698,10 +708,14 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
+
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -940,5 +954,105 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     pluginSettingUtils.setupDlcArgs(dockerStepInfo, "identifier", cacheFrom, cacheTo);
     assertThat(expectedCacheFrom).isEqualTo(dockerStepInfo.getCacheFrom());
     assertThat(expectedCacheTo).isEqualTo(dockerStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testDlcSetupRequiredEcr() {
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField("harness"))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    assertThat(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetDlcPrefixEcr() {
+    String accountId = "test-account-id";
+    String repo = "harness";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String expectedPrefix = String.format("%s/%s/", accountId, repo);
+    String prefix = pluginSettingUtils.getDlcPrefix(accountId, "identifier", ecrStepInfo);
+    assertThat(expectedPrefix).isEqualTo(prefix);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsEcr() {
+    String repo = "harness";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsWithCacheArgsEcr() {
+    String repo = "harness";
+    String inputCacheFrom = "inputCacheFrom";
+    String inputCacheTo = "inputCacheTo";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .cacheFrom(ParameterField.createValueField(asList(inputCacheFrom)))
+            .cacheTo(ParameterField.createValueField(inputCacheTo))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(inputCacheFrom, cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
   }
 }

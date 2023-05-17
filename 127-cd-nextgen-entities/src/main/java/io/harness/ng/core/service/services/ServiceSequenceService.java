@@ -15,7 +15,7 @@ public interface ServiceSequenceService {
   Optional<ServiceSequence> get(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
 
-  ServiceSequence upsertDefaultSequence(ServiceSequence requestServiceSequence);
+  ServiceSequence upsertSequence(ServiceSequence requestServiceSequence);
 
   ServiceSequence upsertCustomSequence(ServiceSequence requestServiceSequence);
 

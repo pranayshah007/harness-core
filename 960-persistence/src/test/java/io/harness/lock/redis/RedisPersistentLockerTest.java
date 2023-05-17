@@ -10,6 +10,7 @@ package io.harness.lock.redis;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.redis.RedisReadMode.SLAVE;
 import static io.harness.rule.OwnerRule.PIYUSH;
+import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.RAMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.redisson.api.RFuture;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisOutOfMemoryException;
 import org.redisson.config.Config;
 
 /**
@@ -161,6 +163,24 @@ public class RedisPersistentLockerTest extends PersistenceTestBase {
     try (AcquiredLock lock = redisPersistentLocker.waitToAcquireLock(
              AcquiredLock.class, "cba", Duration.ofMinutes(1), Duration.ofMinutes(2))) {
       assertThat(lock).isNotNull();
+    }
+
+    verify(rLock, times(1)).tryLock(anyLong(), anyLong(), any(TimeUnit.class));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_MURALI)
+  @Category(UnitTests.class)
+  public void testWaitToAcquireLockThrowsException() throws InterruptedException {
+    RLock rLock = mock(RLock.class);
+    when(client.getLock(anyString())).thenReturn(rLock);
+    when(rLock.tryLock(anyLong(), anyLong(), any(TimeUnit.class)))
+        .thenThrow(new RedisOutOfMemoryException("Out of memory"));
+
+    try (AcquiredLock lock = redisPersistentLocker.waitToAcquireLockOptional(AcquiredLock.class.getName() + "-"
+                 + "cba",
+             Duration.ofMinutes(1), Duration.ofMinutes(2))) {
+      assertThat(lock).isNull();
     }
 
     verify(rLock, times(1)).tryLock(anyLong(), anyLong(), any(TimeUnit.class));

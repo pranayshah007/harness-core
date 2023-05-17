@@ -676,6 +676,7 @@ import software.wings.delegatetasks.jira.ShellScriptApprovalTask;
 import software.wings.delegatetasks.k8s.K8sTask;
 import software.wings.delegatetasks.k8s.taskhandler.K8sApplyTaskHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sBlueGreenDeployTaskHandler;
+import software.wings.delegatetasks.k8s.taskhandler.K8sBlueGreenStageScaleDownRequestHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sCanaryDeployTaskHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sDeleteTaskHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sInstanceSyncTaskHandler;
@@ -1411,6 +1412,8 @@ public class DelegateModule extends AbstractModule {
     k8sTaskTypeToRequestHandler.addBinding(K8sTaskType.CANARY_DELETE.name()).to(K8sCanaryDeleteRequestHandler.class);
     k8sTaskTypeToRequestHandler.addBinding(K8sTaskType.DRY_RUN_MANIFEST.name())
         .to(K8sDryRunManifestRequestHandler.class);
+    k8sTaskTypeToRequestHandler.addBinding(K8sTaskType.BLUE_GREEN_STAGE_SCALE_DOWN.name())
+        .to(K8sBlueGreenStageScaleDownRequestHandler.class);
 
     // Terraform Task Handlers
     MapBinder<TFTaskType, TerraformAbstractTaskHandler> tfTaskTypeToHandlerMap =
@@ -2077,6 +2080,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.TERRAFORM_CLOUD_CLEANUP_TASK_NG).toInstance(TerraformCloudCleanupTaskNG.class);
     mapBinder.addBinding(TaskType.OCI_HELM_DOCKER_API_LIST_TAGS_TASK_NG)
         .toInstance(OciHelmDockerApiListTagsDelegateTask.class);
+    mapBinder.addBinding(TaskType.K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK).toInstance(K8sTaskNG.class);
 
     // ECS NG
     MapBinder<String, EcsCommandTaskNGHandler> ecsTaskTypeToTaskHandlerMap =

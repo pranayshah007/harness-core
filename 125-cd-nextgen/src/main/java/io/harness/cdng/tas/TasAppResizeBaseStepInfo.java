@@ -9,7 +9,7 @@ package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -41,7 +41,7 @@ public class TasAppResizeBaseStepInfo {
   @YamlSchemaTypes({string})
   ParameterField<Boolean> ignoreInstanceCountManifest;
 
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String tasBGSetupFqn;

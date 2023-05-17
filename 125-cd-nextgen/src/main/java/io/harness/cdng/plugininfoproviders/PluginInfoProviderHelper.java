@@ -65,7 +65,12 @@ public class PluginInfoProviderHelper {
     HashSet<Integer> ports = new HashSet<>(portFinder.getUsedPorts());
 
     pluginDetailsBuilder.addPortUsed(nextPort);
-    pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(ports).build());
+
+    HashSet<Integer> newUsedPorts = new HashSet<>();
+    newUsedPorts.addAll(ports);
+    newUsedPorts.add(nextPort);
+
+    pluginDetailsBuilder.setTotalPortUsedDetails(PortDetails.newBuilder().addAllUsedPorts(newUsedPorts).build());
   }
 
   protected PluginDetails.Builder buildPluginDetails(

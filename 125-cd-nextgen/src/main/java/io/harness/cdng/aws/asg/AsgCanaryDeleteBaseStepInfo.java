@@ -7,7 +7,7 @@
 
 package io.harness.cdng.aws.asg;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -32,7 +32,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("asgCanaryDeleteBaseStepInfo")
 @FieldNameConstants(innerTypeName = "AsgCanaryDeleteBaseStepInfoKeys")
 public class AsgCanaryDeleteBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

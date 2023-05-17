@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -346,7 +347,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   }
 
   private void prepareAccountLevelConnector(String url, String vanityUrl) throws IOException {
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetails(any(), any(), eq(true))).thenReturn(connectorDetails);
     when(connectorDetails.getConnectorType()).thenReturn(GITHUB);
     when(connectorDetails.getConnectorConfig()).thenReturn(gitConfigDTO);
     when(gitConfigDTO.getUrl()).thenReturn(url);
@@ -359,7 +360,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   }
 
   private void prepareRepoLevelConnector(String url, String vanityUrl) throws IOException {
-    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
+    when(connectorUtils.getConnectorDetails(any(), any(), eq(true))).thenReturn(connectorDetails);
     when(connectorDetails.getConnectorType()).thenReturn(GITHUB);
     when(connectorDetails.getConnectorConfig()).thenReturn(gitConfigDTO);
     when(gitConfigDTO.getUrl()).thenReturn(url);

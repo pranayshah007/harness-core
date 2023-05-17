@@ -34,6 +34,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -51,6 +54,7 @@ import io.harness.shell.BaseScriptExecutor;
 import io.harness.shell.ExecutorType;
 import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.SshSessionConfig;
+import io.harness.shell.SshSessionManager;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.ConfigFile;
@@ -60,6 +64,12 @@ import software.wings.service.intfc.security.SSHVaultService;
 
 import com.google.common.io.CharStreams;
 import com.google.inject.Inject;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -73,6 +83,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 
 /**
  * Created by anubhaw on 2/10/16.
@@ -208,10 +219,23 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = {ANUBHAW, IVAN})
   @Category(UnitTests.class)
-  public void shouldReturnFailureForFailedCommandExecution() {
+  public void shouldReturnFailureForFailedCommandExecution() throws JSchException, IOException {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().build());
-    CommandExecutionStatus execute = executor.executeCommandString(format("rm %s", "FILE_DOES_NOT_EXIST"));
-    assertThat(execute).isEqualTo(FAILURE);
+    try (MockedStatic<SshSessionManager> sessionManager = mockStatic(SshSessionManager.class)) {
+      Session session = mock(Session.class);
+      Channel channel = mock(ChannelExec.class);
+
+      sessionManager.when(() -> SshSessionManager.getCachedSession(any(SshSessionConfig.class), any(LogCallback.class)))
+          .thenReturn(session);
+      doReturn(channel).when(session).openChannel(any());
+      doReturn(true).when(channel).isClosed();
+      doReturn(-1).when(channel).getExitStatus();
+      doReturn(new ByteArrayInputStream("".getBytes())).when(channel).getInputStream();
+      doReturn(new ByteArrayOutputStream()).when(channel).getOutputStream();
+
+      CommandExecutionStatus execute = executor.executeCommandString(format("rm %s", "FILE_DOES_NOT_EXIST"));
+      assertThat(execute).isEqualTo(FAILURE);
+    }
   }
 
   /**

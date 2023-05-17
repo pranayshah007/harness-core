@@ -28,6 +28,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.persistence.artifact.Artifact;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.SettingsService;
@@ -79,6 +80,7 @@ public class AwsAmiServiceStateHelper {
         (EncryptableSetting) cloudProviderSetting.getValue(), context.getAppId(), context.getWorkflowExecutionId());
     String region = infrastructureMapping.getRegion();
     AwsConfig awsConfig = (AwsConfig) cloudProviderSetting.getValue();
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
 
     return AwsAmiTrafficShiftAlbData.builder()
         .artifact(artifact)

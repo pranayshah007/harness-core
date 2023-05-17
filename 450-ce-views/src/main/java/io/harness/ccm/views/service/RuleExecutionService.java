@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.entities.RuleExecution;
+import io.harness.ccm.views.entities.RuleRecommendation;
 import io.harness.ccm.views.helper.FilterValues;
 import io.harness.ccm.views.helper.OverviewExecutionDetails;
 import io.harness.ccm.views.helper.RuleExecutionFilter;
@@ -23,6 +24,7 @@ public interface RuleExecutionService {
   RuleExecutionList filterExecution(RuleExecutionFilter rulesExecutionFilter);
   FilterValues filterValue(String accountId);
   RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId, String accountId);
+  RuleRecommendation getRuleRecommendation(String ruleRecommendationId, String accountId);
   OverviewExecutionDetails getOverviewExecutionDetails(String accountId, RuleExecutionFilter ruleExecutionFilter);
   Map<String, Double> getExecutionCostDetails(String accountId, RuleExecutionFilter ruleExecutionFilter);
 }

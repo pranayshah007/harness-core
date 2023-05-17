@@ -384,12 +384,13 @@ public class YamlSchemaUtils {
     if (!supportedModules.contains(moduleType)) {
       return false;
     }
+    return true;
 
-    if (!validateByFeatureFlags(yamlSchemaMetadata, enabledFeatureFlags)) {
-      return false;
-    }
-
-    return validateByFeatureRestrictions(yamlSchemaMetadata, featureRestrictionsMap);
+    //    if (!validateByFeatureFlags(yamlSchemaMetadata, enabledFeatureFlags)) {
+    //      return false;
+    //    }
+    //
+    //    return validateByFeatureRestrictions(yamlSchemaMetadata, featureRestrictionsMap);
   }
 
   protected boolean validateByFeatureFlags(YamlSchemaMetadata yamlSchemaMetadata, Set<String> enabledFeatureFlags) {
@@ -450,8 +451,8 @@ public class YamlSchemaUtils {
       Set<String> enabledFeatureFlags, Map<String, Boolean> featureRestrictionsMap) {
     return filterRootClassesByYamlGroup(yamlSchemaRootClasses, yamlGroup)
         .stream()
-        .filter(o -> validateByFeatureFlags(o.getYamlSchemaMetadata(), enabledFeatureFlags))
-        .filter(o -> validateByFeatureRestrictions(o.getYamlSchemaMetadata(), featureRestrictionsMap))
+        //        .filter(o -> validateByFeatureFlags(o.getYamlSchemaMetadata(), enabledFeatureFlags))
+        //        .filter(o -> validateByFeatureRestrictions(o.getYamlSchemaMetadata(), featureRestrictionsMap))
         .map(YamlSchemaRootClass::getClazz)
         .collect(Collectors.toSet());
   }

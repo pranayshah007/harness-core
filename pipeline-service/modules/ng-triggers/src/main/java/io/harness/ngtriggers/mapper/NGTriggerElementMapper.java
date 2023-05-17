@@ -14,6 +14,7 @@ import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
 import static io.harness.constants.Constants.X_GIT_HUB_EVENT;
 import static io.harness.constants.Constants.X_GIT_LAB_EVENT;
+import static io.harness.constants.Constants.X_HARNESS_TRIGGER;
 import static io.harness.constants.Constants.X_HARNESS_TRIGGER_ID;
 import static io.harness.constants.Constants.X_VSS_HEADER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -29,6 +30,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.time.temporal.ChronoUnit.DAYS;
@@ -473,6 +475,8 @@ public class NGTriggerElementMapper {
       }
     } else if (webhookEventPayloadParser.containsHeaderKey(headers, X_VSS_HEADER)) {
       webhookTriggerType = AZURE;
+    } else if (webhookEventPayloadParser.containsHeaderKey(headers, X_HARNESS_TRIGGER)) {
+      webhookTriggerType = HARNESS;
     } else {
       if (isEmpty(accountIdentifier) || isEmpty(orgIdentifier) || isEmpty(projectIdentifier)) {
         throw new InvalidRequestException(

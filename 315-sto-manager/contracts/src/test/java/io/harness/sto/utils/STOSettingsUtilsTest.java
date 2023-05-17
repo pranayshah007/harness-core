@@ -16,6 +16,7 @@ import static junit.framework.TestCase.assertTrue;
 
 import io.harness.beans.steps.stepinfo.security.AwsEcrStepInfo;
 import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
+import io.harness.beans.steps.stepinfo.security.BurpStepInfo;
 import io.harness.beans.steps.stepinfo.security.CustomIngestStepInfo;
 import io.harness.beans.steps.stepinfo.security.FossaStepInfo;
 import io.harness.beans.steps.stepinfo.security.MendStepInfo;
@@ -36,6 +37,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
+import io.harness.yaml.sto.variables.STOYamlBurpConfig;
 import io.harness.yaml.sto.variables.STOYamlCustomIngestConfig;
 import io.harness.yaml.sto.variables.STOYamlGenericConfig;
 import io.harness.yaml.sto.variables.STOYamlLogLevel;
@@ -77,6 +79,10 @@ public class STOSettingsUtilsTest {
   private static final String CLI_PARAMS = "--test";
   private static final String IMAGE_NAME = "image-test";
   private static final String IMAGE_TAG = "latest";
+
+  private static final String USERNAME = "username";
+
+  private static final String PASSWORD = "password";
 
   @Test
   @Owner(developers = SERGEY)
@@ -219,6 +225,22 @@ public class STOSettingsUtilsTest {
   @Test
   @Owner(developers = SERGEY)
   @Category(UnitTests.class)
+  public void getBurpEnvVariablesTest() throws IOException {
+    BurpStepInfo step =
+        BurpStepInfo.builder()
+            .mode(STOYamlScanMode.ORCHESTRATION)
+            .target(createTarget(STOYamlTargetType.INSTANCE, TARGET_NAME, TARGET_VARIANT, WORKSPACE))
+            .ingestion(createIngestionSettings(INGESTION_FILE_NAME))
+            .advanced(createAdvancedSettings(STOYamlLogSerializer.BASIC, STOYamlLogLevel.DEBUG, CLI_PARAMS, ""))
+            .instance(createInstanceSettings())
+            .config(STOYamlBurpConfig.DEFAULT)
+            .build();
+    assertEnvVariables(step, getExpectedValue("burp.json"));
+  }
+
+  @Test
+  @Owner(developers = SERGEY)
+  @Category(UnitTests.class)
   public void getSTOKeyTest() {
     assertEquals(getSTOKey(PRODUCT_NAME), "SECURITY_PRODUCT_NAME");
   }
@@ -232,8 +254,8 @@ public class STOSettingsUtilsTest {
 
   private static STOYamlInstance createInstanceSettings() {
     return STOYamlInstance.builder()
-        .accessId(ParameterField.createValueField(ACCESS_ID))
-        .accessToken(ParameterField.createValueField(ACCESS_TOKEN))
+        .username(ParameterField.createValueField(USERNAME))
+        .password(ParameterField.createValueField(PASSWORD))
         .path(ParameterField.createValueField(INSTANCE_PATH))
         .port(ParameterField.createValueField(INSTANCE_PORT))
         .protocol(ParameterField.createValueField(INSTANCE_PROTOCOL))

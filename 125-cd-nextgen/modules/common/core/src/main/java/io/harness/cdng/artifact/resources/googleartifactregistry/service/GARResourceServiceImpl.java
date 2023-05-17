@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GarRequestDTO;
@@ -65,6 +66,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Singleton
 @Slf4j
@@ -124,6 +126,12 @@ public class GARResourceServiceImpl implements GARResourceService {
   public GARBuildDetailsDTO getLastSuccessfulBuild(IdentifierRef googleArtifactRegistryRef, String region,
       String repositoryName, String project, String pkg, GarRequestDTO garRequestDTO, String orgIdentifier,
       String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.REGION, region),
+        MutablePair.of(NGArtifactConstants.REPOSITORY_NAME, repositoryName),
+        MutablePair.of(NGArtifactConstants.PROJECT, project), MutablePair.of(NGArtifactConstants.PACKAGE, pkg));
+    ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.VERSION, garRequestDTO.getVersion()),
+        MutablePair.of(NGArtifactConstants.VERSION_REGEX, garRequestDTO.getVersionRegex()));
+
     GcpConnectorDTO connector = getConnector(googleArtifactRegistryRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(googleArtifactRegistryRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

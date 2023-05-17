@@ -202,7 +202,6 @@ public class SecretMigrationService extends NgMigrationService {
     String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
     SecretDTOV2Builder secretDTOV2Builder = secretFactory.getSecret(encryptedData, entities, migratedEntities);
     if (secretDTOV2Builder == null) {
-      // TODO: @deepakputhraya
       return YamlGenerationDetails.builder().yamlFileList(files).build();
     }
     SecretDTOV2 secretDTOV2 = secretDTOV2Builder.projectIdentifier(projectIdentifier)

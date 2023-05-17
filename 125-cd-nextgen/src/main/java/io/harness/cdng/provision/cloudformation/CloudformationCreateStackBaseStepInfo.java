@@ -7,7 +7,7 @@
 
 package io.harness.cdng.provision.cloudformation;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -38,7 +38,7 @@ public class CloudformationCreateStackBaseStepInfo {
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> provisionerIdentifier;
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

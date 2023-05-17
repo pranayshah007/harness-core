@@ -70,14 +70,14 @@ public class FreezeRBACHelper {
       String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
     Principal principal = getPrincipalInfoFromSecurityContext();
     PrincipalType principalType = getPrincipalTypeFromSecurityContext(principal);
-    return checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, projectId, orgId,
+    return checkIfUserHasFreezeOverrideAccess(featureFlagHelperService, accountId, orgId, projectId,
         accessControlClient,
         io.harness.accesscontrol.acl.api.Principal.of(
             convertToAccessControlPrincipalType(principalType), principal.getName()));
   }
 
   public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
-      String accountId, String projectId, String orgId, AccessControlClient accessControlClient) {
+      String accountId, String orgId, String projectId, AccessControlClient accessControlClient) {
     Resource resource = Resource.of(DEPLOYMENTFREEZE, null);
     boolean overrideAccess = accessControlClient.hasAccess(
         ResourceScope.of(accountId, orgId, projectId), resource, PermissionTypes.DEPLOYMENT_FREEZE_OVERRIDE_PERMISSION);
@@ -88,7 +88,7 @@ public class FreezeRBACHelper {
   }
 
   public boolean checkIfUserHasFreezeOverrideAccess(NGFeatureFlagHelperService featureFlagHelperService,
-      String accountId, String projectId, String orgId, AccessControlClient accessControlClient,
+      String accountId, String orgId, String projectId, AccessControlClient accessControlClient,
       io.harness.accesscontrol.acl.api.Principal principal) {
     if (principal == null) {
       return false;

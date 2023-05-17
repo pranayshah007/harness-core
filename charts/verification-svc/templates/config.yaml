@@ -16,3 +16,6 @@ data:
   MONGO_SSL_CA_TRUST_STORE_PATH: /opt/harness/keystore.jks
   MONGO_SSL_CA_TRUST_STORE_PASSWORD: password
   {{ end }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

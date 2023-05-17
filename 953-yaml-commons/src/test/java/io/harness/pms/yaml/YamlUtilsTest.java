@@ -10,6 +10,7 @@ package io.harness.pms.yaml;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -24,7 +25,9 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -877,5 +880,25 @@ public class YamlUtilsTest extends CategoryTest {
         + "  project: project\n";
     assertThatCode(() -> YamlUtils.readTree(valid, true)).doesNotThrowAnyException();
     assertThatCode(() -> YamlUtils.readTree(valid)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testRemoveUuid() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+
+    stepElementConfig.put("a", "a");
+    stepElementConfig.put("b", "b");
+    stepElementConfig.put("c", "c");
+    YamlUtils.removeUuid(stepElementConfig);
+
+    stepElementConfig.put(YamlNode.UUID_FIELD_NAME, "d");
+    YamlUtils.removeUuid(stepElementConfig);
+
+    stepElementConfig.put(YamlNode.UUID_FIELD_NAME, "d");
+    stepElementConfig.put("e", "e");
+    YamlUtils.removeUuid(stepElementConfig);
   }
 }

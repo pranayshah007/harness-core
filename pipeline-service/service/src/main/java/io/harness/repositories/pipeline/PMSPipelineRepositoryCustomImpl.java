@@ -9,6 +9,7 @@ package io.harness.repositories.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -464,6 +465,15 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
         ()
             -> moveConfigOperations(pipelineToSave, pipelineUpdate, pipelineCriteria, metadataUpdate, metadataCriteria,
                 moveConfigOperationType));
+  }
+
+  @Override
+  public PipelineEntity updateEntity(Criteria criteria, Update update) {
+    Query query = new Query(criteria);
+    return Failsafe.with(DEFAULT_RETRY_POLICY)
+        .get(()
+                 -> mongoTemplate.findAndModify(
+                     query, update, new FindAndModifyOptions().returnNew(true), PipelineEntity.class));
   }
 
   @VisibleForTesting

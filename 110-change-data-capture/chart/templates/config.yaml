@@ -8,3 +8,7 @@ data:
   MEMORY: {{ .Values.config.MEMORY | quote }}
   MONGO_TAG_NAME: {{ .Values.config.MONGO_TAG_NAME }}
   MONGO_TAG_VALUE: {{ .Values.config.MONGO_TAG_NAME }}
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

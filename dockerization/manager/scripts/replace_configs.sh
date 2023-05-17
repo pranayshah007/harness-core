@@ -414,6 +414,10 @@ if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_PORT" ]]; then
+  export SMTP_PORT; yq -i '.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SMTP_USERNAME" ]]; then
   export SMTP_USERNAME; yq -i '.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
 fi
@@ -424,6 +428,10 @@ fi
 
 if [[ "" != "$SMTP_USE_SSL" ]]; then
   export SMTP_USE_SSL; yq -i '.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_START_TLS" ]]; then
+  export SMTP_USE_TLS; yq -i '.smtp.startTLS=env(SMTP_START_TLS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MARKETO_ENABLED" ]]; then

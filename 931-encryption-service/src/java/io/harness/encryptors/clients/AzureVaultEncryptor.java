@@ -7,6 +7,7 @@
 
 package io.harness.encryptors.clients;
 
+import static io.harness.SecretConstants.EXPIRES_ON;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -20,12 +21,14 @@ import static java.lang.String.format;
 import static java.time.Duration.ofMillis;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SecretText;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.azure.AzureParsedSecretReference;
 import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
+import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -48,6 +51,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.aad.msal4j.MsalException;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
@@ -66,15 +73,15 @@ public class AzureVaultEncryptor implements VaultEncryptor {
   }
 
   @Override
-  public EncryptedRecord createSecret(
-      String accountId, String name, String plaintext, EncryptionConfig encryptionConfig) {
+  public EncryptedRecord createSecret(String accountId, SecretText secretText, EncryptionConfig encryptionConfig) {
     AzureVaultConfig azureConfig = (AzureVaultConfig) encryptionConfig;
     int failedAttempts = 0;
     while (true) {
+      String name = secretText.getName();
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
-            () -> upsertInternal(accountId, name, plaintext, null, azureConfig, keyVaultClient));
+            () -> upsertInternal(accountId, secretText, null, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
         throw new SecretManagementDelegateException(
@@ -97,19 +104,25 @@ public class AzureVaultEncryptor implements VaultEncryptor {
   }
 
   @Override
-  public EncryptedRecord updateSecret(String accountId, String name, String plaintext, EncryptedRecord existingRecord,
-      EncryptionConfig encryptionConfig) {
+  public EncryptedRecord createSecret(
+      String accountId, String name, String plaintext, EncryptionConfig encryptionConfig) {
+    return createSecret(accountId, SecretText.builder().name(name).value(plaintext).build(), encryptionConfig);
+  }
+
+  @Override
+  public EncryptedRecord updateSecret(
+      String accountId, SecretText secretText, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
     AzureVaultConfig azureConfig = (AzureVaultConfig) encryptionConfig;
     int failedAttempts = 0;
     while (true) {
       try {
         SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
         return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
-            () -> upsertInternal(accountId, name, plaintext, existingRecord, azureConfig, keyVaultClient));
+            () -> upsertInternal(accountId, secretText, existingRecord, azureConfig, keyVaultClient));
       } catch (KeyVaultErrorException e) {
         // Key Vault Error Exception is non-retryable
         throw new SecretManagementDelegateException(
-            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, name), e, USER);
+            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, secretText.getName()), e, USER);
       } catch (MsalException e) {
         throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.getMessage(), e, USER);
       } catch (HttpResponseException e) {
@@ -118,7 +131,47 @@ public class AzureVaultEncryptor implements VaultEncryptor {
         failedAttempts++;
         log.warn("encryption failed. trial num: {}", failedAttempts, e);
         if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "After " + NUM_OF_RETRIES + " tries, encryption for secret " + name + " failed.";
+          String message =
+              "After " + NUM_OF_RETRIES + " tries, encryption for secret " + secretText.getName() + " failed.";
+          throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, e, USER);
+        }
+        sleep(ofMillis(1000));
+      }
+    }
+  }
+
+  @Override
+  public EncryptedRecord updateSecret(String accountId, String name, String plaintext, EncryptedRecord existingRecord,
+      EncryptionConfig encryptionConfig) {
+    return updateSecret(
+        accountId, SecretText.builder().name(name).value(plaintext).build(), existingRecord, encryptionConfig);
+  }
+
+  @Override
+  public EncryptedRecord renameSecret(
+      String accountId, SecretText secretText, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
+    AzureVaultConfig azureConfig = (AzureVaultConfig) encryptionConfig;
+    int failedAttempts = 0;
+
+    while (true) {
+      try {
+        SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+            () -> renameSecretInternal(accountId, secretText, existingRecord, azureConfig, keyVaultClient));
+      } catch (KeyVaultErrorException e) {
+        // Key Vault Error Exception is non-retryable
+        throw new SecretManagementDelegateException(
+            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, secretText.getName()), e, USER);
+      } catch (MsalException e) {
+        throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.getMessage(), e, USER);
+      } catch (HttpResponseException e) {
+        throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, e.getMessage(), e, USER);
+      } catch (Exception e) {
+        failedAttempts++;
+        log.warn("encryption failed. trial num: {}", failedAttempts, e);
+        if (failedAttempts == NUM_OF_RETRIES) {
+          String message =
+              "After " + NUM_OF_RETRIES + " tries, encryption for secret " + secretText.getName() + " failed.";
           throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, e, USER);
         }
         sleep(ofMillis(1000));
@@ -129,48 +182,32 @@ public class AzureVaultEncryptor implements VaultEncryptor {
   @Override
   public EncryptedRecord renameSecret(
       String accountId, String name, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
-    AzureVaultConfig azureConfig = (AzureVaultConfig) encryptionConfig;
-    int failedAttempts = 0;
-
-    while (true) {
-      try {
-        SecretClient keyVaultClient = getAzureVaultSecretsClient(azureConfig);
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
-            () -> renameSecretInternal(accountId, name, existingRecord, azureConfig, keyVaultClient));
-      } catch (KeyVaultErrorException e) {
-        // Key Vault Error Exception is non-retryable
-        throw new SecretManagementDelegateException(
-            AZURE_KEY_VAULT_OPERATION_ERROR, prepareKeyVaultErrorMessage(e, accountId, name), e, USER);
-      } catch (MsalException e) {
-        throw new SecretManagementDelegateException(AZURE_AUTHENTICATION_ERROR, e.getMessage(), e, USER);
-      } catch (HttpResponseException e) {
-        throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, e.getMessage(), e, USER);
-      } catch (Exception e) {
-        failedAttempts++;
-        log.warn("encryption failed. trial num: {}", failedAttempts, e);
-        if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "After " + NUM_OF_RETRIES + " tries, encryption for secret " + name + " failed.";
-          throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, e, USER);
-        }
-        sleep(ofMillis(1000));
-      }
-    }
+    return renameSecret(accountId,
+        SecretText.builder().name(name).additionalMetadata(existingRecord.getAdditionalMetadata()).build(),
+        existingRecord, encryptionConfig);
   }
 
-  private EncryptedRecord renameSecretInternal(String accountId, String name, EncryptedRecord existingRecord,
+  private EncryptedRecord renameSecretInternal(String accountId, SecretText secretText, EncryptedRecord existingRecord,
       AzureVaultConfig azureConfig, SecretClient keyVaultClient) throws Exception {
     char[] value = fetchSecretValueInternal(existingRecord, azureConfig, keyVaultClient);
-    return upsertInternal(accountId, name, new String(value), existingRecord, azureConfig, keyVaultClient);
+    return upsertInternal(accountId,
+        SecretText.builder()
+            .name(secretText.getName())
+            .value(new String(value))
+            .additionalMetadata(secretText.getAdditionalMetadata())
+            .build(),
+        existingRecord, azureConfig, keyVaultClient);
   }
 
-  private EncryptedRecord upsertInternal(String accountId, String fullSecretName, String plaintext,
-      EncryptedRecord existingRecord, AzureVaultConfig azureVaultConfig, SecretClient azureVaultSecretsClient)
-      throws Exception {
+  private EncryptedRecord upsertInternal(String accountId, SecretText secretText, EncryptedRecord existingRecord,
+      AzureVaultConfig azureVaultConfig, SecretClient azureVaultSecretsClient) throws Exception {
+    String fullSecretName = secretText.getName();
     log.info("Saving secret '{}' into Azure Secrets Manager: {}", fullSecretName, azureVaultConfig.getName());
     long startTime = System.currentTimeMillis();
 
+    String plaintext = secretText.getValue();
     KeyVaultSecret keyVaultSecret = new KeyVaultSecret(fullSecretName, plaintext);
-    keyVaultSecret.setProperties(new SecretProperties().setTags(getMetadata()));
+    keyVaultSecret.setProperties(getSecretProperties(secretText));
 
     Response<KeyVaultSecret> response = azureVaultSecretsClient.setSecretWithResponse(keyVaultSecret, Context.NONE);
     if (response.getStatusCode() < 200 || response.getStatusCode() >= 300) {
@@ -182,6 +219,7 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     EncryptedRecordData newRecord = EncryptedRecordData.builder()
                                         .encryptedValue(response.getValue().getId().toCharArray())
                                         .encryptionKey(fullSecretName)
+                                        .additionalMetadata(secretText.getAdditionalMetadata())
                                         .build();
 
     try {
@@ -292,7 +330,15 @@ public class AzureVaultEncryptor implements VaultEncryptor {
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
     try {
-      createSecret(accountId, AzureVaultConfig.AZURE_VAULT_VALIDATION_URL, Boolean.TRUE.toString(), encryptionConfig);
+      createSecret(accountId,
+          SecretText.builder()
+              .name(AzureVaultConfig.AZURE_VAULT_VALIDATION_URL)
+              .value(Boolean.TRUE.toString())
+              .additionalMetadata(AdditionalMetadata.builder()
+                                      .value(EXPIRES_ON, Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli())
+                                      .build())
+              .build(),
+          encryptionConfig);
     } catch (Exception exception) {
       log.error("Validation for Secret Manager/KMS failed: " + encryptionConfig.getName());
       throw exception;
@@ -304,6 +350,19 @@ public class AzureVaultEncryptor implements VaultEncryptor {
     return new HashMap<String, String>() {
       { put("createdBy", "Harness"); }
     };
+  }
+
+  private SecretProperties getSecretProperties(SecretText secretText) {
+    SecretProperties secretProperties = new SecretProperties();
+    secretProperties.setTags(getMetadata());
+    if (secretText.getAdditionalMetadata() != null && isNotEmpty(secretText.getAdditionalMetadata().getValues())
+        && secretText.getAdditionalMetadata().getValues().containsKey(EXPIRES_ON)) {
+      long expiresOnEpochMilli =
+          Long.parseLong(String.valueOf(secretText.getAdditionalMetadata().getValues().get(EXPIRES_ON)));
+      secretProperties.setExpiresOn(
+          OffsetDateTime.ofInstant(Instant.ofEpochMilli(expiresOnEpochMilli), ZoneOffset.UTC));
+    }
+    return secretProperties;
   }
 
   private char[] fetchSecretValueInternal(

@@ -319,10 +319,10 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
+    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
     secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
-    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     return getResponseWrapper(secret);
   }
 

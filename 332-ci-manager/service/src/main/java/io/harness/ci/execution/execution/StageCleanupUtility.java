@@ -60,13 +60,19 @@ public class StageCleanupUtility {
         ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
     if (!optionalSweepingOutput.isFound()) {
       // At upgrade time, stage infra sweeping output may not be set.
-      PodCleanupDetails podCleanupDetails = (PodCleanupDetails) executionSweepingOutputResolver.resolve(
+      OptionalSweepingOutput optionalCleanupSweepingOutput = executionSweepingOutputResolver.resolveOptional(
           ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
-      stageInfraDetails = K8StageInfraDetails.builder()
-                              .infrastructure(podCleanupDetails.getInfrastructure())
-                              .podName(podCleanupDetails.getPodName())
-                              .containerNames(podCleanupDetails.getCleanUpContainerNames())
-                              .build();
+      if (!optionalCleanupSweepingOutput.isFound()) {
+        log.warn("Sweeping Output PodCleanupDetails is not set, pod might not be created");
+        throw new CIStageExecutionException("Unable to do cleanup as PodCleanupDetails was not set");
+      } else {
+        PodCleanupDetails podCleanupDetails = (PodCleanupDetails) optionalCleanupSweepingOutput.getOutput();
+        stageInfraDetails = K8StageInfraDetails.builder()
+                                .infrastructure(podCleanupDetails.getInfrastructure())
+                                .podName(podCleanupDetails.getPodName())
+                                .containerNames(podCleanupDetails.getCleanUpContainerNames())
+                                .build();
+      }
     } else {
       stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
     }

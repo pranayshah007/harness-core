@@ -126,8 +126,8 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
       upsertStatement.setString(5, sloHealthIndicator.getErrorBudgetRisk().getDisplayName());
       upsertStatement.setDouble(6, sloHealthIndicator.getErrorBudgetRemainingPercentage());
       upsertStatement.setInt(7, sloHealthIndicator.getErrorBudgetRemainingMinutes());
-      upsertStatement.setDouble(
-          8, sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective).getSliStatusPercentage());
+      upsertStatement.setDouble(8,
+          sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective, null).getSliStatusPercentage());
       upsertStatement.execute();
     } catch (Exception ex) {
       log.error("error while upserting slo data.");
@@ -148,7 +148,7 @@ public class SLOTimeScaleServiceImpl implements SLOTimeScaleService {
         LocalDateTime currentLocalDate =
             LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
         SLODashboardWidget.SLOGraphData sloGraphData =
-            sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective);
+            sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective, null);
         TimePeriod timePeriod = simpleServiceLevelObjective.getTarget().getCurrentTimeRange(currentLocalDate);
         insertStatement.setTimestamp(
             1, new Timestamp(timePeriod.getStartTime().getSecond() * 1000L), Calendar.getInstance());

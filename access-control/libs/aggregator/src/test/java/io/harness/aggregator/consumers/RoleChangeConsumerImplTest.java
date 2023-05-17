@@ -77,8 +77,8 @@ public class RoleChangeConsumerImplTest extends AggregatorTestBase {
     RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler = mock(RoleAssignmentCRUDEventHandler.class);
     UserGroupService userGroupService = mock(UserGroupService.class);
     scopeService = mock(ScopeService.class);
-    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
-        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
+    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(), aclRepository);
     roleChangeConsumer = new RoleChangeConsumerImpl(aclRepository, roleAssignmentRepository, roleRepository,
         AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

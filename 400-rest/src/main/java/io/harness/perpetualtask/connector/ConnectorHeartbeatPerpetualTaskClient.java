@@ -30,10 +30,10 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.UnexpectedException;
-import io.harness.perpetualtask.PerpetualTaskClientBase;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskServiceClient;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.TaskType;
 
@@ -55,12 +55,12 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 @Singleton
-public class ConnectorHeartbeatPerpetualTaskClient
-    extends PerpetualTaskClientBase implements PerpetualTaskServiceClient {
+public class ConnectorHeartbeatPerpetualTaskClient implements PerpetualTaskServiceClient {
+  private KryoSerializer kryoSerializer;
   private ConnectorResourceClient connectorResourceClient;
 
   @Override
-  public Message getTaskParams(PerpetualTaskClientContext clientContext, boolean referenceFalse) {
+  public Message getTaskParams(PerpetualTaskClientContext clientContext) {
     Map<String, String> clientParams = clientContext.getClientParams();
     String accountIdentifier = clientParams.get(ACCOUNT_KEY);
     String orgIdentifier = clientParams.get(ORG_KEY);
@@ -69,7 +69,7 @@ public class ConnectorHeartbeatPerpetualTaskClient
     final ConnectorValidationParameterResponse connectorValidationParameterResponse =
         getConnectorValidationParameterResponse(clientParams);
     ByteString connectorValidatorBytes =
-        ByteString.copyFrom(getKryoSerializer(referenceFalse).asBytes(connectorValidationParameterResponse));
+        ByteString.copyFrom(kryoSerializer.asBytes(connectorValidationParameterResponse));
     ConnectorHeartbeatTaskParams.Builder connectorHeartbeatTaskParamsBuilder =
         ConnectorHeartbeatTaskParams.newBuilder()
             .setAccountIdentifier(accountIdentifier)

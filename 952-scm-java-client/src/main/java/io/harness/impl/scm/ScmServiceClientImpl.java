@@ -1040,7 +1040,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
   @Override
   public GitFileResponse getFile(
       ScmConnector scmConnector, GitFileRequest gitFileRequest, SCMGrpc.SCMBlockingStub scmBlockingStub) {
-    log.info("getOnlyFileContent :: {}", gitFileRequest.isGetOnlyFileContent());
+    log.info("getFile request : {}", gitFileRequest);
     String commitId = gitFileRequest.getCommitId();
     String branch = gitFileRequest.getBranch();
     try (ResponseTimeRecorder ignore1 = new ResponseTimeRecorder("getFile")) {

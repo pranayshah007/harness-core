@@ -31,6 +31,7 @@ import io.harness.exception.WingsException;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.ssh.SshHelperUtils;
+import io.harness.ssh.WinRmCommandResult;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.jcraft.jsch.JSchException;
@@ -156,13 +157,16 @@ public class WinRmSession implements AutoCloseable {
       byte[] buff = command.getBytes(StandardCharsets.UTF_8);
       Files.write(Paths.get(commandFilePath), buff);
 
-      return SshHelperUtils.executeLocalCommand(
-                 format(COMMAND_PLACEHOLDER,
-                     InstallUtils.getPath(ClientTool.HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4),
-                     args.getArgs(commandFile.getAbsolutePath())),
-                 logCallback, output, isOutputWriter, args.getEnvironmentMap())
-          ? 0
-          : 1;
+      WinRmCommandResult winRmCommandResult = SshHelperUtils.executeLocalCommand(
+          format(COMMAND_PLACEHOLDER, InstallUtils.getPath(ClientTool.HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4),
+              args.getArgs(commandFile.getAbsolutePath())),
+          logCallback, output, isOutputWriter, args.getEnvironmentMap());
+
+      if (winRmCommandResult != null && winRmCommandResult.isSuccess()) {
+        return 0;
+      } else {
+        return 1;
+      }
     } catch (IOException e) {
       log.error(format("Error while creating temporary file: %s", e));
       logCallback.saveExecutionLog("Error while creating temporary file");

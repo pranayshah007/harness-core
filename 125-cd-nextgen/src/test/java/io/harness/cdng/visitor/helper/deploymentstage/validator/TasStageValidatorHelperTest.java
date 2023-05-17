@@ -46,8 +46,8 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.rule.Owner;
-import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateFilterPropertiesDTO;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

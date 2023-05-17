@@ -85,6 +85,9 @@ public class GitStatusCheckHelper {
         statusSent = sendBuildStatusToGitLab(gitStatusCheckParams);
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.AZURE_REPO) {
         statusSent = sendBuildStatusToAzureRepo(gitStatusCheckParams);
+      } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.HARNESS) {
+        log.info("Status API not yet implemented for Harness inbuilt SCM");
+        return false;
       } else {
         throw new UnsupportedOperationException("Not supported");
       }

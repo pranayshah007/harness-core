@@ -15,9 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
+import io.harness.ccm.graphql.core.recommendation.AzureVmRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.EC2RecommendationService;
 import io.harness.ccm.graphql.core.recommendation.ECSRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.NodeRecommendationService;
+import io.harness.ccm.graphql.core.recommendation.RuleRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.WorkloadRecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
@@ -48,6 +50,8 @@ public class RecommendationsDetailsQuery {
   @Inject private NodeRecommendationService nodeRecommendationService;
   @Inject private ECSRecommendationService ecsRecommendationService;
   @Inject private EC2RecommendationService ec2RecommendationService;
+  @Inject private RuleRecommendationService ruleRecommendationService;
+  @Inject private AzureVmRecommendationService azureVmRecommendationService;
 
   /**
    * Note: If this query becomes slow due to n+1 serial calls in future. Then,
@@ -105,6 +109,10 @@ public class RecommendationsDetailsQuery {
             bufferPercentage);
       case EC2_INSTANCE:
         return ec2RecommendationService.getEC2RecommendationById(accountIdentifier, id);
+      case GOVERNANCE:
+        return ruleRecommendationService.getRuleRecommendation(id, accountIdentifier);
+      case AZURE_INSTANCE:
+        return azureVmRecommendationService.getAzureVmRecommendationById(accountIdentifier, id);
       default:
         throw new InvalidRequestException(String.format("Recommendation not yet implemented for %s", resourceType));
     }

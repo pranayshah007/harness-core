@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.artifactstream;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_INPUT;
 
 import static software.wings.ngmigration.NGMigrationEntityType.TEMPLATE;
 
@@ -32,17 +33,26 @@ import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.beans.Variable;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
+import software.wings.beans.template.Template;
 import software.wings.beans.trigger.Trigger;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
   @Override
@@ -60,6 +70,10 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
                   .getYaml())
               .getTemplateInfoConfig()
               .getVersionLabel());
+      JsonNode inputs = generateInput(entities, customArtifactStream);
+      if (inputs != null) {
+        templateLinkConfig.setTemplateInputs(inputs);
+      }
       return PrimaryArtifact.builder()
           .primaryArtifactRef(ParameterField.createValueField("<+input>"))
           .sources(Collections.singletonList(ArtifactSource.builder()
@@ -122,5 +136,40 @@ public class CustomArtifactStreamMapper implements ArtifactStreamMapper {
   public ArtifactTypeSpec getTriggerSpec(Map<CgEntityId, CgEntityNode> entities, ArtifactStream artifactStream,
       Map<CgEntityId, NGYamlFile> migratedEntities, Trigger trigger) {
     return null;
+  }
+
+  private JsonNode generateInput(Map<CgEntityId, CgEntityNode> entities, CustomArtifactStream customArtifactStream) {
+    CgEntityId cgEntityId = CgEntityId.builder().id(customArtifactStream.getTemplateUuid()).type(TEMPLATE).build();
+    if (!entities.containsKey(cgEntityId)) {
+      return null;
+    }
+
+    List<Variable> variables = ListUtils.emptyIfNull(customArtifactStream.getTemplateVariables());
+    Map<String, String> varMap =
+        variables.stream()
+            .filter(variable -> StringUtils.isNoneBlank(variable.getName(), variable.getValue()))
+            .collect(Collectors.toMap(Variable::getName, Variable::getValue));
+
+    Template template = (Template) entities.get(cgEntityId).getEntity();
+    ObjectMapper mapper = new ObjectMapper();
+
+    ArrayNode inputs = mapper.createArrayNode();
+    if (isNotEmpty(template.getVariables())) {
+      template.getVariables().stream().filter(v -> StringUtils.isBlank(v.getValue())).forEach(v -> {
+        ObjectNode variable = mapper.createObjectNode();
+        variable.put("name", v.getName());
+        variable.put("type", "String");
+        variable.put("value", varMap.getOrDefault(v.getName(), RUNTIME_INPUT));
+        inputs.add(variable);
+      });
+    }
+    ObjectNode spec = mapper.createObjectNode();
+    spec.put("version", RUNTIME_INPUT);
+    spec.set("inputs", inputs);
+
+    ObjectNode templateInputs = mapper.createObjectNode();
+    templateInputs.put("type", "CustomArtifact");
+    templateInputs.set("spec", spec);
+    return templateInputs;
   }
 }

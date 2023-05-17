@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.TemplateValidationResponseDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
@@ -85,7 +86,10 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
             .fqn(fqn)
             .action(action)
             .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
-            .result(ValidationResult.builder().governanceMetadata(governanceMetadata).build())
+            .result(ValidationResult.builder()
+                        .templateValidationResponse(TemplateValidationResponseDTO.builder().validYaml(true).build())
+                        .governanceMetadata(governanceMetadata)
+                        .build())
             .startTs(System.currentTimeMillis())
             .endTs(System.currentTimeMillis())
             .build();

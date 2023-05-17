@@ -8,7 +8,7 @@
 package io.harness.cdng.elastigroup.rollback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -52,7 +52,7 @@ public class ElastigroupRollbackStepInfo implements CDAbstractStepInfo, Visitabl
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

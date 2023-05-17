@@ -220,8 +220,9 @@ settings :
       - ORGANIZATION
       - PROJECT
   - identifier: enable_matrix_label_by_name
-    name: Enable matrix Labels By Name
+    name: Enable Matrix Labels By Name
     category: PMS
+    groupIdentifier: pms_execution_settings
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: false
@@ -229,6 +230,21 @@ settings :
       - PROJECT
       - ACCOUNT
       - ORGANIZATION
+  - identifier: default_image_pull_policy_for_add_on_container
+    name: Default Image Pull Policy For Add On Container
+    category: PMS
+    groupIdentifier: pms_execution_settings
+    defaultValue: Always
+    valueType: STRING
+    allowOverrides: true
+    allowedScopes:
+      - PROJECT
+      - ACCOUNT
+      - ORGANIZATION
+    allowedValues:
+      - Always
+      - IfNotPresent
+      - Never
   - identifier: show_anomalies
     name: Show Anomalies
     category: CE

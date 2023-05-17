@@ -186,7 +186,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       try {
         K8sSteadyStateDTO k8sSteadyStateDTO =
             k8sTaskHelperBase.createSteadyStateCheckRequest(k8sDeployRequest, managedWorkloadKubernetesResourceIds,
-                waitForeSteadyStateLogCallback, k8sDelegateTaskParams, kubernetesConfig.getNamespace(), false, true);
+                waitForeSteadyStateLogCallback, k8sDelegateTaskParams, kubernetesConfig, false, true);
 
         K8sClient k8sClient =
             k8sTaskHelperBase.getKubernetesClient(k8sRollingDeployRequest.isUseK8sApiForSteadyStateCheck());

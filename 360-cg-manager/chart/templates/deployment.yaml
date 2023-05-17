@@ -21,6 +21,7 @@ spec:
   template:
     metadata:
       annotations:
+      {{- include "harnesscommon.monitoring.annotations" . | nindent 8 }}
         rollme: {{ randAlphaNum 5 | quote }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -97,6 +98,7 @@ spec:
             timeoutSeconds: 1
           name: manager
           ports:
+          {{- include "harnesscommon.monitoring.containerPort" . | nindent 12 }}
             - containerPort: {{.Values.service.grpcport}}
               protocol: TCP
           readinessProbe:

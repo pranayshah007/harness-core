@@ -70,7 +70,7 @@ public class K8sWatchPerpetualTaskServiceClientTest extends WingsBaseTest {
     PerpetualTaskClientContext perpetualTaskClientContext =
         PerpetualTaskClientContext.builder().clientParams(clientParamsMap).build();
     K8sWatchTaskParams k8sWatchTaskParams =
-        k8SWatchPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext, true);
+        k8SWatchPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext);
     assertThat(k8sWatchTaskParams.getClusterId()).isEqualTo(CLUSTER_ID);
     assertThat(k8sWatchTaskParams.getClusterName()).isEqualTo(CLUSTER_NAME);
     assertThat(k8sWatchTaskParams.getCloudProviderId()).isEqualTo(CLOUD_PROVIDER_ID);
@@ -87,7 +87,7 @@ public class K8sWatchPerpetualTaskServiceClientTest extends WingsBaseTest {
     PerpetualTaskClientContext perpetualTaskClientContext =
         PerpetualTaskClientContext.builder().clientParams(clientParamsMap).build();
     K8sWatchTaskParams k8sWatchTaskParams =
-        k8SWatchPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext, true);
+        k8SWatchPerpetualTaskServiceClient.getTaskParams(perpetualTaskClientContext);
     assertThat(k8sWatchTaskParams.getClusterId()).isEqualTo(CLUSTER_ID);
     assertThat(k8sWatchTaskParams.getClusterName()).isEqualTo(K8S_CLUSTER_NAME);
     assertThat(k8sWatchTaskParams.getCloudProviderId()).isEqualTo(CLOUD_PROVIDER_ID);

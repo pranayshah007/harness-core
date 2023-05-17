@@ -29,12 +29,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -46,6 +49,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("s3Store")
 @RecasterAlias("io.harness.cdng.manifest.yaml.S3StoreConfig")
+@FieldNameConstants(innerTypeName = "S3StoreConfigKeys")
 public class S3StoreConfig implements FileStorageStoreConfig, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -128,5 +132,24 @@ public class S3StoreConfig implements FileStorageStoreConfig, Visitable, WithCon
         .paths(ParameterFieldHelper.getParameterFieldValue(paths))
         .folderPath(ParameterFieldHelper.getParameterFieldValue(folderPath))
         .build();
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkStringParameterNullOrInput(connectorRef)) {
+      invalidParameters.add(S3StoreConfigKeys.connectorRef);
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(bucketName)) {
+      invalidParameters.add(S3StoreConfigKeys.bucketName);
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(region)) {
+      invalidParameters.add(S3StoreConfigKeys.region);
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(folderPath)
+        && StoreConfigHelper.checkListOfStringsParameterNullOrInput(paths)) {
+      invalidParameters.add(S3StoreConfigKeys.folderPath);
+    }
+    return invalidParameters;
   }
 }

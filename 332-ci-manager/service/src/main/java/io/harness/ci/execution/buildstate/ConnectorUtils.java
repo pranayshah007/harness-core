@@ -9,6 +9,7 @@ package io.harness.ci.buildstate;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.TASK_SELECTORS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -56,6 +57,7 @@ public class ConnectorUtils extends BaseConnectorUtils {
   private final SecretUtils secretUtils;
   private final CIExecutionServiceConfig cIExecutionServiceConfig;
   @Inject private CIFeatureFlagService featureFlagService;
+  @Inject @Named("ngBaseUrl") private String ngBaseUrl;
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -147,5 +149,20 @@ public class ConnectorUtils extends BaseConnectorUtils {
       }
     }
     return connectorDetails;
+  }
+
+  public ConnectorDetails getConnectorDetails(NGAccess ngAccess, String connectorIdentifier, boolean isGitConnector) {
+    if (isGitConnector && isEmpty(connectorIdentifier)
+        && featureFlagService.isEnabled(FeatureName.CODE_ENABLED, ngAccess.getAccountIdentifier())) {
+      log.info("fetching harness scm connector");
+      String baseUrl = getSCMBaseUrl(ngBaseUrl);
+      return super.getHarnessConnectorDetails(ngAccess, baseUrl);
+    }
+
+    if (isEmpty(connectorIdentifier)) {
+      throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
+    }
+
+    return super.getConnectorDetails(ngAccess, connectorIdentifier);
   }
 }

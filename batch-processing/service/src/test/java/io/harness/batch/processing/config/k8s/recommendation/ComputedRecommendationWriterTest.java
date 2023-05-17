@@ -576,7 +576,11 @@ public class ComputedRecommendationWriterTest extends CategoryTest {
     Cost lastDayCost = Cost.builder().cpu(BigDecimal.valueOf(100)).memory(BigDecimal.valueOf(100)).build();
     computedRecommendationWriter.setContainerLevelCost(containerRecommendationMap, lastDayCost);
 
-    assertThat(containerRecommendationMap.get("c1").getLastDayCost()).isNull();
+    final Offset<BigDecimal> costOffset = offset(BigDecimal.valueOf(0.09D));
+    assertThat(containerRecommendationMap.get("c1").getLastDayCost().getCpu())
+        .isCloseTo(BigDecimal.valueOf(100), costOffset);
+    assertThat(containerRecommendationMap.get("c1").getLastDayCost().getMemory())
+        .isCloseTo(BigDecimal.valueOf(100), costOffset);
   }
 
   @Test

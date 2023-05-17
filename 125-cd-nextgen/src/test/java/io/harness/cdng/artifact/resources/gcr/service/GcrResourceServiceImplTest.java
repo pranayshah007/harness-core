@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.resources.gcr.service;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.vivekveman;
 
@@ -70,6 +71,19 @@ public class GcrResourceServiceImplTest extends CategoryTest {
   private static final String REGISTRY_HOSTNAME = "registryHostname";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final String IDENTIFIER = "identifier";
+  private static final String INPUT = "<+input>-abc";
+  private static final IdentifierRef IDENTIFIER_REF = IdentifierRef.builder()
+                                                          .accountIdentifier(ACCOUNT_ID)
+                                                          .identifier(IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .build();
+  private static final GcrRequestDTO GCR_REQUEST_DTO =
+      GcrRequestDTO.builder().registryHostname(REGISTRY_HOSTNAME).build();
+  private static final String IMAGE_PATH_MESSAGE = "value for imagePath is empty or not provided";
+  private static final String REGISTRY_HOST_NAME_MESSAGE = "value for registryHostname is empty or not provided";
+  private static final String TAG_TAG_REGEX_MESSAGE = "value for tag, tagRegex is empty or not provided";
 
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
@@ -136,15 +150,9 @@ public class GcrResourceServiceImplTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testGetSuccessfulBuild() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
-    GcrRequestDTO gcrRequestDTO = GcrRequestDTO.builder().build();
+    GcrRequestDTO gcrRequestDTO = GcrRequestDTO.builder().registryHostname(REGISTRY_HOSTNAME).tag("version").build();
     ConnectorResponseDTO connectorDTO = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -162,11 +170,11 @@ public class GcrResourceServiceImplTest extends CategoryTest {
                 .build());
 
     GcrBuildDetailsDTO gcrBuildDetailsDTO = gcrResourceService.getSuccessfulBuild(
-        identifierRef, IMAGE_PATH, gcrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        IDENTIFIER_REF, IMAGE_PATH, gcrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(gcrBuildDetailsDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -366,5 +374,96 @@ public class GcrResourceServiceImplTest extends CategoryTest {
                                identifierRef, IMAGE_PATH, REGISTRY_HOSTNAME, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(WingsException.class)
         .hasMessage("Gcr Get Builds task failure due to error - Test failed with error code: DEFAULT_ERROR_CODE");
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_NULL() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, null, GCR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_INPUT() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, INPUT, GCR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RegistryHostName_NULL() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               GcrRequestDTO.builder().build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGISTRY_HOST_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RegistryHostName_INPUT() {
+    assertThatThrownBy(
+        ()
+            -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                GcrRequestDTO.builder().registryHostname(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGISTRY_HOST_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_NULL() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, IMAGE_PATH, GCR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_INPUT() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               GcrRequestDTO.builder().registryHostname(REGISTRY_HOSTNAME).tag(INPUT).build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_NULL() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, IMAGE_PATH, GCR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_INPUT() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               GcrRequestDTO.builder().registryHostname(REGISTRY_HOSTNAME).tagRegex(INPUT).build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 }

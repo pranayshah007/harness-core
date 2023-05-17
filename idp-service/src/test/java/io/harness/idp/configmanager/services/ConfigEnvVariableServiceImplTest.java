@@ -72,7 +72,7 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
 
     AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
 
-    when(backstageEnvVariableService.createMulti(any(), any()))
+    when(backstageEnvVariableService.createOrUpdate(any(), any()))
         .thenReturn(Collections.singletonList(backstageEnvSecretVariable));
     List<BackstageEnvSecretVariable> returnList =
         configEnvVariablesServiceImpl.insertConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);
@@ -105,7 +105,7 @@ public class ConfigEnvVariableServiceImplTest extends CategoryTest {
 
     AppConfig appConfig = getTestAppConfig(backstageEnvSecretVariable);
 
-    when(backstageEnvVariableService.createMulti(any(), any()))
+    when(backstageEnvVariableService.createOrUpdate(any(), any()))
         .thenReturn(Collections.singletonList(backstageEnvSecretVariable));
     List<BackstageEnvSecretVariable> returnList =
         configEnvVariablesServiceImpl.updateConfigEnvVariables(appConfig, TEST_ACCOUNT_IDENTIFIER);

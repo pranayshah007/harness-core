@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.IDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.http.HttpStepResponse;
+import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
@@ -48,14 +49,14 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       ObjectMapper mapper = new ObjectMapper();
       backstageProxyRequest = mapper.readValue(body, BackstageProxyRequest.class);
     } catch (Exception err) {
-      log.info("Error parsing backstageProxyRequest ", err);
+      log.info("Error parsing backstageProxyRequest. Request: {}", body, err);
       throw err;
     }
     log.info("Parsed request body: {}", backstageProxyRequest);
 
+    Set<String> delegateSelectors = getDelegateSelectors(backstageProxyRequest.getUrl(), accountIdentifier);
     List<HttpHeaderConfig> headerList =
         delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders());
-    Set<String> delegateSelectors = getDelegateSelectors(urlString, accountIdentifier);
 
     HttpStepResponse httpResponse =
         delegateProxyRequestForwarder.forwardRequestToDelegate(accountIdentifier, backstageProxyRequest.getUrl(),
@@ -63,7 +64,10 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
 
     if (httpResponse == null) {
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-          .entity(ResponseMessage.builder().message("Did not receive response from Delegate").build())
+          .entity(ResponseMessage.builder()
+                      .message("Did not receive response from Delegate")
+                      .code(ErrorCode.INTERNAL_SERVER_ERROR)
+                      .build())
           .build();
     }
 
@@ -75,7 +79,7 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
     try {
       url = new URL(urlString);
     } catch (MalformedURLException e) {
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error parsing the url while fetching the delegate selectors", e);
     }
     String host = url.getHost();
 

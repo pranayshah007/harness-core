@@ -174,7 +174,8 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
     // Create delegate task for infra if needed
     if (isTaskStep(infraSpec.getKind())) {
       final TaskRequestData taskRequest = obtainTaskInternal(ambiance, infraSpec, logCallback,
-          !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments(), skipInstances);
+          !infrastructureConfig.getInfrastructureDefinitionConfig().isAllowSimultaneousDeployments(), skipInstances,
+          infrastructureConfig.getInfrastructureDefinitionConfig().getTags());
       final DelegateTaskRequest delegateTaskRequest =
           cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest.getTaskRequest(), taskRequest.getTaskData(),
               CollectionUtils.emptyIfNull(taskRequest.getTaskSelectorYamls())
@@ -335,9 +336,9 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     infrastructureValidator.validate(spec);
 
-    final InfrastructureOutcome infrastructureOutcome =
-        infrastructureOutcomeProvider.getOutcome(ambiance, spec, environmentOutcome, serviceOutcome,
-            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    final InfrastructureOutcome infrastructureOutcome = infrastructureOutcomeProvider.getOutcome(ambiance, spec,
+        environmentOutcome, serviceOutcome, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
+        ngAccess.getProjectIdentifier(), infrastructure.getInfrastructureDefinitionConfig().getTags());
 
     // save spec sweeping output for further use within the step
     executionSweepingOutputService.consume(ambiance, INFRA_TASK_EXECUTABLE_STEP_OUTPUT,

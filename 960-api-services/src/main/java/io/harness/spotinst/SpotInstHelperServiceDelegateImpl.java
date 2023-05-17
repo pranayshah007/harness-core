@@ -22,7 +22,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.exception.WingsException;
-import io.harness.exception.WingsException.ReportTarget;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.SpotInstConstants;
@@ -36,7 +35,6 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +82,7 @@ public class SpotInstHelperServiceDelegateImpl implements SpotInstHelperServiceD
             error = responseBody.string();
           }
         }
-        throw new WingsException(error, EnumSet.of(ReportTarget.UNIVERSAL));
+        throw SpotInstErrorHandler.generateException(error);
       }
       return response.body();
     } catch (FailsafeException | IOException ex) {

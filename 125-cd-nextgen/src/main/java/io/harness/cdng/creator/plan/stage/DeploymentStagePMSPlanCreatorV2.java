@@ -171,8 +171,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   @Override
   public String getExecutionInputTemplateAndModifyYamlField(YamlField yamlField) {
-    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
-        yamlField.getNode().getParentNode().getCurrJsonNode());
+    return RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(yamlField);
   }
 
   @SneakyThrows

@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.dto.recommendation;
 
+import io.harness.ccm.commons.entities.recommendations.RecommendationAzureVmId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationEC2InstanceId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationECSServiceId;
 import io.harness.ccm.commons.entities.recommendations.RecommendationNodepoolId;
@@ -25,4 +26,5 @@ public class RecommendationsIgnoreResourcesDTO {
   Set<RecommendationNodepoolId> nodepools;
   Set<RecommendationECSServiceId> ecsServices;
   Set<RecommendationEC2InstanceId> ec2Instances;
+  Set<RecommendationAzureVmId> azureVmIds;
 }
