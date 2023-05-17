@@ -111,4 +111,6 @@ public interface NGTemplateService {
 
   void updateGitDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel, UpdateGitDetailsParams updateGitDetailsParams);
+
+  String getAsyncSetUpUsageUUID(TemplateEntity templateEntity);
 }
