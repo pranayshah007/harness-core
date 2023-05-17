@@ -1,2 +1,2 @@
-HELM_CHART_SOURCE_DIRECTORY="840-template-service/chart"
-HELM_REPO_NAME="us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts"
+HELM_CHART_SOURCE_DIRECTORY: 840-template-service/chart
+HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
