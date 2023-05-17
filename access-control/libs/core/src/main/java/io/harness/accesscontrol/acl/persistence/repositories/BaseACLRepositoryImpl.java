@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicateKeyCode;
 
@@ -42,6 +43,7 @@ import org.springframework.data.mongodb.BulkOperationException;
 import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
 import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
@@ -101,17 +103,14 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
     query.addCriteria(criteria);
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupOperation = group(ACLKeys.resourceSelector, ACLKeys.conditional, ACLKeys.condition);
-    ProjectionOperation ProjectionOperation = project();
+    ProjectionOperation projectionOperation = project().andExpression("_id.resourceSelector").as("resourceSelector")
+            .andExpression("_id.conditional").as("conditional").andExpression("_id.condition").as("condition");
 
-    List<ACL> acls = mongoTemplate.find(query, ACL.class, getCollectionName());
-    return acls.stream()
-        .map(acl
-            -> ResourceSelector.builder()
-                   .selector(acl.getResourceSelector())
-                   .conditional(acl.isConditional())
-                   .condition(acl.getCondition())
-                   .build())
-        .collect(Collectors.toSet());
+    Aggregation aggregation = newAggregation(matchStage, groupOperation, projectionOperation);
+
+    AggregationResults<ResourceSelector> aggregationResults = mongoTemplate.aggregate(aggregation, getCollectionName(), ResourceSelector.class);
+    Set<ResourceSelector> resourceSelectors = aggregationResults.getMappedResults().stream().collect(Collectors.toSet());
+    return resourceSelectors;
   }
 
   @Override
