@@ -9,6 +9,8 @@ package io.harness.pms.approval.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
@@ -60,7 +62,11 @@ public class ApprovalSummary {
     params.put(ApprovalSummaryKeys.pipelineExecutionLink, pipelineExecutionLink);
     params.put(ApprovalSummaryKeys.timeRemainingForApproval, timeRemainingForApproval);
     params.put(ApprovalSummaryKeys.action, action);
-    params.put(ApprovalSummaryKeys.status, String.valueOf(status).toLowerCase(Locale.ROOT));
+    if (isNull(status)) {
+      params.put(ApprovalSummaryKeys.status, "");
+    } else {
+      params.put(ApprovalSummaryKeys.status, String.valueOf(status).toLowerCase(Locale.ROOT));
+    }
     return params;
   }
 

@@ -269,56 +269,18 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     if (isNotEmpty(userGroup.getProjectIdentifier())) {
       notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
     }
-    boolean actionStatus =
-        ApprovalStatus.APPROVED.equals(instance.getStatus()) || ApprovalStatus.REJECTED.equals(instance.getStatus());
 
-    if (actionStatus) {
-      switch (notificationSettingConfig.getType()) {
-        case SLACK:
-          String slackTemplateId = instance.isIncludePipelineExecutionHistory()
-              ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_SLACK.getIdentifier()
-              : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_SLACK.getIdentifier();
-          SlackConfigDTO slackConfig = (SlackConfigDTO) notificationSettingConfig;
-          return SlackChannel.builder()
-              .accountId(userGroup.getAccountIdentifier())
-              .team(Team.PIPELINE)
-              .templateId(slackTemplateId)
-              .templateData(templateData)
-              .webhookUrls(Collections.singletonList(slackConfig.getSlackWebhookUrl()))
-              .build();
-
-        case EMAIL:
-          String emailTemplateId = instance.isIncludePipelineExecutionHistory()
-              ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
-              : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_EMAIL.getIdentifier();
-          templateData.put("action", templateData.get("action").replace("\\n", "<br>"));
-          return EmailChannel.builder()
-              .accountId(userGroup.getAccountIdentifier())
-              .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
-              .team(Team.PIPELINE)
-              .templateId(emailTemplateId)
-              .templateData(templateData)
-              .recipients(Collections.emptyList())
-              .build();
-
-        case MSTEAMS:
-          String msTeamsTemplateId = instance.isIncludePipelineExecutionHistory()
-              ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS.getIdentifier()
-              : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier();
-          return MSTeamChannel.builder()
-              .msTeamKeys(Collections.emptyList())
-              .accountId(userGroup.getAccountIdentifier())
-              .team(Team.PIPELINE)
-              .templateData(templateData)
-              .templateId(msTeamsTemplateId)
-              .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
-              .build();
-
-        default:
-          return null;
-      }
+    if (ApprovalStatus.APPROVED.equals(instance.getStatus()) || ApprovalStatus.REJECTED.equals(instance.getStatus())) {
+      return notificationTemplateForApprovalAction(
+          instance, notificationSettingConfig, userGroup, templateData, notifyUserGroupBuilder);
+    } else {
+      return notificationTemplateForApprovalRequired(
+          instance, notificationSettingConfig, userGroup, templateData, notifyUserGroupBuilder);
     }
-
+  }
+  private NotificationChannel notificationTemplateForApprovalRequired(HarnessApprovalInstance instance,
+      NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup, Map<String, String> templateData,
+      NotificationRequest.UserGroup.Builder notifyUserGroupBuilder) {
     switch (notificationSettingConfig.getType()) {
       case SLACK:
         String slackTemplateId = instance.isIncludePipelineExecutionHistory()
@@ -364,6 +326,55 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
   }
 
+  private NotificationChannel notificationTemplateForApprovalAction(HarnessApprovalInstance instance,
+      NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup, Map<String, String> templateData,
+      NotificationRequest.UserGroup.Builder notifyUserGroupBuilder) {
+    switch (notificationSettingConfig.getType()) {
+      case SLACK:
+        String slackTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_SLACK.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_SLACK.getIdentifier();
+        SlackConfigDTO slackConfig = (SlackConfigDTO) notificationSettingConfig;
+        return SlackChannel.builder()
+            .accountId(userGroup.getAccountIdentifier())
+            .team(Team.PIPELINE)
+            .templateId(slackTemplateId)
+            .templateData(templateData)
+            .webhookUrls(Collections.singletonList(slackConfig.getSlackWebhookUrl()))
+            .build();
+
+      case EMAIL:
+        String emailTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_EMAIL.getIdentifier();
+        templateData.put("action", templateData.get("action").replace("\\n", "<br>"));
+        return EmailChannel.builder()
+            .accountId(userGroup.getAccountIdentifier())
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
+            .team(Team.PIPELINE)
+            .templateId(emailTemplateId)
+            .templateData(templateData)
+            .recipients(Collections.emptyList())
+            .build();
+
+      case MSTEAMS:
+        String msTeamsTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier();
+        return MSTeamChannel.builder()
+            .msTeamKeys(Collections.emptyList())
+            .accountId(userGroup.getAccountIdentifier())
+            .team(Team.PIPELINE)
+            .templateData(templateData)
+            .templateId(msTeamsTemplateId)
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
+            .build();
+
+      default:
+        return null;
+    }
+  }
+
   private String getAction(HarnessApprovalInstance approvalInstance) {
     Optional<HarnessApprovalActivity> optionalHarnessApprovalActivity = approvalInstance.fetchLastApprovalActivity();
     String action = "";
@@ -380,7 +391,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
           // removing last redundant new line character
           action = action.substring(0, action.length() - 2);
         }
-      } else {
+      } else if (HarnessApprovalAction.REJECT.equals(lastApprovalActivity.getAction())) {
         action = lastApprovalActivity.getUser().getEmail() + " rejected on "
             + formatTime(lastApprovalActivity.getApprovedAt());
       }
