@@ -63,4 +63,6 @@ public class TemplateResponseDTO {
   String connectorRef;
   String icon;
   CacheResponseMetadataDTO cacheResponseMetadata;
+
+  String setupUsageUuid;
 }
