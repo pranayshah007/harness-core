@@ -975,7 +975,7 @@ roles:
         - project
     - identifier: _servicediscovery_admin
       name: ServiceDiscovery Admin
-      description: Can create, edit, delete and view Namework Map Resources
+      description: Can create, edit, delete and view Network Map Resources
       permissions:
         - servicediscovery_networkmap_create
         - servicediscovery_networkmap_edit
