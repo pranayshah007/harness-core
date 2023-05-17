@@ -177,7 +177,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
     List<NGServiceOverridesEntity> overridesEntities =
         mongoTemplate.find(new Query(criteria), NGServiceOverridesEntity.class);
     assertThat(overridesEntities).hasSize(2);
-    assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::isV2).collect(Collectors.toList()))
+    assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIsV2).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
     assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getType).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(
@@ -290,7 +290,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
     List<NGServiceOverridesEntity> overridesEntities =
         mongoTemplate.find(new Query(criteria), NGServiceOverridesEntity.class);
     assertThat(overridesEntities).hasSize(2);
-    assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::isV2).collect(Collectors.toList()))
+    assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getIsV2).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
     assertThat(overridesEntities.stream().map(NGServiceOverridesEntity::getType).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(
@@ -459,7 +459,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
 
     List<Environment> envEntities = mongoTemplate.find(new Query(criteria), Environment.class);
     assertThat(envEntities).hasSize(2);
-    assertThat(envEntities.stream().map(Environment::isMigratedToOverride).collect(Collectors.toList()))
+    assertThat(envEntities.stream().map(Environment::getIsMigratedToOverride).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
 
     // assert create overrides from environment
@@ -490,7 +490,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
             generateEnvBasedIdentifier(envRefs.get(0)), generateEnvBasedIdentifier(envRefs.get(1)));
     assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::getType).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
-    assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::isV2).collect(Collectors.toList()))
+    assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::getIsV2).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
     assertThat(
         createdOverridesEntities.stream().map(NGServiceOverridesEntity::getServiceRef).collect(Collectors.toList()))
@@ -561,7 +561,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
 
     List<Environment> envEntities = mongoTemplate.find(new Query(criteria), Environment.class);
     assertThat(envEntities).hasSize(2);
-    assertThat(envEntities.stream().map(Environment::isMigratedToOverride).collect(Collectors.toList()))
+    assertThat(envEntities.stream().map(Environment::getIsMigratedToOverride).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
 
     // assert create overrides from environment
@@ -594,7 +594,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
             generateEnvBasedIdentifier(orgEnvRefs.get(0)), generateEnvBasedIdentifier(orgEnvRefs.get(1)));
     assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::getType).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
-    assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::isV2).collect(Collectors.toList()))
+    assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::getIsV2).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
     assertThat(createdOverridesEntities.get(0).getSpec().getVariables().get(0).getName()).isEqualTo("var1");
   }
@@ -638,7 +638,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
 
     List<Environment> envEntities = mongoTemplate.find(new Query(criteria), Environment.class);
     assertThat(envEntities).hasSize(2);
-    assertThat(envEntities.stream().map(Environment::isMigratedToOverride).collect(Collectors.toList()))
+    assertThat(envEntities.stream().map(Environment::getIsMigratedToOverride).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
 
     // assert create overrides from environment
@@ -664,7 +664,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
             generateEnvBasedIdentifier(accountEnvRefs.get(0)), generateEnvBasedIdentifier(accountEnvRefs.get(1)));
     assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::getType).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
-    assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::isV2).collect(Collectors.toList()))
+    assertThat(createdOverridesEntities.stream().map(NGServiceOverridesEntity::getIsV2).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(true, true);
     assertThat(
         createdOverridesEntities.stream().map(NGServiceOverridesEntity::getServiceRef).collect(Collectors.toList()))

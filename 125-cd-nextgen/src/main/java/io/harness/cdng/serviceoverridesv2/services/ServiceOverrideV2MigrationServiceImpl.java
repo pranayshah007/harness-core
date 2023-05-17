@@ -388,7 +388,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       Query query = new org.springframework.data.mongodb.core.query.Query(criteria);
       Update update = new Update();
       update.set(NGServiceOverridesEntityKeys.spec, spec);
-      update.set(NGServiceOverridesEntityKeys.isV2, true);
+      update.set(NGServiceOverridesEntityKeys.isV2, Boolean.TRUE);
       mongoTemplate.updateFirst(query, update, NGServiceOverridesEntity.class);
       return SingleServiceOverrideMigrationResponse.builder()
           .isSuccessful(true)
@@ -428,7 +428,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
                             .is(projectId);
     return criteria.andOperator(
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(false)));
+            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE)));
   }
 
   @NotNull
@@ -443,7 +443,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).is(null)),
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(false)));
+            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE)));
   }
 
   @NotNull
@@ -455,7 +455,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).is(null)),
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(false)));
+            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE)));
   }
 
   @NotNull
@@ -614,7 +614,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         .accountId(envIdentifierRef.getAccountIdentifier())
         .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
         .spec(specBuilder.build())
-        .isV2(true)
+        .isV2(Boolean.TRUE)
         .build();
   }
 

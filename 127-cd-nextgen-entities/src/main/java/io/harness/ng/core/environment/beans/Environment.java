@@ -111,7 +111,7 @@ public class Environment implements PersistentEntity, ScopeAware {
   @Setter @NonFinal String rootFolder;
 
   // Service Override V2 migration
-  boolean isMigratedToOverride;
+  @Builder.Default @Setter @NonFinal Boolean isMigratedToOverride = Boolean.FALSE;
 
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {
