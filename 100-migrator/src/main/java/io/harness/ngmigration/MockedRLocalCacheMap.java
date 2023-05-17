@@ -7,15 +7,11 @@
 
 package io.harness.ngmigration;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import org.redisson.api.ObjectListener;
 import org.redisson.api.RCountDownLatch;
 import org.redisson.api.RFuture;
@@ -80,21 +76,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
 
   @Override
   public T putIfAbsent(String s, T t) {
-    return null;
-  }
-
-  @Override
-  public T putIfExists(String s, T t) {
-    return null;
-  }
-
-  @Override
-  public Set<String> randomKeys(int i) {
-    return null;
-  }
-
-  @Override
-  public Map<String, T> randomEntries(int i) {
     return null;
   }
 
@@ -218,11 +199,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
   }
 
   @Override
-  public boolean fastPutIfExists(String s, T t) {
-    return false;
-  }
-
-  @Override
   public Set<String> readAllKeySet() {
     return null;
   }
@@ -321,56 +297,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
   }
 
   @Override
-  public boolean expire(Instant instant) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfSet(Instant instant) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfNotSet(Instant instant) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfGreater(Instant instant) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfLess(Instant instant) {
-    return false;
-  }
-
-  @Override
-  public boolean expire(Duration duration) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfSet(Duration duration) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfNotSet(Duration duration) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfGreater(Duration duration) {
-    return false;
-  }
-
-  @Override
-  public boolean expireIfLess(Duration duration) {
-    return false;
-  }
-
-  @Override
   public boolean clearExpire() {
     return false;
   }
@@ -378,31 +304,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
   @Override
   public long remainTimeToLive() {
     return 0;
-  }
-
-  @Override
-  public long getExpireTime() {
-    return 0;
-  }
-
-  @Override
-  public RFuture<T> mergeAsync(String s, T t, BiFunction<? super T, ? super T, ? extends T> biFunction) {
-    return null;
-  }
-
-  @Override
-  public RFuture<T> computeAsync(String s, BiFunction<? super String, ? super T, ? extends T> biFunction) {
-    return null;
-  }
-
-  @Override
-  public RFuture<T> computeIfAbsentAsync(String s, Function<? super String, ? extends T> function) {
-    return null;
-  }
-
-  @Override
-  public RFuture<T> computeIfPresentAsync(String s, BiFunction<? super String, ? super T, ? extends T> biFunction) {
-    return null;
   }
 
   @Override
@@ -432,16 +333,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
 
   @Override
   public RFuture<Void> putAllAsync(Map<? extends String, ? extends T> map, int i) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Set<String>> randomKeysAsync(int i) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Map<String, T>> randomEntriesAsync(int i) {
     return null;
   }
 
@@ -482,11 +373,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
 
   @Override
   public RFuture<Boolean> fastPutIfAbsentAsync(String s, T t) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> fastPutIfExistsAsync(String s, T t) {
     return null;
   }
 
@@ -546,11 +432,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
   }
 
   @Override
-  public RFuture<T> putIfExistsAsync(String s, T t) {
-    return null;
-  }
-
-  @Override
   public RFuture<Boolean> expireAsync(long l, TimeUnit timeUnit) {
     return null;
   }
@@ -566,72 +447,12 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
   }
 
   @Override
-  public RFuture<Boolean> expireAsync(Instant instant) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfSetAsync(Instant instant) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfNotSetAsync(Instant instant) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfGreaterAsync(Instant instant) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfLessAsync(Instant instant) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireAsync(Duration duration) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfSetAsync(Duration duration) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfNotSetAsync(Duration duration) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfGreaterAsync(Duration duration) {
-    return null;
-  }
-
-  @Override
-  public RFuture<Boolean> expireIfLessAsync(Duration duration) {
-    return null;
-  }
-
-  @Override
   public RFuture<Boolean> clearExpireAsync() {
     return null;
   }
 
   @Override
   public RFuture<Long> remainTimeToLiveAsync() {
-    return null;
-  }
-
-  @Override
-  public RFuture<Long> getExpireTimeAsync() {
-    return null;
-  }
-
-  @Override
-  public Long getIdleTime() {
     return null;
   }
 
@@ -713,11 +534,6 @@ public class MockedRLocalCacheMap<T> implements RLocalCachedMap<String, T> {
 
   @Override
   public void removeListener(int i) {}
-
-  @Override
-  public RFuture<Long> getIdleTimeAsync() {
-    return null;
-  }
 
   @Override
   public RFuture<Long> sizeInMemoryAsync() {
