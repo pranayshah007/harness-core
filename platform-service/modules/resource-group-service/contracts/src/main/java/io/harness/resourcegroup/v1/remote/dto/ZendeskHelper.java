@@ -108,8 +108,8 @@ public class ZendeskHelper {
     try {
       String json = "{\n"
           + "    \"userIds\": [\n{"
-          + "        \"name\": \"example\",\n"
-          + "        \"type\": \"type\",\n"
+          + "        \"name\": \"name\",\n"
+          + "        \"type\": \"User\",\n"
           + "        \"provider\":\"Security Provider\"\n"
           + "    }\n]"
           + "}";
