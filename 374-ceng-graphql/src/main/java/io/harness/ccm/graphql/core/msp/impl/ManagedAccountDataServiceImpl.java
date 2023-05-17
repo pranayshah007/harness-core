@@ -17,11 +17,7 @@ import io.harness.ccm.graphql.query.perspectives.PerspectivesQuery;
 import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.graphql.utils.RESTToGraphQLHelper;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
-import io.harness.ccm.msp.entities.AmountDetails;
-import io.harness.ccm.msp.entities.ManagedAccountStats;
-import io.harness.ccm.msp.entities.ManagedAccountTimeSeriesData;
-import io.harness.ccm.msp.entities.ManagedAccountsOverview;
-import io.harness.ccm.msp.entities.MarginDetails;
+import io.harness.ccm.msp.entities.*;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
@@ -85,6 +81,15 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
 
     return ManagedAccountStats.builder().build();
+  }
+
+  @Override
+  public ManagedAccountStats getMockManagedAccountStats(
+      String mspAccountId, String managedAccountId, long startTime, long endTime) {
+    return ManagedAccountStats.builder()
+        .totalSpendStats(AmountTrendStats.builder().currentPeriod(1369.34).trend(10.4).build())
+        .totalMarkupStats(AmountTrendStats.builder().currentPeriod(254.22).trend(7.4).build())
+        .build();
   }
 
   @Override

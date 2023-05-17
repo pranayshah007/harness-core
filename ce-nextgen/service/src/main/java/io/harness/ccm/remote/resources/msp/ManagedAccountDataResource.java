@@ -20,6 +20,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
+import io.harness.security.annotations.PublicApi;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
@@ -72,7 +73,7 @@ public class ManagedAccountDataResource {
       @QueryParam("startTime") @Parameter(required = true, description = "Start time of the period") long startTime,
       @QueryParam("endTime") @Parameter(required = true, description = "End time of the period") long endTime) {
     return ResponseDTO.newResponse(
-        mspManagedAccountDataService.getManagedAccountStats(accountIdentifier, managedAccountId, startTime, endTime));
+        mspManagedAccountDataService.getMockManagedAccountStats(accountIdentifier, managedAccountId, startTime, endTime));
   }
 
   @GET

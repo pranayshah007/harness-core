@@ -20,6 +20,8 @@ public interface ManagedAccountDataService {
   ManagedAccountsOverview getTotalMarkupAndSpend(String mspAccountId, String managedAccountId);
   ManagedAccountStats getManagedAccountStats(
       String mspAccountId, String managedAccountId, long startTime, long endTime);
+  ManagedAccountStats getMockManagedAccountStats(
+          String mspAccountId, String managedAccountId, long startTime, long endTime);
   ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(
       String mspAccountId, String managedAccountId, long startTime, long endTime);
 }
