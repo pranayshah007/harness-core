@@ -576,7 +576,7 @@ public class PipelineMigrationService extends NgMigrationService {
     String stageServiceRef = RUNTIME_INPUT;
     JsonNode serviceInputs = null;
     String serviceId = getServiceId(workflow, stageElement);
-    if (StringUtils.isNotBlank(serviceId)) {
+    if (StringUtils.isNotBlank(serviceId) && !isExpression(serviceId)) {
       CgEntityId serviceEntityId = CgEntityId.builder().id(serviceId).type(SERVICE).build();
       if (migratedEntities.containsKey(serviceEntityId)) {
         NgEntityDetail serviceDetails = migratedEntities.get(serviceEntityId).getNgEntityDetail();
@@ -656,8 +656,9 @@ public class PipelineMigrationService extends NgMigrationService {
     // Set Deployment specific runtime inputs
     if (templateInputs != null && "Deployment".equals(templateInputs.get("type").asText())) {
       String serviceRef = templateInputs.at("/spec/service/serviceRef").asText();
-      if (RUNTIME_INPUT.equals(serviceRef) && !RUNTIME_INPUT.equals(stageServiceRef)) {
-        fixServiceInTemplateInputs(serviceToStageMap, stageServiceRef, serviceInputs, templateInputs);
+      if (RUNTIME_INPUT.equals(serviceRef)
+          && (!RUNTIME_INPUT.equals(stageServiceRef) || serviceToStageMap.containsKey(serviceId))) {
+        fixServiceInTemplateInputs(serviceToStageMap, stageServiceRef, serviceInputs, templateInputs, serviceId);
       }
       String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
       if (RUNTIME_INPUT.equals(envRef)) {
@@ -683,20 +684,20 @@ public class PipelineMigrationService extends NgMigrationService {
     templateStageNode.setTemplate(templateLinkConfig);
 
     // This is needed to propagate services from one stage to another
-    if (isNotEmpty(stageServiceRef) && !serviceToStageMap.containsKey(stageServiceRef)) {
-      serviceToStageMap.put(stageServiceRef, stageIdentifier);
+    if (isNotEmpty(serviceId) && !serviceToStageMap.containsKey(serviceId)) {
+      serviceToStageMap.put(serviceId, stageIdentifier);
     }
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
   }
 
-  private void fixServiceInTemplateInputs(
-      Map<String, String> serviceToStageMap, String stageServiceRef, JsonNode serviceInputs, JsonNode templateInputs) {
+  private void fixServiceInTemplateInputs(Map<String, String> serviceToStageMap, String stageServiceRef,
+      JsonNode serviceInputs, JsonNode templateInputs, String cgServiceId) {
     ObjectNode service = (ObjectNode) templateInputs.get("spec").get("service");
     // serviceRef or use from stage
-    if (serviceToStageMap.containsKey(stageServiceRef)) {
+    if (serviceToStageMap.containsKey(cgServiceId)) {
       ObjectNode stageNode = JsonPipelineUtils.getMapper().createObjectNode();
-      stageNode.put("stage", serviceToStageMap.get(stageServiceRef));
+      stageNode.put("stage", serviceToStageMap.get(cgServiceId));
       service.set("useFromStage", stageNode);
       service.remove(SERVICE_INPUTS);
       service.remove("serviceRef");
@@ -797,7 +798,7 @@ public class PipelineMigrationService extends NgMigrationService {
       return workflowPhase.getServiceId();
     }
     String serviceId = workflowVariables.get(serviceExpression);
-    if (StringUtils.isNotBlank(serviceId) && !isExpression(serviceId)) {
+    if (StringUtils.isNotBlank(serviceId)) {
       return serviceId;
     }
     return null;

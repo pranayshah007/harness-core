@@ -32,6 +32,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -55,6 +56,15 @@ public class DebugResource {
   public RestResponse<SLODebugResponse> getSLODebug(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getSLODebugResponse(projectParams.getProjectParams(), identifier));
+  }
+
+  @DELETE
+  @Timed
+  @Path("slo/{identifier}")
+  @ApiOperation(value = "Force deletes SLOs and associated entities", nickname = "forceDeleteSLO", hidden = true)
+  public RestResponse<Boolean> forceDeleteSLO(@NotNull @BeanParam ProjectScopedProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
+    return new RestResponse<>(debugService.forceDeleteSLO(projectParams.getProjectParams(), identifier));
   }
 
   @GET
