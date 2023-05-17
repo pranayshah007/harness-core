@@ -63,9 +63,9 @@ public class NetworkMapResourceImpl implements Resource {
 
   @Override
   public Map<ScopeLevel, EnumSet<ValidatorType>> getSelectorKind() {
-    return ImmutableMap.of(ScopeLevel.ACCOUNT, EnumSet.of(BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
-        ScopeLevel.ORGANIZATION, EnumSet.of(BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES), ScopeLevel.PROJECT,
-        EnumSet.of(BY_RESOURCE_TYPE));
+    return ImmutableMap.of(ScopeLevel.ACCOUNT, EnumSet.of(BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
+        ScopeLevel.ORGANIZATION, EnumSet.of(BY_RESOURCE_TYPE, BY_RESOURCE_TYPE_INCLUDING_CHILD_SCOPES),
+        ScopeLevel.PROJECT, EnumSet.of(BY_RESOURCE_TYPE));
   }
 
   @Override
