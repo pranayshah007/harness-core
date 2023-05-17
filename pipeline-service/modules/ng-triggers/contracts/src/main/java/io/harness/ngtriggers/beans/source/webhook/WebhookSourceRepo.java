@@ -7,4 +7,4 @@
 
 package io.harness.ngtriggers.beans.source.webhook;
 
-public enum WebhookSourceRepo { AZURE_REPO, GITHUB, GITLAB, BITBUCKET, AWS_CODECOMMIT, CUSTOM }
+public enum WebhookSourceRepo { AZURE_REPO, GITHUB, GITLAB, BITBUCKET, AWS_CODECOMMIT, HARNESS, CUSTOM }

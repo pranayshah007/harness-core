@@ -58,6 +58,8 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, AccountCrudObserver {
   private static final String DEFAULT_TOKEN_NAME = "default_token";
+  private final String TOKEN_NAME_ILLEGAL_CHARACTERS = "[~!@#$%^&*'\"/?<>,;.]";
+
   private final HPersistence persistence;
   private final OutboxService outboxService;
   private final DelegateTokenEncryptDecrypt delegateTokenEncryptDecrypt;
@@ -199,8 +201,9 @@ public class DelegateNgTokenServiceImpl implements DelegateNgTokenService, Accou
       String projectId = DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(owner.getIdentifier());
       tokenIdentifier = String.format("%s_%s_%s", getDefaultTokenName(owner), orgId, projectId);
     }
+    String tokenNameSanitized = StringUtils.replaceAll(tokenIdentifier, TOKEN_NAME_ILLEGAL_CHARACTERS, "_");
     updateOperations.set(DelegateTokenKeys.encryptedTokenId,
-        delegateTokenEncryptDecrypt.encrypt(accountId, getDefaultTokenName(owner), tokenIdentifier.trim()));
+        delegateTokenEncryptDecrypt.encrypt(accountId, getDefaultTokenName(owner), tokenNameSanitized.trim()));
 
     DelegateToken delegateToken = persistence.upsert(query, updateOperations, HPersistence.upsertReturnNewOptions);
     log.info("Default Delegate NG Token inserted/updated for account {}, organization {} and project {}", accountId,

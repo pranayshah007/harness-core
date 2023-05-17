@@ -90,10 +90,19 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testValidatePresenceOfRequiredFields() {
-    assertThatThrownBy(() -> PMSPipelineServiceHelper.validatePresenceOfRequiredFields("", null, "2"))
+  public void testValidatePresenceOfRequiredFieldsWhenNullIsPassed() {
+    assertThatThrownBy(() -> PMSPipelineServiceHelper.validatePresenceOfRequiredFields(null, "2"))
         .isInstanceOf(NullPointerException.class)
         .hasMessageContaining("One of the required fields is null.");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testValidatePresenceOfRequiredFieldsWhenEmptyStringIsPassed() {
+    assertThatThrownBy(() -> PMSPipelineServiceHelper.validatePresenceOfRequiredFields("", "2"))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("One of the required fields is empty.");
   }
 
   @Test

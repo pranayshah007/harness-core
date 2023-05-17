@@ -8,7 +8,7 @@
 package io.harness.steps.servicenow.importset;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -59,7 +59,7 @@ public class ServiceNowImportSetStepInfo implements PMSStepInfo, WithConnectorRe
   @NotNull @VariableExpression(skipVariableExpression = true) ImportDataSpecWrapper importData;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override

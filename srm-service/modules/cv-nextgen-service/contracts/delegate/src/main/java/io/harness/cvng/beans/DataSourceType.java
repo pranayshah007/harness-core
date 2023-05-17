@@ -33,7 +33,9 @@ public enum DataSourceType {
   AWS_PROMETHEUS("AwsPrometheus", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, false),
   SUMOLOGIC_METRICS("SumologicMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true),
   SUMOLOGIC_LOG("SumologicLog", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true),
-  SPLUNK_SIGNALFX_METRICS("SplunkSignalFXMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true);
+  SPLUNK_SIGNALFX_METRICS("SplunkSignalFXMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true),
+  GRAFANA_LOKI_LOGS("GrafanaLokiLogs", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true);
+
   private String displayName;
   private VerificationType verificationType;
   // template prefix that should be used for demo data.

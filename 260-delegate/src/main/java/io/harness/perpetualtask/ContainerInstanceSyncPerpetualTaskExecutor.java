@@ -190,9 +190,9 @@ public class ContainerInstanceSyncPerpetualTaskExecutor implements PerpetualTask
           .build();
 
     } catch (Exception exception) {
-      log.error(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
-                    k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(),
-                    k8sContainerInstanceSyncPerpetualTaskParams.getReleaseName()),
+      log.warn(String.format("Failed to fetch k8s pod list for namespace: [%s] and releaseName:[%s] ",
+                   k8sContainerInstanceSyncPerpetualTaskParams.getNamespace(),
+                   k8sContainerInstanceSyncPerpetualTaskParams.getReleaseName()),
           exception);
       return K8sTaskExecutionResponse.builder()
           .commandExecutionStatus(FAILURE)

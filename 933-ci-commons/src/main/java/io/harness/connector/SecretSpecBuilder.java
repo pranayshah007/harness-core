@@ -60,6 +60,10 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO;
 import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -214,6 +218,9 @@ public class SecretSpecBuilder {
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       return retrieveGitSecretParams(gitConfigDTO, gitConnector);
+    } else if (gitConnector.getConnectorType() == ConnectorType.HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      return retrieveHarnessSecretParams(gitConfigDTO, gitConnector);
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
@@ -432,6 +439,63 @@ public class SecretSpecBuilder {
               .value(encodeBase64(sshKey))
               .type(TEXT)
               .build());
+
+    } else {
+      throw new CIStageExecutionException(
+          "Unsupported github connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+    }
+
+    return secretData;
+  }
+
+  private Map<String, SecretParams> retrieveHarnessSecretParams(
+      HarnessConnectorDTO gitConfigDTO, ConnectorDetails gitConnector) {
+    Map<String, SecretParams> secretData = new HashMap<>();
+    String uniqueIdentifier = "_" + generateRandomAlphaNumericString(RANDOM_LENGTH);
+
+    if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      HarnessHttpCredentialsDTO gitHTTPAuthenticationDTO =
+          (HarnessHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
+
+      log.info("Decrypting Harness connector id:[{}], type:[{}]", gitConnector.getIdentifier(),
+          gitConnector.getConnectorType());
+
+      DecryptableEntity decryptableEntity = secretDecryptor.decrypt(
+          gitHTTPAuthenticationDTO.getHttpCredentialsSpec(), gitConnector.getEncryptedDataDetails());
+
+      log.info("Decrypted connector id:[{}], type:[{}]", gitConnector.getIdentifier(), gitConnector.getConnectorType());
+      if (gitHTTPAuthenticationDTO.getType() == HarnessHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        HarnessUsernameTokenDTO harnessUsernameTokenDTO = (HarnessUsernameTokenDTO) decryptableEntity;
+
+        String username = getSecretAsStringFromPlainTextOrSecretRef(harnessUsernameTokenDTO.getUsername(), null);
+        if (isEmpty(username)) {
+          throw new CIStageExecutionException("Harness connector should have not empty username");
+        }
+        secretData.put(DRONE_NETRC_USERNAME,
+            SecretParams.builder()
+                .secretKey(DRONE_NETRC_USERNAME + uniqueIdentifier)
+                .value(encodeBase64(username))
+                .type(TEXT)
+                .build());
+
+        if (harnessUsernameTokenDTO.getTokenRef() == null) {
+          throw new CIStageExecutionException("Harness connector should have not empty tokenRef");
+        }
+        String token = String.valueOf(harnessUsernameTokenDTO.getTokenRef().getDecryptedValue());
+        if (isEmpty(token)) {
+          throw new CIStageExecutionException("Harness connector should have not empty token");
+        }
+        secretData.put(DRONE_NETRC_PASSWORD,
+            SecretParams.builder()
+                .secretKey(DRONE_NETRC_PASSWORD + uniqueIdentifier)
+                .value(encodeBase64(token))
+                .type(TEXT)
+                .build());
+
+      } else {
+        throw new CIStageExecutionException(
+            "Unsupported harness connector auth type" + gitHTTPAuthenticationDTO.getType());
+      }
 
     } else {
       throw new CIStageExecutionException(

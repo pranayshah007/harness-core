@@ -85,6 +85,12 @@ public class DefaultViewerRoleACLCreationJob implements Runnable {
   @NotNull
   private HashMap<String, ACLCreationConfig> initialize() {
     HashMap<String, ACLCreationConfig> config = new HashMap<>();
+    // PreQA accounts
+    config.put("UP_hsGbkTfChsVu9GYgZbw", new ACLCreationConfig(true, true, true));
+
+    // QA accounts
+    config.put("8CsAEysJSCW4Z-bz-Nt2tQ", new ACLCreationConfig(true, true, true));
+
     // Prod 1 accounts
     config.put("hOGfjDXdRbeM1IHvM1to9Q", new ACLCreationConfig(true, false, false));
     config.put("llMnEGi_RaWKmr0ngrBsJA", new ACLCreationConfig(true, false, false));
@@ -134,7 +140,7 @@ public class DefaultViewerRoleACLCreationJob implements Runnable {
   @VisibleForTesting
   void execute() {
     try {
-      Set<String> targetAccounts = featureFlagService.getAccountIds(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE);
+      Set<String> targetAccounts = getAccountsForFFEnabled();
 
       for (String account : targetAccounts) {
         if (aclCreationConfig.containsKey(account)) {
@@ -154,6 +160,23 @@ public class DefaultViewerRoleACLCreationJob implements Runnable {
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + "Failed to filter accounts for ff", ex);
     }
+  }
+
+  private Set<String> getAccountsForFFEnabled() {
+    Set<String> accountIds = aclCreationConfig.keySet();
+    Set<String> targetAccounts = new HashSet<>();
+    try {
+      for (String accountId : accountIds) {
+        boolean enabledAclRegeneration =
+            featureFlagService.isEnabled(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE, accountId);
+        if (enabledAclRegeneration) {
+          targetAccounts.add(accountId);
+        }
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE");
+    }
+    return targetAccounts;
   }
 
   private CloseableIterator<RoleAssignmentDBO> runQueryWithBatch(String scopeIdentifier, ScopeLevel scopeLevel) {

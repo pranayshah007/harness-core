@@ -2,6 +2,6 @@ proxy:
   '/harness/stress':
     target: 'https://stress.harness.io/'
     pathRewrite:
-      'api/proxy/harness/stress/?': '/'
+      '/api/proxy/harness/stress/?': '/'
     allowedHeaders:
       - authorization

@@ -15,6 +15,7 @@
 
 
 FROM us.gcr.io/platform-205701/ubi/ubi-base:8.7
+USER root
 RUN microdnf update \
     && microdnf install shadow-utils \
     curl \

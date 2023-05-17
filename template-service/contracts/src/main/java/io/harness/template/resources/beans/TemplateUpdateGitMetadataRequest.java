@@ -29,4 +29,5 @@ import lombok.Value;
 public class TemplateUpdateGitMetadataRequest {
   @Schema(description = "filepath to be updated") String filepath;
   @Schema(description = "repo name to be updated") String repoName;
+  @Schema(description = "connector ref to be udpated") String connectorRef;
 }

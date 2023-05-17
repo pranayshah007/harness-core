@@ -420,7 +420,7 @@ fi
 
 if [[ "" != "$ALLOWED_ORIGINS" ]]; then
   yq -i 'del(.allowedOrigins)' $CONFIG_FILE
-  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=env(ALLOWED_ORIGINS)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

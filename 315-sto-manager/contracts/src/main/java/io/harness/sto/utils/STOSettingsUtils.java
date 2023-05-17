@@ -32,6 +32,7 @@ import io.harness.beans.steps.stepinfo.security.ProwlerStepInfo;
 import io.harness.beans.steps.stepinfo.security.SemgrepStepInfo;
 import io.harness.beans.steps.stepinfo.security.SnykStepInfo;
 import io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo;
+import io.harness.beans.steps.stepinfo.security.SysdigStepInfo;
 import io.harness.beans.steps.stepinfo.security.VeracodeStepInfo;
 import io.harness.beans.steps.stepinfo.security.ZapStepInfo;
 import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
@@ -473,6 +474,15 @@ public final class STOSettingsUtils {
     return map;
   }
 
+  private static Map<String, String> processSTOSysdigFields(
+      SysdigStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepInfo.getTarget(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
   private static Map<String, String> processSTOFossaFields(FossaStepInfo stepInfo, String stepType, String identifier) {
     Map<String, String> map = new HashMap<>();
 
@@ -732,6 +742,9 @@ public final class STOSettingsUtils {
         break;
       case SNYK:
         map.putAll(processSTOSnykFields((SnykStepInfo) stepInfo, stepType, identifier));
+        break;
+      case SYSDIG:
+        map.putAll(processSTOSysdigFields((SysdigStepInfo) stepInfo, stepType, identifier));
         break;
       case VERACODE:
         map.putAll(processSTOVeracodeFields((VeracodeStepInfo) stepInfo, stepType, identifier));

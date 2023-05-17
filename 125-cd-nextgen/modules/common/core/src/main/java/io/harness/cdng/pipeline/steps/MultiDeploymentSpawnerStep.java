@@ -69,6 +69,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,6 +87,8 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
+  public static final List<String> SKIP_KEYS_LIST_FROM_STAGE_NAME =
+      Arrays.asList("environmentInputs", "serviceInputs", "infraInputs");
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType("multiDeployment").setStepCategory(StepCategory.STRATEGY).build();
 
@@ -462,13 +465,16 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
       String childNodeId, int currentIteration, int totalIterations, Map<String, String> serviceMap, String subType) {
     return ChildrenExecutableResponse.Child.newBuilder()
         .setChildNodeId(childNodeId)
-        .setStrategyMetadata(
-            StrategyMetadata.newBuilder()
-                .setCurrentIteration(currentIteration)
-                .setTotalIterations(totalIterations)
-                .setMatrixMetadata(
-                    MatrixMetadata.newBuilder().setSubType(subType).putAllMatrixValues(serviceMap).build())
-                .build())
+        .setStrategyMetadata(StrategyMetadata.newBuilder()
+                                 .setCurrentIteration(currentIteration)
+                                 .setTotalIterations(totalIterations)
+                                 .setMatrixMetadata(MatrixMetadata.newBuilder()
+                                                        .setSubType(subType)
+                                                        .addMatrixCombination(currentIteration)
+                                                        .addAllMatrixKeysToSkipInName(SKIP_KEYS_LIST_FROM_STAGE_NAME)
+                                                        .putAllMatrixValues(serviceMap)
+                                                        .build())
+                                 .build())
         .build();
   }
 

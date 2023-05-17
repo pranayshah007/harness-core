@@ -41,9 +41,10 @@ public class AwsSamBuildStepParameters extends AwsSamBaseStepInfo implements Aws
       ContainerResource resources, ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
 
-      ParameterField<List<String>> deployCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef) {
+      ParameterField<List<String>> deployCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
+      ParameterField<String> samVersion) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
-        imagePullPolicy);
+        imagePullPolicy, samVersion);
     this.deployCommandOptions = deployCommandOptions;
     this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
   }

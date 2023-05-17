@@ -19,4 +19,5 @@ import lombok.Value;
 public class UpdateGitDetailsParams {
   String filePath;
   String repoName;
+  String connectorRef;
 }

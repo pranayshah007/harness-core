@@ -86,6 +86,7 @@ import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -350,17 +351,10 @@ public class TriggerServiceHelper {
 
     List<Map<String, Object>> artifactList = new ArrayList<>();
     List<Map<String, Object>> manifestList = new ArrayList<>();
-    if (isNotEmpty(trigger.getArtifactSelections())) {
-      if (services != null) {
-        for (Service service : services) {
-          Map<String, Object> artifacts = new HashMap<>();
-          artifacts.put("service", service.getName());
-          artifacts.put("buildNumber", service.getName() + "_BUILD_NUMBER_PLACE_HOLDER");
-          artifacts.put("artifactSourceName", service.getName() + "_ARTIFACT_SOURCE_NAME_PLACE_HOLDER");
-          Map<String, Object> parameterMap = addParametersForArtifactStream(service, trigger.getArtifactSelections());
-          if (isNotEmpty(parameterMap)) {
-            artifacts.put("artifactVariables", parameterMap);
-          }
+    if (isNotEmpty(trigger.getArtifactSelections()) && services != null) {
+      for (Service service : services) {
+        Map<String, Object> artifacts = getArtifactInfo(service, trigger.getArtifactSelections());
+        if (isNotEmpty(artifacts)) {
           artifactList.add(artifacts);
         }
       }
@@ -588,5 +582,24 @@ public class TriggerServiceHelper {
 
   public void collectArtifactsForSelection(ArtifactSelection artifactSelection, String appId) {
     artifactCollectionService.collectNewArtifacts(appId, artifactSelection.getArtifactStreamId());
+  }
+
+  @VisibleForTesting
+  Map<String, Object> getArtifactInfo(Service service, List<ArtifactSelection> artifactSelection) {
+    Map<String, Object> artifacts = new HashMap<>();
+    for (ArtifactSelection artSelection : artifactSelection) {
+      if (featureFlagService.isNotEnabled(FeatureName.SPG_GENERATE_CURL_WITHOUT_ARTIFACT, service.getAccountId())
+          || (artSelection.getServiceId().equals(service.getUuid())
+              && !LAST_COLLECTED.equals(artSelection.getType()))) {
+        artifacts.put("service", service.getName());
+        artifacts.put("buildNumber", service.getName() + "_BUILD_NUMBER_PLACE_HOLDER");
+        artifacts.put("artifactSourceName", service.getName() + "_ARTIFACT_SOURCE_NAME_PLACE_HOLDER");
+        Map<String, Object> parameterMap = addParametersForArtifactStream(service, artifactSelection);
+        if (isNotEmpty(parameterMap)) {
+          artifacts.put("artifactVariables", parameterMap);
+        }
+      }
+    }
+    return artifacts;
   }
 }

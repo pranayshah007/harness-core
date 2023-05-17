@@ -21,4 +21,5 @@ public class TemplateUniqueIdentifier {
   String templateIdentifier;
   String versionLabel;
   String versionMaker;
+  String gitBranch;
 }

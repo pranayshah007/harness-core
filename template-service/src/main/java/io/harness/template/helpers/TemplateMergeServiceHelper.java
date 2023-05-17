@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.resources.beans.NGTemplateConstants.DUMMY_NODE;
+import static io.harness.template.resources.beans.NGTemplateConstants.GIT_BRANCH;
 import static io.harness.template.resources.beans.NGTemplateConstants.SPEC;
 import static io.harness.template.resources.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.template.resources.beans.NGTemplateConstants.TEMPLATE;
@@ -165,6 +166,24 @@ public class TemplateMergeServiceHelper {
     }
     fqnList.add(templateIdentifier);
     fqnList.add(versionLabel);
+
+    return EntityReferenceHelper.createFQN(fqnList);
+  }
+
+  private String generateUniqueTemplateIdentifier(IdentifierRef templateIdentifierRef, String versionLabel) {
+    List<String> fqnList = new LinkedList<>();
+    fqnList.add(templateIdentifierRef.getAccountIdentifier());
+    if (EmptyPredicate.isNotEmpty(templateIdentifierRef.getOrgIdentifier())) {
+      fqnList.add(templateIdentifierRef.getOrgIdentifier());
+    }
+    if (EmptyPredicate.isNotEmpty(templateIdentifierRef.getProjectIdentifier())) {
+      fqnList.add(templateIdentifierRef.getProjectIdentifier());
+    }
+    fqnList.add(templateIdentifierRef.getIdentifier());
+    fqnList.add(versionLabel);
+    if (isNotEmpty(templateIdentifierRef.getBranch())) {
+      fqnList.add(templateIdentifierRef.getBranch());
+    }
 
     return EntityReferenceHelper.createFQN(fqnList);
   }
@@ -326,8 +345,9 @@ public class TemplateMergeServiceHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, JsonNode value) {
     TemplateUniqueIdentifier templateUniqueIdentification = parseYamlAndGetTemplateIdentifierAndVersion(value);
 
-    IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateUniqueIdentification.getTemplateIdentifier());
+    IdentifierRef templateIdentifierRef =
+        TemplateUtils.getGitBranchAwareIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
+            templateUniqueIdentification.getTemplateIdentifier(), templateUniqueIdentification.getGitBranch());
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
         templateIdentifierRef.getIdentifier(), templateUniqueIdentification.getVersionMaker());
@@ -342,9 +362,9 @@ public class TemplateMergeServiceHelper {
     for (Map.Entry<String, YamlNode> entry : templatesToGet.entrySet()) {
       JsonNode yaml = entry.getValue().getCurrJsonNode();
       TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
-
-      IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(
-          accountIdentifier, orgIdentifier, projectIdentifier, templateUniqueIdentifier.getTemplateIdentifier());
+      IdentifierRef templateIdentifierRef =
+          TemplateUtils.getGitBranchAwareIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
+              templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getGitBranch());
 
       Scope templateScope = Scope.builder()
                                 .projectIdentifier(templateIdentifierRef.getProjectIdentifier())
@@ -356,6 +376,7 @@ public class TemplateMergeServiceHelper {
                                              .templateIdentifier(templateIdentifierRef.getIdentifier())
                                              .version(templateUniqueIdentifier.getVersionLabel())
                                              .loadFromCache(loadFromCache)
+                                             .branch(templateIdentifierRef.getBranch())
                                              .build();
       getBatchRequest.put(entry.getKey(), request);
     }
@@ -395,24 +416,27 @@ public class TemplateMergeServiceHelper {
     Map<String, TemplateEntity> templateCacheMap = new HashMap<>();
     Map<String, TemplateEntity> inlineTemplateResponseList = new HashMap<>();
 
-    for (Map.Entry<String, GetTemplateEntityRequest> getFileRequest : getBatchRequest.entrySet()) {
-      Scope scope = getFileRequest.getValue().getScope();
-      boolean loadFromCache = getFileRequest.getValue().isLoadFromCache();
+    for (Map.Entry<String, GetTemplateEntityRequest> getTemplateEntityRequestEntry : getBatchRequest.entrySet()) {
+      Scope scope = getTemplateEntityRequestEntry.getValue().getScope();
+      boolean loadFromCache = getTemplateEntityRequestEntry.getValue().isLoadFromCache();
+      String branch = getTemplateEntityRequestEntry.getValue().getBranch();
       Optional<TemplateEntity> templateEntity = templateServiceHelper.getMetadataOrThrowExceptionIfInvalid(
           scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
-          getFileRequest.getValue().getTemplateIdentifier(), getFileRequest.getValue().getVersion(), false);
+          getTemplateEntityRequestEntry.getValue().getTemplateIdentifier(),
+          getTemplateEntityRequestEntry.getValue().getVersion(), false);
       if (templateEntity.isEmpty()) {
         throw new NGTemplateException(String.format("Template with template ID %s and version %s not found.",
-            getFileRequest.getValue().getTemplateIdentifier(), getFileRequest.getValue().getVersion()));
+            getTemplateEntityRequestEntry.getValue().getTemplateIdentifier(),
+            getTemplateEntityRequestEntry.getValue().getVersion()));
       }
       TemplateEntity savedEntity = templateEntity.get();
 
       if (StoreType.REMOTE == savedEntity.getStoreType()) {
-        remoteTemplatesRequestList.put(
-            getFileRequest.getKey(), buildFetchRemoteEntityRequest(scope, savedEntity, loadFromCache));
+        remoteTemplatesRequestList.put(getTemplateEntityRequestEntry.getKey(),
+            buildFetchRemoteEntityRequest(scope, savedEntity, loadFromCache, branch));
       } else {
-        templateCacheMap.put(getFileRequest.getKey(), templateEntity.get());
-        inlineTemplateResponseList.put(getFileRequest.getKey(), savedEntity);
+        templateCacheMap.put(getTemplateEntityRequestEntry.getKey(), templateEntity.get());
+        inlineTemplateResponseList.put(getTemplateEntityRequestEntry.getKey(), savedEntity);
       }
     }
     //    process inline templates
@@ -431,8 +455,10 @@ public class TemplateMergeServiceHelper {
   }
 
   private FetchRemoteEntityRequest buildFetchRemoteEntityRequest(
-      Scope scope, TemplateEntity savedEntity, boolean loadFromCache) {
-    String branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
+      Scope scope, TemplateEntity savedEntity, boolean loadFromCache, String branchName) {
+    if (isEmpty(branchName)) {
+      branchName = gitAwareEntityHelper.getWorkingBranch(savedEntity.getRepo());
+    }
 
     GetFileGitContextRequestParams getFileGitContextRequestParams =
         buildGitContextRequestParams(savedEntity, branchName, loadFromCache);
@@ -827,6 +853,10 @@ public class TemplateMergeServiceHelper {
     String templateIdentifier = yaml.get(TEMPLATE_REF).asText();
     String versionLabel = "";
     String versionMarker = STABLE_VERSION;
+    String gitBranch = null;
+    if (yaml.get(GIT_BRANCH) != null) {
+      gitBranch = yaml.get(GIT_BRANCH).asText();
+    }
     if (yaml.get(TEMPLATE_VERSION_LABEL) != null) {
       versionLabel = yaml.get(TEMPLATE_VERSION_LABEL).asText();
       versionMarker = versionLabel;
@@ -835,6 +865,7 @@ public class TemplateMergeServiceHelper {
         .templateIdentifier(templateIdentifier)
         .versionLabel(versionLabel)
         .versionMaker(versionMarker)
+        .gitBranch(gitBranch)
         .build();
   }
 

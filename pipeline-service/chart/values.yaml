@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 global:
   loadbalancerURL: ""
+  stackDriverLoggingEnabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -180,3 +181,5 @@ tolerations: []
 affinity: {}
 
 imagePullSecrets: {}
+
+additionalConfigs: {}
