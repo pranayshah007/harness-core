@@ -42,13 +42,13 @@ public class K8EventHandler {
     String fieldSelector = String.format("involvedObject.name=%s,involvedObject.kind=Pod", pod);
     try {
       Watch<CoreV1Event> watch = createWatch(kubernetesConfig, namespace, fieldSelector);
-      //      new Thread(() -> {
-      //        try {
-      //          logWatchEvents(watch, logStreamingTaskClient);
-      //        } catch (IOException e) {
-      //          log.warn("error in watching pod events", e);
-      //        }
-      //      }).start();
+      new Thread(() -> {
+        try {
+          logWatchEvents(watch, logStreamingTaskClient);
+        } catch (Exception e) {
+          log.warn("error in watching pod events", e);
+        }
+      }).start();
       return watch;
 
     } catch (ApiException e) {
@@ -80,14 +80,13 @@ public class K8EventHandler {
   private void logWatchEvents(Watch<CoreV1Event> watch, ILogStreamingTaskClient logStreamingTaskClient)
       throws IOException {
     try {
-      //      for (Watch.Response<CoreV1Event> item : watch) {
-      //        if (item != null && item.object != null && isNotEmpty(item.object.getMessage())) {
-      //          streamLogLine(logStreamingTaskClient, getLogLevel(item.object.getType()), item.object.getMessage());
-      //          log.info(
-      //              "{}: Event- {}, Reason - {}", item.object.getType(), item.object.getMessage(),
-      //              item.object.getReason());
-      //        }
-      //      }
+      for (Watch.Response<CoreV1Event> item : watch) {
+        if (item != null && item.object != null && isNotEmpty(item.object.getMessage())) {
+          streamLogLine(logStreamingTaskClient, getLogLevel(item.object.getType()), item.object.getMessage());
+          log.info(
+              "{}: Event- {}, Reason - {}", item.object.getType(), item.object.getMessage(), item.object.getReason());
+        }
+      }
     } finally {
       watch.close();
     }
