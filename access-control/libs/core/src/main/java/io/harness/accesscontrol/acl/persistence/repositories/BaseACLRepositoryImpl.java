@@ -10,6 +10,8 @@ package io.harness.accesscontrol.acl.persistence.repositories;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicateKeyCode;
 
 import io.harness.accesscontrol.acl.persistence.ACL;
@@ -39,6 +41,10 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.mongodb.BulkOperationException;
 import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -93,6 +99,10 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
                             .ne(true);
     Query query = new Query();
     query.addCriteria(criteria);
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation groupOperation = group(ACLKeys.resourceSelector, ACLKeys.conditional, ACLKeys.condition);
+    ProjectionOperation ProjectionOperation = project();
+
     List<ACL> acls = mongoTemplate.find(query, ACL.class, getCollectionName());
     return acls.stream()
         .map(acl
