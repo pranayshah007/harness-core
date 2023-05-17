@@ -16,7 +16,6 @@ import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.Consumes;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
