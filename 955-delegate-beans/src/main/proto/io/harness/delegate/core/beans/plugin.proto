@@ -20,7 +20,7 @@ message TaskDescriptor {
   ExecutionMode mode = 2;
   ExecutionPriority priority = 3;
   ExecutionEnvironment runtime = 4;       // Environment in which the task should run
-  TaskInput input = 5;                    // Task inputs
+  InputData input = 5;                    // Task inputs
   repeated TaskSecret input_secrets = 6;  // Task secrets. One instance can contain multiple secrets from same provider
   repeated Resource resources = 7;        // Any additional resources the task might need (e.g. shared locations)
   string logging_token = 8;               // Token for sending logs to logging service
@@ -51,7 +51,7 @@ enum ExecutionPriority {
   All the data needed to decrypt one or many secrets from specific secret manager using certain runtime environment
  */
 message TaskSecret {
-  TaskInput secrets = 1;             // TaskInput may contain any number of secrets, not necessarily just one
+  InputData secrets = 1;             // TaskInput may contain any number of secrets, not necessarily just one
   ExecutionEnvironment runtime = 2;  // Environment where the decryption should take place
   SecretConfig config = 3;           // Config that can be used to deserialize all secrets from input
 }
@@ -131,7 +131,7 @@ message ExecutionSchedule {
  Any parameters describing the job. data needs to be in byte format as delegate might be just passing it through without
  deserialization. Other fields can be interpreted by delegate.
  */
-message TaskInput {
+message InputData {
   // We could use only bytes, but Any gives us additional benefit of knowing the runtime data type for a negligible
   // additional size in bytes. There might also be a minimal performance penalty. There is nothing preventing users
   // using plain proto objects as bytes bypassing Any

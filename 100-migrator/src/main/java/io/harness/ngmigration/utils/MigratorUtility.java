@@ -244,13 +244,20 @@ public class MigratorUtility {
 
   public static String getIdentifierWithScope(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
-    NgEntityDetail detail =
-        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    NGYamlFile yamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (yamlFile == null) {
+      return NGMigrationConstants.RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = yamlFile.getNgEntityDetail();
     return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
     String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    return getScopedIdentifier(scope, identifier);
+  }
+
+  public static String getScopedIdentifier(Scope scope, String identifier) {
     switch (scope) {
       case ACCOUNT:
         return "account." + identifier;

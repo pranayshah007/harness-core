@@ -98,18 +98,24 @@ public class ECRStepInfo implements PluginCompatibleStep, WithConnectorRef {
   @YamlSchemaTypes(value = {string})
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
   private ParameterField<List<String>> baseImageConnectorRefs;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> cacheFrom;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> cacheTo;
+  @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> caching;
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "account", "region", "imageName",
       "tags", "context", "dockerfile", "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage",
-      "baseImageConnectorRefs"})
+      "baseImageConnectorRefs", "cacheFrom", "cacheTo", "caching"})
   public ECRStepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<String> account, ParameterField<String> region,
       ParameterField<String> imageName, ParameterField<List<String>> tags, ParameterField<String> context,
       ParameterField<String> dockerfile, ParameterField<String> target, ParameterField<Map<String, String>> labels,
       ParameterField<Map<String, String>> buildArgs, ParameterField<Integer> runAsUser,
       ParameterField<Boolean> optimize, ParameterField<String> remoteCacheImage,
-      ParameterField<List<String>> baseImageConnectorRefs) {
+      ParameterField<List<String>> baseImageConnectorRefs, ParameterField<List<String>> cacheFrom,
+      ParameterField<String> cacheTo, ParameterField<Boolean> caching) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -128,6 +134,9 @@ public class ECRStepInfo implements PluginCompatibleStep, WithConnectorRef {
     this.optimize = optimize;
     this.remoteCacheImage = remoteCacheImage;
     this.baseImageConnectorRefs = baseImageConnectorRefs;
+    this.cacheFrom = cacheFrom;
+    this.cacheTo = cacheTo;
+    this.caching = caching;
   }
 
   @Override

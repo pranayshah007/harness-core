@@ -691,13 +691,16 @@ public class ExecutionHelper {
 
       List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
 
+      // TODO: The filed useMatrixFieldName is redundant, we can make use of the settingToValueMap values. Please make
+      // sure before removing the field from proto that its not being used anywhere. Also there has been some releases
+      // after removing the usages of the field to maintain Backward compatibility.
       for (SettingResponseDTO settingDto : response) {
         SettingDTO setting = settingDto.getSetting();
-        if (setting.getName().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
+        if (setting.getIdentifier().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
             && setting.getValue().equals("true")) {
           builder.setUseMatrixFieldName(true);
         } else {
-          builder.putSettingToValueMap(setting.getName(), setting.getValue());
+          builder.putSettingToValueMap(setting.getIdentifier(), setting.getValue());
         }
       }
     } catch (Exception e) {

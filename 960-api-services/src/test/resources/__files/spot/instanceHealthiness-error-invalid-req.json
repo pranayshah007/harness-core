@@ -1,0 +1,19 @@
+{
+  "request": {
+    "id": "f3a54e15-56d0-4540-ae63-e791f1881949",
+    "url2": "/aws/ec2/group/sig-54cf878b/instanceHealthiness?accountId=act-d48a11cf",
+    "method": "GET",
+    "timestamp": "2023-03-15T08:00:19.433Z"
+  },
+  "response": {
+    "status": {
+      "code": 400,
+      "message": "Bad Request"
+    },
+    "errors": [
+      {
+        "message": "An unknown error occurred"
+      }
+    ]
+  }
+}

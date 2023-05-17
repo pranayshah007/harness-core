@@ -92,6 +92,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -428,5 +429,48 @@ public class TriggerServiceTestHelper {
             .build();
     pipelineStages.add(pipelineStage);
     pipeline.setPipelineStages(pipelineStages);
+  }
+
+  public static Service buildSimpleService(String serviceId) {
+    return Service.builder().accountId(ACCOUNT_ID).name(SERVICE_NAME).appId(APP_ID).uuid(serviceId).build();
+  }
+
+  public static ArtifactSelection buildArtifactSelection(ArtifactSelection.Type type) {
+    return ArtifactSelection.builder()
+        .serviceId(SERVICE_ID)
+        .serviceName(SERVICE_NAME)
+        .type(type)
+        .artifactFilter(null)
+        .regex(false)
+        .build();
+  }
+
+  public static Trigger buildTrigger(ArtifactSelection artifactSelection) {
+    return Trigger.builder()
+        .uuid(TRIGGER_ID)
+        .accountId(ACCOUNT_ID)
+        .appId(APP_ID)
+        .name("trigger name")
+        .workflowId(WORKFLOW_ID)
+        .workflowName(WORKFLOW_NAME)
+        .workflowType(ORCHESTRATION)
+        .artifactSelections(List.of(artifactSelection))
+        .build();
+  }
+
+  public static LinkedHashMap<String, String> buildParameters() {
+    return new LinkedHashMap<>(Map.of("key1", "val1"));
+  }
+
+  public static WebHookToken buildWebhookToken() {
+    return WebHookToken.builder().webHookToken("TOKEN").httpMethod("GET").build();
+  }
+
+  public static String completePayload() {
+    return "{\"application\":\"APP_ID\",\"parameters\":{\"key1\":\"val1\"},\"artifacts\":[{\"artifactSourceName\":\"SERVICE_NAME_ARTIFACT_SOURCE_NAME_PLACE_HOLDER\",\"service\":\"SERVICE_NAME\",\"buildNumber\":\"SERVICE_NAME_BUILD_NUMBER_PLACE_HOLDER\"}]}";
+  }
+
+  public static String simplePayload() {
+    return "{\"application\":\"APP_ID\",\"parameters\":{\"key1\":\"val1\"}}";
   }
 }

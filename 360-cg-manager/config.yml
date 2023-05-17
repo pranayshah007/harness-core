@@ -216,6 +216,7 @@ smtp:
   port: 465
   fromAddress: noreply@harness.io
   useSSL: true
+  startTLS: false
   username: smtp_username_placeholder
   password: "smtp_password_placeholder"
 
@@ -366,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 9182190a
+scmVersion: 9b34bea7
 
 ngAuthUIEnabled: false
 

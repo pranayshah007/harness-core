@@ -46,6 +46,7 @@ import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.gitsync.utils.GitProviderUtils;
 import io.harness.manage.GlobalContextManager;
 import io.harness.security.PrincipalContextData;
 import io.harness.tasks.DecryptGitApiAccessHelper;
@@ -380,9 +381,11 @@ public class GitSyncConnectorHelper {
             azureRepoConnectorDTO.setApiAccess(azureRepoSCMDTO.getApiAccess());
             break;
           case BITBUCKET:
-            BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO.get();
-            BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
-            bitbucketConnectorDTO.setApiAccess(bitbucketSCMDTO.getApiAccess());
+            if (GitProviderUtils.isBitbucketSaas(connectorDTO)) {
+              BitbucketSCMDTO bitbucketSCMDTO = (BitbucketSCMDTO) userSourceCodeManagerDTO.get();
+              BitbucketConnectorDTO bitbucketConnectorDTO = (BitbucketConnectorDTO) connectorDTO;
+              bitbucketConnectorDTO.setApiAccess(bitbucketSCMDTO.getApiAccess());
+            }
             break;
           default:
             log.info("OAUTH not supported for connector type: {}", connectorDTO.getConnectorType());

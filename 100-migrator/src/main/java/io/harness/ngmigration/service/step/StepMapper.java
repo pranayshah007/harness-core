@@ -151,7 +151,7 @@ public abstract class StepMapper {
   }
 
   void baseOverrideTemplateInputs(PhaseStep phaseStep, GraphNode step, JsonNode templateInputs, String skipCondition) {
-    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : skipCondition;
+    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : "!(" + skipCondition + ")";
     JsonNode failureStrategies = templateInputs.get("failureStrategies");
     if (failureStrategies != null) {
       List<FailureStrategyConfig> strategies =

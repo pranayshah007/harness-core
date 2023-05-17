@@ -8,6 +8,7 @@
 package io.harness.cdng.jenkins.jenkinsstep;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
@@ -67,7 +68,7 @@ public class JenkinsBuildStepInfo implements CDAbstractStepInfo, WithConnectorRe
   boolean useConnectorUrlForJobExecution;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Override

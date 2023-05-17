@@ -8,7 +8,7 @@
 package io.harness.plancreator.steps.email;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -54,7 +54,7 @@ public class EmailStepInfo implements PMSStepInfo {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> subject;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> body;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder(builderMethodName = "infoBuilder")

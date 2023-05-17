@@ -13,12 +13,14 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.CIRegistry;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.serializer.SerializerUtils;
 import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -32,6 +34,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -40,14 +43,15 @@ import org.apache.commons.lang3.StringUtils;
 public class VmBackgroundStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   @Inject CIStepInfoUtils ciStepInfoUtils;
+  @Inject CIFeatureFlagService featureFlagService;
 
-  public VmBackgroundStep serialize(
-      BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier, List<CIRegistry> registries) {
+  public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier,
+      List<CIRegistry> registries, String delegateId) {
     String command = RunTimeInputHandler.resolveStringParameter(
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
         "Image", "Background", identifier, backgroundStepInfo.getImage(), false);
-    if (image.equals(NULL_STR)) {
+    if (isNotEmpty(image) && image.equals(NULL_STR)) {
       image = "";
     }
     String connectorIdentifier;
@@ -75,8 +79,19 @@ public class VmBackgroundStepSerializer {
       command = null;
     }
 
-    Map<String, String> envVars =
-        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+    boolean fVal = featureFlagService.isEnabled(
+        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
+
+    Map<String, String> envVars = resolveMapParameterV2(
+        "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
+    if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HARNESS_DELEGATE_ID", delegateId);
+    }
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
+        ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     if (!isEmpty(command)) {
       String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell());

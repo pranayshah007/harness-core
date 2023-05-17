@@ -14,6 +14,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.HARNESS;
 import static io.harness.delegate.beans.connector.azureconnector.AzureCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.exception.WingsException.USER;
 
@@ -50,6 +51,7 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsD
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
@@ -74,6 +76,15 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
+import io.harness.delegate.beans.connector.scm.harness.HarnessAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO;
+import io.harness.encryption.SecretRefData;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
@@ -92,6 +103,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -116,6 +128,7 @@ public class BaseConnectorUtils {
 
   private final String SAAS = "SaaS";
   private final String SELF_MANAGED = "Self-Managed";
+  private final String GIT_DOT = "git.";
 
   public Map<String, ConnectorDetails> getConnectorDetailsMap(NGAccess ngAccess, Set<String> connectorNameSet) {
     Map<String, ConnectorDetails> connectorDetailsMap = new HashMap<>();
@@ -144,6 +157,74 @@ public class BaseConnectorUtils {
 
   public ConnectorDetails getConnectorDetailsWithIdentifier(NGAccess ngAccess, IdentifierRef identifierRef) {
     return getConnectorDetailsInternalWithRetries(ngAccess, identifierRef);
+  }
+
+  public ConnectorDetails getHarnessConnectorDetails(NGAccess ngAccess, String baseUrl) {
+    String authToken = fetchAuthToken(ngAccess);
+    log.info("Generated harness scm baseurl : {}", baseUrl);
+    String accountId = ngAccess.getAccountIdentifier();
+    HarnessConnectorDTO connectorConfigDTO =
+        HarnessConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url(baseUrl + "/" + accountId)
+            .authentication(
+                HarnessAuthenticationDTO.builder()
+                    .authType(GitAuthType.HTTP)
+                    .credentials(
+                        HarnessHttpCredentialsDTO.builder()
+                            .type(HarnessHttpAuthenticationType.USERNAME_AND_TOKEN)
+                            .httpCredentialsSpec(
+                                HarnessUsernameTokenDTO.builder()
+                                    .username("admin")
+                                    .tokenRef(SecretRefData.builder().decryptedValue(authToken.toCharArray()).build())
+                                    .build())
+                            .build())
+                    .build())
+            .apiAccess(HarnessApiAccessDTO.builder()
+                           .type(HarnessApiAccessType.JWT_TOKEN)
+                           .spec(HarnessJWTTokenSpecDTO.builder()
+                                     .tokenRef(SecretRefData.builder().decryptedValue(authToken.toCharArray()).build())
+                                     .build())
+                           .build())
+            .build();
+
+    HarnessHttpCredentialsDTO harnessHttpCredentialsDTO =
+        (HarnessHttpCredentialsDTO) connectorConfigDTO.getAuthentication().getCredentials();
+    List<EncryptedDataDetail> encryptedDataDetails =
+        secretManagerClientService.getEncryptionDetails(ngAccess, harnessHttpCredentialsDTO.getHttpCredentialsSpec());
+    encryptedDataDetails.addAll(
+        secretManagerClientService.getEncryptionDetails(ngAccess, connectorConfigDTO.getApiAccess().getSpec()));
+
+    ConnectorDetailsBuilder connectorDetailsBuilder = ConnectorDetails.builder()
+                                                          .connectorType(HARNESS)
+                                                          .connectorConfig(connectorConfigDTO)
+                                                          .identifier("HARNESS_SCM")
+                                                          .executeOnDelegate(false)
+                                                          .orgIdentifier(ngAccess.getOrgIdentifier())
+                                                          .projectIdentifier(ngAccess.getProjectIdentifier())
+                                                          .encryptedDataDetails(encryptedDataDetails);
+
+    return connectorDetailsBuilder.build();
+  }
+
+  public String getSCMBaseUrl(String baseUrl) {
+    try {
+      URL url = new URL(baseUrl);
+      String host = url.getHost();
+      String protocol = url.getProtocol();
+      if (host.equals("localhost")) {
+        return "";
+      }
+      return protocol + "://" + GIT_DOT + host;
+    } catch (Exception e) {
+      log.error("There was error while generating scm base URL", e);
+    }
+    return "";
+  }
+
+  // TODO yet to implement
+  private String fetchAuthToken(NGAccess ngAccess) {
+    return "";
   }
 
   public ConnectorDetails getConnectorDetailsInternalWithRetries(NGAccess ngAccess, IdentifierRef connectorRef) {
@@ -245,6 +326,9 @@ public class BaseConnectorUtils {
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       // Username not needed for Azure.
       return null;
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      return fetchUserNameFromHarnessConnector(gitConfigDTO);
     } else {
       throw new CIStageExecutionException("Unsupported git connector " + gitConnector.getConnectorType());
     }
@@ -269,6 +353,9 @@ public class BaseConnectorUtils {
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getUrl();
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getUrl();
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported.");
     }
@@ -289,6 +376,9 @@ public class BaseConnectorUtils {
       return gitConfigDTO.getApiAccess() != null;
     } else if (gitConnector.getConnectorType() == GIT || gitConnector.getConnectorType() == CODECOMMIT) {
       return false;
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getApiAccess() != null;
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
     }
@@ -310,9 +400,25 @@ public class BaseConnectorUtils {
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getGitAuthType().getDisplayName();
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
     } else {
       throw new CIStageExecutionException("scmType " + gitConnector.getConnectorType() + "is not supported");
     }
+  }
+
+  private String fetchUserNameFromHarnessConnector(HarnessConnectorDTO gitConfigDTO) {
+    if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      HarnessHttpCredentialsDTO harnessHttpCredentialsDTO =
+          (HarnessHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
+      if (harnessHttpCredentialsDTO.getType() == HarnessHttpAuthenticationType.USERNAME_AND_TOKEN) {
+        HarnessUsernameTokenDTO harnessHttpCredentialsSpecDTO =
+            (HarnessUsernameTokenDTO) harnessHttpCredentialsDTO.getHttpCredentialsSpec();
+        return harnessHttpCredentialsSpecDTO.getUsername();
+      }
+    }
+    return null;
   }
 
   public String getScmHostType(ConnectorDetails gitConnector) {

@@ -33,7 +33,7 @@ data:
   PROJECT_CLIENT_BASE_URL: {{ .Values.config.PROJECT_CLIENT_BASE_URL | default "http://ng-manager:7090/" }}
   ORGANIZATION_CLIENT_BASE_URL: {{ .Values.config.ORGANIZATION_CLIENT_BASE_URL | default "http://ng-manager:7090/" }}
   OFFSET_FLUSH_INTERVAL_MS: {{ .Values.config.OFFSET_FLUSH_INTERVAL_MS | quote }}
-  MONGODB_SSL_ENABLED: {{ .Values.config.MONGODB_SSL_ENABLED | quote }}
+  MONGODB_SSL_ENABLED: {{ .Values.mongoSSL.enabled | quote }}
   AGGREGATOR_ENABLED: {{ .Values.config.AGGREGATOR_ENABLED | quote }}
   ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
   ACCESS_CONTROL_PREFERENCE_ENABLED: {{ .Values.config.ACCESS_CONTROL_PREFERENCE_ENABLED | quote }}
@@ -46,3 +46,9 @@ data:
   DISTRIBUTED_LOCK_IMPLEMENTATION: {{ .Values.config.DISTRIBUTED_LOCK_IMPLEMENTATION }}
   GOOGLE_APPLICATION_CREDENTIALS: {{ .Values.config.GOOGLE_APPLICATION_CREDENTIALS }}
   MEMORY: {{ .Values.config.MEMORY | default 512 }}m
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+
+  # Additional configs
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

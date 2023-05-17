@@ -30,6 +30,7 @@ public class ServiceOverridesMapperV2 {
         .environmentRef(requestDTOV2.getEnvironmentRef())
         .serviceRef(requestDTOV2.getServiceRef())
         .infraIdentifier(requestDTOV2.getInfraIdentifier())
+        .clusterIdentifier(requestDTOV2.getClusterIdentifier())
         .spec(requestDTOV2.getSpec())
         .type(requestDTOV2.getType())
         .build();
@@ -44,6 +45,7 @@ public class ServiceOverridesMapperV2 {
         .environmentRef(entity.getEnvironmentRef())
         .serviceRef(entity.getServiceRef())
         .infraIdentifier(entity.getInfraIdentifier())
+        .clusterIdentifier(entity.getClusterIdentifier())
         .spec(entity.getSpec())
         .type(entity.getType())
         .build();

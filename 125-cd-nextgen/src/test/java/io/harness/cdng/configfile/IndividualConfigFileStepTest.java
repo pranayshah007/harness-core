@@ -8,6 +8,7 @@
 package io.harness.cdng.configfile;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.beans.storeconfig.FetchType.BRANCH;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILED_CHILDREN_OUTPUT;
 import static io.harness.rule.OwnerRule.IVAN;
 
@@ -214,7 +215,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.GIT.getDisplayName());
     GitStore store = (GitStore) configFileOutcome.getStore();
     assertThat(store.getBranch().getValue()).isEqualTo(MASTER);
-    assertThat(store.getCommitId().getValue()).isEqualTo(COMMIT_ID);
+    assertThat(store.getGitFetchType()).isEqualTo(BRANCH);
     assertThat(store.getConnectorRef().getValue()).isEqualTo(CONNECTOR_REF);
     assertThat(store.getRepoName().getValue()).isEqualTo(REPO_NAME);
   }
@@ -268,9 +269,9 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
                                                 .type(StoreConfigType.GIT)
                                                 .spec(GitStore.builder()
                                                           .branch(ParameterField.createValueField(MASTER))
-                                                          .commitId(ParameterField.createValueField(COMMIT_ID))
                                                           .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
                                                           .repoName(ParameterField.createValueField(REPO_NAME))
+                                                          .gitFetchType(BRANCH)
                                                           .build())
                                                 .build()))
         .build();

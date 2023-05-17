@@ -11,6 +11,8 @@ global:
     tls:
       enabled: true
       secretName: ''
+    objects:
+      annotations: {}
   istio:
     enabled: false
     gateway:
@@ -89,3 +91,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+additionalConfigs: {}

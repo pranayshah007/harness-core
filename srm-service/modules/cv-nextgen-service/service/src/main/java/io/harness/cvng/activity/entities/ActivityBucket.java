@@ -46,7 +46,7 @@ public class ActivityBucket implements PersistentEntity, UuidAware, CreatedAtAwa
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("change_event_event_time_sort_query_indexv2")
+                 .name("change_event_time_sort_query_index")
                  .field(ActivityBucketKeys.accountId)
                  .field(ActivityBucketKeys.orgIdentifier)
                  .field(ActivityBucketKeys.projectIdentifier)
@@ -60,12 +60,11 @@ public class ActivityBucket implements PersistentEntity, UuidAware, CreatedAtAwa
   @Id private String uuid;
   private long createdAt;
   private long lastUpdatedAt;
-
   @NotNull private ActivityType type;
   @NotNull private String accountId;
   @NotNull private String projectIdentifier;
   @NotNull private String orgIdentifier;
-  List<String> monitoredServiceIdentifiers;
+  private List<String> monitoredServiceIdentifiers;
   private Instant bucketTime;
   private Long count;
   @Builder.Default @FdTtlIndex private Date validUntil = Date.from(OffsetDateTime.now().plusMonths(2).toInstant());

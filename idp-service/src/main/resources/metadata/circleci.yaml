@@ -11,7 +11,7 @@ config: |-
     '/circleci/api':
       target: https://circleci.com/api/v1.1
       pathRewrite:
-        'api/proxy/circleci/?': '/'
+        'api/proxy/circleci/api/?': '/'
       headers:
         Circle-Token: ${CIRCLECI_AUTH_TOKEN}
 environmentVariables:

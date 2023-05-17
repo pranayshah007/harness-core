@@ -9,6 +9,7 @@ package io.harness.ng.core.service.services;
 
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +51,7 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
   @Mock ServiceEntityService serviceEntityService;
   @Mock InstanceService instanceService;
   @Mock InstanceRepository instanceRepository;
+  @Mock ServiceSequenceService serviceSequenceService;
   @Spy @Inject @InjectMocks ServiceEntityManagementServiceImpl serviceEntityManagementService;
 
   private static final String accountIdentifier = "accountIdentifier";
@@ -110,6 +112,28 @@ public class ServiceEntityManagementServiceTest extends CategoryTest {
     serviceEntityManagementService.deleteService(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true);
     verify(instanceService, times(1)).deleteAll(any());
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void ShouldDeleteServiceSequence() {
+    doReturn(true).when(serviceEntityManagementService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(serviceEntityManagementService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    doReturn(true).when(serviceSequenceService).delete(any(), any(), any(), any());
+
+    List<Instance> instanceDTOList = new ArrayList<>();
+    instanceDTOList.add(getInstance());
+    instanceDTOList.add(getInstance());
+    when(instanceRepository.getInstancesCreatedBefore(
+             eq(accountIdentifier), eq(orgIdentifier), eq(projectIdentifier), eq(identifier), anyLong()))
+        .thenReturn(instanceDTOList);
+    when(serviceEntityService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null, true))
+        .thenReturn(true);
+    serviceEntityManagementService.deleteService(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier, "", true);
+    verify(instanceService, times(1)).deleteAll(any());
+    verify(serviceSequenceService, times(1)).delete(any(), any(), any(), any());
   }
 
   private Instance getInstance() {

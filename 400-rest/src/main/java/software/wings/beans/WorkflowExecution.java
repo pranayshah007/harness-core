@@ -112,7 +112,8 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static String ACCOUNTID_ENDTS_STATUS_PIPELINEEXECUTIONID = "accountId_endTs_status_pipelineExecutionId";
   public static String ACCOUNTID_STARTTS_SERVICEIDS = "accountId_startTs_serviceIds";
   public static String APPID_CREATEDAT = "appId_createdAt";
-  public static String ACCOUNTID_CDPAGECANDIDATE_KEYWORDS_CREATEDAT = "accountId_cdPageCandidate_keywords_createdAt";
+  public static String ACCOUNTID_KEYWORDS_CREATEDAT_CDPAGECANDIDATE_APPID =
+      "accountId_1_keywords_text_createdAt_-1_cdPageCandidate_1_appId_1";
   public static String APPID_WORKFLOWID_STATUS = "appid_workflowid_status_deployedServices_createdat";
   public static String APPID_WORKFLOWID_STATUS_DEPLOYEDSERVICES_CREATEDAT =
       "appid_workflowid_status_deployedServices_createdat";
@@ -122,6 +123,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   public static String WFE_EXECUTIONS_SEARCH_WORKFLOWID = "wfe_executions_search_workflowId";
   public static String WFE_EXECUTIONS_SEARCH_SERVICEIDS = "wfe_executions_search_serviceIds";
   public static String WFE_EXECUTIONS_SEARCH_ENVIDS = "wfe_executions_search_envIds";
+  public static String ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS =
+      "accountId_appId_workflowId_createdAt_cdPageCandidate_status";
+  public static String ACCOUNTID_APPID_SERVICEIDS_CREATEDAT_CDPAGECANDIDATE_STATUS =
+      "accountId_appId_serviceIds_createdAt_cdPageCandidate_status";
+  public static String ACCOUNTID_APPID_ENVIDS_CREATEDAT_CDPAGECANDIDATE_STATUS =
+      "accountId_appId_envIds_createdAt_cdPageCandidate_status";
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -219,11 +226,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(CompoundTextMongoIndex.builder()
-                 .name(ACCOUNTID_CDPAGECANDIDATE_KEYWORDS_CREATEDAT)
+                 .name(ACCOUNTID_KEYWORDS_CREATEDAT_CDPAGECANDIDATE_APPID)
                  .field(WorkflowExecutionKeys.accountId)
-                 .field(WorkflowExecutionKeys.cdPageCandidate)
                  .textField(WorkflowExecutionKeys.keywords)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.appId)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name(APPID_WORKFLOWID_STATUS_DEPLOYEDSERVICES_CREATEDAT)
@@ -270,6 +278,33 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .rangeField(WorkflowExecutionKeys.appId)
                  .rangeField(WorkflowExecutionKeys.envIds)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name(ACCOUNTID_APPID_WORKFLOWID_CREATEDAT_CDPAGECANDIDATE_STATUS)
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.workflowId)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name(ACCOUNTID_APPID_SERVICEIDS_CREATEDAT_CDPAGECANDIDATE_STATUS)
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.serviceIds)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.cdPageCandidate)
+                 .rangeField(WorkflowExecutionKeys.status)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name(ACCOUNTID_APPID_ENVIDS_CREATEDAT_CDPAGECANDIDATE_STATUS)
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.envIds)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
                  .rangeField(WorkflowExecutionKeys.cdPageCandidate)
                  .rangeField(WorkflowExecutionKeys.status)
                  .build())

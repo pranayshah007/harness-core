@@ -21,6 +21,7 @@ import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetListTypePMS;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -148,5 +149,20 @@ public class PMSInputSetFilterHelper {
         .is(projectIdentifier)
         .and(InputSetEntityKeys.pipelineIdentifier)
         .is(pipelineIdentifier);
+  }
+
+  public Update getUpdateWithGitMetadata(PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Update update = new Update();
+
+    if (updateGitDetailsParams.getConnectorRef() != null) {
+      update.set(InputSetEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
+    }
+    if (updateGitDetailsParams.getRepoName() != null) {
+      update.set(InputSetEntityKeys.repo, updateGitDetailsParams.getRepoName());
+    }
+    if (updateGitDetailsParams.getFilePath() != null) {
+      update.set(InputSetEntityKeys.filePath, updateGitDetailsParams.getFilePath());
+    }
+    return update;
   }
 }

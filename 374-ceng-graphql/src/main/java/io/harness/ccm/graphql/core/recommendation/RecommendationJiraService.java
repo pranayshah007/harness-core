@@ -11,11 +11,13 @@ import static io.harness.ccm.jira.CCMJiraUtils.getStatus;
 
 import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
+import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.EC2RecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.ECSRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.graphql.dto.recommendation.CCMJiraCreateDTO;
 import io.harness.ccm.jira.CCMJiraHelper;
+import io.harness.ccm.views.dao.RuleExecutionDAO;
 import io.harness.jira.JiraIssueNG;
 
 import com.google.inject.Inject;
@@ -28,6 +30,8 @@ public class RecommendationJiraService {
   @Inject private K8sRecommendationDAO k8sRecommendationDAO;
   @Inject private ECSRecommendationDAO ecsRecommendationDAO;
   @Inject private EC2RecommendationDAO ec2RecommendationDAO;
+  @Inject private RuleExecutionDAO ruleExecutionDAO;
+  @Inject private AzureRecommendationDAO azureRecommendationDAO;
   @Inject private CCMJiraHelper jiraHelper;
 
   public CCMJiraDetails createJiraForRecommendation(String accountId, CCMJiraCreateDTO jiraCreateDTO) {
@@ -45,6 +49,10 @@ public class RecommendationJiraService {
       ecsRecommendationDAO.updateJiraInECSRecommendation(accountId, recommendationId, jiraDetails);
     } else if (resourceType.equals(ResourceType.EC2_INSTANCE)) {
       ec2RecommendationDAO.updateJiraInEC2Recommendation(accountId, recommendationId, jiraDetails);
+    } else if (resourceType.equals(ResourceType.GOVERNANCE)) {
+      ruleExecutionDAO.updateJiraInGovernanceRecommendation(accountId, recommendationId, jiraDetails);
+    } else if (resourceType.equals(ResourceType.AZURE_INSTANCE)) {
+      azureRecommendationDAO.updateJiraInAzureRecommendation(accountId, recommendationId, jiraDetails);
     }
     k8sRecommendationDAO.updateJiraInTimescale(
         recommendationId, jiraConnectorRef, jiraIssueNG.getKey(), getStatus(jiraIssueNG));

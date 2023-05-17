@@ -9,6 +9,7 @@ package io.harness.cvng.migration;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.migration.list.ActivityBucketCleanupAndMigration;
 import io.harness.cvng.migration.list.ActivityCleanupAndBucketMigration;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
@@ -35,9 +36,11 @@ import io.harness.cvng.migration.list.CleanUpOldDocuments;
 import io.harness.cvng.migration.list.CleanupDeprecatedDocuments;
 import io.harness.cvng.migration.list.CustomHealthCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.DeleteActivitiesNotAssociatedWithMonitoredServices;
+import io.harness.cvng.migration.list.DeleteHarnessCDChangeSourceMigration;
 import io.harness.cvng.migration.list.DeleteInvalidOrchestratorsMigration;
 import io.harness.cvng.migration.list.DeleteOldAnalysisOrchestratorMigration;
 import io.harness.cvng.migration.list.DeleteOrchestratorWithInvalidVerificationTaskId;
+import io.harness.cvng.migration.list.DeleteRedundantSLIsSLOs;
 import io.harness.cvng.migration.list.DeleteSLISLOMigration;
 import io.harness.cvng.migration.list.ELKMigrationCreateVerificationTaskLiveMonitoring;
 import io.harness.cvng.migration.list.EnableExistingCVConfigs;
@@ -140,6 +143,9 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(62, OrphanMonitoredServicesCleanup.class))
         .add(Pair.of(63, ActivityCleanupAndBucketMigration.class))
         .add(Pair.of(64, UpdateMSNotificationChangeCategoriesMigration.class))
+        .add(Pair.of(65, ActivityBucketCleanupAndMigration.class))
+        .add(Pair.of(66, DeleteHarnessCDChangeSourceMigration.class))
+        .add(Pair.of(67, DeleteRedundantSLIsSLOs.class))
         .build();
   }
 }

@@ -28,6 +28,8 @@ import static io.harness.audit.Action.RESTORE;
 import static io.harness.audit.Action.RESUME;
 import static io.harness.audit.Action.REVOKE_INVITE;
 import static io.harness.audit.Action.REVOKE_TOKEN;
+import static io.harness.audit.Action.STAGE_END;
+import static io.harness.audit.Action.STAGE_START;
 import static io.harness.audit.Action.START;
 import static io.harness.audit.Action.TIMEOUT;
 import static io.harness.audit.Action.UNSUCCESSFUL_LOGIN;
@@ -95,7 +97,7 @@ public class AuditServiceImpl implements AuditService {
       RESEND_INVITE, REVOKE_INVITE, ADD_COLLABORATOR, REMOVE_COLLABORATOR, CREATE_TOKEN, REVOKE_TOKEN, ADD_MEMBERSHIP,
       REMOVE_MEMBERSHIP, ERROR_BUDGET_RESET);
   public static List<Action> loginEvents = List.of(LOGIN, LOGIN2FA, UNSUCCESSFUL_LOGIN);
-  public static List<Action> runTimeEvents = List.of(START, END, PAUSE, RESUME, ABORT, TIMEOUT);
+  public static List<Action> runTimeEvents = List.of(START, STAGE_START, STAGE_END, END, PAUSE, RESUME, ABORT, TIMEOUT);
 
   @Inject
   public AuditServiceImpl(AuditRepository auditRepository, AuditYamlService auditYamlService,

@@ -78,6 +78,10 @@ import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloud
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
+import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
+import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorServiceImpl;
 import io.harness.cdng.tas.service.TasResourceService;
 import io.harness.cdng.tas.service.TasResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
@@ -185,6 +189,9 @@ public class NGModule extends AbstractModule {
     bind(TerraformCloudResourceService.class).to(TerraformCloudResourceServiceImpl.class);
     bind(ServiceSequenceService.class).to(ServiceSequenceServiceImpl.class);
     bind(TerraformCloudPlanExecutionDetailsService.class).to(TerraformCloudPlanExecutionDetailsServiceImpl.class);
+    bind(ServiceOverridesServiceV2.class).to(ServiceOverridesServiceV2Impl.class);
+    bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
+
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())

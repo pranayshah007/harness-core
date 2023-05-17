@@ -871,6 +871,27 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testForceDelete_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveV2Response =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    boolean isDeleted = serviceLevelObjectiveV2Service.forceDelete(projectParams, sloDTO.getIdentifier());
+    assertThat(isDeleted).isEqualTo(true);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(projectParams,
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2Response.getServiceLevelObjectiveV2DTO().getSpec())
+            .getServiceLevelIndicators()
+            .get(0)
+            .getIdentifier());
+    assertThat(serviceLevelIndicator).isNull();
+    SLOHealthIndicator sloHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, sloDTO.getIdentifier());
+    assertThat(sloHealthIndicator).isNull();
+  }
+
+  @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testDelete_SimpleSLO_AssociatedWith_CompositeSLO_Failure() {

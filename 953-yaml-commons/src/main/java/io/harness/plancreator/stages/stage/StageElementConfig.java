@@ -8,8 +8,8 @@
 package io.harness.plancreator.stages.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.onlyRuntimeInputAllowed;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
@@ -95,7 +95,7 @@ public class StageElementConfig {
   ParameterField<Boolean> skipInstances;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRATEGY_CLASSPATH)

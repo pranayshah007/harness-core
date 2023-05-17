@@ -132,6 +132,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -4454,5 +4455,31 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
       updateUser(user.getUuid(), updateOperations);
     }
+  }
+
+  @Override
+  public boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged) {
+    boolean updated = true;
+    if (Generation.NG.equals(generation)) {
+      try {
+        UserMetadataDTO userMetadata =
+            UserMetadataDTO.builder().uuid(userId).externallyManaged(externallyManaged).build();
+        UserMetadataDTO updatedUserMetadata =
+            NGRestUtils.getResponse(ngInviteClient.updateUserMetadata(userId, userMetadata));
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update externallyManaged status for user- {}", userId, ex);
+        updated = false;
+      }
+    } else {
+      try {
+        UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+        updateOperations.set(UserKeys.imported, externallyManaged);
+        updateUser(userId, updateOperations);
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update imported status for user- {}", userId, ex);
+        updated = false;
+      }
+    }
+    return updated;
   }
 }

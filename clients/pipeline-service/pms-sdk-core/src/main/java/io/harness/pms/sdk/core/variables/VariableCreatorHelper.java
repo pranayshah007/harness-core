@@ -448,8 +448,6 @@ public class VariableCreatorHelper {
       if (field.isAnnotationPresent(ApiModelProperty.class)) {
         ApiModelProperty annotation = field.getAnnotation(ApiModelProperty.class);
         return annotation.hidden();
-      } else if (field.getType().getTypeName().equals(LOGGER_NAME)) {
-        return true;
       } else {
         return field.isAnnotationPresent(JsonIgnore.class);
       }

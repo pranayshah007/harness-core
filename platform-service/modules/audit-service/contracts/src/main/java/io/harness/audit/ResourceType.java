@@ -64,7 +64,6 @@ public enum ResourceType {
   FEATURE_FLAG(ResourceTypeConstants.FEATURE_FLAG),
   NG_ACCOUNT_DETAILS(ResourceTypeConstants.NG_ACCOUNT_DETAILS),
   BUDGET_GROUP(ResourceTypeConstants.BUDGET_GROUP),
-  PIPELINE_EXECUTION(ResourceTypeConstants.PIPELINE_EXECUTION),
   IP_ALLOWLIST_CONFIG(ResourceTypeConstants.IP_ALLOWLIST_CONFIG);
 
   ResourceType(String resourceType) {

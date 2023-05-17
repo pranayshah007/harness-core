@@ -14,6 +14,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryArtifactBuildDetailsDTO;
@@ -162,16 +163,17 @@ public class ArtifactoryArtifactResource {
         artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
   }
-  // unuse
+
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets artifactory artifact last successful build",
       nickname = "getLastSuccessfulBuildForArtifactoryArtifact")
   public ResponseDTO<ArtifactoryBuildDetailsDTO>
-  getLastSuccessfulBuild(@QueryParam("repository") String repository, @QueryParam("artifactPath") String artifactPath,
-      @QueryParam("repositoryFormat") String repositoryFormat,
-      @QueryParam("repositoryUrl") String artifactRepositoryUrl,
-      @QueryParam("connectorRef") String dockerConnectorIdentifier,
+  getLastSuccessfulBuild(@QueryParam(NGArtifactConstants.REPOSITORY) String repository,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
+      @QueryParam(NGArtifactConstants.REPOSITORY_FORMAT) String repositoryFormat,
+      @QueryParam(NGArtifactConstants.REPOSITORY_URL) String artifactRepositoryUrl,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -188,10 +190,11 @@ public class ArtifactoryArtifactResource {
   @ApiOperation(value = "Gets artifactory artifact last successful build with yaml input for expression resolution",
       nickname = "getLastSuccessfulBuildArtifactoryArtifactWithYaml")
   public ResponseDTO<ArtifactoryBuildDetailsDTO>
-  getLastSuccessfulBuildV2(@QueryParam("repository") String repository, @QueryParam("artifactPath") String artifactPath,
-      @QueryParam("repositoryFormat") String repositoryFormat,
-      @QueryParam("repositoryUrl") String artifactRepositoryUrl,
-      @QueryParam("connectorRef") String artifactoryConnectorIdentifier,
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.REPOSITORY) String repository,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
+      @QueryParam(NGArtifactConstants.REPOSITORY_FORMAT) String repositoryFormat,
+      @QueryParam(NGArtifactConstants.REPOSITORY_URL) String artifactRepositoryUrl,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String artifactoryConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

@@ -244,7 +244,6 @@ public class ConnectorMigrationService extends NgMigrationService {
       }
       ConnectorType connectorType = connectorImpl.getConnectorType(settingAttribute);
       if (connectorType == null) {
-        // TODO: @deepakputhraya
         return YamlGenerationDetails.builder()
             .skipDetails(Collections.singletonList(NGSkipDetail.builder()
                                                        .reason("Unsupported/Unrecognized connector in NG")

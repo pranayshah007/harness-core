@@ -8,6 +8,7 @@
 package io.harness.gitsync.common.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -189,8 +190,12 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     String email = currentUser.getEmail();
     String userName = currentUser.getName();
     if (userDTO.isPresent()) {
-      email = userDTO.get().getUserEmail();
-      userName = userDTO.get().getUserName();
+      if (isNotEmpty(userDTO.get().getUserEmail())) {
+        email = userDTO.get().getUserEmail();
+      }
+      if (isNotEmpty(userDTO.get().getUserName())) {
+        userName = userDTO.get().getUserName();
+      }
     }
     return GitFileDetails.builder()
         .branch(createGitFileRequestDTO.getBranchName())
@@ -209,8 +214,12 @@ public abstract class AbstractScmClientFacilitatorServiceImpl implements ScmClie
     String email = currentUser.getEmail();
     String userName = currentUser.getName();
     if (userDTO.isPresent()) {
-      email = userDTO.get().getUserEmail();
-      userName = userDTO.get().getUserName();
+      if (isNotEmpty(userDTO.get().getUserEmail())) {
+        email = userDTO.get().getUserEmail();
+      }
+      if (isNotEmpty(userDTO.get().getUserName())) {
+        userName = userDTO.get().getUserName();
+      }
     }
     return GitFileDetails.builder()
         .branch(updateGitFileRequestDTO.getBranchName())

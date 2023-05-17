@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
@@ -46,6 +47,9 @@ import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -74,14 +78,17 @@ import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.NGPipelineSettingsConstant;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -123,6 +130,7 @@ public class ExecutionHelperTest extends CategoryTest {
   @Mock PmsFeatureFlagHelper featureFlagService;
   @Mock RollbackModeExecutionHelper rollbackModeExecutionHelper;
   @Mock PlanService planService;
+  @Mock NGSettingsClient settingsClient;
 
   String accountId = "accountId";
   String orgId = "orgId";
@@ -914,6 +922,38 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(processStageExecutionInfoResult.getStagesExecutionInfo().getExpressionValues()).isNull();
     assertThat(processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef())
         .isEqualTo(mergedPipelineYamlForS2);
+  }
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testUpdateSettingsInExecutionMetadataBuilder() {
+    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
+    mockRestStatic.when(() -> NGRestUtils.getResponse(any()))
+        .thenReturn(Arrays.asList(
+            SettingResponseDTO.builder()
+                .setting(SettingDTO.builder()
+                             .identifier(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
+                             .name("setting1")
+                             .value("true")
+                             .build())
+                .build(),
+            SettingResponseDTO.builder()
+                .setting(SettingDTO.builder()
+                             .identifier(NGPipelineSettingsConstant.DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER.getName())
+                             .name("setting2")
+                             .value("true")
+                             .build())
+                .build()));
+
+    ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder();
+    executionHelper.updateSettingsInExecutionMetadataBuilder(
+        PipelineEntity.builder().accountId(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+        builder);
+    assertThat(builder.build().getSettingToValueMapCount()).isEqualTo(1);
+    assertThat(builder.build().getSettingToValueMapOrThrow(
+                   NGPipelineSettingsConstant.DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER.getName()))
+        .isEqualTo("true");
+    assertThat(builder.build().getUseMatrixFieldName()).isTrue();
   }
 
   private String readFile(String filename) {

@@ -2326,7 +2326,8 @@
             "Spot",
             "Bamboo",
             "TerraformCloud",
-            "SignalFX"
+            "SignalFX",
+            "Harness"
           ]
         }
       },
@@ -2792,6 +2793,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GitlabConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessConnector"
               }
             }
           }
@@ -4708,6 +4725,219 @@
               ]
             }
           ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessApiAccess": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "Token",
+            "Jwt_Token"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Jwt_Token"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessJWTTokenSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Token"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessTokenSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "HarnessApiAccessSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessAuthentication": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/HarnessHttpCredentials"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Http",
+            "Ssh"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "authentication",
+            "type",
+            "url"
+          ],
+          "properties": {
+            "apiAccess": {
+              "$ref": "#/definitions/HarnessApiAccess"
+            },
+            "authentication": {
+              "$ref": "#/definitions/HarnessAuthentication"
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Account",
+                "Repo",
+                "Project"
+              ]
+            },
+            "url": {
+              "type": "string"
+            },
+            "validationRepo": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessHttpCredentials": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernameToken"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernameToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessUsernameToken"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "HarnessHttpCredentialsSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessJWTTokenSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/HarnessApiAccessSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessTokenSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/HarnessApiAccessSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessUsernameToken": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/HarnessHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
