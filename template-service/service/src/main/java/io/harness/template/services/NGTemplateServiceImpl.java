@@ -83,6 +83,8 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
+import io.harness.template.async.beans.Action;
+import io.harness.template.async.beans.TemplateSetupUsageEvent;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
@@ -149,6 +151,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   @Inject private TemplateGitXService templateGitXService;
+
+  @Inject private TemplateAsyncSetupUsageService templateAsyncSetupUsageService;
+
   @Inject private GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private AccountClient accountClient;
   @Inject NGSettingsClient settingsClient;
@@ -1450,6 +1455,17 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           String.format("Template not found for template identifier [%s] and version label [%s] in %s",
               templateIdentifier, versionLabel, scope));
     }
+  }
+
+  @Override
+  public String getAsyncSetUpUsageUUID(TemplateEntity templateEntity) {
+    String setupUsageUUid = null;
+    if (templateEntity.getStoreType() == StoreType.REMOTE) {
+      TemplateSetupUsageEvent newEvent =
+          templateAsyncSetupUsageService.startEvent(templateEntity, templateEntity.getBranch(), Action.GET);
+      setupUsageUUid = newEvent.getUuid();
+    }
+    return setupUsageUUid;
   }
 
   @VisibleForTesting
