@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.msp.entities.ManagedAccountDetails;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -108,21 +107,6 @@ public class MarginObfuscationResource {
   unsetMarginDetails(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
                      @AccountIdentifier String accountIdentifier, @QueryParam("id") String uuid) {
     return ResponseDTO.newResponse(marginDetailsService.unsetMargins(uuid, accountIdentifier));
-  }
-
-  @GET
-  @Path("managed-accounts")
-  @ApiOperation(value = "List accounts managed by the msp", nickname = "listManagedAccounts")
-  @Operation(operationId = "listManagedAccounts", summary = "List Managed accounts",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns list of account details for the accounts managed by the msp")
-      })
-  public ResponseDTO<List<ManagedAccountDetails>>
-  listManagedAccounts(@Parameter(description = "Account id of the msp account") @QueryParam(
-      "accountIdentifier") @AccountIdentifier String accountIdentifier) {
-    return ResponseDTO.newResponse(marginDetailsService.listManagedAccountDetails(accountIdentifier));
   }
 
   @POST
