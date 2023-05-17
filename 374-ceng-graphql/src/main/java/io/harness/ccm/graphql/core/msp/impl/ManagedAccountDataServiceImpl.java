@@ -18,6 +18,7 @@ import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.graphql.utils.RESTToGraphQLHelper;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.*;
+import io.harness.ccm.views.dto.DataPoint;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
@@ -105,14 +106,29 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
                 (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
             .getStats();
-    //    List<TimeSeriesDataPoints> totalMarkupStats =
-    //        perspectivesQuery
-    //            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
-    //                RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
-    //                Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
-    //                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
-    //            .getStats();
-    return ManagedAccountTimeSeriesData.builder().totalSpendStats(totalSpendStats).build();
+    List<TimeSeriesDataPoints> totalMarkupStats = getMockMarkupData(totalSpendStats);
+    return ManagedAccountTimeSeriesData.builder()
+        .totalSpendStats(totalSpendStats)
+        .totalMarkupStats(totalMarkupStats)
+        .build();
+  }
+
+  List<TimeSeriesDataPoints> getMockMarkupData(List<TimeSeriesDataPoints> totalSpendStats) {
+    List<TimeSeriesDataPoints> totalMarkupStats = new ArrayList<>();
+    totalSpendStats.forEach(dataPoint
+        -> totalMarkupStats.add(TimeSeriesDataPoints.builder()
+                                    .time(dataPoint.getTime())
+                                    .values(getUpdatedDataPoint(dataPoint.getValues()))
+                                    .build()));
+    return totalMarkupStats;
+  }
+
+  List<DataPoint> getUpdatedDataPoint(List<DataPoint> dataPoints) {
+    List<DataPoint> updatedDataPoints = new ArrayList<>();
+    dataPoints.forEach(dataPoint
+        -> updatedDataPoints.add(
+            DataPoint.builder().key(dataPoint.getKey()).value(dataPoint.getValue().doubleValue() * 0.2).build()));
+    return updatedDataPoints;
   }
 
   private AmountDetails getTotalMarkupAmountDetails(List<MarginDetails> marginDetailsList) {
