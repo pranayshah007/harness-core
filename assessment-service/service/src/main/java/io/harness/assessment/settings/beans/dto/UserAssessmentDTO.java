@@ -11,6 +11,7 @@ import io.harness.assessment.settings.beans.entities.AssessmentResponseStatus;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -23,6 +24,7 @@ public class UserAssessmentDTO {
   Long majorVersion;
   Long minorVersion;
   List<QuestionResponse> questions;
+  Map<String, List<QuestionResponse>> sectionQuestions;
   Long expectedCompletionDuration;
   Long baseScore;
   List<UserResponseRequestItem> userResponse;

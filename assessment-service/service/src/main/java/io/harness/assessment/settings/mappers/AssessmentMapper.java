@@ -13,7 +13,11 @@ import io.harness.assessment.settings.beans.dto.OptionResponse;
 import io.harness.assessment.settings.beans.dto.QuestionResponse;
 import io.harness.assessment.settings.beans.dto.UserAssessmentDTO;
 import io.harness.assessment.settings.beans.entities.Assessment;
+import io.harness.assessment.settings.beans.entities.Question;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
@@ -21,30 +25,35 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class AssessmentMapper {
   public UserAssessmentDTO toDTO(Assessment assessment) {
+    List<QuestionResponse> questionResponses =
+        assessment.getQuestions()
+            .stream()
+            .map(question
+                -> QuestionResponse.builder()
+                       .questionId(question.getQuestionId())
+                       .questionText(question.getQuestionText())
+                       .questionNumber(question.getQuestionNumber())
+                       .questionType(question.getQuestionType())
+                       .sectionId(question.getSectionId())
+                       .sectionName(question.getSectionName())
+                       .possibleResponses(question.getPossibleResponses()
+                                              .stream()
+                                              .map(option
+                                                  -> OptionResponse.builder()
+                                                         .optionId(option.getOptionId())
+                                                         .optionText(option.getOptionText())
+                                                         .build())
+                                              .collect(Collectors.toList()))
+                       .build())
+            .collect(Collectors.toList());
+    Map<String, List<QuestionResponse>> sectionQuestionMap =
+        questionResponses.stream().collect(Collectors.groupingBy(QuestionResponse::getSectionId));
     return UserAssessmentDTO.builder()
         .assessmentId(assessment.getAssessmentId())
         .assessmentName(assessment.getAssessmentName())
         .expectedCompletionDuration(assessment.getExpectedCompletionDuration())
-        .questions(assessment.getQuestions()
-                       .stream()
-                       .map(question
-                           -> QuestionResponse.builder()
-                                  .questionId(question.getQuestionId())
-                                  .questionText(question.getQuestionText())
-                                  .questionNumber(question.getQuestionNumber())
-                                  .questionType(question.getQuestionType())
-                                  .sectionId(question.getSectionId())
-                                  .sectionName(question.getSectionName())
-                                  .possibleResponses(question.getPossibleResponses()
-                                                         .stream()
-                                                         .map(option
-                                                             -> OptionResponse.builder()
-                                                                    .optionId(option.getOptionId())
-                                                                    .optionText(option.getOptionText())
-                                                                    .build())
-                                                         .collect(Collectors.toList()))
-                                  .build())
-                       .collect(Collectors.toList()))
+        .questions(questionResponses)
+        .sectionQuestions(sectionQuestionMap)
         .baseScore(assessment.getBaseScore())
         .majorVersion(assessment.getVersion())
         .minorVersion(assessment.getMinorVersion())
