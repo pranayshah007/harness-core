@@ -2142,6 +2142,7 @@ public class UserServiceImpl implements UserService {
 
   private void marketPlaceSignup(User user, final UserInvite userInvite, MarketPlaceType marketPlaceType) {
     validateUser(user);
+    log.info("Info for user: {}", user);
 
     UserInvite existingInvite = wingsPersistence.get(UserInvite.class, userInvite.getUuid());
     if (existingInvite == null) {
@@ -2207,6 +2208,8 @@ public class UserServiceImpl implements UserService {
                           .withLicenseInfo(licenseInfo)
                           .withAppId(GLOBAL_APP_ID)
                           .build();
+    log.info("Info for account: {}", account);
+
     if (isNG) {
       account = setupNGAccount(account);
     } else {
@@ -4267,10 +4270,10 @@ public class UserServiceImpl implements UserService {
     String dimension = marketPlace.getDimension();
     Edition plan = licenseService.getDimensionPlan(dimension);
     boolean premiumSupport = licenseService.hasPremierSupport(dimension);
-    LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+    LicenseType licenseType = licenseService.getModuleLicenseType(plan);
     Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
 
-    log.info("dimension:{}, plan:{}, premiumSupport:{}, icenseType:{}, orderQuantity:{}", dimension, plan,
+    log.info("dimension:{}, plan:{}, premiumSupport:{}, licenseType:{}, orderQuantity:{}", dimension, plan,
         premiumSupport, licenseType, orderQuantity);
 
     if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
@@ -4298,7 +4301,6 @@ public class UserServiceImpl implements UserService {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
 
-      // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
@@ -4313,8 +4315,9 @@ public class UserServiceImpl implements UserService {
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
-    } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
+    } else if (true
+        || marketPlace.getProductCode().equals(
+            configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
       CeLicenseType ceLicenseType = CeLicenseType.PAID;
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         ceLicenseType = CeLicenseType.FULL_TRIAL;
@@ -4322,14 +4325,7 @@ public class UserServiceImpl implements UserService {
       Long spendLimit = Long.valueOf(orderQuantity);
       log.info("spendLimit:{}", spendLimit);
 
-      // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
-
-      // licenseService.updateCeLicense(accountId,
-      //     CeLicenseInfo.builder()
-      //         .expiryTime(marketPlace.getExpirationDate().getTime())
-      //         .licenseType(ceLicenseType)
-      //         .build());
 
       ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
           CEModuleLicenseDTO.builder()
@@ -4354,7 +4350,6 @@ public class UserServiceImpl implements UserService {
       Long numberOfClientMAUs = licenseService.getNumberOfClientMAUs(plan);
       log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
 
-      // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CFModuleLicenseDTO.builder()
@@ -4374,7 +4369,6 @@ public class UserServiceImpl implements UserService {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CIModuleLicenseDTO.builder()
@@ -4393,7 +4387,6 @@ public class UserServiceImpl implements UserService {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           SRMModuleLicenseDTO.builder()
@@ -4412,7 +4405,6 @@ public class UserServiceImpl implements UserService {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           STOModuleLicenseDTO.builder()

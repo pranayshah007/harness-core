@@ -104,7 +104,6 @@ public class LicenseServiceImpl implements LicenseService {
   private static final Long FREE_CLIENT_MAUS = 25000L;
   private static final Long TEAM_CLIENT_MAUS = 100000L;
   private static final Long ENTERPRISE_CLIENT_MAUS = 1000000L;
-  private static final String FEATURE_FLAGS = "FF";
   private static final String PREMIER = "PRMR";
   private static final String TEAM = "TEAM";
   private static final String TEAM_SHORT = "TM";
@@ -656,7 +655,7 @@ public class LicenseServiceImpl implements LicenseService {
 
     boolean premiumSupport = hasPremierSupport(dimension);
     Edition plan = getDimensionPlan(dimension);
-    LicenseType licenseType = getModuleLicenseType(dimension, plan);
+    LicenseType licenseType = getModuleLicenseType(plan);
 
     log.info("plan:{}, premiumSupport:{}, licenseType:{}", plan, premiumSupport, licenseType);
 
@@ -802,17 +801,11 @@ public class LicenseServiceImpl implements LicenseService {
   }
 
   // Gets Module License from dimension/plan
-  public LicenseType getModuleLicenseType(String dimension, Edition plan) {
+  public LicenseType getModuleLicenseType(Edition plan) {
     LicenseType licenseType = null;
-    if (StringUtils.isNotBlank(dimension)) {
-      String[] result = dimension.split("_");
-
-      if (FEATURE_FLAGS.equals(result[0]) && (Edition.TEAM.equals(plan) || Edition.ENTERPRISE.equals(plan))) {
-        // Trial currently not yet supported for FF
-        licenseType = LicenseType.PAID;
-      }
+    if ((Edition.TEAM.equals(plan) || Edition.ENTERPRISE.equals(plan))) {
+      licenseType = LicenseType.PAID;
     }
-
     return licenseType;
   }
 

@@ -71,7 +71,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   @Inject private AuthenticationUtils authenticationUtils;
   @Inject private MarketPlaceService marketPlaceService;
   private final String MANUALLY_PROVISIONED_MESSAGE =
-      "Instructions to get started should be provided. If not, please contact Harness at support@harness.io";
+      "Instructions to get started should be emailed shortly. If not, please contact Harness at support@harness.io";
   private static final String INFO = "INFO";
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
@@ -135,7 +135,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
 
     if (!marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)
         && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)
-        && !awsMarketPlaceV2ProductCodes.contains(productCode)) {
+        && (!awsMarketPlaceV2ProductCodes.contains(productCode))) {
       final String message =
           "Customer order from AWS could not be resolved, please contact Harness at support@harness.io";
       log.error("Invalid AWS productcode received:[{}],", productCode);
@@ -212,25 +212,41 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       wingsPersistence.save(marketPlace);
     }
 
-    if (existingCustomer
+    if (existingCustomer && !marketPlace.getProductCode().equals(productCode)) {
+      log.info(
+          "This is an existing customer:[{}], purchasing another module. Existing product code [{}], adding product code [{}]. Desired dimension: [{}]",
+          customerIdentifierCode, marketPlace.getProductCode(), productCode, dimension);
+      final String message = String.format(
+          "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. License details: Quantity: %d, License expiration: %s",
+          orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
+      return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+
+    } else if (existingCustomer
         && (!marketPlace.getOrderQuantity().equals(orderQuantity)
             || (!marketPlace.getExpirationDate().equals(expirationDate)))) {
       log.info(
           "This is an existing customer:[{}], updating orderQuantity from [{}] to [{}], updating expirationDate from [{}] to [{}]",
           customerIdentifierCode, marketPlace.getOrderQuantity(), orderQuantity, marketPlace.getExpirationDate(),
           expirationDate);
-      /**
-       * This is an update to an existing order, treat this as an update
-       */
-      licenseService.updateLicenseForProduct(
-          marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime(), dimension);
 
-      marketPlace.setOrderQuantity(orderQuantity);
-      wingsPersistence.save(marketPlace);
-
-      final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      final String message = String.format(
+          "Looks like you already have a license. Please reach out to harness@support.io to update the existing license. License details: Quantity: %d, License expiration: %s.",
           orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
       return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      // TODO: Add update license once license provisioning works
+      // /**
+      //  * This is an update to an existing order, treat this as an update
+      //  */
+      // licenseService.updateLicenseForProduct(
+      //     marketPlace.getProductCode(), marketPlace.getAccountId(), orderQuantity, expirationDate.getTime(),
+      //     dimension);
+
+      // marketPlace.setOrderQuantity(orderQuantity);
+      // wingsPersistence.save(marketPlace);
+
+      // final String message = String.format("License details: Service Instances: %d, License expiration: %s",
+      //     orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
+      // return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
 
     } else if (!existingCustomer) {
       /**
@@ -375,7 +391,8 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     } else if (marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
       UTMUrlParam =
           "&module=ff&utm_campaign=23-4-6-ff-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
-    } else if (marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+    } else if (true || marketPlaceConfig.getAwsMarketPlaceCcmProductCode().equals(productCode)) {
+      // TODO: REMOVE true
       UTMUrlParam =
           "&module=ce&utm_campaign=23-4-6-ccm-plg-marketplace-partner-aws&utm_medium=marketplace&utm_source=partner&utm_content=sign-up";
     } else if (marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)) {

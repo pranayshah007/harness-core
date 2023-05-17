@@ -131,7 +131,10 @@ public class UserResourceNG {
   @POST
   public RestResponse<UserInfo> createNewUserAndSignIn(UserRequestDTO userRequest) {
     User user = convertUserRequesttoUser(userRequest);
+    log.info("Info for user: {}", user);
+
     String accountId = user.getDefaultAccountId();
+    log.info("accountId: {}", accountId);
 
     User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
 
@@ -216,12 +219,13 @@ public class UserResourceNG {
       @QueryParam("password") String password, @Body SignupDTO dto) {
     MarketPlace marketPlace;
     UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
-    // ! Add back in after testing
-    // if (existingInvite.isCompleted()) {
-    //   log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
-    //   throw new UserRegistrationException(
-    //       EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
-    // }
+
+    if (existingInvite.isCompleted()) {
+      log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
+      throw new UserRegistrationException(
+          EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
+    }
+    log.info("DTO: {}", dto);
 
     userService.verifyRegisteredOrAllowed(email);
 
@@ -245,10 +249,12 @@ public class UserResourceNG {
     }
     // account passed in args does not yet have an identifier
     String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
-    User newAccount = wingsPersistence.get(Account.class, accountId);
+    Account newAccount = wingsPersistence.get(Account.class, accountId);
     List<Account> newAccountsList = new ArrayList<>();
     newAccountsList.add(newAccount);
     user.setAccounts(newAccountsList);
+    user.setDefaultAccountId(accountId);
+
     User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
 
     log.info("Successfully setup account accountId: {}", accountId);
@@ -663,11 +669,11 @@ public class UserResourceNG {
       String passwordHash = hashpw(password, BCrypt.gensalt());
       List<Account> accountList = new ArrayList<>();
 
-      String name = dto.getName();
       // !TODO: Need Default account identifier for User?
+
       return User.Builder.anUser()
           .email(email)
-          .name(name)
+          .name(dto.getName())
           .passwordHash(passwordHash)
           .accountName(dto.getCompanyName())
           .companyName(dto.getCompanyName())
@@ -679,10 +685,7 @@ public class UserResourceNG {
     }
   }
 
-  private User addAccountToAccounts
-
-      private User
-      convertNgUserToUserWithNameUpdated(UserInfo userInfo) {
+  private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {
     if (userInfo == null) {
       return null;
     }

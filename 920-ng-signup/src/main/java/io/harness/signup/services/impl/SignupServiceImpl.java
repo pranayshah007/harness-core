@@ -197,6 +197,7 @@ public class SignupServiceImpl implements SignupService {
     String email = dto.getEmail().toLowerCase();
     String password = dto.getPassword();
     AccountDTO account = AccountDTO.builder().name(dto.getName()).companyName(dto.getCompanyName()).build();
+    log.info("DTO: {}, companyName: {}, name: {}", dto, dto.getCompanyName(), dto.getName());
 
     try {
       userInfo = getResponse(
@@ -213,6 +214,7 @@ public class SignupServiceImpl implements SignupService {
       sendFailedTelemetryEvent(email, dto.getUtmInfo(), e, account, "Create Marketplace user and complete signup");
       throw e;
     }
+
     sendSucceedTelemetryEvent(email, dto.getUtmInfo(), userInfo.getDefaultAccountId(), userInfo, SignupType.MARKETPLACE,
         userInfo.getAccounts().get(0).getAccountName(), null, null, null);
     return userInfo;
