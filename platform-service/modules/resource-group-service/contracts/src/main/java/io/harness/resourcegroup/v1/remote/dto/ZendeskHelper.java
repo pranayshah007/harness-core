@@ -110,7 +110,7 @@ public class ZendeskHelper {
           + "    \"userIds\": [\n{"
           + "        \"name\": \"name\",\n"
           + "        \"type\": \"User\",\n"
-          + "        \"provider\":\"Security Provider\"\n"
+          + "        \"provider\":\"Email Security Provider\"\n"
           + "    }\n]"
           + "}";
       RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), json);
