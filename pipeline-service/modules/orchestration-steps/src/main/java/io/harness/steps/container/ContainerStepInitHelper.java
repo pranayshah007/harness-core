@@ -57,7 +57,7 @@ import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
@@ -265,8 +265,8 @@ public class ContainerStepInitHelper {
           .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
     } else if (containerStepInfo instanceof InitContainerV2StepInfo) {
       InitContainerV2StepInfo initContainerV2StepInfo = (InitContainerV2StepInfo) containerStepInfo;
-      initContainerV2StepInfo.getPluginsData().values().forEach(pluginCreationResponseV2 -> {
-        for (PluginCreationResponseV2 responseV2 : pluginCreationResponseV2.getResponseList()) {
+      initContainerV2StepInfo.getPluginsData().values().forEach(PluginCreationResponseWrapper -> {
+        for (PluginCreationResponseWrapper responseV2 : PluginCreationResponseWrapper.getResponseList()) {
           List<io.harness.pms.contracts.plan.ConnectorDetails> connectorsForStepList =
               responseV2.getResponse().getPluginDetails().getConnectorsForStepList();
           if (isNotEmpty(connectorsForStepList)) {

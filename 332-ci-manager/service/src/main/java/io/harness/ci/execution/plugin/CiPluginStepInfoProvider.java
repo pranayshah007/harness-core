@@ -23,7 +23,7 @@ import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.plan.SecretVariable;
@@ -48,7 +48,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
   @Inject K8InitializeStepUtils k8InitializeStepUtils;
 
   @Override
-  public PluginCreationResponseV2 getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
     String stepJsonNode = request.getStepJsonNode();
     PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
@@ -58,8 +58,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
       throw new ContainerPluginParseException(
           String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
     }
-    // todo(abhinav): get used ports from request
-    Set<Integer> usedPorts = new HashSet<>(request.getUsedPortDetails().getUsedPortsList());
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
     ContainerDefinitionInfo containerDefinitionInfo =
         k8InitializeStepUtils.createStepContainerDefinition(ciAbstractStepNode, null, null, portFinder, 0,
@@ -114,7 +112,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
                                       .setName(ciAbstractStepNode.getName())
                                       .setUuid(ciAbstractStepNode.getUuid())
                                       .build();
-    return PluginCreationResponseV2.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
+    return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
   }
 
   private PluginContainerResources getPluginContainerResources(ContainerDefinitionInfo containerDefinitionInfo) {

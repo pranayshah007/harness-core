@@ -9,7 +9,7 @@ package io.harness.pms.sdk.core.plugin;
 
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.yaml.YamlUtils;
@@ -19,12 +19,13 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
 public class DefaultPluginInfoProvider implements PluginInfoProvider {
-  public PluginCreationResponseV2 getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
     PluginStepV2 pluginStep;
     try {
       pluginStep = YamlUtils.read(request.getStepJsonNode(), PluginStepV2.class);
@@ -55,7 +56,7 @@ public class DefaultPluginInfoProvider implements PluginInfoProvider {
                                       .setName(pluginStep.getIdentifier())
                                       .setUuid(pluginStep.getUuid())
                                       .build();
-    return PluginCreationResponseV2.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
+    return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
   }
 
   @Override

@@ -14,7 +14,6 @@ import "io/harness/pms/contracts/ambiance/ambiance.proto";
 import "google/protobuf/wrappers.proto";
 
 service PluginInfoProviderService {
-  rpc getPluginInfos(PluginCreationRequest) returns (PluginCreationResponse);
   rpc getPluginInfosList(PluginCreationBatchRequest) returns (PluginCreationBatchResponse);
 }
 
@@ -27,11 +26,11 @@ message PluginCreationBatchResponse {
 }
 
 message PluginCreationResponseList {
-  repeated PluginCreationResponseV2 response = 1;
+  repeated PluginCreationResponseWrapper response = 1;
   bool isParallel = 2;
 }
 
-message PluginCreationResponseV2 {
+message PluginCreationResponseWrapper {
   StepInfoProto stepInfo = 1;
   PluginCreationResponse response = 2;
 }

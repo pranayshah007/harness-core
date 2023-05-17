@@ -34,7 +34,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -66,7 +67,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
 
   @Override
-  public PluginCreationResponseV2 getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
     String stepJsonNode = request.getStepJsonNode();
     CdAbstractStepNode cdAbstractStepNode;
 
@@ -104,7 +105,7 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
                                       .setName(cdAbstractStepNode.getName())
                                       .setUuid(cdAbstractStepNode.getUuid())
                                       .build();
-    return PluginCreationResponseV2.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
+    return PluginCreationResponseWrapper.newBuilder().setResponse(response).setStepInfo(stepInfoProto).build();
   }
 
   @Override

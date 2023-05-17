@@ -21,7 +21,7 @@ import io.harness.ci.buildstate.StepContainerUtils;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.grpc.utils.StringValueUtils;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginDetails;
 import io.harness.pms.contracts.plan.StepInfoProto;
 import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
@@ -50,7 +50,7 @@ public class ContainerStepV2DefinitionCreator {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
 
     initContainerV2StepInfo.getPluginsData().forEach((stepInfo1, value) -> {
-      for (PluginCreationResponseV2 response : value.getResponseList()) {
+      for (PluginCreationResponseWrapper response : value.getResponseList()) {
         PluginDetails pluginDetails = response.getResponse().getPluginDetails();
         StepInfoProto stepInfo = response.getStepInfo();
         String stepIdentifier = stepInfo.getIdentifier();

@@ -16,9 +16,6 @@ import io.harness.steps.plugin.StepInfo;
 import java.util.Map;
 
 public interface ContainerStepV2PluginProvider {
-  Map<StepInfo, PluginCreationResponse> getPluginsData(
-      InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance);
-
   Map<StepInfo, PluginCreationResponseList> getPluginsDataV2(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance);
 }

@@ -12,9 +12,8 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,7 +27,7 @@ public class PluginInfoProviderHelper {
   @Inject private DefaultPluginInfoProvider defaultPluginInfoProvider;
   @Inject(optional = true) private Set<PluginInfoProvider> pluginInfoProviderSet;
 
-  public PluginCreationResponseList getPluginInfo(PluginCreationRequest request) {
+  public PluginCreationResponseList getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
     Optional<PluginInfoProvider> pluginInfoProvider = emptyIfNull(pluginInfoProviderSet)
                                                           .stream()
                                                           .map(provider -> {
@@ -42,15 +41,15 @@ public class PluginInfoProviderHelper {
                                                           .findFirst();
     if (pluginInfoProvider.isPresent()) {
       if (pluginInfoProvider.get().willReturnMultipleContainers()) {
-        return pluginInfoProvider.get().getPluginInfoList(request);
+        return pluginInfoProvider.get().getPluginInfoList(request, usedPorts);
       }
-      return convertToList(pluginInfoProvider.get().getPluginInfo(request));
+      return convertToList(pluginInfoProvider.get().getPluginInfo(request, usedPorts));
     }
 
-    return convertToList(defaultPluginInfoProvider.getPluginInfo(request));
+    return convertToList(defaultPluginInfoProvider.getPluginInfo(request, usedPorts));
   }
 
-  private PluginCreationResponseList convertToList(PluginCreationResponseV2 response) {
+  private PluginCreationResponseList convertToList(PluginCreationResponseWrapper response) {
     return PluginCreationResponseList.newBuilder().addResponse(response).build();
   }
 }

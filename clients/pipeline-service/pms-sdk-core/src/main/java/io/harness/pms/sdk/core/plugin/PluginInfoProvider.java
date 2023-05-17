@@ -7,16 +7,16 @@
 
 package io.harness.pms.sdk.core.plugin;
 
-import io.harness.pms.contracts.plan.PluginCreationBatchRequest;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
-import io.harness.pms.contracts.plan.PluginCreationResponseV2;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
+
+import java.util.Set;
 
 public interface PluginInfoProvider {
-  PluginCreationResponseV2 getPluginInfo(PluginCreationRequest request);
+  PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts);
 
-  default PluginCreationResponseList getPluginInfoList(PluginCreationRequest request) {
+  default PluginCreationResponseList getPluginInfoList(PluginCreationRequest request, Set<Integer> usedPorts) {
     return null;
   }
 
