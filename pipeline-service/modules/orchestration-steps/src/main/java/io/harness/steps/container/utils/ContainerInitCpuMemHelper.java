@@ -9,7 +9,6 @@ package io.harness.steps.container.utils;
 
 import io.harness.calculation.InitMemoryCalculatorService;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.pms.contracts.plan.PluginContainerResources;
 import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.yaml.ParameterField;

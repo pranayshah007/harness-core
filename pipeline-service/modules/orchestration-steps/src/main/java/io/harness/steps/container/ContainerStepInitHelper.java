@@ -56,7 +56,6 @@ import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ExpressionResolverUtils;
