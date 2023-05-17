@@ -14,7 +14,7 @@
 #     .
 
 FROM us.gcr.io/platform-205701/ubi/ubi-base:8.7
-COPY --from=adoptopenjdk/openjdk11:jre-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/harness/OpenJDK11/jdk-11.0.19+7
+COPY --from=adoptopenjdk/openjdk11:jdk-11.0.19_7-ubi-minimal /opt/java/openjdk/ /opt/harness/OpenJDK11/jdk-11.0.19+7
 
 ENV JAVA_HOME=/opt/harness/OpenJDK11/jdk-11.0.19+7
 ENV PATH=$JAVA_HOME/bin:$PATH
