@@ -21,6 +21,7 @@ import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.threading.ThreadPoolConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -91,6 +92,7 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("allowedParallelStages") private int allowedParallelStages;
+  @JsonProperty("templateAsyncSetupUsagePoolConfig") private ThreadPoolConfig templateAsyncSetupUsagePoolConfig;
 
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
 
