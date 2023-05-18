@@ -10,6 +10,8 @@ package io.harness.batch.processing.config;
 import static io.harness.authorization.AuthorizationServiceHeader.BATCH_PROCESSING;
 import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 
+import io.harness.AccessControlClientModule;
+import io.harness.accesscontrol.AccessControlAdminClientModule;
 import io.harness.account.AccountClient;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -222,6 +224,10 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new SecretNGManagerClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId()));
+    install(AccessControlClientModule.getInstance(
+        batchMainConfig.getAccessControlClientConfiguration(), BATCH_PROCESSING.getServiceId()));
+    install(new AccessControlAdminClientModule(
+        batchMainConfig.getAccessControlAdminClientConfiguration(), BATCH_PROCESSING.getServiceId()));
     install(new AzureVmPricingClientModule(batchMainConfig.getAzureVmPricingConfig()));
     install(new AbstractTelemetryModule() {
       @Override

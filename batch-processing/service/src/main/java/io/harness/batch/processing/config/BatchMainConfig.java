@@ -7,6 +7,8 @@
 
 package io.harness.batch.processing.config;
 
+import io.harness.AccessControlClientConfiguration;
+import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.config.CurrencyPreferencesConfig;
@@ -18,6 +20,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.remote.GovernanceConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secret.ConfigSecret;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.helpers.ext.mail.SmtpConfig;
@@ -72,6 +75,12 @@ public class BatchMainConfig {
   @JsonProperty("recommendationConfig") private RecommendationConfig recommendationConfig;
   @JsonProperty("governanceConfig") private GovernanceConfig governanceConfig;
   @JsonProperty("azureVmPricingConfig") private ServiceHttpClientConfig azureVmPricingConfig;
+  @JsonProperty("accessControlClient")
+  @ConfigSecret
+  private AccessControlClientConfiguration accessControlClientConfiguration;
+  @JsonProperty("accessControlAdminClient")
+  @ConfigSecret
+  private AccessControlAdminClientConfiguration accessControlAdminClientConfiguration;
 
   public List<String> getDbAliases() {
     List<String> dbAliases = new ArrayList<>();
