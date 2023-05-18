@@ -15,6 +15,7 @@ import static software.wings.ngmigration.NGMigrationEntityType.SERVICE_COMMAND_T
 
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -38,10 +39,10 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
-import io.harness.template.beans.TemplateWrapperResponseDTO;
-import io.harness.template.beans.yaml.NGTemplateConfig;
-import io.harness.template.beans.yaml.NGTemplateInfoConfig;
 import io.harness.template.remote.TemplateResourceClient;
+import io.harness.template.resources.beans.TemplateWrapperResponseDTO;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateInfoConfig;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Service;
@@ -198,7 +199,8 @@ public class ServiceCommandTemplateMigrationService extends NgMigrationService {
         templateClient
             .createTemplate(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                 inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())),
+                StoreType.INLINE)
             .execute();
     log.info("Template creation Response details {} {}", resp.code(), resp.message());
     return handleResp(yamlFile, resp);

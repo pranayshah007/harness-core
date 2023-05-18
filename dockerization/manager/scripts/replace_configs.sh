@@ -414,6 +414,10 @@ if [[ "" != "$SMTP_HOST" ]]; then
   export SMTP_HOST; yq -i '.smtp.host=env(SMTP_HOST)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_PORT" ]]; then
+  export SMTP_PORT; yq -i '.smtp.port=env(SMTP_PORT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SMTP_USERNAME" ]]; then
   export SMTP_USERNAME; yq -i '.smtp.username=env(SMTP_USERNAME)' $CONFIG_FILE
 fi
@@ -424,6 +428,10 @@ fi
 
 if [[ "" != "$SMTP_USE_SSL" ]]; then
   export SMTP_USE_SSL; yq -i '.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
+fi
+
+if [[ "" != "$SMTP_START_TLS" ]]; then
+  export SMTP_USE_TLS; yq -i '.smtp.startTLS=env(SMTP_START_TLS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$MARKETO_ENABLED" ]]; then
@@ -673,12 +681,32 @@ if [[ "" != "$AWS_MARKETPLACE_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceProductCode=env(AWS_MARKETPLACE_PRODUCTCODE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$AWS_MARKETPLACE_FF_PRODUCTCODE" ]]; then
   export AWS_MARKETPLACE_FF_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceFfProductCode=env(AWS_MARKETPLACE_FF_PRODUCTCODE)' $CONFIG_FILE
 fi
 
-if [[ "" != "$AWS_MARKETPLACE_CE_PRODUCTCODE" ]]; then
-  export AWS_MARKETPLACE_CE_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCeProductCode=env(AWS_MARKETPLACE_CE_PRODUCTCODE)' $CONFIG_FILE
+if [[ "" != "$AWS_MARKETPLACE_CI_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CI_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCiProductCode=env(AWS_MARKETPLACE_CI_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_SRM_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_SRM_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceSrmProductCode=env(AWS_MARKETPLACE_SRM_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_STO_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_STO_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceStoProductCode=env(AWS_MARKETPLACE_STO_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_CD_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CD_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCdProductCode=env(AWS_MARKETPLACE_CD_PRODUCTCODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AWS_MARKETPLACE_CCM_PRODUCTCODE" ]]; then
+  export AWS_MARKETPLACE_CCM_PRODUCTCODE; yq -i '.mktPlaceConfig.awsMarketPlaceCcmProductCode=env(AWS_MARKETPLACE_CCM_PRODUCTCODE)' $CONFIG_FILE
 fi
 
 if [[ "" != "$ALLOW_BLACKLISTED_EMAIL_DOMAINS" ]]; then

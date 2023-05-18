@@ -13,13 +13,12 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -101,8 +100,8 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
             manifestDelegateConfig, invalidManifestFileDirectory, logCallback, timeoutIntervalInMillis, accountId);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .applyManifests(any(Kubectl.class), anyListOf(KubernetesResource.class), any(K8sDelegateTaskParams.class),
-            eq(logCallback), anyBoolean(), any());
+        .applyManifests(
+            any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), eq(logCallback), anyBoolean(), any());
     doReturn(K8sDeployResponse.builder().commandExecutionStatus(SUCCESS).build())
         .when(k8sDeleteBaseHandler)
         .getSuccessResponse();
@@ -177,8 +176,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
     verify(k8sDeleteBaseHandler, times(1))
         .getResourceIdsToDelete(eq(deleteRequest), eq(kubernetesConfig), eq(logCallback));
     verify(k8sTaskHelperBase, times(0))
-        .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyListOf(KubernetesResourceId.class), any(),
-            anyBoolean());
+        .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(), anyBoolean());
   }
 
   @Test
@@ -211,8 +209,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
       verify(k8sDeleteBaseHandler, times(1))
           .getResourceIdsToDelete(eq(deleteRequest), eq(kubernetesConfig), eq(logCallback));
       verify(k8sTaskHelperBase, times(0))
-          .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyListOf(KubernetesResourceId.class), any(),
-              anyBoolean());
+          .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(), anyBoolean());
     }
   }
 
@@ -322,8 +319,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
     verify(k8sDeleteBaseHandler, times(1))
         .getResourceIdsToDelete(eq(deleteRequest), eq(kubernetesConfig), eq(logCallback));
     verify(k8sTaskHelperBase, times(0))
-        .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyListOf(KubernetesResourceId.class), any(),
-            anyBoolean());
+        .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(), anyBoolean());
   }
 
   @Test
@@ -357,8 +353,7 @@ public class K8sDeleteRequestHandlerTest extends CategoryTest {
       verify(k8sDeleteBaseHandler, times(1))
           .getResourceIdsToDelete(eq(deleteRequest), eq(kubernetesConfig), eq(logCallback));
       verify(k8sTaskHelperBase, times(0))
-          .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyListOf(KubernetesResourceId.class), any(),
-              anyBoolean());
+          .delete(any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(), anyBoolean());
     }
   }
 

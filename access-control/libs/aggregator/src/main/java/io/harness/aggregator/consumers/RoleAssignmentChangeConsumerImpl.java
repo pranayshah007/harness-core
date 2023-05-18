@@ -10,7 +10,6 @@ package io.harness.aggregator.consumers;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
@@ -19,7 +18,6 @@ import io.harness.logging.DelayLogContext;
 
 import com.google.inject.Singleton;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,15 +28,15 @@ import org.apache.commons.lang3.StringUtils;
 public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssignmentDBO> {
   private final ACLRepository aclRepository;
   private final RoleAssignmentRepository roleAssignmentRepository;
-  private final ChangeConsumerService changeConsumerService;
+  private final ACLGeneratorService aclGeneratorService;
   private final RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler;
 
   public RoleAssignmentChangeConsumerImpl(ACLRepository aclRepository,
-      RoleAssignmentRepository roleAssignmentRepository, ChangeConsumerService changeConsumerService,
+      RoleAssignmentRepository roleAssignmentRepository, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler) {
     this.aclRepository = aclRepository;
     this.roleAssignmentRepository = roleAssignmentRepository;
-    this.changeConsumerService = changeConsumerService;
+    this.aclGeneratorService = aclGeneratorService;
     this.roleAssignmentCRUDEventHandler = roleAssignmentCRUDEventHandler;
   }
 
@@ -74,10 +72,10 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
   }
 
   private long createACLs(RoleAssignmentDBO roleAssignment) {
-    List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment);
-    aclsToCreate.addAll(
-        changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>()));
-    return aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+    long numberOfACLsCreated = aclGeneratorService.createACLsForRoleAssignment(roleAssignment);
+    numberOfACLsCreated +=
+        aclGeneratorService.createImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>());
+    return numberOfACLsCreated;
   }
 
   @Override

@@ -6,9 +6,15 @@ inputs:
     desc: repository name
     required: true
     prompt: true
-repository:
-  connector: account.GitHub
-  name: <+inputs.repo>
+options:
+  repository:
+    connector: account.GitHub
+    name: <+inputs.repo>
+  registry:
+    credentials:
+      - account.docker
+      - name: account.dockerhub
+        match: docker.io
 stages:
   - name: output variable
     type: ci
@@ -28,8 +34,3 @@ stages:
             image: alpine
             run: echo <+steps.one_test.output.outputVariables.foo>
             pull: always
-registry:
-  credentials:
-    - account.docker
-    - name: account.dockerhub
-      match: docker.io

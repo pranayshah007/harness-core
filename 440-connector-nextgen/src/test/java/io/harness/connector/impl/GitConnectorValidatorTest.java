@@ -15,7 +15,7 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -55,8 +55,8 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -191,7 +191,7 @@ public class GitConnectorValidatorTest extends CategoryTest {
     on(gitValidationHandler).set("gitCommandTaskHandler", gitCommandTaskHandler);
     on(gitValidationHandler).set("gitDecryptionHelper", gitDecryptionHelper);
     when(gitValidationHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Git"))).thenReturn(gitValidationHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Git"))).thenReturn(gitValidationHandler);
 
     ConnectorValidationResult connectorValidationResult =
         ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build();
@@ -203,7 +203,8 @@ public class GitConnectorValidatorTest extends CategoryTest {
 
     on(scmConnectorValidationParamsProvider)
         .set("gitConfigAuthenticationInfoHelper", gitConfigAuthenticationInfoHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Git"))).thenReturn(scmConnectorValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Git")))
+        .thenReturn(scmConnectorValidationParamsProvider);
 
     ConnectorValidationResult validationResult = gitConnectorValidator.validate(
         gitConfig, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");

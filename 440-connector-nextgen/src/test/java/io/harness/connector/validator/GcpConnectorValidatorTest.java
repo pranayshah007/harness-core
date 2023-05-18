@@ -12,7 +12,7 @@ import static io.harness.connector.ConnectivityStatus.SUCCESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,8 +53,8 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
-import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -145,11 +145,12 @@ public class GcpConnectorValidatorTest extends CategoryTest {
     on(gcpValidationTaskHandler).set("gcpClient", gcpClient);
     on(gcpValidationTaskHandler).set("decryptionHelper", decryptionHelper);
     when(gcpValidationTaskHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Gcp"))).thenReturn(gcpValidationTaskHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Gcp")))
+        .thenReturn(gcpValidationTaskHandler);
 
     GcpValidationParamsProvider gcpValidationParamsProvider = new GcpValidationParamsProvider();
     on(gcpValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Gcp"))).thenReturn(gcpValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Gcp"))).thenReturn(gcpValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()
@@ -185,11 +186,12 @@ public class GcpConnectorValidatorTest extends CategoryTest {
                     "Connector with credential type InheritFromDelegate does not support validation through harness")
                 .build());
     when(gcpValidationTaskHandler.validate(any(), any())).thenCallRealMethod();
-    when(connectorTypeToConnectorValidationHandlerMap.get(Matchers.eq("Gcp"))).thenReturn(gcpValidationTaskHandler);
+    when(connectorTypeToConnectorValidationHandlerMap.get(ArgumentMatchers.eq("Gcp")))
+        .thenReturn(gcpValidationTaskHandler);
 
     GcpValidationParamsProvider gcpValidationParamsProvider = new GcpValidationParamsProvider();
     on(gcpValidationParamsProvider).set("encryptionHelper", encryptionHelper);
-    when(connectorValidationParamsProviderMap.get(Matchers.eq("Gcp"))).thenReturn(gcpValidationParamsProvider);
+    when(connectorValidationParamsProviderMap.get(ArgumentMatchers.eq("Gcp"))).thenReturn(gcpValidationParamsProvider);
     when(connectorService.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder()
                                     .connector(ConnectorInfoDTO.builder()

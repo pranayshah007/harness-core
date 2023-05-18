@@ -8,6 +8,7 @@
 package io.harness.freeze.service.impl;
 
 import static io.harness.rule.OwnerRule.ABHINAV_MITTAL;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -133,5 +134,14 @@ public class FreezeSchemaServiceImplTest {
     assertThatThrownBy(() -> {
       freezeSchemaService.validateYamlSchema(yaml);
     }).isInstanceOf(InvalidYamlException.class);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testValidateFreezeSchemaForFailure() {
+    when(yamlSchemaValidator.processAndHandleValidationMessage(any(), any(), any()))
+        .thenThrow(new NullPointerException());
+    assertThatThrownBy(() -> freezeSchemaService.validateYamlSchema(yaml)).isInstanceOf(NullPointerException.class);
   }
 }

@@ -16,6 +16,7 @@ import static io.harness.pms.pipeline.MoveConfigOperationType.REMOTE_TO_INLINE;
 
 import static java.lang.String.format;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.EntityYamlRootNames;
 import io.harness.data.structure.EmptyPredicate;
@@ -43,6 +44,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitx.GitXSettingsHelper;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.InputSetMoveConfigOperationDTO;
@@ -56,6 +58,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.PipelineVersion;
@@ -96,6 +99,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSPipelineService pipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
   @Inject private InputSetsApiUtils inputSetsApiUtils;
+  @Inject GitXSettingsHelper gitXSettingsHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -111,6 +115,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier());
     InputSetValidationHelper.validateInputSet(this, inputSetEntity, hasNewYamlStructure);
     if (!isOldGitSync) {
+      applyGitXSettingsIfApplicable(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
+          inputSetEntity.getProjectIdentifier());
+
       PipelineEntity pipelineEntityMetadata =
           pipelineService.getPipelineMetadata(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
               inputSetEntity.getProjectIdentifier(), inputSetEntity.getPipelineIdentifier(), false, true);
@@ -529,6 +536,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     return PMSInputSetListRepoResponse.builder().repositories(inputSetRepoList).build();
   }
 
+  @Override
+  public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, true);
+    Update update = PMSInputSetFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
+
+    InputSetEntity inputSetAfterUpdate = inputSetRepository.updateEntity(criteria, update);
+    if (inputSetAfterUpdate == null) {
+      throw new EntityNotFoundException(
+          format("InputSet with id [%s] is not present or has been deleted", inputSetIdentifier));
+    }
+
+    return inputSetAfterUpdate.getIdentifier();
+  }
+
   @VisibleForTesting
   protected InputSetEntity moveInputSetEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       InputSetMoveConfigOperationDTO inputSetMoveConfigOperationDTO, InputSetEntity inputSetToMove) {
@@ -731,5 +754,12 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           new InvalidRequestException(String.format(
               "Input-set repository [%s] doesn't match linked pipeline repository [%s]", inputSetRepo, pipelineRepo)));
     }
+  }
+
+  @VisibleForTesting
+  void applyGitXSettingsIfApplicable(String accountIdentifier, String orgIdentifier, String projIdentifier) {
+    gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
+    gitXSettingsHelper.setDefaultStoreTypeForEntities(
+        accountIdentifier, orgIdentifier, projIdentifier, EntityType.INPUT_SETS);
   }
 }

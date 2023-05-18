@@ -36,6 +36,7 @@ public class GitFileFetchRunnable implements Runnable {
         scmFacilitatorService.getFileByBranchV2(ScmGetFileByBranchRequestDTO.builder()
                                                     .filePath(gitFileFetchRunnableParams.getFilePath())
                                                     .branchName(gitFileFetchRunnableParams.getBranchName())
+                                                    .commitId(gitFileFetchRunnableParams.getCommitId())
                                                     .connectorRef(gitFileFetchRunnableParams.getConnectorRef())
                                                     .repoName(gitFileFetchRunnableParams.getRepoName())
                                                     .scope(gitFileFetchRunnableParams.getScope())

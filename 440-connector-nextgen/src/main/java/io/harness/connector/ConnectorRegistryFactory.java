@@ -127,6 +127,8 @@ import io.harness.connector.mappers.secretmanagermapper.VaultDTOToEntity;
 import io.harness.connector.mappers.secretmanagermapper.VaultEntityToDTO;
 import io.harness.connector.mappers.servicenow.ServiceNowDTOtoEntity;
 import io.harness.connector.mappers.servicenow.ServiceNowEntityToDTO;
+import io.harness.connector.mappers.signalfxmapper.SignalFXDTOToEntity;
+import io.harness.connector.mappers.signalfxmapper.SignalFXEntityToDTO;
 import io.harness.connector.mappers.splunkconnectormapper.SplunkDTOToEntity;
 import io.harness.connector.mappers.splunkconnectormapper.SplunkEntityToDTO;
 import io.harness.connector.mappers.spotmapper.SpotDTOToEntity;
@@ -299,6 +301,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GithubConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GithubDTOToEntity.class, GithubEntityToDTO.class,
             GitValidationHandler.class));
+    registrar.put(ConnectorType.HARNESS,
+        new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GithubConnectorValidator.class,
+            ScmConnectorValidationParamsProvider.class, GithubDTOToEntity.class, GithubEntityToDTO.class,
+            GitValidationHandler.class));
     registrar.put(ConnectorType.GITLAB,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GitlabConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GitlabDTOToEntity.class, GitlabEntityToDTO.class,
@@ -379,10 +385,14 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TerraformCloudConnectorValidator.class,
             TerraformCloudValidationParamsProvider.class, TerraformCloudDTOToEntity.class,
             TerraformCloudEntityToDTO.class, TerraformCloudValidationHandler.class));
-    registrar.put(ConnectorType.RANCHER,
-        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, RancherConnectionValidator.class,
-            RancherConnectorValidationParamsProvider.class, RancherDTOToEntity.class, RancherEntityToDTO.class,
-            RancherValidationHandler.class));
+    registrar.put(ConnectorType.SIGNALFX,
+        new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
+            CVConnectorParamsProvider.class, SignalFXDTOToEntity.class, SignalFXEntityToDTO.class,
+            NotSupportedValidationHandler.class)),
+        registrar.put(ConnectorType.RANCHER,
+            new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, RancherConnectionValidator.class,
+                RancherConnectorValidationParamsProvider.class, RancherDTOToEntity.class, RancherEntityToDTO.class,
+                RancherValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

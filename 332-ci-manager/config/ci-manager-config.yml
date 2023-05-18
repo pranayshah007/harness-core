@@ -112,6 +112,11 @@ tiServiceConfig:
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
 sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
   baseUrl: http://localhost:8186
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
@@ -158,6 +163,10 @@ ciExecutionServiceConfig:
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
   executionLimits:
+    freeNewUser:
+      dailyMaxBuildsCount: 0
+    freeBasicUser:
+      dailyMaxBuildsCount: 25
     free:
       defaultTotalExecutionCount: 20
       defaultMacExecutionCount: 5
@@ -171,13 +180,31 @@ ciExecutionServiceConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.16.7
-  liteEngineImage: harness/ci-lite-engine:1.16.7
+  addonImage: harness/ci-addon:1.16.13
+  liteEngineImage: harness/ci-lite-engine:1.16.13
   isLocal: false
   remoteDebugTimeout: 3600
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
+  cacheIntelligenceS3Config:
+    bucket: "s3_bucket"
+    accessKey: "s3_access_key"
+    accessSecret: "s3_access_secret"
+    region: "s3_bucket_region"
+    endpoint: "s3_endpoint"
+  dockerLayerCachingConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
+    region: "region"
+  dockerLayerCachingGCSConfig:
+    endpoint: "endpoint"
+    bucket: "bucket"
+    accessKey: "access_key"
+    secretKey: "secret_key"
+    region: "region"
   hostedVmConfig:
     splitLinuxAmd64Pool: false
     splitLinuxArm64Pool: false
@@ -203,6 +230,8 @@ ciExecutionServiceConfig:
         image: harness/blackduckhub-job-runner
       - product: brakeman_default
         image: harness/brakeman-job-runner
+      - product: burp_.*
+        image: harness/burp-job-runner
       - product: custom_.*
         image: harness/sto-plugin
         entrypoint:
@@ -216,13 +245,15 @@ ciExecutionServiceConfig:
           - "--run-strategy"
           - single-container
       - product: gitleaks_.*
+        image: harness/gitleaks-job-runner
+      - product: fossa_.*
+        image: harness/fossa-job-runner
+      - product: semgrep_.*
         image: harness/sto-plugin
         entrypoint:
           - /bin/sto_plugin
           - "--run-strategy"
           - single-container
-      - product: fossa
-        image: harness/fossa-job-runner
       - product: grype_default
         image: harness/grype-job-runner
       - product: nmap_.*
@@ -237,6 +268,8 @@ ciExecutionServiceConfig:
         image: harness/snyk-job-runner
       - product: sonarqube_default
         image: harness/sonarqube-agent-job-runner
+      - product: sysdig_default
+        image: harness/sysdig-job-runner
       - product: prowler_.*
         image: harness/prowler-job-runner
       - product: prismacloud_default
@@ -253,26 +286,26 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.3.3-rootless
+      image: harness/drone-git:1.3.4-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
         - "pwsh"
         - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
-      image: plugins/kaniko:1.7.1
+      image: plugins/kaniko:1.7.2
       entrypoint:
         - /kaniko/kaniko-docker
     buildAndPushECRConfig:
-      image: plugins/kaniko-ecr:1.7.1
+      image: plugins/kaniko-ecr:1.7.2
       entrypoint:
         - /kaniko/kaniko-ecr
     buildAndPushGCRConfig:
-      image: plugins/kaniko-gcr:1.7.1
+      image: plugins/kaniko-gcr:1.7.2
       entrypoint:
         - /kaniko/kaniko-gcr
     buildAndPushACRConfig:
-      image: plugins/kaniko-acr:1.7.1
+      image: plugins/kaniko-acr:1.7.2
       entrypoint:
         - /kaniko/kaniko-acr
     gcsUploadConfig:
@@ -300,13 +333,13 @@ ciExecutionServiceConfig:
       windowsEntrypoint:
         - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.5.2
+      image: plugins/cache:1.5.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
         - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.5.2
+      image: plugins/cache:1.5.7
       entrypoint:
         - /bin/drone-cache
       windowsEntrypoint:
@@ -318,16 +351,16 @@ ciExecutionServiceConfig:
     vmImageConfig:
       # Use root image for VM git clone
       gitClone: harness/drone-git:1.3.3
-      buildAndPushDockerRegistry: plugins/docker:20.13.0
-      buildAndPushACR: plugins/acr:20.13.0
-      buildAndPushECR: plugins/ecr:20.13.0
-      buildAndPushGCR: plugins/gcr:20.13.0
+      buildAndPushDockerRegistry: plugins/docker:20.14.4
+      buildAndPushACR: plugins/acr:20.14.3
+      buildAndPushECR: plugins/ecr:20.14.3
+      buildAndPushGCR: plugins/gcr:20.14.3
       gcsUpload: plugins/gcs:1.3.0
       s3Upload: plugins/s3:1.2.0
       security: harness/sto-plugin:dev
       artifactoryUpload: plugins/artifactory:1.2.0
-      cacheGCS: plugins/cache:1.5.2
-      cacheS3: plugins/cache:1.5.2
+      cacheGCS: plugins/cache:1.5.7
+      cacheS3: plugins/cache:1.5.7
       sscaOrchestration: harness/ssca-plugin:latest
     vmContainerlessStepConfig:
       s3UploadConfig:
@@ -339,7 +372,11 @@ ciExecutionServiceConfig:
       cacheGCSConfig:
         name: github.com/drone-plugins/drone-meltwater-cache@refs/tags/v1.5.6
       gitCloneConfig:
-        name: github.com/wings-software/drone-git@refs/tags/v1.3.2
+        name: github.com/wings-software/drone-git@refs/tags/v1.3.8
+      dockerBuildxConfig:
+        name: github.com/drone-plugins/drone-buildx@refs/tags/v1.0.1
+      dockerBuildxEcrConfig:
+        name: github.com/drone-plugins/drone-buildx-ecr@refs/tags/v1.0.1
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

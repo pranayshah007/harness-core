@@ -19,14 +19,13 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -36,7 +35,6 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -135,7 +133,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
 
     doReturn(singletonList(deployment()))
         .when(taskHelperBase)
-        .readManifestAndOverrideLocalSecrets(anyListOf(FileData.class), eq(logCallback), anyBoolean());
+        .readManifestAndOverrideLocalSecrets(anyList(), eq(logCallback), anyBoolean());
     doReturn(true)
         .when(taskHelperBase)
         .doStatusCheckForAllCustomResources(
@@ -178,7 +176,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
             eq(true), eq(true), anyString());
     doReturn(Collections.singletonList(deployment()))
         .when(taskHelperBase)
-        .readManifestAndOverrideLocalSecrets(anyListOf(FileData.class), eq(logCallback), anyBoolean(), anyBoolean());
+        .readManifestAndOverrideLocalSecrets(anyList(), eq(logCallback), anyBoolean(), anyBoolean());
 
     assertThatThrownBy(()
                            -> rollingRequestHandler.executeTask(
@@ -209,19 +207,16 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
 
     doReturn(singletonList(deployment()))
         .when(taskHelperBase)
-        .readManifestAndOverrideLocalSecrets(anyListOf(FileData.class), eq(logCallback), anyBoolean(), anyBoolean());
+        .readManifestAndOverrideLocalSecrets(anyList(), eq(logCallback), anyBoolean(), anyBoolean());
 
     doReturn(emptyList())
         .when(baseHandler)
-        .getExistingPods(anyLong(), anyListOf(KubernetesResource.class), any(KubernetesConfig.class), anyString(),
-            any(LogCallback.class));
+        .getExistingPods(anyLong(), anyList(), any(KubernetesConfig.class), anyString(), any(LogCallback.class));
     doReturn(true)
         .when(taskHelperBase)
         .doStatusCheckForAllCustomResources(
             any(Kubectl.class), anyList(), any(K8sDelegateTaskParams.class), eq(logCallback), eq(true), anyLong());
-    doThrow(thrownException)
-        .when(baseHandler)
-        .getPods(anyLong(), anyListOf(KubernetesResource.class), any(KubernetesConfig.class), anyString());
+    doThrow(thrownException).when(baseHandler).getPods(anyLong(), anyList(), any(KubernetesConfig.class), anyString());
 
     assertThatThrownBy(()
                            -> rollingRequestHandler.executeTaskInternal(
@@ -288,12 +283,10 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
         KubernetesResourceId.builder().kind("Deployment").name("test-deployment").versioned(false).build());
     doReturn(toBePruned)
         .when(taskHelperBase)
-        .executeDeleteHandlingPartialExecution(any(Kubectl.class), any(K8sDelegateTaskParams.class),
-            anyListOf(KubernetesResourceId.class), any(LogCallback.class), anyBoolean());
+        .executeDeleteHandlingPartialExecution(
+            any(Kubectl.class), any(K8sDelegateTaskParams.class), anyList(), any(LogCallback.class), anyBoolean());
     doNothing().when(taskHelperBase).setNamespaceToKubernetesResourcesIfRequired(anyList(), any());
-    doReturn(toBePruned)
-        .when(taskHelperBase)
-        .getResourcesToBePrunedInOrder(anyListOf(KubernetesResource.class), anyListOf(KubernetesResource.class));
+    doReturn(toBePruned).when(taskHelperBase).getResourcesToBePrunedInOrder(anyList(), anyList());
     rollingRequestHandler.prune(null, releaseWithDummySpec, logCallback);
     verify(taskHelperBase).executeDeleteHandlingPartialExecution(any(), any(), captor.capture(), any(), anyBoolean());
 

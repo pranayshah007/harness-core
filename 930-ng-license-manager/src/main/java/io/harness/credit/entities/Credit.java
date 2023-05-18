@@ -44,4 +44,6 @@ public abstract class Credit implements PersistentEntity, NGAccountAccess {
   @NotEmpty protected long expiryTime;
   @NotEmpty protected CreditType creditType;
   @NotEmpty protected ModuleType moduleType;
+
+  protected Long creditExpiryCheckIteration;
 }

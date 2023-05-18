@@ -12,11 +12,10 @@ import static io.harness.rule.OwnerRule.ROHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyDouble;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -153,8 +152,8 @@ public class SunburstChartStatsDataFetcherTest extends AbstractDataFetcherTestBa
     billingDataMetaDataFieldsList.add(BillingDataMetaDataFields.CLUSTERID);
     billingDataMetaDataFieldsList.add(BillingDataMetaDataFields.CLUSTERTYPE);
     doReturn(billingDataMetaDataFieldsList).when(queryMetadataMock).getFieldNames();
-    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), anyObject());
-    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), anyObject(), anyBoolean());
+    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), any());
+    doCallRealMethod().when(billingDataHelper).roundingDoubleFieldValue(any(), any(), anyBoolean());
     doCallRealMethod().when(billingDataHelper).getRoundedDoubleValue(anyDouble());
     QLSunburstChartData data = (QLSunburstChartData) sunburstChartStatsDataFetcher.fetch(
         ACCOUNT1_ID, aggregateFunction, filters, groupByList, sort, LIMIT, OFFSET);

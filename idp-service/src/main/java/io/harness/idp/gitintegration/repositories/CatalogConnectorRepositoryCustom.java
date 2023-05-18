@@ -15,5 +15,5 @@ import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
 public interface CatalogConnectorRepositoryCustom {
   CatalogConnectorEntity saveOrUpdate(CatalogConnectorEntity catalogConnectorEntity);
 
-  CatalogConnectorEntity findOneByLastUpdatedAt(String accountIdentifier);
+  CatalogConnectorEntity findLastUpdated(String accountIdentifier);
 }

@@ -247,7 +247,7 @@ if [[ "" != "$PMS_API_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
-  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
+  export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
@@ -416,6 +416,11 @@ if [[ "$EVENTS_FRAMEWORK_USE_SENTINEL" == "true" ]]; then
       INDEX=$(expr $INDEX + 1)
     done
   fi
+fi
+
+if [[ "" != "$ALLOWED_ORIGINS" ]]; then
+  yq -i 'del(.allowedOrigins)' $CONFIG_FILE
+  export ALLOWED_ORIGINS; yq -i '.allowedOrigins=(env(ALLOWED_ORIGINS) | split(",") | map(trim))' $CONFIG_FILE
 fi
 
 replace_key_value cacheConfig.cacheNamespace $CACHE_NAMESPACE

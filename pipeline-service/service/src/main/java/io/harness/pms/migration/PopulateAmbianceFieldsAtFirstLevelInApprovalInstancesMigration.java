@@ -48,6 +48,7 @@ public class PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigration impl
   @Inject private MongoTemplate mongoTemplate;
   private static final String DEBUG_LOG = "[ApprovalInstanceAmbianceMigration]: ";
   private static final int BATCH_SIZE = 500;
+  private static final long CREATED_AT_LIMIT = 1650170397000L;
   private final RetryPolicy<Object> updateRetryPolicy = PersistenceUtils.getRetryPolicy(
       String.format("%s [Retrying]: Failed updating ApprovalInstances; attempt: {}", DEBUG_LOG),
       String.format("%s [Failed]: Failed updating ApprovalInstances; attempt: {}", DEBUG_LOG));
@@ -60,7 +61,8 @@ public class PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigration impl
       log.info(DEBUG_LOG + "Starting migration to first-level ambiance fields in Approval instances");
 
       // only BATCH_SIZE records in memory at once
-      Query query = new Query().limit(MongoConfig.NO_LIMIT);
+      Query query =
+          new Query(Criteria.where(ApprovalInstanceKeys.createdAt).gte(CREATED_AT_LIMIT)).limit(MongoConfig.NO_LIMIT);
       query.cursorBatchSize(BATCH_SIZE);
 
       List<ApprovalInstance> approvalInstancesToBeUpdatedInCurrentBatch = new ArrayList<>();
@@ -145,6 +147,13 @@ public class PopulateAmbianceFieldsAtFirstLevelInApprovalInstancesMigration impl
       }
       Criteria idCriteria = Criteria.where(ApprovalInstanceKeys.id).is(approvalInstance.getId());
       Ambiance ambiance = approvalInstance.getAmbiance();
+
+      if (isNull(ambiance)) {
+        log.warn(String.format(
+            "%s Skipping adding update operation for approval instance with identifier %s as ambiance is absent",
+            DEBUG_LOG, approvalInstance.getId()));
+        return;
+      }
 
       Update update = new Update();
       update.set(ApprovalInstanceKeys.accountId, AmbianceUtils.getAccountId(ambiance));

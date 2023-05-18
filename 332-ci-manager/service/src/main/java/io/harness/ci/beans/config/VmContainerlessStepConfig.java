@@ -24,4 +24,6 @@ public class VmContainerlessStepConfig {
   ContainerlessPluginConfig artifactoryUploadConfig;
   ContainerlessPluginConfig cacheGCSConfig;
   ContainerlessPluginConfig cacheS3Config;
+  ContainerlessPluginConfig dockerBuildxConfig;
+  ContainerlessPluginConfig dockerBuildxEcrConfig;
 }

@@ -30,6 +30,7 @@ import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -90,4 +91,10 @@ public interface SecretNGManagerClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query("privateSecret") boolean privateSecret, @Body SecretRequestWrapper dto);
+
+  @PUT(SECRETS_API + "/{identifier}")
+  Call<ResponseDTO<SecretResponseWrapper>> updateSecret(@Path(NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body SecretRequestWrapper dto);
 }

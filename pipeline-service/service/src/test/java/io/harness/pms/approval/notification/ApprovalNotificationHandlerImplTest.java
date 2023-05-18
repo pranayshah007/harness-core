@@ -12,12 +12,13 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.logging.LogLevel;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -57,7 +59,6 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
@@ -80,18 +81,14 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ApprovalNotificationHandlerImpl.class, NGLogCallback.class, NGRestUtils.class})
-@PowerMockIgnore({"javax.net.ssl.*"})
+@RunWith(MockitoJUnitRunner.class)
 public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private NotificationClient notificationClient;
@@ -114,13 +111,9 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   private static String projectName = "project name";
   private static String userUuid = "XXXX YYYY XXXX";
   private static String userId = "userID";
-  private NGLogCallback ngLogCallback;
 
   @Before
   public void setup() throws Exception {
-    ngLogCallback = Mockito.mock(NGLogCallback.class);
-    PowerMockito.whenNew(NGLogCallback.class).withAnyArguments().thenReturn(ngLogCallback);
-    //        MockitoAnnotations.initMocks(this);
     Call<ResponseDTO<Optional<OrganizationResponse>>> orgDTOCall = mock(Call.class);
     when(organizationClient.getOrganization(any(), any())).thenReturn(orgDTOCall);
     OrganizationResponse organizationResponse =
@@ -147,402 +140,420 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testSendNotification() throws Exception {
-    String url =
-        "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(userId).setUuid(userUuid).build();
-    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
-    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setTriggerInfo(triggerInfo).build();
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions("accountId", accountId)
-                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
-                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
-                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
-                            .setMetadata(executionMetadata)
-                            .build();
-    HarnessApprovalInstance approvalInstance =
-        HarnessApprovalInstance.builder()
-            .approvers(
-                ApproversDTO.builder()
-                    .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
-                        "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
-                    .build())
-            .build();
-    approvalInstance.setAmbiance(ambiance);
-    approvalInstance.setCreatedAt(System.currentTimeMillis());
-    approvalInstance.setDeadline(2L * System.currentTimeMillis());
-    approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+      TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(userId).setUuid(userUuid).build();
+      ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
+      ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setTriggerInfo(triggerInfo).build();
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .setMetadata(executionMetadata)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(
+                  ApproversDTO.builder()
+                      .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
+                          "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
+                      .build())
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
 
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
-                                                                        .accountId(accountId)
-                                                                        .orgIdentifier(orgIdentifier)
-                                                                        .projectIdentifier(projectIdentifier)
-                                                                        .pipelineIdentifier(pipelineIdentifier)
-                                                                        .name(pipelineName)
-                                                                        .build();
-    doReturn(pipelineExecutionSummaryEntity)
-        .when(pmsExecutionService)
-        .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
-    notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
-    notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
-    notificationSettingConfigDTOS.add(MicrosoftTeamsConfigDTO.builder().build());
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .name(pipelineName)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(MicrosoftTeamsConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS =
-        new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
-                                          .identifier("proj_right")
-                                          .accountIdentifier(accountId)
-                                          .orgIdentifier(orgIdentifier)
-                                          .projectIdentifier(projectIdentifier)
-                                          .notificationConfigs(notificationSettingConfigDTOS)
-                                          .build(),
-            UserGroupDTO.builder()
-                .identifier("org_right")
-                .accountIdentifier(accountId)
-                .orgIdentifier(orgIdentifier)
-                .notificationConfigs(notificationSettingConfigDTOS)
-                .build(),
-            UserGroupDTO.builder()
-                .identifier("acc_right")
-                .accountIdentifier(accountId)
-                .notificationConfigs(notificationSettingConfigDTOS)
-                .build()));
+      List<UserGroupDTO> userGroupDTOS =
+          new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
+                                            .identifier("proj_right")
+                                            .accountIdentifier(accountId)
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
+                                            .notificationConfigs(notificationSettingConfigDTOS)
+                                            .build(),
+              UserGroupDTO.builder()
+                  .identifier("org_right")
+                  .accountIdentifier(accountId)
+                  .orgIdentifier(orgIdentifier)
+                  .notificationConfigs(notificationSettingConfigDTOS)
+                  .build(),
+              UserGroupDTO.builder()
+                  .identifier("acc_right")
+                  .accountIdentifier(accountId)
+                  .notificationConfigs(notificationSettingConfigDTOS)
+                  .build()));
 
-    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
-    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
-    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
-    when(responseDTOCall.execute()).thenReturn(response);
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
 
-    approvalInstance.setValidatedUserGroups(userGroupDTOS);
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
-    doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance))
+          .thenReturn(Mockito.mock(ILogStreamingStepClient.class));
 
-    approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
-        ArgumentCaptor.forClass(NotificationChannel.class);
-    verify(notificationClient, times(9)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
-    List<NotificationChannel> notificationChannels = notificationChannelArgumentCaptor.getAllValues();
-    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineName))
-        .isEqualTo(pipelineName);
-    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
-    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.projectName))
-        .isEqualTo(projectName);
-    // get userId in triggeredBy because email is not present
-    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
-    assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
-        .isEqualTo(url);
-    assertThat(notificationChannels.get(8).getTemplateId())
-        .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS.getIdentifier());
-    assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
-    verify(pmsExecutionService, times(1))
-        .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
-    ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
-    verify(ngLogCallback, times(1)).saveExecutionLog(stringArgumentCaptor.capture(), eq(LogLevel.WARN));
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+          ArgumentCaptor.forClass(NotificationChannel.class);
+      verify(notificationClient, times(9)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+      List<NotificationChannel> notificationChannels = notificationChannelArgumentCaptor.getAllValues();
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineName))
+          .isEqualTo(pipelineName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.projectName))
+          .isEqualTo(projectName);
+      // get userId in triggeredBy because email is not present
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
+          .isEqualTo(url);
+      assertThat(notificationChannels.get(8).getTemplateId())
+          .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_MSTEAMS.getIdentifier());
+      assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
+      verify(pmsExecutionService, times(1))
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
+      ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
+      verify(ngLogCallback.constructed().get(0), times(1))
+          .saveExecutionLog(stringArgumentCaptor.capture(), eq(LogLevel.WARN));
 
-    String invalidUserGroups = stringArgumentCaptor.getValue().split(":")[1].trim();
-    List<String> invalidUserGroupsList =
-        Arrays.stream(invalidUserGroups.substring(1, invalidUserGroups.length() - 1).split(","))
-            .map(String::trim)
-            .collect(Collectors.toList());
-    List<String> expectedInvalidUserGroupsList =
-        new ArrayList<>(Arrays.asList("proj_faulty", "org.org_faulty", "account.acc_faulty"));
-    assertThat(invalidUserGroupsList.size() == expectedInvalidUserGroupsList.size()
-        && invalidUserGroupsList.containsAll(expectedInvalidUserGroupsList)
-        && expectedInvalidUserGroupsList.containsAll(invalidUserGroupsList))
-        .isTrue();
+      String invalidUserGroups = stringArgumentCaptor.getValue().split(":")[1].trim();
+      List<String> invalidUserGroupsList =
+          Arrays.stream(invalidUserGroups.substring(1, invalidUserGroups.length() - 1).split(","))
+              .map(String::trim)
+              .collect(Collectors.toList());
+      List<String> expectedInvalidUserGroupsList =
+          new ArrayList<>(Arrays.asList("proj_faulty", "org.org_faulty", "account.acc_faulty"));
+      assertThat(invalidUserGroupsList.size() == expectedInvalidUserGroupsList.size()
+          && invalidUserGroupsList.containsAll(expectedInvalidUserGroupsList)
+          && expectedInvalidUserGroupsList.containsAll(invalidUserGroupsList))
+          .isTrue();
+    }
   }
 
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testSendNotification1() throws IOException {
-    String url =
-        "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
 
-    GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
-                                          .setNodeIdentifier("nodeIdentifier")
-                                          .setNodeType("Approval")
-                                          .setNodeUUID("aBcDeFgH")
-                                          .setName("Node name")
-                                          .setNodeGroup("STAGE")
-                                          .build();
-    GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
-    HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
-    layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO);
+      GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
+                                            .setNodeIdentifier("nodeIdentifier")
+                                            .setNodeType("Approval")
+                                            .setNodeUUID("aBcDeFgH")
+                                            .setName("Node name")
+                                            .setNodeGroup("STAGE")
+                                            .build();
+      GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
+      HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
+      layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO);
 
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions("accountId", accountId)
-                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
-                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
-                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
-                            .build();
-    HarnessApprovalInstance approvalInstance =
-        HarnessApprovalInstance.builder()
-            .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
-            .build();
-    approvalInstance.setAmbiance(ambiance);
-    approvalInstance.setCreatedAt(System.currentTimeMillis());
-    approvalInstance.setDeadline(2L * System.currentTimeMillis());
-    approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
-    approvalInstance.setIncludePipelineExecutionHistory(true);
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setIncludePipelineExecutionHistory(true);
 
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
-                                                                        .accountId(accountId)
-                                                                        .orgIdentifier(orgIdentifier)
-                                                                        .projectIdentifier(projectIdentifier)
-                                                                        .pipelineIdentifier(pipelineIdentifier)
-                                                                        .startingNodeId(startingNodeId)
-                                                                        .layoutNodeMap(layoutNodeDTOMap)
-                                                                        .build();
-    doReturn(pipelineExecutionSummaryEntity)
-        .when(pmsExecutionService)
-        .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
-    notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
-    notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .startingNodeId(startingNodeId)
+                                                                          .layoutNodeMap(layoutNodeDTOMap)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
-                                                                     .identifier(userGroupIdentifier)
-                                                                     .notificationConfigs(notificationSettingConfigDTOS)
-                                                                     .build());
-    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
-    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
-    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
-    when(responseDTOCall.execute()).thenReturn(response);
+      List<UserGroupDTO> userGroupDTOS =
+          Collections.singletonList(UserGroupDTO.builder()
+                                        .identifier(userGroupIdentifier)
+                                        .notificationConfigs(notificationSettingConfigDTOS)
+                                        .build());
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
 
-    approvalInstance.setValidatedUserGroups(userGroupDTOS);
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
-    doReturn(url).when(notificationHelper).generateUrl(ambiance);
-    approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
-    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
+      verify(ngLogCallback.constructed().get(0), times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+    }
   }
 
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testSendNotification2() throws IOException {
-    String url =
-        "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
 
-    GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
-                                          .setNodeIdentifier("nodeIdentifier")
-                                          .setNodeType("Approval")
-                                          .setNodeUUID("aBcDeFgH")
-                                          .setName("Node name")
-                                          //                    .status(ExecutionStatus.SUCCESS)
-                                          .setNodeGroup("STAGE")
-                                          .build();
+      GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
+                                            .setNodeIdentifier("nodeIdentifier")
+                                            .setNodeType("Approval")
+                                            .setNodeUUID("aBcDeFgH")
+                                            .setName("Node name")
+                                            //                    .status(ExecutionStatus.SUCCESS)
+                                            .setNodeGroup("STAGE")
+                                            .build();
 
-    GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
-    graphLayoutNodeDTO.setStatus(ExecutionStatus.SUCCESS);
+      GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
+      graphLayoutNodeDTO.setStatus(ExecutionStatus.SUCCESS);
 
-    //    graphLayoutNodeDTO.status= ExecutionStatus.SUCCESS;
-    HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
-    layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO);
+      //    graphLayoutNodeDTO.status= ExecutionStatus.SUCCESS;
+      HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
+      layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO);
 
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions("accountId", accountId)
-                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
-                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
-                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
-                            .build();
-    HarnessApprovalInstance approvalInstance =
-        HarnessApprovalInstance.builder()
-            .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
-            .build();
-    approvalInstance.setAmbiance(ambiance);
-    approvalInstance.setCreatedAt(System.currentTimeMillis());
-    approvalInstance.setDeadline(2L * System.currentTimeMillis());
-    approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
-    approvalInstance.setIncludePipelineExecutionHistory(true);
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setIncludePipelineExecutionHistory(true);
 
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
-                                                                        .accountId(accountId)
-                                                                        .orgIdentifier(orgIdentifier)
-                                                                        .projectIdentifier(projectIdentifier)
-                                                                        .pipelineIdentifier(pipelineIdentifier)
-                                                                        .startingNodeId(startingNodeId)
-                                                                        .layoutNodeMap(layoutNodeDTOMap)
-                                                                        .build();
-    doReturn(pipelineExecutionSummaryEntity)
-        .when(pmsExecutionService)
-        .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
-    notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
-    notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .startingNodeId(startingNodeId)
+                                                                          .layoutNodeMap(layoutNodeDTOMap)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
-                                                                     .identifier(userGroupIdentifier)
-                                                                     .notificationConfigs(notificationSettingConfigDTOS)
-                                                                     .build());
-    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
-    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
-    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
-    when(responseDTOCall.execute()).thenReturn(response);
+      List<UserGroupDTO> userGroupDTOS =
+          Collections.singletonList(UserGroupDTO.builder()
+                                        .identifier(userGroupIdentifier)
+                                        .notificationConfigs(notificationSettingConfigDTOS)
+                                        .build());
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
 
-    approvalInstance.setValidatedUserGroups(userGroupDTOS);
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
-    doReturn(url).when(notificationHelper).generateUrl(ambiance);
-    approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
 
-    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
-    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+      verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
+      verify(ngLogCallback.constructed().get(0), times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+    }
   }
 
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testSendNotification3() throws IOException {
-    String url =
-        "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
 
-    GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
-                                          .setNodeIdentifier("nodeIdentifier")
-                                          .setNodeType("Approval")
-                                          .setNodeUUID("aBcDeFgH")
-                                          .setName("Node name")
-                                          //                    .status(ExecutionStatus.SUCCESS)
-                                          .setNodeGroup("STAGE")
-                                          .build();
+      GraphLayoutNode graphLayoutNode = GraphLayoutNode.newBuilder()
+                                            .setNodeIdentifier("nodeIdentifier")
+                                            .setNodeType("Approval")
+                                            .setNodeUUID("aBcDeFgH")
+                                            .setName("Node name")
+                                            //                    .status(ExecutionStatus.SUCCESS)
+                                            .setNodeGroup("STAGE")
+                                            .build();
 
-    GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
-    graphLayoutNodeDTO.setStatus(ExecutionStatus.ASYNCWAITING);
+      GraphLayoutNodeDTO graphLayoutNodeDTO = GraphLayoutDtoMapper.toDto(graphLayoutNode);
+      graphLayoutNodeDTO.setStatus(ExecutionStatus.ASYNCWAITING);
 
-    //    graphLayoutNodeDTO.status= ExecutionStatus.SUCCESS;
-    HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
-    layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO);
+      //    graphLayoutNodeDTO.status= ExecutionStatus.SUCCESS;
+      HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
+      layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO);
 
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions("accountId", accountId)
-                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
-                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
-                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
-                            .build();
-    HarnessApprovalInstance approvalInstance =
-        HarnessApprovalInstance.builder()
-            .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
-            .build();
-    approvalInstance.setAmbiance(ambiance);
-    approvalInstance.setCreatedAt(System.currentTimeMillis());
-    approvalInstance.setDeadline(2L * System.currentTimeMillis());
-    approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
-    approvalInstance.setIncludePipelineExecutionHistory(true);
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setIncludePipelineExecutionHistory(true);
 
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
-                                                                        .accountId(accountId)
-                                                                        .orgIdentifier(orgIdentifier)
-                                                                        .projectIdentifier(projectIdentifier)
-                                                                        .pipelineIdentifier(pipelineIdentifier)
-                                                                        .startingNodeId(startingNodeId)
-                                                                        .layoutNodeMap(layoutNodeDTOMap)
-                                                                        .build();
-    doReturn(pipelineExecutionSummaryEntity)
-        .when(pmsExecutionService)
-        .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
-    notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
-    notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .startingNodeId(startingNodeId)
+                                                                          .layoutNodeMap(layoutNodeDTOMap)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
-                                                                     .identifier(userGroupIdentifier)
-                                                                     .notificationConfigs(notificationSettingConfigDTOS)
-                                                                     .build());
-    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
-    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
-    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
-    when(responseDTOCall.execute()).thenReturn(response);
+      List<UserGroupDTO> userGroupDTOS =
+          Collections.singletonList(UserGroupDTO.builder()
+                                        .identifier(userGroupIdentifier)
+                                        .notificationConfigs(notificationSettingConfigDTOS)
+                                        .build());
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
 
-    approvalInstance.setValidatedUserGroups(userGroupDTOS);
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
-    doReturn(url).when(notificationHelper).generateUrl(ambiance);
-    approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
 
-    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
-    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+      verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
+      verify(ngLogCallback.constructed().get(0), times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+    }
   }
 
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testSendNotification4() throws IOException {
-    String url =
-        "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
 
-    GraphLayoutNode graphLayoutNode1 =
-        GraphLayoutNode.newBuilder()
-            .setNodeIdentifier("nodeIdentifier")
-            .setNodeType("Approval")
-            .setNodeUUID("aBcDeFgH")
-            .setName("Node name")
-            .setNodeGroup("STAGE")
-            .setEdgeLayoutList(EdgeLayoutList.newBuilder().addNextIds("nextId").addCurrentNodeChildren("child").build())
-            .build();
-    GraphLayoutNodeDTO graphLayoutNodeDTO1 = GraphLayoutDtoMapper.toDto(graphLayoutNode1);
-    HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
-    layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO1);
+      GraphLayoutNode graphLayoutNode1 =
+          GraphLayoutNode.newBuilder()
+              .setNodeIdentifier("nodeIdentifier")
+              .setNodeType("Approval")
+              .setNodeUUID("aBcDeFgH")
+              .setName("Node name")
+              .setNodeGroup("STAGE")
+              .setEdgeLayoutList(
+                  EdgeLayoutList.newBuilder().addNextIds("nextId").addCurrentNodeChildren("child").build())
+              .build();
+      GraphLayoutNodeDTO graphLayoutNodeDTO1 = GraphLayoutDtoMapper.toDto(graphLayoutNode1);
+      HashMap<String, GraphLayoutNodeDTO> layoutNodeDTOMap = new HashMap<>();
+      layoutNodeDTOMap.put(startingNodeId, graphLayoutNodeDTO1);
 
-    GraphLayoutNode graphLayoutNode2 = GraphLayoutNode.newBuilder()
-                                           .setNodeIdentifier("nodeIdentifier")
-                                           .setNodeType("Approval")
-                                           .setNodeUUID("aBcDeFgH")
-                                           .setName("Node name")
-                                           .setNodeGroup("STAGE")
-                                           .build();
-    GraphLayoutNodeDTO graphLayoutNodeDTO2 = GraphLayoutDtoMapper.toDto(graphLayoutNode2);
-    layoutNodeDTOMap.put("nextId", graphLayoutNodeDTO2);
+      GraphLayoutNode graphLayoutNode2 = GraphLayoutNode.newBuilder()
+                                             .setNodeIdentifier("nodeIdentifier")
+                                             .setNodeType("Approval")
+                                             .setNodeUUID("aBcDeFgH")
+                                             .setName("Node name")
+                                             .setNodeGroup("STAGE")
+                                             .build();
+      GraphLayoutNodeDTO graphLayoutNodeDTO2 = GraphLayoutDtoMapper.toDto(graphLayoutNode2);
+      layoutNodeDTOMap.put("nextId", graphLayoutNodeDTO2);
 
-    Ambiance ambiance = Ambiance.newBuilder()
-                            .putSetupAbstractions("accountId", accountId)
-                            .putSetupAbstractions("orgIdentifier", orgIdentifier)
-                            .putSetupAbstractions("projectIdentifier", projectIdentifier)
-                            .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
-                            .build();
-    HarnessApprovalInstance approvalInstance =
-        HarnessApprovalInstance.builder()
-            .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
-            .build();
-    approvalInstance.setAmbiance(ambiance);
-    approvalInstance.setCreatedAt(System.currentTimeMillis());
-    approvalInstance.setDeadline(2L * System.currentTimeMillis());
-    approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
-    approvalInstance.setIncludePipelineExecutionHistory(true);
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setIncludePipelineExecutionHistory(true);
 
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
-                                                                        .accountId(accountId)
-                                                                        .orgIdentifier(orgIdentifier)
-                                                                        .projectIdentifier(projectIdentifier)
-                                                                        .pipelineIdentifier(pipelineIdentifier)
-                                                                        .startingNodeId(startingNodeId)
-                                                                        .layoutNodeMap(layoutNodeDTOMap)
-                                                                        .build();
-    doReturn(pipelineExecutionSummaryEntity)
-        .when(pmsExecutionService)
-        .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
-    notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
-    notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .startingNodeId(startingNodeId)
+                                                                          .layoutNodeMap(layoutNodeDTOMap)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
-                                                                     .identifier(userGroupIdentifier)
-                                                                     .notificationConfigs(notificationSettingConfigDTOS)
-                                                                     .build());
-    Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
-    when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
-    ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
-    Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
-    when(responseDTOCall.execute()).thenReturn(response);
+      List<UserGroupDTO> userGroupDTOS =
+          Collections.singletonList(UserGroupDTO.builder()
+                                        .identifier(userGroupIdentifier)
+                                        .notificationConfigs(notificationSettingConfigDTOS)
+                                        .build());
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
 
-    approvalInstance.setValidatedUserGroups(userGroupDTOS);
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
-    doReturn(url).when(notificationHelper).generateUrl(ambiance);
-    approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
 
-    verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
-    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+      verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
+      verify(ngLogCallback.constructed().get(0), times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+    }
   }
 }

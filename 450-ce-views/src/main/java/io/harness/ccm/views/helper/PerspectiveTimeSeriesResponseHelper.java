@@ -181,9 +181,7 @@ public class PerspectiveTimeSeriesResponseHelper {
       }
     });
 
-    return updatedDataPoints.stream()
-        .filter(dataPoint -> dataPoint.getValue().doubleValue() > 0.0D)
-        .collect(Collectors.toList());
+    return updatedDataPoints;
   }
 
   private List<DataPoint> addSharedCostsToDataPoint(
@@ -248,7 +246,9 @@ public class PerspectiveTimeSeriesResponseHelper {
         double sharedCostForGivenTimestamp = sharedCostsPerTimestamp.getOrDefault(timestamp, 0.0D);
         switch (sharedCostBucket.getStrategy()) {
           case PROPORTIONAL:
-            sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            if (Double.compare(sharedCostParameters.getTotalCost(), 0.0D) != 0) {
+              sharedCost += sharedCostForGivenTimestamp * (entityCost / sharedCostParameters.getTotalCost());
+            }
             break;
           case EQUAL:
             sharedCost += sharedCostForGivenTimestamp * (1.0 / sharedCostParameters.getNumberOfEntities());

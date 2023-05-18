@@ -20,7 +20,7 @@ import org.springframework.data.repository.CrudRepository;
 public interface ConfigEnvVariablesRepository
     extends CrudRepository<PluginConfigEnvVariablesEntity, String>, ConfigEnvVariablesRepositoryCustom {
   List<PluginConfigEnvVariablesEntity> findAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
-  void deleteAllByPluginId(String pluginId);
+  void deleteAllByAccountIdentifierAndPluginId(String accountIdentifier, String pluginId);
 
   PluginConfigEnvVariablesEntity findByAccountIdentifierAndEnvName(String accountIdentifier, String envName);
 }

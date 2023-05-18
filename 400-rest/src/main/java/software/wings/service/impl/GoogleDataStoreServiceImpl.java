@@ -211,18 +211,10 @@ public class GoogleDataStoreServiceImpl implements DataStoreService {
           long createdAt = entity.getLong(AccountDataRetentionEntity.CREATED_AT_KEY);
 
           Long retentionData = accounts.get(accountId);
-          if (retentionData != null) {
-            long correctValidUntil = createdAt + retentionData;
-            // if the correct valid until is in the future lets update and bail
-            if (correctValidUntil >= now) {
-              Entity updatedEntity = Entity.newBuilder(datastore.get(entity.getKey()))
-                                         .set(AccountDataRetentionEntity.VALID_UNTIL_KEY, correctValidUntil)
-                                         .build();
-              datastore.update(updatedEntity);
-              return;
-            }
+          // delete only if the retention criteria is met
+          if (retentionData == null || createdAt + retentionData <= now) {
+            keysToDelete.add(entity.getKey());
           }
-          keysToDelete.add(entity.getKey());
         });
       } else {
         Query<Key> query =

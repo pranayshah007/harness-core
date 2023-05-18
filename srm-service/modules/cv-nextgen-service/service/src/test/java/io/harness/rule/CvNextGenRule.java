@@ -40,6 +40,7 @@ import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.impl.AlwaysFalseFeatureFlagServiceImpl;
+import io.harness.cvng.ticket.clients.TicketServiceRestClientModule;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
@@ -209,6 +210,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     modules.add(new VerificationManagerClientModule("http://test-host"));
     modules.add(new MetricsModule());
     modules.add(new PersistentLockModule());
+    modules.add(new TicketServiceRestClientModule("http://test-host/ticket-service/"));
 
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");

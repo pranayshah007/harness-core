@@ -249,7 +249,7 @@ governanceConfig:
   tagsKey: dc
   tagsValue: dc1:1
   policyPerAccountLimit: 300
-  accountLimit: 100
+  accountLimit: 200
   regionLimit: 30
   packsInEnforcement: 30
   policiesInEnforcement: 30

@@ -145,6 +145,11 @@ public class DefaultWinRmExecutor implements WinRmExecutor {
       WinRmExecutorHelper.cleanupFiles(
           session, psScriptFile, powershell, disableCommandEncoding, config.getCommandParameters());
     } catch (RuntimeException re) {
+      commandExecutionStatus = FAILURE;
+      log.error(ERROR_WHILE_EXECUTING_COMMAND, re);
+      ResponseMessage details = buildErrorDetailsFromWinRmClientException(re);
+      saveExecutionLog(
+          format("Command execution failed. Error: %s", details.getMessage()), ERROR, commandExecutionStatus);
       throw re;
     } catch (Exception e) {
       commandExecutionStatus = FAILURE;

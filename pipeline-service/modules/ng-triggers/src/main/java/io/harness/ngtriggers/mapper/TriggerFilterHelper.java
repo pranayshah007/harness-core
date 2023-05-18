@@ -146,6 +146,9 @@ public class TriggerFilterHelper {
       update.set(
           NGTriggerEntityKeys.encryptedWebhookSecretIdentifier, triggerEntity.getEncryptedWebhookSecretIdentifier());
     }
+    if (triggerEntity.getStagesToExecute() != null) {
+      update.set(NGTriggerEntityKeys.stagesToExecute, triggerEntity.getStagesToExecute());
+    }
     if (triggerEntity.getNextIterations() != null) {
       update.set(NGTriggerEntityKeys.nextIterations, triggerEntity.getNextIterations());
     }

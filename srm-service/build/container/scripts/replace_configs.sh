@@ -55,6 +55,10 @@ if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
   export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TICKET_SERVICE_REST_CLIENT_BASEURL" ]]; then
+  export TICKET_SERVICE_REST_CLIENT_BASEURL; yq -i '.ticketServiceRestClientConfig.baseUrl=env(TICKET_SERVICE_REST_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
   yq -i '.server.requestLog.appenders[0].type="console"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].threshold="TRACE"' $CONFIG_FILE
   yq -i '.server.requestLog.appenders[0].target="STDOUT"' $CONFIG_FILE
@@ -147,6 +151,18 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
     INDEX=$(expr $INDEX + 1)
   done
 fi
+
+replace_key_value redisLockConfig.redisUrl "$LOCK_CONFIG_REDIS_URL"
+replace_key_value redisLockConfig.envNamespace "$LOCK_CONFIG_ENV_NAMESPACE"
+replace_key_value redisLockConfig.sentinel "$LOCK_CONFIG_USE_SENTINEL"
+replace_key_value redisLockConfig.masterName "$LOCK_CONFIG_SENTINEL_MASTER_NAME"
+replace_key_value redisLockConfig.userName "$LOCK_CONFIG_REDIS_USERNAME"
+replace_key_value redisLockConfig.password "$LOCK_CONFIG_REDIS_PASSWORD"
+replace_key_value redisLockConfig.nettyThreads "$REDIS_NETTY_THREADS"
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
 
 if [[ "" != "$PMS_TARGET" ]]; then
   export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
@@ -307,3 +323,7 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
 
+replace_key_value segmentConfiguration.enabled "$SEGMENT_ENABLED"
+replace_key_value segmentConfiguration.url "$SEGMENT_URL"
+replace_key_value segmentConfiguration.apiKey "$SEGMENT_APIKEY"
+replace_key_value segmentConfiguration.certValidationRequired "$SEGMENT_VERIFY_CERT"

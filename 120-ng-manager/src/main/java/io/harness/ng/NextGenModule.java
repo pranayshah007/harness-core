@@ -14,6 +14,7 @@ import static io.harness.audit.ResourceTypeConstants.DEPLOYMENT_FREEZE;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT;
 import static io.harness.audit.ResourceTypeConstants.ENVIRONMENT_GROUP;
 import static io.harness.audit.ResourceTypeConstants.FILE;
+import static io.harness.audit.ResourceTypeConstants.IP_ALLOWLIST_CONFIG;
 import static io.harness.audit.ResourceTypeConstants.ORGANIZATION;
 import static io.harness.audit.ResourceTypeConstants.PROJECT;
 import static io.harness.audit.ResourceTypeConstants.SECRET;
@@ -80,6 +81,7 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -212,6 +214,7 @@ import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentGroupOutboxEventHandler;
 import io.harness.ng.core.outbox.EnvironmentOutboxEventHandler;
+import io.harness.ng.core.outbox.IPAllowlistConfigEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -250,6 +253,8 @@ import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
+import io.harness.ng.rollback.PostProdRollbackService;
+import io.harness.ng.rollback.PostProdRollbackServiceImpl;
 import io.harness.ng.scim.NGScimGroupServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
@@ -519,6 +524,12 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  PluginExecutionConfig pluginExecutionConfig() {
+    return this.appConfig.getPluginExecutionConfig();
+  }
+
+  @Provides
+  @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
     return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
@@ -653,7 +664,8 @@ public class NextGenModule extends AbstractModule {
     install(new InviteModule(appConfig.isNgAuthUIEnabled()));
     install(new SignupModule(this.appConfig.getManagerClientConfig(),
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId(),
-        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration()));
+        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration(),
+        appConfig.getSignupDomainDenylistConfiguration()));
     install(GitopsModule.getInstance());
     install(new AbstractWaiterModule() {
       @Override
@@ -981,6 +993,7 @@ public class NextGenModule extends AbstractModule {
     outboxEventHandlerMapBinder.addBinding(VARIABLE).to(VariableEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(SETTING).to(SettingEventHandler.class);
     outboxEventHandlerMapBinder.addBinding(DEPLOYMENT_FREEZE).to(FreezeOutboxEventHandler.class);
+    outboxEventHandlerMapBinder.addBinding(IP_ALLOWLIST_CONFIG).to(IPAllowlistConfigEventHandler.class);
   }
 
   private void registerEventsFrameworkMessageListeners() {
@@ -1019,6 +1032,7 @@ public class NextGenModule extends AbstractModule {
         .annotatedWith(Names.named(TEMPLATE_ENTITY + ENTITY_CRUD))
         .to(CustomDeploymentEntityCRUDStreamEventListener.class);
     bind(MessageListener.class).annotatedWith(Names.named(INSTANCE_STATS)).to(InstanceStatsEventListener.class);
+    bind(PostProdRollbackService.class).to(PostProdRollbackServiceImpl.class);
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);

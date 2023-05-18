@@ -417,26 +417,32 @@ public class ViewsQueryBuilder {
     return query;
   }
 
-  @NotNull
   public SelectQuery getSharedCostQuery(final List<QLCEViewGroupBy> groupBy,
       final List<QLCEViewAggregation> aggregateFunction, final Map<String, Double> entityCosts, final double totalCost,
       final CostTarget costTarget, final SharedCost sharedCost, final BusinessMapping businessMapping,
       final String cloudProviderTableName, final boolean isClusterPerspective) {
-    final SelectQuery selectQuery = new SelectQuery();
+    SelectQuery selectQuery = null;
     final String tableIdentifier = getTableIdentifier(cloudProviderTableName);
-    decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
     switch (sharedCost.getStrategy()) {
       case PROPORTIONAL:
-        decorateSharedCostQueryWithAggregations(selectQuery, aggregateFunction, tableIdentifier,
-            entityCosts.getOrDefault(costTarget.getName(), 0.0D), totalCost);
+        if (Double.compare(totalCost, 0.0D) != 0) {
+          selectQuery = new SelectQuery();
+          decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
+          decorateSharedCostQueryWithAggregations(selectQuery, aggregateFunction, tableIdentifier,
+              entityCosts.getOrDefault(costTarget.getName(), 0.0D), totalCost);
+        }
         break;
       case EQUAL:
+        selectQuery = new SelectQuery();
+        decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
         decorateSharedCostQueryWithAggregations(
             selectQuery, aggregateFunction, tableIdentifier, 1, businessMapping.getCostTargets().size());
         break;
       case FIXED:
         for (final SharedCostSplit sharedCostSplit : sharedCost.getSplits()) {
           if (costTarget.getName().equals(sharedCostSplit.getCostTargetName())) {
+            selectQuery = new SelectQuery();
+            decorateSharedCostQueryGroupBy(groupBy, isClusterPerspective, selectQuery, tableIdentifier);
             decorateSharedCostQueryWithAggregations(
                 selectQuery, aggregateFunction, tableIdentifier, sharedCostSplit.getPercentageContribution(), 100.0D);
             break;
@@ -522,6 +528,33 @@ public class ViewsQueryBuilder {
     }
 
     log.info("Query for Overview cost by providers {}", selectQuery);
+    return selectQuery;
+  }
+
+  public SelectQuery getTotalCostTimeSeriesQuery(List<QLCEViewTimeFilter> timeFilters,
+      List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations, String cloudProviderTableName) {
+    String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+    SelectQuery selectQuery = new SelectQuery();
+    selectQuery.addCustomFromTable(cloudProviderTableName);
+    QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
+
+    // Adding instance type filters
+    modifyQueryWithInstanceTypeFilter(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList(), Collections.emptyList(), selectQuery);
+
+    if (!aggregations.isEmpty()) {
+      decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
+    }
+
+    if (!timeFilters.isEmpty()) {
+      decorateQueryWithTimeFilters(selectQuery, timeFilters, false, tableIdentifier);
+    }
+
+    if (groupByTime != null) {
+      decorateQueryWithGroupByTime(selectQuery, groupByTime, false, tableIdentifier, false);
+    }
+
+    log.info("Query for Total cost timeseries data {}", selectQuery);
     return selectQuery;
   }
 

@@ -649,6 +649,73 @@ public class GithubPackagesRegistryServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSpecificVersionForUser_WithoutArtifactMetaInfo() throws IOException {
+    GithubPackagesInternalConfig githubPackagesInternalConfig = GithubPackagesInternalConfig.builder()
+                                                                    .githubPackagesUrl("https://github.com/username")
+                                                                    .authMechanism("UsernameToken")
+                                                                    .username("username")
+                                                                    .token("token")
+                                                                    .build();
+
+    String packageName = "helloworld";
+    String packageType = "container";
+    String org = "";
+    String version = "2";
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    File from = new File("960-api-services/src/test/resources/__files/githubpackages/build-details-for-user.json");
+
+    ArrayNode versionsJsonFormat = null;
+
+    try {
+      versionsJsonFormat = (ArrayNode) mapper.readTree(from);
+    } catch (IOException e) {
+      doNothing();
+    }
+
+    List<JsonNode> list = new ArrayList<>();
+    for (JsonNode node : versionsJsonFormat) {
+      list.add(node);
+    }
+
+    doReturn(githubPackagesRestClient)
+        .when(githubPackagesRestClientFactory)
+        .getGithubPackagesRestClient(githubPackagesInternalConfig);
+
+    Call<List<JsonNode>> executeCall = mock(Call.class);
+
+    doReturn(executeCall)
+        .when(githubPackagesRestClient)
+        .listVersionsForPackages(anyString(), anyString(), anyString(), anyInt(), anyInt());
+
+    doReturn(Response.success(list)).when(executeCall).execute();
+
+    GithubPackagesRegistryServiceImpl githubPackagesRegistryServiceSpy = spy(githubPackagesRegistryService);
+
+    ArtifactMetaInfo artifactMetaInfo = ArtifactMetaInfo.builder().build();
+    doReturn(artifactMetaInfo)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "2", org, true);
+    doReturn(artifactMetaInfo)
+        .when(githubPackagesRegistryServiceSpy)
+        .getArtifactMetaInfo(githubPackagesInternalConfig, packageName, "2", org, false);
+
+    BuildDetails build =
+        githubPackagesRegistryServiceSpy.getBuild(githubPackagesInternalConfig, packageName, packageType, version, org);
+
+    assertThat(build.getNumber()).isEqualTo("2");
+    assertThat(build.getArtifactPath()).isEqualTo("ghcr.io/username/helloworld:2");
+    assertThat(build.getBuildDisplayName()).isEqualTo("helloworld: 2");
+    assertThat(build.getBuildFullDisplayName())
+        .isEqualTo("sha256:08cde8fece645d8b60bc13cf85691f0a092238a270c1a95554fc71714cd25237");
+    assertThat(build.getUiDisplayName()).isEqualTo("Tag# 2");
+    assertThat(build.getStatus()).isEqualTo(BuildStatus.SUCCESS);
+  }
+
+  @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
   public void testGetSpecificVersionForOrg() throws IOException {

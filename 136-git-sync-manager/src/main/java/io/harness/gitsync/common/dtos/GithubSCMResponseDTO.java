@@ -13,11 +13,11 @@ import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.ng.userprofile.commons.SCMType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GithubSCMResponseDTO extends UserSourceCodeManagerResponseDTO {
   @JsonProperty("apiAccess") GithubApiAccessDTO apiAccess;

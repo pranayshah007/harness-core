@@ -9,6 +9,8 @@ package io.harness.cvng.migration;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.migration.list.ActivityBucketCleanupAndMigration;
+import io.harness.cvng.migration.list.ActivityCleanupAndBucketMigration;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
 import io.harness.cvng.migration.list.AddEnvRefsToMonitoredServiceMigration;
@@ -21,6 +23,7 @@ import io.harness.cvng.migration.list.AddMonitoredServiceToChangeSourceMigration
 import io.harness.cvng.migration.list.AddMonitoredServiceToHeatMapMigration;
 import io.harness.cvng.migration.list.AddMonitoredServiceToWebhookMigration;
 import io.harness.cvng.migration.list.AddMonitoringSourcesToVerificationJobMigration;
+import io.harness.cvng.migration.list.AddSLIEvaluationTypeToSLOMigration;
 import io.harness.cvng.migration.list.AddStartedAtToServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
 import io.harness.cvng.migration.list.AddTypeToServiceLevelObjectivesV2;
@@ -33,9 +36,11 @@ import io.harness.cvng.migration.list.CleanUpOldDocuments;
 import io.harness.cvng.migration.list.CleanupDeprecatedDocuments;
 import io.harness.cvng.migration.list.CustomHealthCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.DeleteActivitiesNotAssociatedWithMonitoredServices;
+import io.harness.cvng.migration.list.DeleteHarnessCDChangeSourceMigration;
 import io.harness.cvng.migration.list.DeleteInvalidOrchestratorsMigration;
 import io.harness.cvng.migration.list.DeleteOldAnalysisOrchestratorMigration;
 import io.harness.cvng.migration.list.DeleteOrchestratorWithInvalidVerificationTaskId;
+import io.harness.cvng.migration.list.DeleteRedundantSLIsSLOs;
 import io.harness.cvng.migration.list.DeleteSLISLOMigration;
 import io.harness.cvng.migration.list.ELKMigrationCreateVerificationTaskLiveMonitoring;
 import io.harness.cvng.migration.list.EnableExistingCVConfigs;
@@ -44,6 +49,7 @@ import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificati
 import io.harness.cvng.migration.list.MigrateSLOTargetInSLOV2;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
+import io.harness.cvng.migration.list.OrphanMonitoredServicesCleanup;
 import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
@@ -52,6 +58,7 @@ import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
 import io.harness.cvng.migration.list.UpdateELKCVConfigToNextGenCVConfig;
+import io.harness.cvng.migration.list.UpdateMSNotificationChangeCategoriesMigration;
 import io.harness.cvng.migration.list.UpdateRiskIntToRiskEnum;
 import io.harness.cvng.migration.list.UpdateTagsInServiceLevelObjectiveV2;
 import io.harness.cvng.migration.list.WriteServiceLevelObjectivesToV2;
@@ -132,6 +139,13 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(58, UpdateELKCVConfigToNextGenCVConfig.class))
         .add(Pair.of(59, MigrateSLOTargetInSLOV2.class))
         .add(Pair.of(60, ELKMigrationCreateVerificationTaskLiveMonitoring.class))
+        .add(Pair.of(61, AddSLIEvaluationTypeToSLOMigration.class))
+        .add(Pair.of(62, OrphanMonitoredServicesCleanup.class))
+        .add(Pair.of(63, ActivityCleanupAndBucketMigration.class))
+        .add(Pair.of(64, UpdateMSNotificationChangeCategoriesMigration.class))
+        .add(Pair.of(65, ActivityBucketCleanupAndMigration.class))
+        .add(Pair.of(66, DeleteHarnessCDChangeSourceMigration.class))
+        .add(Pair.of(67, DeleteRedundantSLIsSLOs.class))
         .build();
   }
 }

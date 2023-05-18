@@ -19,7 +19,6 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.BAMBOO_ARTIFACTS_NAME;
-import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.CUSTOM_ARTIFACT_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
 import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
@@ -75,7 +74,6 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.BambooArtifactOutcome;
-import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
@@ -132,7 +130,6 @@ import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetail
 import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.AzureDevOpsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.BambooTasArtifactRequestDetails;
-import io.harness.delegate.task.pcf.artifact.CustomArtifactTasRequestDetails;
 import io.harness.delegate.task.pcf.artifact.GoogleCloudStorageTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
 import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
@@ -442,11 +439,16 @@ public class TasStepHelper {
                       .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
                       .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
                       .build();
+    String infraIdentifier = infrastructure.getInfraIdentifier();
+    // infra identifier could be null in service/env version v1
+    if (isBlank(infraIdentifier)) {
+      infraIdentifier = infrastructure.getInfrastructureKey();
+    }
     return ExecutionInfoKey.builder()
         .scope(scope)
         .deploymentIdentifier(getDeploymentIdentifier(tasInfraConfig, appName))
         .envIdentifier(infrastructure.getEnvironment().getIdentifier())
-        .infraIdentifier(infrastructure.getInfrastructureKey())
+        .infraIdentifier(infraIdentifier)
         .serviceIdentifier(serviceOutcome.getIdentifier())
         .build();
   }
@@ -1745,7 +1747,6 @@ public class TasStepHelper {
       case AMAZON_S3_NAME:
       case JENKINS_NAME:
       case AZURE_ARTIFACTS_NAME:
-      case CUSTOM_ARTIFACT_NAME:
       case GITHUB_PACKAGES_NAME:
       case BAMBOO_ARTIFACTS_NAME:
       case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
@@ -1778,8 +1779,6 @@ public class TasStepHelper {
         return artifactOutcome instanceof BambooArtifactOutcome;
       case GOOGLE_CLOUD_STORAGE_ARTIFACT_NAME:
         return artifactOutcome instanceof GoogleCloudStorageArtifactOutcome;
-      case CUSTOM_ARTIFACT_NAME:
-        return true;
       default:
         return false;
     }
@@ -1895,17 +1894,6 @@ public class TasStepHelper {
                 .artifactPaths(new ArrayList<>(singletonList(artifactoryArtifactOutcome.getArtifactPath())))
                 .build());
         connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
-        break;
-      case CUSTOM_ARTIFACT_NAME:
-        CustomArtifactOutcome customArtifactOutcome = (CustomArtifactOutcome) artifactOutcome;
-        artifactConfigBuilder.sourceType(ArtifactSourceType.CUSTOM_ARTIFACT);
-        artifactConfigBuilder.artifactDetails(CustomArtifactTasRequestDetails.builder()
-                                                  .identifier(customArtifactOutcome.getIdentifier())
-                                                  .artifactPath(customArtifactOutcome.getArtifactPath())
-                                                  .image(customArtifactOutcome.getImage())
-                                                  .displayName(customArtifactOutcome.getDisplayName())
-                                                  .metadata(customArtifactOutcome.getMetadata())
-                                                  .build());
         break;
       case AMAZON_S3_NAME:
         S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;

@@ -50,6 +50,8 @@ public interface NextGenService {
 
   ProjectDTO getCachedProject(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
+  boolean isProjectDeleted(String accountId, String orgIdentifier, String projectIdentifier);
+
   OrganizationDTO getOrganization(String accountIdentifier, String orgIdentifier);
 
   Map<String, String> getServiceIdNameMap(ProjectParams projectParams, List<String> serviceIdentifiers);

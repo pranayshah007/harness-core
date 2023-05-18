@@ -80,12 +80,11 @@ public class PipelineSetupUsageUtils {
       String accountIdentifier, TextNode node, EntitySetupUsageDTO referredUsage, Map<String, String> metadata,
       String fqnForNode) {
     String finalValue = node.asText();
-    if (NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
+    if (EmptyPredicate.isEmpty(finalValue) || NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
       return null;
     }
-    if (ParameterFieldUtils.containsInputSetValidator(finalValue, fqnForNode)) {
-      finalValue = ParameterFieldUtils.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
-    }
+    finalValue = ParameterFieldUtils.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
+
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(finalValue, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
     return EntityDetail.builder()

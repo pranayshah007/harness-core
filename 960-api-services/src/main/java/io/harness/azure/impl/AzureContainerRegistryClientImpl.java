@@ -55,6 +55,7 @@ import retrofit2.Response;
 public class AzureContainerRegistryClientImpl extends AzureClient implements AzureContainerRegistryClient {
   private static String REGISTRY_SCOPE = "registry:catalog:*";
   private static String REPOSITORY_SCOPE = "repository:%s:metadata_read";
+  private static String REPOSITORY_SCOPE_PULL = "repository:%s:pull";
 
   @Override
   public Optional<RegistryCredentials> getContainerRegistryCredentials(AzureContainerRegistryClientContext context) {
@@ -159,7 +160,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
                 .block()
                 .getToken();
         String acrAccessToken =
-            getAcrAccessToken(registryHost, azureAccessToken, format(REPOSITORY_SCOPE, repositoryName));
+            getAcrAccessToken(registryHost, azureAccessToken, format(REPOSITORY_SCOPE_PULL, repositoryName));
 
         authHeader = getAzureBearerAuthHeader(acrAccessToken);
       } else {

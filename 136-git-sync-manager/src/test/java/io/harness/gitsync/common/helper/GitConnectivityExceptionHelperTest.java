@@ -7,6 +7,7 @@
 
 package io.harness.gitsync.common.helper;
 
+import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.rule.OwnerRule.BHAVYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,11 +18,17 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.DelegateServiceDriverException;
 import io.harness.rule.Owner;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class GitConnectivityExceptionHelperTest extends CategoryTest {
   private final String errorMessage = "Unknown error";
+
+  @Before
+  public void setup() {
+    initializeLogging();
+  }
 
   @Test
   @Owner(developers = BHAVYA)
@@ -29,8 +36,7 @@ public class GitConnectivityExceptionHelperTest extends CategoryTest {
   public void testGetErrorMessage_whenDelegateDriverExceptionIsThrown() {
     Exception ex = new DelegateServiceDriverException(errorMessage);
     assertThat(GitConnectivityExceptionHelper.getErrorMessage(ex))
-        .isEqualTo(
-            GitConnectivityExceptionHelper.CONNECTIVITY_ERROR + "DelegateServiceDriverException: " + errorMessage);
+        .isEqualTo(GitConnectivityExceptionHelper.CONNECTIVITY_ERROR + errorMessage);
   }
 
   @Test

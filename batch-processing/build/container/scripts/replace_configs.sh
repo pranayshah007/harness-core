@@ -76,6 +76,10 @@ if [[ "" != "$QUERY_BATCH_SIZE" ]]; then
   export QUERY_BATCH_SIZE; yq -i '.batchQueryConfig.queryBatchSize=env(QUERY_BATCH_SIZE)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BULK_OPERATION_QUERY_BATCH_SIZE" ]]; then
+  export BULK_OPERATION_QUERY_BATCH_SIZE; yq -i '.bulkOperationBatchQueryConfig.queryBatchSize=env(BULK_OPERATION_QUERY_BATCH_SIZE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$SYNC_JOB_DISABLED" ]]; then
   export SYNC_JOB_DISABLED; yq -i '.batchQueryConfig.syncJobDisabled=env(SYNC_JOB_DISABLED)' $CONFIG_FILE
 fi
@@ -185,6 +189,10 @@ if [[ "" != "$BUDGET_ALERTS_JOB_CRON" ]]; then
   export BUDGET_ALERTS_JOB_CRON; yq -i '.scheduler-jobs-config.budgetAlertsJobCron=env(BUDGET_ALERTS_JOB_CRON)' $CONFIG_FILE
 fi
 
+if [[ "" != "$BUDGET_COST_UPDATE_JOB_CRON" ]]; then
+  export BUDGET_COST_UPDATE_JOB_CRON; yq -i '.scheduler-jobs-config.budgetCostUpdateJobCron=env(BUDGET_COST_UPDATE_JOB_CRON)' $CONFIG_FILE
+fi
+
 if [[ "" != "$WEEKLY_REPORT_JOB_CRON" ]]; then
   export WEEKLY_REPORT_JOB_CRON; yq -i '.scheduler-jobs-config.weeklyReportsJobCron=env(WEEKLY_REPORT_JOB_CRON)' $CONFIG_FILE
 fi
@@ -195,6 +203,14 @@ fi
 
 if [[ "" != "$AWS_ACCOUNT_TAGS_COLLECTION_CRON" ]]; then
   export AWS_ACCOUNT_TAGS_COLLECTION_CRON; yq -i '.scheduler-jobs-config.awsAccountTagsCollectionJobCron=env(AWS_ACCOUNT_TAGS_COLLECTION_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_CRON" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_CRON; yq -i '.scheduler-jobs-config.governanceRecommendationJobCron=env(GOVERNANCE_RECOMMENDATION_JOB_CRON)' $CONFIG_FILE
+fi
+
+if [[ "" != "$GOVERNANCE_RECOMMENDATION_JOB_ENABLED" ]]; then
+  export GOVERNANCE_RECOMMENDATION_JOB_ENABLED; yq -i '.recommendationConfig.governanceRecommendationEnabled=env(GOVERNANCE_RECOMMENDATION_JOB_ENABLED)' $CONFIG_FILE
 fi
 
 if [[ "" != "$HARNESS_CE_AZURE_CLIENTID" ]]; then

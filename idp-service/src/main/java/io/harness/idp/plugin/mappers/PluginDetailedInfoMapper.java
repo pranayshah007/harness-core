@@ -9,13 +9,16 @@ package io.harness.idp.plugin.mappers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.idp.plugin.beans.ExportsData;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.enums.ExportType;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
+import io.harness.spec.server.idp.v1.model.ExportDetails;
 import io.harness.spec.server.idp.v1.model.Exports;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 
+import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
@@ -39,6 +42,18 @@ public class PluginDetailedInfoMapper {
     exports.setCards(getExportTypeCount(pluginInfoEntity, ExportType.CARD));
     exports.setTabContents(getExportTypeCount(pluginInfoEntity, ExportType.TAB_CONTENT));
     exports.setPages(getExportTypeCount(pluginInfoEntity, ExportType.PAGE));
+    exports.setDefaultEntityTypes(pluginInfoEntity.getExports().getDefaultEntityTypes());
+    List<ExportDetails> exportDetailsList = new ArrayList<>();
+    for (ExportsData.ExportDetails details : pluginInfoEntity.getExports().getExportDetails()) {
+      ExportDetails exportDetails = new ExportDetails();
+      exportDetails.setName(details.getName());
+      exportDetails.setType(details.getType().toString());
+      exportDetails.setAddByDefault(Boolean.valueOf(details.getAddByDefault()));
+      exportDetails.setDefaultRoute(details.getDefaultRoute());
+      exportDetails.setLayoutSchemaSpecs(details.getLayoutSchemaSpecs());
+      exportDetailsList.add(exportDetails);
+    }
+    exports.setExportDetails(exportDetailsList);
     pluginDetailedInfo.setSaved(isConfigSaved);
     pluginDetailedInfo.setExports(exports);
     pluginDetailedInfo.setConfig(config);

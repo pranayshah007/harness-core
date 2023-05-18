@@ -16,7 +16,6 @@ import io.harness.category.element.StressTests;
 import io.harness.maintenance.MaintenanceGuard;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 import io.harness.threading.Concurrent;
 import io.harness.threading.Morpheus;
 
@@ -42,7 +41,7 @@ public class StressTest extends WaitEngineTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(StressTests.class)
-  @RealMongo
+
   @Ignore("Ignore this stress test to make it easy to run only unit tests")
   public void stress() throws IOException {
     persistence.ensureIndexForTesting(NotifyEvent.class);

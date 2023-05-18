@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
@@ -38,7 +39,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.JsonUtils;
 import io.harness.steps.template.stage.TemplateStageNode;
-import io.harness.template.beans.yaml.NGTemplateConfig;
+import io.harness.template.resources.beans.yaml.NGTemplateConfig;
 import io.harness.template.yaml.TemplateLinkConfig;
 import io.harness.yaml.utils.JsonPipelineUtils;
 
@@ -139,7 +140,7 @@ public class WorkflowImportService implements ImportService {
           pmsClient
               .createPipeline(inputDTO.getDestinationAuthToken(), inputDTO.getDestinationAccountIdentifier(),
                   inputDTO.getOrgIdentifier(), inputDTO.getProjectIdentifier(),
-                  RequestBody.create(MediaType.parse("application/yaml"), yaml))
+                  RequestBody.create(MediaType.parse("application/yaml"), yaml), StoreType.INLINE)
               .execute();
       log.info("Workflow as pipeline creation Response details {} {}", resp.code(), resp.message());
       if (resp.code() >= 400) {

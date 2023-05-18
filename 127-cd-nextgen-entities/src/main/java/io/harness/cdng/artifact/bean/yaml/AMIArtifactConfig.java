@@ -158,4 +158,9 @@ public class AMIArtifactConfig implements ArtifactConfig, Visitable, WithConnect
 
     return connectorRefMap;
   }
+
+  @Override
+  public void validate() {
+    ArtifactConfigHelper.checkVersionAndVersionRegex(version, versionRegex);
+  }
 }

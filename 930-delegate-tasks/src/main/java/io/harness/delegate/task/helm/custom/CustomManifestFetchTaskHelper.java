@@ -54,6 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class CustomManifestFetchTaskHelper {
+  private static final String HELM_IGNORE_FILENAME = ".helmignore";
   @Inject CustomManifestService customManifestService;
   @Inject DelegateFileManagerBase delegateFileManagerBase;
 
@@ -100,7 +101,7 @@ public class CustomManifestFetchTaskHelper {
   }
 
   private static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws IOException {
-    if (fileToZip.isHidden()) {
+    if (fileToZip.isHidden() && !fileName.contains(HELM_IGNORE_FILENAME)) {
       return;
     }
     if (fileToZip.isDirectory()) {

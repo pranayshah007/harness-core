@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.ngpipeline.inputs.beans.entity.InputEntity;
-import io.harness.pms.ngpipeline.inputs.beans.entity.RepositoryInput;
+import io.harness.pms.ngpipeline.inputs.beans.entity.OptionsInput;
 
 import java.util.Map;
 import java.util.Optional;
@@ -19,5 +19,5 @@ import java.util.Optional;
 @OwnedBy(PIPELINE)
 public interface PMSInputsService {
   Optional<Map<String, InputEntity>> get(String pipelineYaml);
-  Optional<RepositoryInput> getRepository(String pipelineYaml);
+  Optional<OptionsInput> getOptions(String pipelineYaml);
 }

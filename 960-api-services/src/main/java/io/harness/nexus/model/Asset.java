@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.Date;
 
 @lombok.Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -22,6 +23,7 @@ public class Asset {
   private String repository;
   private String format;
   private Checksum checksum;
+  private Date lastModified;
 
   @lombok.Data
   @JsonIgnoreProperties(ignoreUnknown = true)

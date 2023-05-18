@@ -89,6 +89,8 @@ import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.plan.execution.ExecutionHelper;
 import io.harness.pms.plan.execution.StoreTypeMapper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
+import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
 import io.harness.pms.plan.execution.helpers.InputSetMergeHelperV1;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.triggers.beans.TriggerPlanExecArgs;
@@ -253,13 +255,11 @@ public class TriggerExecutionHelper {
       PipelineEntity pipelineEntity = pipelineEntityToExecute.get();
 
       final String executionId = generateUuid();
-      ExecutionMetadata.Builder executionMetaDataBuilder =
-          ExecutionMetadata.newBuilder()
-              .setExecutionUuid(executionId)
-              .setTriggerInfo(triggerInfo)
-              .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
-              .setPipelineIdentifier(pipelineEntity.getIdentifier())
-              .setHarnessVersion(pipelineEntity.getHarnessVersion());
+      ExecutionMetadata.Builder executionMetaDataBuilder = ExecutionMetadata.newBuilder()
+                                                               .setExecutionUuid(executionId)
+                                                               .setTriggerInfo(triggerInfo)
+                                                               .setPipelineIdentifier(pipelineEntity.getIdentifier())
+                                                               .setHarnessVersion(pipelineEntity.getHarnessVersion());
 
       if (isNotEmpty(pipelineEntity.getConnectorRef())) {
         executionMetaDataBuilder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
@@ -272,6 +272,8 @@ public class TriggerExecutionHelper {
       if (gitSyncBranchContextByteString != null) {
         executionMetaDataBuilder.setGitSyncBranchContext(gitSyncBranchContextByteString);
       }
+
+      executionHelper.updateSettingsInExecutionMetadataBuilder(pipelineEntity, executionMetaDataBuilder);
 
       PlanExecutionMetadata.Builder planExecutionMetadataBuilder =
           PlanExecutionMetadata.builder().planExecutionId(executionId).triggerJsonPayload(payload);
@@ -308,7 +310,6 @@ public class TriggerExecutionHelper {
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
         String pipelineYamlWithTemplateRef = pipelineYaml;
         if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-          log.info("Principal is {}", SourcePrincipalContextBuilder.getSourcePrincipal());
           TemplateMergeResponseDTO templateMergeResponseDTO =
               pipelineTemplateHelper.resolveTemplateRefsInPipelineAndAppendInputSetValidators(
                   pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
@@ -319,6 +320,26 @@ public class TriggerExecutionHelper {
           pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef() == null
               ? pipelineYaml
               : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+        }
+
+        StagesExecutionInfo stagesExecutionInfo = null;
+        if (featureFlagService.isEnabled(
+                pipelineEntity.getAccountId(), FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)
+            && triggerDetails.getNgTriggerConfigV2() != null
+            && EmptyPredicate.isNotEmpty(triggerDetails.getNgTriggerConfigV2().getStagesToExecute())) {
+          boolean allowedStageExecution = false;
+          if (PipelineVersion.V0.equals(pipelineEntity.getHarnessVersion())) {
+            BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+            allowedStageExecution = basicPipeline.isAllowStageExecutions();
+          }
+          ProcessStageExecutionInfoResult processStageExecutionInfoResult = executionHelper.processStageExecutionInfo(
+              triggerDetails.getNgTriggerConfigV2().getStagesToExecute(), allowedStageExecution, pipelineEntity,
+              pipelineYaml, pipelineYamlWithTemplateRef, Collections.emptyMap());
+          stagesExecutionInfo = processStageExecutionInfoResult.getStagesExecutionInfo();
+          pipelineYamlWithTemplateRef = processStageExecutionInfoResult.getFilteredPipelineYamlWithTemplateRef();
+          pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
+          planExecutionMetadataBuilder.stagesExecutionMetadata(stagesExecutionInfo.toStagesExecutionMetadata());
+          planExecutionMetadataBuilder.allowStagesExecution(stagesExecutionInfo.isAllowStagesExecution());
         }
 
         List<NotificationRules> notificationRules = Collections.emptyList();
@@ -344,7 +365,12 @@ public class TriggerExecutionHelper {
             throw new InvalidYamlException("Invalid version");
         }
 
-        pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+        if (stagesExecutionInfo != null && stagesExecutionInfo.isStagesExecution()) {
+          pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(
+              pipelineEntity.getAccountId(), YamlUtils.extractPipelineField(processedYaml));
+        } else {
+          pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+        }
 
         String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
             pipelineEntity, pipelineYamlWithTemplateRef, branch, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
@@ -373,6 +399,9 @@ public class TriggerExecutionHelper {
         PlanExecution planExecution = executionHelper.startExecution(ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
             executionMetaDataBuilder.build(), planExecutionMetadataBuilder.build(), false, null, null, null);
+        log.info("Plan execution created with planExecutionId {}, accountId {} and triggerId {}",
+            planExecution != null ? planExecution.getPlanId() : null, pipelineEntity.getAccountId(),
+            triggerDetails.getNgTriggerEntity().getIdentifier());
         // check if abort prev execution needed.
         requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);
         return planExecution;
@@ -399,14 +428,24 @@ public class TriggerExecutionHelper {
       try (PmsGitSyncBranchContextGuard ignore =
                pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
         RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
-        ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, null, runtimeInputYaml,
-            Collections.emptyList(), Collections.emptyMap(), triggerInfo, null, retryExecutionParameters, false, false);
+        List<String> stagesToExecute = Collections.emptyList();
+        if (featureFlagService.isEnabled(
+                pipelineEntity.getAccountId(), FeatureName.CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION)
+            && triggerDetails.getNgTriggerConfigV2() != null
+            && EmptyPredicate.isNotEmpty(triggerDetails.getNgTriggerConfigV2().getStagesToExecute())) {
+          stagesToExecute = triggerDetails.getNgTriggerConfigV2().getStagesToExecute();
+        }
+        ExecArgs execArgs = executionHelper.buildExecutionArgs(pipelineEntity, null, runtimeInputYaml, stagesToExecute,
+            Collections.emptyMap(), triggerInfo, null, retryExecutionParameters, false, false);
         execArgs.getPlanExecutionMetadata().setTriggerPayload(triggerPayload);
         execArgs.getPlanExecutionMetadata().setTriggerJsonPayload(payload);
         NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
         PlanExecution planExecution = executionHelper.startExecution(ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), execArgs.getMetadata(),
             execArgs.getPlanExecutionMetadata(), false, null, null, null);
+        log.info("Plan execution created with planExecutionId {}, accountId {} and triggerId {}",
+            planExecution.getPlanId(), pipelineEntity.getAccountId(),
+            triggerDetails.getNgTriggerEntity().getIdentifier());
         // check if abort prev execution needed.
         requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);
         return planExecution;
@@ -669,7 +708,7 @@ public class TriggerExecutionHelper {
         NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
             ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
             ngTriggerEntity.getTargetIdentifier(), branch,
-            MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetRefs).build()));
+            MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetRefs).getOnlyFileContent(true).build()));
 
     return mergeInputSetResponseDTOPMS.getPipelineYaml();
   }

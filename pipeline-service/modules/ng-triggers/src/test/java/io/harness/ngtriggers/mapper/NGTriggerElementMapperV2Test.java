@@ -30,6 +30,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static java.util.Arrays.asList;
@@ -1089,7 +1090,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_gitlab_pr, false)
             .getNgTriggerEntity();
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO =
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, false);
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, false, true);
     // baseUrl: "https://app.harness.io/pipeline/api"
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
@@ -1099,20 +1100,20 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         ngTriggerElementMapper.toTriggerDetails("accId", "orgId", "projId", ngTriggerYaml_gitlab_pr, false)
             .getNgTriggerEntity();
     ngTriggerDetailsResponseDTO =
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true);
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true, true);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
 
     // baseUrl: "https://app.harness.io/pipeline/api/#"
     ngTriggerDetailsResponseDTO =
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, false);
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, false, true);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo("https://app.harness.io/ng/api/webhook?accountIdentifier=accId");
 
     ngTriggerEntity = ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_custom, false)
                           .getNgTriggerEntity();
     ngTriggerDetailsResponseDTO =
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true);
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true, true);
     // baseUrl: "https://app.harness.io/pipeline/api"
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
         .isEqualTo(
@@ -1120,8 +1121,46 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
 
     ngTriggerEntity.setType(SCHEDULED);
     ngTriggerDetailsResponseDTO =
-        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true);
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true, true);
     assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetV3WebhookUrl() {
+    NGTriggerEntity ngTriggerEntity =
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_custom, false)
+            .getNgTriggerEntity();
+    ngTriggerEntity.setCustomWebhookToken("webhookToken");
+    NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true, true);
+    // baseUrl: "https://app.harness.io/pipeline/api"
+    assertThat(ngTriggerDetailsResponseDTO.getWebhookUrl())
+        .isEqualTo(
+            "https://app.harness.io/pipeline/api/webhook/custom/webhookToken/v3?accountIdentifier=accId&orgIdentifier=org&projectIdentifier=proj&pipelineIdentifier=pipeline&triggerIdentifier=first_trigger");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetWebhookCurl() throws IOException {
+    NGTriggerEntity ngTriggerEntity =
+        ngTriggerElementMapper.toTriggerDetails("accId", "org", "proj", ngTriggerYaml_custom, false)
+            .getNgTriggerEntity();
+    ngTriggerEntity.setCustomWebhookToken("webhookToken");
+    NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true, false);
+    // baseUrl: "https://app.harness.io/pipeline/api"
+    assertThat(ngTriggerDetailsResponseDTO.getWebhookCurlCommand())
+        .isEqualTo(
+            "curl -X POST -H 'content-type: application/json' --url 'https://app.harness.io/pipeline/api/webhook/custom/webhookToken/v3?accountIdentifier=accId&orgIdentifier=org&projectIdentifier=proj&pipelineIdentifier=pipeline&triggerIdentifier=first_trigger' -d '{\"sample_key\": \"sample_value\"}'");
+    ngTriggerDetailsResponseDTO =
+        ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, false, true, true, true);
+    // baseUrl: "https://app.harness.io/pipeline/api"
+    assertThat(ngTriggerDetailsResponseDTO.getWebhookCurlCommand())
+        .isEqualTo(
+            "curl -X POST -H 'content-type: application/json' -H 'X-Api-Key: sample_api_key' --url 'https://app.harness.io/pipeline/api/webhook/custom/webhookToken/v3?accountIdentifier=accId&orgIdentifier=org&projectIdentifier=proj&pipelineIdentifier=pipeline&triggerIdentifier=first_trigger' -d '{\"sample_key\": \"sample_value\"}'");
   }
 
   @Test

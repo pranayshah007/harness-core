@@ -10,7 +10,9 @@ package io.harness.ccm.graphql.query.instanceutilization;
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.commons.beans.recommendation.AzureVmUtilisationDTO;
 import io.harness.ccm.commons.beans.recommendation.EC2InstanceUtilizationData;
+import io.harness.ccm.graphql.core.recommendation.AzureCpuUtilisationService;
 import io.harness.ccm.graphql.core.recommendation.EC2InstanceUtilizationService;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.ccm.graphql.utils.annotations.GraphQLApi;
@@ -25,7 +27,9 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Query class to fetch the ec2 instance utilisation data from timescale.
+ * Query class to fetch the utilisation data for vm instance(s)
+ * EC2 instance from the timescale DB
+ * Azure VM from the Bigquery
  */
 @Slf4j
 @Singleton
@@ -33,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class UtilizationQuery {
   @Inject GraphQLUtils graphQLUtils;
+  @Inject AzureCpuUtilisationService azureCpuUtilisationService;
   @Inject EC2InstanceUtilizationService ec2InstanceUtilizationService;
 
   /**
@@ -46,5 +51,19 @@ public class UtilizationQuery {
       @GraphQLArgument(name = "instanceId") String instanceId, @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     return ec2InstanceUtilizationService.getEC2InstanceUtilizationData(accountId, instanceId);
+  }
+
+  /**
+   * GQL query to fetch the instance util data.
+   * @param azureVmId
+   * @param duration
+   * @param env
+   * @return
+   */
+  @GraphQLQuery(name = "azureVmUtilData", description = "Fetches the cpu utilization data for azure vm")
+  public List<AzureVmUtilisationDTO> azureVmUtilData(@GraphQLArgument(name = "azureVmId") String azureVmId,
+      @GraphQLArgument(name = "duration") int duration, @GraphQLEnvironment final ResolutionEnvironment env) {
+    final String accountId = graphQLUtils.getAccountIdentifier(env);
+    return azureCpuUtilisationService.getAzureVmCpuUtilisationData(azureVmId, accountId, duration);
   }
 }

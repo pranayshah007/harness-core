@@ -57,8 +57,10 @@ import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -121,10 +123,8 @@ public class ServiceStepV3Test extends CategoryTest {
   @Mock private NgExpressionHelper ngExpressionHelper;
   @Mock private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
 
-  private static final String ACCOUNT_ID = "accountId";
-  private static final String PROJECT_ID = "projectId";
-  private static final String ORG_ID = "orgId";
-
+  @Mock private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
+  @Mock private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
 
@@ -579,7 +579,8 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .childrenNodeIds(new ArrayList<>())
                                 .build(),
                             null))
-        .withMessageContaining("The value provided xyz-1 does not match the required regex pattern");
+        .withMessageContaining(
+            "The value provided for [service.serviceDefinition.spec.artifacts.primary.spec.tag: xyz-1] does not match the required regex pattern");
   }
 
   @Test
@@ -609,7 +610,8 @@ public class ServiceStepV3Test extends CategoryTest {
                                 .childrenNodeIds(new ArrayList<>())
                                 .build(),
                             null))
-        .withMessageContaining("The value provided 7 does not match any of the allowed values [5,6]");
+        .withMessageContaining(
+            "The values provided for environment.variables.numbervar: [\\'7\\'] do not match any of the allowed values [\\'5\\', \\'6\\']");
   }
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
@@ -1210,8 +1212,8 @@ public class ServiceStepV3Test extends CategoryTest {
                                                           .build())
                                     .build();
     String yaml = NGFreezeDtoMapper.toYaml(freezeConfig);
-    FreezeConfigEntity freezeConfigEntity =
-        NGFreezeDtoMapper.toFreezeConfigEntity("accountId", null, null, yaml, FreezeType.GLOBAL);
+    FreezeConfigEntity freezeConfigEntity = NGFreezeDtoMapper.toFreezeConfigEntity(
+        "accountId", "orgIdentifier", "projectIdentifier", yaml, FreezeType.GLOBAL);
     return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
   }
 }

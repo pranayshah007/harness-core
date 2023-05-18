@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;

@@ -112,6 +112,11 @@ public class FakeNextGenService implements NextGenService {
   }
 
   @Override
+  public boolean isProjectDeleted(String accountId, String orgIdentifier, String projectIdentifier) {
+    return true;
+  }
+
+  @Override
   public OrganizationDTO getOrganization(String accountIdentifier, String orgIdentifier) {
     return OrganizationDTO.builder().identifier(orgIdentifier).name("Mocked org name").build();
   }
@@ -144,6 +149,9 @@ public class FakeNextGenService implements NextGenService {
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project1").build());
     projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier").identifier("project3").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project1").build());
+    projectDTOS.add(ProjectDTO.builder().orgIdentifier("orgIdentifier1").identifier("project3").build());
     return projectDTOS;
   }
 }

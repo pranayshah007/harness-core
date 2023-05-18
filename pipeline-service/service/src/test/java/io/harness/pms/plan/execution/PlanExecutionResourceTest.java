@@ -42,6 +42,7 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.ThreadOperationContextHelper;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -153,13 +154,14 @@ public class PlanExecutionResourceTest extends CategoryTest {
     doReturn(planExecutionResponseDto)
         .when(pipelineExecutor)
         .runStagesWithRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
-            RunStageRequestDTO.builder().build(), false);
-    ResponseDTO<PlanExecutionResponseDto> dto = planExecutionResource.runStagesWithRuntimeInputYaml(ACCOUNT_ID,
-        ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, false, RunStageRequestDTO.builder().build());
+            RunStageRequestDTO.builder().build(), false, null);
+    ResponseDTO<PlanExecutionResponseDto> dto =
+        planExecutionResource.runStagesWithRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+            PIPELINE_IDENTIFIER, null, false, RunStageRequestDTO.builder().build(), null);
     assertThat(dto.getData()).isEqualTo(planExecutionResponseDto);
     verify(pipelineExecutor, times(1))
         .runStagesWithRuntimeInputYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
-            RunStageRequestDTO.builder().build(), false);
+            RunStageRequestDTO.builder().build(), false, null);
   }
 
   @Test
@@ -176,7 +178,7 @@ public class PlanExecutionResourceTest extends CategoryTest {
                 .build());
     planExecutionResource.getRetryHistory(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "planExecutionId");
-    verify(retryExecutionHelper, times(1)).getRetryHistory("rootExecutionId");
+    verify(retryExecutionHelper, times(1)).getRetryHistory("rootExecutionId", "planExecutionId");
   }
 
   @Test
@@ -202,9 +204,10 @@ public class PlanExecutionResourceTest extends CategoryTest {
   public void testRunPostExecutionRollback() {
     doReturn(PlanExecution.builder().planId("planId123").build())
         .when(pipelineExecutor)
-        .startPostExecutionRollback(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "originalPlanId");
+        .startPostExecutionRollback(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "originalPlanId",
+            Collections.singletonList("stageNodeExecutionId"), null);
     ResponseDTO<PlanExecutionResponseDto> response = planExecutionResource.runPostExecutionRollback(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, "originalPlanId");
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, "originalPlanId", "stageNodeExecutionId", null);
     PlanExecutionResponseDto data = response.getData();
     assertThat(data.getPlanExecution().getPlanId()).isEqualTo("planId123");
   }
@@ -218,9 +221,9 @@ public class PlanExecutionResourceTest extends CategoryTest {
         PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
         .when(pipelineExecutor)
         .runPipelineWithInputSetPipelineYaml(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd", yaml, false, false);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd", yaml, false, false, null);
     planExecutionResource.runPipelineWithInputSetPipelineYaml(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, false, false, yaml);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, false, false, yaml, null);
     assertEquals(USER_FLOW.EXECUTION, ThreadOperationContextHelper.getThreadOperationContextUserFlow());
   }
 }

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static java.time.LocalDate.now;
 import static junit.framework.TestCase.assertEquals;
@@ -40,6 +41,7 @@ import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.pipeline.CacheResponseMetadataDTO;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
@@ -701,5 +703,17 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     RecentExecutionInfoDTO recentExecutionInfoDTO =
         PMSPipelineDtoMapper.prepareRecentExecutionInfo(recentExecutionInfo);
     assertEquals(recentExecutionInfoDTO.getParentStageInfo(), parentStageInfo);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetCacheResponseFromGitContext() {
+    CacheResponse cacheResponse = CacheResponse.builder().cacheState(CacheState.VALID_CACHE).build();
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+
+    CacheResponseMetadataDTO cacheResponseMetadataDTO = PMSPipelineDtoMapper.getCacheResponseFromGitContext();
+    assertThat(cacheResponseMetadataDTO.getCacheState()).isEqualTo(CacheState.VALID_CACHE);
   }
 }

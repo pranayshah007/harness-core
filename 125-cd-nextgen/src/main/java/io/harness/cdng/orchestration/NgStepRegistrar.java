@@ -29,6 +29,7 @@ import io.harness.cdng.aws.asg.AsgRollingDeployStep;
 import io.harness.cdng.aws.asg.AsgRollingRollbackStep;
 import io.harness.cdng.aws.lambda.deploy.AwsLambdaDeployStep;
 import io.harness.cdng.aws.lambda.rollback.AwsLambdaRollbackStep;
+import io.harness.cdng.aws.sam.AwsSamBuildStep;
 import io.harness.cdng.aws.sam.AwsSamDeployStep;
 import io.harness.cdng.aws.sam.AwsSamRollbackStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
@@ -81,6 +82,7 @@ import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStep;
 import io.harness.cdng.infra.steps.InfrastructureTaskExecutableStepV2;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStep;
 import io.harness.cdng.k8s.K8sApplyStep;
+import io.harness.cdng.k8s.K8sBGStageScaleDownStep;
 import io.harness.cdng.k8s.K8sBGSwapServicesStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
 import io.harness.cdng.k8s.K8sCanaryDeleteStep;
@@ -93,6 +95,7 @@ import io.harness.cdng.k8s.K8sScaleStep;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.steps.ManifestsStepV2;
+import io.harness.cdng.pipeline.steps.CombinedRollbackStep;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerStep;
 import io.harness.cdng.pipeline.steps.NGSectionStep;
@@ -163,6 +166,7 @@ public class NgStepRegistrar {
     engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(SyncStep.STEP_TYPE, SyncStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
+    engineSteps.put(CombinedRollbackStep.STEP_TYPE, CombinedRollbackStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
     engineSteps.put(InfrastructureSectionStep.STEP_TYPE, InfrastructureSectionStep.class);
@@ -194,6 +198,7 @@ public class NgStepRegistrar {
     engineSteps.put(K8sBGSwapServicesStep.STEP_TYPE, K8sBGSwapServicesStep.class);
     engineSteps.put(K8sApplyStep.STEP_TYPE, K8sApplyStep.class);
     engineSteps.put(K8sDryRunManifestStep.STEP_TYPE, K8sDryRunManifestStep.class);
+    engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
     engineSteps.put(TerraformApplyStep.STEP_TYPE, TerraformApplyStep.class);
     engineSteps.put(TerraformPlanStep.STEP_TYPE, TerraformPlanStep.class);
     engineSteps.put(TerraformDestroyStep.STEP_TYPE, TerraformDestroyStep.class);
@@ -294,10 +299,14 @@ public class NgStepRegistrar {
 
     // AWS SAM
     engineSteps.put(AwsSamDeployStep.STEP_TYPE, AwsSamDeployStep.class);
+    engineSteps.put(AwsSamBuildStep.STEP_TYPE, AwsSamBuildStep.class);
     engineSteps.put(AwsSamRollbackStep.STEP_TYPE, AwsSamRollbackStep.class);
 
     // Service Hooks
     engineSteps.put(ServiceHooksStep.STEP_TYPE, ServiceHooksStep.class);
+
+    // Blue Green Stage Scale Down
+    engineSteps.put(K8sBGStageScaleDownStep.STEP_TYPE, K8sBGStageScaleDownStep.class);
     return engineSteps;
   }
 }

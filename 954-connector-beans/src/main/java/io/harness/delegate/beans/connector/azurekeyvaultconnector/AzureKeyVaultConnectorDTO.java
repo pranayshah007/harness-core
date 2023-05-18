@@ -19,7 +19,9 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
+import io.harness.delegate.beans.connector.azurekeyvaultconnector.outcome.AzureKeyVaultConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -75,18 +77,44 @@ public class AzureKeyVaultConnectorDTO extends ConnectorConfigDTO implements Del
   }
 
   @Override
+  public AzureKeyVaultConnectorOutcomeDTO toOutcome() {
+    return AzureKeyVaultConnectorOutcomeDTO.builder()
+        .clientId(clientId)
+        .secretKey(secretKey)
+        .tenantId(tenantId)
+        .vaultName(vaultName)
+        .subscription(subscription)
+        .isDefault(isDefault)
+        .azureEnvironmentType(azureEnvironmentType)
+        .delegateSelectors(delegateSelectors)
+        .useManagedIdentity(useManagedIdentity)
+        .azureManagedIdentityType(azureManagedIdentityType)
+        .managedClientId(managedClientId)
+        .build();
+  }
+
+  @Override
   public void validate() {
     Preconditions.checkNotNull(this.subscription, "subscription cannot be empty");
     Preconditions.checkNotNull(this.vaultName, "vaultName cannot be empty");
-    if (BooleanUtils.isTrue(useManagedIdentity)) {
-      Preconditions.checkNotNull(this.azureManagedIdentityType, "managedIdentityType cannot be empty");
-      if (AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY.equals(this.azureManagedIdentityType)) {
-        Preconditions.checkNotNull(this.managedClientId, "managedClientId cannot be empty");
+    if (BooleanUtils.isTrue(this.useManagedIdentity)) {
+      if (this.azureManagedIdentityType == null) {
+        throw new InvalidRequestException("managedIdentityType cannot be empty");
+      }
+      if (AzureManagedIdentityType.USER_ASSIGNED_MANAGED_IDENTITY.equals(this.azureManagedIdentityType)
+          && this.managedClientId == null) {
+        throw new InvalidRequestException("managedClientId cannot be empty");
       }
     } else {
-      Preconditions.checkNotNull(this.clientId, "clientId cannot be empty");
-      Preconditions.checkNotNull(this.tenantId, "tenantId cannot be empty");
-      Preconditions.checkNotNull(this.secretKey, "secretKey cannot be empty");
+      if (this.clientId == null) {
+        throw new InvalidRequestException("clientId cannot be empty");
+      }
+      if (this.tenantId == null) {
+        throw new InvalidRequestException("tenantId cannot be empty");
+      }
+      if (this.secretKey == null) {
+        throw new InvalidRequestException("secretKey cannot be empty");
+      }
     }
   }
 }

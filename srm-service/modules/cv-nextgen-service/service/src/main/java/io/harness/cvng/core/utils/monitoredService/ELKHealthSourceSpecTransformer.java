@@ -27,7 +27,7 @@ public class ELKHealthSourceSpecTransformer
         .feature(cvConfigs.get(0).getProductName())
         .queries(cvConfigs.stream()
                      .map(cv
-                         -> ELKHealthSourceSpec.QueryDTO.builder()
+                         -> ELKHealthSourceSpec.ELKHealthSourceQueryDTO.builder()
                                 .name(cv.getQueryName())
                                 .query(cv.getQuery())
                                 .index(cv.getIndex())

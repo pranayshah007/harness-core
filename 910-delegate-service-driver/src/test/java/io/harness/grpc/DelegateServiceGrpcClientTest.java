@@ -6,6 +6,7 @@
  */
 package io.harness.grpc;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static junit.framework.TestCase.assertEquals;
@@ -18,6 +19,7 @@ import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.Rule;
@@ -33,14 +35,18 @@ import org.mockito.junit.MockitoRule;
 public class DelegateServiceGrpcClientTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-  @Parameterized.Parameter public LinkedHashMap<String, String> logStreamingAbstractions;
+  @Parameterized.Parameter public Map<String, String> logStreamingAbstractions;
 
   @Parameterized.Parameters
-  public static Collection<LinkedHashMap<String, String>> data() {
+  public static Collection<Map<String, String>> data() {
     return Arrays.asList(
-        new LinkedHashMap(Map.of("accountId", "accountIdValue", "orgId", "orgIdValue", "projectId", "projectIdValue")),
-        new LinkedHashMap(Map.of("accountId", "accountIdValue", "orgId", "orgIdValue", "projectId", "")),
-        new LinkedHashMap(Map.of("accountId", "accountIdValue", "orgId", "", "projectId", "")));
+        Map.of("accountId", "accountIdValue", "orgId", "orgIdValue", "projectId", "projectIdValue"), new HashMap<>() {
+          {
+            put("accountId", "accountIdValue");
+            put("orgId", null);
+            put("projectId", null);
+          }
+        });
   }
 
   @Test
@@ -48,6 +54,24 @@ public class DelegateServiceGrpcClientTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getAbstractionsMapShouldNotContainEmptyValues() {
     Map<String, String> result = DelegateServiceGrpcClient.getAbstractionsMap(logStreamingAbstractions);
-    assertEquals(result.values().contains(""), false);
+    assertEquals(result.values().contains(null), false);
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void getAbstractionsMapShouldRetainOrder() {
+    Map<String, String> map = new LinkedHashMap<>();
+    map.put("b", "value1");
+    map.put("d", "value4");
+    map.put("a", "value3");
+    map.put("c", "value2");
+
+    Map<String, String> result = DelegateServiceGrpcClient.getAbstractionsMap(map);
+    String order = "";
+    for (String k : result.keySet()) {
+      order += k;
+    }
+    assertEquals(order, "bdac");
   }
 }

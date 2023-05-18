@@ -8,13 +8,14 @@
 package io.harness.shell.ssh.xfer;
 
 import io.harness.shell.AbstractScriptExecutor.FileProvider;
+import io.harness.shell.ssh.client.BaseSshRequest;
 
 import lombok.Builder;
 import lombok.Getter;
 
 @Builder
 @Getter
-public class ScpRequest {
+public class ScpRequest extends BaseSshRequest {
   private String remoteFilePath;
   private FileProvider fileProvider;
 }

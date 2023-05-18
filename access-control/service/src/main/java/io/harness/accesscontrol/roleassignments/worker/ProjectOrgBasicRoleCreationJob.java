@@ -23,14 +23,12 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.Ro
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 import io.harness.utils.CryptoUtils;
@@ -54,7 +52,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class ProjectOrgBasicRoleCreationJob implements Runnable {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final FeatureFlagService featureFlagService;
-  private final AccountClient accountClient;
+  private final AccountUtils accountUtils;
   private final ScopeService scopeService;
   private final PersistentLocker persistentLocker;
   private final String DEBUG_MESSAGE = "ProjectOrgBasicRoleCreationJob: ";
@@ -68,11 +66,11 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
 
   @Inject
   public ProjectOrgBasicRoleCreationJob(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService,
+      FeatureFlagService featureFlagService, AccountUtils accountUtils, ScopeService scopeService,
       PersistentLocker persistentLocker) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagService = featureFlagService;
-    this.accountClient = accountClient;
+    this.accountUtils = accountUtils;
     this.scopeService = scopeService;
     this.persistentLocker = persistentLocker;
   }
@@ -103,13 +101,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
   }
 
   private void execute() {
-    List<AccountDTO> accountDTOS = new ArrayList<>();
-    try {
-      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts", ex);
-    }
-    List<String> targetAccounts = filterAccountsForFFEnabled(accountDTOS);
+    List<String> targetAccounts = getFFEnabledAccounts();
     if (isEmpty(targetAccounts)) {
       return;
     }
@@ -151,14 +143,15 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
     }
   }
 
-  private List<String> filterAccountsForFFEnabled(List<AccountDTO> accountDTOS) {
+  private List<String> getFFEnabledAccounts() {
+    List<String> accountIds = accountUtils.getAllAccountIds();
     List<String> targetAccounts = new ArrayList<>();
     try {
-      for (AccountDTO accountDTO : accountDTOS) {
+      for (String accountId : accountIds) {
         boolean isBasicRoleCreationEnabled =
-            featureFlagService.isEnabled(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS, accountDTO.getIdentifier());
+            featureFlagService.isEnabled(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS, accountId);
         if (isBasicRoleCreationEnabled) {
-          targetAccounts.add(accountDTO.getIdentifier());
+          targetAccounts.add(accountId);
         }
       }
     } catch (Exception ex) {
@@ -187,7 +180,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
             try {
               roleAssignmentRepository.save(newRoleAssignmentDBO);
             } catch (DuplicateKeyException e) {
-              log.error("[ProjectOrgBasicRoleCreationJob]: Corresponding basic role assigment was already created {}",
+              log.warn("[ProjectOrgBasicRoleCreationJob]: Corresponding basic role assigment was already created {}",
                   newRoleAssignmentDBO.toString(), e);
             }
             roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));

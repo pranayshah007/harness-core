@@ -9,7 +9,7 @@ package io.harness.ng.core.activityhistory.resource;
 
 import static io.harness.EntityType.CONNECTORS;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
 import io.harness.CategoryTest;

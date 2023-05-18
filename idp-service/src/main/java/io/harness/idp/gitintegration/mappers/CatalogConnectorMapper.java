@@ -22,8 +22,8 @@ public class CatalogConnectorMapper {
     CatalogConnectorInfo catalogConnectorInfo = new CatalogConnectorInfo();
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(catalogConnectorEntity.getConnectorIdentifier());
-    connectorDetails.setType(catalogConnectorEntity.getConnectorProviderType());
-    catalogConnectorInfo.setInfraConnector(connectorDetails);
+    connectorDetails.setType(ConnectorDetails.TypeEnum.valueOf(catalogConnectorEntity.getConnectorProviderType()));
+    catalogConnectorInfo.setConnector(connectorDetails);
     catalogConnectorInfo.setRepo(catalogConnectorEntity.getCatalogRepositoryDetails().getRepo());
     catalogConnectorInfo.setBranch(catalogConnectorEntity.getCatalogRepositoryDetails().getBranch());
     catalogConnectorInfo.setPath(catalogConnectorEntity.getCatalogRepositoryDetails().getPath());

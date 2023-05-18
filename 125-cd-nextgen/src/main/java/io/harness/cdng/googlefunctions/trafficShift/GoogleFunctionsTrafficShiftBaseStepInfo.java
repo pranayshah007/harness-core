@@ -7,7 +7,7 @@
 
 package io.harness.cdng.googlefunctions.trafficShift;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("googleFunctionsTrafficShiftBaseStepInfo")
 @FieldNameConstants(innerTypeName = "GoogleFunctionsTrafficShiftBaseStepInfoKeys")
 public class GoogleFunctionsTrafficShiftBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

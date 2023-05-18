@@ -10,6 +10,7 @@ import static io.harness.annotations.dev.HarnessTeam.GTM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.credit.beans.credits.CreditDTO;
+import io.harness.credit.entities.Credit;
 
 import java.util.List;
 
@@ -17,5 +18,7 @@ import java.util.List;
 public interface CreditService {
   List<CreditDTO> getCredits(String accountIdentifier);
 
-  void purchaseCredits(String accountIdentifier);
+  CreditDTO purchaseCredit(String accountIdentifier, CreditDTO creditDTO);
+
+  void setCreditStatusExpired(Credit entity);
 }

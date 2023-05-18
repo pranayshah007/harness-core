@@ -11,10 +11,10 @@ config: |-
   proxy:
     '/harness':
       target: 'https://app.harness.io/'
-      headers:
-        'x-api-key': ${HARNESS_TOKEN}
-environmentVariables:
-  - HARNESS_TOKEN
+      pathRewrite:
+        'api/proxy/harness/?': '/'
+      allowedHeaders:
+        - authorization
 exports:
   defaultEntityTypes:
     - service

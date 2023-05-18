@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyList;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 
 import io.harness.CategoryTest;
@@ -101,7 +101,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PipelineServiceInternalInfoProviderTest extends CategoryTest {
-  public static final int PLAN_CREATOR_NUMBER = 36;
+  public static final int PLAN_CREATOR_NUMBER = 37;
   public static final int FILTER_JSON_CREATOR_NUMBER = 13;
   public static final int VARIABLE_CREATOR_NUMBER = 25;
 

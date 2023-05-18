@@ -30,8 +30,6 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
-
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.UUID;
@@ -110,37 +108,6 @@ public abstract class AwsClientHelper {
     }
     handleClientServiceException(awsServiceException);
     throw new InvalidRequestException(awsServiceException.getMessage(), awsServiceException, USER);
-  }
-
-  public ClientOverrideConfiguration getClientOverrideConfiguration(AwsInternalConfig awsConfig) {
-    AmazonClientSDKDefaultBackoffStrategy defaultBackoffStrategy = awsConfig.getAmazonClientSDKDefaultBackoffStrategy();
-    RetryPolicy retryPolicy;
-    if (defaultBackoffStrategy != null) {
-      retryPolicy =
-          RetryPolicy.builder()
-              .retryCondition(defaultRetryCondition())
-              .numRetries(defaultBackoffStrategy.getMaxErrorRetry())
-              .backoffStrategy(FullJitterBackoffStrategy.builder()
-                                   .baseDelay(Duration.ofMillis(defaultBackoffStrategy.getBaseDelayInMs()))
-                                   .maxBackoffTime(Duration.ofMillis(defaultBackoffStrategy.getMaxBackoffInMs()))
-                                   .build())
-              .throttlingBackoffStrategy(
-                  EqualJitterBackoffStrategy.builder()
-                      .baseDelay(Duration.ofMillis(defaultBackoffStrategy.getThrottledBaseDelayInMs()))
-                      .maxBackoffTime(Duration.ofMillis(defaultBackoffStrategy.getMaxBackoffInMs()))
-                      .build())
-              .build();
-    } else {
-      retryPolicy = RetryPolicy.builder()
-                        .retryCondition(defaultRetryCondition())
-                        .numRetries(DEFAULT_BACKOFF_MAX_ERROR_RETRIES)
-                        .backoffStrategy(defaultStrategy())
-                        .throttlingBackoffStrategy(defaultThrottlingStrategy())
-                        .build();
-    }
-    return ClientOverrideConfiguration.builder().retryPolicy(retryPolicy).build();
-
-    // todo: good review needed
   }
 
   public ClientOverrideConfiguration getClientOverrideFromBackoffOverride(AwsInternalConfig awsConfig) {

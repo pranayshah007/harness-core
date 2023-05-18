@@ -28,6 +28,7 @@ import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -79,6 +80,8 @@ public class SLOHealthIndicator
   Instant lastComputedAt;
   @FdIndex private long timescaleIteration;
 
+  Boolean failedState;
+
   @Override
   public Long obtainNextIteration(String fieldName) {
     if (SLOHealthIndicatorKeys.timescaleIteration.equals(fieldName)) {
@@ -103,5 +106,9 @@ public class SLOHealthIndicator
       sloHealthIndicator.setLastComputedAt(Instant.now());
       return sloHealthIndicator;
     }
+  }
+
+  public Boolean getFailedState() {
+    return Objects.requireNonNullElse(failedState, false);
   }
 }

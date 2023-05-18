@@ -29,6 +29,8 @@ shared_dependencies = [
     "//120-ng-manager/modules/ng-settings/contracts:module",
     "//120-ng-manager/modules/ng-variables:module",
     "//120-ng-manager/modules/ng-variables/contracts:module",
+    "//120-ng-manager/modules/ip-allowlist:module",
+    "//120-ng-manager/modules/ip-allowlist/contracts:module",
     "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations:module",
     "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/dao:module",
     "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/models:module",

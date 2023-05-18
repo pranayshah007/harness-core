@@ -15,7 +15,7 @@ import io.harness.cdng.creator.plan.infrastructure.InfraRollbackPMSPlanCreator;
 import io.harness.cdng.pipeline.beans.RollbackNode;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters;
 import io.harness.cdng.pipeline.beans.RollbackOptionalChildChainStepParameters.RollbackOptionalChildChainStepParametersBuilder;
-import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
+import io.harness.cdng.pipeline.steps.CombinedRollbackStep;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -94,7 +94,7 @@ public class RollbackPlanCreator {
             .uuid(combinedRollbackNodeUuid)
             .name(NGCommonUtilPlanCreationConstants.ROLLBACK_NODE_NAME)
             .identifier(YAMLFieldNameConstants.ROLLBACK_STEPS)
-            .stepType(RollbackOptionalChildChainStep.STEP_TYPE)
+            .stepType(CombinedRollbackStep.STEP_TYPE)
             .stepParameters(stepParametersBuilder.build())
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()

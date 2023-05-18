@@ -23,7 +23,9 @@ import dev.morphia.annotations.Entity;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -33,6 +35,8 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
+@SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode
 @FieldNameConstants(innerTypeName = "UserSourceCodeManagerKeys")
 @StoreIn(DbAliases.NG_MANAGER)
@@ -48,6 +52,8 @@ public abstract class UserSourceCodeManager {
   @CreatedDate Long createdAt;
   @LastModifiedDate Long lastModifiedAt;
   @NotEmpty SCMType type;
+  String userName;
+  String userEmail;
   public abstract SCMType getType();
 
   public static List<MongoIndex> mongoIndexes() {

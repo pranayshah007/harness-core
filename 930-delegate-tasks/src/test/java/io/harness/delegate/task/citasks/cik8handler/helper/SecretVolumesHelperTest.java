@@ -12,7 +12,7 @@ import static io.harness.delegate.task.citasks.cik8handler.helper.SecretVolumesH
 import static io.harness.rule.OwnerRule.VISTAAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.mockito.Mockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -34,10 +34,10 @@ import org.mockito.InjectMocks;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @Slf4j
 @PrepareForTest(SecretVolumesHelper.class)
 public class SecretVolumesHelperTest extends CategoryTest {
@@ -48,7 +48,6 @@ public class SecretVolumesHelperTest extends CategoryTest {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    mockStatic(System.class);
     tempFile1 = temporaryFolder.newFile();
     tempFile2 = temporaryFolder.newFile();
   }
@@ -68,10 +67,11 @@ public class SecretVolumesHelperTest extends CategoryTest {
   @Owner(developers = VISTAAR)
   @Category(UnitTests.class)
   public void testGetSecretVolumeMappingsNotConfigured() {
-    MockedStatic<SystemWrapper> mockStatic = Mockito.mockStatic(SystemWrapper.class);
-    mockStatic.when(() -> SystemWrapper.getenv(Mockito.eq(CI_MOUNT_VOLUMES))).thenReturn("");
-    Map<String, List<String>> ret = secretVolumesHelper.getSecretVolumeMappings();
-    assertThat(isEmpty(ret));
+    try (MockedStatic<SystemWrapper> mockStatic = mockStatic(SystemWrapper.class)) {
+      mockStatic.when(() -> SystemWrapper.getenv(Mockito.eq(CI_MOUNT_VOLUMES))).thenReturn("");
+      Map<String, List<String>> ret = secretVolumesHelper.getSecretVolumeMappings();
+      assertThat(isEmpty(ret));
+    }
   }
 
   @Test
@@ -86,7 +86,7 @@ public class SecretVolumesHelperTest extends CategoryTest {
     String path2 = tempFile2.getAbsolutePath();
     String secretVolumes =
         String.format("%s:%s,%s:%s,%s:%s,%s:%s", path1, dest1, path1, dest2, path2, dest3, path2, dest4);
-    try (MockedStatic<SystemWrapper> mockStatic = Mockito.mockStatic(SystemWrapper.class)) {
+    try (MockedStatic<SystemWrapper> mockStatic = mockStatic(SystemWrapper.class)) {
       mockStatic.when(() -> SystemWrapper.getenv(CI_MOUNT_VOLUMES)).thenReturn(secretVolumes);
       Map<String, List<String>> ret = secretVolumesHelper.getSecretVolumeMappings();
 

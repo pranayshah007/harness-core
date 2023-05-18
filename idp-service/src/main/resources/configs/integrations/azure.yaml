@@ -1,4 +1,4 @@
 integrations:
   azure:
-    - host: dev.azure.com
+    - host: HOST_VALUE
       token: ${HARNESS_AZURE_REPO_TOKEN}

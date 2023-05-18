@@ -20,6 +20,7 @@ import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsClientImpl;
 import io.harness.beans.execution.license.CILicenseService;
@@ -93,7 +94,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
-import io.harness.ssca.client.SSCAServiceClientModule;
+import io.harness.ssca.client.SSCAServiceClientModuleV2;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -370,7 +371,8 @@ public class CIManagerServiceModule extends AbstractModule {
         this.configurationOverride.getServiceHeader().getServiceId()));
     install(new TIServiceClientModule(ciManagerConfiguration.getTiServiceConfig()));
     install(new STOServiceClientModule(ciManagerConfiguration.getStoServiceConfig()));
-    install(new SSCAServiceClientModule(ciManagerConfiguration.getSscaServiceConfig()));
+    install(new SSCAServiceClientModuleV2(
+        ciManagerConfiguration.getSscaServiceConfig(), AuthorizationServiceHeader.CI_MANAGER.getServiceId()));
     install(new IACMServiceClientModule(ciManagerConfiguration.getIacmServiceConfig()));
     install(new AccountClientModule(ciManagerConfiguration.getManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), this.configurationOverride.getServiceHeader().toString()));

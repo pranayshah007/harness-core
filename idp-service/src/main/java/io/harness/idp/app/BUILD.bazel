@@ -24,6 +24,7 @@ java_binary(
     visibility = ["//idp-service:__subpackages__"],
     deps = [
         "//:lombok",
+        "//910-delegate-service-driver:module",
         "//950-log-client:module",
         "//953-events-api:module",
         "//959-ng-persistence:module",

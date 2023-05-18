@@ -8,6 +8,7 @@
 package io.harness.shell.ssh.client.jsch;
 
 import io.harness.shell.ssh.client.SshConnection;
+import io.harness.shell.ssh.exception.SshClientException;
 
 import com.jcraft.jsch.Session;
 import lombok.Builder;
@@ -18,7 +19,7 @@ import lombok.Getter;
 public class JschConnection extends SshConnection {
   private Session session;
   @Override
-  public void close() throws Exception {
+  public void close() throws SshClientException {
     session.disconnect();
   }
 }

@@ -32,7 +32,6 @@ import com.google.inject.Inject;
 import com.mongodb.ReadPreference;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Sort;
-import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -45,7 +44,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.math3.util.Pair;
 
 @Slf4j
 public class SLIRecordServiceImpl implements SLIRecordService {
@@ -53,8 +52,6 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   private static final int RETRY_COUNT = 3;
 
   @Inject private SRMPersistence hPersistence;
-  @Inject Clock clock;
-
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
 
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
@@ -154,25 +151,6 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   }
 
   @Override
-  public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
-    Instant startTime = clock.instant().minusMillis(lookBackDuration);
-    Instant endTime = clock.instant().minusMillis(Duration.ofMinutes(1).toMillis());
-    List<Instant> minutes = new ArrayList<>();
-    minutes.add(startTime);
-    minutes.add(endTime);
-    return getSLIRecordsOfMinutes(sliId, minutes);
-  }
-
-  @Override
-  public double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes) {
-    List<SLIRecord> sliRecords = getSLIRecordsForLookBackDuration(sliId, lookBackDuration);
-    return sliRecords.size() < 2
-        ? 0
-        : (((double) (sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount()) * 100)
-            / totalErrorBudgetMinutes);
-  }
-
-  @Override
   public List<SLIRecord> getSLIRecords(String sliId, Instant startTimeStamp, Instant endTimeStamp) {
     return hPersistence.createQuery(SLIRecord.class, excludeAuthorityCount)
         .filter(SLIRecordKeys.sliId, sliId)
@@ -212,6 +190,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         .order(Sort.ascending(SLIRecordKeys.timestamp))
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
   }
+  @Override
   public Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
   getSLODetailsSLIRecordsAndSLIMissingDataType(
       List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
@@ -257,7 +236,42 @@ public class SLIRecordServiceImpl implements SLIRecordService {
         objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
       }
     }
-    return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+    return Pair.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
+  }
+
+  @Override
+  public Map<String, SLIRecord> getLastCompositeSLOsSLIRecord(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime) {
+    Map<String, SLIRecord> scopedIdentifierSLIRecordMap = new HashMap<>();
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
+        serviceLevelObjectivesDetailList) {
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(objectivesDetail);
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      String sliId = serviceLevelIndicator.getUuid();
+      int sliVersion = serviceLevelIndicator.getVersion();
+      SLIRecord sliRecord = getLastSLIRecord(sliId, startTime);
+      if (Objects.isNull(sliRecord)) {
+        sliRecord = SLIRecord.builder()
+                        .sliState(SLIRecord.SLIState.GOOD)
+                        .runningBadCount(0)
+                        .runningGoodCount(0)
+                        .sliVersion(sliVersion)
+                        .timestamp(startTime.minus(Duration.ofMinutes(1)))
+                        .build();
+      }
+      scopedIdentifierSLIRecordMap.put(serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecord);
+    }
+    return scopedIdentifierSLIRecordMap;
   }
 
   private SLIRecord getLatestSLIRecordSLIVersion(String sliId, int sliVersion) {

@@ -17,6 +17,8 @@ import io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookDTO;
 import io.harness.eventsframework.webhookpayloads.webhookdata.WebhookEventType;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.pms.contracts.facilitators.FacilitatorEvent;
 import io.harness.pms.events.base.PmsAbstractMessageListener;
 import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorEventHandler;
@@ -56,11 +58,14 @@ public class WebhookEventStreamListener extends PmsAbstractMessageListener<Facil
       try {
         log.info("Started processing webhook event for message id {}", message.getId());
         WebhookDTO webhookDTO = WebhookDTO.parseFrom(message.getMessage().getData());
-        if (webhookDTO.getGitDetails().getEvent().equals(WebhookEventType.PR)
-            && webhookDTO.getGitDetails().getSourceRepoType().equals(SourceRepoType.GITLAB)) {
-          webhookDTO = updateWebhookForGitlabPr(webhookDTO);
+        try (NgTriggerAutoLogContext ignore0 = new NgTriggerAutoLogContext("eventId", webhookDTO.getEventId(),
+                 webhookDTO.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+          if (webhookDTO.getGitDetails().getEvent().equals(WebhookEventType.PR)
+              && webhookDTO.getGitDetails().getSourceRepoType().equals(SourceRepoType.GITLAB)) {
+            webhookDTO = updateWebhookForGitlabPr(webhookDTO);
+          }
+          triggerWebhookExecutionServiceV2.processEvent(webhookDTO);
         }
-        triggerWebhookExecutionServiceV2.processEvent(webhookDTO);
       } catch (InvalidProtocolBufferException e) {
         throw new InvalidRequestException("Exception in unpacking/processing of WebhookDTO event", e);
       } catch (Exception e) {

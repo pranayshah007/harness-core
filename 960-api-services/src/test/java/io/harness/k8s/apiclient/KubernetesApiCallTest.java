@@ -12,11 +12,10 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -31,7 +30,6 @@ import io.harness.rule.Owner;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.Pair;
 import java.lang.reflect.Type;
 import java.util.function.Supplier;
 import okhttp3.Call;
@@ -57,9 +55,8 @@ public class KubernetesApiCallTest extends CategoryTest {
   @Before
   public void setup() throws ApiException {
     MockitoAnnotations.initMocks(this);
-    doReturn(call).when(apiClient).buildCall(anyString(), anyString(), anyListOf(Pair.class), anyListOf(Pair.class),
-        anyObject(), anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-        anyMapOf(String.class, Object.class), any(), any(ApiCallback.class));
+    doReturn(call).when(apiClient).buildCall(anyString(), anyString(), anyList(), anyList(), any(), anyMap(), anyMap(),
+        anyMap(), any(), any(ApiCallback.class));
   }
 
   @Test

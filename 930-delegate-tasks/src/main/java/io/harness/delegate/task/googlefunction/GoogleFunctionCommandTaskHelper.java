@@ -100,6 +100,7 @@ import com.google.protobuf.Empty;
 import com.google.protobuf.FieldMask;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
+import com.google.protobuf.Timestamp;
 import com.google.protobuf.util.JsonFormat;
 import java.util.List;
 import java.util.Optional;
@@ -115,7 +116,8 @@ public class GoogleFunctionCommandTaskHelper {
   @Inject private GoogleCloudRunClient googleCloudRunClient;
   private YamlUtils yamlUtils = new YamlUtils();
   private static final int MAXIMUM_STEADY_STATE_CHECK_API_CALL = 300;
-  private static final String CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION = "%s-harness-temp-version";
+  private static final String CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_A = "%s-harness-temp-version-a";
+  private static final String CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_B = "%s-harness-temp-version-b";
 
   public Function deployFunction(GcpGoogleFunctionInfraConfig googleFunctionInfraConfig,
       String googleFunctionDeployManifestContent, String updateFieldMaskContent,
@@ -201,12 +203,6 @@ public class GoogleFunctionCommandTaskHelper {
       logCallback.saveExecutionLog(format("Updated Function: %s in project: %s and region: %s %n", functionName,
                                        googleFunctionInfraConfig.getProject(), googleFunctionInfraConfig.getRegion()),
           LogLevel.INFO);
-      logCallback.saveExecutionLog(format("Deleting temporary revision: %s present in Cloud-Run service: %s",
-          getResourceName(getTemporaryRevisionName(function.getServiceConfig().getService())),
-          getResourceName(function.getServiceConfig().getService())));
-      deleteRevision(getTemporaryRevisionName(function.getServiceConfig().getService()),
-          googleFunctionInfraConfig.getGcpConnectorDTO(), googleFunctionInfraConfig.getProject(),
-          googleFunctionInfraConfig.getRegion(), logCallback);
       return function;
     }
   }
@@ -460,6 +456,60 @@ public class GoogleFunctionCommandTaskHelper {
     }
   }
 
+  private String evaluateTemporaryRevisionForTrafficShift(
+      String serviceName, GcpConnectorDTO gcpConnectorDTO, String project, String region, LogCallback logCallback) {
+    // check if temporary version a exists
+    Optional<Revision> temporaryRevisionAOptional =
+        getRevision(getRevisionName(serviceName, CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_A), gcpConnectorDTO, project,
+            region, logCallback);
+    if (temporaryRevisionAOptional.isEmpty()) {
+      // if temporary version a doesn't exist, use it as a temp revision for traffic shift
+      return CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_A;
+    }
+    // check if temporary version b exists
+    Optional<Revision> temporaryRevisionBOptional =
+        getRevision(getRevisionName(serviceName, CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_B), gcpConnectorDTO, project,
+            region, logCallback);
+    if (temporaryRevisionBOptional.isEmpty()) {
+      // if temporary version b doesn't exist, use it as a temp revision for traffic shift
+      return CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_B;
+    }
+    // if both versions exist, delete old one and use it as a temp revision for traffic shift
+    Timestamp creationTimeStampForVersionA = temporaryRevisionAOptional.get().getCreateTime();
+    Timestamp creationTimeStampForVersionB = temporaryRevisionBOptional.get().getCreateTime();
+    String oldRevision = (creationTimeStampForVersionA.getNanos() > creationTimeStampForVersionB.getNanos())
+        ? CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_B
+        : CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_A;
+    deleteRevision(getRevisionName(serviceName, oldRevision), gcpConnectorDTO, project, region, logCallback);
+    return oldRevision;
+  }
+
+  private Optional<Revision> getRevision(
+      String revisionName, GcpConnectorDTO gcpConnectorDTO, String project, String region, LogCallback logCallback) {
+    GetRevisionRequest getRevisionRequest = GetRevisionRequest.newBuilder().setName(revisionName).build();
+    try {
+      return Optional.of(
+          googleCloudRunClient.getRevision(getRevisionRequest, getGcpInternalConfig(gcpConnectorDTO, region, project)));
+    } catch (Exception e) {
+      if (e.getCause() instanceof NotFoundException) {
+        return Optional.empty();
+      }
+      throwGetRevisionFailureException(e, logCallback);
+    }
+    return Optional.empty();
+  }
+
+  private void deleteOldTemporaryRevision(String temporaryRevision, String serviceName, GcpConnectorDTO gcpConnectorDTO,
+      String project, String region, LogCallback logCallback) {
+    if (temporaryRevision.equals(CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_A)) {
+      deleteRevision(getRevisionName(serviceName, CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_B), gcpConnectorDTO, project,
+          region, logCallback);
+    } else {
+      deleteRevision(getRevisionName(serviceName, CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION_A), gcpConnectorDTO, project,
+          region, logCallback);
+    }
+  }
+
   private void checkTrafficShiftSteadyState(Integer targetTrafficPercent, String targetRevision,
       String existingRevision, String serviceName, GcpConnectorDTO gcpConnectorDTO, String project, String region,
       LogCallback logCallback) {
@@ -562,7 +612,11 @@ public class GoogleFunctionCommandTaskHelper {
     printExistingRevisionsTraffic(existingService.getTrafficStatusesList(), logCallback, existingService.getName());
 
     RevisionTemplate.Builder revisionTemplateBuilder = existingService.getTemplate().toBuilder();
-    revisionTemplateBuilder.setRevision(format(CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION, getResourceName(serviceName)));
+
+    // evaluating temporary revision
+    String temporaryRevision =
+        evaluateTemporaryRevisionForTrafficShift(serviceName, gcpConnectorDTO, project, region, logCallback);
+    revisionTemplateBuilder.setRevision(format(temporaryRevision, getResourceName(serviceName)));
 
     Service newService = Service.newBuilder()
                              .setName(serviceName)
@@ -582,13 +636,18 @@ public class GoogleFunctionCommandTaskHelper {
         gcpConnectorDTO, project, region, logCallback, operationFuture.getName());
     checkTrafficShiftSteadyState(targetTrafficPercent, targetRevision, existingRevision, serviceName, gcpConnectorDTO,
         project, region, logCallback);
+    // deleting the other temporary revision now
+    deleteOldTemporaryRevision(temporaryRevision, serviceName, gcpConnectorDTO, project, region, logCallback);
   }
 
   public void updateFullTrafficToSingleRevision(String serviceName, String revision, GcpConnectorDTO gcpConnectorDTO,
       String project, String region, LogCallback logCallback) throws ExecutionException, InterruptedException {
     Service existingService = getCloudRunService(serviceName, gcpConnectorDTO, project, region, logCallback);
     RevisionTemplate.Builder revisionTemplateBuilder = existingService.getTemplate().toBuilder();
-    revisionTemplateBuilder.setRevision(format(CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION, getResourceName(serviceName)));
+    // evaluating temporary revision
+    String temporaryRevision =
+        evaluateTemporaryRevisionForTrafficShift(serviceName, gcpConnectorDTO, project, region, logCallback);
+    revisionTemplateBuilder.setRevision(format(temporaryRevision, getResourceName(serviceName)));
 
     Service newService = Service.newBuilder()
                              .setName(serviceName)
@@ -608,6 +667,9 @@ public class GoogleFunctionCommandTaskHelper {
     checkCloudRunServiceUpdateOperationSteadyState(
         gcpConnectorDTO, project, region, logCallback, operationFuture.getName());
     checkTrafficShiftSteadyState(100, revision, null, serviceName, gcpConnectorDTO, project, region, logCallback);
+
+    // deleting the other temporary revision now
+    deleteOldTemporaryRevision(temporaryRevision, serviceName, gcpConnectorDTO, project, region, logCallback);
   }
 
   public void printManifestContent(String manifestContent, LogCallback logCallback) {
@@ -671,8 +733,8 @@ public class GoogleFunctionCommandTaskHelper {
     return "projects/" + project + "/repositories/" + repo;
   }
 
-  private String getTemporaryRevisionName(String serviceName) {
-    return serviceName + "/revisions/" + format(CLOUD_RUN_SERVICE_TEMP_HARNESS_VERSION, getResourceName(serviceName));
+  private String getRevisionName(String serviceName, String revision) {
+    return serviceName + "/revisions/" + format(revision, getResourceName(serviceName));
   }
 
   public Optional<String> getCloudRunServiceName(Function function) {

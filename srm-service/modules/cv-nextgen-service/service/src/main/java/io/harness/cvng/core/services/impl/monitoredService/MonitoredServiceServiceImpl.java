@@ -10,7 +10,6 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
 import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_CODE_ERROR_NOTIFICATIONS;
-import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.ENVIRONMENT_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_NAME;
 import static io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator.NOTIFICATION_URL;
@@ -120,6 +119,7 @@ import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.usage.impl.ActiveServiceMonitoredDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
@@ -248,6 +248,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                      .build();
 
     validate(monitoredServiceDTO, accountId);
+    filterOutHarnessCDChangeSource(monitoredServiceDTO);
     checkIfAlreadyPresent(accountId, environmentParams, monitoredServiceDTO.getIdentifier(),
         monitoredServiceDTO.getSources(), monitoredServiceDTO.getType());
 
@@ -395,6 +396,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         -> baseMonitoredServiceHandler.beforeUpdate(
             environmentParams, existingMonitoredServiceDTO, monitoredServiceDTO));
     validate(monitoredServiceDTO, accountId);
+    filterOutHarnessCDChangeSource(monitoredServiceDTO);
 
     updateHealthSources(monitoredService, monitoredServiceDTO);
     changeSourceService.update(MonitoredServiceParams.builderWithProjectParams(environmentParams)
@@ -453,6 +455,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .build();
     updateOperations.set(MonitoredServiceKeys.notificationRuleRefs,
         getNotificationRuleRefs(projectParams, monitoredService, monitoredServiceDTO));
+    updateOperations.set(MonitoredServiceKeys.lastUpdatedAt, clock.millis());
     validateDependencyMetadata(projectParams, monitoredServiceDTO.getDependencies());
     serviceDependencyService.updateDependencies(
         projectParams, monitoredService.getIdentifier(), monitoredServiceDTO.getDependencies());
@@ -534,7 +537,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                              .orgIdentifier(monitoredService.getOrgIdentifier())
                              .projectIdentifier(monitoredService.getProjectIdentifier())
                              .build());
-      setupUsageEventService.sendDeleteEventsForMonitoredService(projectParams, identifier);
+      setupUsageEventService.sendDeleteEventsForMonitoredService(projectParams, monitoredService);
       activityService.deleteByMonitoredServiceIdentifier(monitoredServiceParams);
     }
     return deleted;
@@ -970,6 +973,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private void saveMonitoredServiceEntity(ProjectParams projectParams, MonitoredServiceDTO monitoredServiceDTO) {
+    long currentTime = System.currentTimeMillis();
     MonitoredService monitoredServiceEntity =
         MonitoredService.builder()
             .name(monitoredServiceDTO.getName())
@@ -988,6 +992,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
                 monitoredServiceDTO.getNotificationRuleRefs(), NotificationRuleType.MONITORED_SERVICE,
                 Instant.ofEpochSecond(0)))
+            .createdAt(currentTime)
+            .lastUpdatedAt(currentTime)
             .build();
     if (monitoredServiceDTO.getTemplate() != null) {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
@@ -1372,7 +1378,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         hPersistence.createQuery(MonitoredService.class).filter(MonitoredServiceKeys.uuid, monitoredService.getUuid()),
         hPersistence.createUpdateOperations(MonitoredService.class)
             .set(MonitoredServiceKeys.enabled, enable)
-            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis()));
+            .set(MonitoredServiceKeys.lastDisabledAt, clock.millis())
+            .set(MonitoredServiceKeys.lastUpdatedAt, clock.millis()));
 
     MonitoredServiceDTO newMonitoredServiceDTO = getMonitoredServiceDTO(monitoredServiceParams);
     MonitoredService newMonitoredService = getMonitoredService(projectParams, identifier);
@@ -1434,7 +1441,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {
-    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(projectParams.getAccountIdentifier());
+    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServicesWithScopedQuery(projectParams);
 
     return getServiceParamsSet(enabledMonitoredServices)
         .contains(ServiceParams.builder()
@@ -1902,8 +1909,65 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (!featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       return 0;
     }
-    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
+    List<MonitoredService> enabledMonitoredServices =
+        getEnabledMonitoredServicesWithScopedQuery(ProjectParams.builder().accountIdentifier(accountId).build());
     return getServiceParamsSet(enabledMonitoredServices).size();
+  }
+
+  @Override
+  public List<ActiveServiceMonitoredDTO> listActiveServiceMonitored(ProjectParams projectParams) {
+    Map<ServiceParams, Long> serviceParamsCountMap = new HashMap<>();
+    Map<ProjectParams, List<String>> projectParamsServiceIdentifiersMap = new HashMap<>();
+    Map<ProjectParams, Map<String, String>> projectParamsToServiceIdNameMap = new HashMap<>();
+    long currentTimeInMS = clock.millis();
+    getEnableMonitoredServiceParamsSet(projectParams).stream().forEach(serviceParams -> {
+      long count = serviceParamsCountMap.getOrDefault(serviceParams, 0L);
+      serviceParamsCountMap.put(serviceParams, count + 1);
+      List<String> serviceIdentifiers =
+          projectParamsServiceIdentifiersMap.getOrDefault(serviceParams.getProjectParams(), new ArrayList<>());
+      serviceIdentifiers.add(serviceParams.getServiceIdentifier());
+      projectParamsServiceIdentifiersMap.put(serviceParams.getProjectParams(), serviceIdentifiers);
+    });
+
+    for (ProjectParams projectParam : projectParamsServiceIdentifiersMap.keySet()) {
+      Map<String, String> serviceIdNameMap =
+          nextGenService.getServiceIdNameMap(projectParam, projectParamsServiceIdentifiersMap.get(projectParam));
+      projectParamsToServiceIdNameMap.put(projectParam, serviceIdNameMap);
+    }
+
+    List<ActiveServiceMonitoredDTO> activeServiceMonitoredDTOList = new ArrayList<>();
+
+    for (ServiceParams serviceParams : serviceParamsCountMap.keySet()) {
+      ActiveServiceMonitoredDTO activeServiceMonitoredDTO =
+          ActiveServiceMonitoredDTO.builder()
+              .accountIdentifier(serviceParams.getAccountIdentifier())
+              .timestamp(currentTimeInMS)
+              .module(ModuleType.SRM.getDisplayName())
+              .identifier(serviceParams.getServiceIdentifier())
+              .orgIdentifier(serviceParams.getOrgIdentifier())
+              .projectIdentifier(serviceParams.getProjectIdentifier())
+              .name(projectParamsToServiceIdNameMap.get(serviceParams.getProjectParams())
+                        .get(serviceParams.getServiceIdentifier()))
+              .monitoredServiceCount(serviceParamsCountMap.get(serviceParams))
+              .build();
+
+      activeServiceMonitoredDTOList.add(activeServiceMonitoredDTO);
+    }
+
+    return activeServiceMonitoredDTOList;
+  }
+
+  private List<ServiceParams> getEnableMonitoredServiceParamsSet(ProjectParams projectParams) {
+    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServicesWithScopedQuery(projectParams);
+    return enabledMonitoredServices.stream()
+        .map(monitoredService
+            -> ServiceParams.builder()
+                   .serviceIdentifier(monitoredService.getServiceIdentifier())
+                   .orgIdentifier(monitoredService.getOrgIdentifier())
+                   .projectIdentifier(monitoredService.getProjectIdentifier())
+                   .accountIdentifier(monitoredService.getAccountId())
+                   .build())
+        .collect(Collectors.toList());
   }
 
   private Set<ServiceParams> getServiceParamsSet(List<MonitoredService> monitoredServices) {
@@ -1918,11 +1982,19 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .collect(Collectors.toSet());
   }
 
-  private List<MonitoredService> getEnabledMonitoredServices(String accountId) {
-    return hPersistence.createQuery(MonitoredService.class)
-        .filter(MonitoredServiceKeys.accountId, accountId)
-        .filter(MonitoredServiceKeys.enabled, true)
-        .asList();
+  private List<MonitoredService> getEnabledMonitoredServicesWithScopedQuery(ProjectParams projectParams) {
+    Query<MonitoredService> query = hPersistence.createQuery(MonitoredService.class)
+                                        .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
+                                        .filter(MonitoredServiceKeys.enabled, true);
+
+    if (projectParams.getOrgIdentifier() != null) {
+      query = query.filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier());
+    }
+    if (projectParams.getProjectIdentifier() != null) {
+      query = query.filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    }
+
+    return query.asList();
   }
 
   private List<MonitoredService> get(ProjectParams projectParams, Filter filter) {
@@ -2011,13 +2083,16 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     Map<String, String> templateDataMap = new HashMap<>();
 
     List<ActivityType> changeObservedActivityTypes = new ArrayList<>();
-    changeObservedCondition.getChangeEventTypes().forEach(
-        changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
+    changeObservedCondition.getChangeCategories().forEach(changeCategory
+        -> changeObservedActivityTypes.addAll(ChangeSourceType.getForCategory(changeCategory)
+                                                  .stream()
+                                                  .map(ChangeSourceType::getActivityType)
+                                                  .collect(Collectors.toList())));
     Optional<Activity> activity = activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams,
         changeObservedActivityTypes, clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant());
     activity.ifPresent(value
         -> templateDataMap.put(
-            CHANGE_EVENT_TYPE, getMonitoredServiceChangeEventTypeFromActivityType(value.getType()).getDisplayName()));
+            CHANGE_EVENT_TYPE, ChangeSourceType.ofActivityType(value.getType()).getChangeCategory().getDisplayName()));
     return NotificationData.builder()
         .shouldSendNotification(activity.isPresent())
         .templateDataMap(templateDataMap)
@@ -2033,14 +2108,17 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     long riskTimeBufferMins = 0;
 
     List<ActivityType> changeImpactActivityTypes = new ArrayList<>();
-    changeImpactCondition.getChangeEventTypes().forEach(
-        changeEventType -> changeImpactActivityTypes.addAll(changeEventType.getActivityTypes()));
+    changeImpactCondition.getChangeCategories().forEach(changeCategory
+        -> changeImpactActivityTypes.addAll(ChangeSourceType.getForCategory(changeCategory)
+                                                .stream()
+                                                .map(ChangeSourceType::getActivityType)
+                                                .collect(Collectors.toList())));
     Optional<Activity> optionalActivity =
         activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeImpactActivityTypes,
             clock.instant().minus(changeImpactCondition.getPeriod(), ChronoUnit.MILLIS), clock.instant());
     if (optionalActivity.isPresent()) {
       templateDataMap.put(CHANGE_EVENT_TYPE,
-          getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
+          ChangeSourceType.ofActivityType(optionalActivity.get().getType()).getChangeCategory().getDisplayName());
       Instant activityStartTime = optionalActivity.get().getActivityStartTime();
       riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
       isEveryHeatMapBelowThreshold =
@@ -2120,6 +2198,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         projectParams, existingNotificationRuleRefs, updatedNotificationRuleRefs);
   }
 
+  private void filterOutHarnessCDChangeSource(MonitoredServiceDTO monitoredServiceDTO) {
+    Sources sources = monitoredServiceDTO.getSources();
+    Set<ChangeSourceDTO> changeSourceDTOList = monitoredServiceDTO.getSources().getChangeSources();
+    sources.setChangeSources(changeSourceDTOList.stream()
+                                 .filter(changeSourceDTO -> changeSourceDTO.getType() != ChangeSourceType.HARNESS_CD)
+                                 .collect(Collectors.toSet()));
+    monitoredServiceDTO.setSources(sources);
+  }
+
   @Value
   @Builder
   private static class Filter {
@@ -2169,6 +2256,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         result = result * prime + s.hashCode();
       }
       return result;
+    }
+
+    public ProjectParams getProjectParams() {
+      return ProjectParams.builder()
+          .projectIdentifier(this.getProjectIdentifier())
+          .orgIdentifier(this.getOrgIdentifier())
+          .accountIdentifier(this.getAccountIdentifier())
+          .build();
     }
   }
 }

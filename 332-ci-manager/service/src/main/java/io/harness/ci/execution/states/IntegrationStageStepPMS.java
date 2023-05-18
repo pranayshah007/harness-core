@@ -7,6 +7,8 @@
 
 package io.harness.ci.states;
 
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
+import static io.harness.beans.FeatureName.CODE_ENABLED;
 import static io.harness.beans.steps.outcome.CIOutcomeNames.INTEGRATION_STAGE_OUTCOME;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -29,6 +31,7 @@ import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.utils.CompletableFutures;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -39,7 +42,10 @@ import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.TriggerType;
+import io.harness.pms.contracts.plan.TriggeredBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
@@ -57,6 +63,9 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
+import io.harness.security.dto.UserPrincipal;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.registry.Registry;
@@ -83,6 +92,7 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
   @Inject OutcomeService outcomeService;
   @Inject @Named("ciBackgroundTaskExecutor") private ExecutorService executorService;
   @Inject ConnectorUtils connectorUtils;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   @Override
   public Class<StageElementParameters> getStepParametersClass() {
@@ -261,9 +271,28 @@ public class IntegrationStageStepPMS implements ChildExecutable<StageElementPara
     }
     ExecutionTriggerInfo triggerInfo = ambiance.getMetadata().getTriggerInfo();
     TriggerPayload triggerPayload = integrationStageStepParametersPMS.getTriggerPayload();
+    // setPrincipalForHarnessSCM(ambiance, codeBase.getConnectorRef().getValue(), triggerInfo);
     return IntegrationStageUtils.buildExecutionSourceV2(ambiance, triggerInfo, triggerPayload, identifier,
         codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, codeBase,
         integrationStageStepParametersPMS.getCloneManually());
+  }
+
+  private void setPrincipalForHarnessSCM(Ambiance ambiance, String connectorId, ExecutionTriggerInfo triggerInfo) {
+    if (isEmpty(connectorId) && featureFlagService.isEnabled(CODE_ENABLED, AmbianceUtils.getAccountId(ambiance))) {
+      if (triggerInfo.getTriggerType() == TriggerType.MANUAL) {
+        ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+        String principal = executionPrincipalInfo.getPrincipal();
+        TriggeredBy triggeredBy = triggerInfo.getTriggeredBy();
+        SecurityContextBuilder.setContext(new UserPrincipal(principal, triggeredBy.getExtraInfoMap().get("email"),
+            triggeredBy.getIdentifier(), AmbianceUtils.getAccountId(ambiance)));
+      } else if (triggerInfo.getTriggerType() == TriggerType.SCHEDULER_CRON
+          || triggerInfo.getTriggerType() == TriggerType.WEBHOOK
+          || triggerInfo.getTriggerType() == TriggerType.WEBHOOK_CUSTOM) {
+        SecurityContextBuilder.setContext(new ServicePrincipal(CI_MANAGER.getServiceId()));
+      } else {
+        log.info("Received trigger type " + triggerInfo.getTriggerType());
+      }
+    }
   }
 
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(

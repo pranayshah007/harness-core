@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.AddUsersDTO;
@@ -39,6 +40,7 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(PL)
 public interface NgUserService {
   void addUserToCG(String userId, Scope scope);
+  void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource);
 
   Optional<UserInfo> getUserById(String userId);
 
@@ -87,6 +89,8 @@ public interface NgUserService {
   void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source);
 
+  void waitForRbacSetup(Scope scope, String userId, String email);
+
   boolean isUserAtScope(String userId, Scope scope);
 
   boolean isUserLastAdminAtScope(String userId, Scope scope);
@@ -117,4 +121,6 @@ public interface NgUserService {
   boolean verifyHarnessSupportGroupUser();
 
   UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
+
+  UserMetadata updateUserMetadataInternal(UserMetadataDTO user);
 }

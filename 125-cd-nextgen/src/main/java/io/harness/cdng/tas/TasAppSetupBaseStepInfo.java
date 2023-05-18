@@ -9,7 +9,6 @@ package io.harness.cdng.tas;
 
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,7 +41,7 @@ public class TasAppSetupBaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> additionalRoutes;
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 }

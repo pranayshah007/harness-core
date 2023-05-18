@@ -8,6 +8,7 @@ package io.harness.credit.resource;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
+import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.EDIT_LICENSE_PERMISSION;
 import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.VIEW_LICENSE_PERMISSION;
 
 import io.harness.NGCommonEntityConstants;
@@ -20,7 +21,7 @@ import io.harness.licensing.accesscontrol.ResourceTypes;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.rest.RestResponse;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
@@ -33,6 +34,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -40,6 +42,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -64,9 +67,21 @@ public class CreditResource {
 
   @POST
   @Path("/create")
-  public RestResponse<Void> createCredits() {
-    creditService.purchaseCredits("kmpySmUISimoRrJL6NL7222");
-    return new RestResponse<>();
+  @ApiOperation(value = "Purchase credit for an account", nickname = "createCredit")
+  @Operation(operationId = "createCredit", summary = "Purchase the credits of an account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Purchased credits of the account")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = EDIT_LICENSE_PERMISSION)
+  @InternalApi
+  public ResponseDTO<CreditDTO>
+  createCredits(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                    NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @Valid CreditDTO creditDTO) {
+    CreditDTO created = creditService.purchaseCredit(accountIdentifier, creditDTO);
+    return ResponseDTO.newResponse(created);
   }
 
   @GET
@@ -80,6 +95,7 @@ public class CreditResource {
         ApiResponse(responseCode = "default", description = "Returns all of a credits purchase of an account")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+  @InternalApi
   public ResponseDTO<List<CreditDTO>>
   getCredits(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {

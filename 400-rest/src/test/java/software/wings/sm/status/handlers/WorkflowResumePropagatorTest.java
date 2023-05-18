@@ -22,7 +22,6 @@ import io.harness.beans.WorkflowType;
 import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.testlib.RealMongo;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
@@ -66,7 +65,7 @@ public class WorkflowResumePropagatorTest extends WingsBaseTest {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldTestHandleStatusUpdateForWorkflowRunning() {
@@ -88,7 +87,7 @@ public class WorkflowResumePropagatorTest extends WingsBaseTest {
   }
 
   @Test
-  @RealMongo
+
   @Owner(developers = POOJA, intermittent = true)
   @Category(UnitTests.class)
   public void shouldTestHandleStatusUpdateForWorkflowPaused() {

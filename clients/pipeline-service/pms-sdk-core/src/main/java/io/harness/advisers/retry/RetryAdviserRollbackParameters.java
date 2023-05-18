@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.commons.RepairActionCode;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.WithFailureTypes;
+import io.harness.yaml.core.failurestrategy.FailureStrategyActionConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public class RetryAdviserRollbackParameters implements WithFailureTypes {
   List<Integer> waitIntervalList;
   int retryCount;
   RepairActionCode repairActionCodeAfterRetry;
+  FailureStrategyActionConfig retryActionConfig;
   Set<FailureType> applicableFailureTypes;
   // Only applicable if the repair action code after retry is set to IGNORE
   String nextNodeId;

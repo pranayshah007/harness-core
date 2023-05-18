@@ -10,6 +10,8 @@ config: |-
   proxy:
     '/snyk':
       target: https://snyk.io/api/v1
+      pathRewrite:
+        'api/proxy/snyk/?': '/'
       headers:
         User-Agent: tech-services/backstage-plugin/1.0
         Authorization: token ${SNYK_TOKEN}
@@ -23,8 +25,10 @@ exports:
       name: SnykOverview
       addByDefault: true
       layoutSchemaSpecs:
-        gridProps:
-          md: 6
+        component: SnykOverview
+        specs:
+          gridProps:
+            md: 6
     - type: TAB_CONTENT
       name: EntitySnykContent
       addByDefault: true

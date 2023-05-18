@@ -18,7 +18,9 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.plan.execution.PipelineExecutor;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
 import io.harness.rule.Owner;
@@ -53,13 +55,15 @@ public class PipelineRollbackStageStepTest extends CategoryTest {
     PlanExecution planExecution = PlanExecution.builder().uuid("rbUuid").build();
     doReturn(planExecution)
         .when(pipelineExecutor)
-        .startPipelineRollback(accountId, orgId, projectId, currentPlanExecutionId);
+        .startPipelineRollback(accountId, orgId, projectId, currentPlanExecutionId,
+            PipelineStageInfo.newBuilder().setHasParentPipeline(false).setStageNodeId("setupId").build());
     doNothing().when(executionSummaryService).update(any(), any());
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgId)
                             .putSetupAbstractions("projectIdentifier", projectId)
                             .setPlanExecutionId(currentPlanExecutionId)
+                            .addLevels(Level.newBuilder().setSetupId("setupId"))
                             .build();
     AsyncExecutableResponse asyncExecutableResponse = step.executeAsyncAfterRbac(ambiance, null, null);
     assertThat(asyncExecutableResponse.getCallbackIdsCount()).isEqualTo(1);

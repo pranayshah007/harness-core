@@ -72,4 +72,11 @@ public class PrivilegedSecretNGManagerClientServiceImpl implements SecretManager
     return getResponse(
         secretManagerClient.create(accountIdentifier, orgIdentifier, projectIdentifier, privateSecret, dto));
   }
+
+  @Override
+  public SecretResponseWrapper updateSecret(String identifier, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SecretRequestWrapper dto) {
+    return getResponse(
+        secretManagerClient.updateSecret(identifier, accountIdentifier, orgIdentifier, projectIdentifier, dto));
+  }
 }

@@ -17,6 +17,7 @@ import com.google.common.collect.Lists;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -29,14 +30,17 @@ public class SLIDataCollectionTask extends DataCollectionTask {
 
   public static final Duration SLI_MAX_DATA_RETRY_DURATION = Duration.ofHours(28);
 
-  @VisibleForTesting public static int MAX_RETRY_COUNT = 10;
+  @VisibleForTesting public static final int MAX_RETRY_COUNT = 10;
+
+  @Builder.Default public boolean isRestore = false;
 
   private static final List<Duration> RETRY_WAIT_DURATIONS =
-      Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(10), Duration.ofSeconds(60), Duration.ofMinutes(5),
-          Duration.ofMinutes(15), Duration.ofHours(1), Duration.ofHours(3));
+      Lists.newArrayList(Duration.ofSeconds(5), Duration.ofSeconds(5), Duration.ofSeconds(15), Duration.ofSeconds(15),
+          Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofMinutes(5), Duration.ofMinutes(5),
+          Duration.ofMinutes(20), Duration.ofMinutes(20), Duration.ofMinutes(30));
   @Override
   public boolean shouldCreateNextTask() {
-    return true;
+    return !isRestore;
   }
 
   @Override
@@ -47,7 +51,9 @@ public class SLIDataCollectionTask extends DataCollectionTask {
     boolean taskNotUpdatedinLast30MinutesAndCreatedAtleast4HoursAgo =
         Instant.ofEpochMilli(this.getLastUpdatedAt()).isBefore(currentTime.minus(Duration.ofMinutes(30)))
         && Instant.ofEpochMilli(this.getCreatedAt()).isBefore(currentTime.minus(Duration.ofHours(4)));
-    return successConditionAndTaskNotCreatedWithInTwoMinutes || taskNotUpdatedinLast30MinutesAndCreatedAtleast4HoursAgo;
+    return shouldCreateNextTask()
+        && (successConditionAndTaskNotCreatedWithInTwoMinutes
+            || taskNotUpdatedinLast30MinutesAndCreatedAtleast4HoursAgo);
   }
 
   @Override

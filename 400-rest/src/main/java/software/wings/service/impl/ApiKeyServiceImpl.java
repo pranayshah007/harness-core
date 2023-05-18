@@ -238,7 +238,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
 
       userGroupIds.forEach(userGroupId -> {
         UserGroup userGroup = idUserGroupMap.get(userGroupId);
-        userGroupList.add(userGroup);
+        if (userGroup != null) {
+          userGroupList.add(userGroup);
+        }
       });
 
       apiKeyEntry.setUserGroups(userGroupList);

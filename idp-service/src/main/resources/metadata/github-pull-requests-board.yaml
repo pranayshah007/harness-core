@@ -13,7 +13,8 @@ exports:
     - type: CARD
       name: EntityTeamPullRequestsCard
       addByDefault: true
-      layoutSchemaSpecs: {}
+      layoutSchemaSpecs:
+        component: EntityTeamPullRequestsCard
     - type: TAB_CONTENT
       name: EntityTeamPullRequestsContent
       addByDefault: true

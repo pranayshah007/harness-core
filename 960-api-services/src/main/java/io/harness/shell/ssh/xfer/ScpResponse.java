@@ -10,8 +10,10 @@ package io.harness.shell.ssh.xfer;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
+import lombok.Getter;
 
 @Builder
+@Getter
 public class ScpResponse {
   boolean success;
   int exitCode;

@@ -61,8 +61,11 @@ public class OauthResource {
       @Parameter(description = "Secret Manager Identifier") @QueryParam("secretManagerIdentifier") @DefaultValue(
           "harnessSecretManager") String secretManagerIdentifier,
       @Parameter(description = "scm provider", required = true) @NotBlank @QueryParam("provider") String scmProvider,
+      @Parameter(
+          description = "This is a boolean value to specify if the Secret is Private. The default value is False.")
+      @QueryParam("isPrivateSecret") @DefaultValue("false") boolean isPrivateSecret,
       @Parameter(description = "access token secret request", required = true) @Body OauthAccessTokenDTO accessToken) {
-    return new RestResponse<>(oauthSecretService.createSecrets(
-        accountIdentifier, orgIdentifier, projectIdentifier, scmProvider, accessToken, secretManagerIdentifier));
+    return new RestResponse<>(oauthSecretService.createSecrets(accountIdentifier, orgIdentifier, projectIdentifier,
+        scmProvider, accessToken, secretManagerIdentifier, isPrivateSecret, accessToken.getUserDetailsDTO()));
   }
 }

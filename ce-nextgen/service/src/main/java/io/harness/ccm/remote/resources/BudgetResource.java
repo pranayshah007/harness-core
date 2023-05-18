@@ -291,8 +291,7 @@ public class BudgetResource {
     rbacHelper.checkBudgetEditPermission(
         accountId, null, null, ceViewService.get(BudgetUtils.getPerspectiveIdForBudget(budget)).getFolderId());
     Budget oldBudget = budgetService.get(budgetId, accountId);
-    budget.setParentBudgetGroupId(oldBudget.getParentBudgetGroupId());
-    budgetService.update(budgetId, budget, oldBudget);
+    budgetService.update(budgetId, budget);
     Budget newBudget = budgetService.get(budgetId, accountId);
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {

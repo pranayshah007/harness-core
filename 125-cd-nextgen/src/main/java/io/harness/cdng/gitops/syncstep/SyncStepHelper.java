@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.syncstep;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationResource;
 import io.harness.gitops.models.ApplicationResource.Resource;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 
 @Slf4j
 @Singleton
@@ -67,7 +69,11 @@ public class SyncStepHelper {
     if (value instanceof Boolean) {
       return (boolean) value;
     } else if (value instanceof String) {
-      return Boolean.parseBoolean((String) value);
+      Boolean parsedValue = BooleanUtils.toBooleanObject((String) value);
+      if (parsedValue == null) {
+        throw new InvalidRequestException(String.format("Only boolean values are allowed. Received input [%s]", value));
+      }
+      return parsedValue.booleanValue();
     } else if (value == null) {
       // do not make this return false
       throw new IllegalArgumentException("Cannot convert null to boolean");

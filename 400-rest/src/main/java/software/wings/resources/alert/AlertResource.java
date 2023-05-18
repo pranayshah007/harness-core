@@ -87,9 +87,12 @@ public class AlertResource {
         return new RestResponse<>();
       }
 
+      List<String> userGroupByUserAccountId = alertVisibilityChecker.listUserGroupByUserAccountId(accountId, user);
+
       List<Alert> filteredAlerts =
           response.stream()
-              .filter(alert -> alertVisibilityChecker.shouldAlertBeShownToUser(accountId, alert, user))
+              .filter(
+                  alert -> alertVisibilityChecker.shouldAlertBeShownToUser(userGroupByUserAccountId, alert, accountId))
               .collect(toList());
 
       response.setResponse(filteredAlerts);

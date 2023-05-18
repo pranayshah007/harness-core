@@ -21,6 +21,8 @@ import lombok.Value;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExecutionLimits {
+  ExecutionLimitSpec freeNewUser;
+  ExecutionLimitSpec freeBasicUser;
   ExecutionLimitSpec free;
   ExecutionLimitSpec team;
   ExecutionLimitSpec enterprise;
@@ -30,5 +32,6 @@ public class ExecutionLimits {
   public static class ExecutionLimitSpec {
     long defaultTotalExecutionCount;
     long defaultMacExecutionCount;
+    long dailyMaxBuildsCount;
   }
 }

@@ -8,6 +8,8 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameterV2;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.FeatureName;
@@ -36,6 +38,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -49,12 +52,16 @@ public class VmRunStepSerializer {
   @Inject private CIFeatureFlagService featureFlagService;
 
   public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries) {
+      ParameterField<Timeout> parameterFieldTimeout, String stepName, List<CIRegistry> registries, String delegateId) {
     String command =
         RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", "Run", identifier, runStepInfo.getImage(), false);
     String connectorIdentifier;
+
+    if (isNotEmpty(image) && image.equals(NULL_STR)) {
+      image = "";
+    }
 
     if (isNotEmpty(registries)) {
       connectorIdentifier = ciStepInfoUtils.resolveConnectorFromRegistries(registries, image).orElse(null);
@@ -64,8 +71,20 @@ public class VmRunStepSerializer {
     }
 
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runStepInfo.getDefaultTimeout());
+    boolean fVal = featureFlagService.isEnabled(
+        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
+
     Map<String, String> envVars =
-        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+        resolveMapParameterV2("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false, fVal);
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
+        ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
+
+    if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HARNESS_DELEGATE_ID", delegateId);
+    }
 
     List<String> outputVarNames = new ArrayList<>();
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {
@@ -81,8 +100,9 @@ public class VmRunStepSerializer {
     if (ambiance.hasMetadata() && ambiance.getMetadata().getIsDebug()
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
-          + SerializerUtils.getVmDebugCommand(ciExecutionServiceConfig.getRemoteDebugTimeout()) + System.lineSeparator()
-          + command;
+          + SerializerUtils.getVmDebugCommand(
+              ngAccess.getAccountIdentifier(), ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo.getShell())
+          + System.lineSeparator() + command;
     } else {
       command = earlyExitCommand + command;
     }

@@ -19,8 +19,9 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.ng.core.service.services.impl.ServiceEntityYamlSchemaHelper;
 import io.harness.rule.Owner;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import io.harness.yaml.validator.YamlSchemaValidator;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServiceEntityYamlSchemaHelperTest extends CategoryTest {
-  @Mock NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock CDFeatureFlagHelper featureFlagHelperService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
   @InjectMocks ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
   private final String ACCOUNT_ID = "account_id";

@@ -139,6 +139,7 @@ public class GitlabEntityToDTO implements ConnectorEntityToDTOMapper<GitlabConne
         final GitlabTokenSpecDTO gitlabTokenSpecDTO =
             GitlabTokenSpecDTO.builder()
                 .tokenRef(SecretRefHelper.createSecretRef(gitlabTokenApiAccess.getTokenRef()))
+                .apiUrl(gitlabTokenApiAccess.getApiUrl())
                 .build();
         return GitlabApiAccessDTO.builder().type(GitlabApiAccessType.TOKEN).spec(gitlabTokenSpecDTO).build();
       case OAUTH:

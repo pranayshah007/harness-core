@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -142,11 +143,12 @@ public class GithubConnectorDTO
 
   @Override
   public String getFileUrl(String branchName, String filePath, String commitId, GitRepositoryDTO gitRepositoryDTO) {
-    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    String pathIdentifier = isEmpty(branchName) ? commitId : branchName;
+    ScmConnectorHelper.validateGetFileUrlParams(pathIdentifier, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     String httpRepoUrl = GitClientHelper.getCompleteHTTPUrlForGithub(repoUrl);
     filePath = removeStartingAndEndingSlash(filePath);
-    return String.format("%s/blob/%s/%s", httpRepoUrl, branchName, filePath);
+    return String.format("%s/blob/%s/%s", httpRepoUrl, pathIdentifier, filePath);
   }
 
   @Override

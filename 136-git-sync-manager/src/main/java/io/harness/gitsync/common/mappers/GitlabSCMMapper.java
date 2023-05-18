@@ -47,10 +47,12 @@ public class GitlabSCMMapper
   }
   @Override
   GitlabSCMDTO toServiceDTOInternal(GitlabSCMRequestDTO userSourceCodeManagerRequestDTO) {
-    return GitlabSCMDTO.builder().apiAccess(userSourceCodeManagerRequestDTO.getApiAccess()).build();
+    return GitlabSCMDTO.builder()
+        .apiAccess(userSourceCodeManagerRequestDTO.getAuthentication().getApiAccessDTO())
+        .build();
   }
 
-  GitlabApiAccess toApiAccess(GitlabApiAccessSpecDTO spec, GitlabApiAccessType apiAccessType) {
+  public GitlabApiAccess toApiAccess(GitlabApiAccessSpecDTO spec, GitlabApiAccessType apiAccessType) {
     switch (apiAccessType) {
       case OAUTH:
         final GitlabOauthDTO oauthDTO = (GitlabOauthDTO) spec;
@@ -63,7 +65,7 @@ public class GitlabSCMMapper
     }
   }
 
-  GitlabApiAccessDTO toApiAccessDTO(GitlabApiAccessType apiAccessType, GitlabApiAccess gitlabApiAccess) {
+  public static GitlabApiAccessDTO toApiAccessDTO(GitlabApiAccessType apiAccessType, GitlabApiAccess gitlabApiAccess) {
     GitlabApiAccessSpecDTO apiAccessSpecDTO = null;
     switch (apiAccessType) {
       case OAUTH:

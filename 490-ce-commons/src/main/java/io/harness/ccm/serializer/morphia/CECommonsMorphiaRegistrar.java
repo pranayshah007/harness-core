@@ -13,6 +13,7 @@ import io.harness.ccm.budget.PerspectiveBudgetScope;
 import io.harness.ccm.budgetGroup.BudgetGroup;
 import io.harness.ccm.commons.entities.AWSConnectorToBucketMapping;
 import io.harness.ccm.commons.entities.ClusterRecord;
+import io.harness.ccm.commons.entities.azure.AzureRecommendation;
 import io.harness.ccm.commons.entities.batch.BatchJobInterval;
 import io.harness.ccm.commons.entities.batch.BatchJobScheduledData;
 import io.harness.ccm.commons.entities.batch.CEDataCleanupRequest;
@@ -88,6 +89,7 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ECSPartialRecommendationHistogram.class);
     set.add(ECSServiceRecommendation.class);
     set.add(RecommendationsIgnoreList.class);
+    set.add(AzureRecommendation.class);
 
     // commons
     set.add(CCMNotificationSetting.class);

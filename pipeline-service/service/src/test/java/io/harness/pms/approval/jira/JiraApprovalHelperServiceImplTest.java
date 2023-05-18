@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -50,7 +50,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.KryoSerializer;
-import io.harness.steps.StepUtils;
 import io.harness.steps.approval.step.ApprovalProgressData;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.beans.CriteriaSpecWrapperDTO;
@@ -61,6 +60,7 @@ import io.harness.waiter.WaitNotifyEngine;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,12 +69,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
 @OwnedBy(PIPELINE)
-@PrepareForTest({NGRestUtils.class, StepUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   @Mock private ConnectorResourceClient connectorResourceClient;
@@ -86,6 +84,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   JiraApprovalHelperServiceImpl jiraApprovalHelperService;
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
+  private MockedStatic<NGRestUtils> aStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
@@ -93,17 +92,21 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
 
   @Before
   public void setUp() {
+    aStatic = Mockito.mockStatic(NGRestUtils.class);
     jiraApprovalHelperService = spy(new JiraApprovalHelperServiceImpl(ngDelegate2TaskExecutor, connectorResourceClient,
         kryoSerializer, secretManagerClient, waitNotifyEngine, logStreamingStepClientFactory, publisherName,
         pmsGitSyncHelper, null));
+  }
+
+  @After
+  public void cleanup() {
+    aStatic.close();
   }
 
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandlePollingEvent() {
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-    Mockito.mockStatic(StepUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
@@ -183,8 +186,6 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testGetConnector() {
-    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
-
     Optional<ConnectorDTO> connectorDTO = Optional.of(
         ConnectorDTO.builder()
             .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(JiraConnectorDTO.builder().build()).build())

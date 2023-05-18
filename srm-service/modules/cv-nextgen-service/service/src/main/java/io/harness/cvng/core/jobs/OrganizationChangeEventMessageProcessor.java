@@ -51,10 +51,20 @@ public class OrganizationChangeEventMessageProcessor extends EntityChangeEventMe
 
   @VisibleForTesting
   void processDeleteAction(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
-    ENTITIES_MAP.forEach(
-        (entity, handler)
-            -> injector.getInstance(handler).deleteByOrgIdentifier(entity,
-                organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier()));
+    ENTITIES_MAP.forEach((entity, handler) -> {
+      log.info("Deleting all records of entity {} for accountId {} orgIdentifier {}", entity.getSimpleName(),
+          organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier());
+      try {
+        injector.getInstance(handler).deleteByOrgIdentifier(
+            entity, organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier());
+        log.info("Deleted all records of entity {} for accountId {} orgIdentifier {}", entity.getSimpleName(),
+            organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier());
+      } catch (Exception exception) {
+        log.error("Error while deleting all records of entity {} for accountId {} orgIdentifier {}",
+            entity.getSimpleName(), organizationEntityChangeDTO.getAccountIdentifier(),
+            organizationEntityChangeDTO.getIdentifier(), exception);
+      }
+    });
   }
 
   private boolean validateMessage(Message message) {

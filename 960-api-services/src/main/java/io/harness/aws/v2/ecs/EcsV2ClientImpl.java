@@ -20,6 +20,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.util.EcsNGUtils;
 import io.harness.aws.v2.AwsClientHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.SdkClient;
 import software.amazon.awssdk.core.retry.backoff.FixedDelayBackoffStrategy;
@@ -361,7 +363,9 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
     if (awsServiceException instanceof ClusterNotFoundException) {
       throw new InvalidRequestException(awsServiceException.getMessage(), AWS_CLUSTER_NOT_FOUND, USER);
     } else if (awsServiceException instanceof ServiceNotFoundException) {
-      throw new InvalidRequestException(awsServiceException.getMessage(), AWS_SERVICE_NOT_FOUND, USER);
+      String errorMessage = awsServiceException.getMessage();
+      errorMessage = StringUtils.replace(errorMessage, "null", EcsNGUtils.ECS_SERVICE_NOT_FOUND_ERROR_MESSAGE);
+      throw new InvalidRequestException(errorMessage, awsServiceException, AWS_SERVICE_NOT_FOUND, USER);
     } else if (awsServiceException instanceof ServiceNotActiveException) {
       throw new InvalidRequestException(awsServiceException.getMessage(), AWS_ECS_SERVICE_NOT_ACTIVE, USER);
     } else if (awsServiceException instanceof AccessDeniedException) {

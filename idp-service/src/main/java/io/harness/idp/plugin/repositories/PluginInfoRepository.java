@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.CrudRepository;
 
@@ -19,4 +20,5 @@ import org.springframework.data.repository.CrudRepository;
 @OwnedBy(HarnessTeam.IDP)
 public interface PluginInfoRepository extends CrudRepository<PluginInfoEntity, String>, PluginInfoRepositoryCustom {
   Optional<PluginInfoEntity> findByIdentifier(String identifier);
+  List<PluginInfoEntity> findByIdentifierIn(List<String> identifiers);
 }

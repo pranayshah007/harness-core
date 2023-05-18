@@ -11,9 +11,9 @@ import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static software.wings.scheduler.approval.ApprovalPollingHandler.TARGET_INTERVAL;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;

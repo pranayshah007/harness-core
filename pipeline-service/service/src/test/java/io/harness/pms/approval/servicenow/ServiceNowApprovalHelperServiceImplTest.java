@@ -13,10 +13,10 @@ import static io.harness.rule.OwnerRule.PRABU;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -68,6 +68,7 @@ import software.wings.beans.TaskType;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -76,12 +77,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDC)
-@PrepareForTest({NGRestUtils.class, TaskRequestsUtils.class})
 public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private NgDelegate2TaskExecutor ngDelegate2TaskExecutor;
   @Mock private ConnectorResourceClient connectorResourceClient;
@@ -93,6 +92,8 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
   ServiceNowApprovalHelperService serviceNowApprovalHelperService;
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
+  private MockedStatic<NGRestUtils> ngRestUtilsMockedStatic;
+  private MockedStatic<TaskRequestsUtils> taskRequestsUtilsMockedStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
@@ -100,17 +101,23 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
 
   @Before
   public void setUp() {
+    ngRestUtilsMockedStatic = Mockito.mockStatic(NGRestUtils.class);
+    taskRequestsUtilsMockedStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     serviceNowApprovalHelperService = spy(new ServiceNowApprovalHelperServiceImpl(connectorResourceClient,
         pmsGitSyncHelper, logStreamingStepClientFactory, secretManagerClient, ngDelegate2TaskExecutor, kryoSerializer,
         publisherName, waitNotifyEngine));
+  }
+
+  @After
+  public void cleanup() {
+    ngRestUtilsMockedStatic.close();
+    taskRequestsUtilsMockedStatic.close();
   }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testHandlePollingEvent() {
-    MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class);
-    Mockito.mockStatic(TaskRequestsUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
@@ -122,7 +129,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
     doNothing().when(waitNotifyEngine).progressOn(any(), any());
 
     ServiceNowApprovalInstance instance = getServiceNowApprovalInstance(ambiance);
-    mockStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
+    taskRequestsUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
     doReturn(ServiceNowConnectorDTO.builder()
                  .username("USERNAME")
                  .serviceNowUrl("url")
@@ -204,8 +211,6 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testGetConnector() {
-    MockedStatic<NGRestUtils> mockStatic = Mockito.mockStatic(NGRestUtils.class);
-
     Optional<ConnectorDTO> connectorDTO = Optional.of(
         ConnectorDTO.builder()
             .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(ServiceNowConnectorDTO.builder().build()).build())
@@ -214,7 +219,7 @@ public class ServiceNowApprovalHelperServiceImplTest extends CategoryTest {
         ConnectorDTO.builder()
             .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build())
             .build());
-    mockStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
     serviceNowApprovalHelperService.getServiceNowConnector(accountId, orgIdentifier, projectIdentifier, "connectorRef");
     when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);
     assertThatThrownBy(()

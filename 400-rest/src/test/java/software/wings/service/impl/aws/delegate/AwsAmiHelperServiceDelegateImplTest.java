@@ -38,13 +38,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -799,18 +798,18 @@ public class AwsAmiHelperServiceDelegateImplTest extends WingsBaseTest {
     doReturn(lbDetails)
         .when(mockAwsElbHelperServiceDelegate)
         .loadTrafficShiftTargetGroupData(
-            eq(awsConfig), eq(REGION), eq(emptyList()), any(LbDetailsForAlbTrafficShift.class), anyObject());
+            eq(awsConfig), eq(REGION), eq(emptyList()), any(LbDetailsForAlbTrafficShift.class), any());
 
     doReturn(setupSuccessResponse)
         .when(awsAmiHelperServiceDelegate)
-        .setUpAmiService(any(AwsAmiServiceSetupRequest.class), anyObject());
+        .setUpAmiService(any(AwsAmiServiceSetupRequest.class), any());
     AwsAmiServiceTrafficShiftAlbSetupResponse trafficShiftSetupResponse =
         awsAmiHelperServiceDelegate.setUpAmiServiceTrafficShift(trafficShiftAlbSetupRequest);
     assertThat(trafficShiftSetupResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
 
     doReturn(setupFailureResponse)
         .when(awsAmiHelperServiceDelegate)
-        .setUpAmiService(any(AwsAmiServiceSetupRequest.class), anyObject());
+        .setUpAmiService(any(AwsAmiServiceSetupRequest.class), any());
     trafficShiftSetupResponse = awsAmiHelperServiceDelegate.setUpAmiServiceTrafficShift(trafficShiftAlbSetupRequest);
     assertThat(trafficShiftSetupResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
 
@@ -909,7 +908,7 @@ public class AwsAmiHelperServiceDelegateImplTest extends WingsBaseTest {
 
     doAnswer(invocation -> { throw new Exception(); })
         .when(mockAwsAsgHelperServiceDelegate)
-        .clearAllScalingPoliciesForAsg(eq(awsConfig), eq(emptyList()), eq(REGION), anyString(), anyObject());
+        .clearAllScalingPoliciesForAsg(eq(awsConfig), eq(emptyList()), eq(REGION), anyString(), any());
     awsAmiSwitchRoutesResponse =
         awsAmiHelperServiceDelegate.rollbackSwitchAmiRoutesTrafficShift(trafficShiftAlbSetupRequest);
     assertThat(awsAmiSwitchRoutesResponse.getExecutionStatus()).isEqualTo(FAILED);
@@ -980,8 +979,7 @@ public class AwsAmiHelperServiceDelegateImplTest extends WingsBaseTest {
     trafficShiftAlbSetupRequest.setNewAutoscalingGroupWeight(DEFAULT_TRAFFIC_SHIFT_WEIGHT);
     doAnswer(invocation -> { throw new Exception(); })
         .when(mockAwsElbHelperServiceDelegate)
-        .updateRulesForAlbTrafficShift(
-            eq(awsConfig), eq(REGION), eq(emptyList()), anyList(), anyObject(), anyInt(), any());
+        .updateRulesForAlbTrafficShift(eq(awsConfig), eq(REGION), eq(emptyList()), anyList(), any(), anyInt(), any());
     awsAmiSwitchRoutesResponse = awsAmiHelperServiceDelegate.switchAmiRoutesTrafficShift(trafficShiftAlbSetupRequest);
     assertThat(awsAmiSwitchRoutesResponse.getExecutionStatus()).isEqualTo(FAILED);
   }

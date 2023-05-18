@@ -27,6 +27,7 @@ import io.harness.connector.impl.DefaultConnectorServiceImpl;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.ff.FeatureFlagService;
 import io.harness.govern.ProviderModule;
 import io.harness.ng.ConnectorServiceImpl;
@@ -65,7 +66,9 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -112,6 +115,15 @@ public class SecretManagementModuleTest extends CategoryTest {
         return NextGenRegistrars.kryoRegistrars;
       }
     });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      Map<Class<? extends Exception>, ExceptionHandler> exceptionHandler() {
+        return new HashMap<>();
+      }
+    });
+
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

@@ -1,0 +1,50 @@
+{{- if .Values.global.ingress.enabled -}}
+{{- $fullName := include "verification-svc.name" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- if and .Values.global.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
+  {{- end }}
+{{- end }}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "verification-svc.labels" . | nindent 4 }}
+  annotations:
+  {{- with .Values.global.ingress.objects.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if and .Values.global.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ .Values.global.ingress.className }}
+  {{- end }}
+  {{- if .Values.global.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.global.ingress.hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .Values.global.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    {{- range .Values.global.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - backend:
+              service:
+                name: verification-svc
+                port:
+                  number: {{ $svcPort }}
+            pathType: ImplementationSpecific
+            path: /verification
+    {{- end }}
+{{- end }}

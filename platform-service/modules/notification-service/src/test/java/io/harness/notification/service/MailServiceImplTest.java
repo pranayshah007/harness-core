@@ -14,10 +14,10 @@ import static io.harness.rule.OwnerRule.RICHA;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -48,18 +48,15 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(NGRestUtils.class)
 public class MailServiceImplTest extends CategoryTest {
   @Mock private NotificationSettingsService notificationSettingsService;
   @Mock private NotificationTemplateService notificationTemplateService;
@@ -68,6 +65,7 @@ public class MailServiceImplTest extends CategoryTest {
   @Mock private MailSenderImpl mailSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private UserNGClient userNGClient;
+  private MockedStatic<NGRestUtils> restUtilsMockedStatic;
   private MailServiceImpl mailService;
   private String accountId = "accountId";
   private String mailTemplateName = "email_test";
@@ -82,8 +80,13 @@ public class MailServiceImplTest extends CategoryTest {
         smtpConfigDefault, mailSender, delegateGrpcClientWrapper, userNGClient);
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
-    mockStatic(NGRestUtils.class);
+    restUtilsMockedStatic = mockStatic(NGRestUtils.class);
     when(NGRestUtils.getResponse(any())).thenReturn(true);
+  }
+
+  @After
+  public void cleanup() {
+    restUtilsMockedStatic.close();
   }
 
   @Test

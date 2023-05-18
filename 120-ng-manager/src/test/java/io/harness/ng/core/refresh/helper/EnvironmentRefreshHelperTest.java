@@ -13,7 +13,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -25,17 +24,14 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
-import io.harness.ng.core.yaml.CDYamlFacade;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
-import org.joor.Reflect;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,9 +44,6 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   @Mock private EnvironmentService environmentService;
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ServiceOverrideService serviceOverrideService;
-
-  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
-  CDYamlFacade cdYamlFacade = new CDYamlFacade();
   @InjectMocks private EnvironmentRefreshHelper refreshHelper;
 
   private final EntityRefreshContext refreshContext = getRefreshContext();
@@ -59,11 +52,6 @@ public class EnvironmentRefreshHelperTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
-
-    doReturn(true).when(featureFlagHelperService).isEnabled("", FeatureName.CDS_ENTITY_REFRESH_DO_NOT_QUOTE_STRINGS);
-
-    Reflect.on(cdYamlFacade).set("featureFlagHelperService", featureFlagHelperService);
-    Reflect.on(refreshHelper).set("cdYamlFacade", cdYamlFacade);
   }
 
   @After

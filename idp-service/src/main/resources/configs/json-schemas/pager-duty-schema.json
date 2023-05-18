@@ -1,7 +1,7 @@
 {
   "definitions": {},
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/object1679770775.json",
+  "$id": "https://example.com/object1682264120.json",
   "title": "Root",
   "type": "object",
   "additionalProperties": false,
@@ -13,6 +13,7 @@
       "$id": "#root/proxy",
       "title": "Proxy",
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "/pagerduty"
       ],
@@ -21,8 +22,10 @@
           "$id": "#root/proxy//pagerduty",
           "title": "/pagerduty",
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "target",
+            "pathRewrite",
             "headers"
           ],
           "properties": {
@@ -31,12 +34,32 @@
               "title": "Target",
               "type": "string",
               "default": "",
-              "pattern": "^.*$"
+              "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
             },
+            "pathRewrite": {
+              "$id": "#root/proxy//pagerduty/pathRewrite",
+              "title": "Pathrewrite",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "api/proxy/pagerduty/?"
+              ],
+              "properties": {
+                "api/proxy/pagerduty/?": {
+                  "$id": "#root/proxy//pagerduty/pathRewrite/api/proxy/pagerduty/?",
+                  "title": "Api/proxy/pagerduty/?",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          ,
             "headers": {
               "$id": "#root/proxy//pagerduty/headers",
               "title": "Headers",
               "type": "object",
+              "additionalProperties": false,
               "required": [
                 "Authorization"
               ],

@@ -9,6 +9,7 @@ package io.harness.cvng;
 
 import static io.harness.cvng.beans.TimeSeriesThresholdActionType.IGNORE;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
+import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -232,6 +233,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMet
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
@@ -270,6 +272,7 @@ import com.google.common.collect.Sets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -1052,7 +1055,7 @@ public class BuilderFactory {
         .deploymentTag("deploymentTag")
         .stageId("stageId")
         .pipelineId("pipelineId")
-        .planExecutionId("executionId")
+        .planExecutionId(generateUuid())
         .artifactType("artifactType")
         .artifactTag("artifactTag")
         .activityName(generateUuid())
@@ -1105,6 +1108,8 @@ public class BuilderFactory {
                     DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
                 .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                 .build())
+        .activityStartTime(clock.instant())
+        .activityEndTime(clock.instant())
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
@@ -1142,9 +1147,13 @@ public class BuilderFactory {
         .workflowEndTime(clock.instant())
         .workflowStartTime(clock.instant())
         .workflowId("workflowId")
-        .workflowExecutionId("workflowExecutionId")
+        .workflowExecutionId(generateUuid())
         .activityName(generateUuid())
         .activityEndTime(clock.instant())
+        .appId(generateUuid())
+        .serviceId(generateUuid())
+        .environmentId(generateUuid())
+        .name(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1178,6 +1187,9 @@ public class BuilderFactory {
         .pagerDutyUrl("https://myurl.com/pagerduty/token")
         .eventId("eventId")
         .activityName("New pager duty incident")
+        .status(generateUuid())
+        .htmlUrl(generateUuid())
+        .pagerDutyUrl(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1192,6 +1204,8 @@ public class BuilderFactory {
         .type(ChangeSourceType.KUBERNETES.getActivityType())
         .activityStartTime(clock.instant())
         .activityName("K8 Activity")
+        .resourceType(KubernetesResourceType.ConfigMap)
+        .action(Action.Add)
         .resourceVersion("resource-version")
         .relatedAppServices(Arrays.asList(
             RelatedAppMonitoredService.builder().monitoredServiceIdentifier("dependent_service").build()));
@@ -1368,6 +1382,37 @@ public class BuilderFactory {
                        .type(SLOTargetType.ROLLING)
                        .sloTargetPercentage(80.0)
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
+        .notificationRuleRefs(Collections.emptyList())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
+  public ServiceLevelObjectiveV2DTOBuilder getSimpleCalendarServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.CALENDER)
+                       .sloTargetPercentage(80.0)
+                       .spec(CalenderSLOTargetSpec.builder()
+                                 .spec(CalenderSLOTargetSpec.MonthlyCalenderSpec.builder().dayOfMonth(2).build())
+                                 .build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
                   .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
@@ -1708,6 +1753,9 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setAccountId(String accountId) {
+      projectParams.setAccountIdentifier(accountId);
+    }
     public void setOrgIdentifier(String orgIdentifier) {
       projectParams.setOrgIdentifier(orgIdentifier);
     }
@@ -1883,6 +1931,7 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeDurationBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeDuration")
         .name("downtime OneTime Duration")
@@ -1902,6 +1951,7 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.DURATION)
                             .spec(OnetimeDowntimeSpec.OnetimeDurationBasedSpec.builder()
@@ -1917,7 +1967,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getOnetimeEndTimeBasedDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofMinutes(30).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusMinutes(30);
     return DowntimeDTO.builder()
         .identifier("downtimeOneTimeEndTime")
         .name("downtime OneTime EndTime")
@@ -1937,9 +1989,13 @@ public class BuilderFactory {
                   .type(DowntimeType.ONE_TIME)
                   .spec(OnetimeDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .type(OnetimeDowntimeType.END_TIME)
-                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder().endTime(endTime).build())
+                            .spec(OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec.builder()
+                                      .endTime(endTime)
+                                      .endDateTime(dtf.format(endDateTime))
+                                      .build())
                             .build())
                   .build())
         .build();
@@ -1947,7 +2003,9 @@ public class BuilderFactory {
 
   public DowntimeDTO getRecurringDowntimeDTO() {
     long startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().getEpochSecond();
+    LocalDateTime startDateTime = LocalDateTime.now(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
     long endTime = startTime + Duration.ofDays(365).toSeconds();
+    LocalDateTime endDateTime = startDateTime.plusDays(365);
     return DowntimeDTO.builder()
         .identifier("downtimeRecurring")
         .name("downtime Recurring")
@@ -1967,12 +2025,14 @@ public class BuilderFactory {
                   .type(DowntimeType.RECURRING)
                   .spec(RecurringDowntimeSpec.builder()
                             .startTime(startTime)
+                            .startDateTime(dtf.format(startDateTime))
                             .timezone("UTC")
                             .downtimeDuration(DowntimeDuration.builder()
                                                   .durationValue(30)
                                                   .durationType(DowntimeDurationType.MINUTES)
                                                   .build())
                             .recurrenceEndTime(endTime)
+                            .recurrenceEndDateTime(dtf.format(endDateTime))
                             .downtimeRecurrence(DowntimeRecurrence.builder()
                                                     .recurrenceValue(1)
                                                     .recurrenceType(DowntimeRecurrenceType.WEEK)

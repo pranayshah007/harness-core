@@ -73,6 +73,8 @@ import io.harness.gitsync.common.dtos.ScmListFilesRequestDTO;
 import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsRequestDTO;
+import io.harness.gitsync.common.dtos.UserDetailsResponseDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitFilePathHelper;
@@ -273,40 +275,51 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       return getFileResponseDTOOptional.get();
     }
 
-    String branchName = isEmpty(scmGetFileByBranchRequestDTO.getBranchName())
-        ? getDefaultBranch(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
-            scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName())
-        : scmGetFileByBranchRequestDTO.getBranchName();
+    String branchName;
+    if (isEmpty(scmGetFileByBranchRequestDTO.getCommitId())) {
+      branchName = isEmpty(scmGetFileByBranchRequestDTO.getBranchName())
+          ? getDefaultBranch(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
+              scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName())
+          : scmGetFileByBranchRequestDTO.getBranchName();
+    } else {
+      branchName = "";
+    }
 
     FileContent fileContent = scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
         -> scmClientFacilitatorService.getFile(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
             scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
-            scmGetFileByBranchRequestDTO.getRepoName(), branchName, scmGetFileByBranchRequestDTO.getFilePath(), null),
+            scmGetFileByBranchRequestDTO.getRepoName(), branchName, scmGetFileByBranchRequestDTO.getFilePath(),
+            scmGetFileByBranchRequestDTO.getCommitId()),
         scmConnector);
 
-    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse =
-        getLatestCommitOnFile(scope, scmConnector, branchName, fileContent.getPath());
+    GetLatestCommitOnFileResponse getLatestCommitOnFileResponse = null;
+    if (isEmpty(scmGetFileByBranchRequestDTO.getCommitId())) {
+      getLatestCommitOnFileResponse = getLatestCommitOnFile(scope, scmConnector, branchName, fileContent.getPath());
 
-    ApiResponseDTO response = getGetFileAPIResponse(scmConnector, fileContent, getLatestCommitOnFileResponse);
+      ApiResponseDTO response = getGetFileAPIResponse(scmConnector, fileContent, getLatestCommitOnFileResponse);
 
-    if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatusCode(), scmConnector.getConnectorType())) {
-      try {
-        ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
-            scmConnector.getUrl(), response.getStatusCode(), response.getError(),
-            ErrorMetadata.builder()
-                .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
-                .repoName(scmGetFileByBranchRequestDTO.getRepoName())
-                .filepath(scmGetFileByBranchRequestDTO.getFilePath())
-                .branchName(branchName)
-                .build());
-      } catch (WingsException wingsException) {
-        if (ScmExceptionUtils.isNestedScmBadRequestException(wingsException)) {
-          invalidateGitFileCache(scope.getAccountIdentifier(), scmGetFileByBranchRequestDTO.getFilePath(), scmConnector,
-              scmGetFileByBranchRequestDTO.getRepoName(), branchName);
+      if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatusCode(), scmConnector.getConnectorType())) {
+        try {
+          ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
+              scmConnector.getUrl(), response.getStatusCode(), response.getError(),
+              ErrorMetadata.builder()
+                  .connectorRef(scmGetFileByBranchRequestDTO.getConnectorRef())
+                  .repoName(scmGetFileByBranchRequestDTO.getRepoName())
+                  .filepath(scmGetFileByBranchRequestDTO.getFilePath())
+                  .branchName(branchName)
+                  .build());
+        } catch (WingsException wingsException) {
+          if (ScmExceptionUtils.isNestedScmBadRequestException(wingsException)) {
+            invalidateGitFileCache(scope.getAccountIdentifier(), scmGetFileByBranchRequestDTO.getFilePath(),
+                scmConnector, scmGetFileByBranchRequestDTO.getRepoName(), branchName);
+          }
+          throw wingsException;
         }
-        throw wingsException;
       }
     }
+
+    String commitId =
+        getLatestCommitOnFileResponse == null ? fileContent.getCommitId() : getLatestCommitOnFileResponse.getCommitId();
 
     try {
       gitFileCacheService.upsertCache(GitFileCacheKey.builder()
@@ -329,7 +342,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     return ScmGetFileResponseDTO.builder()
         .fileContent(fileContent.getContent())
         .blobId(fileContent.getBlobId())
-        .commitId(getLatestCommitOnFileResponse.getCommitId())
+        .commitId(commitId)
         .branchName(branchName)
         .build();
   }
@@ -354,7 +367,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             -> scmClientFacilitatorService.getFile(scope, scmConnector,
                 GitFileRequest.builder()
                     .branch(scmGetFileByBranchRequestDTO.getBranchName())
-                    .commitId(null)
+                    .commitId(scmGetFileByBranchRequestDTO.getCommitId())
                     .filepath(scmGetFileByBranchRequestDTO.getFilePath())
                     .getOnlyFileContent(scmGetFileByBranchRequestDTO.isGetOnlyFileContent())
                     .build()),
@@ -728,6 +741,25 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
+  @Override
+  public UserDetailsResponseDTO getUserDetails(UserDetailsRequestDTO userDetailsRequestDTO) {
+    if (isExecuteOnManager(userDetailsRequestDTO)) {
+      UserDetailsResponseDTO userDetailsResponse = scmOrchestratorService.processScmRequestUsingManager(
+          scmClientFacilitatorService -> scmClientFacilitatorService.getUserDetails(userDetailsRequestDTO));
+      return UserDetailsResponseDTO.builder()
+          .userEmail(userDetailsResponse.getUserEmail())
+          .userName(userDetailsResponse.getUserName())
+          .build();
+    } else {
+      UserDetailsResponseDTO userDetailsResponse = scmOrchestratorService.processScmRequestUsingDelegate(
+          scmClientFacilitatorService -> scmClientFacilitatorService.getUserDetails(userDetailsRequestDTO));
+      return UserDetailsResponseDTO.builder()
+          .userEmail(userDetailsResponse.getUserEmail())
+          .userName(userDetailsResponse.getUserName())
+          .build();
+    }
+  }
+
   private List<GitRepositoryResponseDTO> prepareListRepoResponse(
       ScmConnector scmConnector, GetUserReposResponse response) {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();
@@ -1076,11 +1108,13 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   private ScmGetFileResponseDTO getScmGetFileResponseDTO(GitFileResponse gitFileResponse) {
+    String branch = isEmpty(gitFileResponse.getBranch()) ? "" : gitFileResponse.getBranch();
+
     return ScmGetFileResponseDTO.builder()
         .fileContent(gitFileResponse.getContent())
         .blobId(gitFileResponse.getObjectId())
         .commitId(gitFileResponse.getCommitId())
-        .branchName(gitFileResponse.getBranch())
+        .branchName(branch)
         .build();
   }
 
@@ -1137,5 +1171,10 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
     gitBackgroundCacheRefreshHelper.submitBatchTask(
         getGitBatchFileFetchRunnableParams(accountIdentifier, requestsToCache));
+  }
+
+  private boolean isExecuteOnManager(UserDetailsRequestDTO userDetailsRequestDTO) {
+    // TODO: return true if the secret manager used for token is harness secret manager
+    return true;
   }
 }

@@ -13,7 +13,9 @@ public enum ListKind {
   ServiceList(Kind.Service),
   DeploymentList(Kind.Deployment),
   RoleBindingList(Kind.RoleBinding),
-  ClusterRoleBindingList(Kind.ClusterRoleBinding);
+  ClusterRoleBindingList(Kind.ClusterRoleBinding),
+  ConfigMapList(Kind.ConfigMap),
+  SecretList(Kind.Secret);
 
   private final Kind itemKind;
 

@@ -33,14 +33,14 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -58,7 +58,6 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ff.FeatureFlagService;
-import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.rule.Owner;
 
@@ -311,9 +310,7 @@ public class K8sCanaryDeployTest extends CategoryTest {
             .k8sTaskResponse(K8sCanaryDeployResponse.builder().helmChartInfo(helmChartInfo).build())
             .build();
 
-    doReturn(InstanceElementListParam.builder().build())
-        .when(k8sCanaryDeploy)
-        .fetchInstanceElementListParam(anyListOf(K8sPod.class));
+    doReturn(InstanceElementListParam.builder().build()).when(k8sCanaryDeploy).fetchInstanceElementListParam(anyList());
     doReturn(false).when(k8sCanaryDeploy).shouldSaveManifest(any());
     doReturn(emptyList()).when(k8sCanaryDeploy).fetchInstanceStatusSummaries(any(), any());
     doNothing().when(k8sCanaryDeploy).saveK8sElement(any(), any());

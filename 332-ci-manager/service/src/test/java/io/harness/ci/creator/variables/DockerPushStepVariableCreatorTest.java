@@ -91,6 +91,9 @@ public class DockerPushStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.buildArgs.hello",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.optimize",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.context",
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.cacheFrom",
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.cacheTo",
+            "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.spec.caching",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.name",
             "pipeline.stages.docker_buildPush_success.spec.execution.steps.dockerBuildPush.when");
 

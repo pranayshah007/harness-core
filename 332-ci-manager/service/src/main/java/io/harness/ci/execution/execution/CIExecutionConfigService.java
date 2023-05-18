@@ -664,8 +664,12 @@ public class CIExecutionConfigService {
         name = vmContainerlessStepConfig.getGitCloneConfig().getName();
         break;
       case DOCKER:
-      case GCR:
+        name = vmContainerlessStepConfig.getDockerBuildxConfig().getName();
+        break;
       case ECR:
+        name = vmContainerlessStepConfig.getDockerBuildxEcrConfig().getName();
+        break;
+      case GCR:
       case ACR:
       case SECURITY:
       case UPLOAD_ARTIFACTORY:

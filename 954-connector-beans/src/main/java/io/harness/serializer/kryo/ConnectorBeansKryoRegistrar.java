@@ -194,6 +194,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthentication
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketOAuthDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
@@ -230,12 +231,24 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType;
+import io.harness.delegate.beans.connector.scm.harness.HarnessAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessHttpCredentialsSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowADFSDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
@@ -311,6 +324,8 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(GithubHttpCredentialsDTO.class, 19440);
     kryo.register(GithubHttpAuthenticationType.class, 19441);
     kryo.register(GithubUsernamePasswordDTO.class, 19442);
+    kryo.register(HarnessHttpCredentialsDTO.class, 197010);
+    kryo.register(HarnessHttpAuthenticationType.class, 197020);
     kryo.register(GitlabConnectorDTO.class, 19443);
     kryo.register(GithubConnectorDTO.class, 19444);
     kryo.register(GithubApiAccessDTO.class, 19445);
@@ -321,6 +336,13 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(GithubApiAccessType.class, 19451);
     kryo.register(GithubAuthenticationDTO.class, 19452);
     kryo.register(GithubCredentialsDTO.class, 19453);
+    kryo.register(HarnessConnectorDTO.class, 197030);
+    kryo.register(HarnessApiAccessDTO.class, 197040);
+    kryo.register(HarnessApiAccessSpecDTO.class, 197050);
+    kryo.register(HarnessTokenSpecDTO.class, 197060);
+    kryo.register(HarnessJWTTokenSpecDTO.class, 197120);
+    kryo.register(HarnessApiAccessType.class, 197070);
+    kryo.register(HarnessAuthenticationDTO.class, 197080);
     kryo.register(CEAwsConnectorDTO.class, 19454);
     kryo.register(AwsCurAttributesDTO.class, 19455);
     kryo.register(ArtifactoryConnectorDTO.class, 19487);
@@ -337,10 +359,12 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(NexusConstants.class, 19503);
     kryo.register(VaultConnectorDTO.class, 19506);
     kryo.register(GithubUsernameTokenDTO.class, 19511);
+    kryo.register(HarnessUsernameTokenDTO.class, 197100);
     kryo.register(GitlabUsernameTokenDTO.class, 19512);
     kryo.register(GitlabAuthenticationDTO.class, 19520);
     kryo.register(BitbucketConnectorDTO.class, 19521);
     kryo.register(GithubHttpCredentialsSpecDTO.class, 19522);
+    kryo.register(HarnessHttpCredentialsSpecDTO.class, 197110);
     kryo.register(GitlabHttpCredentialsDTO.class, 19523);
     kryo.register(BitbucketAuthenticationDTO.class, 19524);
     kryo.register(GitlabUsernamePasswordDTO.class, 19525);
@@ -351,6 +375,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(BitbucketUsernamePasswordDTO.class, 19530);
     kryo.register(GithubOauthDTO.class, 19552);
     kryo.register(GitlabOauthDTO.class, 19553);
+    kryo.register(BitbucketOAuthDTO.class, 19555);
     kryo.register(LocalConnectorDTO.class, 543237);
     kryo.register(GcpKmsConnectorDTO.class, 543238);
 
@@ -514,6 +539,7 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSdkClientBackoffStrategyDTO.class, 10000458);
     kryo.register(AwsSdkClientBackoffStrategySpecDTO.class, 10000459);
     kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
+    kryo.register(SignalFXConnectorDTO.class, 9145);
 
     kryo.register(RancherAuthType.class, 20000501);
     kryo.register(RancherConfigType.class, 20000502);

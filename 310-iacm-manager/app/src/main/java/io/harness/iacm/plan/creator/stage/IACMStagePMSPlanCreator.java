@@ -9,14 +9,13 @@ package io.harness.iacm.plan.creator.stage;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
-import static io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
 import static io.harness.yaml.extended.ci.codebase.Build.builder;
 import static io.harness.yaml.extended.ci.codebase.CodeBase.CodeBaseBuilder;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
-import io.harness.beans.entities.Stack;
+import io.harness.beans.entities.Workspace;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
@@ -95,6 +94,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
+@Deprecated
 public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageNode> {
   private static final String TERRAFORM_PLAN_ID = "IACMTerraformPlan";
   private static final String TERRAFORM_APPLY_ID = "IACMTerraformApply";
@@ -105,7 +105,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
-
+  @Inject private CIStagePlanCreationUtils cIStagePlanCreationUtils;
   @Inject private IACMServiceUtils serviceUtils;
 
   /**
@@ -327,7 +327,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     stageNode.setName(StrategyUtils.getIdentifierWithExpression(ctx, stageNode.getName()));
 
     StageElementParametersBuilder stageParameters =
-        CIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
+        cIStagePlanCreationUtils.getStageParameters(getIntegrationStageNode(stageNode));
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
@@ -491,7 +491,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   private CodeBase getIACMCodebase(PlanCreationContext ctx, String stackId) {
     try {
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
-      Stack stack = serviceUtils.getIACMStackInfo(
+      Workspace stack = serviceUtils.getIACMWorkspaceInfo(
           ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
       // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
       // defined

@@ -46,14 +46,14 @@ import org.hibernate.validator.constraints.NotEmpty;
     name = "SplunkHealthSource", description = "This is the Splunk Log Health Source spec entity defined in Harness")
 public class SplunkHealthSourceSpec extends HealthSourceSpec {
   @NotNull String feature;
-  @NotNull @NotEmpty @Valid List<QueryDTO> queries;
+  @NotNull @NotEmpty @Valid List<SplunkHealthSourceQueryDTO> queries;
 
   @Data
   @FieldDefaults(level = AccessLevel.PRIVATE)
   @Builder
   @AllArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public static class QueryDTO {
+  public static class SplunkHealthSourceQueryDTO {
     @NotNull String name;
     @NotNull String query;
     @NotNull String serviceInstanceIdentifier;

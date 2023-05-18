@@ -74,6 +74,9 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
   private final String AWS_FREE_TRIAL_DIMENSION = "AWSMPFreeTrial";
+  private final Integer MINIMUM_DIMENSION_V2_LENGTH = 3;
+  private final String KILO_CONVERSION = "K";
+  private final String MILLION_CONVERSION = "M";
   @Override
   public Response processAWSMarktPlaceOrder(String token) {
     /**
@@ -119,9 +122,18 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     String customerIdentifierCode = resolveCustomerResult.getCustomerIdentifier();
     String productCode = resolveCustomerResult.getProductCode();
 
+    // V2 Product codes use dimension string to retrieve license info
+    List<String> awsMarketPlaceV2ProductCodes = new ArrayList();
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceFfProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCiProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceStoProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceSrmProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCdProductCode());
+    awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCcmProductCode());
+
     if (!marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)
         && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)
-        && !marketPlaceConfig.getAwsMarketPlaceFfProductCode().equals(productCode)) {
+        && !awsMarketPlaceV2ProductCodes.contains(productCode)) {
       final String message =
           "Customer order from AWS could not be resolved, please contact Harness at support@harness.io";
       log.error("Invalid AWS productcode received:[{}],", productCode);
@@ -152,7 +164,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
 
     String dimensionModule = getDimensionModule(dimension);
 
-    if (dimensionModule.equals("FF")) {
+    if (awsMarketPlaceV2ProductCodes.contains(productCode)) {
       orderQuantity = getDimensionQuantity(dimension);
     }
 
@@ -188,8 +200,9 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       wingsPersistence.save(marketPlace);
     }
 
-    if (existingCustomer && (!marketPlace.getOrderQuantity().equals(orderQuantity))
-        || (!marketPlace.getExpirationDate().equals(expirationDate))) {
+    if (existingCustomer
+        && (!marketPlace.getOrderQuantity().equals(orderQuantity)
+            || (!marketPlace.getExpirationDate().equals(expirationDate)))) {
       log.info(
           "This is an existing customer:[{}], updating orderQuantity from [{}] to [{}], updating expirationDate from [{}] to [{}]",
           customerIdentifierCode, marketPlace.getOrderQuantity(), orderQuantity, marketPlace.getExpirationDate(),
@@ -220,7 +233,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       URI redirectUrl = null;
       try {
         redirectUrl = new URI(authenticationUtils.getBaseUrl()
-            + ("#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken));
+            + ("auth/#/invite?inviteId=" + userInvite.getUuid() + "&marketPlaceToken=" + marketPlaceToken));
       } catch (URISyntaxException e) {
         throw new WingsException(e);
       }
@@ -299,20 +312,24 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     Integer quantity = 0;
     // split string from underscore
     String[] result = dimension.split("_");
-    String tempQuantity = result[result.length - 1];
 
-    // Handle K (1000) and M (1000000) units
-    if (tempQuantity.contains("K")) {
-      tempQuantity = tempQuantity.replace("K", "000");
+    String tempQuantityStr = "0";
+    if (result.length >= MINIMUM_DIMENSION_V2_LENGTH) {
+      tempQuantityStr = result[result.length - 1];
     }
 
-    if (tempQuantity.contains("M")) {
-      tempQuantity = tempQuantity.replace("M", "000000");
+    // Handle K (1000) and M (1000000) units
+    if (tempQuantityStr.contains(KILO_CONVERSION)) {
+      tempQuantityStr = tempQuantityStr.replace(KILO_CONVERSION, "000");
+    }
+
+    if (tempQuantityStr.contains(MILLION_CONVERSION)) {
+      tempQuantityStr = tempQuantityStr.replace(MILLION_CONVERSION, "000000");
     }
 
     try {
-      if (Integer.parseInt(tempQuantity) > 0) {
-        quantity = Integer.parseInt(tempQuantity);
+      if (Integer.parseInt(tempQuantityStr) > 0) {
+        quantity = Integer.parseInt(tempQuantityStr);
       }
 
     } catch (Exception e) {

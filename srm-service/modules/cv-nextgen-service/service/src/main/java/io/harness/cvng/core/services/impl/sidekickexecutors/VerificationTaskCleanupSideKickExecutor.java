@@ -41,6 +41,8 @@ import io.harness.persistence.UuidAware;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.WriteResult;
+import dev.morphia.AdvancedDatastore;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import java.time.Clock;
@@ -53,6 +55,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.ObjectId;
 
 @Singleton
 @Slf4j
@@ -115,24 +118,32 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
                                                   .project(UuidAware.UUID_KEY, true);
     FindOptions findOptions = new FindOptions().limit(RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH);
     do {
-      numberOfRecordsDeleted = deleteSingleBatch(entity, query, findOptions);
-      log.info("Deleted {} records of entity {} for the verificationTaskId {}", numberOfRecordsDeleted,
-          entity.getSimpleName(), verificationTaskId);
+      numberOfRecordsDeleted = deleteSingleBatch(entity, query, findOptions, verificationTaskId);
     } while (numberOfRecordsDeleted > 0);
   }
 
-  private int deleteSingleBatch(
-      Class<? extends PersistentEntity> entity, Query<? extends PersistentEntity> query, FindOptions findOptions) {
+  private int deleteSingleBatch(Class<? extends PersistentEntity> entity, Query<? extends PersistentEntity> query,
+      FindOptions findOptions, String verificationTaskId) {
     List<? extends PersistentEntity> recordsToBeDeleted = query.find(findOptions).toList();
-    int numberOfRecordsDeleted = recordsToBeDeleted.size();
-
-    if (numberOfRecordsDeleted > 0) {
-      Set<String> recordIdsTobeDeleted = recordsToBeDeleted.stream()
-                                             .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
-                                             .collect(Collectors.toSet());
+    int numberOfRecordsToBeDeleted = recordsToBeDeleted.size();
+    int numberOfRecordsDeleted = 0;
+    if (numberOfRecordsToBeDeleted > 0) {
+      Set<?> recordIdsTobeDeleted = recordsToBeDeleted.stream()
+                                        .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
+                                        .map(VerificationTaskCleanupSideKickExecutor::convertToObjectIdIfRequired)
+                                        .collect(Collectors.toSet());
       Query<? extends PersistentEntity> queryToFindRecordsToBeDeleted =
           hPersistence.createQuery(entity).field(UuidAware.UUID_KEY).in(recordIdsTobeDeleted);
-      hPersistence.delete(queryToFindRecordsToBeDeleted);
+      log.info("Deleting {} records of entity {} for the verificationTaskId {}", numberOfRecordsToBeDeleted,
+          entity.getSimpleName(), verificationTaskId);
+      numberOfRecordsDeleted = deleteRecords(queryToFindRecordsToBeDeleted);
+      log.info("Deleted {} records of entity {} for the verificationTaskId {}", numberOfRecordsDeleted,
+          entity.getSimpleName(), verificationTaskId);
+      if (numberOfRecordsToBeDeleted != numberOfRecordsDeleted) {
+        log.warn(
+            "Number of records deleted: {} is not equal to the number of records to be deleted: {} for entity {} for the verificationTaskId {}",
+            numberOfRecordsDeleted, numberOfRecordsToBeDeleted, entity.getSimpleName(), verificationTaskId);
+      }
     }
     return numberOfRecordsDeleted;
   }
@@ -148,5 +159,28 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
   private void deleteMonitoringSourcePerpetualTasks(CVConfig cvConfig) {
     monitoringSourcePerpetualTaskService.deleteTask(cvConfig.getAccountId(), cvConfig.getOrgIdentifier(),
         cvConfig.getProjectIdentifier(), cvConfig.getFullyQualifiedIdentifier(), cvConfig.getConnectorIdentifier());
+  }
+
+  private static Object convertToObjectIdIfRequired(final String uuid) {
+    if (ObjectId.isValid(uuid)) {
+      ObjectId objectIdFromGivenUuid = new ObjectId(uuid);
+      String uuidFromNewObjectId = objectIdFromGivenUuid.toString();
+      if (uuidFromNewObjectId.equals(uuid)) {
+        return objectIdFromGivenUuid;
+      } else {
+        return uuid;
+      }
+    } else {
+      return uuid;
+    }
+  }
+
+  @VisibleForTesting
+  <T extends PersistentEntity> int deleteRecords(Query<T> query) {
+    AdvancedDatastore datastore = hPersistence.getDatastore(query.getEntityClass());
+    return HPersistence.retry(() -> {
+      WriteResult result = datastore.delete(query);
+      return result.getN();
+    });
   }
 }

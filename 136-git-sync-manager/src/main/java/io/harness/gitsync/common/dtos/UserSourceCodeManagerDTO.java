@@ -30,5 +30,7 @@ public abstract class UserSourceCodeManagerDTO {
   Long createdAt;
   Long lastModifiedAt;
   SCMType type;
+  String userName;
+  String userEmail;
   public abstract SCMType getType();
 }

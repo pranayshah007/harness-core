@@ -9,6 +9,7 @@ package io.harness.ci.plan.creator;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.ssca.SscaBeansRegistrar.sscaStepPaletteSteps;
+import static io.harness.steps.plugin.ContainerStepConstants.PLUGIN;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
@@ -78,6 +79,7 @@ import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.ssca.execution.creator.filter.SscaStepsFilterJsonCreator;
+import io.harness.ssca.execution.creator.plan.SscaEnforcementStepPlanCreator;
 import io.harness.ssca.execution.creator.plan.SscaOrchestrationStepPlanCreator;
 import io.harness.ssca.execution.creator.variable.SscaStepVariableCreator;
 import io.harness.sto.STOStepType;
@@ -123,6 +125,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new ActionStepPlanCreator());
     planCreators.add(new BitriseStepPlanCreator());
     planCreators.add(new SscaOrchestrationStepPlanCreator());
+    planCreators.add(new SscaEnforcementStepPlanCreator());
 
     // add V1 plan creators
     planCreators.add(new IntegrationStagePMSPlanCreatorV3());
@@ -194,11 +197,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                .build();
 
-    StepInfo backgroundStepInfo = StepInfo.newBuilder()
-                                      .setName("Background")
-                                      .setType(StepSpecTypeConstants.BACKGROUND)
-                                      .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                                      .build();
+    StepInfo backgroundStepInfo =
+        StepInfo.newBuilder()
+            .setName("Background")
+            .setType(StepSpecTypeConstants.BACKGROUND)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo runTestsStepInfo = StepInfo.newBuilder()
                                     .setName("Run Tests")
@@ -213,11 +217,12 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
 
-    StepInfo gitCloneStepInfo = StepInfo.newBuilder()
-                                    .setName("Git Clone")
-                                    .setType(StepSpecTypeConstants.GIT_CLONE)
-                                    .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
-                                    .build();
+    StepInfo gitCloneStepInfo =
+        StepInfo.newBuilder()
+            .setName("Git Clone")
+            .setType(StepSpecTypeConstants.GIT_CLONE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(PLUGIN).addFolderPaths("Build").build())
+            .build();
 
     StepInfo restoreCacheFromGCS = StepInfo.newBuilder()
                                        .setName("Restore Cache From GCS")

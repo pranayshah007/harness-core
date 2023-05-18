@@ -7,14 +7,17 @@
 
 package io.harness.freeze.beans;
 
+import io.harness.data.validator.EntityName;
+import io.harness.validator.NGRegexValidatorConstants;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
 public class FreezeEntityRule {
   @NotNull @JsonProperty("entities") List<EntityConfig> entityConfigList;
-  @NotEmpty String name;
+  @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
 }

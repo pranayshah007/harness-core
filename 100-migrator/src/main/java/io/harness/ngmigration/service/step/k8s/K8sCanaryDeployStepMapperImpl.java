@@ -18,7 +18,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -30,7 +29,7 @@ import software.wings.sm.states.k8s.K8sCanaryDeploy;
 
 import java.util.Map;
 
-public class K8sCanaryDeployStepMapperImpl extends StepMapper {
+public class K8sCanaryDeployStepMapperImpl extends K8sAbstractStepMapperImpl {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;

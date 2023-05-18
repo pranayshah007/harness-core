@@ -73,6 +73,7 @@ public interface NodeExecutionService {
    * @return NodeExecutions with all properties
    */
   List<NodeExecution> getAll(Set<String> nodeExecutionIds);
+  List<NodeExecution> getAllWithFieldIncluded(Set<String> nodeExecutionIds, Set<String> fieldsToInclude);
 
   /**
    * Fetches all step nodeExecutions with given projected fields, checks stepCategory should be step
@@ -327,6 +328,8 @@ public interface NodeExecutionService {
 
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId);
+
+  List<NodeExecution> fetchStageExecutions(String planExecutionId);
 
   // TODO(Projection): Make it paginated, and projection, in retry flow
   List<NodeExecution> fetchStrategyNodeExecutions(String planExecutionId, List<String> stageFQNs);

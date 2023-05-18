@@ -29,6 +29,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
+import io.harness.gitsync.GitMetadataUpdateRequestInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -44,6 +45,7 @@ import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -212,6 +214,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .governanceMetadata(pe.getGovernanceMetadata())
               .entityValidityDetails(EntityValidityDetails.builder().valid(true).invalidYaml(pe.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
+              .cacheResponse(PMSPipelineDtoMapper.getCacheResponseFromGitContext())
               .build());
     } catch (InvalidYamlException e) {
       return ResponseDTO.newResponse(
@@ -220,6 +223,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
               .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(e.getYaml()).build())
               .gitDetails(GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata())
               .yamlSchemaErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata())
+              .cacheResponse(PMSPipelineDtoMapper.getCacheResponseFromGitContext())
               .build());
     }
 
@@ -334,14 +338,16 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public ResponseDTO<PMSPipelineSummaryResponseDTO> getPipelineSummary(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
-      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly) {
+      @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo, Boolean getMetadataOnly,
+      boolean loadFromFallbackBranch, String loadFromCache) {
     log.info(
         String.format("Get pipeline summary for pipeline with with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
-    pipelineEntity = pmsPipelineService.getPipeline(
-        accountId, orgId, projectId, pipelineId, false, Boolean.TRUE.equals(getMetadataOnly));
+    pipelineEntity = pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false,
+        Boolean.TRUE.equals(getMetadataOnly), loadFromFallbackBranch,
+        GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
     PMSPipelineSummaryResponseDTO pipelineSummary = PMSPipelineDtoMapper.preparePipelineSummary(
         pipelineEntity.orElseThrow(
@@ -542,5 +548,19 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineValidationResponseDTO response =
         PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);
     return ResponseDTO.newResponse(response);
+  }
+
+  @Override
+  public ResponseDTO<PMSGitUpdateResponseDTO> updateGitMetadataForPipeline(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      GitMetadataUpdateRequestInfoDTO gitMetadataUpdateRequestInfo) {
+    String pipelineAfterUpdate =
+        pmsPipelineService.updateGitMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            PMSUpdateGitDetailsParams.builder()
+                .connectorRef(gitMetadataUpdateRequestInfo.getConnectorRef())
+                .filePath(gitMetadataUpdateRequestInfo.getFilePath())
+                .repoName(gitMetadataUpdateRequestInfo.getRepoName())
+                .build());
+    return ResponseDTO.newResponse(PMSGitUpdateResponseDTO.builder().identifier(pipelineAfterUpdate).build());
   }
 }

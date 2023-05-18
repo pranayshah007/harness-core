@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
@@ -24,6 +25,7 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ngexception.InvalidFieldsDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -83,6 +85,7 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -109,7 +112,12 @@ public class PMSPipelineServiceHelper {
   public static String PROJECT_ID = "projectId";
 
   public static void validatePresenceOfRequiredFields(Object... fields) {
-    Lists.newArrayList(fields).forEach(field -> Objects.requireNonNull(field, "One of the required fields is null."));
+    Lists.newArrayList(fields).forEach(field -> {
+      Objects.requireNonNull(field, "One of the required fields is null.");
+      if (ObjectUtils.isEmpty(field)) {
+        throw new InvalidRequestException("One of the required fields is empty.");
+      }
+    });
   }
 
   public static Criteria getPipelineEqualityCriteria(String accountId, String orgIdentifier, String projectIdentifier,
@@ -390,6 +398,8 @@ public class PMSPipelineServiceHelper {
 
     Criteria moduleCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(module)) {
+      // Check if the provided module type is valid
+      checkThatTheModuleExists(module);
       // Add approval stage criteria to check for the pipelines containing the given module and the approval stage.
       Criteria approvalStageCriteria =
           Criteria.where(format("%s.%s.stageTypes", PipelineEntityKeys.filters, ModuleType.PMS.name().toLowerCase()))
@@ -562,5 +572,17 @@ public class PMSPipelineServiceHelper {
     update.unset(PipelineEntityKeys.repoURL);
     update.set(PipelineEntityKeys.storeType, StoreType.INLINE);
     return update;
+  }
+
+  public void checkThatTheModuleExists(String module) {
+    if (isNotEmpty(module)
+        && isEmpty(ModuleType.getModules()
+                       .stream()
+                       .filter(moduleType -> moduleType.name().equalsIgnoreCase(module))
+                       .collect(Collectors.toList()))) {
+      throw NestedExceptionUtils.hintWithExplanationException(format("Invalid module type [%s]", module),
+          format("Please select the correct module type %s", ModuleType.getModules()),
+          new InvalidRequestException(format("Invalid module type [%s]", module)));
+    }
   }
 }

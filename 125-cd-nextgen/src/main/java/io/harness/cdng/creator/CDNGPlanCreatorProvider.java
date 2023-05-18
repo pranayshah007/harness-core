@@ -48,6 +48,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_
 import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
 import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
+import static io.harness.ng.core.k8s.ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
 
@@ -64,7 +65,6 @@ import io.harness.cdng.chaos.ChaosStepFilterJsonCreator;
 import io.harness.cdng.chaos.ChaosStepPlanCreator;
 import io.harness.cdng.chaos.ChaosStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
-import io.harness.cdng.creator.plan.CDStepGroupPmsPlanCreator;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
@@ -103,6 +103,7 @@ import io.harness.cdng.creator.plan.steps.GitOpsUpdateReleaseRepoStepPlanCreator
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmRollbackStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.K8sApplyStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.K8sBGStageScaleDownStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sBGSwapServicesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sBlueGreenStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sCanaryDeleteStepPlanCreator;
@@ -137,6 +138,7 @@ import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingDeployStepPlanCreato
 import io.harness.cdng.creator.plan.steps.aws.asg.AsgRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.lambda.AwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamBuildStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.aws.sam.AwsSamRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
@@ -198,6 +200,7 @@ import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCrea
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sApplyStepVariableCreator;
+import io.harness.cdng.creator.variables.K8sBGStageScaleDownStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sBGSwapServicesVariableCreator;
 import io.harness.cdng.creator.variables.K8sBlueGreenStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sCanaryDeleteStepVariableCreator;
@@ -223,6 +226,7 @@ import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.AwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.aws.sam.AwsSamBuildStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.aws.sam.AwsSamRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.googlefunctions.GoogleFunctionsDeployStepVariableCreator;
@@ -260,6 +264,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.EmptyFilterJsonCreator;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.plancreator.steps.StepGroupPMSPlanCreatorV2;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -301,22 +306,22 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AWS_LAMBDA = "AwsLambda";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
-  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(
-      KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
-  private static final List<String> TERRAFORM_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
-  private static final List<String> TERRAGRUNT_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
-  private static final List<String> TERRAFORM_CLOUD_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
+  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER,
+      CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
+      SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA);
+  private static final List<String> TERRAGRUNT_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
+      SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
+  private static final List<String> TERRAFORM_CLOUD_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS,
+      COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, AZURE, HELM, AZURE_WEBAPP, COMMANDS);
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
-  private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS, ASG);
+  private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM,
+      AZURE_WEBAPP, ECS, COMMANDS, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
@@ -389,7 +394,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ManifestsPlanCreator());
     planCreators.add(new IndividualManifestPlanCreator());
     planCreators.add(new CDStepsPlanCreator());
-    planCreators.add(new CDStepGroupPmsPlanCreator());
+    planCreators.add(new StepGroupPMSPlanCreatorV2());
     planCreators.add(new ServerlessAwsLambdaDeployStepPlanCreator());
     planCreators.add(new ServerlessAwsLambdaRollbackStepPlanCreator());
     planCreators.add(new CloudformationCreateStackStepPlanCreator());
@@ -480,7 +485,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS SAM
     planCreators.add(new AwsSamDeployStepPlanCreator());
+    planCreators.add(new AwsSamBuildStepPlanCreator());
     planCreators.add(new AwsSamRollbackStepPlanCreator());
+
+    planCreators.add(new K8sBGStageScaleDownStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -619,7 +627,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     // AWS SAM
     variableCreators.add(new AwsSamDeployStepVariableCreator());
+    variableCreators.add(new AwsSamBuildStepVariableCreator());
     variableCreators.add(new AwsSamRollbackStepVariableCreator());
+
+    variableCreators.add(new K8sBGStageScaleDownStepVariableCreator());
 
     return variableCreators;
   }
@@ -1086,7 +1097,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.CHAOS_STEP)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(Arrays.asList("Chaos")).addFolderPaths("Chaos").build())
-            .setFeatureFlag(FeatureName.CHAOS_ENABLED.name())
             .build();
 
     StepInfo elastigroupDeployStep =
@@ -1333,6 +1343,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
             .build();
 
+    StepInfo awsSamBuild =
+        StepInfo.newBuilder()
+            .setName("AWS SAM Build")
+            .setType(StepSpecTypeConstants.AWS_SAM_BUILD)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AwsSamBuild").setFolderPath("AWS SAM").build())
+            .setFeatureFlag(FeatureName.CDP_AWS_SAM.name())
+            .build();
+
     StepInfo awsSamRollback =
         StepInfo.newBuilder()
             .setName("AWS SAM Rollback")
@@ -1359,6 +1377,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.AWS_LAMBDA_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(AWS_LAMBDA).setFolderPath("Aws Lambda").build())
             .setFeatureFlag(FeatureName.CDS_AWS_NATIVE_LAMBDA.name())
+            .build();
+
+    StepInfo k8sBGStageScaleDown =
+        StepInfo.newBuilder()
+            .setName("K8s Blue Green Stage Scale Down")
+            .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
+            .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())
+            .setFeatureFlag(FeatureName.CDS_BG_STAGE_SCALE_DOWN_STEP_NG.name())
             .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
@@ -1443,12 +1470,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terraformCloudRun);
     stepInfos.add(awsLambdaDeploy);
     stepInfos.add(awsSamDeploy);
+    stepInfos.add(awsSamBuild);
     stepInfos.add(awsSamRollback);
     stepInfos.add(terraformCloudRollback);
     stepInfos.add(awsLambdaRollback);
     stepInfos.add(tasRouteMapping);
     stepInfos.add(googleFunctionGenOneDeploy);
     stepInfos.add(googleFunctionGenOneRollback);
+    stepInfos.add(k8sBGStageScaleDown);
 
     return stepInfos;
   }

@@ -167,7 +167,8 @@ public class ArtifactServiceImpl implements ArtifactService {
             Preconditions.checkNotNull(wingsPersistence.get(ArtifactStream.class, artifactStreamEntry.getKey()),
                 "Artifact stream has been deleted");
         artifactStreamEntry.getValue().forEach(artifact -> artifact.setArtifactStreamName(artifactStream.getName()));
-        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())) {
+        if (featureFlagService.isEnabled(SPG_ALLOW_FILTER_BY_PATHS_GCS, artifactStream.getAccountId())
+            && ArtifactStreamType.GCS.name().equals(artifactStream.getArtifactStreamType())) {
           artifacts.addAll(buildSourceService.listArtifactByArtifactStreamAndFilterPath(
               artifactStreamEntry.getValue().stream().collect(toList()), artifactStream));
         } else {
@@ -955,8 +956,7 @@ public class ArtifactServiceImpl implements ArtifactService {
       return artifactQuery;
     }
     artifactQuery.filter(ArtifactKeys.artifactSourceName, artifactStream.getSourceName());
-    if (artifactStream.getAccountId() != null && hitSecondary
-        && featureFlagService.isEnabled(FeatureName.CDS_QUERY_OPTIMIZATION, artifactStream.getAccountId())) {
+    if (hitSecondary) {
       artifactQuery.useReadPreference(ReadPreference.secondaryPreferred());
     }
     return artifactQuery;
@@ -1040,6 +1040,16 @@ public class ArtifactServiceImpl implements ArtifactService {
     return wingsPersistence.createQuery(Artifact.class)
         .filter(ArtifactKeys.accountId, accountId)
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .order(Sort.descending(CREATED_AT_KEY))
+        .asList();
+  }
+
+  @Override
+  public List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId, String buildNo) {
+    return wingsPersistence.createQuery(Artifact.class)
+        .filter(ArtifactKeys.accountId, accountId)
+        .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
+        .filter(ArtifactKeys.metadata_buildNo, buildNo)
         .order(Sort.descending(CREATED_AT_KEY))
         .asList();
   }

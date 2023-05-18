@@ -82,6 +82,7 @@ import software.wings.security.annotations.IdentityServiceAuth;
 import software.wings.security.annotations.Scope;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.LoginTypeResponse;
+import software.wings.security.authentication.LoginTypeResponseV2;
 import software.wings.security.authentication.SsoRedirectRequest;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
@@ -145,6 +146,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
+import retrofit2.http.Body;
 
 /**
  * Users Resource class.
@@ -768,6 +770,14 @@ public class UserResource {
   public RestResponse<LoginTypeResponse> getLoginType(
       @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(authenticationManager.getLoginTypeResponse(loginTypeRequest.getUserName(), accountId));
+  }
+
+  @POST
+  @Path("v2/logintype")
+  @PublicApi
+  public RestResponse<LoginTypeResponseV2> getLoginTypeV2(
+      @NotNull LoginTypeRequest loginTypeRequest, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(authenticationManager.getLoginTypeResponseV2(loginTypeRequest.getUserName(), accountId));
   }
 
   @GET
@@ -1404,6 +1414,27 @@ public class UserResource {
   public RestResponse<User> unlockUser(
       @NotEmpty @QueryParam("email") String email, @NotEmpty @QueryParam("accountId") String accountId) {
     return new RestResponse<>(userService.unlockUser(email, accountId));
+  }
+
+  @PUT
+  @Path("update-externally-managed/{userId}")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateScimStatusNG(@PathParam("userId") String userId,
+      @QueryParam("generation") Generation generation, @Body Boolean externallyManaged) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(userService.updateExternallyManaged(userId, generation, externallyManaged));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account product-led status").build()))
+          .build();
+    }
   }
 
   private RestResponse<UserInvite> getPublicUserInvite(UserInvite userInvite) {

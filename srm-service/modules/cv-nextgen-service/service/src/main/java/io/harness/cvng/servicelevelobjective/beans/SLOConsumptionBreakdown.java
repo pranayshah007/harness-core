@@ -10,24 +10,26 @@ package io.harness.cvng.servicelevelobjective.beans;
 import io.harness.cvng.core.beans.params.ProjectParams;
 
 import javax.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
-@Value
-@Builder
+@Data
+@SuperBuilder
 public class SLOConsumptionBreakdown {
   @NotNull String sloIdentifier;
   @NotNull String sloName;
-  @NotNull String monitoredServiceIdentifier;
-  @NotNull String serviceName;
-  @NotNull String environmentIdentifier;
-  @NotNull ServiceLevelIndicatorType sliType;
+  String monitoredServiceIdentifier;
+  String serviceName;
+  String environmentIdentifier;
+  ServiceLevelIndicatorType sliType;
   @NotNull double weightagePercentage;
   @NotNull double sloTargetPercentage;
   @NotNull double sliStatusPercentage;
   @NotNull long errorBudgetBurned;
-  @NotNull int contributedErrorBudgetBurned;
+  Integer contributedErrorBudgetBurned;
   @NotNull ProjectParams projectParams;
   String orgName;
   String projectName;
+
+  SLOError sloError;
 }

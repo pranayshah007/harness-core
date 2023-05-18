@@ -19,7 +19,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public interface PlanExecutionExpansionRepositoryCustom {
-  void update(String planExecutionId, Update update);
+  void update(String planExecutionId, Update update, long lockTimeoutInMinutes);
 
   PlanExecutionExpansion find(Query query);
 

@@ -16,13 +16,17 @@ import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
+import io.harness.idp.plugin.beans.PluginRequestEntity;
 import io.harness.idp.plugin.mappers.PluginDetailedInfoMapper;
 import io.harness.idp.plugin.mappers.PluginInfoMapper;
+import io.harness.idp.plugin.mappers.PluginRequestMapper;
 import io.harness.idp.plugin.repositories.PluginInfoRepository;
+import io.harness.idp.plugin.repositories.PluginRequestRepository;
 import io.harness.spec.server.idp.v1.model.AppConfig;
 import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.PluginDetailedInfo;
 import io.harness.spec.server.idp.v1.model.PluginInfo;
+import io.harness.spec.server.idp.v1.model.RequestPlugin;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -33,6 +37,11 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.IDP)
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -41,12 +50,13 @@ public class PluginInfoServiceImpl implements PluginInfoService {
   private static final String METADATA_FOLDER = "metadata/";
   private static final String YAML_EXT = ".yaml";
   private PluginInfoRepository pluginInfoRepository;
+  private PluginRequestRepository pluginRequestRepository;
   private ConfigManagerService configManagerService;
   private ConfigEnvVariablesService configEnvVariablesService;
   private BackstageEnvVariableService backstageEnvVariableService;
   @Override
   public List<PluginInfo> getAllPluginsInfo(String accountId) {
-    List<PluginInfoEntity> plugins = (List<PluginInfoEntity>) pluginInfoRepository.findAll();
+    List<PluginInfoEntity> plugins = pluginInfoRepository.findByIdentifierIn(Constants.pluginIds);
     List<PluginInfo> pluginDTOs = new ArrayList<>();
 
     Map<String, Boolean> map = configManagerService.getAllPluginIdsMap(accountId);
@@ -67,11 +77,14 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     PluginInfoEntity pluginEntity = pluginInfoEntity.get();
     AppConfig appConfig = configManagerService.getPluginConfig(harnessAccount, identifier);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariables = new ArrayList<>();
-    if (pluginEntity.getEnvVariables() != null && appConfig != null) {
+    if (appConfig != null) {
       List<String> envNames =
           configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndPluginId(harnessAccount, identifier);
-      backstageEnvSecretVariables =
-          backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(harnessAccount, envNames);
+      if (CollectionUtils.isNotEmpty(envNames)) {
+        backstageEnvSecretVariables =
+            backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+                harnessAccount, envNames);
+      }
     } else if (pluginEntity.getEnvVariables() != null) {
       for (String envVariable : pluginEntity.getEnvVariables()) {
         BackstageEnvSecretVariable backstageEnvSecretVariable = new BackstageEnvSecretVariable();
@@ -100,10 +113,30 @@ public class PluginInfoServiceImpl implements PluginInfoService {
     pluginInfoRepository.deleteAll();
   }
 
+  @Override
+  public RequestPlugin savePluginRequest(String harnessAccount, RequestPlugin pluginRequest) {
+    PluginRequestEntity pluginRequestEntity = PluginRequestMapper.fromDTO(harnessAccount, pluginRequest);
+    pluginRequestRepository.save(pluginRequestEntity);
+    return PluginRequestMapper.toDTO(pluginRequestEntity);
+  }
+
+  @Override
+  public Page<PluginRequestEntity> getPluginRequests(String harnessAccount, int page, int limit) {
+    Criteria criteria = createCriteriaForGetPluginRequests(harnessAccount);
+    Pageable pageable = PageRequest.of(page, limit);
+    return pluginRequestRepository.findAll(criteria, pageable);
+  }
+
   public void savePluginInfo(String identifier) throws Exception {
     String schema = FileUtils.readFile(METADATA_FOLDER, identifier, YAML_EXT);
     ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
     PluginInfoEntity pluginInfoEntity = objectMapper.readValue(schema, PluginInfoEntity.class);
     pluginInfoRepository.saveOrUpdate(pluginInfoEntity);
+  }
+
+  private Criteria createCriteriaForGetPluginRequests(String harnessAccount) {
+    Criteria criteria = new Criteria();
+    criteria.and(PluginRequestEntity.PluginRequestKeys.accountIdentifier).is(harnessAccount);
+    return criteria;
   }
 }

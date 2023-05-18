@@ -30,7 +30,6 @@ import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjectiv
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<AbstractServiceLevelObjective> {
@@ -44,7 +43,12 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   AbstractServiceLevelObjective getEntity(ProjectParams projectParams, String identifier);
 
+  AbstractServiceLevelObjective getEntity(ServiceLevelObjectivesDetail serviceLevelObjectivesDetail);
+
   boolean delete(ProjectParams projectParams, String identifier);
+
+  boolean delete(ProjectParams projectParams, String identifier, boolean validateReferencedCompositeSLOForSimpleSLO);
+  boolean forceDelete(ProjectParams projectParams, String identifier);
 
   void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoreServiceIdentifier, boolean isEnabled);
@@ -58,8 +62,6 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
   ServiceLevelObjectiveV2Response get(ProjectParams projectParams, String identifier);
 
   SLORiskCountResponse getRiskCount(ProjectParams projectParams, SLODashboardApiFilter serviceLevelObjectiveFilter);
-
-  List<AbstractServiceLevelObjective> getAllSLOs(ProjectParams projectParams);
 
   List<AbstractServiceLevelObjective> getAllSLOs(
       ProjectParams projectParams, ServiceLevelObjectiveType serviceLevelObjectiveType);
@@ -96,8 +98,13 @@ public interface ServiceLevelObjectiveV2Service extends DeleteEntityByHandler<Ab
 
   void handleNotification(AbstractServiceLevelObjective serviceLevelObjective);
 
-  Map<AbstractServiceLevelObjective, SLIEvaluationType> getEvaluationType(
-      ProjectParams projectParams, List<AbstractServiceLevelObjective> serviceLevelObjectiveList);
+  SLIEvaluationType getEvaluationType(AbstractServiceLevelObjective serviceLevelObjective);
+
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, Set<ServiceLevelObjectivesDetail> serviceLevelObjectiveDetailDTOList);
+
+  List<AbstractServiceLevelObjective> getAllReferredSLOs(
+      ProjectParams projectParams, List<CompositeServiceLevelObjective> compositeServiceLevelObjectives);
 
   String getScopedIdentifier(AbstractServiceLevelObjective abstractServiceLevelObjective);
 

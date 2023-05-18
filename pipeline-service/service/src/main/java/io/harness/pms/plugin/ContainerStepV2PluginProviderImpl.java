@@ -22,9 +22,11 @@ import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
 import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
+import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.steps.SdkStep;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.steps.container.exception.ContainerStepExecutionException;
@@ -32,6 +34,7 @@ import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.container.utils.K8sPodInitUtils;
 import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.StepInfo;
+import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -59,6 +62,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
   public Map<StepInfo, PluginCreationResponse> getPluginsData(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance) {
     Set<StepInfo> stepInfos = getStepInfos(initContainerV2StepInfo.getStepsExecutionConfig());
+    Set<Integer> usedPorts = new HashSet<>();
     return stepInfos.stream()
         .map(stepInfo -> {
           OSType os = k8sPodInitUtils.getOS(initContainerV2StepInfo.getInfrastructure());
@@ -70,19 +74,19 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                                       .setAmbiance(ambiance)
                                       .setAccountId(AmbianceUtils.getAccountId(ambiance))
                                       .setOsType(os.getYamlName())
+                                      .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
                                       .build());
           if (pluginInfo.hasError()) {
             log.error("Encountered error in plugin info collection {}", pluginInfo.getError());
             throw new ContainerStepExecutionException(pluginInfo.getError().getMessagesList().toString());
           }
           if (isEmpty(pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().getConnectorRef())) {
-            ConnectorDetails connectorDetails =
-                pluginInfo.getPluginDetails()
-                    .getImageDetails()
-                    .getConnectorDetails()
-                    .toBuilder()
-                    .setConnectorRef(containerExecutionConfig.getDefaultInternalImageConnector())
-                    .build();
+            ConnectorDetails connectorDetails = pluginInfo.getPluginDetails()
+                                                    .getImageDetails()
+                                                    .getConnectorDetails()
+                                                    .toBuilder()
+                                                    .setConnectorRef(getConnectorRef(initContainerV2StepInfo, stepInfo))
+                                                    .build();
             ImageDetails imageDetails = pluginInfo.toBuilder()
                                             .getPluginDetails()
                                             .getImageDetails()
@@ -94,9 +98,22 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
                     .setPluginDetails(pluginInfo.getPluginDetails().toBuilder().setImageDetails(imageDetails).build())
                     .build();
           }
+          usedPorts.addAll(pluginInfo.getPluginDetails().getTotalPortUsedDetails().getUsedPortsList());
           return Pair.of(stepInfo, pluginInfo);
         })
         .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+  }
+
+  private String getConnectorRef(InitContainerV2StepInfo initContainerV2StepInfo, StepInfo stepInfo) {
+    if (initContainerV2StepInfo.getInfrastructure() instanceof ContainerK8sInfra) {
+      ParameterField<String> harnessImageConnectorRef =
+          ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getHarnessImageConnectorRef();
+      if (harnessImageConnectorRef != null) {
+        return harnessImageConnectorRef.getValue();
+      }
+    }
+    log.info("Defaulting to default connector for step {}", stepInfo.getStepIdentifier());
+    return containerExecutionConfig.getDefaultInternalImageConnector();
   }
 
   private ParallelStepElementConfig getParallelStepElementConfig(ExecutionWrapperConfig executionWrapperConfig) {

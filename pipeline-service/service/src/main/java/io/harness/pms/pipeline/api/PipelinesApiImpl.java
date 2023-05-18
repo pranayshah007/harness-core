@@ -30,7 +30,9 @@ import io.harness.pms.pipeline.MoveConfigOperationDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -44,11 +46,15 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineImportRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineMoveConfigResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineSaveResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
@@ -62,6 +68,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import lombok.AccessLevel;
@@ -198,6 +205,23 @@ public class PipelinesApiImpl implements PipelinesApi {
   }
 
   @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response updatePipelineGitMetadata(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String pipeline, @Valid GitMetadataUpdateRequestBody body,
+      @AccountIdentifier String harnessAccount) {
+    String pipelineAfterUpdate = pmsPipelineService.updateGitMetadata(harnessAccount, org, project, pipeline,
+        PMSUpdateGitDetailsParams.builder()
+            .connectorRef(body.getConnectorRef())
+            .filePath(body.getFilePath())
+            .repoName(body.getRepoName())
+            .build());
+
+    GitMetadataUpdateResponseBody gitMetadataUpdateResponseBody = new GitMetadataUpdateResponseBody();
+    gitMetadataUpdateResponseBody.setEntityIdentifier(pipelineAfterUpdate);
+    return Response.ok().entity(gitMetadataUpdateResponseBody).build();
+  }
+
+  @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipelineValidateResult(
       @OrgIdentifier String org, @ProjectIdentifier String project, String uuid, @AccountIdentifier String account) {
@@ -206,6 +230,25 @@ public class PipelinesApiImpl implements PipelinesApi {
     PipelineValidationResponseBody pipelineValidationResponseBody =
         PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);
     return Response.ok().entity(pipelineValidationResponseBody).build();
+  }
+
+  @Override
+  public Response importPipelineFromGit(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String pipeline, @Valid PipelineImportRequestBody body,
+      @AccountIdentifier String harnessAccount) {
+    GitAwareContextHelper.populateGitDetails(PipelinesApiUtils.populateGitImportDetails(body.getGitImportInfo()));
+    PipelineImportRequestDTO pipelineImportRequestDTO =
+        PipelineImportRequestDTO.builder()
+            .pipelineName(body.getPipelineImportRequest().getPipelineName())
+            .pipelineDescription(body.getPipelineImportRequest().getPipelineDescription())
+            .build();
+    log.info(String.format("Importing Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project,
+        org, harnessAccount));
+    PipelineEntity savedPipelineEntity = pmsPipelineService.importPipelineFromRemote(harnessAccount, org, project,
+        pipeline, pipelineImportRequestDTO, Boolean.TRUE.equals(body.getGitImportInfo().isIsForceImport()));
+    PipelineSaveResponseBody responseBody = new PipelineSaveResponseBody();
+    responseBody.setIdentifier(savedPipelineEntity.getIdentifier());
+    return Response.ok().entity(responseBody).build();
   }
 
   @Override

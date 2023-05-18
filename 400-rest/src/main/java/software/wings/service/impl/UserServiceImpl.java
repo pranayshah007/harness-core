@@ -19,7 +19,11 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
+import static io.harness.ng.core.common.beans.Generation.CG;
 import static io.harness.ng.core.common.beans.Generation.NG;
+import static io.harness.ng.core.common.beans.UserSource.LDAP;
+import static io.harness.ng.core.common.beans.UserSource.MANUAL;
+import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -39,6 +43,7 @@ import static software.wings.beans.AccountRole.AccountRoleBuilder.anAccountRole;
 import static software.wings.beans.ApplicationRole.ApplicationRoleBuilder.anApplicationRole;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.User.Builder.anUser;
+import static software.wings.beans.UserInviteSource.SourceType.SSO;
 import static software.wings.security.JWT_CATEGORY.INVITE_SECRET;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 import static software.wings.security.PermissionAttribute.ResourceType.ARTIFACT;
@@ -99,7 +104,12 @@ import io.harness.invites.remote.NgInviteClient;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.CDModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
+import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
+import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
@@ -110,6 +120,7 @@ import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.account.OauthProviderType;
 import io.harness.ng.core.common.beans.Generation;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
@@ -121,6 +132,7 @@ import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -283,6 +295,7 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
+import javax.ws.rs.core.UriInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -420,28 +433,32 @@ public class UserServiceImpl implements UserService {
     return savedUser;
   }
 
-  private User createNewUser(User user, String accountId) {
+  private User createNewUser(User user, String accountId, Generation generation) {
     user.setAppId(GLOBAL_APP_ID);
 
     List<UserGroup> accountAdminGroups = getAccountAdminGroup(accountId);
 
-    User savedUser = createUser(user, accountId);
-
+    User savedUser = null;
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      savedUser = createUserWithAccountLevelData(user, accountId, MANUAL, generation);
+    } else {
+      savedUser = createUser(user, accountId);
+    }
     addUserToUserGroups(accountId, user, accountAdminGroups, false, false);
 
     return savedUser;
   }
 
   @Override
-  public User createNewUserAndSignIn(User user, String accountId) {
-    User savedUser = createNewUser(user, accountId);
+  public User createNewUserAndSignIn(User user, String accountId, Generation generation) {
+    User savedUser = createNewUser(user, accountId, generation);
 
     return authenticationManager.defaultLoginUsingPasswordHash(savedUser.getEmail(), savedUser.getPasswordHash());
   }
 
   @Override
   public User createNewOAuthUser(User user, String accountId) {
-    User savedUser = createNewUser(user, accountId);
+    User savedUser = createNewUser(user, accountId, NG);
 
     createSSOSettingsAndMarkAsDefaultAuthMechanism(accountId);
 
@@ -450,7 +467,8 @@ public class UserServiceImpl implements UserService {
 
   public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm) {
-    User user = get(userId, true);
+    User user = get(userId);
+    loadSupportAccounts(user);
     Account defaultAccount = null;
     List<Account> userAccounts = user.getAccounts();
     for (Account account : userAccounts) {
@@ -615,7 +633,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
-    return createNewUserAndSignIn(user, createdAccount.getUuid());
+    return createNewUserAndSignIn(user, createdAccount.getUuid(), NG);
   }
 
   @Override
@@ -655,7 +673,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
-    return createNewUserAndSignIn(user, createdAccount.getUuid());
+    return createNewUserAndSignIn(user, createdAccount.getUuid(), NG);
   }
 
   @Override
@@ -852,6 +870,7 @@ public class UserServiceImpl implements UserService {
       List<UserInvite> userInviteList = wingsPersistence.createQuery(UserInvite.class)
                                             .filter(UserInviteKeys.email, email)
                                             .order(Sort.descending("createdAt"))
+                                            .limit(1)
                                             .asList();
       if (isNotEmpty(userInviteList)) {
         return userInviteList.get(0).getUuid();
@@ -918,6 +937,15 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void addUserToAccount(String userId, String accountId) {
+    UserSource userSource = MANUAL;
+    User user = get(userId);
+    if (user != null && userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, NG)) {
+      userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(NG);
+    }
+    addUserToAccount(userId, accountId, userSource);
+  }
+  @Override
+  public void addUserToAccount(String userId, String accountId, UserSource userSource) {
     Account account = accountService.get(accountId);
     if (account == null) {
       throw new InvalidRequestException("No account exists with id " + accountId);
@@ -926,13 +954,28 @@ public class UserServiceImpl implements UserService {
     if (user == null) {
       throw new InvalidRequestException("No user exists with id " + userId);
     }
-    if (user.getAccountIds().contains(account.getUuid())) {
-      return;
-    }
-    List<Account> newAccounts = user.getAccounts();
-    newAccounts.add(account);
+    boolean shouldUpdateUserAccountLevelData = false;
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    updateOperations.set(UserKeys.accounts, newAccounts);
+    if (user.getAccountIds().contains(account.getUuid())) {
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+        shouldUpdateUserAccountLevelData = true;
+      } else {
+        return;
+      }
+    }
+
+    List<Account> newAccounts = user.getAccounts();
+    if (!shouldUpdateUserAccountLevelData) {
+      newAccounts.add(account);
+      updateOperations.set(UserKeys.accounts, newAccounts);
+    }
+
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, userSource);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+    }
+
     updateUser(user.getUuid(), updateOperations);
   }
 
@@ -1050,26 +1093,32 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(hashed);
         user.setPasswordChangedAt(System.currentTimeMillis());
         user.setRoles(newArrayList(roleService.getAccountAdminRole(account.getUuid())));
-        return createUser(user, accountId);
+        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+          return createUserWithAccountLevelData(user, accountId, MANUAL, CG);
+        } else {
+          return createUser(user, accountId);
+        }
       });
 
     } else {
       UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
       updateOperations.set(UserKeys.name, user.getName());
       updateOperations.set(UserKeys.passwordHash, hashpw(new String(user.getPassword()), BCrypt.gensalt()));
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+        userServiceHelper.populateAccountToUserMapping(user, accountId, NG, MANUAL);
+        updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+      }
       updateUser(existingUser.getUuid(), updateOperations);
       return existingUser;
     }
   }
 
   @Override
-  public User getUserByEmail(String email, boolean loadSupportAccounts) {
+  public User getUserByEmail(String email) {
     User user = null;
     if (isNotEmpty(email)) {
       user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
-      if (loadSupportAccounts) {
-        loadSupportAccounts(user);
-      }
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
       }
@@ -1079,11 +1128,6 @@ public class UserServiceImpl implements UserService {
     }
 
     return user;
-  }
-
-  @Override
-  public User getUserByEmail(String email) {
-    return getUserByEmail(email, false);
   }
 
   @Override
@@ -1128,7 +1172,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<User> getUsersEmails(String accountId) {
     Query<User> query = wingsPersistence.createQuery(User.class);
-    query.project(UserKeys.email, true).criteria(UserKeys.accounts).hasThisOne(accountId);
+    query.project(UserKeys.email, true).limit(NO_LIMIT).criteria(UserKeys.accounts).hasThisOne(accountId);
 
     return query.asList();
   }
@@ -1446,7 +1490,7 @@ public class UserServiceImpl implements UserService {
     Account account = accountService.get(accountId);
 
     User user = getUserByEmail(userInvite.getEmail());
-    if (user == null) {
+    if (user == null && featureFlagService.isEnabled(FeatureName.LDAP_SYNC_WITH_USERID, accountId)) {
       user = getUserByUserId(account.getUuid(), userInvite.getExternalUserId());
     }
 
@@ -1505,7 +1549,12 @@ public class UserServiceImpl implements UserService {
     user.setImported(userInvite.getImportedByScim());
     user.setExternalUserId(userInvite.getExternalUserId());
 
-    user = createUser(user, accountId);
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      UserSource userSource = getUserSource(userInvite.getImportedByScim(), SSO == userInvite.getSource().getType());
+      user = createUserWithAccountLevelData(user, accountId, userSource, CG);
+    } else {
+      user = createUser(user, accountId);
+    }
     user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
 
     if (!isInviteAcceptanceRequired || isPLNoEmailForSamlAccountInvitesEnabled) {
@@ -1848,8 +1897,8 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<UserInvite> getInvitesFromAccountId(String accountId) {
-    return wingsPersistence.createQuery(UserInvite.class).filter(UserInvite.ACCOUNT_ID_KEY2, accountId).asList();
+  public Query<UserInvite> getInvitesQueryFromAccountId(String accountId) {
+    return wingsPersistence.createQuery(UserInvite.class).filter(UserInvite.ACCOUNT_ID_KEY2, accountId);
   }
 
   @Override
@@ -1966,7 +2015,7 @@ public class UserServiceImpl implements UserService {
     if (userInvite == null) {
       throw new UnauthorizedException(EXC_MSG_USER_INVITE_INVALID, USER);
     }
-    return completeTrialSignupAndSignIn(userInvite);
+    return completeTrialSignupAndSignIn(userInvite, false);
   }
 
   @Override
@@ -1987,7 +2036,7 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User completeTrialSignupAndSignIn(UserInvite userInvite) {
+  public User completeTrialSignupAndSignIn(UserInvite userInvite, boolean shouldCreateSampleApp) {
     String accountName = accountService.suggestAccountName(userInvite.getAccountName());
     String companyName = userInvite.getCompanyName();
 
@@ -2000,7 +2049,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
 
-    completeSignup(user, userInvite, getTrialLicense(), false);
+    completeSignup(user, userInvite, getTrialLicense(), shouldCreateSampleApp);
 
     return authenticationManager.defaultLoginUsingPasswordHash(userInvite.getEmail(), userInvite.getPasswordHash());
   }
@@ -2015,6 +2064,11 @@ public class UserServiceImpl implements UserService {
     return authenticationManager.defaultLogin(userInvite.getEmail(), String.valueOf(userInvite.getPassword()));
   }
 
+  @Override
+  public void completeNGInviteWithAccountLevelData(
+      UserInviteDTO userInvite, boolean shouldSendTwoFactorAuthResetEmail) {
+    completeNGInvite(userInvite, SCIM == userInvite.getUserSource(), shouldSendTwoFactorAuthResetEmail);
+  }
   @Override
   public void completeNGInvite(
       UserInviteDTO userInvite, boolean isScimInvite, boolean shouldSendTwoFactorAuthResetEmail) {
@@ -2051,7 +2105,14 @@ public class UserServiceImpl implements UserService {
 
       user.setPasswordHash(hashpw(userInvite.getPassword(), BCrypt.gensalt()));
     }
-    user = createUser(user, accountId);
+
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      UserSource userSource = null == userInvite.getUserSource() ? MANUAL : userInvite.getUserSource();
+      createUserWithAccountLevelData(user, accountId, userSource, NG);
+    } else {
+      user = createUser(user, accountId);
+    }
+
     if (shouldSendTwoFactorAuthResetEmail) {
       user = checkIfTwoFactorAuthenticationIsEnabledForAccount(user, account);
       if (user.isTwoFactorAuthenticationEnabled()) {
@@ -2062,6 +2123,16 @@ public class UserServiceImpl implements UserService {
     moveAccountFromPendingToConfirmed(user, account, Collections.emptyList(), true);
     eventPublishHelper.publishUserRegistrationCompletionEvent(userInvite.getAccountId(), user);
     NGRestUtils.getResponse(ngInviteClient.completeInvite(userInvite.getToken()));
+  }
+
+  private UserSource getUserSource(boolean isScimInvite, boolean isLDAPInvite) {
+    UserSource userSource = MANUAL;
+    if (isScimInvite) {
+      userSource = SCIM;
+    } else if (isLDAPInvite) {
+      userSource = LDAP;
+    }
+    return userSource;
   }
 
   private boolean validateNgInvite(UserInviteDTO userInvite) {
@@ -2159,8 +2230,11 @@ public class UserServiceImpl implements UserService {
     user.setEmailVerified(true);
     user.getAccounts().add(account);
     user.setUserGroups(accountAdminGroups);
-
-    createUser(user, account.getUuid());
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, account.getUuid())) {
+      createUserWithAccountLevelData(user, account.getUuid(), MANUAL, CG);
+    } else {
+      createUser(user, account.getUuid());
+    }
 
     addUserToUserGroups(account.getUuid(), user, accountAdminGroups, false, false);
   }
@@ -2324,7 +2398,11 @@ public class UserServiceImpl implements UserService {
     user.setAppId(GLOBAL_APP_ID);
     user.getAccounts().add(account);
     user.setUserGroups(accountAdminGroups);
-    user = createUser(user, account.getUuid());
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, account.getUuid())) {
+      createUserWithAccountLevelData(user, account.getUuid(), MANUAL, CG);
+    } else {
+      user = createUser(user, account.getUuid());
+    }
 
     addUserToUserGroups(account.getUuid(), user, accountAdminGroups, false, false);
 
@@ -2364,7 +2442,7 @@ public class UserServiceImpl implements UserService {
             .build();
     ssoSettingService.saveOauthSettings(oauthSettings);
     log.info("Setting authentication mechanism as oauth for account id: {}", accountId);
-    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH);
+    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH, false);
   }
 
   @Override
@@ -2404,6 +2482,15 @@ public class UserServiceImpl implements UserService {
     } catch (JWTDecodeException | SignatureVerificationException e) {
       throw new InvalidCredentialsException("Invalid JWTToken received, failed to decode the token", USER);
     }
+  }
+
+  @Override
+  public List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId) {
+    Query<UserInvite> userInviteQuery = wingsPersistence.createQuery(UserInvite.class)
+                                            .filter(ACCOUNT_ID_KEY, accountId)
+                                            .field(UserInviteKeys.userGroups)
+                                            .hasThisOne(userGroupId);
+    return userInviteQuery.asList();
   }
 
   @Override
@@ -2681,6 +2768,13 @@ public class UserServiceImpl implements UserService {
   @Override
   public boolean matchPassword(char[] password, String hash) {
     return checkpw(new String(password), hash);
+  }
+
+  @Override
+  public User createUserWithAccountLevelData(
+      User user, String accountId, UserSource userSource, Generation generation) {
+    userServiceHelper.populateAccountToUserMapping(user, accountId, generation, userSource);
+    return createUser(user, accountId);
   }
 
   @Override
@@ -2968,6 +3062,35 @@ public class UserServiceImpl implements UserService {
     return !isEmpty(userGroups);
   }
 
+  @Override
+  public boolean delete(String accountId, String userId, Generation generation) {
+    User user = get(userId);
+    if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (CG.equals(generation)) {
+        removeAllUserGroupsFromUser(user, accountId);
+        removeUserFromThisGenInAccount(accountId, userId, generation, user);
+        if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
+          delete(accountId, userId);
+        }
+      } else if (NG.equals(generation) && isUserPresent(userId)) {
+        removeUserFromThisGenInAccount(accountId, userId, generation, user);
+        if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
+          delete(accountId, userId);
+        }
+      }
+      return true;
+    } else {
+      log.warn("FF PL_USER_ACCOUNT_LEVEL_DATA_FLOW is not enabled or Data is still not populated. No update done.");
+      return false;
+    }
+  }
+
+  private void removeUserFromThisGenInAccount(String accountId, String userId, Generation generation, User user) {
+    UpdateOperations<User> updateOp = wingsPersistence.createUpdateOperations(User.class);
+    userServiceHelper.removeUserProvisioningFromGenerationInAccount(accountId, user, updateOp, generation);
+    updateUser(userId, updateOp);
+  }
+
   /* (non-Javadoc)
    * @see software.wings.service.intfc.UserService#delete(java.lang.String)
    */
@@ -2982,6 +3105,9 @@ public class UserServiceImpl implements UserService {
       } else {
         log.warn("User is removed from all user groups in CG");
         removeAllUserGroupsFromUser(user, accountId);
+        if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+          removeUserFromThisGenInAccount(accountId, userId, CG, user);
+        }
         log.error(
             "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
       }
@@ -3046,6 +3172,8 @@ public class UserServiceImpl implements UserService {
       if (defaultAccountId != null) {
         updateOp.set(UserKeys.defaultAccountId, defaultAccountId);
       }
+      userServiceHelper.removeUserAccountLevelDataForThisAccount(accountId, user, updateOp);
+
       updateUser(user.getUuid(), updateOp);
     });
     auditServiceHelper.reportDeleteForAuditingUsingAccountId(accountId, user);
@@ -3123,18 +3251,9 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, false);
-  }
-
-  @Override
-  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
-    }
-
-    if (includeSupportAccounts) {
-      loadSupportAccounts(user);
     }
 
     List<Account> accounts = user.getAccounts();
@@ -3952,14 +4071,17 @@ public class UserServiceImpl implements UserService {
   }
 
   private void applySortFilter(PageRequest pageRequest, Query<User> query) {
-    List<String> fieldToSort = pageRequest.getUriInfo().getQueryParameters(true).get("sort[0][field]");
-    if (fieldToSort == null) {
-      return;
-    }
-    if (pageRequest.getUriInfo().getQueryParameters(true).get("sort[0][direction]").get(0).equals("ASC")) {
-      query.order(Sort.ascending(fieldToSort.get(0)));
-    } else {
-      query.order(Sort.descending(fieldToSort.get(0)));
+    UriInfo uriInfo = pageRequest.getUriInfo();
+    if (null != uriInfo && isNotEmpty(uriInfo.getQueryParameters(true))) {
+      List<String> fieldToSort = uriInfo.getQueryParameters(true).get("sort[0][field]");
+      if (fieldToSort == null) {
+        return;
+      }
+      if (uriInfo.getQueryParameters(true).get("sort[0][direction]").get(0).equals("ASC")) {
+        query.order(Sort.ascending(fieldToSort.get(0)));
+      } else {
+        query.order(Sort.descending(fieldToSort.get(0)));
+      }
     }
   }
 
@@ -4130,6 +4252,16 @@ public class UserServiceImpl implements UserService {
                                   .expiryTime(marketPlace.getExpirationDate().getTime())
                                   .accountStatus(AccountStatus.ACTIVE)
                                   .build();
+
+    String dimension = marketPlace.getDimension();
+    Edition plan = licenseService.getDimensionPlan(dimension);
+    boolean premiumSupport = licenseService.hasPremierSupport(dimension);
+    LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+    Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
+
+    log.info("dimension:{}, plan:{}, premiumSupport:{}, icenseType:{}, orderQuantity:{}", dimension, plan,
+        premiumSupport, licenseType, orderQuantity);
+
     if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
@@ -4150,15 +4282,62 @@ public class UserServiceImpl implements UserService {
               .licenseType(ceLicenseType)
               .build());
     } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CDModuleLicenseDTO.builder()
+              .serviceInstances(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CD)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
+      CeLicenseType ceLicenseType = CeLicenseType.PAID;
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        ceLicenseType = CeLicenseType.FULL_TRIAL;
+      }
+      Long spendLimit = Long.valueOf(orderQuantity);
+      log.info("spendLimit:{}", spendLimit);
+
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+
+      licenseService.updateCeLicense(accountId,
+          CeLicenseInfo.builder()
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .licenseType(ceLicenseType)
+              .build());
+
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CEModuleLicenseDTO.builder()
+              .spendLimit(spendLimit)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CE)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
-      String dimension = marketPlace.getDimension();
-      Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
-      Edition plan = licenseService.getDimensionPlan(dimension);
       Long numberOfClientMAUs = licenseService.getNumberOfClientMAUs(plan);
-      LicenseType licenseType = licenseService.getModuleLicenseType(dimension, plan);
+      log.info("numberOfClientMAUs:{}", numberOfClientMAUs);
 
       // TODO: please add trial logic here [PLG-1942]
       accountId = setupAccountForUser(user, userInvite, licenseInfo);
@@ -4170,6 +4349,64 @@ public class UserServiceImpl implements UserService {
               .moduleType(ModuleType.CF)
               .edition(plan)
               .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          CIModuleLicenseDTO.builder()
+              .numberOfCommitters(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.CI)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          SRMModuleLicenseDTO.builder()
+              .numberOfServices(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.SRM)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
+              .status(LicenseStatus.ACTIVE)
+              .startTime(DateTime.now().getMillis())
+              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .build());
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())) {
+      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
+        licenseInfo.setAccountType(AccountType.TRIAL);
+      }
+      // TODO: please add trial logic here [PLG-1942]
+      accountId = setupAccountForUser(user, userInvite, licenseInfo);
+      adminLicenseHttpClient.createAccountLicense(accountId,
+          STOModuleLicenseDTO.builder()
+              .numberOfDevelopers(orderQuantity)
+              .accountIdentifier(accountId)
+              .moduleType(ModuleType.STO)
+              .edition(plan)
+              .licenseType(licenseType)
+              .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
@@ -4206,5 +4443,43 @@ public class UserServiceImpl implements UserService {
         true, null, null);
     List<UserGroup> userGroupList = pageResponse.getResponse();
     removeUserFromUserGroups(user, userGroupList, false);
+  }
+
+  @Override
+  public void updateUserAccountLevelDataForThisGen(
+      String accountId, User user, Generation generation, UserSource userSource) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      userServiceHelper.populateAccountToUserMapping(user, accountId, generation, userSource);
+      UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+      updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
+      updateUser(user.getUuid(), updateOperations);
+    }
+  }
+
+  @Override
+  public boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged) {
+    boolean updated = true;
+    if (Generation.NG.equals(generation)) {
+      try {
+        UserMetadataDTO userMetadata =
+            UserMetadataDTO.builder().uuid(userId).externallyManaged(externallyManaged).build();
+        UserMetadataDTO updatedUserMetadata =
+            NGRestUtils.getResponse(ngInviteClient.updateUserMetadata(userId, userMetadata));
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update externallyManaged status for user- {}", userId, ex);
+        updated = false;
+      }
+    } else {
+      try {
+        UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+        updateOperations.set(UserKeys.imported, externallyManaged);
+        updateUser(userId, updateOperations);
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update imported status for user- {}", userId, ex);
+        updated = false;
+      }
+    }
+    return updated;
   }
 }

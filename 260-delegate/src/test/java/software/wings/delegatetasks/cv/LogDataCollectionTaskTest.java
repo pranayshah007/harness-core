@@ -13,13 +13,13 @@ import static software.wings.common.VerificationConstants.TOTAL_HITS_PER_MIN_THR
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -168,7 +168,7 @@ public class LogDataCollectionTaskTest extends WingsBaseTest {
             captor.capture());
     List<LogElement> capturedList = captor.getValue();
     assertThat(capturedList.size()).isEqualTo(TOTAL_HITS_PER_MIN_THRESHOLD + 1);
-    verifyZeroInteractions(activityLogger);
+    verifyNoInteractions(activityLogger);
   }
 
   @Test

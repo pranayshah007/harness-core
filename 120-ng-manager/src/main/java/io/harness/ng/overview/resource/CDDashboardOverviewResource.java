@@ -21,6 +21,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.NGServiceConstants;
+import io.harness.cdng.service.beans.CustomSequenceDTO;
 import io.harness.models.InstanceDetailGroupedByPipelineExecutionList;
 import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
@@ -31,7 +32,9 @@ import io.harness.ng.core.dashboard.DeploymentsInfo;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.service.entity.ServiceSequence;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummary;
 import io.harness.ng.overview.dto.ActiveServiceInstanceSummaryV2;
 import io.harness.ng.overview.dto.ArtifactInstanceDetails;
@@ -40,7 +43,7 @@ import io.harness.ng.overview.dto.DashboardWorkloadDeploymentV2;
 import io.harness.ng.overview.dto.EnvBuildIdAndInstanceCountInfoList;
 import io.harness.ng.overview.dto.EnvIdCountPair;
 import io.harness.ng.overview.dto.EnvironmentDeploymentInfo;
-import io.harness.ng.overview.dto.EnvironmentInstanceDetails;
+import io.harness.ng.overview.dto.EnvironmentGroupInstanceDetails;
 import io.harness.ng.overview.dto.ExecutionDeploymentInfo;
 import io.harness.ng.overview.dto.HealthDeploymentDashboard;
 import io.harness.ng.overview.dto.HealthDeploymentDashboardV2;
@@ -50,6 +53,7 @@ import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.SequenceToggleDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfoV2;
@@ -67,11 +71,13 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -376,9 +382,10 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
-      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId) {
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) String envGrpId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByEnvironmentList(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId));
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId, envGrpId));
   }
 
   @GET
@@ -392,10 +399,11 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) String envGrpId,
       @QueryParam(NGCommonEntityConstants.ARTIFACT) String displayName,
       @NotNull @QueryParam("filterOnArtifact") boolean filterOnArtifact) {
-    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, environmentId, displayName, filterOnArtifact));
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedOnArtifactList(accountIdentifier,
+        orgIdentifier, projectIdentifier, serviceId, environmentId, envGrpId, displayName, filterOnArtifact));
   }
 
   @GET
@@ -537,19 +545,21 @@ public class CDDashboardOverviewResource {
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 
-  @GET
+  @POST
   @Path("/getEnvironmentInstanceDetails")
   @ApiOperation(
       value = "Get instance count and last artifact deployment detail in each environment for a particular service",
       nickname = "getEnvironmentInstanceDetails")
   @Hidden
-  public ResponseDTO<EnvironmentInstanceDetails>
+  public ResponseDTO<EnvironmentGroupInstanceDetails>
   getEnvironmentInstanceDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @RequestBody(description = "This is the body for the filter properties for listing environments.")
+      EnvironmentFilterPropertiesDTO filterProperties) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentInstanceDetails(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, filterProperties, false));
   }
 
   @GET
@@ -585,7 +595,6 @@ public class CDDashboardOverviewResource {
   @Path("/getPipelineExecutionCount")
   @ApiOperation(value = "Get pipeline execution count for a service grouped on artifact and status",
       nickname = "getPipelineExecutionCount")
-  @Hidden
   public ResponseDTO<PipelineExecutionCountInfo>
   getPipelineExecutionCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -600,5 +609,73 @@ public class CDDashboardOverviewResource {
     return ResponseDTO.newResponse(
         cdOverviewDashboardService.getPipelineExecutionCountInfo(accountIdentifier, orgIdentifier, projectIdentifier,
             serviceId, startInterval, endInterval, artifactPath, artifactVersion, artifact, status));
+  }
+
+  @GET
+  @Path("/customSequence")
+  @Hidden
+  @ApiOperation(value = "Get custom sequence for env and env groups", nickname = "getCustomSequence")
+  public ResponseDTO<CustomSequenceDTO> getCustomSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.getCustomSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @POST
+  @Path("/customSequence")
+  @Hidden
+  @ApiOperation(value = "Save custom sequence for env and env groups", nickname = "saveCustomSequence")
+  public ResponseDTO<ServiceSequence> saveCustomSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @RequestBody(
+          required = true, description = "custom sequence for env and env grps") CustomSequenceDTO customSequenceDTO) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.saveCustomSequence(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, customSequenceDTO));
+  }
+
+  @GET
+  @Path("/defaultSequence")
+  @Hidden
+  @ApiOperation(value = "Get default sequence for env and env groups", nickname = "DefaultSequence")
+  public ResponseDTO<CustomSequenceDTO> getDefaultSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.getDefaultSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @POST
+  @Path("/useCustomSequence")
+  @Hidden
+  @ApiOperation(value = "Save the status of current sequence of env cards ", nickname = "setCustomSequenceStatus")
+  public ResponseDTO<ServiceSequence> useCustomSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @NotNull @QueryParam("useCustomSequence") boolean useCustomSequence) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.useCustomSequence(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, useCustomSequence));
+  }
+
+  @GET
+  @Path("/useCustomSequence")
+  @Hidden
+  @ApiOperation(value = "get the status of current sequence of env cards ", nickname = "getCustomSequenceStatus")
+  public ResponseDTO<SequenceToggleDTO> useCustomSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.useCustomSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 }

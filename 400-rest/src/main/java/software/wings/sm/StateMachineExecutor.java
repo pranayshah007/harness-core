@@ -219,7 +219,8 @@ public class StateMachineExecutor implements StateInspectionListener {
   private static final List<String> POSSIBLE_ROLLBACK_STATE_TYPES =
       asList(ENV_ROLLBACK_STATE.getType(), ENV_LOOP_STATE.getType(), FORK.getType());
   static final String TEMPLATE_VARIABLE_ENTRY = "templateVariables";
-  private static final String VARIABLE_DESCRIPTION_FIELD = "description";
+  static final String VARIABLE_DESCRIPTION_FIELD = "description";
+  static final String VARIABLE_VALUE_FIELD = "value";
 
   @Getter private Subject<StateStatusUpdate> statusUpdateSubject = new Subject<>();
 
@@ -2834,20 +2835,23 @@ public class StateMachineExecutor implements StateInspectionListener {
       try {
         @SuppressWarnings("unchecked")
         List<Map<String, String>> elements = (List<Map<String, String>>) entry.getValue();
+        final List<Map<String, String>> result = new ArrayList<>();
 
-        if (elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD))) {
-          final List<Map<String, String>> result = new ArrayList<>();
+        final boolean hasDescription = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_DESCRIPTION_FIELD));
+        final boolean hasValue = elements.stream().anyMatch(e -> e.containsKey(VARIABLE_VALUE_FIELD));
 
-          elements.forEach(e -> {
-            if (e.containsKey(VARIABLE_DESCRIPTION_FIELD)) {
-              result.add(e);
-            } else {
-              Map<String, String> content = new HashMap<>(e);
-              content.put(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
-              result.add(content);
-            }
-          });
+        elements.forEach(e -> {
+          Map<String, String> content = new HashMap<>(e);
+          if (hasDescription) {
+            content.putIfAbsent(VARIABLE_DESCRIPTION_FIELD, StringUtils.EMPTY);
+          }
+          if (hasValue) {
+            content.putIfAbsent(VARIABLE_VALUE_FIELD, StringUtils.EMPTY);
+          }
+          result.add(content);
+        });
 
+        if (!result.isEmpty()) {
           return Collections.singletonMap(TEMPLATE_VARIABLE_ENTRY, result);
         }
 
@@ -2858,6 +2862,10 @@ public class StateMachineExecutor implements StateInspectionListener {
         log.warn(String.format("Unable to sanitize field [%s]", TEMPLATE_VARIABLE_ENTRY), e);
       }
     }
-    return null;
+
+    // FALLBACK. THE OUTPUT IS THE SAME AS INPUT
+    final Map<String, Object> fallback = new HashMap<>();
+    fallback.put(entry.getKey(), entry.getValue());
+    return fallback;
   }
 }

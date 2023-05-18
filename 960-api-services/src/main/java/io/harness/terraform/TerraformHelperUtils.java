@@ -85,7 +85,9 @@ public class TerraformHelperUtils {
     }
 
     File tfCloudVarFile = new File(newVarFileCloudExt);
-    FileUtils.copyFile(src, tfCloudVarFile);
+    if (!src.equals(tfCloudVarFile)) {
+      FileUtils.copyFile(src, tfCloudVarFile);
+    }
     FileUtils.copyFileToDirectory(tfCloudVarFile, dest);
     FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }

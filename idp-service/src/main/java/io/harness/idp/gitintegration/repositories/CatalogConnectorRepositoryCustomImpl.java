@@ -42,7 +42,7 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
   }
 
   @Override
-  public CatalogConnectorEntity findOneByLastUpdatedAt(String accountIdentifier) {
+  public CatalogConnectorEntity findLastUpdated(String accountIdentifier) {
     Query query =
         new Query(Criteria.where(CatalogConnectorEntity.CatalogConnectorKeys.accountIdentifier).is(accountIdentifier));
     query.with(Sort.by(Sort.Direction.DESC, CatalogConnectorEntity.CatalogConnectorKeys.lastUpdatedAt));
@@ -61,6 +61,9 @@ public class CatalogConnectorRepositoryCustomImpl implements CatalogConnectorRep
         catalogConnectorEntity.getConnectorIdentifier());
     update.set(CatalogConnectorEntity.CatalogConnectorKeys.type, catalogConnectorEntity.getType());
     update.set(CatalogConnectorEntity.CatalogConnectorKeys.lastUpdatedAt, System.currentTimeMillis());
+    update.set(CatalogConnectorEntity.CatalogConnectorKeys.host, catalogConnectorEntity.getHost());
+    update.set(
+        CatalogConnectorEntity.CatalogConnectorKeys.delegateSelectors, catalogConnectorEntity.getDelegateSelectors());
     return update;
   }
 }

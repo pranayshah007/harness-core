@@ -77,9 +77,7 @@ public class ServiceHooksStep implements SyncExecutable<EmptyStepParameters> {
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (EmptyPredicate.isEmpty(serviceHooks)) {
       logCallback.saveExecutionLog(
-          String.format("No service hooks configured in the service. <+%s> expressions will not work",
-              OutcomeExpressionConstants.SERVICE_HOOKS),
-          LogLevel.WARN);
+          "No service hooks configured in the service. hooks expressions will not work", LogLevel.WARN);
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
 

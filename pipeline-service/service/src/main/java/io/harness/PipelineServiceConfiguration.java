@@ -35,6 +35,7 @@ import io.harness.pms.sdk.core.PipelineSdkRedisEventsConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.repositories.planExecutionJson.ExpandedJsonLockConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.steps.container.execution.ContainerExecutionConfig;
@@ -163,6 +164,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("cfClientConfig") @ConfigSecret private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("triggerAuthenticationPoolConfig") private ThreadPoolConfig triggerAuthenticationPoolConfig;
+  @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

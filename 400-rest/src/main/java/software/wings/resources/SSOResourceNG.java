@@ -29,6 +29,7 @@ import io.harness.exception.WingsException;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.rest.RestResponse;
 import io.harness.secretmanagers.SecretManagerConfigService;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import software.wings.beans.sso.LdapSettings;
@@ -38,7 +39,6 @@ import software.wings.beans.sso.SamlSettings;
 import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.LoginTypeResponse;
-import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
 import software.wings.security.authentication.SSOConfig;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.SSOService;
@@ -54,6 +54,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -92,7 +93,17 @@ public class SSOResourceNG {
   @AuthRule(permissionType = LOGGED_IN)
   @ExceptionMetered
   public RestResponse<SSOConfig> getAccountAccessManagementSettings(@QueryParam("accountId") String accountId) {
-    return new RestResponse<>(ssoService.getAccountAccessManagementSettings(accountId));
+    return new RestResponse<>(ssoService.getAccountAccessManagementSettings(
+        accountId, false)); // even though NG but there is V2 API so here 'false' is passed
+  }
+
+  @GET
+  @Path("v2/get-access-management")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SSOConfig> getAccountAccessManagementSettingsV2(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(ssoService.getAccountAccessManagementSettingsV2(accountId));
   }
 
   @POST
@@ -101,8 +112,8 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<SSOConfig> uploadOathSettings(
       @QueryParam("accountId") String accountId, OauthSettings oauthSettings) {
-    return new RestResponse<>(
-        ssoService.uploadOauthConfiguration(accountId, oauthSettings.getFilter(), oauthSettings.getAllowedProviders()));
+    return new RestResponse<>(ssoService.uploadOauthConfiguration(
+        accountId, oauthSettings.getFilter(), oauthSettings.getAllowedProviders(), true));
   }
 
   @PUT
@@ -111,7 +122,7 @@ public class SSOResourceNG {
   @ExceptionMetered
   public RestResponse<SSOConfig> setAuthMechanism(@QueryParam("accountId") String accountId,
       @QueryParam("authMechanism") AuthenticationMechanism authenticationMechanism) {
-    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, authenticationMechanism));
+    return new RestResponse<>(ssoService.setAuthenticationMechanism(accountId, authenticationMechanism, true));
   }
 
   @DELETE
@@ -130,6 +141,16 @@ public class SSOResourceNG {
     return new RestResponse<>(ssoService.getSamlSettings(accountId));
   }
 
+  @GET
+  @Path("get-saml-settings-sso-id")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SamlSettings> getSamlSetting(
+      @QueryParam("accountId") String accountId, @QueryParam("samlSSOId") String samlSSOId) {
+    return new RestResponse<>(ssoService.getSamlSettings(accountId));
+  }
+
   @POST
   @Path("saml-idp-metadata-upload")
   @Timed
@@ -141,11 +162,11 @@ public class SSOResourceNG {
       @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
       @FormDataParam("entityIdentifier") String entityIdentifier,
       @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
-      @FormDataParam("clientSecret") String clientSecret) {
+      @FormDataParam("clientSecret") String clientSecret, @FormDataParam("friendlySamlName") String friendlySamlName) {
     final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, true, clientId, clientSecret);
     return new RestResponse<>(ssoService.uploadSamlConfiguration(accountId, uploadedInputStream, displayName,
         groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
-        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlName, true));
   }
 
   @PUT
@@ -166,6 +187,37 @@ public class SSOResourceNG {
         isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), true));
   }
 
+  @PUT
+  @Path("saml-idp-metadata-upload-sso-id")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SSOConfig> updateSamlMetaData(@QueryParam("accountId") String accountId,
+      @QueryParam("samlSSOId") String samlSSOId, @FormDataParam("file") InputStream uploadedInputStream,
+      @FormDataParam("displayName") String displayName,
+      @FormDataParam("groupMembershipAttr") String groupMembershipAttr,
+      @FormDataParam("authorizationEnabled") Boolean authorizationEnabled, @FormDataParam("logoutUrl") String logoutUrl,
+      @FormDataParam("entityIdentifier") String entityIdentifier,
+      @FormDataParam("samlProviderType") String samlProviderType, @FormDataParam("clientId") String clientId,
+      @FormDataParam("clientSecret") String clientSecret,
+      @FormDataParam("friendlySamlName") String friendlySamlAppName) {
+    final String clientSecretRef = getCGSecretManagerRefForClientSecret(accountId, false, clientId, clientSecret);
+    return new RestResponse<>(ssoService.updateSamlConfiguration(accountId, samlSSOId, uploadedInputStream, displayName,
+        groupMembershipAttr, authorizationEnabled, logoutUrl, entityIdentifier, samlProviderType, clientId,
+        isEmpty(clientSecretRef) ? null : clientSecretRef.toCharArray(), friendlySamlAppName, true));
+  }
+
+  @PUT
+  @Path("update-saml-setting-authentication")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<Boolean> updateLoginEnabledForSAMLSetting(@QueryParam("accountId") String accountId,
+      @QueryParam("samlSSOId") String samlSSOId, @QueryParam("enable") @DefaultValue("true") boolean enable) {
+    ssoService.updateAuthenticationEnabledForSAMLSetting(accountId, samlSSOId, enable);
+    return new RestResponse<>(true);
+  }
+
   @DELETE
   @Path("delete-saml-idp-metadata")
   @Timed
@@ -175,13 +227,38 @@ public class SSOResourceNG {
     return new RestResponse<SSOConfig>(ssoService.deleteSamlConfiguration(accountId));
   }
 
+  @DELETE
+  @Path("delete-saml-idp-metadata-sso-id")
+  @Timed
+  @ExceptionMetered
+  @InternalApi
+  public RestResponse<SSOConfig> deleteSamlMetaData(
+      @QueryParam("accountId") String accountId, @QueryParam("samlSSOId") String samlSSOId) {
+    return new RestResponse<>(ssoService.deleteSamlConfiguration(accountId, samlSSOId));
+  }
+
   @GET
   @Path("saml-login-test")
   public RestResponse<LoginTypeResponse> getSamlLoginTest(@QueryParam("accountId") @NotBlank String accountId) {
-    LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
+    LoginTypeResponse response = LoginTypeResponse.builder().build();
     try {
-      builder.SSORequest(samlClientService.generateTestSamlRequest(accountId));
-      return new RestResponse<>(builder.authenticationMechanism(AuthenticationMechanism.SAML).build());
+      response.setSSORequest(samlClientService.generateTestSamlRequest(accountId));
+      response.setAuthenticationMechanism(AuthenticationMechanism.SAML);
+      return new RestResponse<>(response);
+    } catch (Exception e) {
+      throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
+    }
+  }
+
+  @GET
+  @Path("v2/saml-login-test")
+  public RestResponse<LoginTypeResponse> getSamlLoginTest(
+      @QueryParam("accountId") @NotBlank String accountId, @QueryParam("samlSSOId") @NotNull String samlSSOId) {
+    LoginTypeResponse response = LoginTypeResponse.builder().build();
+    try {
+      response.setSSORequest(samlClientService.generateTestSamlRequest(accountId, samlSSOId));
+      response.setAuthenticationMechanism(AuthenticationMechanism.SAML);
+      return new RestResponse<>(response);
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
     }

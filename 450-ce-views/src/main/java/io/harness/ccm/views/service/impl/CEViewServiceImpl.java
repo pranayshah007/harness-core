@@ -106,7 +106,7 @@ public class CEViewServiceImpl implements CEViewService {
   private static final String DEFAULT_CLUSTER_FIELD_ID = "clusterName";
   private static final String DEFAULT_CLUSTER_FIELD_NAME = "Cluster Name";
 
-  private static final int VIEW_COUNT = 1000;
+  private static final int VIEW_COUNT = 10000;
 
   @Inject private CEViewDao ceViewDao;
   @Inject private CEViewFolderDao ceViewFolderDao;

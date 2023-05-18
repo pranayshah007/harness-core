@@ -15,7 +15,7 @@ import static com.google.cloud.bigquery.StandardSQLTypeName.FLOAT64;
 import static com.google.cloud.bigquery.StandardSQLTypeName.STRING;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Percentage.withPercentage;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;

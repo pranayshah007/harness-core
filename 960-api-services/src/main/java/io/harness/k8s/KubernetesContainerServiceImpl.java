@@ -80,7 +80,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
@@ -95,8 +94,6 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.oidc.model.OidcTokenRequestData;
-import io.harness.retry.RetryHelper;
-import io.harness.supplier.ThrowingSupplier;
 
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
 import com.google.api.client.util.Charsets;
@@ -109,7 +106,6 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.istio.api.networking.v1alpha3.DestinationRule;
-import io.fabric8.istio.api.networking.v1alpha3.DestinationRuleBuilder;
 import io.fabric8.istio.api.networking.v1alpha3.DestinationRuleList;
 import io.fabric8.istio.api.networking.v1alpha3.HTTPRouteDestination;
 import io.fabric8.istio.api.networking.v1alpha3.VirtualService;
@@ -151,9 +147,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
 import io.github.resilience4j.retry.Retry;
-import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
@@ -181,15 +177,9 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewBuilder;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
-import io.kubernetes.client.util.Watch;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.lang.reflect.Type;
-import java.net.ConnectException;
-import java.net.SocketException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -206,18 +196,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Call;
-import okhttp3.internal.http2.ConnectionShutdownException;
-import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.time.DateTime;
@@ -231,14 +216,11 @@ import org.zeroturnaround.exec.ProcessResult;
 @OwnedBy(CDP)
 public class KubernetesContainerServiceImpl implements KubernetesContainerService {
   private static final String RUNNING = "Running";
-  private static final String RESOURCE_NAME_FIELD = "metadata.name";
   private static final String K8S_SELECTOR_FORMAT = "%s=%s";
   private static final String K8S_SELECTOR_DELIMITER = ",";
   public static final String METRICS_SERVER_ABSENT = "CE.MetricsServerCheck: Please install metrics server.";
   public static final String RESOURCE_PERMISSION_REQUIRED =
       "CE: The provided serviceaccount is missing the following permissions: %n %s. Please grant these to the service account.";
-  public static final Integer WATCH_CALL_TIMEOUT_SECONDS = 300;
-
   @Inject private KubernetesHelperService kubernetesHelperService = new KubernetesHelperService();
   @Inject private TimeLimiter timeLimiter;
   @Inject private Clock clock;
@@ -247,7 +229,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private K8sApiClientHelper k8sApiClientHelper;
 
-  private final Retry retry = buildRetryAndRegisterListeners();
+  private final Retry retry = KubernetesApiRetryUtils.buildRetryAndRegisterListeners(this.getClass().getSimpleName());
 
   @Override
   public HasMetadata createOrReplaceController(KubernetesConfig kubernetesConfig, HasMetadata definition) {
@@ -311,16 +293,17 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         boolean success = false;
         boolean allFailed = true;
         while (!success) {
-          try {
+          try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
+               OpenShiftClient openShiftClient = kubernetesHelperService.getOpenShiftClient(kubernetesConfig)) {
             try {
-              controller = rcOperations(kubernetesConfig, namespace).withName(name).get();
+              controller = rcOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
               allFailed = false;
             } catch (Exception e) {
               // Ignore
             }
             if (controller == null) {
               try {
-                controller = deploymentOperations(kubernetesConfig, namespace).withName(name).get();
+                controller = deploymentOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
                 // Ignore
@@ -328,7 +311,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
             }
             if (controller == null) {
               try {
-                controller = replicaOperations(kubernetesConfig, namespace).withName(name).get();
+                controller = replicaOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
                 // Ignore
@@ -336,7 +319,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
             }
             if (controller == null) {
               try {
-                controller = statefulOperations(kubernetesConfig, namespace).withName(name).get();
+                controller = statefulOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
                 // Ignore
@@ -344,7 +327,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
             }
             if (controller == null) {
               try {
-                controller = daemonOperations(kubernetesConfig, namespace).withName(name).get();
+                controller = daemonOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
                 // Ignore
@@ -352,14 +335,15 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
             }
             if (controller == null) {
               try {
-                controller = deploymentConfigOperations(kubernetesConfig, namespace).withName(name).get();
+                controller =
+                    deploymentConfigOperations(kubernetesConfig, namespace, openShiftClient).withName(name).get();
                 allFailed = false;
               } catch (Exception e) {
                 // Ignore
               }
             }
             if (allFailed) {
-              controller = deploymentOperations(kubernetesConfig, namespace).withName(name).get();
+              controller = deploymentOperations(kubernetesConfig, namespace, kubernetesClient).withName(name).get();
             } else {
               success = true;
             }
@@ -401,63 +385,72 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   public List<? extends HasMetadata> getControllers(KubernetesConfig kubernetesConfig, Map<String, String> labels) {
     List<? extends HasMetadata> controllers = new ArrayList<>();
     boolean allFailed = true;
-    try {
-      controllers.addAll(
-          (List) rcOperations(kubernetesConfig, kubernetesConfig.getNamespace()).withLabels(labels).list().getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace())
-                             .withLabels(labels)
-                             .list()
-                             .getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) replicaOperations(kubernetesConfig, kubernetesConfig.getNamespace())
-                             .withLabels(labels)
-                             .list()
-                             .getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) statefulOperations(kubernetesConfig, kubernetesConfig.getNamespace())
-                             .withLabels(labels)
-                             .list()
-                             .getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) daemonOperations(kubernetesConfig, kubernetesConfig.getNamespace())
-                             .withLabels(labels)
-                             .list()
-                             .getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) deploymentConfigOperations(kubernetesConfig, kubernetesConfig.getNamespace())
-                             .withLabels(labels)
-                             .list()
-                             .getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    if (allFailed) {
-      controllers.addAll((List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace())
-                             .withLabels(labels)
-                             .list()
-                             .getItems());
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
+         OpenShiftClient openShiftClient = kubernetesHelperService.getOpenShiftClient(kubernetesConfig)) {
+      try {
+        controllers.addAll((List) rcOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                               .withLabels(labels)
+                               .list()
+                               .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll(
+            (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                .withLabels(labels)
+                .list()
+                .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll((List) replicaOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                               .withLabels(labels)
+                               .list()
+                               .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll(
+            (List) statefulOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                .withLabels(labels)
+                .list()
+                .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll((List) daemonOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                               .withLabels(labels)
+                               .list()
+                               .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll(
+            (List) deploymentConfigOperations(kubernetesConfig, kubernetesConfig.getNamespace(), openShiftClient)
+                .withLabels(labels)
+                .list()
+                .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      if (allFailed) {
+        controllers.addAll(
+            (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                .withLabels(labels)
+                .list()
+                .getItems());
+      }
     }
     return controllers;
   }
@@ -663,41 +656,54 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   public List<? extends HasMetadata> listControllers(KubernetesConfig kubernetesConfig) {
     List<? extends HasMetadata> controllers = new ArrayList<>();
     boolean allFailed = true;
-    try {
-      controllers.addAll((List) rcOperations(kubernetesConfig, kubernetesConfig.getNamespace()).list().getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll(
-          (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace()).list().getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) replicaOperations(kubernetesConfig, kubernetesConfig.getNamespace()).list().getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll(
-          (List) statefulOperations(kubernetesConfig, kubernetesConfig.getNamespace()).list().getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    try {
-      controllers.addAll((List) daemonOperations(kubernetesConfig, kubernetesConfig.getNamespace()).list().getItems());
-      allFailed = false;
-    } catch (RuntimeException e) {
-      // Ignore
-    }
-    if (allFailed) {
-      controllers.addAll(
-          (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace()).list().getItems());
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      try {
+        controllers.addAll(
+            (List) rcOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient).list().getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll(
+            (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                .list()
+                .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll((List) replicaOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                               .list()
+                               .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll(
+            (List) statefulOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                .list()
+                .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      try {
+        controllers.addAll((List) daemonOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                               .list()
+                               .getItems());
+        allFailed = false;
+      } catch (RuntimeException e) {
+        // Ignore
+      }
+      if (allFailed) {
+        controllers.addAll(
+            (List) deploymentOperations(kubernetesConfig, kubernetesConfig.getNamespace(), kubernetesClient)
+                .list()
+                .getItems());
+      }
     }
     return controllers;
   }
@@ -1076,6 +1082,13 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .inNamespace(namespace);
   }
 
+  private NonNamespaceOperation<ReplicationController, ReplicationControllerList,
+      RollableScalableResource<ReplicationController>>
+  rcOperations(KubernetesConfig kubernetesConfig, String namespace, KubernetesClient kubernetesClient) {
+    namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
+    return kubernetesClient.replicationControllers().inNamespace(namespace);
+  }
+
   private NonNamespaceOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> deploymentOperations(
       KubernetesConfig kubernetesConfig, String namespace) {
     namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
@@ -1083,6 +1096,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .extensions()
         .deployments()
         .inNamespace(namespace);
+  }
+
+  private NonNamespaceOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> deploymentOperations(
+      KubernetesConfig kubernetesConfig, String namespace, KubernetesClient kubernetesClient) {
+    namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
+    return kubernetesClient.extensions().deployments().inNamespace(namespace);
   }
 
   private NonNamespaceOperation<ReplicaSet, ReplicaSetList, RollableScalableResource<ReplicaSet>> replicaOperations(
@@ -1094,6 +1113,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .inNamespace(namespace);
   }
 
+  private NonNamespaceOperation<ReplicaSet, ReplicaSetList, RollableScalableResource<ReplicaSet>> replicaOperations(
+      KubernetesConfig kubernetesConfig, String namespace, KubernetesClient kubernetesClient) {
+    namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
+    return kubernetesClient.extensions().replicaSets().inNamespace(namespace);
+  }
+
   private NonNamespaceOperation<DaemonSet, DaemonSetList, Resource<DaemonSet>> daemonOperations(
       KubernetesConfig kubernetesConfig, String namespace) {
     namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
@@ -1103,10 +1128,22 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .inNamespace(namespace);
   }
 
+  private NonNamespaceOperation<DaemonSet, DaemonSetList, Resource<DaemonSet>> daemonOperations(
+      KubernetesConfig kubernetesConfig, String namespace, KubernetesClient kubernetesClient) {
+    namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
+    return kubernetesClient.extensions().daemonSets().inNamespace(namespace);
+  }
+
   private NonNamespaceOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> statefulOperations(
       KubernetesConfig kubernetesConfig, String namespace) {
     namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
     return kubernetesHelperService.getKubernetesClient(kubernetesConfig).apps().statefulSets().inNamespace(namespace);
+  }
+
+  private NonNamespaceOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> statefulOperations(
+      KubernetesConfig kubernetesConfig, String namespace, KubernetesClient kubernetesClient) {
+    namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
+    return kubernetesClient.apps().statefulSets().inNamespace(namespace);
   }
 
   private NonNamespaceOperation<DeploymentConfig, DeploymentConfigList, DeployableScalableResource<DeploymentConfig>>
@@ -1115,12 +1152,17 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     return kubernetesHelperService.getOpenShiftClient(kubernetesConfig).deploymentConfigs().inNamespace(namespace);
   }
 
+  private NonNamespaceOperation<DeploymentConfig, DeploymentConfigList, DeployableScalableResource<DeploymentConfig>>
+  deploymentConfigOperations(KubernetesConfig kubernetesConfig, String namespace, OpenShiftClient openShiftClient) {
+    namespace = isNotBlank(namespace) ? namespace : kubernetesConfig.getNamespace();
+    return openShiftClient.deploymentConfigs().inNamespace(namespace);
+  }
+
   @Override
   public Service createOrReplaceServiceFabric8(KubernetesConfig kubernetesConfig, Service definition) {
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .services()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .createOrReplace(definition);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.services().inNamespace(kubernetesConfig.getNamespace()).createOrReplace(definition);
+    }
   }
 
   @Override
@@ -1177,12 +1219,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public Service getServiceFabric8(KubernetesConfig kubernetesConfig, String name) {
-    return isNotBlank(name) ? kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-                                  .services()
-                                  .inNamespace(kubernetesConfig.getNamespace())
-                                  .withName(name)
-                                  .get()
-                            : null;
+    if (isBlank(name)) {
+      return null;
+    }
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.services().inNamespace(kubernetesConfig.getNamespace()).withName(name).get();
+    }
   }
 
   @Override
@@ -1218,76 +1260,68 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public List<Service> getServices(KubernetesConfig kubernetesConfig, Map<String, String> labels) {
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .services()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withLabels(labels)
-        .list()
-        .getItems();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.services()
+          .inNamespace(kubernetesConfig.getNamespace())
+          .withLabels(labels)
+          .list()
+          .getItems();
+    }
   }
 
   @Override
   public void deleteService(KubernetesConfig kubernetesConfig, String name) {
     log.info("Deleting service {}", name);
-    kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .services()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withName(name)
-        .delete();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      kubernetesClient.services().inNamespace(kubernetesConfig.getNamespace()).withName(name).delete();
+    }
   }
 
   @Override
   public Ingress createOrReplaceIngress(KubernetesConfig kubernetesConfig, Ingress definition) {
     String name = definition.getMetadata().getName();
-    Ingress ingress = kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-                          .extensions()
-                          .ingresses()
-                          .inNamespace(kubernetesConfig.getNamespace())
-                          .withName(name)
-                          .get();
-    log.info("{} ingress [{}]", ingress == null ? "Creating" : "Replacing", name);
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .extensions()
-        .ingresses()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .createOrReplace(definition);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      Ingress ingress =
+          kubernetesClient.extensions().ingresses().inNamespace(kubernetesConfig.getNamespace()).withName(name).get();
+      log.info("{} ingress [{}]", ingress == null ? "Creating" : "Replacing", name);
+      return kubernetesClient.extensions()
+          .ingresses()
+          .inNamespace(kubernetesConfig.getNamespace())
+          .createOrReplace(definition);
+    }
   }
 
   @Override
   public Ingress getIngress(KubernetesConfig kubernetesConfig, String name) {
-    return isNotBlank(name) ? kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-                                  .extensions()
-                                  .ingresses()
-                                  .inNamespace(kubernetesConfig.getNamespace())
-                                  .withName(name)
-                                  .get()
-                            : null;
+    if (isBlank(name)) {
+      return null;
+    }
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.extensions()
+          .ingresses()
+          .inNamespace(kubernetesConfig.getNamespace())
+          .withName(name)
+          .get();
+    }
   }
 
   @Override
   public void deleteIngress(KubernetesConfig kubernetesConfig, String name) {
     log.info("Deleting service {}", name);
-    kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .extensions()
-        .ingresses()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withName(name)
-        .delete();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      kubernetesClient.extensions().ingresses().inNamespace(kubernetesConfig.getNamespace()).withName(name).delete();
+    }
   }
 
   @Override
   public ConfigMap createOrReplaceConfigMapFabric8(KubernetesConfig kubernetesConfig, ConfigMap definition) {
     String name = definition.getMetadata().getName();
-    ConfigMap configMap = kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-                              .configMaps()
-                              .inNamespace(kubernetesConfig.getNamespace())
-                              .withName(name)
-                              .get();
-    log.info("{} config map [{}]", configMap == null ? "Creating" : "Replacing", name);
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .configMaps()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .createOrReplace(definition);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      ConfigMap configMap =
+          kubernetesClient.configMaps().inNamespace(kubernetesConfig.getNamespace()).withName(name).get();
+      log.info("{} config map [{}]", configMap == null ? "Creating" : "Replacing", name);
+      return kubernetesClient.configMaps().inNamespace(kubernetesConfig.getNamespace()).createOrReplace(definition);
+    }
   }
 
   @VisibleForTesting
@@ -1337,12 +1371,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   @Deprecated
   public ConfigMap getConfigMapFabric8(KubernetesConfig kubernetesConfig, String name) {
-    try {
-      return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-          .configMaps()
-          .inNamespace(kubernetesConfig.getNamespace())
-          .withName(name)
-          .get();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.configMaps().inNamespace(kubernetesConfig.getNamespace()).withName(name).get();
     } catch (Exception e) {
       log.error("Failed to get ConfigMap/{}", name, e);
       return null;
@@ -1388,11 +1418,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   @Deprecated
   public void deleteConfigMapFabric8(KubernetesConfig kubernetesConfig, String name) {
-    kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .configMaps()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withName(name)
-        .delete();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      kubernetesClient.configMaps().inNamespace(kubernetesConfig.getNamespace()).withName(name).delete();
+    }
   }
 
   @Override
@@ -1417,8 +1445,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String name = definition.getMetadata().getName();
     String kind = definition.getKind();
     log.info("Registering {} [{}]", kind, name);
-    IstioClient fabric8IstioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig);
-    return fabric8IstioClient.v1alpha3().virtualServices().createOrReplace(definition);
+    try (IstioClient fabric8IstioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig)) {
+      return fabric8IstioClient.v1alpha3().virtualServices().createOrReplace(definition);
+    }
   }
 
   @Override
@@ -1427,14 +1456,14 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String name = definition.getMetadata().getName();
     String kind = definition.getKind();
     log.info("Registering {} [{}]", kind, name);
-    IstioClient fabric8IstioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig);
-    return fabric8IstioClient.v1alpha3().destinationRules().createOrReplace(definition);
+    try (IstioClient fabric8IstioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig)) {
+      return fabric8IstioClient.v1alpha3().destinationRules().createOrReplace(definition);
+    }
   }
 
   @Override
   public VirtualService getFabric8IstioVirtualService(KubernetesConfig kubernetesConfig, String name) {
-    KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    try {
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
       return kubernetesClient.resources(VirtualService.class, VirtualServiceList.class)
           .inNamespace(kubernetesConfig.getNamespace())
           .withName(name)
@@ -1447,9 +1476,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public DestinationRule getFabric8IstioDestinationRule(KubernetesConfig kubernetesConfig, String name) {
-    KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    try {
-      DestinationRule destinationRule = new DestinationRuleBuilder().build();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
       return kubernetesClient.resources(DestinationRule.class, DestinationRuleList.class)
           .inNamespace(kubernetesConfig.getNamespace())
           .withName(name)
@@ -1462,8 +1489,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public void deleteIstioDestinationRule(KubernetesConfig kubernetesConfig, String name) {
-    IstioClient istioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig);
-    try {
+    try (IstioClient istioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig)) {
       istioClient.v1alpha3().destinationRules().inNamespace(kubernetesConfig.getNamespace()).withName(name).delete();
     } catch (Exception e) {
       log.info(e.getMessage());
@@ -1472,8 +1498,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public void deleteIstioVirtualService(KubernetesConfig kubernetesConfig, String name) {
-    IstioClient istioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig);
-    try {
+    try (IstioClient istioClient = kubernetesHelperService.getFabric8IstioClient(kubernetesConfig)) {
       istioClient.v1alpha3().virtualServices().inNamespace(kubernetesConfig.getNamespace()).withName(name).delete();
     } catch (Exception e) {
       log.info(e.getMessage());
@@ -1523,20 +1548,12 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public void createNamespaceIfNotExist(KubernetesConfig kubernetesConfig) {
-    try {
-      Namespace namespace = kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-                                .namespaces()
-                                .withName(kubernetesConfig.getNamespace())
-                                .get();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      Namespace namespace = kubernetesClient.namespaces().withName(kubernetesConfig.getNamespace()).get();
       if (namespace == null) {
         log.info("Creating namespace [{}]", kubernetesConfig.getNamespace());
-        kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-            .namespaces()
-            .create(new NamespaceBuilder()
-                        .withNewMetadata()
-                        .withName(kubernetesConfig.getNamespace())
-                        .endMetadata()
-                        .build());
+        kubernetesClient.namespaces().create(
+            new NamespaceBuilder().withNewMetadata().withName(kubernetesConfig.getNamespace()).endMetadata().build());
       }
     } catch (Exception e) {
       log.error("Couldn't get or create namespace {}", kubernetesConfig.getNamespace(), e);
@@ -1546,12 +1563,13 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   @Deprecated
   public Secret getSecretFabric8(KubernetesConfig kubernetesConfig, String secretName) {
-    return isNotBlank(secretName) ? kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-                                        .secrets()
-                                        .inNamespace(kubernetesConfig.getNamespace())
-                                        .withName(secretName)
-                                        .get()
-                                  : null;
+    if (isBlank(secretName)) {
+      return null;
+    }
+
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.secrets().inNamespace(kubernetesConfig.getNamespace()).withName(secretName).get();
+    }
   }
 
   @Override
@@ -1580,11 +1598,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   @Deprecated
   public void deleteSecretFabric8(KubernetesConfig kubernetesConfig, String secretName) {
-    kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .secrets()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withName(secretName)
-        .delete();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      kubernetesClient.secrets().inNamespace(kubernetesConfig.getNamespace()).withName(secretName).delete();
+    }
   }
 
   @Override
@@ -1606,10 +1622,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   @Deprecated
   public Secret createOrReplaceSecretFabric8(KubernetesConfig kubernetesConfig, Secret secret) {
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .secrets()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .createOrReplace(secret);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.secrets().inNamespace(kubernetesConfig.getNamespace()).createOrReplace(secret);
+    }
   }
 
   @Override
@@ -1678,12 +1693,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
 
   @Override
   public List<Pod> getPods(KubernetesConfig kubernetesConfig, Map<String, String> labels) {
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .pods()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withLabels(labels)
-        .list()
-        .getItems();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.pods().inNamespace(kubernetesConfig.getNamespace()).withLabels(labels).list().getItems();
+    }
   }
 
   private List<Pod> prunePodsInFinalState(List<Pod> pods) {
@@ -1697,12 +1709,11 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Override
   public void waitForPodsToStop(KubernetesConfig kubernetesConfig, Map<String, String> labels,
       int serviceSteadyStateTimeout, List<Pod> originalPods, long startTime, LogCallback logCallback) {
-    KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
     List<String> originalPodNames = originalPods.stream().map(pod -> pod.getMetadata().getName()).collect(toList());
     String namespace = kubernetesConfig.getNamespace();
     String waitingMsg = "Waiting for pods to stop...";
     log.info(waitingMsg);
-    try {
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
       Callable<Boolean> callable = () -> {
         Set<String> seenEvents = new HashSet<>();
 
@@ -1746,123 +1757,124 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     Set<String> images = getControllerImages(podTemplateSpec);
     Map<String, String> labels = podTemplateSpec.getMetadata().getLabels();
     List<String> originalPodNames = originalPods.stream().map(pod -> pod.getMetadata().getName()).collect(toList());
-    KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    log.info("Waiting for pods to be ready...");
-    AtomicBoolean countReached = new AtomicBoolean(false);
-    AtomicBoolean haveImagesCountReached = new AtomicBoolean(false);
-    AtomicBoolean runningCountReached = new AtomicBoolean(false);
-    AtomicBoolean steadyStateCountReached = new AtomicBoolean(false);
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      log.info("Waiting for pods to be ready...");
+      AtomicBoolean countReached = new AtomicBoolean(false);
+      AtomicBoolean haveImagesCountReached = new AtomicBoolean(false);
+      AtomicBoolean runningCountReached = new AtomicBoolean(false);
+      AtomicBoolean steadyStateCountReached = new AtomicBoolean(false);
 
-    try {
-      int waitMinutes = serviceSteadyStateTimeout > 0 ? serviceSteadyStateTimeout : DEFAULT_STEADY_STATE_TIMEOUT;
-      Callable<List<Pod>> callable = () -> {
-        Set<String> seenEvents = new HashSet<>();
+      try {
+        int waitMinutes = serviceSteadyStateTimeout > 0 ? serviceSteadyStateTimeout : DEFAULT_STEADY_STATE_TIMEOUT;
+        Callable<List<Pod>> callable = () -> {
+          Set<String> seenEvents = new HashSet<>();
 
-        while (true) {
-          try {
-            int absoluteDesiredCount = desiredCount;
-            HasMetadata currentController = getController(kubernetesConfig, controllerName, namespace);
-            if (currentController != null) {
-              int controllerDesiredCount = getControllerPodCount(currentController);
-              absoluteDesiredCount = (desiredCount == -1) ? controllerDesiredCount : desiredCount;
-              if (controllerDesiredCount != absoluteDesiredCount) {
-                String msg = format("Replica count is set to %d instead of %d. [Could be due to HPA.]",
-                    controllerDesiredCount, absoluteDesiredCount);
-                log.warn(msg);
+          while (true) {
+            try {
+              int absoluteDesiredCount = desiredCount;
+              HasMetadata currentController = getController(kubernetesConfig, controllerName, namespace);
+              if (currentController != null) {
+                int controllerDesiredCount = getControllerPodCount(currentController);
+                absoluteDesiredCount = (desiredCount == -1) ? controllerDesiredCount : desiredCount;
+                if (controllerDesiredCount != absoluteDesiredCount) {
+                  String msg = format("Replica count is set to %d instead of %d. [Could be due to HPA.]",
+                      controllerDesiredCount, absoluteDesiredCount);
+                  log.warn(msg);
+                  executionLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
+                }
+              } else {
+                String msg = "Couldn't find controller " + controllerName;
+                log.error(msg);
                 executionLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
               }
-            } else {
-              String msg = "Couldn't find controller " + controllerName;
-              log.error(msg);
-              executionLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
-            }
 
-            showControllerEvents(
-                kubernetesClient, namespace, controllerName, seenEvents, startTime, executionLogCallback);
+              showControllerEvents(
+                  kubernetesClient, namespace, controllerName, seenEvents, startTime, executionLogCallback);
 
-            List<Pod> pods = kubernetesClient.pods().inNamespace(namespace).withLabels(labels).list().getItems();
+              List<Pod> pods = kubernetesClient.pods().inNamespace(namespace).withLabels(labels).list().getItems();
 
-            // Show pod events
-            showPodEvents(
-                kubernetesClient, namespace, pods, originalPodNames, seenEvents, startTime, executionLogCallback);
+              // Show pod events
+              showPodEvents(
+                  kubernetesClient, namespace, pods, originalPodNames, seenEvents, startTime, executionLogCallback);
 
-            pods = prunePodsInFinalState(pods);
+              pods = prunePodsInFinalState(pods);
 
-            // Check current state
-            if (pods.size() != absoluteDesiredCount) {
-              executionLogCallback.saveExecutionLog(
-                  format("Waiting for desired number of pods [%d/%d]", pods.size(), absoluteDesiredCount));
-              sleep(ofSeconds(5));
-              continue;
-            }
-            if (!countReached.getAndSet(true)) {
-              executionLogCallback.saveExecutionLog(
-                  format("Desired number of pods reached [%d/%d]", pods.size(), absoluteDesiredCount));
-            }
-
-            if (absoluteDesiredCount > 0) {
-              int haveImages = (int) pods.stream().filter(pod -> podHasImages(pod, images)).count();
-              if (haveImages != absoluteDesiredCount) {
-                executionLogCallback.saveExecutionLog(format("Waiting for pods to be updated with image %s [%d/%d]",
-                                                          images, haveImages, absoluteDesiredCount),
-                    LogLevel.INFO);
+              // Check current state
+              if (pods.size() != absoluteDesiredCount) {
+                executionLogCallback.saveExecutionLog(
+                    format("Waiting for desired number of pods [%d/%d]", pods.size(), absoluteDesiredCount));
                 sleep(ofSeconds(5));
                 continue;
               }
-              if (!haveImagesCountReached.getAndSet(true)) {
+              if (!countReached.getAndSet(true)) {
                 executionLogCallback.saveExecutionLog(
-                    format("Pods are updated with image %s [%d/%d]", images, haveImages, absoluteDesiredCount));
-              }
-            }
-
-            if (isNotVersioned || absoluteDesiredCount > previousCount) {
-              int running = (int) pods.stream().filter(this::isRunning).count();
-              if (running != absoluteDesiredCount) {
-                executionLogCallback.saveExecutionLog(
-                    format("Waiting for pods to be running [%d/%d]", running, absoluteDesiredCount));
-                sleep(ofSeconds(10));
-                continue;
-              }
-              if (!runningCountReached.getAndSet(true)) {
-                executionLogCallback.saveExecutionLog(
-                    format("Pods are running [%d/%d]", running, absoluteDesiredCount));
+                    format("Desired number of pods reached [%d/%d]", pods.size(), absoluteDesiredCount));
               }
 
-              int steadyState = (int) pods.stream().filter(this::inSteadyState).count();
-              if (steadyState != absoluteDesiredCount) {
-                executionLogCallback.saveExecutionLog(
-                    format("Waiting for pods to reach steady state [%d/%d]", steadyState, absoluteDesiredCount));
-                sleep(ofSeconds(15));
-                continue;
+              if (absoluteDesiredCount > 0) {
+                int haveImages = (int) pods.stream().filter(pod -> podHasImages(pod, images)).count();
+                if (haveImages != absoluteDesiredCount) {
+                  executionLogCallback.saveExecutionLog(format("Waiting for pods to be updated with image %s [%d/%d]",
+                                                            images, haveImages, absoluteDesiredCount),
+                      LogLevel.INFO);
+                  sleep(ofSeconds(5));
+                  continue;
+                }
+                if (!haveImagesCountReached.getAndSet(true)) {
+                  executionLogCallback.saveExecutionLog(
+                      format("Pods are updated with image %s [%d/%d]", images, haveImages, absoluteDesiredCount));
+                }
               }
-              if (!steadyStateCountReached.getAndSet(true)) {
-                executionLogCallback.saveExecutionLog(
-                    format("Pods have reached steady state [%d/%d]", steadyState, absoluteDesiredCount));
+
+              if (isNotVersioned || absoluteDesiredCount > previousCount) {
+                int running = (int) pods.stream().filter(this::isRunning).count();
+                if (running != absoluteDesiredCount) {
+                  executionLogCallback.saveExecutionLog(
+                      format("Waiting for pods to be running [%d/%d]", running, absoluteDesiredCount));
+                  sleep(ofSeconds(10));
+                  continue;
+                }
+                if (!runningCountReached.getAndSet(true)) {
+                  executionLogCallback.saveExecutionLog(
+                      format("Pods are running [%d/%d]", running, absoluteDesiredCount));
+                }
+
+                int steadyState = (int) pods.stream().filter(this::inSteadyState).count();
+                if (steadyState != absoluteDesiredCount) {
+                  executionLogCallback.saveExecutionLog(
+                      format("Waiting for pods to reach steady state [%d/%d]", steadyState, absoluteDesiredCount));
+                  sleep(ofSeconds(15));
+                  continue;
+                }
+                if (!steadyStateCountReached.getAndSet(true)) {
+                  executionLogCallback.saveExecutionLog(
+                      format("Pods have reached steady state [%d/%d]", steadyState, absoluteDesiredCount));
+                }
               }
+              return pods;
+            } catch (Exception e) {
+              log.error("Exception in pod state wait loop.", e);
+              executionLogCallback.saveExecutionLog("Error while waiting for pods to be ready", LogLevel.ERROR);
+              Misc.logAllMessages(e, executionLogCallback);
+              executionLogCallback.saveExecutionLog("Continuing to wait...", LogLevel.ERROR);
+              sleep(ofSeconds(15));
             }
-            return pods;
-          } catch (Exception e) {
-            log.error("Exception in pod state wait loop.", e);
-            executionLogCallback.saveExecutionLog("Error while waiting for pods to be ready", LogLevel.ERROR);
-            Misc.logAllMessages(e, executionLogCallback);
-            executionLogCallback.saveExecutionLog("Continuing to wait...", LogLevel.ERROR);
-            sleep(ofSeconds(15));
           }
-        }
-      };
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(waitMinutes), callable);
-    } catch (UncheckedTimeoutException e) {
-      String msg = "Timed out waiting for pods to be ready";
-      log.error(msg, e);
-      executionLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
-    } catch (WingsException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new WingsException(ErrorCode.GENERAL_ERROR, e)
-          .addParam("message", "Error while waiting for pods to be ready");
-    }
+        };
+        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(waitMinutes), callable);
+      } catch (UncheckedTimeoutException e) {
+        String msg = "Timed out waiting for pods to be ready";
+        log.error(msg, e);
+        executionLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
+      } catch (WingsException e) {
+        throw e;
+      } catch (Exception e) {
+        throw new WingsException(ErrorCode.GENERAL_ERROR, e)
+            .addParam("message", "Error while waiting for pods to be ready");
+      }
 
-    return kubernetesClient.pods().inNamespace(namespace).withLabels(labels).list().getItems();
+      return kubernetesClient.pods().inNamespace(namespace).withLabels(labels).list().getItems();
+    }
   }
 
   private void showPodEvents(KubernetesClient kubernetesClient, String namespace, List<Pod> currentPods,
@@ -1936,12 +1948,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       return emptyList();
     }
     Map<String, String> labels = podTemplateSpec.getMetadata().getLabels();
-    return kubernetesHelperService.getKubernetesClient(kubernetesConfig)
-        .pods()
-        .inNamespace(kubernetesConfig.getNamespace())
-        .withLabels(labels)
-        .list()
-        .getItems();
+    try (KubernetesClient kubernetesClient = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      return kubernetesClient.pods().inNamespace(kubernetesConfig.getNamespace()).withLabels(labels).list().getItems();
+    }
   }
 
   private Set<String> getControllerImages(PodTemplateSpec template) {
@@ -1949,22 +1958,23 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   public void checkStatus(KubernetesConfig kubernetesConfig, String rcName, String serviceName) {
-    KubernetesClient client = kubernetesHelperService.getKubernetesClient(kubernetesConfig);
-    String masterUrl = client.getMasterUrl().toString();
-    ReplicationController rc =
-        client.replicationControllers().inNamespace(kubernetesConfig.getNamespace()).withName(rcName).get();
-    if (rc != null) {
-      String rcLink = masterUrl + rc.getMetadata().getSelfLink().substring(1);
-      log.info("Controller {}: {}", rcName, rcLink);
-    } else {
-      log.info("Controller {} does not exist", rcName);
-    }
-    Service service = client.services().inNamespace(kubernetesConfig.getNamespace()).withName(serviceName).get();
-    if (service != null) {
-      String serviceLink = masterUrl + service.getMetadata().getSelfLink().substring(1);
-      log.info("Service: {}, link: {}", serviceName, serviceLink);
-    } else {
-      log.info("Service {} does not exist", serviceName);
+    try (KubernetesClient client = kubernetesHelperService.getKubernetesClient(kubernetesConfig)) {
+      String masterUrl = client.getMasterUrl().toString();
+      ReplicationController rc =
+          client.replicationControllers().inNamespace(kubernetesConfig.getNamespace()).withName(rcName).get();
+      if (rc != null) {
+        String rcLink = masterUrl + rc.getMetadata().getSelfLink().substring(1);
+        log.info("Controller {}: {}", rcName, rcLink);
+      } else {
+        log.info("Controller {} does not exist", rcName);
+      }
+      Service service = client.services().inNamespace(kubernetesConfig.getNamespace()).withName(serviceName).get();
+      if (service != null) {
+        String serviceLink = masterUrl + service.getMetadata().getSelfLink().substring(1);
+        log.info("Service: {}, link: {}", serviceName, serviceLink);
+      } else {
+        log.info("Service {} does not exist", serviceName);
+      }
     }
   }
 
@@ -2303,68 +2313,5 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace(OIDC_ISSUER_URL, providerUrl)
         .replace(OIDC_RERESH_TOKEN, refreshToken)
         .replace(OIDC_AUTH_NAME, authConfigName);
-  }
-
-  public <T extends KubernetesObject> boolean watchRetriesWrapper(WorkloadDetails workloadDetails,
-      ThrowingSupplier<Call> callSupplier, Predicate<Watch.Response<T>> consumer) throws Exception {
-    boolean success;
-    try {
-      success = watchWithRetries(
-          workloadDetails.getWorkloadType(), callSupplier.get(), workloadDetails.getApiClient(), consumer);
-    } catch (ApiException e) {
-      ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
-      String errorMessage = String.format("Failed to watch rollout status for workload [%s]. ",
-                                workloadDetails.getK8sWorkload().kindNameRef())
-          + ExceptionUtils.getMessage(ex);
-      log.error(errorMessage, ex);
-      workloadDetails.getLogCallback().saveExecutionLog(errorMessage, LogLevel.ERROR);
-      if (workloadDetails.isErrorFramework()) {
-        throw e;
-      }
-      return false;
-    } catch (RuntimeException e) {
-      if (e.getCause() != null) {
-        if (e.getCause() instanceof InterruptedIOException) {
-          log.warn("Kubernetes watch was aborted.", e);
-          Thread.currentThread().interrupt();
-          return false;
-        }
-      }
-      log.error("Runtime exception during Kubernetes watch.", e);
-      throw e;
-    }
-    return success;
-  }
-
-  public <T extends KubernetesObject> boolean watchWithRetries(
-      Type type, Call call, ApiClient apiClient, Predicate<Watch.Response<T>> consumer) {
-    final Supplier<Boolean> v1Supplier = Retry.decorateSupplier(retry, () -> {
-      while (!Thread.currentThread().isInterrupted()) {
-        try (Watch<T> watch = Watch.createWatch(apiClient, call.clone(), type)) {
-          for (Watch.Response<T> event : watch) {
-            if (consumer.test(event)) {
-              return true;
-            }
-          }
-        } catch (IOException e) {
-          IOException ex = ExceptionMessageSanitizer.sanitizeException(e);
-          String errorMessage = "Failed to close Kubernetes watch." + ExceptionUtils.getMessage(ex);
-          log.error(errorMessage, ex);
-          return false;
-        } catch (ApiException e) {
-          throw new RuntimeException(e);
-        }
-      }
-      return false;
-    });
-    return v1Supplier.get();
-  }
-
-  private Retry buildRetryAndRegisterListeners() {
-    final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
-        new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
-            StreamResetException.class, SocketException.class, EOFException.class});
-    RetryHelper.registerEventListeners(exponentialRetry);
-    return exponentialRetry;
   }
 }

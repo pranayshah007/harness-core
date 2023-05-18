@@ -39,6 +39,7 @@ import io.harness.cvng.downtime.entities.EntityUnavailabilityStatuses;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.downtime.transformer.DowntimeSpecDetailsTransformer;
+import io.harness.cvng.downtime.utils.DateTimeUtils;
 import io.harness.cvng.downtime.utils.DowntimeUtils;
 import io.harness.cvng.events.downtime.DowntimeCreateEvent;
 import io.harness.cvng.events.downtime.DowntimeDeleteEvent;
@@ -213,8 +214,6 @@ public class DowntimeServiceImpl implements DowntimeService {
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
-    DowntimeDTO existingDowntimeDTO = getDowntimeDTOFromDowntime(downtimeOptional.get());
-    validateNotAllowedFieldsChanges(existingDowntimeDTO, downtimeDTO);
     return update(projectParams, identifier, downtimeOptional.get(), downtimeDTO);
   }
 
@@ -488,8 +487,15 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .category(identifierToDowntimeMap.get(instance.getEntityId()).getCategory())
                    .identifier(instance.getEntityId())
                    .startTime(instance.getStartTime())
+                   .startDateTime(DateTimeUtils.getDateStringFromEpoch(
+                       instance.getStartTime(), identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .endTime(instance.getEndTime())
+                   .endDateTime(DateTimeUtils.getDateStringFromEpoch(
+                       instance.getEndTime(), identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .spec(getDowntimeSpecDTO(identifierToDowntimeMap.get(instance.getEntityId()).getType(),
+                       identifierToDowntimeMap.get(instance.getEntityId()).getDowntimeDetails(),
+                       identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
+                   .downtimeDetails(getDowntimeSpecDTO(identifierToDowntimeMap.get(instance.getEntityId()).getType(),
                        identifierToDowntimeMap.get(instance.getEntityId()).getDowntimeDetails(),
                        identifierToDowntimeMap.get(instance.getEntityId()).getTimezone()))
                    .duration(
@@ -602,8 +608,8 @@ public class DowntimeServiceImpl implements DowntimeService {
   }
   private DowntimeSpecDTO getDowntimeSpecDTO(
       DowntimeType downtimeType, DowntimeDetails downtimeDetails, String timeZone) {
-    DowntimeSpec downtimeSpec = downtimeTransformerMap.get(downtimeType).getDowntimeSpec(downtimeDetails);
-    downtimeSpec.setStartTime(downtimeDetails.getStartTime());
+    DowntimeSpec downtimeSpec = downtimeTransformerMap.get(downtimeType).getDowntimeSpec(downtimeDetails, timeZone);
+    downtimeSpec.setStartDateTime(DateTimeUtils.getDateStringFromEpoch(downtimeDetails.getStartTime(), timeZone));
     downtimeSpec.setTimezone(timeZone);
     return DowntimeSpecDTO.builder().type(downtimeType).spec(downtimeSpec).build();
   }
@@ -671,9 +677,15 @@ public class DowntimeServiceImpl implements DowntimeService {
                    .enabled(downtime.isEnabled())
                    .identifier(downtime.getIdentifier())
                    .downtimeStatusDetails(downtimeIdentifierToInstancesDTOMap.containsKey(downtime.getIdentifier())
-                           ? DowntimeStatusDetails.getDowntimeStatusDetailsInstance(
-                               downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getStartTime(),
-                               downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getEndTime(), clock)
+                           ? DowntimeStatusDetails
+                                 .getDowntimeStatusDetailsInstanceBuilder(
+                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getStartTime(),
+                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getEndTime(),
+                                     clock)
+                                 .endDateTime(DateTimeUtils.getDateStringFromEpoch(
+                                     downtimeIdentifierToInstancesDTOMap.get(downtime.getIdentifier()).getEndTime(),
+                                     downtime.getTimezone()))
+                                 .build()
                            : null)
                    .affectedEntities(downtime.getEntitiesRule().getType().equals(RuleType.IDENTFIERS)
                            ? ((EntityIdentifiersRule) downtime.getEntitiesRule())
@@ -778,19 +790,32 @@ public class DowntimeServiceImpl implements DowntimeService {
     Duration allowedDuration = Duration.ofDays(MAX_DURATION_IN_DAYS);
     if (downtimeSpecDTO.getType().equals(DowntimeType.RECURRING)) {
       RecurringDowntimeSpec recurringDowntimeSpec = (RecurringDowntimeSpec) downtimeSpecDTO.getSpec();
-      endInstant = Instant.ofEpochSecond(recurringDowntimeSpec.getRecurrenceEndTime());
+      Optional<String> recurrenceEndDateTime = Optional.ofNullable(recurringDowntimeSpec.getRecurrenceEndDateTime());
+      endInstant = recurrenceEndDateTime.isPresent()
+          ? Instant.ofEpochSecond(DateTimeUtils.getEpochValueFromDateString(
+              recurrenceEndDateTime.get(), recurringDowntimeSpec.getTimezone()))
+          : Instant.ofEpochSecond(recurringDowntimeSpec.getRecurrenceEndTime());
     } else {
       OnetimeDowntimeSpec onetimeDowntimeSpec = (OnetimeDowntimeSpec) downtimeSpecDTO.getSpec();
       if (onetimeDowntimeSpec.getSpec().getType().equals(OnetimeDowntimeType.END_TIME)) {
         OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec onetimeEndTimeBasedSpec =
             (OnetimeDowntimeSpec.OnetimeEndTimeBasedSpec) onetimeDowntimeSpec.getSpec();
-        endInstant = Instant.ofEpochSecond(onetimeEndTimeBasedSpec.getEndTime());
+        Optional<String> endDateTime = Optional.ofNullable(onetimeEndTimeBasedSpec.getEndDateTime());
+        endInstant = endDateTime.isPresent() ? Instant.ofEpochSecond(DateTimeUtils.getEpochValueFromDateString(
+                         endDateTime.get(), onetimeDowntimeSpec.getTimezone()))
+                                             : Instant.ofEpochSecond(onetimeEndTimeBasedSpec.getEndTime());
       } else if (onetimeDowntimeSpec.getSpec().getType().equals(OnetimeDowntimeType.DURATION)) {
         OnetimeDowntimeSpec.OnetimeDurationBasedSpec onetimeDurationBasedSpec =
             (OnetimeDowntimeSpec.OnetimeDurationBasedSpec) onetimeDowntimeSpec.getSpec();
-        endInstant = Instant.ofEpochSecond(
-            downtimeTransformerMap.get(DowntimeType.ONE_TIME)
-                .getEndTime(onetimeDowntimeSpec.getStartTime(), onetimeDurationBasedSpec.getDowntimeDuration()));
+        Optional<String> startDateTime = Optional.ofNullable(onetimeDowntimeSpec.getStartDateTime());
+        endInstant = startDateTime.isPresent()
+            ? Instant.ofEpochSecond(downtimeTransformerMap.get(DowntimeType.ONE_TIME)
+                                        .getEndTime(DateTimeUtils.getEpochValueFromDateString(
+                                                        startDateTime.get(), onetimeDowntimeSpec.getTimezone()),
+                                            onetimeDurationBasedSpec.getDowntimeDuration()))
+            : Instant.ofEpochSecond(
+                downtimeTransformerMap.get(DowntimeType.ONE_TIME)
+                    .getEndTime(onetimeDowntimeSpec.getStartTime(), onetimeDurationBasedSpec.getDowntimeDuration()));
       }
     }
     if (endInstant != null && now.plus(allowedDuration).isBefore(endInstant)) {

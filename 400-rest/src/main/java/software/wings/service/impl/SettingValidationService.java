@@ -198,6 +198,7 @@ public class SettingValidationService {
         sshVaultConfig = sshVaultService.getSSHVaultConfig(settingAttribute.getAccountId(),
             ((HostConnectionAttributes) settingAttribute.getValue()).getSshVaultConfigId());
       }
+      settingServiceHelper.setFeatureFlagIfRequired(settingValue, settingAttribute.getAccountId());
       ConnectivityValidationDelegateRequest request = ConnectivityValidationDelegateRequest.builder()
                                                           .encryptedDataDetails(encryptionDetails)
                                                           .settingAttribute(settingAttribute.toDTO())

@@ -40,6 +40,12 @@ public class NGConstants {
   public static final String ORGANIZATION_BASIC_ROLE = "_organization_basic";
   public static final String PROJECT_ADMIN_ROLE = "_project_admin";
   public static final String PROJECT_VIEWER_ROLE = "_project_viewer";
+  public static final String LICENSE_PERMISSION = "core_license_view";
+  public static final String ORGANIZATION_VIEW_PERMISSION = "core_organization_view";
+  public static final String PROJECT_VIEW_PERMISSION = "core_project_view";
+  public static final String LICENSE_RESOURCE = "LICENSE";
+  public static final String ORGANIZATION_RESOURCE = "ORGANIZATION";
+  public static final String PROJECT_RESOURCE = "PROJECT";
 
   public static final String PROJECT_BASIC_ROLE = "_project_basic";
   public static final String ENTITY_REFERENCE_LOG_PREFIX = "ENTITY_REFERENCE :";

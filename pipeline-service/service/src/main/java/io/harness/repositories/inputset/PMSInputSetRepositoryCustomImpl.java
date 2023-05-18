@@ -9,6 +9,7 @@ package io.harness.repositories.inputset;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.pipeline.MoveConfigOperationType.INLINE_TO_REMOTE;
+import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -227,6 +228,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
             .connectorRef(savedEntity.getConnectorRef())
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
+            .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
             .entityType(EntityType.INPUT_SETS)
             .loadFromCache(loadFromCache)
             .build(),
@@ -427,6 +429,15 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   public List<String> findAllUniqueInputSetRepos(@NotNull Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.findDistinct(query, InputSetEntityKeys.repo, InputSetEntity.class, String.class);
+  }
+
+  @Override
+  public InputSetEntity updateEntity(Criteria criteria, Update update) {
+    Query query = new Query(criteria);
+    return Failsafe.with(DEFAULT_RETRY_POLICY)
+        .get(()
+                 -> mongoTemplate.findAndModify(
+                     query, update, new FindAndModifyOptions().returnNew(true), InputSetEntity.class));
   }
 
   @VisibleForTesting

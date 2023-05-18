@@ -1296,8 +1296,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:9ZrokpIAX+BANYGahqJp6vJqgYiD5c8v5A4iVk+oyZo=",
-    version = "v1.29.1",
+    sum = "h1:p35onfFNfSQTKLC15sb76sESs+bj+Rb/pMqDtsgKsU4=",
+    version = "v1.29.2-0.20230515092809-5877f3846131",
 )
 
 go_repository(
@@ -4599,7 +4599,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.6")
+go_register_toolchains(version = "1.19.8")
 
 gazelle_dependencies()
 
@@ -4649,11 +4649,11 @@ http_archive(
     ],
 )
 
-RULES_JVM_EXTERNAL_TAG = "4.1"
+RULES_JVM_EXTERNAL_TAG = "4.5"
 
 http_archive(
     name = "rules_jvm_external",
-    sha256 = "f36441aa876c4f6427bfb2d1f2d723b48e9d930b62662bf723ddfb8fc80f0140",
+    sha256 = "b17d7388feb9bfa7f2fa09031b32707df529f26c91ab9e5d909eb1676badd9a6",
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     url = "https://harness-artifactory.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
 )
@@ -4845,7 +4845,6 @@ plain_artifacts = [
     "com.openpojo:openpojo:0.8.3",
     "com.palominolabs.metrics:metrics-guice:3.2.0",
     "com.papertrail:profiler:1.0.2",
-    "com.papertrail:profiler:1.0.2",
     "com.segment.analytics.java:analytics-core:2.1.1",
     "com.segment.analytics.java:analytics:2.1.1",
     "com.segment.backo:backo:1.0.0",
@@ -4956,16 +4955,16 @@ plain_artifacts = [
     "io.dropwizard.logback:logback-throttling-appender:1.1.0",
     "io.fabric8:fabric8-utils:3.0.11",
     "io.fabric8:kubernetes-api:3.0.12",
-    "io.fabric8:kubernetes-client:5.12.1",
-    "io.fabric8:openshift-client:5.12.1",
-    "io.fabric8:kubernetes-client-project:5.12.1",
-    "io.fabric8:openshift-client:5.12.1",
-    "io.fabric8:kubernetes-model-generator:5.12.1",
-    "io.fabric8:openshift-model:5.12.1",
-    "io.fabric8:istio-client:5.12.1",
-    "io.fabric8:kubernetes-extensions:5.12.1",
-    "io.fabric8:istio-model-v1beta1:5.12.1",
-    "io.fabric8:istio-model-v1alpha3:5.12.1",
+    "io.fabric8:kubernetes-client:6.5.1",
+    "io.fabric8:openshift-client:6.5.1",
+    "io.fabric8:kubernetes-client-project:6.5.1",
+    "io.fabric8:openshift-client:6.5.1",
+    "io.fabric8:kubernetes-model-generator:6.5.1",
+    "io.fabric8:openshift-model:6.5.1",
+    "io.fabric8:istio-client:6.5.1",
+    "io.fabric8:kubernetes-extensions:6.5.1",
+    "io.fabric8:istio-model-v1beta1:6.5.1",
+    "io.fabric8:istio-model-v1alpha3:6.5.1",
     "io.fabric8:zjsonpatch:0.3.0",
     "io.github.benas:random-beans:3.7.0",
     "io.github.resilience4j:resilience4j-circuitbreaker:1.5.0",
@@ -4986,7 +4985,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.47-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.52-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5053,7 +5052,7 @@ plain_artifacts = [
     "javax:javaee-api:8.0",
     "joda-time:joda-time:2.10.6",
     "net.arnx:nashorn-promise:0.1.1",
-    "net.bytebuddy:byte-buddy:1.10.7",
+    "net.bytebuddy:byte-buddy:1.14.1",
     "net.engio:mbassador:1.3.0",
     "net.i2p.crypto:eddsa:0.3.0",
     "net.java.dev.jna:jna-platform:5.5.0",
@@ -5142,7 +5141,7 @@ plain_artifacts = [
     "org.atmosphere:atmosphere-runtime:2.7.6",
     "org.atmosphere:wasync:3.0.0",
     "org.atteo:evo-inflector:1.2.2",
-    "org.bitbucket.b_c:jose4j:0.7.0",
+    "org.bitbucket.b_c:jose4j:0.9.3",
     "org.bouncycastle:bcpg-jdk15on:1.70",
     "org.bouncycastle:bcpkix-jdk15on:1.70",
     "org.bouncycastle:bcprov-ext-jdk15on:1.70",
@@ -5165,28 +5164,28 @@ plain_artifacts = [
     "org.cryptacular:cryptacular:1.1.4",
     "org.javassist:javassist:3.27.0-GA",
     "org.glassfish:jakarta.el:3.0.4",
-    "org.eclipse.jetty.http2:http2-common:9.4.48.v20220622",
-    "org.eclipse.jetty.http2:http2-hpack:9.4.48.v20220622",
-    "org.eclipse.jetty.http2:http2-server:9.4.48.v20220622",
+    "org.eclipse.jetty.http2:http2-common:9.4.51.v20230217",
+    "org.eclipse.jetty.http2:http2-hpack:9.4.51.v20230217",
+    "org.eclipse.jetty.http2:http2-server:9.4.51.v20230217",
     "org.eclipse.jetty.toolchain.setuid:jetty-setuid-java:1.0.4",
-    "org.eclipse.jetty.websocket:websocket-api:9.4.48.v20220622",
-    "org.eclipse.jetty.websocket:websocket-client:9.4.48.v20220622",
-    "org.eclipse.jetty.websocket:websocket-common:9.4.48.v20220622",
-    "org.eclipse.jetty.websocket:websocket-server:9.4.48.v20220622",
-    "org.eclipse.jetty.websocket:websocket-servlet:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-alpn-openjdk8-server:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-alpn-server:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-client:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-continuation:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-http:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-io:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-security:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-server:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-servlet:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-servlets:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-util:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-webapp:9.4.48.v20220622",
-    "org.eclipse.jetty:jetty-xml:9.4.48.v20220622",
+    "org.eclipse.jetty.websocket:websocket-api:9.4.51.v20230217",
+    "org.eclipse.jetty.websocket:websocket-client:9.4.51.v20230217",
+    "org.eclipse.jetty.websocket:websocket-common:9.4.51.v20230217",
+    "org.eclipse.jetty.websocket:websocket-server:9.4.51.v20230217",
+    "org.eclipse.jetty.websocket:websocket-servlet:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-alpn-openjdk8-server:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-alpn-server:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-client:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-continuation:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-http:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-io:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-security:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-server:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-servlet:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-servlets:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-util:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-webapp:9.4.51.v20230217",
+    "org.eclipse.jetty:jetty-xml:9.4.51.v20230217",
     "org.eclipse.jgit:org.eclipse.jgit.ssh.jsch:jar:5.13.0.202109080827-r",
     "org.eclipse.jgit:org.eclipse.jgit.http.apache:5.13.0.202109080827-r",
     "org.eclipse.jgit:org.eclipse.jgit:5.13.0.202109080827-r",
@@ -5253,7 +5252,7 @@ plain_artifacts = [
     "org.jodd:jodd-core:5.0.13",
     "org.jooq:jooq:3.14.8",
     "org.jooq:joor:0.9.5",
-    "org.json:json:20160810",
+    "org.json:json:20230227",
     "org.jsoup:jsoup:1.8.3",
     "org.jsoup:jsoup:1.8.3",
     "org.jsr107.ri:cache-annotations-ri-common:1.0.0",
@@ -5294,7 +5293,7 @@ plain_artifacts = [
     "org.projectlombok:lombok:1.18.26",
     "org.quartz-scheduler:quartz:2.3.2",
     "org.reactivestreams:reactive-streams:1.0.2",
-    "org.redisson:redisson:3.17.7",
+    "org.redisson:redisson:3.13.3",
     "org.reflections:reflections:0.9.12-SNAPSHOT",
     "org.slf4j:jcl-over-slf4j:1.7.30",
     "org.slf4j:jul-to-slf4j:1.7.30",
@@ -5312,16 +5311,16 @@ plain_artifacts = [
     "org.springframework.kafka:spring-kafka:2.3.7.RELEASE",
     "org.springframework.retry:spring-retry:1.2.5.RELEASE",
     "org.springframework.security:spring-security-crypto:5.3.5.RELEASE",
-    "org.springframework:spring-aop:5.3.26",
-    "org.springframework:spring-beans:5.3.26",
-    "org.springframework:spring-context:5.3.26",
-    "org.springframework:spring-core:5.3.26",
-    "org.springframework:spring-expression:5.3.26",
-    "org.springframework:spring-jcl:5.3.26",
-    "org.springframework:spring-messaging:5.3.26",
-    "org.springframework:spring-test:5.3.26",
-    "org.springframework:spring-tx:5.3.26",
-    "org.springframework:spring-web:5.3.26",
+    "org.springframework:spring-aop:5.3.27",
+    "org.springframework:spring-beans:5.3.27",
+    "org.springframework:spring-context:5.3.27",
+    "org.springframework:spring-core:5.3.27",
+    "org.springframework:spring-expression:5.3.27",
+    "org.springframework:spring-jcl:5.3.27",
+    "org.springframework:spring-messaging:5.3.27",
+    "org.springframework:spring-test:5.3.27",
+    "org.springframework:spring-tx:5.3.27",
+    "org.springframework:spring-web:5.3.27",
     "org.threeten:threetenbp:1.4.1",
     "org.webjars.npm:viz.js-for-graphviz-java:2.1.3",
     "org.xerial.snappy:snappy-java:1.1.7.3",
@@ -5521,13 +5520,12 @@ maven_install(
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
         maven_test_artifact("com.squareup.okhttp3:mockwebserver:4.9.2"),
-        maven_test_artifact("de.bwaldvogel:mongo-java-server-core:1.34.0"),
-        maven_test_artifact("de.bwaldvogel:mongo-java-server-memory-backend:1.34.0"),
-        maven_test_artifact("de.bwaldvogel:mongo-java-server:1.34.0"),
-        maven_test_artifact("de.flapdoodle.embed:de.flapdoodle.embed.mongo:2.0.3"),
-        maven_test_artifact("de.flapdoodle.embed:de.flapdoodle.embed.process:2.0.3"),
+        maven_test_artifact("de.bwaldvogel:mongo-java-server-core:1.43.0"),
+        maven_test_artifact("de.bwaldvogel:mongo-java-server-memory-backend:1.43.0"),
+        maven_test_artifact("de.bwaldvogel:mongo-java-server:1.43.0"),
         maven_test_artifact("io.dropwizard:dropwizard-testing:2.0.10"),
-        maven_test_artifact("io.fabric8:kubernetes-server-mock:5.12.1"),
+        maven_test_artifact("io.fabric8:kubernetes-server-mock:6.5.1"),
+        maven_test_artifact("org.junit.jupiter:junit-jupiter-api:5.8.2"),
         maven_test_artifact("io.fabric8:mockwebserver:0.2.2"),
         maven_test_artifact("io.grpc:grpc-testing:1.48.0"),
         maven_test_artifact("junit:junit:4.12"),
@@ -5537,10 +5535,11 @@ maven_install(
         maven_test_artifact("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-grizzly2:2.23.1"),
         maven_test_artifact("org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-inmemory:2.23.1"),
         maven_test_artifact("org.glassfish.jersey.test-framework:jersey-test-framework-core:2.23.1"),
-        maven_test_artifact("org.mockito:mockito-core:3.4.4"),
-        maven_test_artifact("org.mockito:mockito-inline:3.4.4"),
+        maven_test_artifact("org.mockito:mockito-core:5.2.0"),
+        maven_test_artifact("org.mockito:mockito-inline:5.2.0"),
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
         maven_test_artifact("pl.pragmatists:JUnitParams:1.0.4"),
+        maven_test_artifact("uk.org.webcompere:system-stubs-core:2.0.2"),
     ],
     excluded_artifacts = [],
     maven_install_json = "//project:main_maven_install.json",
@@ -5585,10 +5584,13 @@ maven_install(
         "com.azure:azure-identity:1.5.0",
         "com.azure:azure-storage-blob:12.16.0",
         "com.azure:azure-storage-common:12.15.1",
+        "com.azure.resourcemanager:azure-resourcemanager-advisor:1.0.0-beta.2",
+        "com.azure.resourcemanager:azure-resourcemanager-compute:2.26.0",
     ],
     repositories = [
         "https://harness-artifactory.harness.io/artifactory/portal-maven",
         "https://harness.jfrog.io/harness/thirdparty-annonymous",
+        "https://search.maven.org/artifact/",
     ],
     version_conflict_policy = "pinned",
 )
@@ -5725,7 +5727,10 @@ filegroup(
     urls = ["https://www.python.org/ftp/python/3.9.10/Python-3.9.10.tar.xz"],
 )
 
-register_toolchains("//:harness_no_fdLimit_jdk11_toolchain_definition")
+register_toolchains(
+    "//:harness_no_fdLimit_jdk11_toolchain_definition",
+    "//:harness_no_fdLimit_jdk17_toolchain_definition",
+)
 
 register_toolchains("//:py_toolchain")
 
@@ -5733,9 +5738,8 @@ register_toolchains("//:py_toolchain")
 
 http_archive(
     name = "io_bazel_rules_docker",
-    sha256 = "59d5b42ac315e7eadffa944e86e90c2990110a1c8075f1cd145f487e999d22b3",
-    strip_prefix = "rules_docker-0.17.0",
-    urls = ["https://harness-artifactory.harness.io/artifactory/rules-docker-github/download/v0.17.0/rules_docker-v0.17.0.tar.gz"],
+    sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
+    urls = ["https://harness-artifactory.harness.io/artifactory/rules-docker-github/download/v0.25.0/rules_docker-v0.25.0.tar.gz"],
 )
 
 load(
@@ -5792,9 +5796,9 @@ container_repositories()
 
 http_archive(
     name = "rules_pkg",
-    sha256 = "038f1caa773a7e35b3663865ffb003169c6a71dc995e39bf4815792f385d837d",
+    sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-pkg-github/download/0.4.0/rules_pkg-0.4.0.tar.gz",
+        "https://harness-artifactory.harness.io/artifactory/rules-pkg-github/download/0.8.0/rules_pkg-0.8.0.tar.gz",
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
         #"https://github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
     ],
@@ -5888,9 +5892,9 @@ go_repository(
 # Contrib rules jvm for build cleaner.
 http_archive(
     name = "contrib_rules_jvm",
-    sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
-    strip_prefix = "rules_jvm-0.4.0",
-    url = "https://harness-artifactory.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
+    sha256 = "548f0583192ff79c317789b03b882a7be9b1325eb5d3da5d7fdcc4b7ca69d543",
+    strip_prefix = "rules_jvm-0.9.0",
+    url = "https://harness-artifactory.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.9.0.tar.gz",
 )
 
 # Fetches the contrib_rules_jvm dependencies.
@@ -5907,6 +5911,6 @@ load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
 
 contrib_rules_jvm_setup()
 
-load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contrib_rules_jvm_gazelle_setup")
 
-contib_rules_jvm_gazelle_setup()
+contrib_rules_jvm_gazelle_setup()

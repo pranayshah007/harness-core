@@ -31,6 +31,7 @@ import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
 import static io.harness.helm.HelmConstants.DEFAULT_TILLER_CONNECTION_TIMEOUT_MILLIS;
 import static io.harness.k8s.K8sConstants.MANIFEST_FILES_DIR;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
+import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -70,6 +71,8 @@ import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.localstore.ManifestFiles;
+import io.harness.delegate.task.utils.ServiceHookDTO;
+import io.harness.delegate.utils.ServiceHookHandler;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GitOperationException;
 import io.harness.exception.HelmClientException;
@@ -97,6 +100,8 @@ import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.ServiceHookAction;
+import io.harness.k8s.model.ServiceHookType;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.K8sLegacyRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
@@ -200,16 +205,23 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       logCallback.saveExecutionLog(helmCliResponse.getOutputWithErrorStream());
-
+      ServiceHookDTO serviceHookDTO = new ServiceHookDTO(commandRequest);
       prevVersion = getPrevReleaseVersion(helmCliResponse);
-
+      String manifestFilesDirectory = Paths.get(commandRequest.getWorkingDir(), MANIFEST_FILES_DIR).toString();
+      ServiceHookHandler serviceHookHandler =
+          new ServiceHookHandler(commandRequest.getServiceHooks(), serviceHookDTO, commandRequest.getTimeoutInMillis());
+      serviceHookHandler.addToContext(MANIFEST_FILES_DIRECTORY.getContextName(), manifestFilesDirectory);
+      serviceHookHandler.execute(
+          ServiceHookType.PRE_HOOK, ServiceHookAction.FETCH_FILES, serviceHookDTO.getWorkingDirectory(), logCallback);
       kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
           commandRequest.getK8sInfraDelegateConfig(), commandRequest.getWorkingDir(), logCallback);
 
       prepareRepoAndCharts(commandRequest, commandRequest.getTimeoutInMillis(), logCallback);
-
+      serviceHookHandler.execute(
+          ServiceHookType.POST_HOOK, ServiceHookAction.FETCH_FILES, serviceHookDTO.getWorkingDirectory(), logCallback);
       skipApplyDefaultValuesYaml(commandRequest);
-
+      serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+          serviceHookDTO.getWorkingDirectory(), logCallback);
       resources = printHelmChartKubernetesResources(commandRequest);
 
       List<KubernetesResourceId> workloads = readResources(resources);
@@ -222,6 +234,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       helmChartInfo = getHelmChartDetails(commandRequest);
 
+      serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
+          serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, InstallUpgrade);
 
       // call listReleases method
@@ -266,7 +280,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WaitForSteadyState);
-
+      serviceHookHandler.addWorkloadContextForHooks(resources, Collections.emptyList());
+      serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+          serviceHookDTO.getWorkingDirectory(), logCallback);
       List<ContainerInfo> containerInfos = getContainerInfos(
           commandRequest, workloads, useSteadyStateCheck, logCallback, commandRequest.getTimeoutInMillis());
       if (!useSteadyStateCheck) {
@@ -274,11 +290,15 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
       commandResponse.setContainerInfoList(containerInfos);
       commandResponse.setHelmVersion(commandRequest.getHelmVersion());
-
+      serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
+          serviceHookDTO.getWorkingDirectory(), logCallback);
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WrapUp);
 
       return commandResponse;
 
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+      throw new HelmNGException(prevVersion, ExceptionMessageSanitizer.sanitizeException(ex), isInstallUpgrade);
     } catch (UncheckedTimeoutException e) {
       logCallback.saveExecutionLog(TIMED_OUT_IN_STEADY_STATE, LogLevel.ERROR);
       if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
@@ -465,8 +485,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         ? IK8sRelease.Status.Succeeded
         : IK8sRelease.Status.Failed;
     releaseHistory.setReleaseStatus(releaseStatus);
-    k8sTaskHelperBase.saveReleaseHistory(
-        kubernetesConfig, commandRequest.getReleaseName(), releaseHistory.getAsYaml(), true);
+    String releaseHistoryName = getOverridenReleaseHistoryName(commandRequest);
+    k8sTaskHelperBase.saveReleaseHistory(kubernetesConfig, releaseHistoryName, releaseHistory.getAsYaml(), true);
   }
 
   private ReleaseHistory createNewRelease(HelmCommandRequestNG commandRequest, List<KubernetesResourceId> workloads,
@@ -482,8 +502,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private ReleaseHistory fetchReleaseHistory(HelmCommandRequestNG commandRequest, KubernetesConfig kubernetesConfig)
       throws IOException {
-    String releaseHistoryData =
-        k8sTaskHelperBase.getReleaseHistoryFromSecret(kubernetesConfig, commandRequest.getReleaseName());
+    String releaseHistoryName = getOverridenReleaseHistoryName(commandRequest);
+    String releaseHistoryData = k8sTaskHelperBase.getReleaseHistoryFromSecret(kubernetesConfig, releaseHistoryName);
     if (StringUtils.isEmpty(releaseHistoryData)) {
       return ReleaseHistory.createNew();
     }
@@ -1182,5 +1202,13 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
     }
     return Optional.empty();
+  }
+
+  private String getOverridenReleaseHistoryName(HelmCommandRequestNG commandRequestNG) {
+    if (isNotEmpty(commandRequestNG.getReleaseHistoryPrefix())) {
+      return commandRequestNG.getReleaseHistoryPrefix() + commandRequestNG.getReleaseName();
+    }
+
+    return commandRequestNG.getReleaseName();
   }
 }

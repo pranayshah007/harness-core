@@ -11,9 +11,9 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.VUK;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -102,14 +102,14 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
         CompletableFuture.completedFuture(Collections.singletonList(PerpetualTaskAssignDetails.newBuilder().build()))
             .get())
         .when(perpetualTaskServiceAgentClient)
-        .perpetualTaskList(anyString(), anyObject());
+        .perpetualTaskList(anyString(), any());
 
     doReturn(CompletableFuture
                  .completedFuture(PerpetualTaskContextResponse.newBuilder().setPerpetualTaskContext(context).build())
                  .get()
                  .getPerpetualTaskContext())
         .when(perpetualTaskServiceAgentClient)
-        .perpetualTaskContext(isA(PerpetualTaskId.class), anyObject());
+        .perpetualTaskContext(isA(PerpetualTaskId.class), any());
   }
 
   @Test
@@ -141,7 +141,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Category(UnitTests.class)
   public void testFetchAssignedTask() {
     worker.fetchAssignedTask();
-    verify(perpetualTaskServiceAgentClient).perpetualTaskList(anyString(), anyObject());
+    verify(perpetualTaskServiceAgentClient).perpetualTaskList(anyString(), any());
   }
 
   @Test

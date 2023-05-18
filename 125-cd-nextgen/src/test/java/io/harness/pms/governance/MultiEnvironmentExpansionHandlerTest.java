@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
+import org.joor.Reflect;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class MultiEnvironmentExpansionHandlerTest extends CategoryTest {
   @Mock private EnvironmentService environmentService;
   @Mock private InfrastructureEntityService infrastructureEntityService;
   @Mock private ConnectorService connectorService;
-
+  private EnvironmentExpansionUtils utils = new EnvironmentExpansionUtils();
   private AutoCloseable mocks;
   @InjectMocks private MultiEnvironmentExpansionHandler expansionHandler;
 
@@ -98,6 +99,11 @@ public class MultiEnvironmentExpansionHandlerTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     mocks = MockitoAnnotations.openMocks(this);
+
+    Reflect.on(utils).set("environmentService", environmentService);
+    Reflect.on(utils).set("infrastructureService", infrastructureEntityService);
+    Reflect.on(utils).set("connectorService", connectorService);
+    Reflect.on(expansionHandler).set("utils", utils);
 
     doReturn(
         List.of(ConnectorResponseDTO.builder()

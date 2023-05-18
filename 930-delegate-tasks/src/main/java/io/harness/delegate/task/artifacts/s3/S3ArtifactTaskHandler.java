@@ -58,7 +58,7 @@ public class S3ArtifactTaskHandler extends DelegateArtifactTaskHandler<S3Artifac
     if (StringUtils.isNotBlank(filePath)) {
       buildDetails = awsApiHelperService.getBuild(awsInternalConfig, s3ArtifactDelegateRequest.getRegion(),
           s3ArtifactDelegateRequest.getBucketName(), filePath);
-      if (buildDetails == null || !filePath.equals(buildDetails.getArtifactPath())) {
+      if (buildDetails == null) {
         throw new InvalidRequestException("No build exist for the given file path.");
       }
     } else {

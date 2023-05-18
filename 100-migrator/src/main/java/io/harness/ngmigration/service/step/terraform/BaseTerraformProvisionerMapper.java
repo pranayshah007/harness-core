@@ -54,6 +54,7 @@ import io.harness.ngmigration.expressions.step.TerraformStepFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
+import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -216,9 +217,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     }
 
     if (REMOTE_STORE_TYPE.equals(beConfig.getStoreType())) {
-      GitStore store = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT).build();
-
       GitFileConfig gitFileConfig = beConfig.getRemoteBackendConfig();
+      GitStore store = GitStore.builder()
+                           .connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScopeDefaults(
+                               migratedEntities, gitFileConfig.getConnectorId(), NGMigrationEntityType.CONNECTOR,
+                               NGMigrationConstants.RUNTIME_INPUT)))
+                           .build();
       if (StringUtils.isNotBlank(gitFileConfig.getBranch())) {
         store.setGitFetchType(FetchType.BRANCH);
         store.setBranch(ParameterField.createValueField(gitFileConfig.getBranch()));
@@ -254,6 +258,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   protected List<TerraformVarFileWrapper> getVarFiles(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
     List<TerraformVarFileWrapper> varFileWrappers = new ArrayList<>();
+
+    TerraformVarFileWrapper remoteVarFile = getRemoteTFVar(entities, migratedEntities, state);
+    if (remoteVarFile != null) {
+      varFileWrappers.add(remoteVarFile);
+    }
+
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       String inlineContent = convertNameValuePairToContent(migratedEntities, state.getVariables());
       TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
@@ -267,10 +277,11 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
       varFileWrappers.add(wrapper);
     }
 
-    if (EmptyPredicate.isEmpty(state.getTfVarFiles()) && state.getTfVarGitFileConfig() == null) {
-      return varFileWrappers;
-    }
+    return varFileWrappers;
+  }
 
+  private TerraformVarFileWrapper getRemoteTFVar(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
     TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
     RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
     GitStore gitStore = null;
@@ -279,7 +290,10 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
       gitStore.setFolderPath(ParameterField.ofNull());
       gitStore.setPaths(ParameterField.createValueField(state.getTfVarFiles()));
     } else if (state.getTfVarGitFileConfig() != null) {
-      GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
+      GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(
+          ParameterField.createValueField(MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities,
+              state.getTfVarGitFileConfig().getConnectorId(), NGMigrationEntityType.CONNECTOR,
+              NGMigrationConstants.RUNTIME_INPUT)));
       if (StringUtils.isNotBlank(state.getTfVarGitFileConfig().getBranch())) {
         storeBuilder.gitFetchType(FetchType.BRANCH);
         storeBuilder.branch(ParameterField.createValueField(state.getTfVarGitFileConfig().getBranch()));
@@ -299,9 +313,9 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
                              .type(TerraformVarFileTypes.Remote)
                              .spec(remoteTerraformVarFileSpec)
                              .build());
-      varFileWrappers.add(wrapper);
+      return wrapper;
     }
-    return varFileWrappers;
+    return null;
   }
 
   protected ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(TerraformProvisionState state) {
@@ -330,17 +344,26 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
 
   private GitStore getGitStore(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       TerraformProvisionState state) {
-    GitStoreBuilder storeBuilder = GitStore.builder().connectorRef(MigratorUtility.RUNTIME_INPUT);
-
     CgEntityNode node =
         entities.getOrDefault(CgEntityId.builder().id(state.getProvisionerId()).type(INFRA_PROVISIONER).build(), null);
     if (node == null || node.getEntity() == null) {
-      return storeBuilder.branch(MigratorUtility.RUNTIME_INPUT)
+      return GitStore.builder()
+          .connectorRef(MigratorUtility.RUNTIME_INPUT)
+          .branch(MigratorUtility.RUNTIME_INPUT)
           .gitFetchType(FetchType.BRANCH)
           .folderPath(MigratorUtility.RUNTIME_INPUT)
           .build();
     }
     TerraformInfrastructureProvisioner provisioner = (TerraformInfrastructureProvisioner) node.getEntity();
+    GitStoreBuilder storeBuilder = GitStore.builder();
+    if (StringUtils.isNotBlank(provisioner.getSourceRepoSettingId())) {
+      storeBuilder.connectorRef(ParameterField.createValueField(
+          MigratorUtility.getIdentifierWithScopeDefaults(migratedEntities, provisioner.getSourceRepoSettingId(),
+              NGMigrationEntityType.CONNECTOR, NGMigrationConstants.RUNTIME_INPUT)));
+    } else {
+      storeBuilder.connectorRef(MigratorUtility.RUNTIME_INPUT);
+    }
+
     String path = StringUtils.isNotBlank(provisioner.getPath()) ? provisioner.getPath() : "/";
     if (StringUtils.isNotBlank(provisioner.getSourceRepoBranch())) {
       storeBuilder.gitFetchType(FetchType.BRANCH);
@@ -393,11 +416,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
     TerraformProvisionState state = (TerraformProvisionState) getState(graphNode);
     if (state.isRunPlanOnly()) {
       TerraformPlanExecutionData executionData = getPlanExecutionData(entities, migratedEntities, state);
-      TerraformPlanStepInfo stepInfo = TerraformPlanStepInfo.infoBuilder()
-                                           .delegateSelectors(getDelegateSelectors(state))
-                                           .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
-                                           .terraformPlanExecutionData(executionData)
-                                           .build();
+      TerraformPlanStepInfo stepInfo =
+          TerraformPlanStepInfo.infoBuilder()
+              .delegateSelectors(getDelegateSelectors(state))
+              .provisionerIdentifier(getProvisionerIdentifier(migrationContext, state.getProvisionerId()))
+              .terraformPlanExecutionData(executionData)
+              .build();
       TerraformPlanStepNode planStepNode = new TerraformPlanStepNode();
       baseSetup(graphNode, planStepNode, identifierCaseFormat);
       planStepNode.setTerraformPlanStepInfo(stepInfo);
@@ -406,11 +430,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
       TerraformStepConfiguration stepConfiguration = new TerraformStepConfiguration();
       stepConfiguration.setTerraformExecutionData(getExecutionData(entities, migratedEntities, state));
       stepConfiguration.setTerraformStepConfigurationType(TerraformStepConfigurationType.INLINE);
-      TerraformApplyStepInfo stepInfo = TerraformApplyStepInfo.infoBuilder()
-                                            .delegateSelectors(getDelegateSelectors(state))
-                                            .terraformStepConfiguration(stepConfiguration)
-                                            .provisionerIdentifier(MigratorUtility.RUNTIME_INPUT)
-                                            .build();
+      TerraformApplyStepInfo stepInfo =
+          TerraformApplyStepInfo.infoBuilder()
+              .delegateSelectors(getDelegateSelectors(state))
+              .terraformStepConfiguration(stepConfiguration)
+              .provisionerIdentifier(getProvisionerIdentifier(migrationContext, state.getProvisionerId()))
+              .build();
       TerraformApplyStepNode applyStepNode = new TerraformApplyStepNode();
       baseSetup(graphNode, applyStepNode, identifierCaseFormat);
       applyStepNode.setTerraformApplyStepInfo(stepInfo);
@@ -421,18 +446,18 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
 
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
-      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     String sweepingOutputName = "terraform";
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
                    .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
-                   .stepIdentifier(
-                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
-                   .stepGroupIdentifier(
-                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                       MigratorUtility.generateIdentifier(phase.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(
+                       graphNode.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(
+                       phaseStep.getName(), migrationContext.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(TerraformStepFunctor::new)

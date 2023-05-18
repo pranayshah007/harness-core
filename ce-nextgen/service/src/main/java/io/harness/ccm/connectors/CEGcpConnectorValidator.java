@@ -23,6 +23,8 @@ import io.harness.ng.core.dto.ErrorDetail;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.gax.paging.Page;
+import com.google.api.gax.rpc.FixedHeaderProvider;
+import com.google.api.gax.rpc.HeaderProvider;
 import com.google.api.services.cloudresourcemanager.CloudResourceManager;
 import com.google.api.services.cloudresourcemanager.model.TestIamPermissionsRequest;
 import com.google.api.services.cloudresourcemanager.model.TestIamPermissionsResponse;
@@ -38,6 +40,7 @@ import com.google.cloud.bigquery.Dataset;
 import com.google.cloud.bigquery.Table;
 import com.google.cloud.bigquery.TableId;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
@@ -50,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,13 +63,16 @@ import org.springframework.stereotype.Service;
 @Singleton
 @OwnedBy(HarnessTeam.CE)
 public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractCEConnectorValidator {
-  @Inject CENextGenConfiguration configuration;
-  @Inject CEConnectorsHelper ceConnectorsHelper;
-
+  private static final String USER_AGENT_HEADER = "user-agent";
+  private static final String USER_AGENT_HEADER_ENVIRONMENT_VARIABLE = "USER_AGENT_HEADER";
+  private static final String DEFAULT_USER_AGENT = "default-user-agent";
   public static final String GCP_CREDENTIALS_PATH = "CE_GCP_CREDENTIALS_PATH";
   public static final String GCP_BILLING_EXPORT_V_1 = "gcp_billing_export_v1";
-  private final String GENERIC_LOGGING_ERROR =
+  private static final String GENERIC_LOGGING_ERROR =
       "Failed to validate accountIdentifier:{} orgIdentifier:{} projectIdentifier:{} connectorIdentifier:{} ";
+
+  @Inject private CENextGenConfiguration configuration;
+  @Inject private CEConnectorsHelper ceConnectorsHelper;
 
   public ConnectorValidationResult validate(ConnectorResponseDTO connectorResponseDTO, String accountIdentifier) {
     final GcpCloudCostConnectorDTO gcpCloudCostConnectorDTO =
@@ -303,14 +310,14 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       googleCredentials = GoogleCredentials.getApplicationDefault();
     }
     Credentials credentials = getGcpImpersonatedCredentials(googleCredentials, impersonatedServiceAccount);
-    BigQuery bigQuery;
-    BigQueryOptions.Builder bigQueryOptionsBuilder = BigQueryOptions.newBuilder().setCredentials(credentials);
+    BigQueryOptions.Builder bigQueryOptionsBuilder =
+        BigQueryOptions.newBuilder().setCredentials(credentials).setHeaderProvider(getHeaderProvider());
     log.info("projectId '{}', datasetId '{}', impersonatedServiceAccount '{}'", projectId, datasetId,
         impersonatedServiceAccount);
     if (projectId != null) {
       bigQueryOptionsBuilder.setProjectId(projectId);
     }
-    bigQuery = bigQueryOptionsBuilder.build().getService();
+    BigQuery bigQuery = bigQueryOptionsBuilder.build().getService();
 
     try {
       // 1. Check presence of dataset
@@ -407,6 +414,12 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .build();
     }
     return null;
+  }
+
+  private HeaderProvider getHeaderProvider() {
+    String userAgent = System.getenv(USER_AGENT_HEADER_ENVIRONMENT_VARIABLE);
+    return FixedHeaderProvider.create(
+        ImmutableMap.of(USER_AGENT_HEADER, Objects.nonNull(userAgent) ? userAgent : DEFAULT_USER_AGENT));
   }
 
   public GoogleCredentials getGcpCredentials(String googleCredentialPathSystemEnv) {

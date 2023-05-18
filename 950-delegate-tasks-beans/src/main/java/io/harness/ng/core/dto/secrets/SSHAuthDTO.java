@@ -10,14 +10,15 @@ package io.harness.ng.core.dto.secrets;
 import io.harness.ng.core.models.SSHAuth;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -35,8 +36,12 @@ public class SSHAuthDTO {
   @Valid
   private BaseSSHSpecDTO spec;
 
-  @JsonIgnore private boolean useSshClient;
-  @JsonIgnore private boolean useSshj;
+  @Getter(onMethod_ = { @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY) })
+  @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+  private boolean useSshClient;
+  @Getter(onMethod_ = { @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY) })
+  @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+  private boolean useSshj;
 
   @Builder
   public SSHAuthDTO(SSHAuthScheme type, BaseSSHSpecDTO spec) {

@@ -10,6 +10,7 @@ package software.wings.resources;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
@@ -27,6 +28,7 @@ import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
@@ -111,7 +113,7 @@ public class UserResourceNG {
     User user = convertUserRequesttoUser(userRequest);
     String accountId = user.getDefaultAccountId();
 
-    User createdUser = userService.createNewUserAndSignIn(user, accountId);
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
 
     return new RestResponse<>(convertUserToNgUser(createdUser));
   }
@@ -160,7 +162,7 @@ public class UserResourceNG {
           String.format("%s is an invalid email.Please add a valid email and try again.", request.getEmail()),
           exception);
     }
-    if (!accountService.listAllAccountsWithoutTheGlobalAccount().isEmpty()) {
+    if (accountService.countAccountsWithoutTheGlobalAccount() > 0) {
       throw new InvalidRequestException(COMMUNITY_ACCOUNT_EXISTS);
     }
 
@@ -198,6 +200,10 @@ public class UserResourceNG {
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
+      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+          && userService.delete(accountId, userId, NG)) {
+        return new RestResponse<>(true);
+      }
       if (userService.isUserPresent(userId) && userServiceHelper.isUserActiveInNG(userService.get(userId), accountId)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
       }
@@ -286,10 +292,9 @@ public class UserResourceNG {
 
   @GET
   @Path("/{userId}")
-  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId,
-      @QueryParam("includeSupportAccounts") @DefaultValue("false") Boolean includeSupportAccounts) {
+  public RestResponse<Optional<UserInfo>> getUser(@PathParam("userId") String userId) {
     try {
-      User user = userService.get(userId, includeSupportAccounts);
+      User user = userService.get(userId);
       return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
     } catch (UnauthorizedException ex) {
       log.warn("User is not found in database {}", userId);
@@ -300,7 +305,7 @@ public class UserResourceNG {
   @GET
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserByEmailId(@PathParam("emailId") String emailId) {
-    User user = userService.getUserByEmail(emailId, false);
+    User user = userService.getUserByEmail(emailId);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }
 
@@ -317,6 +322,14 @@ public class UserResourceNG {
       @QueryParam("isScimInvite") boolean isScimInvite,
       @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
     userService.completeNGInvite(userInvite, isScimInvite, shouldSendTwoFactorAuthResetEmail);
+    return new RestResponse<>(true);
+  }
+
+  @PUT
+  @Path("invites/user")
+  public RestResponse<Boolean> createUserWithAccountLevelDataForInvite(@Body @NotNull UserInviteDTO userInvite,
+      @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
+    userService.completeNGInviteWithAccountLevelData(userInvite, shouldSendTwoFactorAuthResetEmail);
     return new RestResponse<>(true);
   }
 
@@ -409,6 +422,14 @@ public class UserResourceNG {
   public RestResponse<Boolean> addUserToAccount(
       @QueryParam("userId") String userId, @QueryParam("accountId") String accountId) {
     userService.addUserToAccount(userId, accountId);
+    return new RestResponse<>(true);
+  }
+
+  @POST
+  @Path("/user-account-with-source")
+  public RestResponse<Boolean> updateNGUserToCGWithSource(
+      @QueryParam("userId") String userId, @QueryParam("accountId") String accountId, @Body UserSource userSource) {
+    userService.addUserToAccount(userId, accountId, userSource);
     return new RestResponse<>(true);
   }
 
@@ -567,6 +588,8 @@ public class UserResourceNG {
     }
     User user = userService.getUserByEmail(userInfo.getEmail());
     user.setName(userInfo.getName());
+    user.setFamilyName(userInfo.getFamilyName());
+    user.setGivenName(userInfo.getGivenName());
     return user;
   }
 

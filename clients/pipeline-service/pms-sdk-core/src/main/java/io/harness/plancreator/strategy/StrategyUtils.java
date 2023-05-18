@@ -277,6 +277,14 @@ public class StrategyUtils {
     JsonNodeUtils.updatePropertyInObjectNode(jsonNode, NAME, newName);
   }
 
+  public void replaceExpressions(
+      Object jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
+    EngineExpressionEvaluator evaluator =
+        new StrategyExpressionEvaluator(combinations, currentIteration, totalIteration, itemValue,
+            Map.of(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, "CI_DISABLE_RESOURCE_OPTIMIZATION"));
+    evaluator.resolve(jsonString, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+  }
+
   public String replaceExpressions(
       String jsonString, Map<String, String> combinations, int currentIteration, int totalIteration, String itemValue) {
     EngineExpressionEvaluator evaluator =
@@ -296,10 +304,10 @@ public class StrategyUtils {
    * @param level
    * @return
    */
-  public Map<String, Object> fetchStrategyObjectMap(Level level) {
+  public Map<String, Object> fetchStrategyObjectMap(Level level, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     if (level.hasStrategyMetadata()) {
-      return fetchStrategyObjectMap(Lists.newArrayList(level));
+      return fetchStrategyObjectMap(Lists.newArrayList(level), useMatrixFieldName);
     }
     strategyObjectMap.put(ITERATION, 0);
     strategyObjectMap.put(ITERATIONS, 1);
@@ -313,7 +321,10 @@ public class StrategyUtils {
    * @param levelsWithStrategyMetadata
    * @return
    */
-  public Map<String, Object> fetchStrategyObjectMap(List<Level> levelsWithStrategyMetadata) {
+
+  // pass flag
+  public Map<String, Object> fetchStrategyObjectMap(
+      List<Level> levelsWithStrategyMetadata, boolean useMatrixFieldName) {
     Map<String, Object> strategyObjectMap = new HashMap<>();
     Map<String, Object> matrixValuesMap = new HashMap<>();
     Map<String, Object> repeatValuesMap = new HashMap<>();
@@ -342,7 +353,7 @@ public class StrategyUtils {
       strategyObjectMap.put(ITERATION, level.getStrategyMetadata().getCurrentIteration());
       strategyObjectMap.put(ITERATIONS, level.getStrategyMetadata().getTotalIterations());
       strategyObjectMap.put(TOTAL_ITERATIONS, level.getStrategyMetadata().getTotalIterations());
-      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level));
+      strategyObjectMap.put("identifierPostFix", AmbianceUtils.getStrategyPostfix(level, useMatrixFieldName));
     }
     strategyObjectMap.put(MATRIX, matrixValuesMap);
     strategyObjectMap.put(REPEAT, repeatValuesMap);

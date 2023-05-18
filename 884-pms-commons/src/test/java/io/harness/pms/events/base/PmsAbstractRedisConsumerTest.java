@@ -10,8 +10,8 @@ package io.harness.pms.events.base;
 import static io.harness.rule.OwnerRule.GARVIT;
 
 import static org.jooq.tools.reflect.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

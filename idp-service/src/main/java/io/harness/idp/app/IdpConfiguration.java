@@ -80,9 +80,14 @@ public class IdpConfiguration extends Configuration {
   @JsonProperty("env") private String env;
   @JsonProperty("prEnvDefaultBackstageNamespace") private String prEnvDefaultBackstageNamespace;
   @JsonProperty(PROVISION_MODULE_CONFIG) private ProvisionModuleConfig provisionModuleConfig;
+  @JsonProperty("backstageAppBaseUrl") private String backstageAppBaseUrl;
+  @JsonProperty("backstagePostgresHost") private String backstagePostgresHost;
+  private String managerTarget;
+  private String managerAuthority;
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
   public static final String IDP_SPEC_PACKAGE = "io.harness.spec.server.idp.v1";
-  public static final String IDP_PROXY_PACKAGE = "io.harness.idp.proxy.ngmanager";
+  public static final String NG_MANAGER_PROXY_PACKAGE = "io.harness.idp.proxy.ngmanager";
+  public static final String DELEGATE_PROXY_PACKAGE = "io.harness.idp.proxy.delegate";
   public static final String IDP_HEALTH_PACKAGE = "io.harness.idp.health";
 
   public IdpConfiguration() {
@@ -144,8 +149,8 @@ public class IdpConfiguration extends Configuration {
         .getTypesAnnotatedWith(Path.class)
         .stream()
         .filter(klazz
-            -> StringUtils.startsWithAny(
-                klazz.getPackage().getName(), IDP_SPEC_PACKAGE, IDP_PROXY_PACKAGE, IDP_HEALTH_PACKAGE))
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), IDP_SPEC_PACKAGE, NG_MANAGER_PROXY_PACKAGE,
+                DELEGATE_PROXY_PACKAGE, IDP_HEALTH_PACKAGE))
         .collect(Collectors.toSet());
   }
 }

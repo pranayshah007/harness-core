@@ -31,4 +31,7 @@ public interface SecretManagerClientService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   SecretResponseWrapper create(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       boolean privateSecret, SecretRequestWrapper dto);
+
+  SecretResponseWrapper updateSecret(String identifier, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SecretRequestWrapper dto);
 }

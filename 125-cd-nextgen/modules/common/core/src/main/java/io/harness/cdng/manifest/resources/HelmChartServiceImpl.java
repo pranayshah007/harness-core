@@ -47,6 +47,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -131,11 +132,17 @@ public class HelmChartServiceImpl implements HelmChartService {
           connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
       OciHelmConnectorDTO ociHelmConnectorDTO = (OciHelmConnectorDTO) helmConnector.getConnectorConfig();
 
+      String normalizedFolderPath = normalizeURI(folderPath);
+      String normalizedChartName = normalizeURI(chartName);
+      String updatedChartName = format((EmptyPredicate.isNotEmpty(normalizedFolderPath) ? "/%s" : "%s")
+              + (EmptyPredicate.isNotEmpty(normalizedChartName) ? "/%s" : "%s"),
+          normalizedFolderPath, normalizedChartName);
+
       OciHelmDockerApiListTagsTaskParams ociHelmDockerApiListTagsTaskParams =
           OciHelmDockerApiListTagsTaskParams.builder()
               .ociHelmConnector(ociHelmConnectorDTO)
               .encryptionDetails(k8sEntityHelper.getEncryptionDataDetails(helmConnector, ngAccess))
-              .chartName(chartName)
+              .chartName(updatedChartName)
               .pageSize(PAGE_SIZE)
               .lastTag(lastTag)
               .build();
@@ -446,5 +453,21 @@ public class HelmChartServiceImpl implements HelmChartService {
 
   private boolean isAValidHelmConnector(@Valid @NotNull ConnectorResponseDTO connectorResponseDTO) {
     return VALID_CONNECTOR_TYPES.contains(connectorResponseDTO.getConnector().getConnectorType());
+  }
+
+  private String normalizeURI(final String uri) {
+    if (EmptyPredicate.isEmpty(uri)) {
+      return "";
+    }
+
+    StringBuffer result = new StringBuffer(uri);
+    while (result.length() > 0 && result.charAt(0) == '/') {
+      result.replace(0, 1, "");
+    }
+    while (result.length() > 0 && result.charAt(result.length() - 1) == '/') {
+      result.replace(result.length() - 1, result.length(), "");
+    }
+
+    return result.toString();
   }
 }

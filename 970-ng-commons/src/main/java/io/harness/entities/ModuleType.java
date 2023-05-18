@@ -34,6 +34,7 @@ public enum ModuleType {
   @JsonProperty("CHAOS") CHAOS("Chaos Engineering", PUBLIC, ONBOARDED),
   @JsonProperty("SRM") SRM("Service Reliability Management", PUBLIC, ONBOARDED),
   @JsonProperty("IACM") IACM("Infrastructure as Code Manager", PUBLIC, ONBOARDED),
+  @JsonProperty("CET") CET("Continuous Error Tracking", PUBLIC, ONBOARDED),
 
   // Internal modules which have been onboarded
   @JsonProperty("CODE") CODE("Code", INTERNAL, ONBOARDED), // TODO: Remove internal flag once licensing is added.
@@ -42,7 +43,6 @@ public enum ModuleType {
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", INTERNAL, ONBOARDED),
 
   // Internal modules which have not been onboarded yet
-  @JsonProperty("CET") CET("Continuous Error Tracking", INTERNAL, ONBOARDING_IN_PROGRESS),
   @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", INTERNAL, ONBOARDING_IN_PROGRESS),
   @JsonProperty("IDP") IDP("Internal Developer Portal", INTERNAL, ONBOARDING_IN_PROGRESS);
   String displayName;

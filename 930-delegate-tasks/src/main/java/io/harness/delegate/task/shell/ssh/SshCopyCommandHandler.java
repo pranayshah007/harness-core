@@ -13,6 +13,15 @@ import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.ARTIF
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.COPY_ARTIFACT_NOT_SUPPORTED_FOR_CUSTOM_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_CONFIG_FILE;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_CONFIG_FILE_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.FAILED_TO_COPY_SSH_CONFIG_FILE_HINT;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED;
+import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_EXPLANATION;
 import static io.harness.delegate.task.ssh.exception.SshExceptionConstants.NO_DESTINATION_PATH_SPECIFIED_HINT;
@@ -27,6 +36,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.GitFetchedStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
@@ -41,6 +51,7 @@ import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -129,8 +140,11 @@ public class SshCopyCommandHandler implements CommandHandler {
       result = executor.copyFiles(context);
       executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
       if (result == CommandExecutionStatus.FAILURE) {
-        log.error(
-            "Failed to copy artifact with id: " + sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier());
+        String artifactId = sshCommandTaskParameters.getArtifactDelegateConfig().getIdentifier();
+        log.error("Failed to copy artifact with id: " + artifactId);
+        throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_ARTIFACT_HINT,
+            format(FAILED_TO_COPY_ARTIFACT_HINT_EXPLANATION, artifactId, copyCommandUnit.getDestinationPath()),
+            new SshCommandExecutionException(format(FAILED_TO_COPY_ARTIFACT, artifactId)));
       }
       return ExecuteCommandResponse.builder().status(result).build();
     }
@@ -164,7 +178,10 @@ public class SshCopyCommandHandler implements CommandHandler {
         result = executor.copyConfigFiles(context.getEvaluatedDestinationPath(), configFile);
         if (result == CommandExecutionStatus.FAILURE) {
           log.error("Failed to copy config file: " + configFile.getFileName());
-          break;
+          executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
+          throw NestedExceptionUtils.hintWithExplanationException(FAILED_TO_COPY_SSH_CONFIG_FILE_HINT,
+              format(FAILED_TO_COPY_CONFIG_FILE_EXPLANATION, configFile.getFileName(), configFile.getDestinationPath()),
+              new SshCommandExecutionException(format(FAILED_TO_COPY_CONFIG_FILE, configFile.getFileName())));
         }
       }
       executor.getLogCallback().saveExecutionLog("Command finished with status " + result, LogLevel.INFO, result);
@@ -181,12 +198,31 @@ public class SshCopyCommandHandler implements CommandHandler {
 
     List<ConfigFileParameters> configFiles = new ArrayList<>();
     for (StoreDelegateConfig storeDelegateConfig : sshCommandTaskParameters.getFileDelegateConfig().getStores()) {
-      if (StoreDelegateConfigType.HARNESS.equals(storeDelegateConfig.getType())) {
-        HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) storeDelegateConfig;
-        configFiles.addAll(harnessStoreDelegateConfig.getConfigFiles());
+      if (storeDelegateConfig.getType() == null) {
+        throw generateExceptionForInvalidStoreDelegateConfig(null);
+      }
+
+      switch (storeDelegateConfig.getType()) {
+        case HARNESS:
+          HarnessStoreDelegateConfig harnessStoreDelegateConfig = (HarnessStoreDelegateConfig) storeDelegateConfig;
+          configFiles.addAll(harnessStoreDelegateConfig.getConfigFiles());
+          break;
+        case GIT_FETCHED:
+          GitFetchedStoreDelegateConfig fetchedStoreDelegateConfig =
+              (GitFetchedStoreDelegateConfig) storeDelegateConfig;
+          configFiles.addAll(fetchedStoreDelegateConfig.getConfigFiles());
+          break;
+        default:
+          throw generateExceptionForInvalidStoreDelegateConfig(storeDelegateConfig.getType());
       }
     }
 
     return configFiles;
+  }
+
+  private WingsException generateExceptionForInvalidStoreDelegateConfig(StoreDelegateConfigType type) {
+    return NestedExceptionUtils.hintWithExplanationException(INVALID_STORE_DELEGATE_CONFIG_TYPE_HINT,
+        format(INVALID_STORE_DELEGATE_CONFIG_TYPE_EXPLANATION, type),
+        new SshCommandExecutionException(INVALID_STORE_DELEGATE_CONFIG_TYPE_FAILED));
   }
 }

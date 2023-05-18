@@ -19,6 +19,7 @@ RUN microdnf update --nodocs \
     gzip \
     git \
     shadow-utils \
+    glibc-langpack-en \
   && useradd -u 1001 -g 0 harness \
   && microdnf remove shadow-utils \
   && microdnf clean all \
@@ -62,8 +63,8 @@ RUN mkdir -m 777 -p client-tools/kubectl/v1.24.3 \
   && curl -s -L -o client-tools/oc/v4.2.16/oc https://app.harness.io/public/shared/tools/oc/release/v4.2.16/bin/linux/$TARGETARCH/oc \
   && mkdir -m 777 -p client-tools/kustomize/v4.5.4 \
   && curl -s -L -o client-tools/kustomize/v4.5.4/kustomize https://app.harness.io/public/shared/tools/kustomize/release/v4.5.4/bin/linux/$TARGETARCH/kustomize \
-  && mkdir -m 777 -p client-tools/scm/ef2d02fb \
-  && curl -s -L -o client-tools/scm/ef2d02fb/scm https://app.harness.io/public/shared/tools/scm/release/ef2d02fb/bin/linux/$TARGETARCH/scm \
+  && mkdir -m 777 -p client-tools/scm/9b34bea7 \
+  && curl -s -L -o client-tools/scm/9b34bea7/scm https://app.harness.io/public/shared/tools/scm/release/9b34bea7/bin/linux/$TARGETARCH/scm \
   && chmod -R 775 /opt/harness-delegate \
   && chgrp -R 0 /opt/harness-delegate  \
   && chown -R 1001 /opt/harness-delegate

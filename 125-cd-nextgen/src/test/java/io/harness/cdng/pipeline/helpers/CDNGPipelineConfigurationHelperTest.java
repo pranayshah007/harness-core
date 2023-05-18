@@ -76,7 +76,7 @@ public class CDNGPipelineConfigurationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetGiOopsStepTemplate() throws IOException {
     String yaml = cdngPipelineConfigurationHelper.getExecutionStrategyYaml(
-        ServiceDefinitionType.KUBERNETES, ExecutionStrategyType.GITOPS, false);
+        ServiceDefinitionType.KUBERNETES, ExecutionStrategyType.GITOPS, false, "");
     assertThat(yaml).contains("GitOpsFetchLinkedApps");
   }
 }

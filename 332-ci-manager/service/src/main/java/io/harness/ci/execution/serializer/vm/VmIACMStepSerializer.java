@@ -9,8 +9,8 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.beans.entities.Stack;
-import io.harness.beans.entities.StackVariables;
+import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Singleton
+@Deprecated
 public class VmIACMStepSerializer {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private ConnectorUtils connectorUtils;
@@ -51,7 +52,7 @@ public class VmIACMStepSerializer {
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
-    Stack stackInfo = getIACMStackInfo(ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
+    Workspace stackInfo = getIACMStackInfo(ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
         ngAccess.getAccountIdentifier(), stepInfo.getStackID());
 
     String command = stepInfo.getEnv().getValue().get("command");
@@ -63,7 +64,7 @@ public class VmIACMStepSerializer {
     } else {
       throw new GeneralException("Action " + command + " on IACM Terraform step not recognized");
     }
-    createExecution(ambiance, stackInfo.getIdentifier(), action);
+    createExecution(ambiance, stackInfo.getIdentifier());
 
     Map<String, String> envVars = getStackVariables(ambiance, ngAccess.getOrgIdentifier(),
         ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), stepInfo.getStackID(), command, stackInfo);
@@ -94,18 +95,18 @@ public class VmIACMStepSerializer {
   }
 
   private Map<String, String> getStackVariables(Ambiance ambiance, String org, String projectId, String accountId,
-      String stackID, String command, Stack stackInfo) {
+      String stackID, String command, Workspace stackInfo) {
     String pluginEnvPrefix = "PLUGIN_";
     String tfEnvPrefix = "TF_";
 
-    StackVariables[] variables = getIACMStackVariables(org, projectId, accountId, stackID);
+    WorkspaceVariables[] variables = getIACMStackVariables(org, projectId, accountId, stackID);
     HashMap<String, String> env = new HashMap<>();
 
     HashMap<String, String> envSecrets = new HashMap<>();
     HashMap<String, String> tfVars = new HashMap<>();
     HashMap<String, String> tfVarsSecrets = new HashMap<>();
 
-    for (StackVariables variable : variables) {
+    for (WorkspaceVariables variable : variables) {
       switch (variable.getKind()) {
         case "env":
           if (Objects.equals(variable.getValue_type(), "secret")) {
@@ -146,16 +147,16 @@ public class VmIACMStepSerializer {
    * the stackID. Once the connectorRef is retrieved from the IACM Server, it will then try to retrieve the credentials
    * and inject those as env variables in the container so they are available to the plugins steps.
    */
-  public Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
-    Stack stack = iacmServiceUtils.getIACMStackInfo(org, projectId, accountId, stackID);
+  public Workspace getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
+    Workspace stack = iacmServiceUtils.getIACMWorkspaceInfo(org, projectId, accountId, stackID);
     if (stack == null) {
       throw new IACMStageExecutionException("Unable to retrieve the stack information for the stack " + stackID);
     }
     return stack;
   }
 
-  public StackVariables[] getIACMStackVariables(String org, String projectId, String accountId, String stackID) {
-    return iacmServiceUtils.getIacmStackEnvs(org, projectId, accountId, stackID);
+  public WorkspaceVariables[] getIACMStackVariables(String org, String projectId, String accountId, String stackID) {
+    return iacmServiceUtils.getIacmWorkspaceEnvs(org, projectId, accountId, stackID);
   }
 
   Map<String, String> prepareEnvsMaps(Map<String, String> envs, String prefix) {
@@ -173,7 +174,7 @@ public class VmIACMStepSerializer {
     return iacmServiceUtils.GetTerraformEndpointsData(ambiance, stackId);
   }
 
-  private void createExecution(Ambiance ambiance, String stackId, String action) {
-    iacmServiceUtils.createIACMExecution(ambiance, stackId, action);
+  private void createExecution(Ambiance ambiance, String stackId) {
+    iacmServiceUtils.createIACMExecution(ambiance, stackId);
   }
 }

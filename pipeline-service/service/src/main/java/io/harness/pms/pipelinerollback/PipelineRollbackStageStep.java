@@ -19,6 +19,7 @@ import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -69,8 +70,9 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     String currentPlanExecutionId = ambiance.getPlanExecutionId();
     log.info("Starting Pipeline Rollback");
+    PipelineStageInfo parentStageInfo = buildParentStageInfo(ambiance);
     PlanExecution rollbackPlanExecution =
-        pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, currentPlanExecutionId);
+        pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, currentPlanExecutionId, parentStageInfo);
     if (rollbackPlanExecution == null) {
       throw new InvalidRequestException("Failed to start Pipeline Rollback");
     }
@@ -78,6 +80,11 @@ public class PipelineRollbackStageStep implements AsyncExecutableWithRbac<EmptyS
     update.set(PlanExecutionSummaryKeys.rollbackModeExecutionId, rollbackPlanExecution.getUuid());
     executionSummaryService.update(currentPlanExecutionId, update);
     return AsyncExecutableResponse.newBuilder().addCallbackIds(rollbackPlanExecution.getUuid()).build();
+  }
+
+  public PipelineStageInfo buildParentStageInfo(Ambiance ambiance) {
+    String currentSetupId = AmbianceUtils.obtainCurrentSetupId(ambiance);
+    return PipelineStageInfo.newBuilder().setStageNodeId(currentSetupId).setHasParentPipeline(false).build();
   }
 
   @Override

@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +44,7 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.serializer.BackgroundStepProtobufSerializer;
 import io.harness.ci.serializer.vm.VmStepSerializer;
 import io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -180,9 +182,12 @@ public class BackgroundStepTest extends CIExecutionTestBase {
     when(outcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(POD_DETAILS_OUTCOME)))
         .thenReturn(liteEnginePodDetailsOutcome);
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
+
+    when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any())).thenReturn(callbackId);
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+
     when(backgroundStepProtobufSerializer.serializeStepWithStepParameters(
-             any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
 
     AsyncExecutableResponse asyncExecutableResponse =
@@ -227,7 +232,7 @@ public class BackgroundStepTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmBackgroundStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
 

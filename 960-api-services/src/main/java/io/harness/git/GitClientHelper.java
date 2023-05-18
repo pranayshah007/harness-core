@@ -224,6 +224,11 @@ public class GitClientHelper {
     }
   }
 
+  public static String getHarnessApiURL(String url) {
+    String domain = GitClientHelper.getGitSCM(url);
+    return getHttpProtocolPrefix(url) + domain;
+  }
+
   private static boolean isUrlHTTP(String url) {
     return url.startsWith("http") && !url.startsWith("https");
   }
@@ -235,7 +240,10 @@ public class GitClientHelper {
     return "https://";
   }
 
-  public static String getGitlabApiURL(String url) {
+  public static String getGitlabApiURL(String url, String apiUrl) {
+    if (!StringUtils.isBlank(apiUrl)) {
+      return StringUtils.stripEnd(apiUrl, "/") + "/";
+    }
     if (GitClientHelper.isGitlabSAAS(url)) {
       return "https://gitlab.com/";
     } else {

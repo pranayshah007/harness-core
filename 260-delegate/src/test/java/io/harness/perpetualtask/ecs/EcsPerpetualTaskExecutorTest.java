@@ -13,11 +13,11 @@ import static io.harness.rule.OwnerRule.HITESH;
 
 import static java.time.temporal.ChronoUnit.HOURS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
@@ -226,9 +226,9 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
 
     then(ecsMetricClient)
         .should(times(1))
-        .getUtilizationMetrics(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class),
+        .getUtilizationMetrics(any(AwsConfig.class), anyList(),
             eq(Date.from(now.minus(Duration.ofHours(1)).truncatedTo(HOURS))), eq(Date.from(now.truncatedTo(HOURS))),
-            any(Cluster.class), anyListOf(Service.class), any(EcsPerpetualTaskParams.class));
+            any(Cluster.class), anyList(), any(EcsPerpetualTaskParams.class));
   }
 
   @Test
@@ -260,7 +260,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
         .should(times(1))
         .getUtilizationMetrics(eq(awsConfig), eq(encryptionDetails),
             eq(Date.from(now.truncatedTo(HOURS).minus(Duration.ofHours(24)))), eq(Date.from(now.truncatedTo(HOURS))),
-            any(Cluster.class), anyListOf(Service.class), any(EcsPerpetualTaskParams.class));
+            any(Cluster.class), anyList(), any(EcsPerpetualTaskParams.class));
   }
 
   @Test
@@ -291,8 +291,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
     then(ecsMetricClient)
         .should(times(1))
         .getUtilizationMetrics(eq(awsConfig), eq(encryptionDetails), eq(Date.from(heartBeatTime.truncatedTo(HOURS))),
-            eq(Date.from(now.truncatedTo(HOURS))), any(Cluster.class), anyListOf(Service.class),
-            any(EcsPerpetualTaskParams.class));
+            eq(Date.from(now.truncatedTo(HOURS))), any(Cluster.class), anyList(), any(EcsPerpetualTaskParams.class));
   }
 
   @Test
@@ -324,7 +323,7 @@ public class EcsPerpetualTaskExecutorTest extends DelegateTestBase {
 
     then(ecsMetricClient)
         .should(never())
-        .getUtilizationMetrics(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), any(Date.class),
-            any(Date.class), any(Cluster.class), anyListOf(Service.class), any(EcsPerpetualTaskParams.class));
+        .getUtilizationMetrics(any(AwsConfig.class), anyList(), any(Date.class), any(Date.class), any(Cluster.class),
+            anyList(), any(EcsPerpetualTaskParams.class));
   }
 }

@@ -1,0 +1,41 @@
+identifier: jenkins
+name: Jenkins
+description: Jenkins offers a simple way to set up a continuous integration and continuous delivery environment.
+createdBy: '@timja'
+category: CI/CD
+source: https://github.com/backstage/backstage/tree/master/plugins/jenkins
+iconUrl: https://img.icons8.com/color/1600/jenkins.png
+imageUrl: ''
+config: |-
+  jenkins:
+    instances:
+      - name: default
+        baseUrl: '<your-jenkins-url>'
+        username: '<your-jenkins-username>'
+        apiKey: ${JENKINS_TOKEN}
+environmentVariables:
+  - JENKINS_TOKEN
+exports:
+  defaultEntityTypes:
+    - service
+  exportDetails:
+    - type: TAB_CONTENT
+      name: EntityJenkinsContent
+      addByDefault: true
+      defaultRoute: /ci-cd
+      layoutSchemaSpecs:
+        name: EntityJenkinsContent
+        title: CI/CD
+        contents:
+          - component: EntityJenkinsContent
+    - type: CARD
+      name: EntityLatestJenkinsRunCard
+      addByDefault: true
+      layoutSchemaSpecs:
+        component: EntityLatestJenkinsRunCard
+        specs:
+          props:
+            branch: "main,master"
+            variant: "gridItem"
+          gridProps:
+            sm: 6

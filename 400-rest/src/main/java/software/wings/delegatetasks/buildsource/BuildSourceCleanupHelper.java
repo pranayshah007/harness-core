@@ -9,7 +9,6 @@ package software.wings.delegatetasks.buildsource;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import static software.wings.beans.artifact.ArtifactStreamType.ACR;
@@ -27,6 +26,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.mongo.MongoConfig;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
@@ -77,11 +77,7 @@ public class BuildSourceCleanupHelper {
         return;
       }
 
-      List<Artifact> artifacts = processBuilds(artifactStream, builds);
-      if (isNotEmpty(artifacts)) {
-        log.info("[{}] artifacts deleted for artifactStreamId {}",
-            artifacts.stream().map(Artifact::getBuildNo).collect(Collectors.toList()), artifactStream.getUuid());
-      }
+      processBuilds(artifactStream, builds);
     } catch (WingsException ex) {
       ex.addContext(Account.class, accountId);
       ex.addContext(ArtifactStream.class, artifactStream.getUuid());
@@ -89,29 +85,23 @@ public class BuildSourceCleanupHelper {
     }
   }
 
-  private List<Artifact> processBuilds(ArtifactStream artifactStream, List<BuildDetails> builds) {
-    List<Artifact> deletedArtifacts = new ArrayList<>();
+  private void processBuilds(ArtifactStream artifactStream, List<BuildDetails> builds) {
     if (artifactStream == null) {
       log.info("Artifact Stream {} does not exist. Returning", artifactStream.getUuid());
-      return deletedArtifacts;
     }
     String artifactStreamType = artifactStream.getArtifactStreamType();
     if (DOCKER.name().equals(artifactStreamType)) {
-      cleanupDockerArtifacts(artifactStream, deletedArtifacts, builds);
+      cleanupDockerArtifacts(artifactStream, builds);
     } else if (AMI.name().equals(artifactStreamType)) {
-      cleanupAMIArtifacts(artifactStream, deletedArtifacts, builds);
+      cleanupAMIArtifacts(artifactStream, builds);
     } else if (Stream.of(ARTIFACTORY, GCR, ECR, ACR, NEXUS, AZURE_MACHINE_IMAGE)
                    .anyMatch(at -> at.name().equals(artifactStreamType))) {
       // This might not work for Nexus as we are also calling update nexus status
-      List<Artifact> deletedArtifactsNew = cleanupStaleArtifacts(artifactStream, builds);
-      deletedArtifacts.addAll(deletedArtifactsNew);
+      cleanupStaleArtifacts(artifactStream, builds);
     }
-
-    return deletedArtifacts;
   }
 
-  private void cleanupDockerArtifacts(
-      ArtifactStream artifactStream, List<Artifact> deletedArtifacts, List<BuildDetails> builds) {
+  private void cleanupDockerArtifacts(ArtifactStream artifactStream, List<BuildDetails> builds) {
     Set<String> buildNumbers =
         isEmpty(builds) ? new HashSet<>() : builds.stream().map(BuildDetails::getNumber).collect(Collectors.toSet());
     List<Artifact> deletedArtifactsNew = new ArrayList<>();
@@ -127,12 +117,10 @@ public class BuildSourceCleanupHelper {
       return;
     }
 
-    artifactService.deleteArtifacts(deletedArtifactsNew);
-    deletedArtifacts.addAll(deletedArtifactsNew);
+    deleteArtifacts(artifactStream, deletedArtifactsNew);
   }
 
-  private void cleanupAMIArtifacts(
-      ArtifactStream artifactStream, List<Artifact> deletedArtifacts, List<BuildDetails> builds) {
+  private void cleanupAMIArtifacts(ArtifactStream artifactStream, List<BuildDetails> builds) {
     Set<String> revisionNumbers =
         isEmpty(builds) ? new HashSet<>() : builds.stream().map(BuildDetails::getRevision).collect(Collectors.toSet());
     List<Artifact> artifactsToBeDeleted = new ArrayList<>();
@@ -148,11 +136,10 @@ public class BuildSourceCleanupHelper {
       return;
     }
 
-    artifactService.deleteArtifacts(artifactsToBeDeleted);
-    deletedArtifacts.addAll(artifactsToBeDeleted);
+    deleteArtifacts(artifactStream, artifactsToBeDeleted);
   }
 
-  private List<Artifact> cleanupStaleArtifacts(ArtifactStream artifactStream, List<BuildDetails> buildDetails) {
+  private void cleanupStaleArtifacts(ArtifactStream artifactStream, List<BuildDetails> buildDetails) {
     log.info("Artifact Stream {} cleanup started with type {} name {}", artifactStream.getUuid(),
         artifactStream.getArtifactStreamType(), artifactStream.getSourceName());
     ArtifactStreamAttributes artifactStreamAttributes =
@@ -169,19 +156,37 @@ public class BuildSourceCleanupHelper {
     Function<Artifact, String> artifactKeyFn =
         ArtifactCollectionUtils.getArtifactKeyFn(artifactStream.getArtifactStreamType(), artifactStreamAttributes);
     List<Artifact> toBeDeletedArtifacts = new ArrayList<>();
+    int deletedCount = 0;
     try (HIterator<Artifact> artifactHIterator =
-             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).fetch())) {
+             new HIterator<>(artifactService.prepareCleanupQuery(artifactStream).limit(MongoConfig.NO_LIMIT).fetch())) {
       for (Artifact artifact : artifactHIterator) {
         if (!buildDetailsMap.containsKey(artifactKeyFn.apply(artifact))) {
           toBeDeletedArtifacts.add(artifact);
+          // TO KEEP THE MEMORY CONSUMPTION UNDER CONTROL, WE DON'T HOLD MORE THAN 10K DOCUMENTS.
+          // WHEN REACH THAT LIMIT WE EXECUTE THE DELETE OPERATION.
+          deletedCount++;
+          if (toBeDeletedArtifacts.size() >= 10_000) {
+            deleteArtifacts(artifactStream, toBeDeletedArtifacts);
+            toBeDeletedArtifacts.clear();
+          }
         }
       }
     }
 
-    artifactService.deleteArtifacts(toBeDeletedArtifacts);
-
+    if (!toBeDeletedArtifacts.isEmpty()) {
+      deleteArtifacts(artifactStream, toBeDeletedArtifacts);
+    }
     log.info("Artifact Stream {} cleanup complete with type {}, count {}", artifactStream.getUuid(),
-        artifactStream.getArtifactStreamType(), toBeDeletedArtifacts.size());
-    return toBeDeletedArtifacts;
+        artifactStream.getArtifactStreamType(), deletedCount);
+  }
+
+  private void deleteArtifacts(ArtifactStream artifactStream, List<Artifact> artifacts) {
+    artifactService.deleteArtifacts(artifacts);
+    printBuildNumber(artifactStream, artifacts);
+  }
+
+  private void printBuildNumber(ArtifactStream artifactStream, List<Artifact> artifacts) {
+    log.info("[{}] artifacts deleted for artifactStreamId {}",
+        artifacts.stream().map(Artifact::getBuildNo).collect(Collectors.toList()), artifactStream.getUuid());
   }
 }

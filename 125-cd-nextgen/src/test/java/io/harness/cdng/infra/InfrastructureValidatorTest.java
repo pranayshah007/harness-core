@@ -9,6 +9,7 @@ package io.harness.cdng.infra;
 
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -21,6 +22,7 @@ import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AsgInfrastructure.AsgInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure.ElastigroupInfrastructureBuilder;
+import io.harness.cdng.infra.yaml.GoogleFunctionsInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAwsInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -435,5 +437,24 @@ public class InfrastructureValidatorTest extends CategoryTest {
                                                        .cluster(ParameterField.createValueField("<+input>"))
                                                        .build();
     assertThatThrownBy(() -> validator.validate(runtimeInputClusterName)).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testGoogleFunctionInfraMapperEmptyValues() {
+    GoogleFunctionsInfrastructure emptyRegionInfra = GoogleFunctionsInfrastructure.builder()
+                                                         .connectorRef(ParameterField.createValueField("connectorId"))
+                                                         .region(ParameterField.createValueField(""))
+                                                         .project(ParameterField.createValueField("project"))
+                                                         .build();
+    assertThatThrownBy(() -> validator.validate(emptyRegionInfra)).isInstanceOf(InvalidArgumentsException.class);
+
+    GoogleFunctionsInfrastructure emptyProjectInfra = GoogleFunctionsInfrastructure.builder()
+                                                          .connectorRef(ParameterField.createValueField("connectorId"))
+                                                          .region(ParameterField.createValueField("region"))
+                                                          .project(ParameterField.createValueField(""))
+                                                          .build();
+    assertThatThrownBy(() -> validator.validate(emptyProjectInfra)).isInstanceOf(InvalidArgumentsException.class);
   }
 }

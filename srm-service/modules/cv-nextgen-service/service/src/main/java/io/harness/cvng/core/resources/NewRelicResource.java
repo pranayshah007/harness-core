@@ -68,7 +68,6 @@ public class NewRelicResource {
   public ResponseDTO<List<NewRelicApplication>> getNewRelicApplications(
       @NotNull @BeanParam ProjectScopedProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
-      @QueryParam("pageSize") @NotNull int pageSize, @QueryParam("offset") @NotNull int offset,
       @QueryParam("filter") @DefaultValue("") String filter, @NotNull @QueryParam("tracingId") String tracingId) {
     return ResponseDTO.newResponse(
         newRelicService.getNewRelicApplications(projectParams.getAccountIdentifier(), connectorIdentifier,

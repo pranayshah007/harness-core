@@ -104,6 +104,7 @@ import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.ServiceHookDelegateConfig;
 import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -123,10 +124,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(CDP)
 @Singleton
+@Slf4j
 public class K8sStepHelper extends K8sHelmCommonStepHelper {
   private static final Set<String> VALUES_YAML_SUPPORTED_MANIFEST_TYPES =
       ImmutableSet.of(ManifestType.K8Manifest, ManifestType.HelmChart);
@@ -167,6 +170,12 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
 
   public TaskChainResponse queueK8sTask(StepElementParameters stepElementParameters, K8sDeployRequest k8sDeployRequest,
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData) {
+    List<ServiceHookDelegateConfig> serviceHooks = k8sDeployRequest.getServiceHooks();
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)
+        && isNotEmpty(serviceHooks)) {
+      return queueK8sTask(
+          stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, TaskType.K8S_COMMAND_TASK_NG_V2);
+    }
     return queueK8sTask(
         stepElementParameters, k8sDeployRequest, ambiance, executionPassThroughData, TaskType.K8S_COMMAND_TASK_NG);
   }
@@ -886,6 +895,17 @@ public class K8sStepHelper extends K8sHelmCommonStepHelper {
       default:
         return false;
     }
+  }
+
+  public boolean isDeclarativeRollbackEnabled(Ambiance ambiance) {
+    ManifestOutcome k8sManifestOutcome = null;
+    try {
+      ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
+      k8sManifestOutcome = getK8sSupportedManifestOutcome(manifestsOutcome.values());
+    } catch (Exception ex) {
+      log.warn("No manifest configured in service");
+    }
+    return isDeclarativeRollbackEnabled(k8sManifestOutcome);
   }
 
   public boolean isDeclarativeRollbackEnabled(ManifestOutcome manifestOutcome) {

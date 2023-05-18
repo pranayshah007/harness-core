@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ngtriggers.Constants.ARTIFACT_BUILD_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_EXPR;
+import static io.harness.ngtriggers.Constants.ARTIFACT_METADATA_EXPR;
 import static io.harness.ngtriggers.Constants.ARTIFACT_TYPE;
 import static io.harness.ngtriggers.Constants.BASE_COMMIT_SHA;
 import static io.harness.ngtriggers.Constants.BRANCH;
@@ -39,11 +40,13 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 import static io.harness.pms.contracts.triggers.SourceType.AWS_CODECOMMIT_REPO;
 import static io.harness.pms.contracts.triggers.SourceType.BITBUCKET_REPO;
 import static io.harness.pms.contracts.triggers.SourceType.CUSTOM_REPO;
 import static io.harness.pms.contracts.triggers.SourceType.GITHUB_REPO;
 import static io.harness.pms.contracts.triggers.SourceType.GITLAB_REPO;
+import static io.harness.pms.contracts.triggers.SourceType.HARNESS_REPO;
 import static io.harness.pms.contracts.triggers.Type.SCHEDULED;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -130,6 +133,7 @@ public class TriggerHelper {
     if (triggerPayload.hasArtifactData()) {
       // <+trigger.artifact.build>
       map.put(ARTIFACT_BUILD_EXPR, triggerPayload.getArtifactData().getBuild());
+      map.put(ARTIFACT_METADATA_EXPR, triggerPayload.getArtifactData().getMetadataMap());
       jsonObject.put(TYPE, ARTIFACT_TYPE);
       jsonObject.remove(SOURCE_TYPE);
       jsonObject.put(ARTIFACT_EXPR, map);
@@ -166,6 +170,8 @@ public class TriggerHelper {
       sourceTypeVal = CUSTOM.getValue();
     } else if (sourceRepo == AWS_CODECOMMIT_REPO) {
       sourceTypeVal = AWS_CODECOMMIT.getValue();
+    } else if (sourceRepo == HARNESS_REPO) {
+      sourceTypeVal = HARNESS.getValue();
     }
 
     if (isNotBlank(sourceTypeVal)) {

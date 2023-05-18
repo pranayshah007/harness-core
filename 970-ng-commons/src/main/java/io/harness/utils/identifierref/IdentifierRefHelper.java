@@ -135,6 +135,22 @@ public class IdentifierRefHelper {
     return getIdentifierRef(scopedIdentifierConfig, accountId, orgIdentifier, projectIdentifier, null);
   }
 
+  public Scope getScopeFromScopedRef(String scopedIdentifierRef) {
+    if (isEmpty(scopedIdentifierRef)) {
+      throw new InvalidRequestException("Scope can not be computed for empty/null ref");
+    }
+
+    String[] identifierConfigStringSplit = scopedIdentifierRef.split(IDENTIFIER_REF_DELIMITER);
+    if (identifierConfigStringSplit.length > 2) {
+      throw new InvalidRequestException("Identifier should not contain dot(.)");
+    }
+    if (identifierConfigStringSplit.length > 1) {
+      String scopeString = identifierConfigStringSplit[0];
+      return Scope.fromString(scopeString);
+    }
+    return Scope.PROJECT;
+  }
+
   public IdentifierRef getIdentifierRef(String scopedIdentifierConfig, String accountId, String orgIdentifier,
       String projectIdentifier, Map<String, String> metadata) {
     Scope scope;
@@ -162,7 +178,12 @@ public class IdentifierRefHelper {
           .build();
     } else if (identifierConfigStringSplit.length == 2) {
       identifier = identifierConfigStringSplit[1];
-      scope = getScope(identifierConfigStringSplit[0]);
+      try {
+        scope = getScope(identifierConfigStringSplit[0]);
+      } catch (IllegalArgumentException e) {
+        throw new InvalidIdentifierRefException(String.format(
+            "Invalid Identifier Reference %s. " + GENERIC_IDENTIFIER_REFERENCE_HELP, scopedIdentifierConfig));
+      }
       identifierRefBuilder = identifierRefBuilder.identifier(identifier).scope(scope);
       if (scope == Scope.PROJECT || scope == null) {
         throw new InvalidIdentifierRefException(String.format(

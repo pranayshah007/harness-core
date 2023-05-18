@@ -14,6 +14,8 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.utils.TemplateDetails;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
+import io.harness.delegate.beans.connector.customsecretmanager.outcome.CustomSecretManagerConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.secret.SecretReference;
 
@@ -71,5 +73,19 @@ public class CustomSecretManagerConnectorDTO extends ConnectorConfigDTO implemen
                                          .templateRef(template.getTemplateRef())
                                          .versionLabel(template.getVersionLabel())
                                          .build());
+  }
+
+  @Override
+  public ConnectorConfigOutcomeDTO toOutcome() {
+    return CustomSecretManagerConnectorOutcomeDTO.builder()
+        .delegateSelectors(delegateSelectors)
+        .onDelegate(onDelegate)
+        .isDefault(isDefault)
+        .harnessManaged(harnessManaged)
+        .connectorRef(connectorRef)
+        .host(host)
+        .workingDirectory(workingDirectory)
+        .template(template)
+        .build();
   }
 }

@@ -11,8 +11,8 @@ import static io.harness.rule.OwnerRule.ALEKSANDAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTaskRequest;
@@ -24,6 +24,7 @@ import io.harness.delegate.task.HDelegateTask;
 import io.harness.delegate.task.SimpleHDelegateTask;
 import io.harness.delegate.task.stepstatus.StepStatusTaskParameters;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.rule.Owner;
 

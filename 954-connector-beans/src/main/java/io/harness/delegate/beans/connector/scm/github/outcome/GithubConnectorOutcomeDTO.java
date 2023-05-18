@@ -9,19 +9,14 @@ package io.harness.delegate.beans.connector.scm.github.outcome;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.connector.ManagerExecutable;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
-import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsSpecDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -60,26 +55,5 @@ public class GithubConnectorOutcomeDTO
     this.apiAccess = apiAccess;
     this.delegateSelectors = delegateSelectors;
     this.executeOnDelegate = executeOnDelegate;
-  }
-
-  @Override
-  public List<DecryptableEntity> getDecryptableEntities() {
-    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
-    if (authentication.getType() == GitAuthType.HTTP) {
-      GithubHttpCredentialsSpecDTO httpCredentialsSpec =
-          ((GithubHttpCredentialsOutcomeDTO) authentication.getSpec()).getSpec();
-      if (httpCredentialsSpec != null) {
-        decryptableEntities.add(httpCredentialsSpec);
-      }
-    } else {
-      GithubSshCredentialsOutcomeDTO sshCredential = (GithubSshCredentialsOutcomeDTO) authentication.getSpec();
-      if (sshCredential != null) {
-        decryptableEntities.add(sshCredential);
-      }
-    }
-    if (apiAccess != null && apiAccess.getSpec() != null) {
-      decryptableEntities.add(apiAccess.getSpec());
-    }
-    return decryptableEntities;
   }
 }

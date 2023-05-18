@@ -15,8 +15,8 @@ import static software.wings.beans.ElementExecutionSummary.ElementExecutionSumma
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -83,7 +83,7 @@ public class AnalysisServiceTest extends WingsBaseTest {
     FieldUtils.writeField(analysisService, "jiraHelperService", jiraHelperService, true);
     JiraExecutionData executionData =
         JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).issueUrl("tempJiraUrl").build();
-    when(jiraHelperService.createJira(anyString(), anyString(), anyString(), anyObject())).thenReturn(executionData);
+    when(jiraHelperService.createJira(anyString(), anyString(), anyString(), any())).thenReturn(executionData);
     MockitoAnnotations.initMocks(this);
   }
 

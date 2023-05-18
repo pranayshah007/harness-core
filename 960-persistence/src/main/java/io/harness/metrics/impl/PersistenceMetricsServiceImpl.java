@@ -28,6 +28,7 @@ public class PersistenceMetricsServiceImpl {
   public static final String ITERATOR_DELAY = "iterator_delay";
   public static final String ITERATOR_WORKING_ON_ENTITY = "iterator_working_on_entity";
   public static final String ITERATOR_PROCESSING_TIME = "iterator_processing_time";
+  public static final String ITERATOR_REDIS_LOCK_ACQUIRE_FAIL = "iterator_redis_lock_acq_fail";
   public static final String REDIS_SUBSCRIPTION_CNT = "redis_subscription_count";
 
   private final MetricService metricService;

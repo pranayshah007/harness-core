@@ -22,6 +22,9 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.IDP)
 public class OnboardingModuleConfig {
+  String descriptionForEntitySelected;
+  String descriptionForSampleEntity;
+  boolean useGitServiceGrpcForSingleEntityPush;
   String tmpPathForCatalogInfoYamlStore;
   String catalogInfoLocationDefaultPath;
   List<String> sampleEntities;

@@ -411,6 +411,8 @@ pipelineEventConsumersConfig:
     threads: 1
   pollingEvent:
     threads: 1
+  triggerExecutionEvent:
+    threads: 1
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -582,6 +584,11 @@ featureFlagConfig:
   syncFeaturesToCF: false
 
 sscaServiceConfig:
+  httpClientConfig:
+    baseUrl: http://localhost:8186
+    connectTimeOutSeconds: 40
+    readTimeOutSeconds: 40
+  serviceSecret: secret
   baseUrl: http://localhost:8186
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002" # this is dummy token
 
@@ -596,3 +603,6 @@ triggerAuthenticationPoolConfig:
   maxPoolSize: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_MAX_SIZE:-25}
   idleTime: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+expandedJsonConfig:
+  lockTimeOutInMinutes: 2

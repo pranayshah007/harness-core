@@ -17,8 +17,10 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.secretmanagerclient.SecretType.SSHKey;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secretmanagerclient.SecretType.WinRmCredentials;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
@@ -178,8 +180,16 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         secretSpec.setValue(encryptedData.getPath());
       }
     }
+    SecretDTOV2 secretDTO = secret.toDTO();
+    if (null != secretDTO && secretDTO.getSpec() instanceof SSHKeySpecDTO) {
+      SSHKeySpecDTO sshKeySpecDTO = (SSHKeySpecDTO) secretDTO.getSpec();
+      sshKeySpecDTO.getAuth().setUseSshClient(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_CLIENT));
+      sshKeySpecDTO.getAuth().setUseSshj(
+          featureFlagHelperService.isEnabled(secret.getAccountIdentifier(), FeatureName.CDS_SSH_SSHJ));
+    }
     return SecretResponseWrapper.builder()
-        .secret(secret.toDTO())
+        .secret(secretDTO)
         .updatedAt(secret.getLastModifiedAt())
         .createdAt(secret.getCreatedAt())
         .draft(secret.isDraft())
@@ -289,6 +299,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @VisibleForTesting
   public boolean checkIfSecretManagerUsedIsHarnessManaged(String accountIdentifier, SecretDTOV2 dto) {
+    /**
+     * SSH and WinRm are special kind of secrets and are not associated to any secret manager, therefore return false in
+     * such a case.
+     */
+    if (dto.getType() == SSHKey || dto.getType() == WinRmCredentials) {
+      return false;
+    }
+
     final String secretManagerIdentifier = getSecretManagerIdentifier(dto);
     /**
      * Using scope identifiers of secret because as of now Secrets can be created using SM at same scope. This should
@@ -311,10 +329,10 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   }
 
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
+    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
     secretEntityReferenceHelper.createSetupUsageForSecret(accountIdentifier, dto);
-    Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
     return getResponseWrapper(secret);
   }
 
@@ -416,7 +434,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     } else {
       List<Secret> allMatchingSecrets =
           ngSecretService
-              .list(criteria, getPageRequest(PageRequest.builder().sortOrders(pageRequest.getSortOrders()).build()))
+              .list(criteria,
+                  getPageRequest(PageRequest.builder()
+                                     .pageIndex(0)
+                                     .pageSize(50000) // keeping the default max supported value
+                                     .sortOrders(pageRequest.getSortOrders())
+                                     .build()))
               .getContent();
       allMatchingSecrets = ngSecretService.getPermitted(allMatchingSecrets);
       return ngSecretService
@@ -704,6 +727,31 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
     NGEncryptedData encryptedData = encryptedDataService.createSecretFile(
         accountIdentifier, dto, new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit()));
+
+    if (Optional.ofNullable(encryptedData).isPresent()) {
+      secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
+          dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
+      Secret secret = ngSecretService.create(accountIdentifier, dto, false);
+      secretResponseWrapper = getResponseWrapper(secret);
+      secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+      return secretResponseWrapper;
+    }
+    throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret file remotely", USER);
+  }
+
+  @SneakyThrows
+  @Override
+  public SecretResponseWrapper createFile(@NotNull String accountIdentifier, @NotNull SecretDTOV2 dto,
+      @NotNull String encryptionKey, @NotNull String encryptedValue) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if (!isOpaPoliciesSatisfied(accountIdentifier, getMaskedDTOForOpa(dto), secretResponseWrapper)) {
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
+    SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
+    NGEncryptedData encryptedData =
+        encryptedDataService.createSecretFile(accountIdentifier, dto, encryptionKey, encryptedValue);
 
     if (Optional.ofNullable(encryptedData).isPresent()) {
       secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),

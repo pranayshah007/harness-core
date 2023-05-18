@@ -139,7 +139,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
 
     FreezeWindow freezeWindow2 = new FreezeWindow();
     freezeWindow2.setDuration("30m");
-    freezeWindow2.setStartTime("2023-01-21 04:30 PM");
+    freezeWindow2.setStartTime("2027-01-21 04:30 PM");
     freezeWindow2.setTimeZone(timeZone);
     Recurrence recurrence2 = new Recurrence();
     recurrence2.setRecurrenceType(RecurrenceType.MONTHLY);
@@ -150,8 +150,8 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     List<FreezeWindow> windows2 = new ArrayList<>();
     windows2.add(freezeWindow2);
     CurrentOrUpcomingWindow currentOrUpcomingWindow1 = FreezeTimeUtils.fetchCurrentOrUpcomingTimeWindow(windows2);
-    assertThat(currentOrUpcomingWindow1.getStartTime()).isEqualTo(1682074800000L);
-    assertThat(currentOrUpcomingWindow1.getEndTime()).isEqualTo(1682076600000L);
+    assertThat(currentOrUpcomingWindow1.getStartTime()).isEqualTo(1800529200000L);
+    assertThat(currentOrUpcomingWindow1.getEndTime()).isEqualTo(1800531000000L);
   }
 
   @Test
@@ -206,7 +206,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
 
     FreezeWindow freezeWindow2 = new FreezeWindow();
     freezeWindow2.setDuration("30m");
-    freezeWindow2.setStartTime("2023-01-21 04:30 PM");
+    freezeWindow2.setStartTime("2027-01-21 04:30 PM");
     freezeWindow2.setTimeZone(timeZone);
     Recurrence recurrence2 = new Recurrence();
     recurrence2.setRecurrenceType(RecurrenceType.MONTHLY);
@@ -218,7 +218,7 @@ public class FreezeTimeUtilsTest extends CategoryTest {
     List<FreezeWindow> windows2 = new ArrayList<>();
     windows2.add(freezeWindow2);
     List<Long> nextWindow1 = FreezeTimeUtils.fetchUpcomingTimeWindow(windows2);
-    assertThat(nextWindow1.get(0)).isEqualTo(1682074800000L);
+    assertThat(nextWindow1.get(0)).isEqualTo(1800529200000L);
   }
 
   @Test

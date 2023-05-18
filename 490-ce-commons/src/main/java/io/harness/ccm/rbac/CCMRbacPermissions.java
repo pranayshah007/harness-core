@@ -32,6 +32,7 @@ public interface CCMRbacPermissions {
   String RULE_CREATE_AND_EDIT = "ccm_cloudAssetGovernanceRule_edit";
   String RULE_VIEW = "ccm_cloudAssetGovernanceRule_view";
   String RULE_DELETE = "ccm_cloudAssetGovernanceRule_delete";
+  String RULE_EXECUTE = "ccm_cloudAssetGovernanceRule_execute";
 
   String RULE_SET_CREATE_AND_EDIT = "ccm_cloudAssetGovernanceRuleSet_edit";
   String RULE_SET_VIEW = "ccm_cloudAssetGovernanceRuleSet_view";

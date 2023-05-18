@@ -8,6 +8,7 @@
 package io.harness.artifactory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -19,6 +20,7 @@ import static org.jfrog.artifactory.client.model.impl.PackageTypeImpl.docker;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
@@ -63,6 +65,7 @@ public class ArtifactoryClientImplTest extends CategoryTest {
 
   private ArtifactoryConfigRequest artifactoryConfig;
   private ArtifactoryConfigRequest artifactoryConfigAnonymous;
+  private static final String SHA = "sha256:047ad42f407271c2ea16f62b25a0df3f6d63e3d8df7efdf531939050031576d9";
 
   @Before
   public void setUp() throws IllegalAccessException {
@@ -205,5 +208,21 @@ public class ArtifactoryClientImplTest extends CategoryTest {
   public void shouldGetLabelsIs401() {
     assertThatThrownBy(() -> artifactoryClient.getLabels(artifactoryConfig, "image", "docker", "version407"))
         .isInstanceOf(WingsException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void shouldGetArtifactMetaInfo() {
+    ArtifactMetaInfo artifactMetaInfo =
+        artifactoryClient.getArtifactMetaInfo(artifactoryConfig, "image", "docker", "version");
+    Map<String, String> label = artifactMetaInfo.getLabels();
+    assertThat(label.size()).isGreaterThan(0);
+    assertThat(label.containsKey("harness.test"));
+    assertThat(label.containsKey("maintainer"));
+    assertThat(label.get("harness.test").equals("passed"));
+    assertThat(label.get("maintainer").equals("Test Harness.io"));
+    assertThat(artifactMetaInfo.getSha()).isEqualTo(SHA);
+    assertThat(artifactMetaInfo.getShaV2()).isEqualTo(SHA);
   }
 }

@@ -154,7 +154,7 @@ public abstract class NgMigrationService {
     return generateYaml(migrationContext, entityId);
   }
 
-  private NgEntityDetail getNGEntityDetail(
+  public NgEntityDetail getNGEntityDetail(
       MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities, CgEntityId entityId) {
     CgEntityNode cgEntityNode = entities.get(entityId);
     String name = "";

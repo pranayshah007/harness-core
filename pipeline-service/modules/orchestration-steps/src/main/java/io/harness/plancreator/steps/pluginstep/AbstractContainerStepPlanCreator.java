@@ -8,6 +8,7 @@
 package io.harness.plancreator.steps.pluginstep;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
@@ -18,6 +19,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
 import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
+import io.harness.plancreator.steps.internal.PmsStepPlanCreatorUtils;
 import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
@@ -37,6 +39,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.common.steps.stepgroup.StepGroupStep;
@@ -87,7 +90,13 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     }
     PlanNode initPlanNode = InitContainerStepPlanCreater.createPlanForField(
         initStepNodeId, stepParameters, advisorParametersInitStep, StepSpecTypeConstants.INIT_CONTAINER_STEP);
-    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters);
+    boolean isStepInsideRollback = false;
+    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
+      isStepInsideRollback = true;
+    }
+    PlanNode stepPlanNode = createPlanForStep(stepNodeId, stepParameters,
+        PmsStepPlanCreatorUtils.getAdviserObtainmentForFailureStrategy(
+            kryoSerializer, ctx.getCurrentField(), isStepInsideRollback, false));
 
     planCreationResponseMap.put(
         initPlanNode.getUuid(), PlanCreationResponse.builder().node(initPlanNode.getUuid(), initPlanNode).build());
@@ -154,7 +163,8 @@ public abstract class AbstractContainerStepPlanCreator<T extends PmsAbstractStep
     return stepElement.getStepSpecType().getStepParameters();
   }
 
-  public abstract PlanNode createPlanForStep(String stepNodeId, StepParameters stepParameters);
+  public abstract PlanNode createPlanForStep(
+      String stepNodeId, StepParameters stepParameters, List<AdviserObtainment> adviserObtainments);
 
   private void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
       String name, String identifier, LinkedHashMap<String, PlanCreationResponse> responseMap) {
