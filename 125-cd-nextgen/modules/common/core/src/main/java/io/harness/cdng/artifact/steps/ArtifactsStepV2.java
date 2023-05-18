@@ -133,6 +133,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
     NGServiceConfig ngServiceConfig;
+    String primaryArtifactRefValue = null;
     try {
       // get service merged with service inputs
       String mergedServiceYaml = cdStepHelper.fetchServiceYamlFromSweepingOutput(ambiance);
@@ -142,6 +143,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
 
       // process artifact sources in service yaml and select primary
       String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
+      primaryArtifactRefValue = artifactStepHelper.getPrimaryArtifactRefValue(ambiance, mergedServiceYaml);
 
       // resolve template refs in primary and sidecar artifacts
       String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -231,8 +233,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       }
     }
     sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
-        new ArtifactsStepV2SweepingOutput(
-            primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
+        new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap,
+            artifactConfigMapForNonDelegateTaskTypes, primaryArtifactRefValue),
         "");
     serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, ARTIFACT_STEP);
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
@@ -313,6 +315,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     }
 
     ArtifactsStepV2SweepingOutput artifactsSweepingOutput = (ArtifactsStepV2SweepingOutput) outputOptional.getOutput();
+    final String primaryArtifactRefValue = artifactsSweepingOutput.getPrimaryArtifactRef();
 
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     final ArtifactsOutcomeBuilder outcomeBuilder = ArtifactsOutcome.builder();
@@ -331,6 +334,9 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
           if (!EmptyPredicate.isEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
             artifactDelegateResponses =
                 taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0);
+          }
+          if (isPrimary && isNotEmpty(primaryArtifactRefValue) && artifactConfig != null) {
+            artifactConfig.setIdentifier(primaryArtifactRefValue);
           }
 
           ArtifactOutcome artifactOutcome =

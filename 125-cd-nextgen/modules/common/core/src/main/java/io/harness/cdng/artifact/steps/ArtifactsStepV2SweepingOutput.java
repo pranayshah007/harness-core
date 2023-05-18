@@ -34,4 +34,5 @@ public class ArtifactsStepV2SweepingOutput implements ExecutionSweepingOutput {
   String primaryArtifactTaskId;
   @Builder.Default Map<String, ArtifactConfig> artifactConfigMap = new HashMap<>();
   @Builder.Default List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
+  String primaryArtifactRef;
 }

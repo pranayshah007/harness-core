@@ -850,6 +850,66 @@ public class ArtifactStepHelper {
     return yamlField;
   }
 
+  public String getPrimaryArtifactRefValue(Ambiance ambiance, String serviceEntityYaml) throws IOException {
+    YamlField yamlField = YamlUtils.readTree(serviceEntityYaml);
+    YamlField serviceDefField =
+        yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
+    if (serviceDefField == null) {
+      throw new InvalidRequestException(
+          "Invalid Service being referred as serviceDefinition section is not there in Service");
+    }
+
+    YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
+    if (serviceSpecField == null) {
+      throw new InvalidRequestException(
+          "Invalid Service being referred as spec inside serviceDefinition section is not there in Service");
+    }
+
+    YamlField artifactsField = serviceSpecField.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (artifactsField == null) {
+      return null;
+    }
+
+    YamlField primaryArtifactField = artifactsField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT);
+    if (primaryArtifactField == null) {
+      return null;
+    }
+
+    YamlField primaryArtifactRef = primaryArtifactField.getNode().getField(YamlTypes.PRIMARY_ARTIFACT_REF);
+    YamlField artifactSourcesField = primaryArtifactField.getNode().getField(YamlTypes.ARTIFACT_SOURCES);
+
+    if (artifactSourcesField != null && artifactSourcesField.getNode().isArray()) {
+      List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+
+      ObjectNode primaryNode = null;
+      String primaryArtifactRefValue = null;
+      // If there is only 1 artifact source, default to that
+      if (artifactSources.size() == 1) {
+        if (artifactSources.get(0).isObject()) {
+          primaryNode = (ObjectNode) artifactSources.get(0).getCurrJsonNode();
+          primaryArtifactRefValue = primaryNode.get(YamlTypes.IDENTIFIER).textValue();
+          return primaryArtifactRefValue;
+        }
+      } else {
+        if (primaryArtifactRef == null) {
+          throw new InvalidRequestException("Primary artifact ref cannot be empty when multiple sources are present");
+        }
+        primaryArtifactRefValue = primaryArtifactRef.getNode().asText();
+        if (EmptyPredicate.isEmpty(primaryArtifactRefValue)) {
+          throw new InvalidRequestException("Primary artifact ref cannot be empty");
+        }
+
+        primaryArtifactRefValue = resolvePrimaryArtifactRef(ambiance, primaryArtifactRefValue);
+        if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
+          throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
+        }
+        return primaryArtifactRefValue;
+      }
+    }
+
+    return null;
+  }
+
   private String resolvePrimaryArtifactRef(Ambiance ambiance, String primaryArtifactRefValue) {
     // handle primaryArtifactRef with input set validators nginx.allowedValues(nginx,http)
     final ParameterField<String> primaryArtifactRefParameterField =
