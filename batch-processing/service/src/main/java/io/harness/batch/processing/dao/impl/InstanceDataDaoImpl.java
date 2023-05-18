@@ -291,7 +291,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
         .field(InstanceDataKeys.instanceType)
         .in(instanceTypes)
         .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator)
-        .useReadPreference(ReadPreference.secondaryPreferred());
+        .useReadPreference(ReadPreference.secondary());
   }
 
   public List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
@@ -307,7 +307,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .in(instanceTypes)
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
                                         + InstanceDataKeys.activeInstanceIterator)
-                                    .useReadPreference(ReadPreference.secondaryPreferred());
+                                    .useReadPreference(ReadPreference.secondary());
     return query.asList(new FindOptions().limit(batchSize));
   }
 
@@ -324,7 +324,7 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .in(instanceTypes)
                                     .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
                                         + InstanceDataKeys.activeInstanceIterator)
-                                    .useReadPreference(ReadPreference.secondaryPreferred());
+                                    .useReadPreference(ReadPreference.secondary());
     return query.asList();
   }
 }

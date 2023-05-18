@@ -31,6 +31,7 @@ import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.gitx.USER_FLOW;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
@@ -71,6 +72,7 @@ import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PipelineGitXHelper;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -266,6 +268,9 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
       @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO, String loadFromCache) {
     if (pipelineBranch == null && gitEntityBasicInfo != null) {
       pipelineBranch = gitEntityBasicInfo.getBranch();
+    }
+    if (mergeInputSetRequestDTO.isGetOnlyFileContent()) {
+      PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
     }
     List<String> inputSetReferences = mergeInputSetRequestDTO.getInputSetReferences();
     String mergedYaml;

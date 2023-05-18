@@ -52,6 +52,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.signalfxconnector.SignalFXConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
@@ -95,6 +96,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = JiraConnectorDTO.class, name = "Jira"),
       @JsonSubTypes.Type(value = NexusConnectorDTO.class, name = "Nexus"),
       @JsonSubTypes.Type(value = GithubConnectorDTO.class, name = "Github"),
+      @JsonSubTypes.Type(value = HarnessConnectorDTO.class, name = "Harness"),
       @JsonSubTypes.Type(value = GitlabConnectorDTO.class, name = "Gitlab"),
       @JsonSubTypes.Type(value = BitbucketConnectorDTO.class, name = "Bitbucket"),
       @JsonSubTypes.Type(value = AwsCodeCommitConnectorDTO.class, name = "Codecommit"),

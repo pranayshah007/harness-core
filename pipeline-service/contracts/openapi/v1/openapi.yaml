@@ -549,6 +549,47 @@ paths:
       description: Fetches InputSet YAML from Git Repository and saves a record for it in Harness
       tags:
         - Input Sets
+  '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/git-metadata':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/PipelineParam'
+    put:
+      summary: Update GitMetadata for Remote Pipelines
+      operationId: update-pipeline-git-metadata
+      responses:
+        '200':
+          $ref: '#/components/responses/GitMetadataUpdateResponseBody'
+      requestBody:
+        $ref: '#/components/requestBodies/GitMetadataUpdateRequestBody'
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      tags:
+        - Pipelines
+      description: Update git-metadata in remote pipeline
+  '/v1/orgs/{org}/projects/{project}/input-sets/{input-set}/git-metadata':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/InputSetParam'
+    put:
+      summary: Update GitMetadata for Remote InputSet
+      operationId: update-input-set-git-metadata
+      responses:
+        '200':
+          $ref: '#/components/responses/GitMetadataUpdateResponseBody'
+      requestBody:
+        $ref: '#/components/requestBodies/GitMetadataUpdateRequestBody'
+      security:
+        - x-api-key: []
+      tags:
+        - Input Sets
+      description: Update git-metadata in remote inputSet and return the updated inputSet
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/PipelineInputSetParam'
 components:
   schemas:
     GitDetails:
@@ -2194,6 +2235,30 @@ components:
         input_set_identifier:
           type: string
       description: Response body for Input Set import.
+    GitMetadataUpdateRequestBody:
+      title: GitMetadataUpdateRequestBody
+      x-stoplight:
+        id: tbut447jtr7t9
+      type: object
+      properties:
+        connector_ref:
+          type: string
+          description: Harness connector id used for entity CRUD operations
+        repo_name:
+          type: string
+          description: Name of the repository.
+        file_path:
+          type: string
+          description: File path of the entity in the repository.
+    GitMetadataUpdateResponseBody:
+      title: GitMetadataUpdateResponseBody
+      x-stoplight:
+        id: l87orzoyih6io
+      type: object
+      properties:
+        entity_identifier:
+          type: string
+          description: identifier of updated entity
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2799,6 +2864,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/InputSetImportResponseBody'
+    GitMetadataUpdateResponseBody:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GitMetadataUpdateResponseBody'
   requestBodies:
     PipelineCreateRequestBody:
       content:
@@ -3321,3 +3392,8 @@ components:
           schema:
             $ref: '#/components/schemas/InputSetImportRequestBody'
       description: Input Set import request body
+    GitMetadataUpdateRequestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GitMetadataUpdateRequestBody'

@@ -37,10 +37,7 @@ import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -292,6 +289,40 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(mergedPluginConfigs.getConfig(), TEST_EXPECTED_CONFIG_VALUE_AFTER_MERGE);
     assertEquals(mergedPluginConfigs.getEnvVariables().get(0).getEnvName(), TEST_SECRET_ENV_NAME);
     assertEquals(mergedPluginConfigs.getEnvVariables().get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
+
+    // check if no plugin is enabled with configs for an account
+
+    appConfigEntity = getTestAppConfigEntity();
+    appConfigEntity.setConfigs(null);
+    when(appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
+             TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE, TEST_ENABLED))
+        .thenReturn(Collections.singletonList(appConfigEntity));
+    when(configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
+             TEST_ACCOUNT_IDENTIFIER, Arrays.asList(TEST_CONFIG_ID)))
+        .thenReturn(Collections.emptyList());
+    when(backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+             any(String.class), anyList()))
+        .thenReturn(Collections.emptyList());
+    Exception exception = null;
+    try {
+      configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
+    } catch (InvalidRequestException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
+
+    // check if no plugin is enabled for an account
+
+    when(appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
+             TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE, TEST_ENABLED))
+        .thenReturn(Collections.emptyList());
+    exception = null;
+    try {
+      configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
+    } catch (InvalidRequestException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
   }
 
   @Test
@@ -300,6 +331,8 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   public void testToggleConfigForAccount() throws Exception {
     AppConfigEntity appConfigEntity = getTestAppConfigEntity();
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(null);
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(any(), any(), any()))
+        .thenReturn(Optional.of(appConfigEntity));
     doNothing().when(configEnvVariablesService).deleteConfigEnvVariables(any(), any());
     Exception exception = null;
     try {

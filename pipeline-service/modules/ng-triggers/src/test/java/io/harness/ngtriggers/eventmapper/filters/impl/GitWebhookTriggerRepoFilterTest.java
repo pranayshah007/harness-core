@@ -54,6 +54,7 @@ import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.utils.GitProviderDataObtainmentManager;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -61,9 +62,11 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -75,6 +78,7 @@ import org.slf4j.LoggerFactory;
 public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Mock private NGTriggerService ngTriggerService;
   @Mock private GitProviderDataObtainmentManager dataObtainmentManager;
+  @Mock PmsFeatureFlagService featureFlagService;
   @Inject @InjectMocks private GitWebhookTriggerRepoFilter filter;
   private Logger logger;
   private ListAppender<ILoggingEvent> listAppender;
@@ -742,7 +746,7 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                     .build())
             .build();
 
-    filter.generateConnectorFQNFromTriggerConfig(triggerDetails, triggerToConnectorMap);
+    filter.generateConnectorFQNFromTriggerConfig("accountId", triggerDetails, triggerToConnectorMap);
     ILoggingEvent log = listAppender.list.get(0);
     assertThat(log).isNotNull();
     assertThat(log.getFormattedMessage())
@@ -821,5 +825,68 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
 
     String sanitizedUrlAzure5 = filter.sanitizeUrl("http://www.dev.azure.com/username/repo");
     assertThat(sanitizedUrlAzure5).isEqualTo("https://dev.azure.com/username/repo");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetCompleteHarnessRepoName() {
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "proj/repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "org/proj/repo/")).isEqualTo("acc/org/proj/repo");
+    assertThat(filter.getCompleteHarnessRepoName(ngTriggerEntity, "/org/proj/repo")).isEqualTo("acc/org/proj/repo");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testEvaluateWrapperForSCMConnector() {
+    NGTriggerEntity ngTriggerEntity =
+        NGTriggerEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
+    Set<String> urls = filter.getUrls(
+        Repository.builder()
+            .httpURL(
+                "https://git.app.harness.io/kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo.git")
+            .sshURL("")
+            .link("")
+            .build(),
+        "HARNESS");
+    List<TriggerDetails> eligibleTriggers = new ArrayList<>();
+    TriggerDetails harnessTrigger =
+        TriggerDetails.builder()
+            .ngTriggerEntity(
+                NGTriggerEntity.builder()
+                    .accountId("kmpySmUISimoRrJL6NL73w")
+                    .orgIdentifier("CITestDemoOrgnpAUTg9bai")
+                    .projectIdentifier("CITestDemoProsQQ6BmCDXS")
+                    .metadata(NGTriggerMetadata.builder()
+                                  .webhook(WebhookMetadata.builder()
+                                               .type("HARNESS")
+                                               .git(GitMetadata.builder().repoName("testprivaterepo").build())
+                                               .build())
+                                  .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.HARNESS).build())
+                                .build())
+                    .build())
+            .build();
+    FilterRequestData.builder().details(new ArrayList<>() {}).build();
+    filter.evaluateWrapperForSCMConnector(urls, eligibleTriggers,
+        FilterRequestData.builder()
+            .details(new ArrayList<TriggerDetails>() {
+              { add(harnessTrigger); }
+            })
+            .build());
+    assertThat(eligibleTriggers.size()).isEqualTo(1);
   }
 }

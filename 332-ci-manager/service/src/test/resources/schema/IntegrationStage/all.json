@@ -2233,8 +2233,7 @@
     "CodeBase": {
       "type": "object",
       "required": [
-        "build",
-        "connectorRef"
+        "build"
       ],
       "properties": {
         "build": {
@@ -3482,7 +3481,8 @@
             "PipelineRollback",
             "ManualIntervention",
             "ProceedWithDefaultValues",
-            "MarkAsFailure"
+            "MarkAsFailure",
+            "RetryStepGroup"
           ]
         }
       },
@@ -4281,11 +4281,8 @@
         {
           "type": "object",
           "properties": {
-            "files": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+            "file": {
+              "type": "string"
             }
           }
         }
@@ -8213,6 +8210,33 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RetrySGFailureActionConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FailureStrategyActionConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "readOnly": true,
+              "$ref": "#/definitions/RetryFailureSpecConfig"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "RetryStepGroup"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RunStepInfo": {
       "allOf": [
         {
@@ -11857,6 +11881,9 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -11865,6 +11892,9 @@
               "enum": [
                 "default"
               ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
             },
             "imagePullPolicy": {
               "oneOf": [

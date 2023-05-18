@@ -220,8 +220,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public void payInvoice(String invoiceId) {
-    stripeHelper.payInvoice(invoiceId);
+  public void payInvoice(String invoiceId, String accountIdentifier) {
+    stripeHelper.payInvoice(invoiceId, accountIdentifier);
   }
 
   private StripeItemRequest buildSubscriptionItemRequest(

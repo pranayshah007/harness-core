@@ -20,7 +20,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE;
 import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
-import static java.util.Set.of;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
@@ -83,8 +82,7 @@ public class DefaultViewerRoleACLCreationJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
     createEntities(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    when(featureFlagService.getAccountIds(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE)).thenReturn(of(accountIdentifier));
-
+    when(featureFlagService.isEnabled(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE, accountIdentifier)).thenReturn(true);
     defaultViewerRoleACLCreationJob.execute();
 
     verify(aclGeneratorService, times(0)).createACLsForRoleAssignment(accountRoleAssignmentDBO);
@@ -109,7 +107,7 @@ public class DefaultViewerRoleACLCreationJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
     createEntities(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    when(featureFlagService.getAccountIds(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE)).thenReturn(of(accountIdentifier));
+    when(featureFlagService.isEnabled(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE, accountIdentifier)).thenReturn(true);
 
     defaultViewerRoleACLCreationJob.execute();
 
@@ -125,7 +123,7 @@ public class DefaultViewerRoleACLCreationJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
     createEntities(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    when(featureFlagService.getAccountIds(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE)).thenReturn(of());
+    when(featureFlagService.isEnabled(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE, accountIdentifier)).thenReturn(false);
 
     defaultViewerRoleACLCreationJob.execute();
 
@@ -133,7 +131,8 @@ public class DefaultViewerRoleACLCreationJobTest extends AccessControlTestBase {
   }
 
   private void createEntities(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    when(featureFlagService.getAccountIds(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE)).thenReturn(of(accountIdentifier));
+    when(featureFlagService.isEnabled(PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE, accountIdentifier)).thenReturn(true);
+
     when(aclGeneratorService.createACLsForRoleAssignment(any())).thenReturn(1L);
 
     accountRoleAssignmentDBO = createAccountScopeEntity(accountIdentifier);

@@ -77,6 +77,8 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   ServiceOverridesSpec spec;
   ServiceOverridesType type;
 
+  @Builder.Default Boolean isV2 = Boolean.FALSE;
+
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;
 }

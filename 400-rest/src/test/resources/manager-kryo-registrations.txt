@@ -2384,6 +2384,17 @@
 150027:io.harness.delegatetasks.FetchCustomSecretTaskParameters
 150028:io.harness.delegatetasks.NGVaultTokenLookupTaskResponse
 193418:io.harness.delegate.beans.ci.pod.ConnectorDetails
+197010:io.harness.delegate.beans.connector.scm.harness.HarnessHttpCredentialsDTO
+197020:io.harness.delegate.beans.connector.scm.harness.HarnessHttpAuthenticationType
+197030:io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO
+197040:io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO
+197050:io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessSpecDTO
+197060:io.harness.delegate.beans.connector.scm.harness.HarnessTokenSpecDTO
+197070:io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessType
+197080:io.harness.delegate.beans.connector.scm.harness.HarnessAuthenticationDTO
+197100:io.harness.delegate.beans.connector.scm.harness.HarnessUsernameTokenDTO
+197110:io.harness.delegate.beans.connector.scm.harness.HarnessHttpCredentialsSpecDTO
+197120:io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO
 229305:io.harness.delegate.task.bamboo.BambooBuildTaskNGResponse
 400101:software.wings.beans.ce.CEAwsConfig
 400102:software.wings.beans.ce.CEGcpConfig

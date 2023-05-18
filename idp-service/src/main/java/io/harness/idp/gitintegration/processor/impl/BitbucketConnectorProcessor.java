@@ -13,11 +13,14 @@ import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALO
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.adapter.BitbucketToGitMapper;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.outcome.BitbucketHttpCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
@@ -125,7 +128,14 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
         (BitbucketHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     BitbucketUsernamePasswordDTO spec = (BitbucketUsernamePasswordDTO) outcome.getSpec();
 
+    config.setUrl(catalogConnectorInfo.getRepo());
+
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), bitbucketConnectorSecret, throughGrpc);
+        spec.getUsername(), bitbucketConnectorSecret, config, throughGrpc);
+  }
+
+  @Override
+  public GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig) {
+    return BitbucketToGitMapper.mapToGitConfigDTO((BitbucketConnectorDTO) connectorConfig);
   }
 }

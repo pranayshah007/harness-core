@@ -13,9 +13,12 @@ import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALO
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.outcome.AzureRepoHttpCredentialsOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.gitintegration.processor.base.ConnectorProcessor;
@@ -87,7 +90,14 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
         (AzureRepoHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     AzureRepoUsernameTokenDTO spec = (AzureRepoUsernameTokenDTO) outcome.getSpec();
 
+    config.setUrl(catalogConnectorInfo.getRepo());
+
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), azureRepoConnectorSecret, throughGrpc);
+        spec.getUsername(), azureRepoConnectorSecret, config, throughGrpc);
+  }
+
+  @Override
+  public GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig) {
+    return AzureRepoToGitMapper.mapToGitConfigDTO((AzureRepoConnectorDTO) connectorConfig);
   }
 }

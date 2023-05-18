@@ -18,7 +18,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.rule.Owner;
 

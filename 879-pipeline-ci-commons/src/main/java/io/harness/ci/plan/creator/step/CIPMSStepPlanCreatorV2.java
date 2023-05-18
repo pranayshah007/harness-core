@@ -345,6 +345,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
                 .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
+                .retryActionConfig(actionUnderRetry)
                 .retryCount(retryCount.getValue())
                 .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
                 .waitIntervalList(retryAction.getSpecConfig()

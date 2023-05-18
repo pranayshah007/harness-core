@@ -7,6 +7,8 @@
 
 package io.harness.pms.pipeline.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
@@ -98,13 +100,13 @@ public class PMSPipelineFilterHelper {
   public Update getUpdateWithGitMetadata(PMSUpdateGitDetailsParams updateGitDetailsParams) {
     Update update = new Update();
 
-    if (updateGitDetailsParams.getConnectorRef() != null) {
+    if (isNotEmpty(updateGitDetailsParams.getConnectorRef())) {
       update.set(PipelineEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
     }
-    if (updateGitDetailsParams.getRepoName() != null) {
+    if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
       update.set(PipelineEntityKeys.repo, updateGitDetailsParams.getRepoName());
     }
-    if (updateGitDetailsParams.getFilePath() != null) {
+    if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
       update.set(PipelineEntityKeys.filePath, updateGitDetailsParams.getFilePath());
     }
     return update;

@@ -5,7 +5,6 @@
 
 #Copy the analyser-service jar for uploading on GCP then dockerization
 
-set -x
 set -e
 curl https://storage.googleapis.com/harness-prod-public/public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar  --output alpn-boot-8.1.13.v20181017.jar
 

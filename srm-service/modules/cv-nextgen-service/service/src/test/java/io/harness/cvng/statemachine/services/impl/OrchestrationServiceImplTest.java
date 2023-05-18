@@ -156,7 +156,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
                                            .startTime(startTime.minus(5, ChronoUnit.MINUTES))
                                            .build());
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
       updateLearningEngineTask();
       orchestrator = orchestrationService.getAnalysisOrchestrator(verificationTaskId);
       orchestrationService.orchestrate(orchestrator);
@@ -234,7 +234,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
     assertThat(orchestrator.get(0).getAnalysisStateMachineQueue()).hasSize(2);
     orchestrationService.orchestrate(orchestrator.get(0));
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
       updateLearningEngineTask();
       orchestrationService.orchestrate(orchestrator.get(0));
       incrementAnalysisStateMachineClockBy5Hours();

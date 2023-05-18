@@ -42,6 +42,7 @@ public class OutgoingEmailTest extends CategoryTest {
 
     Map testData = new HashMap();
     testData.put("company", "Testcompany");
+    testData.put("accountname", "Testaccount");
     testData.put("name", "Testname");
     testData.put("url", "TestURL");
     testData.put("totpSecret", "testTotpSecret");

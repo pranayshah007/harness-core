@@ -23,6 +23,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.CUSTOM;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
 import io.harness.NgAutoLogContext;
@@ -247,6 +248,8 @@ public class TriggerEventExecutionHelper {
       builder.setSourceType(SourceType.BITBUCKET_REPO);
     } else if (AWS_CODECOMMIT.getEntityMetadataName().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
       builder.setSourceType(SourceType.BITBUCKET_REPO);
+    } else if (HARNESS.getEntityMetadataName().equalsIgnoreCase(triggerWebhookEvent.getSourceRepoType())) {
+      builder.setSourceType(SourceType.HARNESS_REPO);
     }
 
     if (parseWebhookResponse != null) {

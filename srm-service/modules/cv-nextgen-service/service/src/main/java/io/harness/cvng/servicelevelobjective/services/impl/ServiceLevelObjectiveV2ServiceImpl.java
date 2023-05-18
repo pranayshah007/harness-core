@@ -489,6 +489,37 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                            .build());
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
+
+  @Override
+  public boolean forceDelete(ProjectParams projectParams, String identifier) {
+    AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
+    if (serviceLevelObjective != null) {
+      if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+        serviceLevelIndicatorService.deleteByIdentifier(
+            projectParams, ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators());
+        notificationRuleService.delete(projectParams,
+            serviceLevelObjective.getNotificationRuleRefs()
+                .stream()
+                .map(NotificationRuleRef::getNotificationRuleRef)
+                .collect(Collectors.toList()));
+      } else {
+        String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+            serviceLevelObjective.getAccountId(), serviceLevelObjective.getUuid());
+        if (StringUtils.isNotBlank(verificationTaskId)) {
+          sideKickService.schedule(
+              VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+              clock.instant().plus(Duration.ofMinutes(15)));
+        }
+      }
+    }
+    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
+    sloHealthIndicatorService.delete(projectParams, identifier);
+    annotationService.delete(projectParams, identifier);
+    sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
+
+    return hPersistence.delete(serviceLevelObjective);
+  }
+
   @Override
   public void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled) {

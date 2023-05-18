@@ -39,6 +39,9 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.TimeoutUtils;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -94,15 +97,26 @@ public class RetryAdviserWithRollback implements Adviser {
     AdviserResponse.Builder adviserResponseBuilder =
         AdviserResponse.newBuilder().setRepairActionCode(parameters.getRepairActionCodeAfterRetry());
     switch (parameters.getRepairActionCodeAfterRetry()) {
-      case MANUAL_INTERVENTION:
+      case MANUAL_INTERVENTION: {
+        ManualInterventionFailureActionConfig retryConfig =
+            (ManualInterventionFailureActionConfig) parameters.getRetryActionConfig();
+
+        Timeout timeoutValue = Timeout.fromString("1d");
+
+        if (retryConfig != null && retryConfig.getSpecConfig() != null
+            && retryConfig.getSpecConfig().getTimeout() != null) {
+          timeoutValue = retryConfig.getSpecConfig().getTimeout().getValue();
+        }
         return adviserResponseBuilder
             .setInterventionWaitAdvise(
                 InterventionWaitAdvise.newBuilder()
-                    .setTimeout(Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).build())
+                    .setTimeout(Duration.newBuilder().setSeconds(TimeoutUtils.getTimeoutInSeconds(timeoutValue,
+                        Duration.newBuilder().setSeconds(java.time.Duration.ofDays(1).toMinutes() * 60).getSeconds())))
                     .setFromStatus(toStatus)
                     .build())
             .setType(AdviseType.INTERVENTION_WAIT)
             .build();
+      }
       case END_EXECUTION:
         return adviserResponseBuilder.setEndPlanAdvise(EndPlanAdvise.newBuilder().setIsAbort(true).build())
             .setType(AdviseType.END_PLAN)

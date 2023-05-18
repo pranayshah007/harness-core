@@ -42,6 +42,6 @@ public interface InstanceSyncResourceClient {
 
   @GET(INSTANCE_SYNC + "/task/{perpetualTaskId}/details")
   Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
-      @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId);
+      @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
+      @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId);
 }

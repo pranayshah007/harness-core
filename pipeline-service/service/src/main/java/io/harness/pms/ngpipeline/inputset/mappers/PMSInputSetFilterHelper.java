@@ -154,13 +154,13 @@ public class PMSInputSetFilterHelper {
   public Update getUpdateWithGitMetadata(PMSUpdateGitDetailsParams updateGitDetailsParams) {
     Update update = new Update();
 
-    if (updateGitDetailsParams.getConnectorRef() != null) {
+    if (isNotEmpty(updateGitDetailsParams.getConnectorRef())) {
       update.set(InputSetEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
     }
-    if (updateGitDetailsParams.getRepoName() != null) {
+    if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
       update.set(InputSetEntityKeys.repo, updateGitDetailsParams.getRepoName());
     }
-    if (updateGitDetailsParams.getFilePath() != null) {
+    if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
       update.set(InputSetEntityKeys.filePath, updateGitDetailsParams.getFilePath());
     }
     return update;

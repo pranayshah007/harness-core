@@ -60,6 +60,7 @@ public class EngineExpressionEvaluator {
   private static final Pattern VALID_VARIABLE_FIELD_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   private static final Pattern ALIAS_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
+  public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
 
   private static final int MAX_DEPTH = 15;
 
@@ -534,6 +535,9 @@ public class EngineExpressionEvaluator {
   }
 
   protected Object evaluateByCreatingExpression(@NotNull String expression, @NotNull EngineJexlContext ctx) {
+    if (ctx.isFeatureFlagEnabled(PIE_EXECUTION_JSON_SUPPORT)) {
+      return engine.createScript(expression).execute(ctx);
+    }
     JexlExpression jexlExpression = engine.createExpression(expression);
     return jexlExpression.evaluate(ctx);
   }
@@ -641,11 +645,7 @@ public class EngineExpressionEvaluator {
         if (value == null) {
           unresolvedExpressions.add(expression);
         }
-        if (ctx.getOriginalMap().containsKey(ENABLED_FEATURE_FLAGS_KEY)
-            && ctx.getOriginalMap()
-                   .get(ENABLED_FEATURE_FLAGS_KEY)
-                   .toString()
-                   .contains("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
+        if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
           // Use the asJson only when the FF is enabled.
           if (value instanceof Collection) {
             return JsonUtils.asJson(value);

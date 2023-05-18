@@ -83,8 +83,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     List<Criteria> criteriaListForAndOperator = new ArrayList<>();
     criteria.and(ConnectorKeys.accountIdentifier).is(accountIdentifier);
     if (includeAllConnectorsAccessibleAtScope != null && includeAllConnectorsAccessibleAtScope) {
-      addCriteriaToReturnAllConnectorsAccessible(
-          criteria, orgIdentifier, projectIdentifier, criteriaListForAndOperator);
+      addCriteriaToReturnAllConnectorsAccessible(orgIdentifier, projectIdentifier, criteriaListForAndOperator);
     } else {
       criteria.and(ConnectorKeys.orgIdentifier).is(orgIdentifier);
       criteria.and(ConnectorKeys.projectIdentifier).is(projectIdentifier);
@@ -95,7 +94,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     criteria.orOperator(where(ConnectorKeys.deleted).exists(false), where(ConnectorKeys.deleted).is(false));
 
     if (isEmpty(filterIdentifier) && filterProperties == null) {
-      applySearchFilter(criteria, searchTerm, criteriaListForAndOperator);
+      applySearchFilter(searchTerm, criteriaListForAndOperator);
       if (!criteriaListForAndOperator.isEmpty()) {
         criteria.andOperator(criteriaListForAndOperator.toArray(new Criteria[0]));
       }
@@ -115,15 +114,15 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     return criteria;
   }
 
-  private void applySearchFilter(Criteria criteria, String searchTerm, List<Criteria> criteriaListForAndOperator) {
+  private void applySearchFilter(String searchTerm, List<Criteria> criteriaListForAndOperator) {
     if (isNotBlank(searchTerm)) {
-      Criteria criteriaWithSearchTerm = getSearchTermFilter(criteria, searchTerm);
+      Criteria criteriaWithSearchTerm = getSearchTermFilter(searchTerm);
       criteriaListForAndOperator.add(criteriaWithSearchTerm);
     }
   }
 
   private void addCriteriaToReturnAllConnectorsAccessible(
-      Criteria criteria, String orgIdentifier, String projectIdentifier, List<Criteria> criteriaListForAndOperator) {
+      String orgIdentifier, String projectIdentifier, List<Criteria> criteriaListForAndOperator) {
     Criteria orCriteria;
     if (isNotBlank(projectIdentifier)) {
       orCriteria = new Criteria().orOperator(
@@ -145,7 +144,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     FilterDTO connectorFilterDTO =
         filterService.get(accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, CONNECTOR);
     if (connectorFilterDTO == null) {
-      throw new InvalidRequestException(String.format("Could not find a connector filter with the identifier %s, in %s",
+      throw new InvalidRequestException(String.format("Could not find a connector filter with the identifier %s",
           ScopeHelper.getScopeMessageForLogs(accountIdentifier, orgIdentifier, projectIdentifier)));
     }
     populateConnectorFiltersInTheCriteria(criteria,
@@ -160,9 +159,8 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     }
     populateInFilter(criteria, ConnectorKeys.categories, connectorFilter.getCategories());
     populateInFilter(criteria, ConnectorKeys.type, connectorFilter.getTypes());
-    populateNameDesciptionAndSearchTermFilter(criteria, connectorFilter.getConnectorNames(),
-        connectorFilter.getDescription(), searchTerm, connectorFilter.getInheritingCredentialsFromDelegate(),
-        criteriaListForAndOperator);
+    populateNameDesciptionAndSearchTermFilter(connectorFilter.getConnectorNames(), connectorFilter.getDescription(),
+        searchTerm, connectorFilter.getInheritingCredentialsFromDelegate(), criteriaListForAndOperator);
     populateInFilter(criteria, ConnectorKeys.identifier, connectorFilter.getConnectorIdentifiers());
     populateInFilter(criteria, ConnectorKeys.connectionStatus, connectorFilter.getConnectivityStatuses());
     List<Boolean> isExecuteOnDelegate = null;
@@ -180,33 +178,32 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     populateTagsFilter(criteria, connectorFilter.getTags());
   }
 
-  private void populateNameDesciptionAndSearchTermFilter(Criteria criteria, List<String> connectorNames,
-      String description, String searchTerm, Boolean inheritingCredentialsFromDelegate,
-      List<Criteria> criteriaListForAndOperator) {
+  private void populateNameDesciptionAndSearchTermFilter(List<String> connectorNames, String description,
+      String searchTerm, Boolean inheritingCredentialsFromDelegate, List<Criteria> criteriaListForAndOperator) {
     List<Criteria> criteriaList = new ArrayList<>();
-    Criteria nameCriteria = getNameFilter(criteria, connectorNames);
+    Criteria nameCriteria = getNameFilter(connectorNames);
     if (nameCriteria != null) {
       criteriaList.add(nameCriteria);
     }
-    Criteria descriptionCriteria = getDescriptionFilter(criteria, description, searchTerm);
+    Criteria descriptionCriteria = getDescriptionFilter(description);
     if (descriptionCriteria != null) {
       criteriaList.add(descriptionCriteria);
     }
     Criteria inheritingFromDelegateCriteria =
-        getInheritCredentialsFromDelegateFilter(criteria, inheritingCredentialsFromDelegate);
+        getInheritCredentialsFromDelegateFilter(inheritingCredentialsFromDelegate);
     if (inheritingFromDelegateCriteria != null) {
       criteriaList.add(inheritingFromDelegateCriteria);
     }
-    Criteria searchCriteria = getSearchTermFilter(criteria, searchTerm);
+    Criteria searchCriteria = getSearchTermFilter(searchTerm);
     if (searchCriteria != null) {
       criteriaList.add(searchCriteria);
     }
-    if (criteriaList.size() != 0) {
+    if (!criteriaList.isEmpty()) {
       criteriaListForAndOperator.addAll(criteriaList);
     }
   }
 
-  private Criteria getNameFilter(Criteria criteria, List<String> connectorNames) {
+  private Criteria getNameFilter(List<String> connectorNames) {
     if (isEmpty(connectorNames)) {
       return null;
     }
@@ -225,24 +222,23 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     criteria.and(ConnectorKeys.tags).in(TagMapper.convertToList(tags));
   }
 
-  private Criteria getInheritCredentialsFromDelegateFilter(
-      Criteria criteria, Boolean inheritingCredentialsFromDelegate) {
+  private Criteria getInheritCredentialsFromDelegateFilter(Boolean inheritingCredentialsFromDelegate) {
     if (inheritingCredentialsFromDelegate != null) {
       if (inheritingCredentialsFromDelegate.booleanValue()) {
-        return addCriteriaForInheritingFromDelegate(criteria);
+        return addCriteriaForInheritingFromDelegate();
       } else {
-        return addCriteriaForNotInheritingFromDelegate(criteria);
+        return addCriteriaForNotInheritingFromDelegate();
       }
     }
     return null;
   }
 
-  private Criteria addCriteriaForNotInheritingFromDelegate(Criteria criteria) {
+  private Criteria addCriteriaForNotInheritingFromDelegate() {
     return new Criteria().orOperator(
         where(CREDENTIAL_TYPE_KEY).exists(false), where(CREDENTIAL_TYPE_KEY).ne(INHERIT_FROM_DELEGATE_STRING));
   }
 
-  private Criteria addCriteriaForInheritingFromDelegate(Criteria criteria) {
+  private Criteria addCriteriaForInheritingFromDelegate() {
     return where(CREDENTIAL_TYPE_KEY).is(INHERIT_FROM_DELEGATE_STRING);
   }
 
@@ -250,7 +246,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     return StringUtils.collectionToDelimitedString(wordsToBeMatched, "|");
   }
 
-  private Criteria getDescriptionFilter(Criteria criteria, String description, String searchTerm) {
+  private Criteria getDescriptionFilter(String description) {
     if (isBlank(description)) {
       return null;
     }
@@ -262,7 +258,7 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
     return null;
   }
 
-  private Criteria getSearchTermFilter(Criteria criteria, String searchTerm) {
+  private Criteria getSearchTermFilter(String searchTerm) {
     if (isNotBlank(searchTerm)) {
       Criteria tagCriteria = createCriteriaForSearchingTag(searchTerm);
       return new Criteria().orOperator(

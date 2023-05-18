@@ -10,7 +10,7 @@ package io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator;
 import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 
 import java.time.Instant;
 import java.util.ArrayList;

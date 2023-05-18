@@ -29,6 +29,7 @@ import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -90,6 +91,9 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("nextGen") private NGManagerServiceConfig ngManagerServiceConfig;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+
+  @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
+
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;

@@ -110,6 +110,9 @@ public class Environment implements PersistentEntity, ScopeAware {
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
 
+  // Service Override V2 migration
+  @Builder.Default @Setter @NonFinal Boolean isMigratedToOverride = Boolean.FALSE;
+
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {
       NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(this);

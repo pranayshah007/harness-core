@@ -120,7 +120,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
       } else if (ciCodeBase.getConnectorRef().getValue() != null) {
         try {
           ConnectorDetails connectorDetails =
-              connectorUtils.getConnectorDetails(baseNGAccess, ciCodeBase.getConnectorRef().getValue());
+              connectorUtils.getConnectorDetails(baseNGAccess, ciCodeBase.getConnectorRef().getValue(), true);
           String repoName = getGitRepo(connectorUtils.retrieveURL(connectorDetails));
           ciFilterBuilder.repoName(repoName);
         } catch (Exception exception) {
@@ -181,7 +181,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
     }
 
     Set<EntityDetailProtoDTO> result = new HashSet<>();
-    if (ciCodeBase != null) {
+    if (ciCodeBase != null && ParameterField.isNotNull(ciCodeBase.getConnectorRef())) {
       String fullQualifiedDomainName =
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode()) + PATH_CONNECTOR
           + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + ciCodeBase.getConnectorRef();

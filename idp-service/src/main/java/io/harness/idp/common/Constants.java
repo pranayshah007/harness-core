@@ -33,4 +33,6 @@ public class Constants {
   public static final String BACKEND_SECRET = "BACKEND_SECRET";
   public static final String IDP_BACKEND_SECRET = "IDP_BACKEND_SECRET";
   public static final String PROXY_ENV_NAME = "HOST_PROXY_MAP";
+  public static final String LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG =
+      "LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG";
 }

@@ -19,7 +19,6 @@ import static io.harness.ng.core.activityhistory.dto.TimeGroupType.DAY;
 import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
 import static io.harness.ng.core.template.TemplateListType.STABLE_TEMPLATE_TYPE;
 
-import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.NGDateUtils;
@@ -108,6 +107,7 @@ import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.LastWorkloadInfo;
 import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.SequenceToggleDTO;
 import io.harness.ng.overview.dto.ServiceArtifactExecutionDetail;
 import io.harness.ng.overview.dto.ServiceDeployment;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
@@ -1643,61 +1643,102 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         serviceArtifactExecutionDetailList, executionStatusMap);
   }
   @Override
-  public ServiceSequence getCustomSequence(
+  public CustomSequenceDTO getCustomSequence(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Optional<ServiceSequence> serviceSequenceOptional =
         serviceSequenceService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    ServiceSequence serviceSequence;
-    if (serviceSequenceOptional.isPresent()) {
-      serviceSequence = serviceSequenceOptional.get();
-    } else {
-      throw new InvalidRequestException("No default sequence of Env and Env Group exist for this service");
+    CustomSequenceDTO defaultSequence = getSequenceDTO(
+        getEnvironmentInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, true));
+    if (!serviceSequenceOptional.isPresent()) {
+      return defaultSequence;
     }
+    ServiceSequence serviceSequence = serviceSequenceOptional.get();
     if (isNull(serviceSequence.getCustomSequence())) {
-      return serviceSequence;
+      return defaultSequence;
     } else {
-      List<CustomSequenceDTO.EnvAndEnvGroupCard> customSequence = filterCustomSequence(serviceSequence);
-      serviceSequence.setCustomSequence(CustomSequenceDTO.builder().EnvAndEnvGroupCardList(customSequence).build());
-      return serviceSequence;
+      CustomSequenceDTO customSequence = serviceSequence.getCustomSequence();
+      return filterExtraAndDeletedCards(customSequence, defaultSequence);
     }
   }
 
-  private List<CustomSequenceDTO.EnvAndEnvGroupCard> filterCustomSequence(ServiceSequence serviceSequence) {
-    List<CustomSequenceDTO.EnvAndEnvGroupCard> customSequence =
-        serviceSequence.getCustomSequence().getEnvAndEnvGroupCardList();
-    List<CustomSequenceDTO.EnvAndEnvGroupCard> defaultSequence =
-        serviceSequence.getDefaultSequence().getEnvAndEnvGroupCardList();
-    HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envGrpCardsMap = new HashMap<>();
-    customSequence.forEach(envGroupCard
-        -> envGrpCardsMap.put(
-            envGroupCard.getName() + envGroupCard.getIdentifier() + envGroupCard.isEnvGroup(), envGroupCard));
+  private CustomSequenceDTO filterExtraAndDeletedCards(
+      CustomSequenceDTO customSequence, CustomSequenceDTO defaultSequence) {
+    Set<String> defaultKeys = new HashSet<>();
+    Set<String> customKeys = new HashSet<>();
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> newEnvAndEnvGroupCardList = new ArrayList<>();
+    List<CustomSequenceDTO.EnvAndEnvGroupCard> appendEnvAndEnvGroupCardList = new ArrayList<>();
 
-    List<CustomSequenceDTO.EnvAndEnvGroupCard> appendSequence = new ArrayList<>();
-    defaultSequence.forEach(envGroupCard -> addIfPresentInDefault(appendSequence, envGroupCard, envGrpCardsMap));
+    defaultSequence.getEnvAndEnvGroupCardList().forEach(
+        card -> defaultKeys.add(card.getIdentifier() + card.isEnvGroup()));
+    customSequence.getEnvAndEnvGroupCardList().forEach(
+        card -> customKeys.add(card.getIdentifier() + card.isEnvGroup()));
 
-    for (String envKey : envGrpCardsMap.keySet()) {
-      CustomSequenceDTO.EnvAndEnvGroupCard customCard = envGrpCardsMap.get(envKey);
-
-      boolean isNew = customCard.isNew();
-      customCard.setNew(false);
-
-      if (!defaultSequence.contains(customCard)) {
-        customSequence.remove(customCard);
+    customSequence.getEnvAndEnvGroupCardList().forEach(card -> {
+      if (defaultKeys.contains(card.getIdentifier() + card.isEnvGroup())) {
+        newEnvAndEnvGroupCardList.add(card);
       }
-      customCard.setNew(isNew);
-    }
+    });
 
-    customSequence.addAll(0, appendSequence);
-    return customSequence;
+    defaultSequence.getEnvAndEnvGroupCardList().forEach(card -> {
+      if (!customKeys.contains(card.getIdentifier() + card.isEnvGroup())) {
+        card.setNew(true);
+        appendEnvAndEnvGroupCardList.add(card);
+      }
+    });
+
+    appendEnvAndEnvGroupCardList.addAll(newEnvAndEnvGroupCardList);
+    return CustomSequenceDTO.builder().envAndEnvGroupCardList(appendEnvAndEnvGroupCardList).build();
   }
 
-  private void addIfPresentInDefault(List<CustomSequenceDTO.EnvAndEnvGroupCard> appendSequence,
-      CustomSequenceDTO.EnvAndEnvGroupCard envGroupCard,
-      HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envGrpCardsMap) {
-    if (isNull(envGrpCardsMap.get(envGroupCard.getName() + envGroupCard.getIdentifier() + envGroupCard.isEnvGroup()))) {
-      envGroupCard.setNew(true);
-      appendSequence.add(envGroupCard);
+  @Override
+  public CustomSequenceDTO getDefaultSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    CustomSequenceDTO sequenceDTO = getSequenceDTO(
+        getEnvironmentInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, null, true));
+
+    Optional<ServiceSequence> serviceSequenceOptional =
+        serviceSequenceService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    if (!serviceSequenceOptional.isPresent()) {
+      return sequenceDTO;
     }
+    CustomSequenceDTO customSequenceDTO = serviceSequenceOptional.get().getCustomSequence();
+
+    if (isNull(customSequenceDTO)) {
+      return sequenceDTO;
+    }
+    Map<String, Boolean> cardToIsNew = new HashMap<>();
+    customSequenceDTO.getEnvAndEnvGroupCardList().forEach(
+        card -> cardToIsNew.put(card.getIdentifier() + card.isEnvGroup(), card.isNew()));
+    sequenceDTO.getEnvAndEnvGroupCardList().forEach(
+        card -> card.setNew(cardToIsNew.getOrDefault(card.getIdentifier() + card.isEnvGroup(), false)));
+    return sequenceDTO;
+  }
+
+  @Override
+  public ServiceSequence useCustomSequence(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, boolean useCustomSequence) {
+    ServiceSequence serviceSequence = ServiceSequence.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .serviceIdentifier(serviceId)
+                                          .shouldUseCustomSequence(useCustomSequence)
+                                          .build();
+    return serviceSequenceService.upsertSequence(serviceSequence);
+  }
+
+  @Override
+  public SequenceToggleDTO useCustomSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    Optional<ServiceSequence> serviceSequenceOptional =
+        serviceSequenceService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    if (!serviceSequenceOptional.isPresent()) {
+      return SequenceToggleDTO.builder().shouldUseCustomSequence(false).isNullCustomSequence(true).build();
+    }
+    return SequenceToggleDTO.builder()
+        .shouldUseCustomSequence(serviceSequenceOptional.get().isShouldUseCustomSequence())
+        .isNullCustomSequence(isNull(serviceSequenceOptional.get().getCustomSequence()))
+        .build();
   }
 
   @Override
@@ -1709,6 +1750,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                           .projectIdentifier(projectIdentifier)
                                           .customSequence(customSequenceDTO)
                                           .serviceIdentifier(serviceId)
+                                          .shouldUseCustomSequence(true)
                                           .build();
     return serviceSequenceService.upsertCustomSequence(serviceSequence);
   }
@@ -3271,8 +3313,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
   @Override
   public EnvironmentGroupInstanceDetails getEnvironmentInstanceDetails(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier,
-      EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO) {
+      String projectIdentifier, String serviceIdentifier, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO,
+      boolean returnDefaultSequence) {
     Boolean isGitOps = isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     List<EnvironmentInstanceCountModel> environmentInstanceCounts =
         instanceDashboardService.getInstanceCountForEnvironmentFilteredByService(
@@ -3311,38 +3353,38 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                 -> EmptyPredicate.isNotEmpty(servicePipelineWithRevertInfo.getPipelineExecutionId()))
             .map(servicePipelineWithRevertInfo -> servicePipelineWithRevertInfo.getPipelineExecutionId())
             .collect(Collectors.toList()));
-    return DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(artifactDeploymentDetailsMap, envToCountMap,
-        envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO,
-        pipelineExecutionDetailsMap, pipelineExecutionIdsWhereRollbackOccurred);
+    EnvironmentGroupInstanceDetails environmentGroupInstanceDetails =
+        DashboardServiceHelper.getEnvironmentInstanceDetailsFromMap(artifactDeploymentDetailsMap, envToCountMap,
+            envIdToEnvNameMap, envIdToEnvTypeMap, environmentGroupEntities, environmentFilterPropertiesDTO,
+            pipelineExecutionDetailsMap, pipelineExecutionIdsWhereRollbackOccurred);
 
-    /* saveDefaultSequenceInDB(
-         environmentGroupInstanceDetails, accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
+    if (returnDefaultSequence) {
+      return environmentGroupInstanceDetails;
+    }
+    environmentGroupInstanceDetails.setEnvironmentGroupInstanceDetails(
+        getCustomSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier,
+            environmentGroupInstanceDetails.getEnvironmentGroupInstanceDetails()));
 
-     environmentGroupInstanceDetails.setEnvironmentGroupInstanceDetails(
-         getServiceSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier,
-             environmentGroupInstanceDetails.getEnvironmentGroupInstanceDetails()));*/
+    return environmentGroupInstanceDetails;
   }
 
-  private List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> getServiceSequence(
+  private List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> getCustomSequence(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList) {
     Optional<ServiceSequence> serviceSequenceOptional =
         serviceSequenceService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier);
     ServiceSequence serviceSequence;
-    if (serviceSequenceOptional.isPresent()) {
-      serviceSequence = serviceSequenceOptional.get();
-    } else {
-      throw new InvalidRequestException(format("Failed to get service sequence for service id: ", serviceIdentifier));
+    if (!serviceSequenceOptional.isPresent()) {
+      return environmentGroupInstanceDetailList;
     }
+    serviceSequence = serviceSequenceOptional.get();
 
-    CustomSequenceDTO sequenceDTO;
-    if (isNull(serviceSequence.getCustomSequence())) {
+    if (!serviceSequence.isShouldUseCustomSequence() || isNull(serviceSequence.getCustomSequence())) {
       return environmentGroupInstanceDetailList;
 
     } else {
-      sequenceDTO = serviceSequence.getCustomSequence();
-
-      List<CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCards = sequenceDTO.getEnvAndEnvGroupCardList();
+      CustomSequenceDTO sequenceDTO = serviceSequence.getCustomSequence();
+      List<CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCardsCustom = sequenceDTO.getEnvAndEnvGroupCardList();
 
       List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> newEnvironmentGroupInstanceDetailList =
           new ArrayList<>();
@@ -3355,87 +3397,49 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
       HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envGrpMapForCustomSequence = new HashMap<>();
 
-      envAndEnvGroupCards.forEach(envGroupDetail
+      envAndEnvGroupCardsCustom.forEach(envGroupDetail
           -> envGrpMapForCustomSequence.put(
-              envGroupDetail.getName() + envGroupDetail.getIdentifier() + envGroupDetail.isEnvGroup(), envGroupDetail));
+              envGroupDetail.getIdentifier() + envGroupDetail.isEnvGroup(), envGroupDetail));
 
       environmentGroupInstanceDetailList.forEach(envGroupDetail
           -> envGrpMapForListFromDB.put(
-              envGroupDetail.getName() + envGroupDetail.getId() + envGroupDetail.getIsEnvGroup().toString(),
-              envGroupDetail));
+              envGroupDetail.getId() + envGroupDetail.getIsEnvGroup().toString(), envGroupDetail));
 
-      for (String key : envGrpMapForListFromDB.keySet()) {
-        if (isNull(envGrpMapForCustomSequence.get(key))) {
-          appendListForEnvGrpNotPresentInSequence.add(envGrpMapForListFromDB.get(key));
+      for (Map.Entry<String, EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> entry :
+          envGrpMapForListFromDB.entrySet()) {
+        if (!envGrpMapForCustomSequence.containsKey(entry.getKey())) {
+          appendListForEnvGrpNotPresentInSequence.add(entry.getValue());
         }
       }
-      envAndEnvGroupCards.forEach(envGroup
-          -> filterInstanceDetailsList(newEnvironmentGroupInstanceDetailList, envGrpMapForListFromDB, envGroup));
 
-      newEnvironmentGroupInstanceDetailList.addAll(0, appendListForEnvGrpNotPresentInSequence);
+      envAndEnvGroupCardsCustom.forEach(envGroup
+          -> filterNonDeletedEnvListForSequence(
+              newEnvironmentGroupInstanceDetailList, envGrpMapForListFromDB, envGroup));
 
-      saveCustomSequenceInDB(newEnvironmentGroupInstanceDetailList, envGrpMapForCustomSequence, accountIdentifier,
-          orgIdentifier, projectIdentifier, serviceIdentifier);
+      appendListForEnvGrpNotPresentInSequence.addAll(newEnvironmentGroupInstanceDetailList);
 
-      return newEnvironmentGroupInstanceDetailList;
+      return appendListForEnvGrpNotPresentInSequence;
     }
   }
 
-  private void saveCustomSequenceInDB(
+  private void filterNonDeletedEnvListForSequence(
       List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> newEnvironmentGroupInstanceDetailList,
-      HashMap<String, CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCards, String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
-    List<CustomSequenceDTO.EnvAndEnvGroupCard> sequenceToStoreInDB = new ArrayList<>();
-    for (EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail envGrpDetail :
-        newEnvironmentGroupInstanceDetailList) {
-      if (isNull(envAndEnvGroupCards.get(
-              envGrpDetail.getName() + envGrpDetail.getId() + envGrpDetail.getIsEnvGroup().toString()))) {
-        sequenceToStoreInDB.add(createEnvAndEnvGroupCard(envGrpDetail, true));
-      } else {
-        sequenceToStoreInDB.add(createEnvAndEnvGroupCard(envGrpDetail, false));
-      }
-    }
-
-    CustomSequenceDTO customSequenceDTO =
-        CustomSequenceDTO.builder().EnvAndEnvGroupCardList(sequenceToStoreInDB).build();
-    ServiceSequence serviceSequence = ServiceSequence.builder()
-                                          .customSequence(customSequenceDTO)
-                                          .accountId(accountIdentifier)
-                                          .projectIdentifier(projectIdentifier)
-                                          .orgIdentifier(orgIdentifier)
-                                          .serviceIdentifier(serviceIdentifier)
-                                          .build();
-    serviceSequenceService.upsertCustomSequence(serviceSequence);
-  }
-
-  private void filterInstanceDetailsList(
-      List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> newEnvironmentGroupInstanceDetailList,
-      HashMap<String, EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> mapForEnvGroup,
+      HashMap<String, EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> envGrpMapForListFromDB,
       CustomSequenceDTO.EnvAndEnvGroupCard envGroup) {
-    if (!isNull(mapForEnvGroup.get(envGroup.getName() + envGroup.getIdentifier() + envGroup.isEnvGroup()))) {
+    if (!isNull(envGrpMapForListFromDB.get(envGroup.getIdentifier() + envGroup.isEnvGroup()))) {
       newEnvironmentGroupInstanceDetailList.add(
-          mapForEnvGroup.get(envGroup.getName() + envGroup.getIdentifier() + envGroup.isEnvGroup()));
+          envGrpMapForListFromDB.get(envGroup.getIdentifier() + envGroup.isEnvGroup()));
     }
   }
 
-  private void saveDefaultSequenceInDB(EnvironmentGroupInstanceDetails environmentGroupInstanceDetails,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier) {
+  private CustomSequenceDTO getSequenceDTO(EnvironmentGroupInstanceDetails environmentGroupInstanceDetails) {
     List<EnvironmentGroupInstanceDetails.EnvironmentGroupInstanceDetail> environmentGroupInstanceDetailList =
         environmentGroupInstanceDetails.getEnvironmentGroupInstanceDetails();
     List<CustomSequenceDTO.EnvAndEnvGroupCard> envAndEnvGroupCards = new ArrayList<>();
 
     environmentGroupInstanceDetailList.forEach(
         envGrpDetail -> envAndEnvGroupCards.add(createEnvAndEnvGroupCard(envGrpDetail, false)));
-    CustomSequenceDTO defaultSequenceDTO =
-        CustomSequenceDTO.builder().EnvAndEnvGroupCardList(envAndEnvGroupCards).build();
-    ServiceSequence serviceSequence = ServiceSequence.builder()
-                                          .defaultSequence(defaultSequenceDTO)
-                                          .accountId(accountIdentifier)
-                                          .projectIdentifier(projectIdentifier)
-                                          .orgIdentifier(orgIdentifier)
-                                          .serviceIdentifier(serviceIdentifier)
-                                          .build();
-    serviceSequenceService.upsertDefaultSequence(serviceSequence);
+    return CustomSequenceDTO.builder().envAndEnvGroupCardList(envAndEnvGroupCards).build();
   }
 
   private CustomSequenceDTO.EnvAndEnvGroupCard createEnvAndEnvGroupCard(

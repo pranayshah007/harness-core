@@ -78,7 +78,10 @@ public class ConfigManagerUtils {
 
   public JsonNode asJsonNode(String yamlString) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    JsonNode jsonNode = mapper.readTree(yamlString);
+    JsonNode jsonNode = mapper.createObjectNode();
+    if (yamlString != null) {
+      jsonNode = mapper.readTree(yamlString);
+    }
     return jsonNode;
   }
 

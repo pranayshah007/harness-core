@@ -1223,17 +1223,11 @@ public class UserServiceImpl implements UserService {
             account.getUuid());
     Map<String, String> model = getTemplateModel(user.getName(), loginUrl);
     model.put("company", account.getCompanyName());
-    model.put(
-        "subject", "You have been invited to the " + account.getCompanyName().toUpperCase() + " account at Harness");
+    model.put("subject", "You have been added to the account " + account.getAccountName() + " on Harness");
     model.put("email", user.getEmail());
     model.put("name", user.getEmail());
     model.put("authenticationMechanism", account.getAuthenticationMechanism().getType());
-    model.put("message",
-        "You have been added to account " + account.getAccountName() + " on Harness Platform."
-            + " CLick below to Sign-in");
-
-    SSOSettings ssoSettings = getSSOSettings(account);
-    model.put("ssoUrl", checkGetDomainName(account, ssoSettings.getUrl()));
+    model.put("message", "You have been added to the account " + account.getAccountName() + " on Harness Platform.");
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));

@@ -25,8 +25,8 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
-import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
+import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 
@@ -77,9 +77,9 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
         (ConnectorInfoDTO) kryoSerializer.asObject(taskParams.getConnectorInfoDto().toByteArray());
 
     Set<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList =
-        details.getDeploymentDetailsList()
+        details.getDeploymentDetails()
             .stream()
-            .map(deploymentDetails -> AnyUtils.unpack(deploymentDetails, K8sDeploymentReleaseDetails.class))
+            .map(K8sDeploymentReleaseDetails.class ::cast)
             .map(this::setDefaultNamespaceIfNeeded)
             .collect(Collectors.toSet());
 
@@ -100,8 +100,8 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
   }
 
   private K8sDeploymentReleaseDetails setDefaultNamespaceIfNeeded(K8sDeploymentReleaseDetails releaseDetails) {
-    if (isEmpty(releaseDetails.getNamespacesList()) && isNotBlank(releaseDetails.getReleaseName())) {
-      releaseDetails.getNamespacesList().add(DEFAULT_NAMESPACE);
+    if (isEmpty(releaseDetails.getNamespaces()) && isNotBlank(releaseDetails.getReleaseName())) {
+      releaseDetails.getNamespaces().add(DEFAULT_NAMESPACE);
     }
     return releaseDetails;
   }
@@ -119,7 +119,7 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
 
   private List<PodDetailsRequest> populatePodDetailsRequest(ConnectorInfoDTO connectorDTO,
       K8sDeploymentReleaseDetails releaseDetails, List<EncryptedDataDetail> encryptedDataDetails) {
-    HashSet<String> namespaces = new HashSet<>(releaseDetails.getNamespacesList());
+    HashSet<String> namespaces = new HashSet<>(releaseDetails.getNamespaces());
     String releaseName = releaseDetails.getReleaseName();
     return namespaces.stream()
         .map(namespace

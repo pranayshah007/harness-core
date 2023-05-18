@@ -78,6 +78,8 @@ import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloud
 import io.harness.cdng.provision.terraformcloud.resources.service.TerraformCloudResourceServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
@@ -191,6 +193,7 @@ public class NGModule extends AbstractModule {
     bind(TerraformCloudPlanExecutionDetailsService.class).to(TerraformCloudPlanExecutionDetailsServiceImpl.class);
     bind(ServiceOverridesServiceV2.class).to(ServiceOverridesServiceV2Impl.class);
     bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
+    bind(ServiceOverrideV2MigrationService.class).to(ServiceOverrideV2MigrationServiceImpl.class);
 
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);

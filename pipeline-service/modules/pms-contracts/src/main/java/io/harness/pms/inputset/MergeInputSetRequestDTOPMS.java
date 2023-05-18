@@ -40,4 +40,7 @@ public class MergeInputSetRequestDTOPMS {
   @Schema(description =
               "Runtime Input Yaml needed to be merged into the result of the merged Yaml of the inputSetReferences")
   String lastYamlToMerge;
+
+  @Schema(description = "To be set true if we want to set user flow in thread context", hidden = true)
+  boolean getOnlyFileContent;
 }

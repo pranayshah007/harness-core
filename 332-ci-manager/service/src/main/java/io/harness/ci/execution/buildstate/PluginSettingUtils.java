@@ -21,6 +21,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V1;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DOCKER_REGISTRY_V2;
+import static io.harness.ci.commonconstants.CIExecutionConstants.NULL_STR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ASSUME_ROLE;
@@ -517,7 +518,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
 
     String dockerFile =
         resolveStringParameter("dockerfile", "BuildAndPushDockerRegistry", identifier, stepInfo.getDockerfile(), false);
-    if (dockerFile != null && !dockerFile.equals(UNRESOLVED_PARAMETER)) {
+    if (dockerFile != null && !dockerFile.equals(UNRESOLVED_PARAMETER) && !dockerFile.equals(NULL_STR)) {
       PluginServiceImpl.setOptionalEnvironmentVariable(map, PLUGIN_DOCKERFILE, dockerFile);
     }
 

@@ -63,7 +63,6 @@ public class InstanceSyncResource {
   @DelegateAuth
   @GET
   @Path("instance-sync-ng-v2/task/{perpetualTaskId}/details")
-  @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
   public Response fetchInstanceSyncV2TaskDetails(
       @PathParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");

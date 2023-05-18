@@ -276,6 +276,8 @@ public class OrchestrationServiceImpl implements OrchestrationService {
 
     if (analysisStateMachine != null && ignoredCount < STATE_MACHINE_IGNORE_LIMIT) {
       stateMachineService.initiateStateMachine(verificationTaskId, analysisStateMachine);
+      stateMachineEventPublisherService.registerTaskComplete(
+          analysisStateMachine.getAccountId(), analysisStateMachine.getVerificationTaskId());
     }
     if (analysisStateMachine == null) {
       updateStatusOfOrchestrator(verificationTaskId, AnalysisOrchestratorStatus.WAITING);
