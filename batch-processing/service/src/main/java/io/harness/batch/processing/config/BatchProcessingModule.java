@@ -52,8 +52,12 @@ import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
+import io.harness.ccm.graphql.core.msp.impl.ManagedAccountDataServiceImpl;
+import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
+import io.harness.ccm.msp.service.impl.MarginDetailsServiceImpl;
+import io.harness.ccm.msp.service.intf.MarginDetailsService;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.views.businessmapping.service.impl.BusinessMappingHistoryServiceImpl;
@@ -203,6 +207,8 @@ public class BatchProcessingModule extends AbstractModule {
     bind(GovernanceRuleService.class).to(GovernanceRuleServiceImpl.class);
     bind(RuleExecutionService.class).to(RuleExecutionServiceImpl.class);
     bind(AnomalyService.class).to(AnomalyServiceImpl.class);
+    bind(MarginDetailsService.class).to(MarginDetailsServiceImpl.class);
+    bind(ManagedAccountDataService.class).to(ManagedAccountDataServiceImpl.class);
     install(new ConnectorResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new InstanceNGResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
