@@ -249,7 +249,7 @@ public class AmbianceUtils {
   public Optional<Level> getStageLevelFromAmbiance(Ambiance ambiance) {
     Optional<Level> stageLevel = Optional.empty();
     for (Level level : ambiance.getLevelsList()) {
-      if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+      if (level.getStepType().getStepCategory() == StepCategory.STAGE || Objects.equals(level.getGroup(), "STAGE")) {
         stageLevel = Optional.of(level);
       }
     }
