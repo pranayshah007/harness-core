@@ -296,6 +296,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GithubConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GithubDTOToEntity.class, GithubEntityToDTO.class,
             GitValidationHandler.class));
+    registrar.put(ConnectorType.HARNESS,
+        new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GithubConnectorValidator.class,
+            ScmConnectorValidationParamsProvider.class, GithubDTOToEntity.class, GithubEntityToDTO.class,
+            GitValidationHandler.class));
     registrar.put(ConnectorType.GITLAB,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GitlabConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GitlabDTOToEntity.class, GitlabEntityToDTO.class,

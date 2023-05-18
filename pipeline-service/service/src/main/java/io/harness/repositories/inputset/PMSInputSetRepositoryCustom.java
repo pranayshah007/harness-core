@@ -69,4 +69,6 @@ public interface PMSInputSetRepositoryCustom {
       InputSetEntity inputSetToMove, Criteria criteria, Update update, MoveConfigOperationType moveConfigOperationType);
 
   List<String> findAllUniqueInputSetRepos(@NotNull Criteria criteria);
+
+  InputSetEntity updateEntity(Criteria criteria, Update update);
 }

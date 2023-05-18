@@ -186,9 +186,12 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     switch (secretManager.getEncryptionType()) {
       case GCP_SECRETS_MANAGER:
         additionalMetadataValidationHelper.validateAdditionalMetadataForGcpSecretManager(secret);
-        return;
+        break;
+      case AZURE_VAULT:
+        additionalMetadataValidationHelper.validateAdditionalMetadataForAzureValue(secret);
+        break;
       default:
-        return;
+        break;
     }
   }
 

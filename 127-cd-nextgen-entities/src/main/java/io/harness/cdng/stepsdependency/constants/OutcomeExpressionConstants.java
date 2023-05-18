@@ -81,4 +81,5 @@ public class OutcomeExpressionConstants {
   public final String SERVICE_HOOKS = "hooks";
 
   public final String AWS_LAMBDA_FUNCTION_PREPARE_ROLLBACK_OUTCOME = "awsLambdaFunctionPrepareRollbackOutcome";
+  public final String SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME = "sshWinRmPrepareRollbackDataOutcome";
 }

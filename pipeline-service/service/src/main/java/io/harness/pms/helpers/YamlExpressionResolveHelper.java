@@ -18,6 +18,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.ngtriggers.expressions.NGTriggerExpressionEvaluatorProvider;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.pipeline.ResolveInputYamlType;
@@ -120,7 +121,8 @@ public class YamlExpressionResolveHelper {
       YamlNode parentNode, int childIndex, String childValue, EngineExpressionEvaluator engineExpressionEvaluator) {
     ArrayNode object = (ArrayNode) parentNode.getCurrJsonNode();
     if (EngineExpressionEvaluator.hasExpressions(childValue)) {
-      String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
+      String resolvedExpression = engineExpressionEvaluator.renderExpression(
+          childValue, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       // Update node value only if expression was successfully resolved
       if (isExpressionResolved(resolvedExpression) && !resolvedExpression.equals(childValue)) {
         object.set(childIndex, resolvedExpression);
@@ -135,7 +137,8 @@ public class YamlExpressionResolveHelper {
       return;
     }
     if (EngineExpressionEvaluator.hasExpressions(childValue)) {
-      String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
+      String resolvedExpression = engineExpressionEvaluator.renderExpression(
+          childValue, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       // Update node value only if expression was successfully resolved
       if (isExpressionResolved(resolvedExpression) && !resolvedExpression.equals(childValue)) {
         objectNode.put(childName, resolvedExpression);

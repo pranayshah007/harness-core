@@ -718,13 +718,18 @@ public class YamlUtils {
 
   private void removeUuidInObject(JsonNode node) {
     ObjectNode objectNode = (ObjectNode) node;
+    List<String> removalKeyList = new ArrayList<>();
     for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
       Entry<String, JsonNode> field = it.next();
       if (field.getKey().equals(YamlNode.UUID_FIELD_NAME)) {
-        objectNode.remove(field.getKey());
+        removalKeyList.add(field.getKey());
       } else {
         removeUuid(field.getValue());
       }
+    }
+
+    for (String key : removalKeyList) {
+      objectNode.remove(key);
     }
   }
 

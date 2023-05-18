@@ -30,6 +30,8 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -42,8 +44,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.IDP)
 @Slf4j
-@AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @com.google.inject.Inject }))
+@AllArgsConstructor(access = AccessLevel.PUBLIC, onConstructor = @__({ @com.google.inject.Inject }))
 public class ConfigManagerServiceImpl implements ConfigManagerService {
+  @Inject @Named("env") private String env;
   private AppConfigRepository appConfigRepository;
   private MergedAppConfigRepository mergedAppConfigRepository;
   private K8sClient k8sClient;
@@ -58,15 +61,18 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       "Plugin config saving is unsuccessful for plugin - % in account - %s";
   private static final String NO_PLUGIN_ENABLED_FOR_ACCOUNT = "No plugin is enabled for account - %s";
   private static final String BASE_APP_CONFIG_PATH = "baseappconfig.yaml";
+  private static final String BASE_APP_CONFIG_PATH_QA = "baseappconfig-qa.yaml";
+  private static final String BASE_APP_CONFIG_PATH_PRE_QA = "baseappconfig-preqa.yaml";
+  private static final String BASE_APP_CONFIG_PATH_COMPLIANCE = "baseappconfig-compliance.yaml";
 
   private static final String CONFIG_DATA_NAME = "config";
 
   private static final String CONFIG_NAME = "backstage-override-config";
 
-  private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid plugin config provided for Plugin id - %s";
+  private static final String INVALID_PLUGIN_CONFIG_PROVIDED = "Invalid config provided for Plugin id - %s";
   private static final String MERGED_APP_CONFIG_JSON_SCHEMA_PATH = "configs/json-schemas/merged-app-config-schema.json";
 
-  private static final String INVALID_CONFIG_ID_PROVIDED = "Error in reading schema - Invalid config id provided";
+  private static final String INVALID_CONFIG_ID_PROVIDED = "Error in reading schema - Invalid config id provided - %s";
 
   private static final String INVALID_MERGED_APP_CONFIG_SCHEMA =
       "Invalid schema for merged app-config.yaml for account - %s";
@@ -186,7 +192,8 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   @Override
   public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
     List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
-    if (allEnabledPluginConfigs.isEmpty()) {
+    boolean isAllEnabledPluginsWithNoConfig = allEnabledPluginConfigs.stream().allMatch(config -> config == null);
+    if (allEnabledPluginConfigs.isEmpty() || isAllEnabledPluginsWithNoConfig) {
       throw new InvalidRequestException(String.format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
     }
     Iterator<String> itr = allEnabledPluginConfigs.iterator();
@@ -221,7 +228,9 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   private String mergeAppConfigs(List<String> configs) throws Exception {
-    String baseAppConfig = readFileFromClassPath(BASE_APP_CONFIG_PATH);
+    String baseAppConfigPath = getBaseAppConfigPath();
+    log.info("Base config path - {} for env - {}: ", baseAppConfigPath, env);
+    String baseAppConfig = readFileFromClassPath(baseAppConfigPath);
     JsonNode baseConfig = ConfigManagerUtils.asJsonNode(baseAppConfig);
     Iterator<String> itr = configs.iterator();
     while (itr.hasNext()) {
@@ -263,7 +272,7 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   public void validateSchemaForPlugin(String config, String configId) throws Exception {
     String pluginSchema = ConfigManagerUtils.getPluginConfigSchema(configId);
     if (pluginSchema == null) {
-      throw new UnsupportedOperationException(INVALID_CONFIG_ID_PROVIDED);
+      throw new UnsupportedOperationException(String.format(INVALID_CONFIG_ID_PROVIDED, configId));
     }
     if (!ConfigManagerUtils.isValidSchema(config, pluginSchema)) {
       throw new InvalidRequestException(String.format(INVALID_PLUGIN_CONFIG_PROVIDED, configId));
@@ -304,5 +313,18 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
       return false;
     }
     return true;
+  }
+
+  private String getBaseAppConfigPath() {
+    switch (env) {
+      case "qa":
+        return BASE_APP_CONFIG_PATH_QA;
+      case "stress":
+        return BASE_APP_CONFIG_PATH_PRE_QA;
+      case "compliance":
+        return BASE_APP_CONFIG_PATH_COMPLIANCE;
+      default:
+        return BASE_APP_CONFIG_PATH;
+    }
   }
 }

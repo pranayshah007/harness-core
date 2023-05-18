@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instanceinfo.AsgInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsLambdaInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.AwsSamInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AwsSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureSshWinrmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.AzureWebAppInstanceInfoDTO;
@@ -28,6 +29,7 @@ import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
 import io.harness.entities.instanceinfo.AsgInstanceInfo;
 import io.harness.entities.instanceinfo.AwsLambdaInstanceInfo;
+import io.harness.entities.instanceinfo.AwsSamInstanceInfo;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureWebAppNGInstanceInfo;
@@ -81,6 +83,8 @@ public class InstanceInfoMapper {
       return AsgInstanceInfoMapper.toDTO((AsgInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof GoogleFunctionInstanceInfo) {
       return GoogleFunctionInstanceInfoMapper.toDTO((GoogleFunctionInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof AwsSamInstanceInfo) {
+      return AwsSamInstanceInfoMapper.toDTO((AwsSamInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof AwsLambdaInstanceInfo) {
       return AwsLambdaInstanceInfoMapper.toDTO((AwsLambdaInstanceInfo) instanceInfo);
     }
@@ -118,6 +122,8 @@ public class InstanceInfoMapper {
       return AsgInstanceInfoMapper.toEntity((AsgInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof GoogleFunctionInstanceInfoDTO) {
       return GoogleFunctionInstanceInfoMapper.toEntity((GoogleFunctionInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof AwsSamInstanceInfoDTO) {
+      return AwsSamInstanceInfoMapper.toEntity((AwsSamInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof AwsLambdaInstanceInfoDTO) {
       return AwsLambdaInstanceInfoMapper.toEntity((AwsLambdaInstanceInfoDTO) instanceInfoDTO);
     }

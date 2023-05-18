@@ -23,7 +23,7 @@ import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.Ro
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
@@ -36,8 +36,8 @@ import io.harness.utils.CryptoUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -52,7 +52,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class ProjectOrgBasicRoleCreationJob implements Runnable {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final FeatureFlagService featureFlagService;
-  private final AccountClient accountClient;
+  private final AccountUtils accountUtils;
   private final ScopeService scopeService;
   private final PersistentLocker persistentLocker;
   private final String DEBUG_MESSAGE = "ProjectOrgBasicRoleCreationJob: ";
@@ -66,11 +66,11 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
 
   @Inject
   public ProjectOrgBasicRoleCreationJob(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService,
+      FeatureFlagService featureFlagService, AccountUtils accountUtils, ScopeService scopeService,
       PersistentLocker persistentLocker) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagService = featureFlagService;
-    this.accountClient = accountClient;
+    this.accountUtils = accountUtils;
     this.scopeService = scopeService;
     this.persistentLocker = persistentLocker;
   }
@@ -101,7 +101,7 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
   }
 
   private void execute() {
-    Set<String> targetAccounts = featureFlagService.getAccountIds(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS);
+    List<String> targetAccounts = getFFEnabledAccounts();
     if (isEmpty(targetAccounts)) {
       return;
     }
@@ -141,6 +141,23 @@ public class ProjectOrgBasicRoleCreationJob implements Runnable {
     } catch (Exception ex) {
       log.error(DEBUG_MESSAGE + "Failed to create basic role for org/project", ex);
     }
+  }
+
+  private List<String> getFFEnabledAccounts() {
+    List<String> accountIds = accountUtils.getAllAccountIds();
+    List<String> targetAccounts = new ArrayList<>();
+    try {
+      for (String accountId : accountIds) {
+        boolean isBasicRoleCreationEnabled =
+            featureFlagService.isEnabled(PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS, accountId);
+        if (isBasicRoleCreationEnabled) {
+          targetAccounts.add(accountId);
+        }
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_ENABLE_BASIC_ROLE_FOR_PROJECTS_ORGS");
+    }
+    return targetAccounts;
   }
 
   private void addBasicRoleToDefaultUserGroup(Criteria criteria, String roleIdentifier) {

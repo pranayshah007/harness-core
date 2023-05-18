@@ -79,7 +79,7 @@ public class AuthenticationUtils {
   }
 
   protected User getUserByEmail(String userName) {
-    return wingsPersistence.createQuery(User.class).field("email").equal(userName.trim().toLowerCase()).get();
+    return wingsPersistence.createQuery(User.class).field("email").equalIgnoreCase(userName.trim().toLowerCase()).get();
   }
 
   public Account getAccount(String accountId) {

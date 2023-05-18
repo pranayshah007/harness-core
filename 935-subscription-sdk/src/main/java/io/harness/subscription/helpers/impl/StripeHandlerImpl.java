@@ -41,10 +41,14 @@ import com.stripe.param.SubscriptionUpdateParams;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StripeHandlerImpl {
   private final TelemetryReporter telemetryReporter;
   private static final String SUBSCRIPTION = "subscription";
+  private static final String SUBSCRIPTION_PAYMENT_SUCCEEDED = "Subscription Payment Succeeded";
+  private static final String SUBSCRIPTION_PAYMENT_FAILED = "Subscription Payment Failed";
 
   @Inject
   StripeHandlerImpl(TelemetryReporter telemetryReporter) {
@@ -200,12 +204,15 @@ public class StripeHandlerImpl {
     }
   }
 
-  Invoice payInvoice(String invoiceId) {
+  Invoice payInvoice(String invoiceId, String accountIdentifier) {
     try {
       Invoice invoice = Invoice.retrieve(invoiceId);
 
+      sendTelemetryEvent(SUBSCRIPTION_PAYMENT_SUCCEEDED, invoice.getCustomerEmail(), accountIdentifier, null);
       return invoice.pay();
     } catch (StripeException e) {
+      log.error(SUBSCRIPTION_PAYMENT_FAILED + ": {} at {}", e.getMessage(), e.getStackTrace());
+      sendTelemetryEvent(SUBSCRIPTION_PAYMENT_FAILED, null, accountIdentifier, null);
       throw new InvalidRequestException("Unable to preview upcoming invoice", e);
     }
   }

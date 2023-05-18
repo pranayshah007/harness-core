@@ -331,11 +331,15 @@ public class AmbianceUtils {
                                  .collect(Collectors.joining("_"));
 
     if (useMatrixFieldName) {
+      List<String> matrixKeysToSkipInName =
+          level.getStrategyMetadata().getMatrixMetadata().getMatrixKeysToSkipInNameList();
       levelIdentifier = level.getStrategyMetadata()
                             .getMatrixMetadata()
                             .getMatrixValuesMap()
                             .entrySet()
                             .stream()
+                            .filter(entry -> !matrixKeysToSkipInName.contains(entry.getKey()))
+                            .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
     }
@@ -447,5 +451,19 @@ public class AmbianceUtils {
   public boolean isRollbackModeExecution(Ambiance ambiance) {
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();
     return executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK || executionMode == ExecutionMode.PIPELINE_ROLLBACK;
+  }
+
+  public String getStageExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getOriginalStageExecutionIdForRollbackMode();
+    }
+    return ambiance.getStageExecutionId();
+  }
+
+  public String getPlanExecutionIdForExecutionMode(Ambiance ambiance) {
+    if (isRollbackModeExecution(ambiance)) {
+      return ambiance.getMetadata().getOriginalPlanExecutionIdForRollbackMode();
+    }
+    return ambiance.getPlanExecutionId();
   }
 }

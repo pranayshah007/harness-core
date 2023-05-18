@@ -15,9 +15,9 @@ spec:
                   number: {{ .Values.service.port }}
             path: /api
             pathType: ImplementationSpecific
-    {{- range .Values.global.ingress.hosts }}
-    host: {{ . | quote }}
-    {{- end }}
+      {{- range .Values.global.ingress.hosts }}
+      host: {{ . | quote }}
+      {{- end }}
   {{- if .Values.global.ingress.tls.enabled }}
   tls:
     - hosts:
@@ -63,8 +63,8 @@ metadata:
   name: blocking-swagger-api
   namespace: {{ .Release.Namespace }}
   annotations:
-    {{- if .Values.global.ingress.nginx.objects.annotations }}
-    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.nginx.objects.annotations "context" $ ) | nindent 4 }}
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
     {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:

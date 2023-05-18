@@ -15,6 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 
@@ -26,7 +27,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = ScheduledTriggerConfig.class, name = "Scheduled")
   , @JsonSubTypes.Type(value = WebhookTriggerConfigV2.class, name = "Webhook"),
       @JsonSubTypes.Type(value = ArtifactTriggerConfig.class, name = "Artifact"),
-      @JsonSubTypes.Type(value = ManifestTriggerConfig.class, name = "Manifest")
+      @JsonSubTypes.Type(value = ManifestTriggerConfig.class, name = "Manifest"),
+      @JsonSubTypes.Type(value = MultiArtifactTriggerConfig.class, name = "MultiArtifact")
 })
 @OwnedBy(PIPELINE)
 public interface NGTriggerSpecV2 {}

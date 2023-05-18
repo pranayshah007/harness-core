@@ -24,7 +24,6 @@ check_mongo_status () {
   fi
 }
 
-set -x
 
 #Parse the comma separated list of mongo URIs and store into the array
 echo $TEST_MONGO_URIS

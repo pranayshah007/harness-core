@@ -11,6 +11,7 @@ import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
@@ -45,6 +46,8 @@ import io.harness.exception.TriggerException;
 import io.harness.exception.ngexception.NGPipelineNotFoundException;
 import io.harness.expression.common.ExpressionConstants;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.logging.AutoLogContext;
+import io.harness.logging.NgTriggerAutoLogContext;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -68,7 +71,9 @@ import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
+import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -193,6 +198,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getIdentifier());
     }
     try {
+      populateCustomWebhookTokenForCustomWebhookTriggers(ngTriggerEntity);
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
       performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
@@ -210,6 +216,13 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     } catch (DuplicateKeyException e) {
       throw new DuplicateFieldException(
           String.format(DUP_KEY_EXP_FORMAT_STRING, ngTriggerEntity.getIdentifier()), USER_SRE, e);
+    }
+  }
+
+  private void populateCustomWebhookTokenForCustomWebhookTriggers(NGTriggerEntity ngTriggerEntity) {
+    if (ngTriggerEntity.getMetadata().getWebhook() != null
+        && ngTriggerEntity.getMetadata().getWebhook().getCustom() != null) {
+      ngTriggerEntity.setCustomWebhookToken(generateUuid());
     }
   }
 
@@ -257,7 +270,15 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
         PollingDocument pollingDocument =
             (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
-        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
+        try (
+            AutoLogContext ignore0 = new NgTriggerAutoLogContext("pollingDocumentId", pollingDocument.getPollingDocId(),
+                ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
+                ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(),
+                ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+          log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
+              ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
+          updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
+        }
       }
     } catch (Exception exception) {
       log.error(String.format("Polling Subscription Request failed for Trigger: %s with error",
@@ -622,6 +643,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   @Override
+  public Optional<NGTriggerEntity> findTriggersForCustomWebhookViaCustomWebhookToken(String webhookToken) {
+    return ngTriggerRepository.findByCustomWebhookToken(webhookToken);
+  }
+
+  @Override
   public List<NGTriggerEntity> findTriggersForWehbookBySourceRepoType(
       TriggerWebhookEvent triggerWebhookEvent, boolean isDeleted, boolean enabled) {
     Page<NGTriggerEntity> triggersPage = list(TriggerFilterHelper.createCriteriaFormWebhookTriggerGetListByRepoType(
@@ -759,6 +785,15 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         validateStageIdentifierAndBuildRef(
             (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
+      case MULTI_ARTIFACT:
+        if (!pmsFeatureFlagService.isEnabled(
+                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)) {
+          throw new InvalidRequestException(
+              "Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-artifact triggers.");
+        }
+        validateMultiArtifactTriggerConfig(
+            (MultiArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
+        return;
       default:
         return; // not implemented
     }
@@ -884,6 +919,35 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       validationFailed = true;
     }
 
+    if (validationFailed) {
+      throw new InvalidArgumentsException(msg.toString());
+    }
+  }
+
+  private void validateMultiArtifactTriggerConfig(MultiArtifactTriggerConfig triggerConfig, boolean serviceV2) {
+    StringBuilder msg = new StringBuilder(128);
+    boolean validationFailed = false;
+    if (!serviceV2) {
+      msg.append("Multi-Artifact triggers are only supported with Service V2.\n");
+      validationFailed = true;
+    }
+    if (triggerConfig.getType() == null) {
+      msg.append("Multi-Artifact trigger source type must have a valid artifact source type value.\n");
+    }
+    if (isEmpty(triggerConfig.getSources())) {
+      msg.append("Multi-Artifact trigger sources list must have at least one element.\n");
+      validationFailed = true;
+    }
+    if (isNotEmpty(triggerConfig.getSources())) {
+      String artifactBuildType = triggerConfig.fetchBuildType();
+      for (ArtifactTypeSpec artifactSource : triggerConfig.getSources()) {
+        if (!artifactBuildType.equals(artifactSource.fetchBuildType())) {
+          msg.append("Multi-Artifact sources must all be of type ").append(artifactBuildType).append(".\n");
+          validationFailed = true;
+          break;
+        }
+      }
+    }
     if (validationFailed) {
       throw new InvalidArgumentsException(msg.toString());
     }

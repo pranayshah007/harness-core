@@ -22,6 +22,8 @@ import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.fqn.FQNNode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -199,7 +201,8 @@ public class RuntimeInputFormHelper {
                               : FQN.builder().fqnList(fqnList).build();
   }
 
-  public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
+  public String createExecutionInputFormAndUpdateYamlField(YamlField yamlField) {
+    JsonNode jsonNode = yamlField.getNode().getParentNode().getCurrJsonNode();
     YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
@@ -214,12 +217,22 @@ public class RuntimeInputFormHelper {
         templateMap.put(key, fullMap.get(key));
       }
     });
-    // Updating the executionInput field to expression in jsonNode.
-    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
-    return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    if (EmptyPredicate.isNotEmpty(templateMap)) {
+      updateJsonNodeInYamlNodeForExecutionInput(yamlField.getNode(), jsonNode, fullMap, yamlField.getName());
+      return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
+    }
+    return null;
   }
 
-  public String createExecutionInputFormAndUpdateYamlFieldForStage(JsonNode jsonNode) {
+  private void updateJsonNodeInYamlNodeForExecutionInput(
+      YamlNode yamlNode, JsonNode jsonNode, Map<FQN, Object> fullMap, String fieldName) {
+    JsonNode copyJsonNode = jsonNode.deepCopy();
+    JsonNodeUtils.merge(copyJsonNode, (new YamlConfig(fullMap, copyJsonNode, false, true)).getYamlMap());
+    yamlNode.setCurrJsonNode(copyJsonNode.get(fieldName), fieldName);
+  }
+
+  public String createExecutionInputFormAndUpdateYamlFieldForStage(YamlField yamlField) {
+    JsonNode jsonNode = yamlField.getNode().getParentNode().getCurrJsonNode();
     YamlConfig yamlConfig = new YamlConfig(jsonNode, true);
 
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
@@ -243,7 +256,7 @@ public class RuntimeInputFormHelper {
     // TODO: we are updating the json node, due to race condition ConcurrentModificationException is possible here. To
     // minimize the race condition, adding NotEmpty condition on templateMap. Find permanent way to solve this issue
     if (isNotEmpty(templateMap)) {
-      JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap(), false, true)).getYamlMap());
+      updateJsonNodeInYamlNodeForExecutionInput(yamlField.getNode(), jsonNode, fullMap, yamlField.getName());
       return (new YamlConfig(templateMap, yamlConfig.getYamlMap(), false, true)).getYaml();
     }
     return null;

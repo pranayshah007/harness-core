@@ -48,7 +48,8 @@ public class WebhookHelper {
   }
 
   public String generateCustomWebhookUrl(WebhookConfigProvider webhookConfigProvider, String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String triggerIdentifier) {
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String triggerIdentifier,
+      String customWebhookToken) {
     String webhookUrl = webhookConfigProvider.getCustomApiBaseUrl();
     if (isBlank(webhookUrl)) {
       return null;
@@ -65,23 +66,44 @@ public class WebhookHelper {
       urlBuilder.append('/');
     }
 
-    // This will change to common endpoint that will be used by all
-    urlBuilder.append("webhook/custom/v2?accountIdentifier=")
-        .append(accountId)
-        .append("&orgIdentifier=")
-        .append(orgIdentifier)
-        .append("&projectIdentifier=")
-        .append(projectIdentifier)
-        .append("&pipelineIdentifier=")
-        .append(pipelineIdentifier)
-        .append("&triggerIdentifier=")
-        .append(triggerIdentifier);
+    if (customWebhookToken == null) {
+      // This will change to common endpoint that will be used by all
+      urlBuilder.append("webhook/custom/v2?accountIdentifier=")
+          .append(accountId)
+          .append("&orgIdentifier=")
+          .append(orgIdentifier)
+          .append("&projectIdentifier=")
+          .append(projectIdentifier)
+          .append("&pipelineIdentifier=")
+          .append(pipelineIdentifier)
+          .append("&triggerIdentifier=")
+          .append(triggerIdentifier);
+    } else {
+      urlBuilder.append("webhook/custom/")
+          .append(customWebhookToken)
+          .append("/v3?accountIdentifier=")
+          .append(accountId)
+          .append("&orgIdentifier=")
+          .append(orgIdentifier)
+          .append("&projectIdentifier=")
+          .append(projectIdentifier)
+          .append("&pipelineIdentifier=")
+          .append(pipelineIdentifier)
+          .append("&triggerIdentifier=")
+          .append(triggerIdentifier);
+    }
     return urlBuilder.toString();
   }
 
-  public String generateCustomWebhookCurlCommand(String webhookUrl) {
-    return String.format(
-        "curl -X POST -H 'content-type: application/json' -H 'X-Api-Key: sample_api_key' --url '%s' -d '{\"sample_key\": \"sample_value\"}'",
-        webhookUrl);
+  public String generateCustomWebhookCurlCommand(String webhookUrl, boolean mandatoryAuth) {
+    if (mandatoryAuth) {
+      return String.format(
+          "curl -X POST -H 'content-type: application/json' -H 'X-Api-Key: sample_api_key' --url '%s' -d '{\"sample_key\": \"sample_value\"}'",
+          webhookUrl);
+    } else {
+      return String.format(
+          "curl -X POST -H 'content-type: application/json' --url '%s' -d '{\"sample_key\": \"sample_value\"}'",
+          webhookUrl);
+    }
   }
 }

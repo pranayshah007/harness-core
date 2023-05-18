@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.utils;
 
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -38,6 +39,26 @@ public class DateTimeUtilsTest extends CategoryTest {
         .isEqualTo(Instant.parse("2020-04-22T10:25:00Z"));
     assertThat(DateTimeUtils.roundDownTo5MinBoundary(Instant.parse("2020-04-22T10:00:00Z")))
         .isEqualTo(Instant.parse("2020-04-22T10:00:00Z"));
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testRoundUpTo5MinBoundary() {
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-04-22T10:02:06Z")))
+        .isEqualTo(Instant.parse("2020-04-22T10:05:00Z"));
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-04-22T10:00:06Z")))
+        .isEqualTo(Instant.parse("2020-04-22T10:05:00Z"));
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-04-22T10:59:59Z")))
+        .isEqualTo(Instant.parse("2020-04-22T11:00:00Z"));
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-04-22T10:15:59Z")))
+        .isEqualTo(Instant.parse("2020-04-22T10:20:00Z"));
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-04-22T10:26:00Z")))
+        .isEqualTo(Instant.parse("2020-04-22T10:30:00Z"));
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-04-22T10:00:00Z")))
+        .isEqualTo(Instant.parse("2020-04-22T10:00:00Z"));
+    assertThat(DateTimeUtils.roundUpTo5MinBoundary(Instant.parse("2020-12-31T23:59:00Z")))
+        .isEqualTo(Instant.parse("2021-01-01T00:00:00Z"));
   }
 
   @Test

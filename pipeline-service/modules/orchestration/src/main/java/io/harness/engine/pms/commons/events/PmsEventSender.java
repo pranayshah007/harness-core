@@ -30,6 +30,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConsumerConfig;
 import io.harness.pms.contracts.plan.ConsumerConfig.ConfigCase;
 import io.harness.pms.contracts.plan.Redis;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PmsEventCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.PmsSdkInstance;
@@ -83,7 +84,8 @@ public class PmsEventSender {
 
   public String sendEvent(Ambiance ambiance, ByteString eventData, PmsEventCategory eventCategory, String serviceName,
       boolean isMonitored) {
-    if (INIT_CONTAINER_V2_STEP_TYPE.getType().equals(AmbianceUtils.getCurrentStepType(ambiance).getType())) {
+    StepType stepType = AmbianceUtils.getCurrentStepType(ambiance);
+    if (stepType != null && INIT_CONTAINER_V2_STEP_TYPE.getType().equals(stepType.getType())) {
       serviceName = ModuleType.PMS.name().toLowerCase();
     }
     log.info("Sending {} event for {} to the producer", eventCategory, serviceName);

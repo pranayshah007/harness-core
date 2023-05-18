@@ -14,10 +14,12 @@ import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupTags;
+import io.harness.delegate.beans.DelegateListResponse;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.beans.SupportedDelegateVersion;
+import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.rest.RestResponse;
 
@@ -126,6 +128,13 @@ public interface DelegateNgManagerCgManagerClient {
       @Body DelegateSetupDetails delegateSetupDetails);
 
   //------------------------ NG Delegate Setup Apis -----------------------------------
+
+  @POST(DELEGATE_SETUP_NG_API + "/list")
+  Call<RestResponse<List<DelegateListResponse>>> getDelegates(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body DelegateFilterPropertiesDTO delegateFilterPropertiesDTO);
 
   @POST(DELEGATE_SETUP_NG_API + "/delegate-helm-values-yaml")
   Call<RestResponse<String>> generateHelmValuesFile(

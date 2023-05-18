@@ -31,7 +31,7 @@ public class SshWinRmAzureInfrastructureOutcome extends InfrastructureOutcomeAbs
   String subscriptionId;
   String resourceGroup;
   String credentialsRef;
-  Map<String, String> tags;
+  Map<String, String> hostTags;
   String hostConnectionType;
 
   @VariableExpression(skipVariableExpression = true) EnvironmentOutcome environment;

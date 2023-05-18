@@ -15,6 +15,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.utils.TimeUtils;
+import io.harness.ccm.graphql.dto.recommendation.AzureVmRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
@@ -229,5 +230,33 @@ public class RESTWrapperRecommendationDetails {
     EC2RecommendationDTO ec2Recommendation =
         (EC2RecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.EC2_INSTANCE, null, null, null, env);
     return ResponseDTO.newResponse(ec2Recommendation);
+  }
+
+  @GET
+  @Path("azure-vm")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "Azure VM Recommendation Details", nickname = "azureVmRecommendationDetail")
+  @Operation(operationId = "azureVmRecommendationDetail",
+      description = "Returns Azure VM Recommendation details for the given Recommendation identifier.",
+      summary = "Return Azure VM Recommendation",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns the Azure VM Recommendation for the given identifier.",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<AzureVmRecommendationDTO>
+  azureVmRecommendationDetail(
+      @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(required = true, description = "Azure VM Recommendation identifier.") @QueryParam(
+          "id") @NotNull @Valid String id) {
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+    AzureVmRecommendationDTO azureVmRecommendationDTO = (AzureVmRecommendationDTO) detailsQuery.recommendationDetails(
+        id, ResourceType.AZURE_INSTANCE, null, null, null, env);
+    return ResponseDTO.newResponse(azureVmRecommendationDTO);
   }
 }

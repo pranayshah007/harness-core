@@ -8,6 +8,7 @@
 package io.harness.connector.service.git;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.SATHISH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -53,10 +54,35 @@ public class NGGitServiceImplTest extends CategoryTest implements MockableTestMi
                                     .gitAuthType(GitAuthType.HTTP)
                                     .build();
     final GitBaseRequest gitBaseRequest = GitBaseRequest.builder().build();
-    ngGitService.setGitBaseRequest(gitConfigDTO, accountId, gitBaseRequest, GitRepositoryType.YAML, null);
+    ngGitService.setGitBaseRequest(gitConfigDTO, accountId, gitBaseRequest, GitRepositoryType.YAML, null, true);
     assertThat(gitBaseRequest).isNotNull();
     assertThat(gitBaseRequest.getRepoType()).isNotNull();
     assertThat(gitBaseRequest.getAccountId()).isNotNull();
     assertThat(gitBaseRequest.getAuthRequest()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGetGitBaseRequestWithoutGitConfigOverride() {
+    final String accountId = "accountId";
+    GitConfigDTO gitConfigDTO = GitConfigDTO.builder()
+                                    .gitAuth(GitHTTPAuthenticationDTO.builder()
+                                                 .username("username")
+                                                 .passwordRef(SecretRefData.builder().build())
+                                                 .build())
+                                    .gitAuthType(GitAuthType.HTTP)
+                                    .url("https://gitconfig.com")
+                                    .branchName("git-config-test-branch")
+                                    .build();
+    final GitBaseRequest gitBaseRequest =
+        GitBaseRequest.builder().repoUrl("https://gitBaserequest.com/repo").branch("test-branch").build();
+    ngGitService.setGitBaseRequest(gitConfigDTO, accountId, gitBaseRequest, GitRepositoryType.YAML, null, false);
+    assertThat(gitBaseRequest).isNotNull();
+    assertThat(gitBaseRequest.getRepoType()).isNotNull();
+    assertThat(gitBaseRequest.getAccountId()).isNotNull();
+    assertThat(gitBaseRequest.getAuthRequest()).isNotNull();
+    assertThat(gitBaseRequest.getRepoUrl()).isEqualTo("https://gitBaserequest.com/repo");
+    assertThat(gitBaseRequest.getBranch()).isEqualTo("test-branch");
   }
 }

@@ -30,6 +30,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
@@ -220,13 +221,17 @@ public class ConfigFilesStepV2Test extends CategoryTest {
         any(), taskDataCaptor.capture(), any(), any(), any(), anyBoolean(), anyString(), any());
     ArgumentCaptor<ConfigFilesStepV2SweepingOutput> captor =
         ArgumentCaptor.forClass(ConfigFilesStepV2SweepingOutput.class);
+    ArgumentCaptor<List<StepDelegateInfo>> stepDelegateInfosCaptor = ArgumentCaptor.forClass(List.class);
     verify(mockSweepingOutputService, times(1))
         .consume(any(), eq("CONFIG_FILES_STEP_V2"), captor.capture(), eq("STAGE"));
     verify(pipelineRbacHelper, times(1)).checkRuntimePermissions(any(), any(List.class), any(Boolean.class));
+    verify(serviceStepsHelper)
+        .publishTaskIdsStepDetailsForServiceStep(any(), stepDelegateInfosCaptor.capture(), eq("Config Files Step"));
     ConfigFilesStepV2SweepingOutput outcome = captor.getValue();
     TaskData taskData = taskDataCaptor.getValue();
     assertThat(taskData.getTimeout()).isEqualTo(TimeUnit.MINUTES.toMillis(10));
     assertThat(outcome.getGitConfigFileOutcomesMapTaskIds().size()).isEqualTo(3);
+    assertThat(stepDelegateInfosCaptor.getValue().size()).isEqualTo(3);
   }
 
   @Test

@@ -7,8 +7,10 @@
 
 package io.harness.cvng.servicelevelobjective.resources;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -27,10 +29,14 @@ import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.rule.Owner;
@@ -206,6 +212,37 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreate_CompositeSLO_WithLeastPerformant() {
+    ServiceLevelObjectiveV2DTO sloDTO = getCompositeSLODTO();
+    CompositeServiceLevelObjectiveSpec spec = (CompositeServiceLevelObjectiveSpec) sloDTO.getSpec();
+    spec.setSloFormulaType(CompositeSLOFormulaType.LEAST_PERFORMANCE);
+    sloDTO.setSpec(spec);
+    Response response = V2_RESOURCES.client()
+                            .target("http://localhost:9998/slo/v2/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"sloFormulaType\":\"LeastPerformance\"");
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreate_CompositeSLO() {
+    ServiceLevelObjectiveV2DTO sloDTO = getCompositeSLODTO();
+
+    Response response = V2_RESOURCES.client()
+                            .target("http://localhost:9998/slo/v2/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(sloDTO));
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.readEntity(String.class)).contains("\"sloFormulaType\":\"WeightedAverage\"");
+  }
+  @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testUpdateSLOData_withNotificationRules() throws IOException {
@@ -338,5 +375,51 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
     sloYaml = sloYaml.replace(
         "$healthSourceRef", monitoredServiceDTO.getSources().getHealthSources().iterator().next().getIdentifier());
     return sloYaml;
+  }
+
+  private ServiceLevelObjectiveV2DTO getCompositeSLODTO() {
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
+    SimpleServiceLevelObjective simpleServiceLevelObjective1 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
+    SimpleServiceLevelObjective simpleServiceLevelObjective2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    return builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+        .spec(CompositeServiceLevelObjectiveSpec.builder()
+                  .serviceLevelObjectivesDetails(
+                      Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                        .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                        .weightagePercentage(75.0)
+                                        .accountId(simpleServiceLevelObjective1.getAccountId())
+                                        .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                        .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                        .build(),
+                          ServiceLevelObjectiveDetailsDTO.builder()
+                              .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                              .weightagePercentage(25.0)
+                              .accountId(simpleServiceLevelObjective2.getAccountId())
+                              .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                              .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                              .build()))
+                  .build())
+        .build();
   }
 }

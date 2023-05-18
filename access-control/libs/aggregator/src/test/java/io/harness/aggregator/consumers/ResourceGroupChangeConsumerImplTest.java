@@ -77,8 +77,8 @@ public class ResourceGroupChangeConsumerImplTest extends AggregatorTestBase {
     userGroupService = mock(UserGroupService.class);
     roleAssignmentRepository = mock(RoleAssignmentRepository.class);
     resourceGroupRepository = mock(ResourceGroupRepository.class);
-    ChangeConsumerService changeConsumerService = new ChangeConsumerServiceImpl(
-        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>());
+    ACLGeneratorService changeConsumerService = new ACLGeneratorServiceImpl(
+        roleService, userGroupService, resourceGroupService, scopeService, new HashMap<>(), aclRepository);
     resourceGroupChangeConsumer = new ResourceGroupChangeConsumerImpl(aclRepository, roleAssignmentRepository,
         resourceGroupRepository, AggregatorJobType.PRIMARY.name(), changeConsumerService);
     aclRepository.cleanCollection();

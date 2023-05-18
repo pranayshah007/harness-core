@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -47,7 +48,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
   @Override
   public PluginCreationResponse getPluginInfo(PluginCreationRequest request) {
     String stepJsonNode = request.getStepJsonNode();
-    io.harness.beans.plugin.compatible.PluginCompatibleStep pluginCompatibleStep;
+    PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
     try {
       ciAbstractStepNode = YamlUtils.read(stepJsonNode, CIAbstractStepNode.class);
@@ -93,8 +94,7 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
 
     if (!(CIStepInfoType.BACKGROUND_V1.getDisplayName().equals(ciAbstractStepNode.getType())
             || CIStepInfoType.BACKGROUND.getDisplayName().equals(ciAbstractStepNode.getType()))) {
-      pluginCompatibleStep =
-          (io.harness.beans.plugin.compatible.PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
+      pluginCompatibleStep = (PluginCompatibleStep) ciAbstractStepNode.getStepSpecType();
 
       String stepConnectorRef =
           ExpressionResolverUtils.resolveStringParameter("connectorRef", pluginCompatibleStep.getStepType().toString(),

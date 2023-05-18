@@ -160,7 +160,7 @@ public abstract class AbstractContainerStepV2<T extends StepParameters> implemen
     if (Strings.isNotBlank(stepGroupIdentifier)) {
       stepIdentifier = stepGroupIdentifier + "_" + stepIdentifier;
     }
-    return containerPortHelper.getPort(ambiance, stepIdentifier);
+    return containerPortHelper.getPort(ambiance, stepIdentifier, false);
   }
 
   public abstract long getTimeout(Ambiance ambiance, T stepElementParameters);

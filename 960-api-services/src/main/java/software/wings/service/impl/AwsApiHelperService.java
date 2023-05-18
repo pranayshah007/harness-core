@@ -107,6 +107,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -285,7 +286,7 @@ public class AwsApiHelperService {
     boolean isExpression = filePathRegex.contains("*") || filePathRegex.endsWith("/");
 
     if (isExpression == false) {
-      return null;
+      return Collections.emptyList();
     }
 
     try {

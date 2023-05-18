@@ -58,8 +58,10 @@ public class WorkflowExecutionAddCDPageCandidateMigration implements Migration {
       boolean latestPipelineResume =
           workflowExecution
               .isLatestPipelineResume(); // if pipelineResumeId is NotEmpty--> then latestPipelineResume must be true
+      String accountId = workflowExecution.getAccountId();
 
-      boolean cdPageCandidate = calculateCdPageCandidate(pipelineExecutionId, pipelineResumeId, latestPipelineResume);
+      boolean cdPageCandidate =
+          calculateCdPageCandidate(pipelineExecutionId, pipelineResumeId, latestPipelineResume, accountId);
       UpdateOperations<WorkflowExecution> updateOps = wingsPersistence.createUpdateOperations(WorkflowExecution.class)
                                                           .set(WorkflowExecutionKeys.cdPageCandidate, cdPageCandidate);
       wingsPersistence.update(workflowExecution, updateOps);

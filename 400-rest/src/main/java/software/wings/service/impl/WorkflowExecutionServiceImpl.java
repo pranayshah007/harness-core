@@ -170,6 +170,7 @@ import io.harness.limits.checker.LimitApproachingException;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -5659,7 +5660,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       query.project(projectedKey, true);
     }
 
-    return new HIterator<>(query.fetch());
+    FindOptions findOptions = new FindOptions();
+    findOptions.hint(BasicDBUtils.getIndexObject(
+        WorkflowExecution.mongoIndexes(), WorkflowExecution.ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID));
+    return new HIterator<>(query.limit(MongoConfig.NO_LIMIT).fetch(findOptions));
   }
 
   private HIterator<WorkflowExecution> obtainWorkflowExecutionIterator(
@@ -5674,7 +5678,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     for (String projectedKey : projectedKeys) {
       query.project(projectedKey, true);
     }
-    return new HIterator<>(query.fetch());
+    FindOptions findOptions = new FindOptions();
+    findOptions.hint(BasicDBUtils.getIndexObject(
+        WorkflowExecution.mongoIndexes(), WorkflowExecution.ACCOUNT_ID_PIP_EXECUTIONID_CREATEDAT_APP_ID));
+    return new HIterator<>(query.limit(MongoConfig.NO_LIMIT).fetch(findOptions));
   }
 
   @Override

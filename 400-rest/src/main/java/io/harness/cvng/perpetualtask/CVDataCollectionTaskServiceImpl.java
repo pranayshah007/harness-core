@@ -14,7 +14,6 @@ import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
-import static software.wings.beans.TaskType.PT_SERIALIZATION_SUPPORT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -52,7 +51,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
-import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.SyncTaskContext;
 import software.wings.delegatetasks.DelegateProxyFactory;
@@ -74,11 +72,9 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(CV)
 public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskService {
   @Inject private PerpetualTaskService perpetualTaskService;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private KryoSerializer kryoSerializer;
   @Inject @Named("PRIVILEGED") private SecretNGManagerClient secretNGManagerClient;
   @Inject private DelegateProxyFactory delegateProxyFactory;
-  @Inject private DelegateTaskService delegateTaskService;
 
   @Override
   public void resetTask(String accountId, String orgIdentifier, String projectIdentifier, String taskId,
@@ -131,7 +127,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
             DataCollectionPerpetualTaskParams.newBuilder()
                 .setAccountId(accountId)
                 .setDataCollectionWorkerId(bundle.getDataCollectionWorkerId())
-                .setDataCollectionInfo(ByteString.copyFrom(getKryoSerializer(accountId).asBytes(cvDataCollectionInfo)))
+                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo)))
                 .build();
         perpetualTaskPack = Any.pack(params);
         break;
@@ -151,7 +147,7 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
             K8ActivityCollectionPerpetualTaskParams.newBuilder()
                 .setAccountId(accountId)
                 .setDataCollectionWorkerId(bundle.getDataCollectionWorkerId())
-                .setDataCollectionInfo(ByteString.copyFrom(getKryoSerializer(accountId).asBytes(cvDataCollectionInfo)))
+                .setDataCollectionInfo(ByteString.copyFrom(kryoSerializer.asBytes(cvDataCollectionInfo)))
                 .build();
         perpetualTaskPack = Any.pack(k8ActivityCollectionPerpetualTaskParams);
         break;
@@ -169,20 +165,19 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     }
     executionCapabilities.addAll(bundle.fetchRequiredExecutionCapabilities(null));
     return createPerpetualTaskExecutionBundle(
-        perpetualTaskPack, executionCapabilities, orgIdentifier, projectIdentifier, accountId);
+        perpetualTaskPack, executionCapabilities, orgIdentifier, projectIdentifier);
   }
 
   @NotNull
   private PerpetualTaskExecutionBundle createPerpetualTaskExecutionBundle(Any perpetualTaskPack,
-      List<ExecutionCapability> executionCapabilities, String orgIdentifier, String projectIdentifier,
-      String accountId) {
+      List<ExecutionCapability> executionCapabilities, String orgIdentifier, String projectIdentifier) {
     PerpetualTaskExecutionBundle.Builder builder = PerpetualTaskExecutionBundle.newBuilder();
     executionCapabilities.forEach(executionCapability
         -> builder
-               .addCapabilities(Capability.newBuilder()
-                                    .setKryoCapability(ByteString.copyFrom(
-                                        getKryoSerializer(accountId).asDeflatedBytes(executionCapability)))
-                                    .build())
+               .addCapabilities(
+                   Capability.newBuilder()
+                       .setKryoCapability(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(executionCapability)))
+                       .build())
                .build());
     return builder.setTaskParams(perpetualTaskPack)
         .putAllSetupAbstractions(Maps.of(NG, "true", OWNER, orgIdentifier + "/" + projectIdentifier))
@@ -370,11 +365,5 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
     SyncTaskContext syncTaskContext = getSyncTaskContext(accountId, orgIdentifier, projectIdentifier);
     return delegateProxyFactory.getV2(K8InfoDataService.class, syncTaskContext)
         .checkCapabilityToGetEvents(bundle, isNotEmpty(encryptedDataDetails) ? encryptedDataDetails.get(0) : null);
-  }
-
-  private KryoSerializer getKryoSerializer(String accountId) {
-    return delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, PT_SERIALIZATION_SUPPORT.name())
-        ? referenceFalseKryoSerializer
-        : kryoSerializer;
   }
 }

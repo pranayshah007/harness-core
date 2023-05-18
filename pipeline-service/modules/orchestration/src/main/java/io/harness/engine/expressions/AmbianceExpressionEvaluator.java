@@ -111,7 +111,11 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
     this.refObjectSpecific = refObjectSpecific;
     this.groupAliases = new HashMap<>();
     if (EmptyPredicate.isNotEmpty(contextMap)) {
-      contextMapProvided = true;
+      // TODO(REMOVE): ENABLED_FEATURE_FLAGS_KEY is not a real contextMap entry. This we added to pass the FF to
+      // engineExpressionEvaluator.
+      if (contextMap.size() > 1 || !contextMap.containsKey(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY)) {
+        contextMapProvided = true;
+      }
       contextMap.forEach(this::addToContext);
     }
   }

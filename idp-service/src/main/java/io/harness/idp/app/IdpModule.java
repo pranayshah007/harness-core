@@ -13,6 +13,7 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallback;
@@ -242,6 +243,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getAccessControlClientConfiguration(), IDP_SERVICE.getServiceId()));
     install(
         new NgConnectorManagerClientModule(appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret()));
+    install(new AccountClientModule(
+        appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new OrganizationClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ProjectClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
@@ -254,7 +257,7 @@ public class IdpModule extends AbstractModule {
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {
-        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.MORPHIA).build();
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
     install(new DelegateServiceDriverGrpcClientModule(
@@ -323,6 +326,10 @@ public class IdpModule extends AbstractModule {
         .to(BackstageEnvConfigVariableMapper.class);
     backstageEnvVariableMapBinder.addBinding(BackstageEnvVariableType.SECRET)
         .to(BackstageEnvSecretVariableMapper.class);
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
   }
 
   @Provides

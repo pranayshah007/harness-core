@@ -35,17 +35,19 @@ public class StepDetailsUpdateEventHandler {
   public OrchestrationGraph handleEvent(String planExecutionId, String nodeExecutionId,
       OrchestrationGraph orchestrationGraph, Update summaryEntityUpdate) {
     try {
-      Map<String, PmsStepDetails> stepDetails =
-          pmsGraphStepDetailsService.getStepDetails(planExecutionId, nodeExecutionId);
-      orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepDetails(stepDetails);
-      Level currentLevel = AmbianceUtils.obtainCurrentLevel(
-          orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getAmbiance());
-      if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)
-          || Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STRATEGY)) {
-        String stageUuid = currentLevel.getSetupId();
-        summaryEntityUpdate.set(
-            PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".stepDetails",
-            stepDetails);
+      if (orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId) != null) {
+        Map<String, PmsStepDetails> stepDetails =
+            pmsGraphStepDetailsService.getStepDetails(planExecutionId, nodeExecutionId);
+        orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).setStepDetails(stepDetails);
+        Level currentLevel = AmbianceUtils.obtainCurrentLevel(
+            orchestrationGraph.getAdjacencyList().getGraphVertexMap().get(nodeExecutionId).getAmbiance());
+        if (Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STAGE)
+            || Objects.equals(currentLevel.getStepType().getStepCategory(), StepCategory.STRATEGY)) {
+          String stageUuid = currentLevel.getSetupId();
+          summaryEntityUpdate.set(
+              PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".stepDetails",
+              stepDetails);
+        }
       }
     } catch (Exception e) {
       log.error(String.format(

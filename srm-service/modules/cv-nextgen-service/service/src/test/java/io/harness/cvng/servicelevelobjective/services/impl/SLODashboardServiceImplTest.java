@@ -50,6 +50,7 @@ import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationDTO;
 import io.harness.cvng.servicelevelobjective.beans.AnnotationInstanceDetails;
+import io.harness.cvng.servicelevelobjective.beans.CompositeSLOFormulaType;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
@@ -1633,6 +1634,123 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testGetSLOConsumptionBreakdownViewForLeastPerformantSLO() {
+    MonitoredServiceDTO monitoredServiceDTO2 =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier + '1').build();
+    monitoredServiceDTO2.setServiceRef("new");
+    monitoredServiceDTO2.setEnvironmentRef("one");
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
+    WindowBasedServiceLevelIndicatorSpec serviceLevelIndicatorSpec =
+        (WindowBasedServiceLevelIndicatorSpec) simpleServiceLevelObjectiveSpec.getServiceLevelIndicators()
+            .get(0)
+            .getSpec();
+    serviceLevelIndicatorSpec.setSliMissingDataType(SLIMissingDataType.BAD);
+    simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).setSpec(serviceLevelIndicatorSpec);
+    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
+    serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2DTO2.setName("new three");
+    serviceLevelObjectiveV2DTO2.setIdentifier("new_three");
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO2);
+    AbstractServiceLevelObjective serviceLevelObjective2 = serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO2.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO compositeSLO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .sloFormulaType(CompositeSLOFormulaType.LEAST_PERFORMANCE)
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(serviceLevelObjectiveV2DTO.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                            .accountId(builderFactory.getContext().getAccountId())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef("new_three")
+                                  .weightagePercentage(25.0)
+                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                  .accountId(builderFactory.getContext().getAccountId())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
+    AbstractServiceLevelObjective compositeServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(builderFactory.getProjectParams(), compositeSLO.getIdentifier());
+    serviceLevelObjectiveV2Service.delete(builderFactory.getProjectParams(), compositeSLO.getIdentifier());
+    compositeServiceLevelObjective.setCreatedAt(startTime.toEpochMilli());
+    compositeServiceLevelObjective.setStartedAt(startTime.toEpochMilli());
+    hPersistence.save(compositeServiceLevelObjective);
+    ServiceLevelIndicator serviceLevelIndicator1 =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec())
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    createData(clock.instant().minus(Duration.ofMinutes(12)), Arrays.asList(GOOD, BAD, BAD, GOOD),
+        serviceLevelIndicator1.getUuid());
+    SLODashboardWidget.SLOGraphData sloGraphData1 =
+        graphDataService.getGraphData(serviceLevelObjective, clock.instant().minus(Duration.ofDays(1)), clock.instant(),
+            8640, TimeRangeParams.builder().startTime(startTime).endTime(endTime).build());
+
+    ServiceLevelIndicator serviceLevelIndicator2 =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec())
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    createData(clock.instant().minus(Duration.ofMinutes(12)), Arrays.asList(NO_DATA, BAD, BAD, NO_DATA),
+        serviceLevelIndicator2.getUuid());
+    SLODashboardWidget.SLOGraphData sloGraphData2 =
+        graphDataService.getGraphData(serviceLevelObjective2, clock.instant().minus(Duration.ofDays(1)),
+            clock.instant(), 8640, TimeRangeParams.builder().startTime(startTime).endTime(endTime).build());
+
+    PageResponse<SLOConsumptionBreakdown> pageResponse = sloDashboardService.getSLOConsumptionBreakdownView(
+        builderFactory.getProjectParams(), compositeSLO.getIdentifier(),
+        startTime.minus(2, ChronoUnit.MINUTES).toEpochMilli(), endTime.toEpochMilli());
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(2);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(2);
+    List<SLOConsumptionBreakdown> sloConsumptionBreakdownList = pageResponse.getContent();
+    assertThat(sloConsumptionBreakdownList).hasSize(2);
+
+    SLOConsumptionBreakdown sloBreakdown = sloConsumptionBreakdownList.get(0);
+    assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO.getIdentifier());
+    assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO.getName());
+    assertThat(sloBreakdown.getSliType())
+        .isEqualTo(
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec()).getServiceLevelIndicatorType());
+    assertThat(sloBreakdown.getSloTargetPercentage())
+        .isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getSloTargetPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
+    assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData1.getSliStatusPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(1);
+    assertThat(sloBreakdown.getSloError().isFailedState()).isEqualTo(false);
+    assertThat(sloBreakdown.getContributedErrorBudgetBurned()).isEqualTo(null);
+
+    sloBreakdown = sloConsumptionBreakdownList.get(1);
+    assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
+    assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO2.getName());
+    assertThat(sloBreakdown.getSliType())
+        .isEqualTo(
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec()).getServiceLevelIndicatorType());
+    assertThat(sloBreakdown.getSloTargetPercentage())
+        .isEqualTo(serviceLevelObjectiveV2DTO2.getSloTarget().getSloTargetPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData2.getErrorBudgetBurned());
+    assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData2.getSliStatusPercentage());
+    assertThat(sloBreakdown.getProjectParams()).isEqualTo(builderFactory.getProjectParams());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(2);
+    assertThat(sloBreakdown.getSloError().isFailedState()).isEqualTo(false);
+    assertThat(sloBreakdown.getContributedErrorBudgetBurned()).isEqualTo(null);
+  }
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testGetSLOConsumptionBreakdownView_ForAccountScoped() {
     ProjectParams projectParam1 = builderFactory.getProjectParams();
     projectParam1.setProjectIdentifier("project1");
@@ -1916,6 +2034,16 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testGetSecondaryEventDetails_Success() {
+    serviceLevelObjectiveV2DTO =
+        builderFactory.getSimpleCalendarServiceLevelObjectiveV2DTOBuilder().identifier("slo").build();
+    simpleServiceLevelObjectiveSpec = (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO.getSpec();
+    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier);
+    simpleServiceLevelObjectiveSpec.setHealthSourceRef(healthSource.getIdentifier());
+    serviceLevelObjectiveV2DTO.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    serviceLevelObjective = serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+
     ServiceLevelIndicator serviceLevelIndicator =
         serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
             simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getIdentifier());
@@ -1933,6 +2061,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     downtimeService.create(builderFactory.getProjectParams(), downtimeDTO);
 
     AnnotationDTO annotationDTO = builderFactory.getAnnotationDTO();
+    annotationDTO.setSloIdentifier("slo");
     annotationService.create(builderFactory.getProjectParams(), annotationDTO);
     annotationDTO.setMessage("new one");
     annotationService.create(builderFactory.getProjectParams(), annotationDTO);

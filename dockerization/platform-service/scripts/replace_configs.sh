@@ -122,6 +122,10 @@ if [[ "" != "$SMTP_USE_SSL" ]]; then
   export SMTP_USE_SSL; yq -i '.notificationServiceConfig.smtp.useSSL=env(SMTP_USE_SSL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$SMTP_START_TLS" ]]; then
+  export SMTP_START_TLS; yq -i '.notificationServiceConfig.smtp.startTLS=env(SMTP_START_TLS)' $CONFIG_FILE
+fi
+
 if [[ "" != "$OVERRIDE_PREDEFINED_TEMPLATES" ]]; then
   export OVERRIDE_PREDEFINED_TEMPLATES; yq -i '.notificationServiceConfig.seedDataConfiguration.shouldOverrideAllPredefinedTemplates=env(OVERRIDE_PREDEFINED_TEMPLATES)' $CONFIG_FILE
 fi

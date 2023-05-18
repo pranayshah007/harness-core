@@ -86,7 +86,7 @@ public class SignupTestRule implements InjectorRuleMixin, MethodRule, MongoRuleM
 
     modules.add(new SignupModule(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build(),
         "test_secret", "Service", SignupNotificationConfiguration.builder().build(),
-        AccessControlClientConfiguration.builder().build()));
+        AccessControlClientConfiguration.builder().build(), SignupDomainDenylistConfiguration.builder().build()));
 
     modules.add(new ProviderModule() {
       @Provides

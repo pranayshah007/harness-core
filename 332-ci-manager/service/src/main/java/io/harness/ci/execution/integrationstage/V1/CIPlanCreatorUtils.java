@@ -374,7 +374,7 @@ public class CIPlanCreatorUtils {
     }
     String connectorIdentifier = (String) repository.getConnector().fetchFinalValue();
     String repoName = (String) repository.getName().fetchFinalValue();
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier, true);
     try {
       String defaultBranch = scmGitRefManager.getDefaultBranch(
           scmGitRefManager.getScmConnector(connectorDetails, ngAccess.getAccountIdentifier(), repoName),

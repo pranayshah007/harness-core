@@ -223,7 +223,9 @@ public class ServiceResourceV2 {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = "Specify whether Service is deleted or not") @QueryParam(
-          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
+          NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
+      @Parameter(description = "Specify true for fetching resolved service yaml", hidden = true) @QueryParam(
+          "fetchResolvedYaml") @DefaultValue("false") boolean fetchResolvedYaml) {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
     if (serviceEntity.isPresent()) {
@@ -240,9 +242,17 @@ public class ServiceResourceV2 {
       ServiceEntity service =
           updateArtifactoryRegistryUrlIfEmpty(serviceEntity.get(), accountId, orgIdentifier, projectIdentifier);
       Optional<ServiceEntity> serviceResponse = Optional.ofNullable(service);
+      if (fetchResolvedYaml) {
+        serviceEntity.get().setYaml(serviceEntityService.resolveArtifactSourceTemplateRefs(
+            accountId, orgIdentifier, projectIdentifier, serviceEntity.get().getYaml()));
+      }
+
       return ResponseDTO.newResponse(serviceResponse.map(ServiceElementMapper::toResponseWrapper).orElse(null));
     }
-
+    if (fetchResolvedYaml) {
+      serviceEntity.get().setYaml(serviceEntityService.resolveArtifactSourceTemplateRefs(
+          accountId, orgIdentifier, projectIdentifier, serviceEntity.get().getYaml()));
+    }
     return ResponseDTO.newResponse(serviceEntity.map(ServiceElementMapper::toResponseWrapper).orElse(null));
   }
 

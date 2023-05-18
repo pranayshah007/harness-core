@@ -151,6 +151,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
                                               .namespace(canaryWorkload.getResourceId().getNamespace())
                                               .denoteOverallSuccess(false)
                                               .isErrorFrameworkEnabled(true)
+                                              .kubernetesConfig(k8sCanaryHandlerConfig.getKubernetesConfig())
                                               .build();
 
     K8sClient k8sClient =

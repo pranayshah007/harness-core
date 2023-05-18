@@ -1052,7 +1052,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
   }
 
-  private <T> T executeCallWithRetryableException(Call<T> call, String failureMessage) throws IOException {
+  private <T> Response<T> executeCallWithRetryableException(Call<T> call, String failureMessage) throws IOException {
     T responseBody = null;
     Response<T> response = null;
     int attempt = 1;
@@ -1060,6 +1060,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         response = call.clone().execute();
         responseBody = response.body();
+        if (responseBody == null) {
+          attempt++;
+        }
       } catch (Exception exception) {
         if (exception instanceof StreamResetException && attempt < MAX_ATTEMPTS) {
           attempt++;
@@ -1069,13 +1072,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         }
       }
     }
-    return responseBody;
+    return response;
   }
 
   private <T> T executeAcquireCallWithRetry(Call<T> call, String failureMessage) throws IOException {
     Response<T> response = null;
     try {
-      return executeCallWithRetryableException(call, failureMessage);
+      response = executeCallWithRetryableException(call, failureMessage);
+      return response.body();
     } catch (Exception e) {
       log.error("error executing rest call", e);
       throw e;

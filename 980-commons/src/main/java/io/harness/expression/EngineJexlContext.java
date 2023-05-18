@@ -70,4 +70,9 @@ public class EngineJexlContext implements JexlContext {
       originalMap.putAll(newMap);
     }
   }
+
+  public boolean isFeatureFlagEnabled(String featureName) {
+    return originalMap.containsKey(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY)
+        && originalMap.get(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY).toString().contains(featureName);
+  }
 }

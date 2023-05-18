@@ -233,6 +233,7 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMet
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RequestBasedServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServiceLevelIndicatorSpec;
@@ -1054,7 +1055,7 @@ public class BuilderFactory {
         .deploymentTag("deploymentTag")
         .stageId("stageId")
         .pipelineId("pipelineId")
-        .planExecutionId("executionId")
+        .planExecutionId(generateUuid())
         .artifactType("artifactType")
         .artifactTag("artifactTag")
         .activityName(generateUuid())
@@ -1107,6 +1108,8 @@ public class BuilderFactory {
                     DeepLink.builder().action(DeepLink.Action.REDIRECT_URL).url("internalUrl").build())
                 .eventDescriptions(Arrays.asList("eventDesc1", "eventDesc2"))
                 .build())
+        .activityStartTime(clock.instant())
+        .activityEndTime(clock.instant())
         .eventEndTime(clock.instant().toEpochMilli());
   }
 
@@ -1144,9 +1147,13 @@ public class BuilderFactory {
         .workflowEndTime(clock.instant())
         .workflowStartTime(clock.instant())
         .workflowId("workflowId")
-        .workflowExecutionId("workflowExecutionId")
+        .workflowExecutionId(generateUuid())
         .activityName(generateUuid())
         .activityEndTime(clock.instant())
+        .appId(generateUuid())
+        .serviceId(generateUuid())
+        .environmentId(generateUuid())
+        .name(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1180,6 +1187,9 @@ public class BuilderFactory {
         .pagerDutyUrl("https://myurl.com/pagerduty/token")
         .eventId("eventId")
         .activityName("New pager duty incident")
+        .status(generateUuid())
+        .htmlUrl(generateUuid())
+        .pagerDutyUrl(generateUuid())
         .activityStartTime(clock.instant());
   }
 
@@ -1194,6 +1204,8 @@ public class BuilderFactory {
         .type(ChangeSourceType.KUBERNETES.getActivityType())
         .activityStartTime(clock.instant())
         .activityName("K8 Activity")
+        .resourceType(KubernetesResourceType.ConfigMap)
+        .action(Action.Add)
         .resourceVersion("resource-version")
         .relatedAppServices(Arrays.asList(
             RelatedAppMonitoredService.builder().monitoredServiceIdentifier("dependent_service").build()));
@@ -1370,6 +1382,37 @@ public class BuilderFactory {
                        .type(SLOTargetType.ROLLING)
                        .sloTargetPercentage(80.0)
                        .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
+                       .build())
+        .spec(SimpleServiceLevelObjectiveSpec.builder()
+                  .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
+                  .healthSourceRef("healthSourceIdentifier")
+                  .monitoredServiceRef(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+                  .serviceLevelIndicatorType(ServiceLevelIndicatorType.AVAILABILITY)
+                  .build())
+        .notificationRuleRefs(Collections.emptyList())
+        .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
+  public ServiceLevelObjectiveV2DTOBuilder getSimpleCalendarServiceLevelObjectiveV2DTOBuilder() {
+    return ServiceLevelObjectiveV2DTO.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier")
+        .name("sloName")
+        .tags(new HashMap<String, String>() {
+          {
+            put("tag1", "value1");
+            put("tag2", "");
+          }
+        })
+        .description("slo description")
+        .sloTarget(SLOTargetDTO.builder()
+                       .type(SLOTargetType.CALENDER)
+                       .sloTargetPercentage(80.0)
+                       .spec(CalenderSLOTargetSpec.builder()
+                                 .spec(CalenderSLOTargetSpec.MonthlyCalenderSpec.builder().dayOfMonth(2).build())
+                                 .build())
                        .build())
         .spec(SimpleServiceLevelObjectiveSpec.builder()
                   .serviceLevelIndicators(Collections.singletonList(getServiceLevelIndicatorDTOBuilder()))
@@ -1710,6 +1753,9 @@ public class BuilderFactory {
       return projectParams.getProjectIdentifier();
     }
 
+    public void setAccountId(String accountId) {
+      projectParams.setAccountIdentifier(accountId);
+    }
     public void setOrgIdentifier(String orgIdentifier) {
       projectParams.setOrgIdentifier(orgIdentifier);
     }

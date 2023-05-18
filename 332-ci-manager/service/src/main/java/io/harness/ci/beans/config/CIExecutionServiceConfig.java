@@ -36,6 +36,7 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
   MiningPatternConfig miningPatternConfig;
   Integer remoteDebugTimeout;
   CIDockerLayerCachingConfig dockerLayerCachingConfig;
+  CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig;
 
   @Builder
   public CIExecutionServiceConfig(String addonImageTag, String liteEngineImageTag, String defaultInternalImageConnector,
@@ -44,7 +45,8 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
       CIStepConfig stepConfig, CICacheIntelligenceConfig cacheIntelligenceConfig,
       CICacheIntelligenceS3Config cacheIntelligenceS3Config, ExecutionLimits executionLimits,
       QueueServiceClientConfig queueServiceClientConfig, HostedVmConfig hostedVmConfig, STOStepConfig stoStepConfig,
-      Integer remoteDebugTimeout, CIDockerLayerCachingConfig dockerLayerCachingConfig) {
+      Integer remoteDebugTimeout, CIDockerLayerCachingConfig dockerLayerCachingConfig,
+      CIDockerLayerCachingGCSConfig dockerLayerCachingGCSConfig) {
     super(addonImageTag, liteEngineImageTag, defaultInternalImageConnector, delegateServiceEndpointVariableValue,
         defaultMemoryLimit, defaultCPULimit, pvcDefaultStorageSize, addonImage, liteEngineImage, isLocal);
     this.ciImageTag = ciImageTag;
@@ -57,5 +59,6 @@ public class CIExecutionServiceConfig extends ExecutionServiceConfig {
     this.hostedVmConfig = hostedVmConfig;
     this.remoteDebugTimeout = remoteDebugTimeout;
     this.dockerLayerCachingConfig = dockerLayerCachingConfig;
+    this.dockerLayerCachingGCSConfig = dockerLayerCachingGCSConfig;
   }
 }

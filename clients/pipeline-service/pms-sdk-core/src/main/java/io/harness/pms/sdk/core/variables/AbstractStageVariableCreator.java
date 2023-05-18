@@ -101,7 +101,12 @@ public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> 
               "Variable with name \"" + variableName + "\" added without any value. Fqn: " + fqn);
         }
         yamlPropertiesMap.put(valueNode.getNode().getCurrJsonNode().textValue(),
-            YamlProperties.newBuilder().setLocalName(localName).setFqn(fqn).build());
+            YamlProperties.newBuilder()
+                .setLocalName(localName)
+                .setFqn(fqn)
+                .setVariableName(variableName)
+                .setVisible(true)
+                .build());
       }
     });
   }

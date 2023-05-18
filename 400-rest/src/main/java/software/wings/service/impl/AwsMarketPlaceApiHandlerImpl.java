@@ -74,6 +74,9 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
   private final String AWS_FREE_TRIAL_DIMENSION = "AWSMPFreeTrial";
+  private final Integer MINIMUM_DIMENSION_V2_LENGTH = 3;
+  private final String KILO_CONVERSION = "K";
+  private final String MILLION_CONVERSION = "M";
   @Override
   public Response processAWSMarktPlaceOrder(String token) {
     /**
@@ -309,20 +312,24 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     Integer quantity = 0;
     // split string from underscore
     String[] result = dimension.split("_");
-    String tempQuantity = result[result.length - 1];
 
-    // Handle K (1000) and M (1000000) units
-    if (tempQuantity.contains("K")) {
-      tempQuantity = tempQuantity.replace("K", "000");
+    String tempQuantityStr = "0";
+    if (result.length >= MINIMUM_DIMENSION_V2_LENGTH) {
+      tempQuantityStr = result[result.length - 1];
     }
 
-    if (tempQuantity.contains("M")) {
-      tempQuantity = tempQuantity.replace("M", "000000");
+    // Handle K (1000) and M (1000000) units
+    if (tempQuantityStr.contains(KILO_CONVERSION)) {
+      tempQuantityStr = tempQuantityStr.replace(KILO_CONVERSION, "000");
+    }
+
+    if (tempQuantityStr.contains(MILLION_CONVERSION)) {
+      tempQuantityStr = tempQuantityStr.replace(MILLION_CONVERSION, "000000");
     }
 
     try {
-      if (Integer.parseInt(tempQuantity) > 0) {
-        quantity = Integer.parseInt(tempQuantity);
+      if (Integer.parseInt(tempQuantityStr) > 0) {
+        quantity = Integer.parseInt(tempQuantityStr);
       }
 
     } catch (Exception e) {

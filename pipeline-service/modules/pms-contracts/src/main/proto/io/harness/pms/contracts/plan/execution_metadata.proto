@@ -32,6 +32,9 @@ message ExecutionMetadata {
   ExecutionMode executionMode = 19;
   bool useMatrixFieldName = 20;
   repeated PostExecutionRollbackInfo postExecutionRollbackInfo = 21;
+  string originalPlanExecutionIdForRollbackMode = 22;
+  // storing details for all the PMS settings used as per need in execution flow
+  map<string, string> settingToValueMap = 23;
 }
 
 message RetryExecutionInfo {

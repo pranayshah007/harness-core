@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.config.CIDockerLayerCachingConfig;
+import io.harness.ci.config.CIDockerLayerCachingGCSConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.rule.Owner;
@@ -48,6 +49,16 @@ public class CIDockerLayerCachingConfigServiceTest {
         .build();
   }
 
+  private CIDockerLayerCachingGCSConfig getGCSConfig() {
+    return CIDockerLayerCachingGCSConfig.builder()
+        .endpoint("endpoint")
+        .bucket("bucket")
+        .accessKey("access_key")
+        .secretKey("secret_key")
+        .region("region")
+        .build();
+  }
+
   @Test
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
@@ -55,6 +66,7 @@ public class CIDockerLayerCachingConfigServiceTest {
     CIDockerLayerCachingConfig expectedConfig = getConfig();
 
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)).thenReturn(true);
+    when(featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)).thenReturn(true);
     when(ciExecutionServiceConfig.getDockerLayerCachingConfig()).thenReturn(expectedConfig);
     CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
     assertThat(expectedConfig).isEqualTo(config);
@@ -65,8 +77,22 @@ public class CIDockerLayerCachingConfigServiceTest {
   @Category(UnitTests.class)
   public void testGetDockerLayerCachingConfigFFDisabled() {
     when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)).thenReturn(false);
+    when(featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)).thenReturn(true);
     CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
     assertThat(config).isNull();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetDockerLayerCachingGCSConfig() {
+    CIDockerLayerCachingConfig expectedConfig = getConfig();
+
+    when(featureFlagService.isEnabled(FeatureName.CI_ENABLE_DLC, accountId)).thenReturn(true);
+    when(featureFlagService.isEnabled(FeatureName.CI_USE_S3_FOR_DLC, accountId)).thenReturn(false);
+    when(ciExecutionServiceConfig.getDockerLayerCachingGCSConfig()).thenReturn(getGCSConfig());
+    CIDockerLayerCachingConfig config = ciDockerLayerCachingConfigService.getDockerLayerCachingConfig(accountId);
+    assertThat(expectedConfig).isEqualTo(config);
   }
 
   @Test

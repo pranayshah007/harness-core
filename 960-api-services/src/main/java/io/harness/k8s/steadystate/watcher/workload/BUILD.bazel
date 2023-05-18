@@ -19,6 +19,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/k8s/steadystate:module",
         "//960-api-services/src/main/java/io/harness/k8s/steadystate/model:module",
         "//960-api-services/src/main/java/io/harness/k8s/steadystate/statusviewer:module",
+        "//960-api-services/src/main/java/io/harness/k8s/steadystate/watcher/client:module",
         "//970-api-services-beans:module",
         "//980-commons/src/main/java/io/harness/configuration:module",
         "//980-commons/src/main/java/io/harness/data/structure:module",

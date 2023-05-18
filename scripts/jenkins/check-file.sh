@@ -11,6 +11,10 @@
 
 #Run the TI,FT and other bazel builds based on the commit
 
+# Define colors
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 set -e
 export TargetBranch=$(echo "${ghprbTargetBranch}")
 export SourceBranch=$(echo "${ghprbSourceBranch}")
@@ -21,18 +25,21 @@ SONAR_SCAN=("SonarQube Code Analysis" "SonarPR-SonarScan")
 
 merge_summary=""
 bazelignore_array=($(cat bazelignore))
+tmp_array=($(cat sonarIgnore))
+sonarignore_array=($(printf "%s\n" "${bazelignore_array[@]}" "${tmp_array[@]}" | sort -u))
 
 BASE_SHA="$(git merge-base "$COMMIT_SHA" "$BASE_COMMIT_SHA")"
 merge_summary=( $(git diff --name-only $COMMIT_SHA..$BASE_SHA) )
+echo -e "${YELLOW}Merge Summary:\e[0m ${merge_summary[@]}"
 
-echo "Merge Summary:" "${merge_summary[@]}"
 compile="true"
+sonar="true"
 
 function compile_check() {
   for file_name in "${merge_summary[@]}"; do
     for i in "${bazelignore_array[@]}"; do
       if [[ $file_name =~ ^$i  ]]; then
-        printf >&2 "Compilation is not required for file $file_name :REGEX=$i \n"
+        printf >&2 "${GREEN}Compilation is not required for file $file_name :REGEX=$i ${NC}\n"
         compile=False
         break
       else
@@ -40,33 +47,51 @@ function compile_check() {
       fi
     done
     if [ $compile == True ]; then
-      echo >&2 "Compilation is required for " "$file_name"
+      echo -e "${YELLOW}Compilation is required for $file_name ${NC}" >&2
       break
     fi
   done
   echo "$compile"
+}
 
+function sonar_check() {
+  for file_name in "${merge_summary[@]}"; do
+    for i in "${sonarignore_array[@]}"; do
+      if [[ $file_name =~ ^$i  ]]; then
+        printf >&2 "${GREEN}Sonar is not required for file $file_name :REGEX=$i \n"
+        sonar=False
+        break
+      else
+        sonar=True
+      fi
+    done
+    if [ $sonar == True ]; then
+      echo -e "${YELLOW}SONAR is required for $file_name ${NC}" >&2
+      break
+    fi
+  done
+  echo "$sonar"
 }
 
 function print_log() {
-  printf "##################################\n\n\n"
-  echo "Compilation is Not Required as files/folders are added in bazelignore"
-  echo "Also marking the heavy checks NotRequired!"
+  printf "${YELLOW}##################################${NC}\n"
+  printf "${GREEN} Compilation is not required as files/folders are added in bazelignore${NC}\n"
+  printf "${GREEN} Also marking the heavy checks as NotRequired${NC}\n"
 
   for checks in "${PR_Name[@]}"; do
-    printf "${checks}\t NotRequired \n"
+    printf "${GREEN} ${checks}\t NotRequired ${NC}\n"
   done
 
   for checks in "${PR_TI[@]}"; do
-    printf "${checks}\t NotRequired \n"
+    printf "${GREEN} ${checks}\t NotRequired ${NC}\n"
   done
 
   for checks in "${SONAR_SCAN[@]}"; do
-      printf "${checks}\t NotRequired \n"
+      printf "${GREEN} ${checks}\t NotRequired ${NC}\n"
   done
 
-  echo "Merge Summary:" "${merge_summary[@]}"
-  printf "\n\n\n##################################\n\n"
+  echo -e "${YELLOW}Merge Summary:\e[0m ${merge_summary[@]}\n"
+  printf "${YELLOW} ##################################${NC}\n\n"
   export COMPILE="false"
   echo "false" >/tmp/COMPILE
 }
@@ -129,17 +154,34 @@ function send_webhook() {
           --data-raw '{
             "state": "success",
             "target_url": "https://app.harness.io/ng/#/account/VRuJ8-dqQH6QZgAtoBr66g/ci/orgs/default/projects/PRCHECKS/pipelines/SonarPR/executions/'"$Execution_Id"'/pipeline",
-            "description": "Skipped the check as compilation is not required!",
+            "description": "Skipped the check as the SONAR scan is not required!",
             "context": "'"${check}"'"
             }'
     done
 }
 
+function send_sonar_webhook() {
+    for check in "${SONAR_SCAN[@]}"; do
+          curl --silent --output /dev/null --location --request POST 'https://api.github.com/repos/harness/harness-core/statuses/'"$COMMIT_SHA"'' \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'Authorization: Bearer '"$BOT_PWD"'' \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+              "state": "success",
+              "target_url": "https://app.harness.io/ng/#/account/VRuJ8-dqQH6QZgAtoBr66g/ci/orgs/default/projects/PRCHECKS/pipelines/SonarPR/executions/'"$Execution_Id"'/pipeline",
+              "description": "Skipped the check as compilation is not required!",
+              "context": "'"${check}"'"
+              }'
+      done
+}
+
 if [ -z "${merge_summary}" ]; then
-  echo "THIS IS AN EMPTY COMMIT"
+  echo "${GREEN}THIS IS AN EMPTY COMMIT${NC}"
   COMPILE=False
-  else
-    COMPILE=$( compile_check )
+  SONAR=False
+else
+  COMPILE=$( compile_check )
+  SONAR=$( sonar_check )
 fi
 
 echo Overall Result: "$COMPILE"
@@ -151,6 +193,15 @@ if [[ $COMPILE == False ]]; then
 else
   export COMPILE="true"
   echo "true" >/tmp/COMPILE
+fi
+
+if [[ $SONAR == False ]]; then
+  export SONAR="false"
+  echo "false" >/tmp/SONAR
+  send_sonar_webhook
+else
+  export SONAR="true"
+  echo "true" >/tmp/SONAR
 fi
 
 #cat /tmp/COMPILE

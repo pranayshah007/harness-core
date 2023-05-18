@@ -71,6 +71,8 @@ public interface HPersistence extends HealthMonitor {
 
   MongoClient getNewMongoClient(Store store);
 
+  void invalidateCacheAndPut(String cls);
+
   /**
    * Gets the datastore.
    *
@@ -106,6 +108,14 @@ public interface HPersistence extends HealthMonitor {
    * @param readPref the readPref
    * @return         the datastore
    */
+
+  default Store getStore(Class cls) {
+    Optional<Store> secondaryStore = getSecondaryStore(cls);
+    if (secondaryStore.isPresent() && isMigrationEnabled(cls.getName())) {
+      return secondaryStore.get();
+    }
+    return getPrimaryStore(cls);
+  }
 
   default AdvancedDatastore getDatastore(Class cls) {
     Optional<Store> secondaryStore = getSecondaryStore(cls);

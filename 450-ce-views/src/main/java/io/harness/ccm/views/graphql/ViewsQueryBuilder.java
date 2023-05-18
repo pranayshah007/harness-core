@@ -531,6 +531,33 @@ public class ViewsQueryBuilder {
     return selectQuery;
   }
 
+  public SelectQuery getTotalCostTimeSeriesQuery(List<QLCEViewTimeFilter> timeFilters,
+      List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations, String cloudProviderTableName) {
+    String tableIdentifier = getTableIdentifier(cloudProviderTableName);
+    SelectQuery selectQuery = new SelectQuery();
+    selectQuery.addCustomFromTable(cloudProviderTableName);
+    QLCEViewTimeTruncGroupBy groupByTime = getGroupByTime(groupByList);
+
+    // Adding instance type filters
+    modifyQueryWithInstanceTypeFilter(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(),
+        Collections.emptyList(), Collections.emptyList(), selectQuery);
+
+    if (!aggregations.isEmpty()) {
+      decorateQueryWithAggregations(selectQuery, aggregations, tableIdentifier, false);
+    }
+
+    if (!timeFilters.isEmpty()) {
+      decorateQueryWithTimeFilters(selectQuery, timeFilters, false, tableIdentifier);
+    }
+
+    if (groupByTime != null) {
+      decorateQueryWithGroupByTime(selectQuery, groupByTime, false, tableIdentifier, false);
+    }
+
+    log.info("Query for Total cost timeseries data {}", selectQuery);
+    return selectQuery;
+  }
+
   public SelectQuery getTotalCountQuery(List<ViewRule> rules, List<QLCEViewFilter> filters,
       List<QLCEViewTimeFilter> timeFilters, List<QLCEViewGroupBy> groupByList, String cloudProviderTableName) {
     String tableIdentifier = getTableIdentifier(cloudProviderTableName);

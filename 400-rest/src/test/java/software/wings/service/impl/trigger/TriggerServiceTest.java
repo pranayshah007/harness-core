@@ -2025,6 +2025,7 @@ public class TriggerServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldTriggerExecutionByWebhookWithNoBuildNumber() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.SPG_GENERATE_CURL_WITHOUT_ARTIFACT), any())).thenReturn(true);
     Artifact artifact = prepareArtifact(ARTIFACT_ID);
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(singletonList(artifact));
@@ -2053,7 +2054,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(syncArtifactCollectionServiceImpl, times(2)).collectNewArtifacts(APP_ID, ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(syncArtifactCollectionServiceImpl);
     verify(workflowExecutionService).triggerEnvExecution(any(), any(), any(ExecutionArgs.class), any(Trigger.class));
-    verify(artifactStreamService, times(11)).get(ARTIFACT_STREAM_ID);
+    verify(artifactStreamService, times(20)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
   }
 
@@ -2092,6 +2093,7 @@ public class TriggerServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldTriggerExecutionByWebhookWithBuildNumber() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.SPG_GENERATE_CURL_WITHOUT_ARTIFACT), any())).thenReturn(true);
     Artifact artifact = prepareArtifact(ARTIFACT_ID);
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(singletonList(artifact));
@@ -2120,7 +2122,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(syncArtifactCollectionServiceImpl, times(2)).collectNewArtifacts(APP_ID, ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(syncArtifactCollectionServiceImpl);
     verify(workflowExecutionService).triggerEnvExecution(any(), any(), any(ExecutionArgs.class), any(Trigger.class));
-    verify(artifactStreamService, times(11)).get(ARTIFACT_STREAM_ID);
+    verify(artifactStreamService, times(20)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
 
     verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, PIPELINE_ID, SERVICE_ID);
@@ -2130,6 +2132,7 @@ public class TriggerServiceTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldTriggerWorkflowExecutionByWebhookWithBuildNumber() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.SPG_GENERATE_CURL_WITHOUT_ARTIFACT), any())).thenReturn(true);
     Artifact artifact = prepareArtifact(ARTIFACT_ID);
     ExecutionArgs executionArgs = new ExecutionArgs();
     executionArgs.setArtifacts(singletonList(artifact));
@@ -2175,7 +2178,7 @@ public class TriggerServiceTest extends WingsBaseTest {
     verify(syncArtifactCollectionServiceImpl).collectNewArtifacts(APP_ID, ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(syncArtifactCollectionServiceImpl);
     verify(workflowExecutionService).triggerEnvExecution(any(), any(), any(ExecutionArgs.class), any(Trigger.class));
-    verify(artifactStreamService, times(7)).get(ARTIFACT_STREAM_ID);
+    verify(artifactStreamService, times(11)).get(ARTIFACT_STREAM_ID);
     verify(artifactService).getArtifactByBuildNumber(artifactStream, ARTIFACT_FILTER, false);
 
     verify(workflowExecutionService).obtainLastGoodDeployedArtifacts(APP_ID, WORKFLOW_ID, SERVICE_ID);
@@ -2879,6 +2882,7 @@ public class TriggerServiceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void shouldGenerateWebhookTokenWithTempServiceForPipeline() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.SPG_GENERATE_CURL_WITHOUT_ARTIFACT), any())).thenReturn(true);
     Trigger trigger = buildPipelineCondTrigger();
     trigger.setWorkflowVariables(ImmutableMap.of("srv", "hello"));
     trigger.setArtifactSelections(Lists.newArrayList(

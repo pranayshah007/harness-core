@@ -35,10 +35,9 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,12 +59,14 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
 
   @Mock private NamespaceService namespaceService;
-
+  String env = "prod";
   @InjectMocks ConfigManagerServiceImpl configManagerServiceImpl;
 
   @Before
   public void setUp() {
     openMocks = MockitoAnnotations.openMocks(this);
+    configManagerServiceImpl = new ConfigManagerServiceImpl(env, appConfigRepository, mergedAppConfigRepository,
+        k8sClient, namespaceService, configEnvVariablesService, backstageEnvVariableService);
   }
 
   static final String TEST_ID = "test_id";
@@ -87,7 +88,7 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
       + "  /harness/prod:\n"
       + "    target: https://app.harness.io/\n"
       + "    pathRewrite:\n"
-      + "      api/proxy/harness/prod/?: /\n"
+      + "      /api/proxy/harness/prod/?: /\n"
       + "    allowedHeaders:\n"
       + "    - authorization\n"
       + "kafka:\n"
@@ -288,6 +289,40 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     assertEquals(mergedPluginConfigs.getConfig(), TEST_EXPECTED_CONFIG_VALUE_AFTER_MERGE);
     assertEquals(mergedPluginConfigs.getEnvVariables().get(0).getEnvName(), TEST_SECRET_ENV_NAME);
     assertEquals(mergedPluginConfigs.getEnvVariables().get(0).getHarnessSecretIdentifier(), TEST_SECRET_ID);
+
+    // check if no plugin is enabled with configs for an account
+
+    appConfigEntity = getTestAppConfigEntity();
+    appConfigEntity.setConfigs(null);
+    when(appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
+             TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE, TEST_ENABLED))
+        .thenReturn(Collections.singletonList(appConfigEntity));
+    when(configEnvVariablesService.getAllEnvVariablesForAccountIdentifierAndMultiplePluginIds(
+             TEST_ACCOUNT_IDENTIFIER, Arrays.asList(TEST_CONFIG_ID)))
+        .thenReturn(Collections.emptyList());
+    when(backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
+             any(String.class), anyList()))
+        .thenReturn(Collections.emptyList());
+    Exception exception = null;
+    try {
+      configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
+    } catch (InvalidRequestException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
+
+    // check if no plugin is enabled for an account
+
+    when(appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
+             TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE, TEST_ENABLED))
+        .thenReturn(Collections.emptyList());
+    exception = null;
+    try {
+      configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
+    } catch (InvalidRequestException e) {
+      exception = e;
+    }
+    assertNotNull(exception);
   }
 
   @Test

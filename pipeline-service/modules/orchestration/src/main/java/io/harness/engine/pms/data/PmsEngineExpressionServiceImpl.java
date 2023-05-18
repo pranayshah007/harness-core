@@ -9,6 +9,7 @@ package io.harness.engine.pms.data;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.common.ExpressionMode;
@@ -17,6 +18,8 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -57,6 +60,15 @@ public class PmsEngineExpressionServiceImpl implements PmsEngineExpressionServic
   @Override
   public Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode) {
     EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance);
+    return evaluator.resolve(o, expressionMode);
+  }
+  @Override
+  public Object resolve(Ambiance ambiance, Object o, ExpressionMode expressionMode, List<String> enabledFeatureFlags) {
+    Map<String, String> contxtMap = new HashMap<>();
+    if (EmptyPredicate.isNotEmpty(enabledFeatureFlags)) {
+      contxtMap.put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, String.join(",", enabledFeatureFlags));
+    }
+    EngineExpressionEvaluator evaluator = prepareExpressionEvaluator(ambiance, contxtMap);
     return evaluator.resolve(o, expressionMode);
   }
 

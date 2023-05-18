@@ -15,6 +15,7 @@ import io.harness.capability.SocketConnectivityParameters;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
+import io.harness.exception.ExceptionUtils;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class SocketConnectivityCapabilityCheck implements CapabilityCheck, Proto
       }
       return CapabilityResponse.builder().delegateCapability(socketConnCapability).validated(valid).build();
     } catch (final Exception ex) {
-      log.error("Error Occurred while checking socketConnCapability", ex);
+      log.error("Error Occurred while checking socketConnCapability {}", ExceptionUtils.getMessage(ex));
       return CapabilityResponse.builder().delegateCapability(socketConnCapability).validated(false).build();
     }
   }
@@ -58,7 +59,7 @@ public class SocketConnectivityCapabilityCheck implements CapabilityCheck, Proto
               connectableHost(host, socketParameters.getPort()) ? PermissionResult.ALLOWED : PermissionResult.DENIED)
           .build();
     } catch (final Exception ex) {
-      log.error("Error Occurred while checking socketConnCapability with proto", ex);
+      log.error("Error Occurred while checking socketConnCapability with proto {}", ExceptionUtils.getMessage(ex));
       return builder.permissionResult(PermissionResult.DENIED).build();
     }
   }
@@ -69,7 +70,8 @@ public class SocketConnectivityCapabilityCheck implements CapabilityCheck, Proto
       log.info("[Delegate Capability] Socket Connection Succeeded for url {} on port {}", host, port);
       return true;
     } catch (final IOException e) {
-      log.info("[Delegate Capability] Socket Connection Failed for url " + host + " on port " + port, e);
+      log.info("[Delegate Capability] Socket Connection Failed for url {} on port {} error", host, port,
+          ExceptionUtils.getMessage(e));
     }
     return false; // Either timeout or unreachable or failed DNS lookup.
   }

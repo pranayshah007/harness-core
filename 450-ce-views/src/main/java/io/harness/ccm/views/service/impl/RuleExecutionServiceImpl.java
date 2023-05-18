@@ -8,6 +8,8 @@
 package io.harness.ccm.views.service.impl;
 
 import static io.harness.NGCommonEntityConstants.MONGODB_ID;
+import static io.harness.ccm.views.helper.RuleCostType.POTENTIAL;
+import static io.harness.ccm.views.helper.RuleCostType.REALIZED;
 import static io.harness.ccm.views.helper.RuleExecutionType.INTERNAL;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
@@ -22,7 +24,9 @@ import io.harness.ccm.views.dao.RuleSetDAO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleExecution;
 import io.harness.ccm.views.entities.RuleExecution.RuleExecutionKeys;
+import io.harness.ccm.views.entities.RuleRecommendation;
 import io.harness.ccm.views.entities.RuleSet;
+import io.harness.ccm.views.helper.ExecutionSummary;
 import io.harness.ccm.views.helper.FilterValues;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.OverviewExecutionDetails;
@@ -38,6 +42,9 @@ import io.harness.exception.InvalidRequestException;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,13 +115,32 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     return filterValues;
   }
 
+  public static Map<String, String> getDates() {
+    LocalDate endDate = LocalDate.now();
+    LocalDate startDate = endDate.minusDays(30);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    Map<String, String> datesAsString = new HashMap<>();
+    LocalDate currentDate = startDate;
+    while (currentDate.isBefore(endDate)) {
+      currentDate = currentDate.plusDays(1);
+      datesAsString.put(currentDate.format(formatter), "0");
+    }
+    return datesAsString;
+  }
+
   @Override
   public OverviewExecutionDetails getOverviewExecutionDetails(
       String accountId, RuleExecutionFilter ruleExecutionFilter) {
     OverviewExecutionDetails overviewExecutionDetails =
         rulesExecutionDAO.getOverviewExecutionDetails(accountId, ruleExecutionFilter);
     overviewExecutionDetails.setTopResourceTypeExecution(getResourceTypeCount(accountId, ruleExecutionFilter));
-    overviewExecutionDetails.setMonthlyRealizedSavings(getResourceActualCost(accountId, ruleExecutionFilter));
+    Map<String, String> dates = getDates();
+    List<Map> result = getResourceActualCost(accountId, ruleExecutionFilter);
+    for (Map res : result) {
+      dates.put(res.get("_id").toString(), res.get("cost").toString());
+    }
+    overviewExecutionDetails.setMonthlyRealizedSavings(dates);
     return overviewExecutionDetails;
   }
 
@@ -129,15 +155,17 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   public Map<String, Double> getResourcePotentialCost(String accountId, RuleExecutionFilter ruleExecutionFilter) {
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
-                            .and(RuleExecutionKeys.potentialSavings)
+                            .and(RuleExecutionKeys.cost)
                             .ne(null)
+                            .and(RuleExecutionKeys.costType)
+                            .is(POTENTIAL)
                             .and(RuleExecutionKeys.executionType)
                             .is(INTERNAL);
     if (ruleExecutionFilter.getTime() != null) {
       for (CCMTimeFilter time : ruleExecutionFilter.getTime()) {
         switch (time.getOperator()) {
           case AFTER:
-            criteria.and(RuleExecutionKeys.lastUpdatedAt).gte(time.getTimestamp());
+            criteria.and(RuleExecutionKeys.createdAt).gte(time.getTimestamp());
             break;
           default:
             throw new InvalidRequestException("Operator not supported not supported for time fields");
@@ -146,7 +174,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
     }
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation group =
-        group(RuleExecutionKeys.resourceType).sum(RuleExecutionKeys.potentialSavings).as(ResourceTypeCostKey.cost);
+        group(RuleExecutionKeys.resourceType).sum(RuleExecutionKeys.cost).as(ResourceTypeCostKey.cost);
     ProjectionOperation projectionStage =
         project().and(MONGODB_ID).as(ResourceTypeCostKey.resourceName).andInclude(ResourceTypeCostKey.cost);
     SortOperation sortStage = sort(Sort.by(ResourceTypeCostKey.cost));
@@ -163,8 +191,10 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   public List<Map> getResourceActualCost(String accountId, RuleExecutionFilter ruleExecutionFilter) {
     Criteria criteria = Criteria.where(RuleExecutionKeys.accountId)
                             .is(accountId)
-                            .and(RuleExecutionKeys.realizedSavings)
+                            .and(RuleExecutionKeys.cost)
                             .ne(null)
+                            .and(RuleExecutionKeys.costType)
+                            .is(REALIZED)
                             .and(RuleExecutionKeys.executionType)
                             .ne(INTERNAL);
     if (ruleExecutionFilter.getTime() != null) {
@@ -184,13 +214,13 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
                                                   + "$createdAt"
                                                   + "))")
                                               .as("formatted_day")
-                                              .andInclude("realizedSavings");
+                                              .andInclude("cost");
 
-    GroupOperation group = Aggregation.group("formatted_day").sum("realizedSavings").as("totalRealizedSavings");
+    GroupOperation group = Aggregation.group("formatted_day").sum("cost").as("cost");
     AggregationOperation[] stages = {matchStage, projectionStage, group};
     Aggregation aggregation = Aggregation.newAggregation(stages);
-
     List<Map> result = mongoTemplate.aggregate(aggregation, "governanceRuleExecution", Map.class).getMappedResults();
+
     log.info("getResourceActualCost: {}", result);
     return result;
   }
@@ -229,6 +259,27 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
 
   @Override
   public RuleExecutionList getRuleRecommendationDetails(String ruleRecommendationId, String accountId) {
-    return rulesExecutionDAO.getRuleRecommendationDetails(ruleRecommendationId, accountId);
+    MatchOperation match = Aggregation.match(Criteria.where("_id").is(ruleRecommendationId));
+    Aggregation aggregation = Aggregation.newAggregation(match);
+    RuleRecommendation ruleRecommendation =
+        mongoTemplate.aggregate(aggregation, "governanceRecommendation", RuleRecommendation.class)
+            .getMappedResults()
+            .get(0);
+    List<String> executionIds = new ArrayList<>();
+    for (ExecutionSummary executionSummary : ruleRecommendation.getExecutions()) {
+      executionIds.add(executionSummary.getRuleExecutionID());
+    }
+    RuleExecutionFilter ruleExecutionFilter =
+        RuleExecutionFilter.builder().executionIds(executionIds).accountId(accountId).build();
+    return rulesExecutionDAO.filterExecutionInternal(ruleExecutionFilter);
+  }
+
+  @Override
+  public RuleRecommendation getRuleRecommendation(String ruleRecommendationId, String accountId) {
+    MatchOperation match = Aggregation.match(Criteria.where("_id").is(ruleRecommendationId));
+    Aggregation aggregation = Aggregation.newAggregation(match);
+    return mongoTemplate.aggregate(aggregation, "governanceRecommendation", RuleRecommendation.class)
+        .getMappedResults()
+        .get(0);
   }
 }

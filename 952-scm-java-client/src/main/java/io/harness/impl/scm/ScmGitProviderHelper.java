@@ -19,6 +19,7 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.GitClientHelper;
@@ -45,6 +46,8 @@ public class ScmGitProviderHelper {
       return getSlugFromUrlForBitbucket(((BitbucketConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return getSlugFromUrlForAzureRepo(((AzureRepoConnectorDTO) scmConnector).getUrl());
+    } else if (scmConnector instanceof HarnessConnectorDTO) {
+      return getSlugFromHarnessUrl(((HarnessConnectorDTO) scmConnector).getUrl());
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -59,6 +62,12 @@ public class ScmGitProviderHelper {
     String repoName = gitClientHelper.getGitRepo(url);
     String ownerName = gitClientHelper.getGitOwner(url, false);
     return ownerName + "/" + repoName;
+  }
+
+  private String getSlugFromHarnessUrl(String url) {
+    String repoName = gitClientHelper.getGitRepo(url);
+    String ownerName = gitClientHelper.getGitOwner(url, true);
+    return ownerName + "/" + repoName + "/+";
   }
 
   private String getSlugFromUrlForGitlab(GitlabConnectorDTO gitlabConnectorDTO) {

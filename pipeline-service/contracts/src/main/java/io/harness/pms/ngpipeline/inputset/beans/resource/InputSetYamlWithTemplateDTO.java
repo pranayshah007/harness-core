@@ -32,9 +32,9 @@ import lombok.experimental.FieldDefaults;
     description = "This contains the Runtime Input YAML used during a Pipeline Execution.")
 public class InputSetYamlWithTemplateDTO {
   // Template-Yaml at the time of execution
-  String inputSetTemplateYaml;
+  @Schema(description = "Template Yaml at the time of execution") String inputSetTemplateYaml;
   // InputSet Yaml used during execution
-  String inputSetYaml;
+  @Schema(description = "Input set Yaml used during execution") String inputSetYaml;
   // Execution Inputs.
-  Map<String, String> expressionValues;
+  @Schema(hidden = true, description = "Execution inputs") Map<String, String> expressionValues;
 }

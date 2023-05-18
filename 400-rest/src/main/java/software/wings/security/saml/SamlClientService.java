@@ -144,9 +144,16 @@ public class SamlClientService {
       Account account, boolean isTestConnectionRequest, String samlSSOId) {
     SSORequest ssoRequest = new SSORequest();
     try {
-      SamlClient samlClient = isEmpty(samlSSOId) ? getSamlClientFromAccount(account)
-                                                 : getSamlClientFromAccountAndSamlId(account, samlSSOId);
-      populateRedirectUriValueInSSORequest(samlClient, isTestConnectionRequest, ssoRequest);
+      SamlSettings setting;
+      if (isEmpty(samlSSOId)) {
+        setting = ssoSettingService.getSamlSettingsByAccountIdNotConfiguredFromNG(account.getUuid());
+        if (setting == null) {
+          setting = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
+        }
+      } else {
+        setting = ssoSettingService.getSamlSettingsByAccountIdAndUuid(account.getUuid(), samlSSOId);
+      }
+      populateRedirectUriValueInSSORequest(getSamlClient(setting), isTestConnectionRequest, ssoRequest);
       return ssoRequest;
     } catch (SamlException | URISyntaxException | IOException e) {
       throw new WingsException(String.format("Generating Saml request failed for account: [%s]", account.getUuid()), e);
@@ -196,9 +203,11 @@ public class SamlClientService {
       samlSettings.forEach(setting -> {
         try {
           if (setting != null && setting.isAuthenticationEnabled()) {
+            final String friendlyName =
+                isNotEmpty(setting.getFriendlySamlName()) ? setting.getFriendlySamlName() : setting.getDisplayName();
             samlClientMap.put(setting.getUuid(),
                 new SamlClientFriendlyNameProviderType(
-                    getSamlClient(setting), setting.getFriendlySamlName(), setting.getSamlProviderType()));
+                    getSamlClient(setting), friendlyName, setting.getSamlProviderType()));
           }
         } catch (SamlException se) {
           log.warn("Error generating saml client for saml setting id {} in account {}", setting.getUuid(),

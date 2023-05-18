@@ -77,6 +77,21 @@ public class GarResourceServiceImplTest extends CategoryTest {
   private static final String pkg = "pkg";
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final String IDENTIFIER = "identifier";
+  private static final String INPUT = "<+input>-abc";
+  private static final IdentifierRef CONNECTOR_REF = IdentifierRef.builder()
+                                                         .accountIdentifier(ACCOUNT_ID)
+                                                         .identifier(IDENTIFIER)
+                                                         .projectIdentifier(PROJECT_IDENTIFIER)
+                                                         .orgIdentifier(ORG_IDENTIFIER)
+                                                         .build();
+  private static final GarRequestDTO GAR_REQUEST_DTO_VERSION = GarRequestDTO.builder().version(version).build();
+  private static final String REGION_MESSAGE = "value for region is empty or not provided";
+  private static final String REPOSITORY_NAME_MESSAGE = "value for repositoryName is empty or not provided";
+  private static final String PROJECT_MESSAGE = "value for project is empty or not provided";
+  private static final String PACKAGE_MESSAGE = "value for package is empty or not provided";
+  private static final String VERSION_VERSION_REGEX_MESSAGE =
+      "value for version, versionRegex is empty or not provided";
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -256,14 +271,8 @@ public class GarResourceServiceImplTest extends CategoryTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild() {
-    IdentifierRef connectorRef = IdentifierRef.builder()
-                                     .accountIdentifier(ACCOUNT_ID)
-                                     .identifier("identifier")
-                                     .projectIdentifier(PROJECT_IDENTIFIER)
-                                     .orgIdentifier(ORG_IDENTIFIER)
-                                     .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -280,14 +289,147 @@ public class GarResourceServiceImplTest extends CategoryTest {
                                                    .build())
                 .build());
 
-    GARBuildDetailsDTO garResponseDTO = garResourceService.getLastSuccessfulBuild(connectorRef, REGION, repositoryName,
-        project, pkg, GarRequestDTO.builder().version(version).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    GARBuildDetailsDTO garResponseDTO = garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName,
+        project, pkg, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(garResponseDTO).isNotNull();
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
     assertThat(artifactTaskParameters.getArtifactTaskType()).isEqualTo(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Region_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, null, repositoryName, project,
+                               pkg, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Region_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, INPUT, repositoryName, project,
+                               pkg, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_RepositoryName_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, null, project, pkg,
+                               GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_RepositoryName_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, INPUT, project, pkg,
+                               GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Project_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, null,
+                               pkg, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Project_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, INPUT,
+                               pkg, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PROJECT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Package_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, project,
+                               null, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Package_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, project,
+                               INPUT, GAR_REQUEST_DTO_VERSION, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Version_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, project,
+                               pkg, GarRequestDTO.builder().build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(VERSION_VERSION_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Version_Input() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, project,
+                               pkg, GarRequestDTO.builder().version(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(VERSION_VERSION_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_VersionRegex_Null() {
+    assertThatThrownBy(()
+                           -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, project,
+                               pkg, GarRequestDTO.builder().build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(VERSION_VERSION_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_VersionRegex_Input() {
+    assertThatThrownBy(
+        ()
+            -> garResourceService.getLastSuccessfulBuild(CONNECTOR_REF, REGION, repositoryName, project, pkg,
+                GarRequestDTO.builder().versionRegex(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(VERSION_VERSION_REGEX_MESSAGE);
   }
 }

@@ -14,9 +14,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.entities.Execution;
 import io.harness.beans.entities.IACMServiceConfig;
-import io.harness.beans.entities.Stack;
-import io.harness.beans.entities.StackVariables;
 import io.harness.beans.entities.TerraformEndpointsData;
+import io.harness.beans.entities.Workspace;
+import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.exception.GeneralException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -57,12 +57,12 @@ public class IACMServiceUtils {
     this.iacmServiceConfig = iacmServiceConfig;
   }
 
-  public Stack getIACMStackInfo(String org, String projectId, String accountId, String stackID) {
+  public Workspace getIACMWorkspaceInfo(String org, String projectId, String accountId, String workspaceID) {
     log.info("Initiating token request to IACM service: {}", this.iacmServiceConfig.getBaseUrl());
 
     RetryPolicy<Response<JsonObject>> retryPolicy =
-        getRetryPolicyJsonObject(format("[Retrying failed call to retrieve stack info: {}"),
-            format("Failed to retrieve stack info after retrying {} times"));
+        getRetryPolicyJsonObject(format("[Retrying failed call to retrieve workspace info: {}"),
+            format("Failed to retrieve workspace info after retrying {} times"));
 
     Response<JsonObject> response;
 
@@ -70,12 +70,12 @@ public class IACMServiceUtils {
       response = Failsafe.with(retryPolicy)
                      .get(()
                               -> iacmServiceClient
-                                     .getStackInfo(org, projectId, stackID, generateJWTToken(accountId, org, projectId),
-                                         accountId)
+                                     .getWorkspaceInfo(org, projectId, workspaceID,
+                                         generateJWTToken(accountId, org, projectId), accountId)
                                      .execute());
     } catch (Exception e) {
       log.error("Error while trying to execute the query in the IACM Service: ", e);
-      throw new GeneralException("Stack Info request to IACM service call failed", e);
+      throw new GeneralException("Workspace Info request to IACM service call failed", e);
     }
     if (!response.isSuccessful()) {
       String errorBody = null;
@@ -90,26 +90,27 @@ public class IACMServiceUtils {
       log.error("error querying the iac server{}", errorBody);
 
       throw new GeneralException(
-          String.format("Could not retrieve IACM stack info from the IACM service. status code = %s, message = %s",
+          String.format("Could not retrieve IACM workspace info from the IACM service. status code = %s, message = %s",
               response.code(), response.message()));
     }
 
     if (response.body() == null) {
-      throw new GeneralException("Could not retrieve IACM stack info from the IACM service. Response body is null");
+      throw new GeneralException("Could not retrieve IACM workspace info from the IACM service. Response body is null");
     }
     ObjectMapper objectMapper = new ObjectMapper();
-    Stack stack;
+    Workspace workspace;
     try {
-      stack = objectMapper.readValue(response.body().toString(), Stack.class);
+      workspace = objectMapper.readValue(response.body().toString(), Workspace.class);
     } catch (JsonProcessingException ex) {
       log.error("Could not parse json body {}", response.body().toString());
-      throw new GeneralException("Could not parse stack response. Please contact Harness Support for more information");
+      throw new GeneralException(
+          "Could not parse workspace response. Please contact Harness Support for more information");
     }
-    if (stack.getProvider_connector() == null) {
-      throw new GeneralException("Could not retrieve IACM Connector from the IACM service. The StackID: "
-          + stack.getIdentifier() + " doesn't have a connector reference");
+    if (workspace.getProvider_connector() == null) {
+      throw new GeneralException("Could not retrieve IACM Connector from the IACM service. The WorkspaceID: "
+          + workspace.getIdentifier() + " doesn't have a connector reference");
     }
-    return stack;
+    return workspace;
   }
 
   @NotNull
@@ -151,7 +152,7 @@ public class IACMServiceUtils {
     return response.body().get("token").getAsString();
   }
 
-  public StackVariables[] getIacmStackEnvs(String org, String projectId, String accountId, String stackID) {
+  public WorkspaceVariables[] getIacmWorkspaceEnvs(String org, String projectId, String accountId, String workspaceID) {
     log.info("Initiating request to IACM service for env retrieval: {}", this.iacmServiceConfig.getBaseUrl());
     RetryPolicy<Response<JsonArray>> retryPolicy =
         getRetryPolicyJsonArray(format("[Retrying failed call to retrieve envs variables from the IAC Server info: {}"),
@@ -163,7 +164,7 @@ public class IACMServiceUtils {
       response = Failsafe.with(retryPolicy)
                      .get(()
                               -> iacmServiceClient
-                                     .getStackVariables(org, projectId, stackID,
+                                     .getWorkspaceVariables(org, projectId, workspaceID,
                                          generateJWTToken(accountId, org, projectId), accountId)
                                      .execute());
     } catch (Exception e) {
@@ -189,9 +190,9 @@ public class IACMServiceUtils {
       throw new GeneralException("Could not retrieve IACM variables from the IACM service. Response body is null");
     }
     ObjectMapper objectMapper = new ObjectMapper();
-    StackVariables[] vars;
+    WorkspaceVariables[] vars;
     try {
-      vars = objectMapper.readValue(response.body().toString(), StackVariables[].class);
+      vars = objectMapper.readValue(response.body().toString(), WorkspaceVariables[].class);
     } catch (JsonProcessingException ex) {
       log.error("Could not parse json body {}", response.body().toString());
       throw new GeneralException(
@@ -203,7 +204,7 @@ public class IACMServiceUtils {
     return vars;
   }
 
-  public String GetTerraformEndpointsData(Ambiance ambiance, String stackId) {
+  public String GetTerraformEndpointsData(Ambiance ambiance, String workspaceId) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     TerraformEndpointsData tfEndpointsData = TerraformEndpointsData.builder()
                                                  .org_id(ngAccess.getOrgIdentifier())
@@ -212,7 +213,7 @@ public class IACMServiceUtils {
                                                  .pipeline_execution_id(ambiance.getPlanExecutionId())
                                                  .pipeline_stage_execution_id(ambiance.getStageExecutionId())
                                                  .project_id(ngAccess.getProjectIdentifier())
-                                                 .stack_id(stackId)
+                                                 .workspace_id(workspaceId)
                                                  .token(generateJWTToken(ngAccess.getAccountIdentifier(),
                                                      ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier()))
                                                  .build();
@@ -225,7 +226,7 @@ public class IACMServiceUtils {
     }
   }
 
-  public void createIACMExecution(Ambiance ambiance, String stackId, String action) {
+  public void createIACMExecution(Ambiance ambiance, String workspaceId) {
     log.info("Initiating post request to IACM service for execution creation: {}", this.iacmServiceConfig.getBaseUrl());
     RetryPolicy<Response<JsonObject>> retryPolicy =
         getRetryPolicyJsonObject(format("[Retrying failed call to create an execution in the IAC Server info: {}"),
@@ -237,11 +238,10 @@ public class IACMServiceUtils {
                               .org(ngAccess.getOrgIdentifier())
                               .account(ngAccess.getAccountIdentifier())
                               .project(ngAccess.getProjectIdentifier())
-                              .stack(stackId)
+                              .workspace(workspaceId)
                               .pipeline_execution_id(ambiance.getPlanExecutionId())
                               .pipeline(ambiance.getMetadata().getPipelineIdentifier())
                               .pipeline_stage_id(ambiance.getStageExecutionId())
-                              .action(action)
                               .build();
 
     Response<JsonObject> response;

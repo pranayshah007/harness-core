@@ -14,6 +14,7 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
 import "955-delegate-beans/src/main/proto/io/harness/delegate/capability.proto";
 import "955-delegate-beans/src/main/proto/io/harness/perpetualtask/perpetual_task.proto";
 
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/execution_infra.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/delegate/progress.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
@@ -50,6 +51,9 @@ service DelegateService {
   rpc ObtainDocument(ObtainDocumentRequest) returns (ObtainDocumentResponse);
 
   rpc isTaskTypeSupported(SupportedTaskTypeRequest) returns (SupportedTaskTypeResponse);
+
+  rpc initializeExecutionInfrastructure(InitializeExecutionInfrastructureRequest)
+      returns (InitializeExecutionInfraResponse);
 }
 
 // Next ID: 11
@@ -76,6 +80,11 @@ message SubmitTaskRequest {
   bool execute_on_harness_hosted_delegates = 12;
   bool emitEvent = 13;
   string stageId = 14;
+}
+
+message InitializeExecutionInfraResponse {
+  TaskId task_id = 1;
+  google.protobuf.Timestamp total_expiry = 2;
 }
 
 message SubmitTaskResponse {

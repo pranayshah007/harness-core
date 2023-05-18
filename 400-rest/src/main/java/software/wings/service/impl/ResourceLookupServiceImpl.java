@@ -13,6 +13,7 @@ import static io.harness.beans.SearchFilter.Operator.IN;
 import static io.harness.beans.SortOrder.OrderType.ASC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 
 import static software.wings.audit.ResourceType.API_KEY;
 import static software.wings.audit.ResourceType.APPLICATION;
@@ -166,19 +167,22 @@ public class ResourceLookupServiceImpl implements ResourceLookupService {
         .get();
   }
 
+  // USES PROJECTION TO RETRIEVE ONLY FIELDS resourceId AND tags.
   @Override
   public Map<String, ResourceLookup> getResourceLookupMapWithResourceIds(String accountId, Set<String> resourceIds) {
     Query<ResourceLookup> query = wingsPersistence.createQuery(ResourceLookup.class)
                                       .filter(ResourceLookupKeys.accountId, accountId)
                                       .field(ResourceLookupKeys.resourceId)
                                       .in(resourceIds);
+    query.project(ResourceLookupKeys.resourceId, true);
+    query.project(ResourceLookupKeys.tags, true);
 
     Map<String, ResourceLookup> resourceLookupMap = new HashMap<>();
 
     FindOptions findOptions = new FindOptions();
     findOptions.hint(BasicDBUtils.getIndexObject(ResourceLookup.mongoIndexes(), "resourceIdResourceLookupIndex"));
 
-    try (HIterator<ResourceLookup> iterator = new HIterator<>(query.fetch(findOptions))) {
+    try (HIterator<ResourceLookup> iterator = new HIterator<>(query.limit(NO_LIMIT).fetch(findOptions))) {
       while (iterator.hasNext()) {
         ResourceLookup resourceLookup = iterator.next();
         resourceLookupMap.put(resourceLookup.getResourceId(), resourceLookup);

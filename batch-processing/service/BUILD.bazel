@@ -14,6 +14,8 @@ shared_dependencies = [
     "@batch//:com_azure_azure_core",
     "@batch//:com_azure_azure_storage_blob",
     "@batch//:com_azure_azure_storage_common",
+    "@batch//:com_azure_resourcemanager_azure_resourcemanager_advisor",
+    "@batch//:com_azure_resourcemanager_azure_resourcemanager_compute",
 ] + [
     "//350-event-server:module",
     "//374-ceng-graphql:module",
@@ -22,6 +24,7 @@ shared_dependencies = [
     "//400-rest:module",
     "//450-ce-views:module",
     "//480-pricing-service:module",
+    "//930-ng-core-clients:module",
     "//490-ce-commons:module",
     "//950-telemetry:module",
     "//959-psql-database-models:module",

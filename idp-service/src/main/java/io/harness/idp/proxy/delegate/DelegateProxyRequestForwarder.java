@@ -38,27 +38,17 @@ public class DelegateProxyRequestForwarder {
   private static final long EXECUTION_TIMEOUT_IN_SECONDS = 60;
   private static final int SOCKET_TIMEOUT_IN_MILLISECONDS = 20000;
   DelegateGrpcClientWrapper delegateGrpcClientWrapper;
-  WaitNotifyEngine waitNotifyEngine;
 
-  public UriBuilder createUrlWithQueryParameters(String url, MultivaluedMap<String, String> queryParam) {
-    UriBuilder uriBuilder = UriBuilder.fromUri(url);
-
-    for (Map.Entry<String, List<String>> entry : queryParam.entrySet()) {
-      uriBuilder.queryParam(entry.getKey(), entry.getValue());
-    }
-    return uriBuilder;
-  }
-
-  public List<HttpHeaderConfig> createHeaderConfig(Map<String, Object> headers) {
+  public List<HttpHeaderConfig> createHeaderConfig(Map<String, String> headers) {
     List<HttpHeaderConfig> headerList = new ArrayList<>();
     try {
-      for (Map.Entry<String, Object> entry : headers.entrySet()) {
-        if (entry.getKey().equalsIgnoreCase("Content-Length") || entry.getKey().equalsIgnoreCase("host")) {
+      for (Map.Entry<String, String> entry : headers.entrySet()) {
+        if (entry.getKey().equalsIgnoreCase("Content-Length") || entry.getKey().equalsIgnoreCase("host")
+            || entry.getKey().equalsIgnoreCase("Connection")) {
           continue;
         }
-        String value = entry.getValue().toString();
-        headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(value).build());
-        log.debug("header {} : {}", entry.getKey(), value);
+        headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(entry.getValue()).build());
+        log.info("header {} : {}", entry.getKey(), entry.getValue());
       }
     } catch (Exception ex) {
       log.error("Error while mapping the headers", ex);
@@ -89,9 +79,7 @@ public class DelegateProxyRequestForwarder {
       }
       if (responseData instanceof HttpStepResponse) {
         httpResponse = (HttpStepResponse) responseData;
-
-        log.debug("responseData header: {}", httpResponse.getHeader());
-        log.debug("responseData body: {}", httpResponse.getHttpResponseBody());
+        log.info("httpResponse: {}", httpResponse);
       }
     } catch (Exception ex) {
       log.error("Delegate error: ", ex);

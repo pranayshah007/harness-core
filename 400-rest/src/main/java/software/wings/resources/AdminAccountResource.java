@@ -31,6 +31,7 @@ import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.common.beans.Generation;
 import io.harness.rest.RestResponse;
 
 import software.wings.beans.Account;
@@ -311,5 +312,12 @@ public class AdminAccountResource {
   public RestResponse<Void> deleteNgLicense(
       @PathParam("accountId") String accountId, @QueryParam("identifier") String identifier) {
     return new RestResponse<>(getResponse(adminLicenseHttpClient.deleteModuleLicense(identifier, accountId)));
+  }
+
+  @PUT
+  @Path("update-externally-managed/{userId}")
+  public RestResponse<Boolean> updateScimStatusNG(@PathParam("userId") String userId,
+      @QueryParam("generation") Generation generation, @Body Boolean externallyManaged) {
+    return new RestResponse<>(adminUserService.updateExternallyManaged(userId, generation, externallyManaged));
   }
 }

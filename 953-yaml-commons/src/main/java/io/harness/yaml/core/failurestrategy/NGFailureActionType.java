@@ -32,7 +32,9 @@ public enum NGFailureActionType {
   @JsonProperty(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES)
   PROCEED_WITH_DEFAULT_VALUES(NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES),
   @JsonProperty(NGFailureActionTypeConstants.MARK_AS_FAILURE)
-  MARK_AS_FAILURE(NGFailureActionTypeConstants.MARK_AS_FAILURE);
+  MARK_AS_FAILURE(NGFailureActionTypeConstants.MARK_AS_FAILURE),
+  @JsonProperty(NGFailureActionTypeConstants.RETRY_STEP_GROUP)
+  RETRY_STEP_GROUP(NGFailureActionTypeConstants.RETRY_STEP_GROUP);
 
   String yamlName;
 

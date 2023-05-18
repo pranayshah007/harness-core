@@ -20,6 +20,8 @@ import io.harness.yaml.core.intfc.OverridesApplier;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 @OwnedBy(PIPELINE)
 @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -27,4 +29,7 @@ public interface StoreConfig extends OverridesApplier<StoreConfig>, OverrideConn
   @JsonIgnore String getKind();
   @JsonIgnore StoreConfig cloneInternal();
   @JsonIgnore ParameterField<String> getConnectorReference();
+  default Set<String> validateAtRuntime() {
+    return new HashSet<>();
+  }
 }
