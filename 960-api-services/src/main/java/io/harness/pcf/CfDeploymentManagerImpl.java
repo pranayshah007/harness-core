@@ -745,7 +745,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         if(activeStatus) {
           return userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER);
         } else {
-          userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__INACTIVE__IDENTIFIER);
+          return userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__INACTIVE__IDENTIFIER);
         }
       }
     }
