@@ -160,7 +160,7 @@ public class PluginSettingUtils {
   public static final String PLUGIN_CACHE_FROM = "PLUGIN_CACHE_FROM";
   public static final String PLUGIN_CACHE_TO = "PLUGIN_CACHE_TO";
   public static final String PLUGIN_BUILDER_DRIVER_OPTS = "PLUGIN_BUILDER_DRIVER_OPTS";
-  public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.0";
+  public static final String DOCKER_BUILDKIT_IMAGE = "harness/buildkit:1.0.1";
   @Inject private CodebaseUtils codebaseUtils;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
