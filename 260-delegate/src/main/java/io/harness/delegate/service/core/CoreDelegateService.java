@@ -14,10 +14,8 @@ import static software.wings.beans.TaskType.INITIALIZATION_PHASE;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import io.harness.delegate.beans.DelegateTaskAbortEvent;
-import io.harness.delegate.core.beans.ExecutionInfrastructure;
-import io.harness.delegate.core.beans.ExecutionMode;
-import io.harness.delegate.core.beans.ExecutionPriority;
-import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.service.common.SimpleDelegateAgent;
 import io.harness.delegate.service.core.runner.TaskRunner;
 
@@ -26,7 +24,6 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,38 +38,25 @@ public class CoreDelegateService extends SimpleDelegateAgent {
   }
 
   @Override
-  protected void executeTask(
-          final String groupId, final List<TaskDescriptor> tasks, final ExecutionInfrastructure infra, final String logPrefix) {
-    tasks.forEach(this::validatePluginData);
-
+  protected void executeTask(final String groupId, final List<TaskPayload> tasks) {
     // FixMe: Hack so we don't need to make changes to CI & NG manager for now. Normally it would just invoke a single
     // runner stage
-    if (hasTaskType(tasks, INITIALIZATION_PHASE)) {
-      taskRunner.init(groupId, tasks, infra, logPrefix);
-    } else if (hasTaskType(tasks, CI_EXECUTE_STEP)) {
-      taskRunner.execute(groupId, tasks);
-    } else if (hasTaskType(tasks, CI_CLEANUP)) {
+    final var task = tasks.stream().findFirst().get(); // For now just take first
+    if (hasTaskType(task.getTaskData(), INITIALIZATION_PHASE)) {
+      taskRunner.init(groupId, task.getInfraData());
+    } else if (hasTaskType(task.getTaskData(), CI_EXECUTE_STEP)) {
+      taskRunner.execute(groupId, task.getTaskData());
+    } else if (hasTaskType(task.getTaskData(), CI_CLEANUP)) {
       taskRunner.cleanup(groupId);
     } else { // Task which doesn't have separate infra step (e.g. CD)
-      taskRunner.init(groupId, tasks, infra, logPrefix);
-      taskRunner.execute(groupId, tasks);
+      taskRunner.init(groupId, task.getInfraData());
+      taskRunner.execute(groupId, task.getTaskData());
       taskRunner.cleanup(groupId);
     }
   }
 
-  private boolean hasTaskType(final List<TaskDescriptor> tasks, final TaskType taskType) {
-    return tasks.stream()
-        .filter(TaskDescriptor::hasRuntime)
-        .anyMatch(task -> taskType.name().equals(task.getRuntime().getType()));
-  }
-
-  private void validatePluginData(final @NonNull TaskDescriptor task) {
-    if (task.getPriority() == ExecutionPriority.PRIORITY_UNKNOWN) {
-      throw new IllegalArgumentException("Task Priority must be specified");
-    }
-    if (task.getMode() == ExecutionMode.MODE_UNKNOWN) {
-      throw new IllegalArgumentException("Task Mode must be specified");
-    }
+  private boolean hasTaskType(final InputData tasks, final TaskType taskType) {
+    return taskType != INITIALIZATION_PHASE && taskType != CI_EXECUTE_STEP && taskType != CI_CLEANUP;
   }
 
   @Override

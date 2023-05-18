@@ -7,9 +7,9 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import io.harness.delegate.core.beans.ExecutionEnvironment;
 import io.harness.delegate.core.beans.ResourceRequirements;
 import io.harness.delegate.core.beans.SecurityContext;
+import io.harness.delegate.core.beans.StepRuntime;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 
@@ -21,14 +21,12 @@ import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ContainerPortBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ResourceRequirementsBuilder;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContextBuilder;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.NonNull;
 
 public class ContainerBuilder {
@@ -55,8 +53,7 @@ public class ContainerBuilder {
   private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
   private static final int RESERVED_LE_PORT = 20001;
 
-  public V1ContainerBuilder createContainer(
-      final String taskId, final ExecutionEnvironment containerRuntime, final int port) {
+  public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()
                                                     .withName(K8SResourceHelper.getContainerName(taskId))
                                                     .withImage(containerRuntime.getUses())
@@ -115,7 +112,7 @@ public class ContainerBuilder {
     envVars.put(HARNESS_LE_STATUS_REST_ENABLED, "true");
     envVars.put(DELEGATE_SERVICE_ENDPOINT_VARIABLE, "delegate-service"); // Todo: make per delegate
     envVars.put(DELEGATE_SERVICE_ID_VARIABLE, "delegate-grpc-service"); // fixme: What's this for?
-    //    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, accountID);
+    envVars.put(HARNESS_ACCOUNT_ID_VARIABLE, "kmpySmUISimoRrJL6NL73w"); // TODO: How do we get these mandatory fields to runner
     //    envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     //    envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     //    envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
@@ -202,7 +199,6 @@ public class ContainerBuilder {
       requestBuilder.put("memory", Quantity.fromString(memory));
       limitBuilder.put("memory", Quantity.fromString(memory));
     }
-
 
     final var requests = requestBuilder.build();
     final var limits = limitBuilder.build();

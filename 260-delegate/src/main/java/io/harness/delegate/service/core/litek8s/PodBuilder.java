@@ -10,8 +10,9 @@ package io.harness.delegate.service.core.litek8s;
 import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.ResourceRequirements;
-import io.harness.delegate.core.beans.TaskDescriptor;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
 import io.harness.delegate.service.core.util.K8SVolumeUtils;
@@ -126,7 +127,7 @@ public class PodBuilder extends V1PodBuilder {
         .collect(toList());
   }
 
-  private static Long getTimeout(final List<TaskDescriptor> taskDescriptor) {
+  private static Long getTimeout(final List<K8SStep> taskDescriptor) {
     return POD_MAX_TTL_SECS;
   }
 
@@ -135,7 +136,7 @@ public class PodBuilder extends V1PodBuilder {
                       // delegate
   }
 
-  private List<V1Toleration> getTolerations(final TaskDescriptor taskDescriptor) {
+  private List<V1Toleration> getTolerations(final K8SInfra taskDescriptor) {
     final List<V1Toleration> tolerations = new ArrayList<>();
     //    if (isEmpty(podParams.getTolerations())) {
     //      return tolerations;

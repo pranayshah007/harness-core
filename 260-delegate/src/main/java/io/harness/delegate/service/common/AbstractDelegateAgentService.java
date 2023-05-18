@@ -45,9 +45,8 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
-import io.harness.delegate.core.beans.ExecutionInfrastructure;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
-import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
@@ -170,7 +169,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(String id, List<TaskDescriptor> task, ExecutionInfrastructure resourcesList, String logPrefix);
+  protected abstract void executeTask(String id, List<TaskPayload> tasks);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -295,7 +294,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
         final var taskGroup = acquireTask(delegateTaskId);
-        executeTask(taskGroup.getId(), taskGroup.getTasksList(), taskGroup.getInfra(), taskGroup.getLogPrefix());
+        executeTask(taskGroup.getId(), taskGroup.getTasksList());
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {

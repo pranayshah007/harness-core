@@ -13,10 +13,10 @@ import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
-import io.harness.delegate.core.beans.ExecutionEnvironment;
-import io.harness.delegate.core.beans.ExecutionInfrastructure;
-import io.harness.delegate.core.beans.K8S;
-import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
+import io.harness.delegate.core.beans.StepRuntime;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.k8s.K8SSecret;
 import io.harness.delegate.service.core.runner.TaskRunner;
@@ -58,13 +58,12 @@ public class K8SLiteRunner implements TaskRunner {
   //  private final K8EventHandler k8EventHandler;
 
   @Override
-  public void init(final String taskGroupId, final List<TaskDescriptor> tasks, final ExecutionInfrastructure infra,
-      final String logPrefix) {
+  public void init(final String taskGroupId, final InputData infra) {
     log.info("Setting up pod spec");
 
     try {
       // Step 0 - unpack infra definition. Each runner knows the infra spec it expects
-      final var k8sInfra = AnyUtils.unpack(infra.getProtoSpec(), K8S.class);
+      final var k8sInfra = AnyUtils.unpack(infra.getProtoData(), K8SInfra.class);
 
       // Step 1 - decrypt image pull secrets and create secret resources.
       // pullSecrets need to be decrypted by component which is configured during startup (e.g. runner or core),
@@ -79,11 +78,13 @@ public class K8SLiteRunner implements TaskRunner {
               .collect(toList());
 
       // Step 1a - Should we decrypt other step secrets here and create resources?
-      final var taskSecrets =
-          tasks.stream().collect(groupingBy(TaskDescriptor::getId, flatMapping(this::createTaskSecrets, toList())));
+      final var taskSecrets = k8sInfra.getStepsList().stream().collect(
+          groupingBy(K8SStep::getId, flatMapping(this::createTaskSecrets, toList())));
 
-      final var loggingToken = tasks.stream().findAny().get().getLoggingToken(); // FixMe: obviously no no
-      final V1Secret loggingSecret = createLoggingSecret(taskGroupId, LOGGING_SERVICE_URL, loggingToken, logPrefix);
+      final var loggingToken =
+          k8sInfra.getStepsList().stream().findAny().get().getLoggingToken(); // FixMe: obviously no no
+      final V1Secret loggingSecret =
+          createLoggingSecret(taskGroupId, LOGGING_SERVICE_URL, loggingToken, k8sInfra.getLogPrefix());
 
       // Step 1c - TODO: Support certs (i.e. secret files that get mounted as secret volume).
       // Right now these are copied from delegate using special syntax and env vars (complicated)
@@ -98,7 +99,7 @@ public class K8SLiteRunner implements TaskRunner {
       final var portMap = new PortMap(CONTAINER_START_PORT);
       final V1Pod pod = PodBuilder.createSpec(taskGroupId)
                             .withImagePullSecrets(imageSecrets)
-                            .withTasks(createContainers(tasks, taskSecrets, volumeMounts, portMap))
+                            .withTasks(createContainers(k8sInfra.getStepsList(), taskSecrets, volumeMounts, portMap))
                             .buildPod(containerBuilder, k8sInfra.getResource(), volumes, loggingSecret, portMap);
 
       log.info("Creating Task Pod with YAML:\n{}", Yaml.dump(pod));
@@ -133,7 +134,7 @@ public class K8SLiteRunner implements TaskRunner {
   }
 
   @Override
-  public void execute(final String taskGroupId, final List<TaskDescriptor> tasks) {
+  public void execute(final String taskGroupId, final InputData tasks) {
     throw new UnsupportedOperationException("Not implemented");
   }
 
@@ -143,11 +144,11 @@ public class K8SLiteRunner implements TaskRunner {
   }
 
   @NonNull
-  private Stream<V1Secret> createTaskSecrets(final TaskDescriptor task) {
+  private Stream<V1Secret> createTaskSecrets(final K8SStep task) {
     return task.getInputSecretsList().stream().map(secret -> secretsBuilder.createSecret(task.getId(), secret));
   }
 
-  private List<V1Container> createContainers(final List<TaskDescriptor> taskDescriptors,
+  private List<V1Container> createContainers(final List<K8SStep> taskDescriptors,
       final Map<String, List<V1Secret>> taskSecrets, final List<V1VolumeMount> volumeMounts, final PortMap portMap) {
     return taskDescriptors.stream()
         .map(descriptor
@@ -156,8 +157,8 @@ public class K8SLiteRunner implements TaskRunner {
         .collect(Collectors.toList());
   }
 
-  private V1Container createContainer(final String taskId, final ExecutionEnvironment runtime,
-      final List<V1Secret> secrets, final List<V1VolumeMount> volumeMounts, final int port) {
+  private V1Container createContainer(final String taskId, final StepRuntime runtime, final List<V1Secret> secrets,
+      final List<V1VolumeMount> volumeMounts, final int port) {
     return containerBuilder.createContainer(taskId, runtime, port)
         .addAllToVolumeMounts(volumeMounts)
         .addAllToEnvFrom(createSecretRef(secrets))

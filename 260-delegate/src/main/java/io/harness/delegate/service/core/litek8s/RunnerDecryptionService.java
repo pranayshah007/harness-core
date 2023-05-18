@@ -7,7 +7,7 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import io.harness.delegate.core.beans.TaskSecret;
+import io.harness.delegate.core.beans.Secret;
 import io.harness.security.encryption.DelegateDecryptionService;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
@@ -26,7 +26,7 @@ public class RunnerDecryptionService {
   private final DelegateDecryptionService decryptionService;
   @Named("referenceFalseKryoSerializer") private final KryoSerializer kryoSerializer; // TODO: remove named
 
-  public Map<String, char[]> decrypt(final TaskSecret secret) {
+  public Map<String, char[]> decrypt(final Secret secret) {
     final EncryptionConfig secretConfig =
         (EncryptionConfig) kryoSerializer.asInflatedObject(secret.getConfig().getBinaryData().toByteArray());
     final List<EncryptedRecord> kryoSecrets =

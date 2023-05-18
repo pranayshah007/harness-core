@@ -14,6 +14,7 @@ proto_library(
         "plugin.proto",
         "plugin_execution_status.proto",
         "resource.proto",
+        "secret.proto",
     ],
     visibility = ["//visibility:public"],
     deps = [
