@@ -217,4 +217,10 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
                                                         LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
+
+  @Override
+  public boolean checkSettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
+                                                               LogCallback executionLogCallback) throws PivotalClientApiException {
+    throw new PivotalClientApiException("PCF operations not supported by this API.");
+  }
 }
