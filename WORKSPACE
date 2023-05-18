@@ -5728,7 +5728,6 @@ filegroup(
 
 register_toolchains(
     "//:harness_no_fdLimit_jdk11_toolchain_definition",
-    "//:harness_no_fdLimit_jdk17_toolchain_definition",
 )
 
 register_toolchains("//:py_toolchain")
