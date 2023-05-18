@@ -152,6 +152,18 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   done
 fi
 
+replace_key_value redisLockConfig.redisUrl "$LOCK_CONFIG_REDIS_URL"
+replace_key_value redisLockConfig.envNamespace "$LOCK_CONFIG_ENV_NAMESPACE"
+replace_key_value redisLockConfig.sentinel "$LOCK_CONFIG_USE_SENTINEL"
+replace_key_value redisLockConfig.masterName "$LOCK_CONFIG_SENTINEL_MASTER_NAME"
+replace_key_value redisLockConfig.userName "$LOCK_CONFIG_REDIS_USERNAME"
+replace_key_value redisLockConfig.password "$LOCK_CONFIG_REDIS_PASSWORD"
+replace_key_value redisLockConfig.nettyThreads "$REDIS_NETTY_THREADS"
+replace_key_value redisLockConfig.connectionPoolSize $REDIS_CONNECTION_POOL_SIZE
+replace_key_value redisLockConfig.retryInterval $REDIS_RETRY_INTERVAL
+replace_key_value redisLockConfig.retryAttempts $REDIS_RETRY_ATTEMPTS
+replace_key_value redisLockConfig.timeout $REDIS_TIMEOUT
+
 if [[ "" != "$PMS_TARGET" ]]; then
   export PMS_TARGET; yq -i '.pmsGrpcClientConfig.target=env(PMS_TARGET)' $CONFIG_FILE
 fi

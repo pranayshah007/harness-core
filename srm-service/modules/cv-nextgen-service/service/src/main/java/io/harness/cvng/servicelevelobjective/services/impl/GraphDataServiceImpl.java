@@ -25,6 +25,7 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
@@ -43,7 +44,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
@@ -124,16 +124,7 @@ public class GraphDataServiceImpl implements GraphDataService {
       CompositeSLORecord lastCompositeSLORecord =
           compositeSLORecordService.getLastCompositeSLORecord(compositeServiceLevelObjective.getUuid(), startTime);
       if (Objects.isNull(lastCompositeSLORecord)) {
-        Map<String, SLIRecord> scopedIdentifierSLIRecordMap = sliRecordService.getLastCompositeSLOsSLIRecord(
-            compositeServiceLevelObjective.getServiceLevelObjectivesDetails(), startTime);
-        lastCompositeSLORecord = CompositeSLORecord.builder()
-                                     .runningGoodCount(0)
-                                     .runningBadCount(0)
-                                     .sloId(compositeServiceLevelObjective.getUuid())
-                                     .scopedIdentifierSLIRecordMap(scopedIdentifierSLIRecordMap)
-                                     .timestamp(startTime.minus(Duration.ofMinutes(1)))
-                                     .sloVersion(compositeServiceLevelObjective.getVersion())
-                                     .build();
+        lastCompositeSLORecord = sloRecords.get(0);
       }
       prevRecordGoodCount = lastCompositeSLORecord.getRunningGoodCount();
       prevRecordBadCount = lastCompositeSLORecord.getRunningBadCount();
@@ -283,7 +274,7 @@ public class GraphDataServiceImpl implements GraphDataService {
       for (SLIRecord sliRecord : sliRecords) {
         long goodCountFromStart = sliRecord.getRunningGoodCount() - lastRecordBeforeStartGoodCount;
         long badCountFromStart = sliRecord.getRunningBadCount() - lastRecordBeforeStartBadCount;
-        if (sliRecord.getSliState().equals(SLIRecord.SLIState.SKIP_DATA)) {
+        if (sliRecord.getSliState().equals(SLIState.SKIP_DATA)) {
           skipRecordCount += 1;
         }
         long minutesFromStart = sliRecord.getEpochMinute() - beginningMinute + 1;
@@ -327,9 +318,8 @@ public class GraphDataServiceImpl implements GraphDataService {
             && !sliRecord.getTimestamp().isBefore(DateTimeUtils.roundDownTo1MinBoundary(filter.getStartTime()))) {
           badCountTillRangeStartTime = sliValue.getBadCount();
           if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
-            if (sliRecord.getSliState().equals(SLIRecord.SLIState.BAD)
-                || (sliRecord.getSliState().equals(SLIRecord.SLIState.NO_DATA)
-                    && sliMissingDataType == SLIMissingDataType.BAD)) {
+            if (sliRecord.getSliState().equals(SLIState.BAD)
+                || (sliRecord.getSliState().equals(SLIState.NO_DATA) && sliMissingDataType == SLIMissingDataType.BAD)) {
               badCountTillRangeStartTime--;
             }
           } else {
@@ -399,8 +389,8 @@ public class GraphDataServiceImpl implements GraphDataService {
 
   private Pair<Long, Long> getPreviousRunningCount(SLIRecord sliRecord, ServiceLevelIndicator serviceLevelIndicator) {
     if (serviceLevelIndicator.getSLIEvaluationType() == SLIEvaluationType.WINDOW) {
-      return Pair.of(sliRecord.getRunningGoodCount() - (sliRecord.getSliState() == SLIRecord.SLIState.GOOD ? 1 : 0),
-          sliRecord.getRunningBadCount() - (sliRecord.getSliState() == SLIRecord.SLIState.BAD ? 1 : 0));
+      return Pair.of(sliRecord.getRunningGoodCount() - (sliRecord.getSliState() == SLIState.GOOD ? 1 : 0),
+          sliRecord.getRunningBadCount() - (sliRecord.getSliState() == SLIState.BAD ? 1 : 0));
     } else {
       SLIRecord previousRecord =
           sliRecordService.getLastSLIRecord(serviceLevelIndicator.getUuid(), sliRecord.getTimestamp());

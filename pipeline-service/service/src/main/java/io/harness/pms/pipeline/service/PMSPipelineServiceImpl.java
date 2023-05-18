@@ -175,9 +175,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return createPipeline(pipelineEntity);
     }
 
-    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-        pipelineEntity.getIdentifier());
+    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
     applyGitXSettingsIfApplicable(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier());
     checkProjectExists(
@@ -478,8 +476,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
     }
-    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
+    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
     GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
         pipelineEntity, throwExceptionIfGovernanceFails, false);
     if (governanceMetadata.getDeny()) {

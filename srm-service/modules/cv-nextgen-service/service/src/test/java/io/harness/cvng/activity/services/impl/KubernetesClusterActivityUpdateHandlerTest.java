@@ -79,7 +79,7 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
             .build();
     appService.getSources().setHealthSources(null);
     appService.getSources().setChangeSources(
-        Sets.newHashSet(builderFactory.getHarnessCDChangeSourceDTOBuilder().build()));
+        Sets.newHashSet(builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build()));
     monitoredServiceService.create(clusterActivity.getAccountId(), appService);
 
     kubernetesClusterActivityUpdateHandler.handleCreate(clusterActivity);
@@ -114,8 +114,7 @@ public class KubernetesClusterActivityUpdateHandlerTest extends CvNextGenTestBas
                                          .environmentRef(envIdentifier)
                                          .build();
     appService.getSources().setHealthSources(null);
-    appService.getSources().setChangeSources(
-        Sets.newHashSet(builderFactory.getHarnessCDChangeSourceDTOBuilder().build()));
+    appService.getSources().setChangeSources(null);
     monitoredServiceService.create(clusterActivity.getAccountId(), appService);
 
     kubernetesClusterActivityUpdateHandler.handleCreate(clusterActivity);

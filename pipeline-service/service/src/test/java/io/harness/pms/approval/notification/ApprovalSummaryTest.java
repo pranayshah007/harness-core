@@ -54,7 +54,7 @@ public class ApprovalSummaryTest extends CategoryTest {
                                           .timeRemainingForApproval("6d")
                                           .build();
     Map<String, String> params = approvalSummary.toParams();
-    assertThat(params).hasSize(12);
+    assertThat(params).hasSize(14);
     assertThat(params.get("pipelineName")).isEqualTo("p1");
     assertThat(params.get("orgName")).isEqualTo("default");
     assertThat(params.get("projectName")).isEqualTo("dev");

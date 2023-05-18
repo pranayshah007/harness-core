@@ -461,7 +461,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     }
   }
 
-  public InstanceSyncTaskDetails fetchTaskDetails(String accountIdentifier, String perpetualTaskId) {
+  public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountIdentifier) {
     List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
         instanceSyncPerpetualTaskInfoService.findAll(accountIdentifier, perpetualTaskId);
     List<DeploymentReleaseDetails> deploymentReleaseDetailsList = new ArrayList<>();
@@ -484,16 +484,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList().get(0).getDeploymentInfoDTO().getType(),
           infrastructureMappingDTO.getInfrastructureKind());
 
-      deploymentReleaseDetailsList.add(instanceSyncHandler.getDeploymentReleaseDetails(
-          instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
+      deploymentReleaseDetailsList.add(
+          instanceSyncHandler.getDeploymentReleaseDetails(instanceSyncPerpetualTaskInfoDTO));
     }
 
-    return InstanceSyncTaskDetails.newBuilder()
-        .addAllDetails(deploymentReleaseDetailsList)
-        .setResponseBatchConfig(ResponseBatchConfig.newBuilder()
-                                    .setReleaseCount(RELEASE_COUNT_LIMIT)
-                                    .setInstanceCount(INSTANCE_COUNT_LIMIT)
-                                    .build())
+    return InstanceSyncTaskDetails.builder()
+        .details(deploymentReleaseDetailsList)
+        .responseBatchConfig(
+            ResponseBatchConfig.builder().releaseCount(RELEASE_COUNT_LIMIT).instanceCount(INSTANCE_COUNT_LIMIT).build())
         .build();
   }
 

@@ -331,6 +331,8 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
   public void testToggleConfigForAccount() throws Exception {
     AppConfigEntity appConfigEntity = getTestAppConfigEntity();
     when(appConfigRepository.updateConfigEnablement(any(), any(), any(), any())).thenReturn(null);
+    when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(any(), any(), any()))
+        .thenReturn(Optional.of(appConfigEntity));
     doNothing().when(configEnvVariablesService).deleteConfigEnvVariables(any(), any());
     Exception exception = null;
     try {

@@ -37,6 +37,8 @@ import io.harness.impl.scm.ScmGitProviderMapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -257,8 +259,9 @@ public class GitStatusCheckHelper {
         orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(completeUrl);
       }
 
-      String project = GitClientHelper.getAzureRepoProject(orgAndProject);
-      String repo = StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR);
+      String project = URLDecoder.decode(GitClientHelper.getAzureRepoProject(orgAndProject), StandardCharsets.UTF_8);
+      String repo =
+          URLDecoder.decode(StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR), StandardCharsets.UTF_8);
 
       RetryPolicy<Object> retryPolicy =
           getRetryPolicy(format("[Retrying failed call to send status for azure repo check: [%s], attempt: {}",

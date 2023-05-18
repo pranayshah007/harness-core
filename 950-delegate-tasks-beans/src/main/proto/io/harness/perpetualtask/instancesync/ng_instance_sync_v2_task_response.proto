@@ -9,8 +9,6 @@ package io.harness.perpetualtask.instancesync;
 
 option java_multiple_files = true;
 
-import "google/protobuf/any.proto";
-
 message InstanceSyncResponseV2 {
   string perpetual_task_id = 1;
   string account_id = 2;

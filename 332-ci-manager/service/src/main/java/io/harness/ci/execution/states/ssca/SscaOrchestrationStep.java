@@ -21,7 +21,9 @@ import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.ssca.beans.SscaConstants;
 import io.harness.ssca.client.SSCAServiceClient;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
@@ -33,11 +35,12 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.SSCA)
-public class SscaGenericStep extends AbstractStepExecutable {
+public class SscaOrchestrationStep extends AbstractStepExecutable {
+  public static final StepType STEP_TYPE = SscaConstants.SSCA_ORCHESTRATION_STEP_TYPE;
   private SSCAServiceClient sscaServiceClient;
 
   @Inject
-  public SscaGenericStep(SSCAServiceClient sscaServiceClient) {
+  public SscaOrchestrationStep(SSCAServiceClient sscaServiceClient) {
     this.sscaServiceClient = sscaServiceClient;
   }
 

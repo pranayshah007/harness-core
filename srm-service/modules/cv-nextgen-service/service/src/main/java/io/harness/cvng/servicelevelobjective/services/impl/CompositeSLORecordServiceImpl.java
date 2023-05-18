@@ -20,6 +20,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.Composi
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -208,7 +209,7 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       for (SLIRecord sliRecord : serviceLevelObjectivesDetailCompositeSLORecordMap.get(objectivesDetail)) {
         Map<String, SLIRecord> serviceLevelObjectivesDetailSLIRecordMap =
             timeStampToSLIRecordsMap.getOrDefault(sliRecord.getTimestamp(), new HashMap<>());
-        if (sliRecord.getSliState() != SLIRecord.SLIState.SKIP_DATA) {
+        if (sliRecord.getSliState() != SLIState.SKIP_DATA) {
           serviceLevelObjectivesDetailSLIRecordMap.put(
               serviceLevelObjectiveV2Service.getScopedIdentifier(objectivesDetail), sliRecord);
         }
@@ -327,8 +328,8 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       Map<Instant, Integer> timeStampToTotalValue) {
     for (ServiceLevelObjectivesDetail objectivesDetail : serviceLevelObjectivesDetailCompositeSLORecordMap.keySet()) {
       for (SLIRecord sliRecord : serviceLevelObjectivesDetailCompositeSLORecordMap.get(objectivesDetail)) {
-        if (SLIRecord.SLIState.GOOD.equals(sliRecord.getSliState())
-            || (SLIRecord.SLIState.NO_DATA.equals(sliRecord.getSliState())
+        if (SLIState.GOOD.equals(sliRecord.getSliState())
+            || (SLIState.NO_DATA.equals(sliRecord.getSliState())
                 && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.GOOD))) {
           Pair<List<Double>, List<Integer>> badCountPair = timeStampToBadValue.getOrDefault(
               sliRecord.getTimestamp(), new Pair<>(new ArrayList<>(), new ArrayList<>()));
@@ -337,8 +338,8 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           timeStampToBadValue.put(sliRecord.getTimestamp(), badCountPair);
           timeStampToTotalValue.put(
               sliRecord.getTimestamp(), timeStampToTotalValue.getOrDefault(sliRecord.getTimestamp(), 0) + 1);
-        } else if (SLIRecord.SLIState.BAD.equals(sliRecord.getSliState())
-            || (SLIRecord.SLIState.NO_DATA.equals(sliRecord.getSliState())
+        } else if (SLIState.BAD.equals(sliRecord.getSliState())
+            || (SLIState.NO_DATA.equals(sliRecord.getSliState())
                 && objectivesDetailSLIMissingDataTypeMap.get(objectivesDetail).equals(SLIMissingDataType.BAD))) {
           Pair<List<Double>, List<Integer>> badCountPair = timeStampToBadValue.getOrDefault(
               sliRecord.getTimestamp(), new Pair<>(new ArrayList<>(), new ArrayList<>()));

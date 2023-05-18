@@ -32,6 +32,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -45,6 +46,8 @@ import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.GitMetadataUpdateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
@@ -199,6 +202,23 @@ public class PipelinesApiImpl implements PipelinesApi {
     PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
         PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
     return Response.ok().entity(pipelineValidationUUIDResponseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  public Response updatePipelineGitMetadata(@OrgIdentifier String org, @ProjectIdentifier String project,
+      @ResourceIdentifier String pipeline, @Valid GitMetadataUpdateRequestBody body,
+      @AccountIdentifier String harnessAccount) {
+    String pipelineAfterUpdate = pmsPipelineService.updateGitMetadata(harnessAccount, org, project, pipeline,
+        PMSUpdateGitDetailsParams.builder()
+            .connectorRef(body.getConnectorRef())
+            .filePath(body.getFilePath())
+            .repoName(body.getRepoName())
+            .build());
+
+    GitMetadataUpdateResponseBody gitMetadataUpdateResponseBody = new GitMetadataUpdateResponseBody();
+    gitMetadataUpdateResponseBody.setEntityIdentifier(pipelineAfterUpdate);
+    return Response.ok().entity(gitMetadataUpdateResponseBody).build();
   }
 
   @Override

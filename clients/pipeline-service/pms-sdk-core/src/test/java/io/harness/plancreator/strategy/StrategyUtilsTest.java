@@ -8,15 +8,17 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.YAGYANSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import io.harness.NGCommonUtilitiesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidYamlException;
+import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -35,11 +37,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
-public class StrategyUtilsTest extends NGCommonUtilitiesTestBase {
+public class StrategyUtilsTest extends PmsSdkCoreTestBase {
   @Inject KryoSerializer kryoSerializer;
 
   @Test
@@ -60,7 +63,7 @@ public class StrategyUtilsTest extends NGCommonUtilitiesTestBase {
     List<YamlNode> stageYamlNodes = stagesYamlField.getNode().asArray();
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
-    assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
+    Assertions.assertThat(StrategyUtils.isWrappedUnderStrategy(approvalStageYamlField)).isTrue();
   }
 
   @Test
@@ -285,5 +288,20 @@ public class StrategyUtilsTest extends NGCommonUtilitiesTestBase {
         approvalStageYamlField.getNode().getName(), dependenciesNodeMap, metadataMap, new ArrayList<>());
     assertThat(metadataMap.size()).isEqualTo(1);
     assertThat(dependenciesNodeMap.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = YAGYANSH)
+  @Category(UnitTests.class)
+  public void testValidateAxesIfMatrixConfigIsNull() throws InvalidYamlException {
+    MockitoAnnotations.initMocks(this);
+    StrategyConfig strategyConfig =
+        StrategyConfig.builder()
+            .matrixConfig(ParameterField.<MatrixConfigInterface>builder().value(MatrixConfig.builder().build()).build())
+            .build();
+
+    assertThatThrownBy(() -> StrategyValidationUtils.validateStrategyNode(strategyConfig))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("No Axes defined in matrix. Please define at least one axis");
   }
 }

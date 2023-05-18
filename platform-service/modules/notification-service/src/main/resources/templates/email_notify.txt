@@ -2,1147 +2,144 @@ subject: >-
     <#if projectname??>
     You have been added to the project ${projectname} on Harness
     <#elseif organizationname??>
-    You have been added to the ${organizationname} on Harness
+    You have been added to the organization ${organizationname} on Harness
     <#else>
     You have been added to the account ${accountname} on Harness
     </#if>
 body: >-
-    <html
-       lang="en"
-       xmlns="http://www.w3.org/1999/xhtml"
-       xmlns:v="urn:schemas-microsoft-com:vml"
-       xmlns:o="urn:schemas-microsoft-com:office:office"
-       >
-       <head>
-          <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-          <meta name="x-apple-disable-message-reformatting" />
-          <meta name="format-detection" content="telephone=no" />
-          <meta name="color-scheme" content="light dark" />
-          <meta name="supported-color-schemes" content="light dark" />
-          <title><#if projectname??>
-             You have been added to project ${projectname}
-             <#elseif organizationname??>
-             You have been added to organization ${organizationname}
-             <#else>
-             You have been added to account ${accountname}
-             </#if>
-          </title>
-          <!--##custom-font-resource##-->
-          <!--[if gte mso 16]>
-          <xml>
-             <o:OfficeDocumentSettings>
-                <o:AllowPNG />
-                <o:PixelsPerInch>96</o:PixelsPerInch>
-             </o:OfficeDocumentSettings>
-          </xml>
-          <![endif]-->
-          <style>
-             html,
-             body,
-             table,
-             tbody,
-             tr,
-             td,
-             div,
-             p,
-             ul,
-             ol,
-             li,
-             h1,
-             h2,
-             h3,
-             h4,
-             h5,
-             h6 {
-             margin: 0;
-             padding: 0;
-             }
-             body {
-             -ms-text-size-adjust: 100%;
-             -webkit-text-size-adjust: 100%;
-             }
-             table {
-             border-spacing: 0;
-             mso-table-lspace: 0pt;
-             mso-table-rspace: 0pt;
-             }
-             table td {
-             border-collapse: collapse;
-             }
-             h1,
-             h2,
-             h3,
-             h4,
-             h5,
-             h6 {
-             font-family: Arial;
-             }
-             .ExternalClass {
-             width: 100%;
-             }
-             .ExternalClass,
-             .ExternalClass p,
-             .ExternalClass span,
-             .ExternalClass font,
-             .ExternalClass td,
-             .ExternalClass div {
-             line-height: 100%;
-             }
-             /* Outermost container in Outlook.com */
-             .ReadMsgBody {
-             width: 100%;
-             }
-             img {
-             -ms-interpolation-mode: bicubic;
-             }
-          </style>
-          <style>
-             a[x-apple-data-detectors="true"] {
-             color: inherit !important;
-             text-decoration: inherit !important;
-             }
-             u + #body a {
-             color: inherit;
-             text-decoration: inherit !important;
-             font-size: inherit;
-             font-family: inherit;
-             font-weight: inherit;
-             line-height: inherit;
-             }
-             a,
-             a:link,
-             .no-detect-local a,
-             .appleLinks a {
-             color: inherit !important;
-             text-decoration: inherit;
-             }
-          </style>
-          <style>
-             :root {
-             color-scheme: light dark;
-             supported-color-schemes: light dark;
-             }
-             .width600 {
-             width: 600px;
-             max-width: 100%;
-             }
-             @media (prefers-color-scheme: dark) {
-             h1,
-             h2,
-             h3,
-             b,
-             p,
-             span,
-             td {
-             color: #ffffff !important;
-             }
-             .main {
-             background-color: #07182b !important;
-             }
-             .illustration {
-             width: 315px !important;
-             }
-             }
-             @media all and (max-width: 599px) {
-             .width600 {
-             width: 100% !important;
-             }
-             }
-             @media screen and (min-width: 600px) {
-             .hide-on-desktop {
-             display: none !important;
-             }
-             }
-             @media all and (max-width: 599px),
-             only screen and (max-device-width: 599px) {
-             .main-container {
-             width: 100% !important;
-             }
-             .col {
-             width: 100%;
-             }
-             .fluid-on-mobile {
-             width: 100% !important;
-             height: auto !important;
-             text-align: center;
-             }
-             .fluid-on-mobile img {
-             width: 100% !important;
-             }
-             .hide-on-mobile {
-             display: none !important;
-             width: 0px !important;
-             height: 0px !important;
-             overflow: hidden;
-             }
-             }
-          </style>
-          <!--[if gte mso 9]>
-          <style>
-             .col {
-             width: 100% !important;
-             }
-             .width600 {
-             width: 600px;
-             }
-             .width126 {
-             width: 126px;
-             height: auto;
-             }
-             .width229 {
-             width: 229px;
-             height: auto;
-             }
-             .hide-on-desktop {
-             display: none;
-             }
-             .hide-on-desktop table {
-             mso-hide: all;
-             }
-             .nounderline {
-             text-decoration: none !important;
-             }
-             .mso-font-fix-arial {
-             font-family: Arial, sans-serif;
-             }
-             .mso-font-fix-comic_sans_ms {
-             font-family: "Comic Sans MS", sans-serif;
-             }
-             .mso-font-fix-courier {
-             font-family: Courier, monospace;
-             }
-             .mso-font-fix-georgia {
-             font-family: Georgia, serif;
-             }
-             .mso-font-fix-segoe_ui {
-             font-family: "Segoe UI", sans-serif;
-             }
-             .mso-font-fix-tahoma {
-             font-family: Tahoma, sans-serif;
-             }
-             .mso-font-fix-times_new_roman {
-             font-family: "Times New Roman", serif;
-             }
-             .mso-font-fix-trebuchet_ms {
-             font-family: "Trebuchet MS", sans-serif;
-             }
-             .mso-font-fix-verdana {
-             font-family: Verdana, sans-serif;
-             }
-          </style>
-          <![endif]-->
-       </head>
-       <body
-          id="body"
-          leftmargin="0"
-          marginwidth="0"
-          topmargin="0"
-          marginheight="0"
-          offset="0"
-          style="
-          font-family: Arial, sans-serif;
-          font-size: 0px;
-          margin: 0;
-          padding: 0;
-          background-color: #dadcdf;
-          "
-          >
-          <span
-             style="
-             display: none;
-             font-size: 0px;
-             line-height: 0px;
-             max-height: 0px;
-             max-width: 0px;
-             opacity: 0;
-             overflow: hidden;
-             "
-             >Congratulations!</span
-             >
-          <style type="text/css">
-             @media screen and (min-width: 600px) {
-             .hide-on-desktop {
-             display: none;
-             }
-             }
-             @media all and (max-width: 599px) {
-             .hide-on-mobile {
-             display: none !important;
-             width: 0px !important;
-             height: 0px !important;
-             overflow: hidden;
-             }
-             .main-container {
-             width: 100% !important;
-             }
-             .col {
-             width: 100%;
-             }
-             .fluid-on-mobile {
-             width: 100% !important;
-             height: auto !important;
-             text-align: center;
-             }
-             .fluid-on-mobile img {
-             width: 100% !important;
-             }
-             }
-          </style>
-          <div style="background-color: #dadcdf">
-             <table
-                height="100%"
-                width="100%"
-                cellpadding="0"
-                cellspacing="0"
-                border="0"
-                >
-                <tr>
-                   <td valign="top" align="left">
-                      <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                         <tr>
-                            <td width="100%">
-                               <table
-                                  cellpadding="0"
-                                  cellspacing="0"
-                                  border="0"
-                                  width="100%"
-                                  >
-                                  <tr>
-                                     <td align="center" width="100%">
-                                        <!--[if gte mso 9]>
-                                        <table width="600" cellpadding="0" cellspacing="0">
-                                           <tr>
-                                              <td>
-                                                 <![endif]-->
-                                                 <table
-                                                    class="width600 main-container"
-                                                    cellpadding="0"
-                                                    cellspacing="0"
-                                                    border="0"
-                                                    width="100%"
-                                                    style="max-width: 600px"
-                                                    >
-                                                    <tr>
-                                                       <td width="100%">
-                                                          <table
-                                                             cellpadding="0"
-                                                             cellspacing="0"
-                                                             border="0"
-                                                             width="100%"
-                                                             >
-                                                             <tr>
-                                                                <td valign="top" style="padding-top: 16px">
-                                                                   <table
-                                                                      cellpadding="0"
-                                                                      cellspacing="0"
-                                                                      border="0"
-                                                                      width="100%"
-                                                                      >
-                                                                      <tr>
-                                                                         <td valign="top">
-                                                                            <table
-                                                                               cellpadding="0"
-                                                                               cellspacing="0"
-                                                                               border="0"
-                                                                               width="100%"
-                                                                               bgcolor="#ffffff"
-                                                                               class="main"
-                                                                               style="background-color: #ffffff"
-                                                                               >
-                                                                               <tr>
-                                                                                  <td valign="top">
-                                                                                     <table
-                                                                                        cellpadding="0"
-                                                                                        cellspacing="0"
-                                                                                        border="0"
-                                                                                        width="100%"
-                                                                                        >
-                                                                                        <tr>
-                                                                                           <td
-                                                                                              valign="top"
-                                                                                              align="left"
-                                                                                              >
-                                                                                              <!--[if gte mso 9]>
-                                                                                              <table width="142" cellpadding="0" cellspacing="0">
-                                                                                                 <tr>
-                                                                                                    <td>
-                                                                                                       <![endif]-->
-                                                                                                       <table
-                                                                                                          cellpadding="0"
-                                                                                                          cellspacing="0"
-                                                                                                          border="0"
-                                                                                                          style="max-width: 100%"
-                                                                                                          class="img-wrap"
-                                                                                                          >
-                                                                                                          <tr>
-                                                                                                             <td
-                                                                                                                valign="top"
-                                                                                                                align="left"
-                                                                                                                style="
-                                                                                                                padding-top: 16px;
-                                                                                                                padding-bottom: 24px;
-                                                                                                                padding-left: 16px;
-                                                                                                                "
-                                                                                                                >
-                                                                                                                <a
-                                                                                                                   href="https://harness.io/?utm_campaign=notification&utm_content=usergroup"
-                                                                                                                   class="imglink"
-                                                                                                                   target="_blank"
-                                                                                                                   >
-                                                                                                                   <picture>
-                                                                                                                      <source
-                                                                                                                         srcset="
-                                                                                                                         https://images.chamaileon.io/5f32e20a548f111409d71d60/6108acc3c270324dc6530c28/1630910496508_color=white.png
-                                                                                                                         "
-                                                                                                                         media="(prefers-color-scheme: dark)"
-                                                                                                                         />
-                                                                                                                      <img
-                                                                                                                         src="https://images.chamaileon.io/5f32e20a548f111409d71d60/6108acc3c270324dc6530c28/1628052451661_Logo%20Harnessdarkmode.png"
-                                                                                                                         height="28"
-                                                                                                                         alt="Harness.io"
-                                                                                                                         border="0"
-                                                                                                                         style="
-                                                                                                                         display: block;
-                                                                                                                         font-size: 14px;
-                                                                                                                         max-width: 100%;
-                                                                                                                         "
-                                                                                                                         class="
-                                                                                                                         width126
-                                                                                                                         "
-                                                                                                                         />
-                                                                                                                   </picture>
-                                                                                                                </a>
-                                                                                                             </td>
-                                                                                                          </tr>
-                                                                                                       </table>
-                                                                                                       <!--[if gte mso 9]>
-                                                                                                    </td>
-                                                                                                 </tr>
-                                                                                              </table>
-                                                                                              <![endif]-->
-                                                                                           </td>
-                                                                                        </tr>
-                                                                                     </table>
-                                                                                     <table
-                                                                                        cellpadding="0"
-                                                                                        cellspacing="0"
-                                                                                        border="0"
-                                                                                        width="100%"
-                                                                                        >
-                                                                                        <tr>
-                                                                                           <td
-                                                                                              valign="top"
-                                                                                              align="center"
-                                                                                              style="
-                                                                                              padding-bottom: 24px;
-                                                                                              "
-                                                                                              >
-                                                                                              <!--[if gte mso 9]>
-                                                                                              <table width="229" cellpadding="0" cellspacing="0">
-                                                                                                 <tr>
-                                                                                                    <td>
-                                                                                                       <![endif]-->
-                                                                                                       <table
-                                                                                                          cellpadding="0"
-                                                                                                          cellspacing="0"
-                                                                                                          border="0"
-                                                                                                          style="max-width: 100%"
-                                                                                                          class="img-wrap"
-                                                                                                          >
-                                                                                                          <tr>
-                                                                                                             <td
-                                                                                                                valign="top"
-                                                                                                                align="center"
-                                                                                                                >
-                                                                                                                <a
-                                                                                                                   href="https://harness.io?utm_campaign=notification&utm_content=usergroup"
-                                                                                                                   class="imglink"
-                                                                                                                   target="_blank"
-                                                                                                                   >
-                                                                                                                   <picture>
-                                                                                                                      <source
-                                                                                                                         srcset="
-                                                                                                                         https://images.chamaileon.io/5f32e20a548f111409d71d60/6108acc3c270324dc6530c28/1630915465909_hot%20air%20baloon%20-%20illus%20-%20dark%20mode.png
-                                                                                                                         "
-                                                                                                                         media="(prefers-color-scheme: dark)"
-                                                                                                                         />
-                                                                                                                      <img
-                                                                                                                         src="https://images.chamaileon.io/5f32e20a548f111409d71d60/6108acc3c270324dc6530c28/1630656734349_Illustration.png"
-                                                                                                                         width="229"
-                                                                                                                         height="198"
-                                                                                                                         alt="Harness"
-                                                                                                                         border="0"
-                                                                                                                         style="
-                                                                                                                         display: block;
-                                                                                                                         font-size: 14px;
-                                                                                                                         max-width: 100%;
-                                                                                                                         "
-                                                                                                                         class="
-                                                                                                                         width229
-                                                                                                                         illustration
-                                                                                                                         "
-                                                                                                                         />
-                                                                                                                   </picture>
-                                                                                                                </a>
-                                                                                                             </td>
-                                                                                                          </tr>
-                                                                                                       </table>
-                                                                                                       <!--[if gte mso 9]>
-                                                                                                    </td>
-                                                                                                 </tr>
-                                                                                              </table>
-                                                                                              <![endif]-->
-                                                                                           </td>
-                                                                                        </tr>
-                                                                                     </table>
-                                                                                     <table
-                                                                                        cellpadding="0"
-                                                                                        cellspacing="0"
-                                                                                        border="0"
-                                                                                        width="100%"
-                                                                                        >
-                                                                                        <tr>
-                                                                                           <td
-                                                                                              valign="top"
-                                                                                              style="
-                                                                                              padding-top: 5px;
-                                                                                              padding-right: 10px;
-                                                                                              padding-bottom: 5px;
-                                                                                              padding-left: 10px;
-                                                                                              "
-                                                                                              >
-                                                                                              <div
-                                                                                                 style="
-                                                                                                 font-family: arial;
-                                                                                                 font-size: 18px;
-                                                                                                 color: #131313;
-                                                                                                 line-height: 25px;
-                                                                                                 text-align: left;
-                                                                                                 "
-                                                                                                 >
-                                                                                                 <h1
-                                                                                                    style="
-                                                                                                    font-family: Arial,
-                                                                                                    Helvetica Neue,
-                                                                                                    Helvetica,
-                                                                                                    sans-serif;
-                                                                                                    font-size: 28px;
-                                                                                                    color: #000000;
-                                                                                                    font-weight: normal;
-                                                                                                    line-height: 32px;
-                                                                                                    mso-line-height: exactly;
-                                                                                                    mso-text-raise: 2px;
-                                                                                                    padding: 0;
-                                                                                                    margin: 0;
-                                                                                                    text-align: center;
-                                                                                                    "
-                                                                                                    >
-                                                                                                    <span
-                                                                                                       class="
-                                                                                                       mso-font-fix-arial
-                                                                                                       "
-                                                                                                       ><b
-                                                                                                       >Congratulations!</b
-                                                                                                       ></span
-                                                                                                       >
-                                                                                                 </h1>
-                                                                                              </div>
-                                                                                           </td>
-                                                                                        </tr>
-                                                                                     </table>
-                                                                                     <table
-                                                                                        cellpadding="0"
-                                                                                        cellspacing="0"
-                                                                                        border="0"
-                                                                                        width="100%"
-                                                                                        >
-                                                                                        <tr>
-                                                                                           <td
-                                                                                              valign="top"
-                                                                                              style="
-                                                                                              padding-top: 5px;
-                                                                                              padding-right: 10px;
-                                                                                              padding-bottom: 5px;
-                                                                                              padding-left: 10px;
-                                                                                              "
-                                                                                              >
-                                                                                              <div
-                                                                                                 style="
-                                                                                                 font-family: arial;
-                                                                                                 font-size: 16px;
-                                                                                                 color: #131313;
-                                                                                                 line-height: 24px;
-                                                                                                 text-align: left;
-                                                                                                 "
-                                                                                                 >
-                                                                                                 <p
-                                                                                                    style="
-                                                                                                    padding: 0;
-                                                                                                    margin: 0;
-                                                                                                    text-align: center;
-                                                                                                    "
-                                                                                                    >
-                                                                                                    <#if projectname??>
-                                                                                                    You have been added to the project ${projectname}
-                                                                                                    <#elseif organizationname??>
-                                                                                                    You have been added to the organization ${organizationname}
-                                                                                                    <#else>
-                                                                                                    You have been added to the account ${accountname}
-                                                                                                    </#if>
-                                                                                                 </p>
-                                                                                              </div>
-                                                                                           </td>
-                                                                                        </tr>
-                                                                                     </table>
-                               <table
-                                                                 cellpadding="0"
-                                                                 cellspacing="0"
-                                                                 border="0"
-                                                                 width="100%"
-                                                                 >
-                                                                 <tr>
-                                                                    <td align="center" width="100%">
-                                                                       <!--[if gte mso 9]>
-                                                                       <table width="600" cellpadding="0" cellspacing="0">
-                                                                          <tr>
-                                                                             <td>
-                                                                                <![endif]-->
-                                                                                <table
-                                                                                   class="width600 main-container"
-                                                                                   cellpadding="0"
-                                                                                   cellspacing="0"
-                                                                                   border="0"
-                                                                                   width="100%"
-                                                                                   style="max-width: 600px"
-                                                                                   >
-                                                                                   <tr>
-                                                                                      <td width="100%">
-                                                                                         <table
-                                                                                            cellpadding="0"
-                                                                                            cellspacing="0"
-                                                                                            border="0"
-                                                                                            width="100%"
-                                                                                            >
-                                                                                            <tr>
-                                                                                               <td valign="top">
-                                                                                                  <table
-                                                                                                     cellpadding="0"
-                                                                                                     cellspacing="0"
-                                                                                                     border="0"
-                                                                                                     width="100%"
-                                                                                                     bgcolor="#ffffff"
-                                                                                                     class="main"
-                                                                                                     style="background-color: #ffffff"
-                                                                                                     >
-                                            <tr>
-                                              <td
-                                                                                                           valign="top"
-                                                                                                           style="
-                                                                                                           padding-top: 24px;
-                                                                                                           padding-right: 16px;
-                                                                                                           padding-bottom: 16px;
-                                                                                                           padding-left: 16px;
-                                                                                                           "
-                                                                                                           >
-                                                                                                           <div
-                                                                                                              style="
-                                                                                                              font-family: arial;
-                                                                                                              font-size: 18px;
-                                                                                                              color: #131313;
-                                                                                                              line-height: 25px;
-                                                                                                              text-align: left;
-                                                                                                              "
-                                                                                                              >
-                                                                                                              <tr>
-                                                                 <td valign="top" align="center">
-                                                                   <#if shouldMailContainTwoFactorInfo??>
-                                                                        <#if shouldMailContainTwoFactorInfo == "true">
-                                                                                                <tr>
-                                                                                                    <td valign="top" align="center" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 17px; font-weight: 400; line-height: 160%; padding-top: 25px; padding-bottom: 5px; color: #000000; font-family: 'Source Sans Pro', Tahoma, Verdana, Segoe, sans-serif; border-collapse: collapse;" class="paragraph" width="87.5%">
-                                                                                                        <div style="color: #77787b; line-height: 30px; font-weight: normal;">
-                                                                                                            Use this QR code to set up two-factor authentication: <br>
-                                                                                                            <img src="https://chart.googleapis.com/chart?cht=qr&chl=${totpUrl}&chs=200x200&chld=L|0" ali><br>
-                                                                                                            <h0>Secret key : ${totpSecret}</h0>
-                                                                                                        </div>
-                                                                                                    </td>
-                                                                                                </tr>
-                                                                        </#if>
-                                                                    </#if>
-                                                               </td>
-                                                           </tr>
-                                                                                                           </div>
-                                                                                                        </td>
-                                                                                                      </tr>
-                                                                                                </table>
-                                                                                               </td>
-                                                                                            </tr>
-                                                                                         </table>
-                                                                                      </td>
-                                                                                   </tr>
-                                                                                </table>
-                               <table
-                                                                                                                       cellpadding="0"
-                                                                                                                       cellspacing="0"
-                                                                                                                       border="0"
-                                                                                                                       width="100%"
-                                                                                                                       >
-                                                                                                                       <tr>
-                                                                                                                          <td
-                                                                                                                             valign="top"
-                                                                                                                             align="center"
-                                                                                                                             style="padding: 20px"
-                                                                                                                             >
-                                                                                                                             <!--[if !mso]><!-- -->
-                                                                                                                             <a
-                                                                                                                                href="${url!}"
-                                                                                                                                target="_blank"
-                                                                                                                                style="
-                                                                                                                                display: inline-block;
-                                                                                                                                text-decoration: none;
-                                                                                                                                "
-                                                                                                                                class="fluid-on-mobile"
-                                                                                                                                >
-                                                                                                                                <span>
-                                                                                                                                   <table
-                                                                                                                                      cellpadding="0"
-                                                                                                                                      cellspacing="0"
-                                                                                                                                      border="0"
-                                                                                                                                      bgcolor="#0278d5"
-                                                                                                                                      style="
-                                                                                                                                      border-radius: 5px;
-                                                                                                                                      border-collapse: separate !important;
-                                                                                                                                      background-color: #0278d5;
-                                                                                                                                      "
-                                                                                                                                      class="
-                                                                                                                                      fluid-on-mobile
-                                                                                                                                      "
-                                                                                                                                      >
-                                                                                                                                      <tr>
-                                                                                                                                         <td
-                                                                                                                                            align="center"
-                                                                                                                                            style="
-                                                                                                                                            padding-top: 8px;
-                                                                                                                                            padding-right: 56px;
-                                                                                                                                            padding-bottom: 8px;
-                                                                                                                                            padding-left: 56px;
-                                                                                                                                            "
-                                                                                                                                            >
-                                                                                                                                            <span
-                                                                                                                                               style="
-                                                                                                                                               color: #ffffff !important;
-                                                                                                                                               font-family: Arial,
-                                                                                                                                               Helvetica
-                                                                                                                                               Neue,
-                                                                                                                                               Helvetica,
-                                                                                                                                               sans-serif;
-                                                                                                                                               font-size: 16px;
-                                                                                                                                               mso-line-height: exactly;
-                                                                                                                                               line-height: 20px;
-                                                                                                                                               mso-text-raise: 2px;
-                                                                                                                                               letter-spacing: normal;
-                                                                                                                                               "
-                                                                                                                                               >
-                                                                                                                                            <font
-                                                                                                                                               style="
-                                                                                                                                               color: #ffffff;
-                                                                                                                                               "
-                                                                                                                                               class="
-                                                                                                                                               button
-                                                                                                                                               "
-                                                                                                                                               >
-                                                                                                                                            <span
-                                                                                                                                               ><strong
-                                                                                                                                               >View on
-                                                                                                                                            Harness</strong
-                                                                                                                                               ></span
-                                                                                                                                               >
-                                                                                                                                            </font>
-                                                                                                                                            </span>
-                                                                                                                                         </td>
-                                                                                                                                      </tr>
+  <html xmlns="http://www.w3.org/1999/xhtml">
 
-                                                                                                                                   </table>
-                                                                                                                                </span>
-                                                                                                                             </a>
-                                                                                                                             <!--<![endif]-->
-                                                                                                                             <div
-                                                                                                                                style="
-                                                                                                                                display: none;
-                                                                                                                                mso-hide: none;
-                                                                                                                                "
-                                                                                                                                >
-                                                                                                                                <table
-                                                                                                                                   cellpadding="0"
-                                                                                                                                   cellspacing="0"
-                                                                                                                                   border="0"
-                                                                                                                                   bgcolor="#0278d5"
-                                                                                                                                   style="
-                                                                                                                                   border-radius: 5px;
-                                                                                                                                   border-collapse: separate !important;
-                                                                                                                                   background-color: #0278d5;
-                                                                                                                                   "
-                                                                                                                                   class="
-                                                                                                                                   fluid-on-mobile
-                                                                                                                                   "
-                                                                                                                                   >
-                                                                                                                                   <tr>
-                                                                                                                                      <td
-                                                                                                                                         align="center"
-                                                                                                                                         style="
-                                                                                                                                         padding-top: 8px;
-                                                                                                                                         padding-right: 56px;
-                                                                                                                                         padding-bottom: 8px;
-                                                                                                                                         padding-left: 56px;
-                                                                                                                                         "
-                                                                                                                                         >
-                                                                                                                                         <a
-                                                                                                                                            href="${url!}"
-                                                                                                                                            target="_blank"
-                                                                                                                                            style="
-                                                                                                                                            color: #ffffff !important;
-                                                                                                                                            font-family: Arial,
-                                                                                                                                            Helvetica
-                                                                                                                                            Neue,
-                                                                                                                                            Helvetica,
-                                                                                                                                            sans-serif;
-                                                                                                                                            font-size: 16px;
-                                                                                                                                            mso-line-height: exactly;
-                                                                                                                                            line-height: 20px;
-                                                                                                                                            mso-text-raise: 2px;
-                                                                                                                                            letter-spacing: normal;
-                                                                                                                                            text-decoration: none;
-                                                                                                                                            text-align: center;
-                                                                                                                                            "
-                                                                                                                                            >
-                                                                                                                                         <span
-                                                                                                                                            style="
-                                                                                                                                            color: #ffffff !important;
-                                                                                                                                            font-family: Arial,
-                                                                                                                                            Helvetica
-                                                                                                                                            Neue,
-                                                                                                                                            Helvetica,
-                                                                                                                                            sans-serif;
-                                                                                                                                            font-size: 16px;
-                                                                                                                                            mso-line-height: exactly;
-                                                                                                                                            line-height: 20px;
-                                                                                                                                            mso-text-raise: 2px;
-                                                                                                                                            letter-spacing: normal;
-                                                                                                                                            "
-                                                                                                                                            >
-                                                                                                                                         <font
-                                                                                                                                            style="
-                                                                                                                                            color: #ffffff;
-                                                                                                                                            "
-                                                                                                                                            class="
-                                                                                                                                            button
-                                                                                                                                            "
-                                                                                                                                            >
-                                                                                                                                         <span
-                                                                                                                                            ><strong
-                                                                                                                                            >View on
-                                                                                                                                         Harness</strong
-                                                                                                                                            ></span
-                                                                                                                                            >
-                                                                                                                                         </font>
-                                                                                                                                         </span>
-                                                                                                                                         </a>
-                                                                                                                                      </td>
-                                                                                                                                   </tr>
-                                                                                                                                </table>
-                                                                                                                             </div>
-                                                                                                                          </td>
-                                                                                                                       </tr>
-                                                                                                                    </table>
-                                                                                                                 </td>
-                                                                                                              </tr>
-                                                                                                           </table>
-                                                                                                        </td>
-                                                                                                     </tr>
-                                                                                                  </table>
-                                                                                               </td>
-                                                                                            </tr>
-                                                                                         </table>
-                                                                                      </td>
-                                                                                   </tr>
-                                                                                </table>
-                                                                                <!--[if gte mso 9]>
-                                                                             </td>
-                                                                          </tr>
-                                                                       </table>
-                                                                       <![endif]-->
-                                                                    </td>
-                                                                 </tr>
-                                                              </table>
-                               <table
-                                  cellpadding="0"
-                                  cellspacing="0"
-                                  border="0"
-                                  width="100%"
-                                  >
-                                  <tr>
-                                     <td align="center" width="100%">
-                                        <!--[if gte mso 9]>
-                                        <table width="600" cellpadding="0" cellspacing="0">
-                                           <tr>
-                                              <td>
-                                                 <![endif]-->
-                                                 <table
-                                                    class="width600 main-container"
-                                                    cellpadding="0"
-                                                    cellspacing="0"
-                                                    border="0"
-                                                    width="100%"
-                                                    style="max-width: 600px"
-                                                    >
-                                                    <tr>
-                                                       <td width="100%">
-                                                          <table
-                                                             cellpadding="0"
-                                                             cellspacing="0"
-                                                             border="0"
-                                                             width="100%"
-                                                             >
-                                                             <tr>
-                                                                <td valign="top">
-                                                                   <table
-                                                                      cellpadding="0"
-                                                                      cellspacing="0"
-                                                                      border="0"
-                                                                      width="100%"
-                                                                      bgcolor="#ffffff"
-                                                                      class="main"
-                                                                      style="background-color: #ffffff"
-                                                                      >
-             <tr>
-               <td
-                                                                            valign="top"
-                                                                            style="
-                                                                            padding-top: 24px;
-                                                                            padding-right: 16px;
-                                                                            padding-bottom: 16px;
-                                                                            padding-left: 16px;
-                                                                            "
-                                                                            >
-                                                                            <div
-                                                                               style="
-                                                                               font-family: arial;
-                                                                               font-size: 18px;
-                                                                               color: #131313;
-                                                                               line-height: 25px;
-                                                                               text-align: left;
-                                                                               "
-                                                                               >
-                                                                               <p
-                                                                                  style="
-                                                                                  padding: 0;
-                                                                                  margin: 0;
-                                                                                  text-align: center;
-                                                                                  "
-                                                                                  >
-                                                                                  <span style="font-size: 14px"
-                                                                                     >Not you? Contact us
-                                                                                  at&nbsp;<strong
-                                                                                     ><a
-                                                                                     href="mailto:support@harness.io"
-                                                                                     style="
-                                                                                     color: #0278d5 !important;
-                                                                                     text-decoration: none !important;
-                                                                                     "
-                                                                                     class="nounderline"
-                                                                                     ><font
-                                                                                     style="color: #0278d5"
-                                                                                     >support@harness.io</font
-                                                                                     ></a
-                                                                                     ></strong
-                                                                                     ></span
-                                                                                     >
-                                                                               </p>
-                                                                            </div>
-                                                                         </td>
-                                                                       </tr>
-                                                                 </table>
-                                                                </td>
-                                                             </tr>
-                                                          </table>
-                                                       </td>
-                                                    </tr>
-                                                 </table>
-                                                 <!--[if gte mso 9]>
-                                              </td>
-                                           </tr>
-                                        </table>
-                                        <![endif]-->
-                                     </td>
-                                  </tr>
-                               </table>
-                               <table
-                                  cellpadding="0"
-                                  cellspacing="0"
-                                  border="0"
-                                  width="100%"
-                                  >
-                                  <tr>
-                                     <td align="center" width="100%">
-                                        <!--[if gte mso 9]>
-                                        <table width="600" cellpadding="0" cellspacing="0">
-                                           <tr>
-                                              <td>
-                                                 <![endif]-->
-                                                 <table
-                                                    class="width600 main-container"
-                                                    cellpadding="0"
-                                                    cellspacing="0"
-                                                    border="0"
-                                                    width="100%"
-                                                    style="max-width: 600px"
-                                                    >
-                                                    <tr>
-                                                       <td width="100%">
-                                                          <table
-                                                             cellpadding="0"
-                                                             cellspacing="0"
-                                                             border="0"
-                                                             width="100%"
-                                                             >
-                                                             <tr>
-                                                                <td valign="top" style="padding-bottom: 16px">
-                                                                   <table
-                                                                      cellpadding="0"
-                                                                      cellspacing="0"
-                                                                      border="0"
-                                                                      width="100%"
-                                                                      >
-                                                                      <tr>
-                                                                         <td valign="top">
-                                                                            <table
-                                                                               cellpadding="0"
-                                                                               cellspacing="0"
-                                                                               border="0"
-                                                                               width="100%"
-                                                                               bgcolor="#000000"
-                                                                               style="background-color: #000000"
-                                                                               >
-                                                                               <tr>
-                                                                                  <td valign="top">
-                                                                                     <table
-                                                                                        cellpadding="0"
-                                                                                        cellspacing="0"
-                                                                                        border="0"
-                                                                                        width="100%"
-                                                                                        >
-                                                                                        <tr>
-                                                                                           <td
-                                                                                              valign="top"
-                                                                                              style="padding: 16px"
-                                                                                              >
-                                                                                              <div
-                                                                                                 style="
-                                                                                                 font-family: arial;
-                                                                                                 font-size: 18px;
-                                                                                                 color: #131313;
-                                                                                                 line-height: 25px;
-                                                                                                 text-align: left;
-                                                                                                 "
-                                                                                                 >
-                                                                                                 <p
-                                                                                                    style="
-                                                                                                    padding: 0;
-                                                                                                    margin: 0;
-                                                                                                    text-align: center;
-                                                                                                    "
-                                                                                                    >
-                                                                                                    <span
-                                                                                                       style="
-                                                                                                       font-size: 14px;
-                                                                                                       "
-                                                                                                       ><span
-                                                                                                       style="
-                                                                                                       color: #ecf0f1;
-                                                                                                       "
-                                                                                                       >You received this
-                                                                                                    email because you
-                                                                                                    signed up for
-                                                                                                    <strong
-                                                                                                       ><a
-                                                                                                       href="https://harness.io/?utm_campaign=notification&utm_content=usergroup"
-                                                                                                       target="_blank"
-                                                                                                       style="
-                                                                                                       color: #00c0e7 !important;
-                                                                                                       text-decoration: none !important;
-                                                                                                       "
-                                                                                                       class="
-                                                                                                       nounderline
-                                                                                                       "
-                                                                                                       ><font
-                                                                                                       style="
-                                                                                                       color: #00c0e7;
-                                                                                                       "
-                                                                                                       >harness.io</font
-                                                                                                       ></a
-                                                                                                       ></strong
-                                                                                                       >, the modern
-                                                                                                    software delivery
-                                                                                                    platform that
-                                                                                                    empowers engineers
-                                                                                                    to deliver
-                                                                                                    software
-                                                                                                    on-demand.</span
-                                                                                                       ></span
-                                                                                                       >
-                                                                                                 </p>
-                                                                                                 <p
-                                                                                                    style="
-                                                                                                    padding: 0;
-                                                                                                    margin: 0;
-                                                                                                    text-align: center;
-                                                                                                    "
-                                                                                                    >
-                                                                                                    <br />
-                                                                                                    <span
-                                                                                                       style="
-                                                                                                       font-size: 14px;
-                                                                                                       "
-                                                                                                       ><span
-                                                                                                       style="
-                                                                                                       color: #ecf0f1;
-                                                                                                       "
-                                                                                                       >&copy; 2021 Harness
-                                                                                                    Inc.</span
-                                                                                                       ></span
-                                                                                                       >
-                                                                                                 </p>
-                                                                                              </div>
-                                                                                           </td>
-                                                                                        </tr>
-                                                                                     </table>
-                                                                                  </td>
-                                                                               </tr>
-                                                                            </table>
-                                                                         </td>
-                                                                      </tr>
-                                                                   </table>
-                                                                </td>
-                                                             </tr>
-                                                          </table>
-                                                       </td>
-                                                    </tr>
-                                                 </table>
-                                                 <!--[if gte mso 9]>
-                                              </td>
-                                           </tr>
-                                        </table>
-                                        <![endif]-->
-                                     </td>
-                                  </tr>
-                               </table>
-                            </td>
-                         </tr>
-                      </table>
-                   </td>
-                </tr>
-             </table>
-          </div>
-       </body>
-    </html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0;">
+    <meta name="format-detection" content="telephone=no">
+    <style>
+      @media all and (max-width: 580px) {
+        a.logo img {
+          margin-left: 15px !important;
+        }
+      }
+    </style>
+    <title>Harness</title>
+  </head>
+
+  <body topmargin="0" rightmargin="0" bottommargin="0" leftmargin="0" marginwidth="0" marginheight="0" width="100%" style="min-width: 100%; border-collapse: collapse; border-spacing: 0; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; background-color: #EFEFF1; color: #000000; width: 100%; height: 100%;" bgcolor="#EFEFF1" text="#000000">
+    <table width="100%" align="center" border="0" cellpadding="0" cellspacing="0" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; width: 100%; border-collapse: collapse;" class="background">
+      <tr>
+        <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; border-collapse: collapse;" bgcolor="#EFEFF1">
+          <table border="0" cellpadding="0" cellspacing="0" align="center" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; display: block; border-spacing: 0; padding: 0; width: inherit; max-width: 580px; border-collapse: collapse;" class="wrapper">
+
+            <tr>
+              <td align="left" valign="middle" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 0; padding-right: 6.25%; width: 87.5%; padding-top: 25px; padding-bottom: 25px; border-collapse: collapse;" width="87.5%">
+                <div style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; display: none; visibility: hidden; overflow: hidden; opacity: 0; font-size: 1px; line-height: 1px; height: 0; max-height: 0; max-width: 0; color: #EFEFF1;" class="preheader">
+                  <!-- Reserved for future -->
+                </div>
+
+                <a class="logo" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; color: #00ade4; text-decoration: none;" href="https://harness.io">
+                  <img border="0" vspace="0" hspace="0" src="https://s3.amazonaws.com/wings-assets/email-assets/logo.png" width="141" height="30" alt="Harness" title="Logo" style="line-height: 100%; color: #000000; font-size: 10px; margin: 0; padding: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: block;">
+                </a>
+
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellpadding="0" cellspacing="0" align="center" bgcolor="#FFFFFF" width="580" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; padding: 0; width: inherit; max-width: 580px; border-collapse: collapse;" class="container">
+            <tr>
+              <td valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-top: 0; border-collapse: collapse;" class="hero">
+                <a target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; color: #00ade4; text-decoration: none;" href="https://harness.io">
+                  <img border="0" vspace="0" hspace="0" src="https://s3.amazonaws.com/wings-assets/ng-mail-assets/ng-background.png" alt="Please enable images to view this content" title="Harness Hero" width="580" style="line-height: 100%; width: 100%; max-width: 580px; color: #000000; font-size: 13px; margin: 0; padding: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: block;">
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 17px; font-weight: 400; line-height: 160%; padding-top: 25px; padding-bottom: 5px; color: #000000; font-family: 'Inter', sans-serif; border-collapse: collapse;" class="paragraph" width="87.5%">
+                <div style="color: #77787b; line-height: 30px; font-weight: normal;">
+                  Hi ${name!},
+                  <#if projectname??> <br>You have been added to the project ${projectname} on Harness Platform.
+                  <#elseif organizationname??> <br>You have been added to the organization ${organizationname} on Harness Platform.
+                  <#else> <br>You have been added to the account <a href="${url!}" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none; color: #00ade4; font-family: 'Inter', sans-serif; font-size: 17px; font-weight: 600; line-height: 33px;">${accountname}</a> on Harness Platform.
+                  </#if>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="middle" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; padding-top: 0px; height: 70px; border-collapse: collapse;" height="70" class="button" width="87.5%">
+                <a href="${url!}" data-testid="lets-go" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; padding: 12px 24px; text-decoration: none; background-color: #000000; color: #FFFFFF; font-family: 'Inter', sans-serif;font-size: 16px; font-weight: bold; line-height: 120%; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px;">
+                  <#if accountname??> Sign In
+                  <#else> Get Started
+                  </#if>
+                </a>
+              </td>
+            </tr>
+            <#if shouldMailContainTwoFactorInfo == "true">
+              <tr>
+                <td valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 17px; font-weight: 400; line-height: 160%; padding-top: 25px; padding-bottom: 5px; color: #000000; font-family: 'Source Sans Pro', Tahoma, Verdana, Segoe, sans-serif; border-collapse: collapse;" class="paragraph" width="87.5%">
+                  <div style="color: #77787b; line-height: 30px; font-weight: normal;">
+                    Use this QR code to set up two-factor authentication: <br>
+                    <img src="https://chart.googleapis.com/chart?cht=qr&chl=${totpUrl}&chs=200x200&chld=L|0" ali><br>
+                    <h0>Secret key : ${totpSecret}</h0>
+                  </div>
+                </td>
+              </tr>
+            </#if>
+            <tr>
+              <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; padding-top: 25px; border-collapse: collapse;" class="line" width="87.5%">
+                <hr color="#DBDCDD" align="center" width="100%" size="1" noshade="" style="margin: 0; padding: 0;">
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 14px; font-weight: 600; line-height: 33px; padding-top: 20px; padding-bottom: 25px; color: #000000; font-family: 'Inter', sans-serif; border-collapse: collapse;" class="paragraph" width="87.5%">
+                Have a question?
+                <a href="mailto:support@harness.io" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none; color: #00ade4; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; line-height: 33px;">support@harness.io</a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellpadding="0" cellspacing="0" align="center" width="580" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; padding: 0; width: inherit; max-width: 580px; border-collapse: collapse;" class="wrapper">
+            <tr>
+              <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; padding-top: 25px; border-collapse: collapse;" class="social-icons" width="87.5%">
+                <table width="256" border="0" cellpadding="0" cellspacing="0" align="center" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; padding: 0; border-collapse: collapse;">
+                  <tr>
+                    <!-- Facebook -->
+                    <td align="center" valign="middle" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 0; padding: 0;  padding-left: 0; padding-right: 0; border-spacing: 0; border-collapse: collapse;">
+                      <a target="_blank" href="https://www.facebook.com/harnessinc/" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; color: #00ade4; text-decoration: none;">
+                        <img border="0" vspace="0" hspace="0" style="line-height: 100%; padding: 0; margin: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: inline-block; color: #000000;" alt="I" title="Follow us on LinkedIn" width="44" height="44" src="https://s3.amazonaws.com/wings-assets/ng-mail-assets/logofb.png">
+                      </a>
+                    </td>
+                    <!-- LinkedIn -->
+                    <td align="center" valign="middle" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 0; padding: 0;  padding-left: 0; padding-right: 0; border-spacing: 0; border-collapse: collapse;">
+                      <a target="_blank" href="https://www.linkedin.com/company/18249313/" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; color: #00ade4; text-decoration: none;">
+                        <img border="0" vspace="0" hspace="0" style="line-height: 100%; padding: 0; margin: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: inline-block; color: #000000;" alt="I" title="Follow us on LinkedIn" width="44" height="44" src="https://s3.amazonaws.com/wings-assets/ng-mail-assets/logolinkedin.png">
+                      </a>
+                    </td>
+                    <!-- Instagram -->
+                    <td align="center" valign="middle" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 0; padding: 0;  padding-left: 0; padding-right: 0; border-spacing: 0; border-collapse: collapse;">
+                      <a target="_blank" href="https://www.instagram.com/harness.io/" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; color: #00ade4; text-decoration: none;">
+                        <img border="0" vspace="0" hspace="0" style="line-height: 100%; padding: 0; margin: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: inline-block; color: #000000;" alt="I" title="Follow us on LinkedIn" width="44" height="44" src="https://s3.amazonaws.com/wings-assets/ng-mail-assets/logoinstagram.png">
+                      </a>
+                    </td>
+                    <!-- Twitter -->
+                    <td align="center" valign="middle" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; margin: 0; padding: 0; padding-left: 0; padding-right: 0; border-spacing: 0; border-collapse: collapse;">
+                      <a target="_blank" href="https://twitter.com/harnessio" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; line-height: 100%; color: #00ade4; text-decoration: none;">
+                        <img border="0" vspace="0" hspace="0" style="line-height: 100%; padding: 0; margin: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: none; display: inline-block; color: #000000;" alt="T" title="Follow us on Twitter" width="44" height="44" src="https://s3.amazonaws.com/wings-assets/ng-mail-assets/logotwitter.png">
+                      </a>
+                    </td>
+
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="top" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-spacing: 0; margin: 0; padding: 0; padding-left: 6.25%; padding-right: 6.25%; width: 87.5%; font-size: 13px; font-weight: 400; line-height: 150%; padding-top: 20px; padding-bottom: 20px; color: #999999; font-family: 'Inter', sans-serif; border-collapse: collapse;" class="footer" width="87.5%">
+                <a href="https://www.google.com/maps/place/116+New+Montgomery+St+%23200,+San+Francisco,+CA+94105/@37.7857739,-122.4006368#if,16.55z/data=!4m5!3m4!1s0x8085807d496517f3:0x6b10cbd0d6af2855!8m2!3d37.7870722!4d-122.4004509" target="_blank" style="-webkit-font-smoothing: antialiased; text-size-adjust: 100%; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; text-decoration: none; color: #999999; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 400; line-height: 150%;">
+                  Harness.io 116 New Montgomery Street, Suite 200 San Francisco, CA 94105
+                </a>
+                <br>
+                copyright &copy; 2021 Harness Inc.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+
+  </html>

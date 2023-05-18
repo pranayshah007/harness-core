@@ -9,9 +9,9 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.downtime.utils.DateTimeUtils.dtf;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -84,7 +84,8 @@ import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset.SLOErrorBudgetResetKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -469,7 +470,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(Instant.parse("2020-07-27T10:50:00Z").toEpochMilli());
     assertThat(sloDashboardWidget.getErrorBudgetRemaining()).isEqualTo(8639); // 8640 - (1.25 bad mins)
     assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
-    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(99.9855, offset(0.001));
+    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(99.9884, offset(0.001));
     assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(8640);
     assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
     assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
@@ -538,12 +539,10 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                         .getServiceLevelIndicator(builderFactory.getProjectParams(),
                             simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
                         .getUuid();
-    List<SLIRecord.SLIState> sliStateList1 =
-        Arrays.asList(SLIRecord.SLIState.BAD, SLIRecord.SLIState.BAD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList1 = Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD);
     List<Long> goodCounts1 = Arrays.asList(100L, 200l, 0L);
     List<Long> badCounts1 = Arrays.asList(10L, 20L, 0L);
-    List<SLIRecord.SLIState> sliStateList2 =
-        Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD);
+    List<SLIState> sliStateList2 = Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
     List<Long> goodCounts2 = Arrays.asList(100L, 200L, 300L);
     List<Long> badCounts2 = Arrays.asList(0L, 0L, 10L);
 
@@ -586,7 +585,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(Instant.parse("2020-07-27T10:50:00Z").toEpochMilli());
     assertThat(sloDashboardWidget.getErrorBudgetRemaining()).isEqualTo(0);
     assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
-    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(63.8599, offset(0.001));
+    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(63.4581, offset(0.001));
     assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(0);
     assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.OBSERVE);
     assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
@@ -878,6 +877,32 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                       .build())
             .build();
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    String sliId1 =
+        serviceLevelIndicatorService
+            .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                ((SimpleServiceLevelObjective) serviceLevelObjectiveRequestBased).getServiceLevelIndicators().get(0))
+            .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    List<SLIState> sliStateList1 = Arrays.asList(SLIState.BAD, SLIState.BAD, SLIState.GOOD);
+    List<Long> goodCounts1 = Arrays.asList(100L, 200l, 0L);
+    List<Long> badCounts1 = Arrays.asList(10L, 20L, 0L);
+    List<SLIState> sliStateList2 = Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.GOOD);
+    List<Long> goodCounts2 = Arrays.asList(100L, 200L, 300L);
+    List<Long> badCounts2 = Arrays.asList(0L, 0L, 10L);
+
+    List<SLIRecord> sliRecordList1 =
+        createSLIRecords(startTime, endTime.minusSeconds(120), sliId1, sliStateList1, goodCounts1, badCounts1);
+    List<SLIRecord> sliRecordList2 =
+        createSLIRecords(startTime, endTime.minusSeconds(120), sliId2, sliStateList2, goodCounts2, badCounts2);
+    List<List<SLIRecord>> objectiveDetailToSLIRecordList = new ArrayList<>();
+    objectiveDetailToSLIRecordList.add(sliRecordList1);
+    objectiveDetailToSLIRecordList.add(sliRecordList2);
+    createSLORecords(startTime, endTime.minusSeconds(120), objectiveDetailToSLIRecordList);
     SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOEntity(simpleServiceLevelObjective2);
     hPersistence.delete(simpleServiceLevelObjective2);
     hPersistence.delete(sloHealthIndicator);
@@ -928,7 +953,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloConsumptionBreakdown.getProjectParams()).isEqualTo(builderFactory.getProjectParams());
 
     SLODashboardDetail sloDashboardDetail = sloDashboardService.getSloDashboardDetail(builderFactory.getProjectParams(),
-        serviceLevelObjectiveV2DTO.getIdentifier(), clock.instant().toEpochMilli(), clock.instant().toEpochMilli());
+        serviceLevelObjectiveV2DTO.getIdentifier(), startTime.toEpochMilli(), endTime.toEpochMilli());
     assertThat(sloDashboardDetail.getSloDashboardWidget().getSloError())
         .isEqualTo(SLOError.getErrorForDeletionOfSimpleSLOInWidgetDetailsView());
   }
@@ -2145,22 +2170,22 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .hasMessage("All the messages should be of the same thread");
   }
 
-  private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates, String sliId) {
+  private void createData(Instant startTime, List<SLIState> sliStates, String sliId) {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, sliId, 0);
   }
 
-  private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates, List<Long> goodCounts,
-      List<Long> badCounts, String sliId) {
+  private void createData(
+      Instant startTime, List<SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts, String sliId) {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates, goodCounts, badCounts);
     sliRecordService.create(sliRecordParams, sliId, sliId, 0);
   }
 
   private List<SLIRecordParam> getSLIRecordParam(
-      Instant startTime, List<SLIRecord.SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
+      Instant startTime, List<SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
-      SLIRecord.SLIState sliState = sliStates.get(i);
+      SLIState sliState = sliStates.get(i);
       long goodCount = goodCounts.get(i);
       long badCount = badCounts.get(i);
       sliRecordParams.add(SLIRecordParam.builder()
@@ -2224,8 +2249,8 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     return sloRecords;
   }
 
-  private List<SLIRecord> createSLIRecords(Instant start, Instant end, String sliId, List<SLIRecord.SLIState> states,
-      List<Long> goodCounts, List<Long> badCounts) {
+  private List<SLIRecord> createSLIRecords(
+      Instant start, Instant end, String sliId, List<SLIState> states, List<Long> goodCounts, List<Long> badCounts) {
     int index = 0;
     List<SLIRecord> sliRecords = new ArrayList<>();
     long runningGoodCount = 0;
@@ -2249,10 +2274,10 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     return sliRecords;
   }
 
-  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIRecord.SLIState> sliStates) {
+  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
-      SLIRecord.SLIState sliState = sliStates.get(i);
+      SLIState sliState = sliStates.get(i);
       long goodCount = 0;
       long badCount = 0;
       if (sliState == GOOD) {
@@ -2288,13 +2313,21 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     for (int i = 0; i < sloPerformanceTrend.size(); i++) {
       assertThat(sloPerformanceTrend.get(i).getTimestamp())
           .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
-      assertThat(sloPerformanceTrend.get(i).getValue())
-          .isCloseTo((runningGoodCount.get(i) * 100.0) / (i + 1), offset(0.01));
+      double total =
+          runningGoodCount.get(i) + runningBadCount.get(i) - runningBadCount.get(0) - runningGoodCount.get(0);
+      double percentageTrend;
+      if (total == 0) {
+        percentageTrend = 100;
+      } else {
+        percentageTrend = ((runningGoodCount.get(i) - runningGoodCount.get(0)) * 100) / total;
+      }
+      assertThat(sloPerformanceTrend.get(i).getValue()).isCloseTo(percentageTrend, offset(0.01));
       assertThat(errorBudgetBurndown.get(i).getTimestamp())
           .isEqualTo(startTime.plus(Duration.ofMinutes(i)).toEpochMilli());
       assertThat(errorBudgetBurndown.get(i).getValue())
-          .isCloseTo(
-              ((totalErrorBudgetMinutes - runningBadCount.get(i)) * 100.0) / totalErrorBudgetMinutes, offset(0.01));
+          .isCloseTo(((totalErrorBudgetMinutes - (runningBadCount.get(i) - runningBadCount.get(0))) * 100.0)
+                  / totalErrorBudgetMinutes,
+              offset(0.01));
     }
   }
 }

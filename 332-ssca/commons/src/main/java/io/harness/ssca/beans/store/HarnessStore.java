@@ -14,7 +14,6 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -22,7 +21,7 @@ import lombok.Data;
 @Data
 @Builder
 public class HarnessStore implements StoreSpec {
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @JsonProperty("files")
-  private ParameterField<List<String>> files;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @JsonProperty("file")
+  private ParameterField<String> file;
 }

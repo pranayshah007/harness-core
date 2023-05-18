@@ -53,6 +53,7 @@ import io.harness.cvng.migration.list.OrphanMonitoredServicesCleanup;
 import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
+import io.harness.cvng.migration.list.SLIRecordToSLIRecordBucketMigration;
 import io.harness.cvng.migration.list.SetNotRequiredActivityAnalysisStatusToIgnored;
 import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
@@ -146,6 +147,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(65, ActivityBucketCleanupAndMigration.class))
         .add(Pair.of(66, DeleteHarnessCDChangeSourceMigration.class))
         .add(Pair.of(67, DeleteRedundantSLIsSLOs.class))
+        .add(Pair.of(68, SLIRecordToSLIRecordBucketMigration.class))
         .build();
   }
 }

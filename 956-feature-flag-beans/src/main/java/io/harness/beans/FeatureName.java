@@ -23,6 +23,9 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT(
+      "Disable evaluation of first deployment condition to avoid unoptimized query execution on each completed deployment",
+      HarnessTeam.SPG),
   SPG_CG_LIST_RESUMED_PIPELINES(
       "Allows resumed workflow/pipelines to be listed on the deployment history page", HarnessTeam.SPG),
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
@@ -416,6 +419,7 @@ public enum FeatureName {
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
   CI_TI_DASHBOARDS_ENABLED,
+  CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   PERSIST_MONITORED_SERVICE_TEMPLATE_STEP(

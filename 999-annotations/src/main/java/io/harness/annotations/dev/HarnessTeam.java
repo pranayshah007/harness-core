@@ -30,5 +30,6 @@ public enum HarnessTeam {
   IACM,
   IDP,
   SSCA,
+  CDB,
   CET
 }

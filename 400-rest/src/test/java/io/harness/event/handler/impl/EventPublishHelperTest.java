@@ -5,9 +5,11 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.events;
+package io.harness.event.handler.impl;
 
+import static io.harness.beans.FeatureName.SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SOWMYA;
 import static io.harness.rule.OwnerRule.VIKAS;
@@ -17,6 +19,7 @@ import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.CV_CONFIG_ID;
 import static software.wings.utils.WingsTestConstants.STATE_EXECUTION_ID;
+import static software.wings.utils.WingsTestConstants.USER1_EMAIL;
 import static software.wings.utils.WingsTestConstants.USER_GROUP_ID;
 import static software.wings.utils.WingsTestConstants.USER_ID;
 import static software.wings.utils.WingsTestConstants.WHITELIST_ID;
@@ -39,14 +42,15 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.PageRequest;
+import io.harness.beans.PageResponse;
 import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.category.element.UnitTests;
-import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.event.handler.marketo.MarketoConfig;
 import io.harness.event.handler.segment.SegmentConfig;
 import io.harness.event.model.Event;
 import io.harness.event.model.EventType;
 import io.harness.event.publisher.EventPublisher;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -57,6 +61,7 @@ import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.access.Whitelist;
+import software.wings.events.TestUtils;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;
 import software.wings.service.impl.analysis.ContinuousVerificationService;
@@ -110,6 +115,7 @@ public class EventPublishHelperTest extends WingsBaseTest {
   @Inject private TestUtils eventTestHelper;
   @Mock private ContinuousVerificationService continuousVerificationService;
   @Mock private VerificationService learningEngineService;
+  @Mock private FeatureFlagService featureFlagService;
 
   private User user;
   private Account account;
@@ -305,6 +311,7 @@ public class EventPublishHelperTest extends WingsBaseTest {
       when(userService.getUserFromCacheOrDB(user.getUuid())).thenReturn(user);
       when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
       when(appService.getAppIdsByAccountId(ACCOUNT_ID)).thenReturn(Arrays.asList(APP_ID));
+      when(featureFlagService.isNotEnabled(SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT, ACCOUNT_ID)).thenReturn(true);
 
       WorkflowExecution workflowExecution =
           WorkflowExecution.builder()
@@ -334,6 +341,7 @@ public class EventPublishHelperTest extends WingsBaseTest {
       when(userService.getUserFromCacheOrDB(user.getUuid())).thenReturn(user);
       when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
       when(appService.getAppIdsByAccountId(ACCOUNT_ID)).thenReturn(Arrays.asList(APP_ID));
+      when(featureFlagService.isNotEnabled(SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT, ACCOUNT_ID)).thenReturn(true);
       WorkflowExecution workflowExecution =
           WorkflowExecution.builder()
               .uuid(WORKFLOW_EXECUTION_ID)
@@ -374,6 +382,7 @@ public class EventPublishHelperTest extends WingsBaseTest {
       when(userService.getUserFromCacheOrDB(user.getUuid())).thenReturn(user);
       when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
       when(appService.getAppIdsByAccountId(ACCOUNT_ID)).thenReturn(Arrays.asList(APP_ID));
+      when(featureFlagService.isNotEnabled(SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT, ACCOUNT_ID)).thenReturn(true);
       WorkflowExecution workflowExecution =
           WorkflowExecution.builder()
               .uuid(WORKFLOW_EXECUTION_ID)
@@ -680,5 +689,35 @@ public class EventPublishHelperTest extends WingsBaseTest {
     } finally {
       UserThreadLocal.unset();
     }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldPublishIfFirstDeploymentNotExecuteWhenEnabledFF() throws IllegalAccessException {
+    when(featureFlagService.isNotEnabled(SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT, ACCOUNT_ID)).thenReturn(false);
+
+    eventPublishHelper.publishIfFirstDeployment(
+        WORKFLOW_EXECUTION_ID, Collections.emptyList(), ACCOUNT_ID, USER1_EMAIL);
+
+    verify(executionService, never()).listExecutions(any(PageRequest.class), anyBoolean());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldPublishIfFirstDeploymentNotExecuteWhenDisabledFF() throws IllegalAccessException {
+    when(featureFlagService.isNotEnabled(SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT, ACCOUNT_ID)).thenReturn(true);
+
+    List<WorkflowExecution> workflowExecutions =
+        Collections.singletonList(WorkflowExecution.builder().uuid(WORKFLOW_EXECUTION_ID).build());
+    PageResponse<WorkflowExecution> pageResponse = new PageResponse<>();
+    pageResponse.setResponse(workflowExecutions);
+    when(executionService.listExecutions(any(PageRequest.class), eq(false))).thenReturn(pageResponse);
+
+    eventPublishHelper.publishIfFirstDeployment(
+        WORKFLOW_EXECUTION_ID, Collections.emptyList(), ACCOUNT_ID, USER1_EMAIL);
+
+    verify(executionService).listExecutions(any(PageRequest.class), anyBoolean());
   }
 }

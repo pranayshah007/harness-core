@@ -36,13 +36,16 @@ filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": t
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}
 gcpServiceAccount {"name": "account_id_service_account_email", "background": true} {"accountId": 1, "email": 1}
 gitProcessRequestSdk {"name": "accountId_repo_branch_commit_index", "background": true} {"accountId": 1, "repoUrl": 1, "branch": 1, "commitId": 1}
+governanceRule {"name": "recommendation", "background": true} {"isOOTB": 1, "forRecommendation": 1}
 governanceRule {"name": "rules", "background": true} {"accountId": 1, "cloudProvider": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRule {"name": "sort1", "background": true} {"name": 1, "accountId": 1, "cloudProvider": 1, "lastUpdatedAt": 1}
 governanceRule {"name": "sort2", "background": true} {"name": 1, "accountId": 1, "createdAt": 1}
 governanceRuleEnforcement {"name": "ruleEnforcement", "background": true} {"name": 1, "accountId": 1, "cloudProvider": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 governanceRuleEnforcement {"name": "sort1", "background": true} {"name": 1, "accountId": 1, "lastUpdatedAt": 1}
 governanceRuleEnforcement {"name": "sort2", "background": true} {"name": 1, "accountId": 1, "createdAt": 1}
+governanceRuleExecution {"name": "recommendation", "background": true} {"executionCompletedAt": 1, "cost": 1, "costType": 1}
 governanceRuleExecution {"name": "ruleExecution", "background": true} {"accountId": 1, "cloudProvider": 1, "ruleEnforcementIdentifier": 1, "rulePackIdentifier": 1, "ruleIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
+governanceRuleExecution {"name": "ruleIdentifier", "background": true} {"ruleIdentifier": 1}
 governanceRuleExecution {"name": "sort1", "background": true} {"accountId": 1, "cloudProvider": 1, "lastUpdatedAt": 1}
 governanceRuleExecution {"name": "sort2", "background": true} {"accountId": 1, "cloudProvider": 1, "createdAt": 1}
 governanceRuleExecution {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}

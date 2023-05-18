@@ -106,7 +106,6 @@ import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO.ServiceDe
 import io.harness.cvng.core.beans.monitoredService.RiskCategoryDTO;
 import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.CustomChangeSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.HarnessCDCurrentGenChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.KubernetesChangeSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.changeSourceSpec.PagerDutyChangeSourceSpec;
@@ -388,7 +387,7 @@ public class BuilderFactory {
             MonitoredServiceDTO.Sources.builder()
                 .healthSources(
                     Arrays.asList(createHealthSource(CVMonitoringCategory.ERRORS)).stream().collect(Collectors.toSet()))
-                .changeSources(Sets.newHashSet(getHarnessCDChangeSourceDTOBuilder().build()))
+                .changeSources(Sets.newHashSet(getHarnessCDCurrentGenChangeSourceDTOBuilder().build()))
                 .build());
   }
 
@@ -1004,10 +1003,6 @@ public class BuilderFactory {
         .name(randomAlphabetic(20))
         .type(customChangeSourceType)
         .identifier("customIdentifier");
-  }
-
-  public ChangeSourceDTOBuilder getHarnessCDChangeSourceDTOBuilder() {
-    return getChangeSourceDTOBuilder(ChangeSourceType.HARNESS_CD).spec(new HarnessCDChangeSourceSpec());
   }
 
   public ChangeSourceDTOBuilder getPagerDutyChangeSourceDTOBuilder() {

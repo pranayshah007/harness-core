@@ -551,13 +551,13 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     return NGMigrationConfiguration.builder()
         .microservice(Microservice.CORE)
         .migrationProviderList(new ArrayList<Class<? extends MigrationProvider>>() {
-          { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
+          { add(NGBeanMigrationProvider.class); }
 
           { add(ProjectMigrationProvider.class); }
 
-          { add(UserMembershipMigrationProvider.class); }
+          { add(NGCoreMigrationProvider.class); } // Add all migration provider classes here
 
-          { add(NGBeanMigrationProvider.class); }
+          { add(UserMembershipMigrationProvider.class); }
 
           { add(InstanceMigrationProvider.class); }
 

@@ -14,7 +14,6 @@ import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 

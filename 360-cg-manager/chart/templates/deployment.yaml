@@ -74,6 +74,8 @@ spec:
               value: postgres
             - name: MONGO_URI
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "harness" "context" $) }}
+            - name: DMS_MONGO_URI
+              value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "dms-harness" "context" $) }}
             - name: TIMESCALEDB_URI
               value: 'jdbc:postgresql://timescaledb-single-chart.{{ .Release.Namespace }}:5432/harness'
           image: {{ include "common.images.image" (dict "imageRoot" .Values.image "global" .Values.global) }}
