@@ -276,8 +276,12 @@ public class K8InitializeTaskParamsBuilder {
     k8InitializeTaskUtils.checkSecretAccess(ambiance, secretVariableDetails, accountId,
         AmbianceUtils.getProjectIdentifier(ambiance), AmbianceUtils.getOrgIdentifier(ambiance));
 
+        K8sDirectInfraYaml    k8sDirectInfraYaml = (K8sDirectInfraYaml)infrastructure;
+
+    Integer runAsUser = resolveIntegerParameter(k8sDirectInfraYaml.getSpec().getRunAsUser(), null);
+
     CIK8ContainerParams setupAddOnContainerParams = internalContainerParamsProvider.getSetupAddonContainerParams(
-        harnessInternalImageConnector, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(),
+        harnessInternalImageConnector, volumeToMountPath, k8InitializeTaskUtils.getWorkDir(), runAsUser,
         k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), ngAccess.getAccountIdentifier(), os);
 
     Pair<Integer, Integer> wrapperRequests = k8InitializeStepUtils.getStageRequest(initializeStepInfo, accountId);

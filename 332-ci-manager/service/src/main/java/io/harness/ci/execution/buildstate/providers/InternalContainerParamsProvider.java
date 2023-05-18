@@ -75,7 +75,7 @@ public class InternalContainerParamsProvider {
   @Inject private CIFeatureFlagService featureFlagService;
 
   public CIK8ContainerParams getSetupAddonContainerParams(ConnectorDetails harnessInternalImageConnector,
-      Map<String, String> volumeToMountPath, String workDir, ContainerSecurityContext ctrSecurityContext,
+      Map<String, String> volumeToMountPath, String workDir, Integer runAsUser, ContainerSecurityContext ctrSecurityContext,
       String accountIdentifier, OSType os) {
     Map<String, String> envVars = new HashMap<>();
     envVars.put(HARNESS_WORKSPACE, workDir);
@@ -101,6 +101,7 @@ public class InternalContainerParamsProvider {
         .volumeToMountPath(volumeToMountPath)
         .commands(commands)
         .args(args)
+        .runAsUser(runAsUser)
         .securityContext(ctrSecurityContext)
         .containerResourceParams(getAddonResourceParams())
         .build();
