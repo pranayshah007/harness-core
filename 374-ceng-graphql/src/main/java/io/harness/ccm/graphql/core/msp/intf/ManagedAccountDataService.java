@@ -18,10 +18,9 @@ public interface ManagedAccountDataService {
   List<String> getEntityList(String managedAccountId, CCMField entity, Integer limit, Integer offset);
   ManagedAccountsOverview getTotalMarkupAndSpend(String mspAccountId);
   ManagedAccountsOverview getTotalMarkupAndSpend(String mspAccountId, String managedAccountId);
+  ManagedAccountStats getManagedAccountStats(String mspAccountId, long startTime, long endTime);
   ManagedAccountStats getManagedAccountStats(
       String mspAccountId, String managedAccountId, long startTime, long endTime);
-  ManagedAccountStats getMockManagedAccountStats(
-          String mspAccountId, String managedAccountId, long startTime, long endTime);
   ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(
       String mspAccountId, String managedAccountId, long startTime, long endTime);
 }

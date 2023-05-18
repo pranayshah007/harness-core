@@ -13,12 +13,14 @@ import static io.harness.ccm.views.graphql.QLCEViewFilterOperator.IN;
 
 import io.harness.ccm.commons.entities.CCMField;
 import io.harness.ccm.graphql.core.msp.intf.ManagedAccountDataService;
+import io.harness.ccm.graphql.dto.perspectives.PerspectiveTrendStats;
 import io.harness.ccm.graphql.query.perspectives.PerspectivesQuery;
 import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.graphql.utils.RESTToGraphQLHelper;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.*;
 import io.harness.ccm.views.dto.DataPoint;
+import io.harness.ccm.views.dto.Reference;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
@@ -27,9 +29,7 @@ import io.harness.ccm.views.graphql.QLCEViewPreferences;
 
 import com.google.inject.Inject;
 import io.leangen.graphql.execution.ResolutionEnvironment;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ManagedAccountDataServiceImpl implements ManagedAccountDataService {
@@ -77,26 +77,75 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
   }
 
   @Override
-  public ManagedAccountStats getManagedAccountStats(
-      String mspAccountId, String managedAccountId, long startTime, long endTime) {
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
+  public ManagedAccountStats getManagedAccountStats(String mspAccountId, long startTime, long endTime) {
+    ManagedAccountsOverview totalMarkupAndSpend = getTotalMarkupAndSpend(mspAccountId);
+    return getTotalMarkupAndSpendForPeriod(totalMarkupAndSpend, startTime, endTime);
+  }
 
-    return ManagedAccountStats.builder().build();
+  private ManagedAccountStats getTotalMarkupAndSpendForPeriod(
+      ManagedAccountsOverview totalMarkupAndSpend, long startTime, long endTime) {
+    Calendar startOfMonthCalendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+    startOfMonthCalendar.set(Calendar.DAY_OF_MONTH, 1);
+    startOfMonthCalendar.set(Calendar.HOUR_OF_DAY, 0);
+    startOfMonthCalendar.set(Calendar.MINUTE, 0);
+    startOfMonthCalendar.set(Calendar.SECOND, 0);
+    startOfMonthCalendar.set(Calendar.MILLISECOND, 0);
+    long startOfCurrentMonth = startOfMonthCalendar.getTimeInMillis();
+    long diff = endTime - startTime / 86400000L;
+    double totalSpend = 0;
+    double totalMarkup = 0;
+
+    if (startTime == startOfCurrentMonth) {
+      if (diff > 30) {
+        totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getCurrentQuarter();
+        totalSpend = totalMarkupAndSpend.getTotalSpend().getCurrentQuarter();
+      } else {
+        totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getCurrentMonth();
+        totalSpend = totalMarkupAndSpend.getTotalSpend().getCurrentMonth();
+      }
+    } else {
+      if (diff > 30) {
+        totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getLastQuarter();
+        totalSpend = totalMarkupAndSpend.getTotalSpend().getLastQuarter();
+      } else {
+        totalMarkup = totalMarkupAndSpend.getTotalMarkupAmount().getLastMonth();
+        totalSpend = totalMarkupAndSpend.getTotalSpend().getLastMonth();
+      }
+    }
+    return ManagedAccountStats.builder()
+        .totalSpendStats(AmountTrendStats.builder().currentPeriod(totalSpend).build())
+        .totalMarkupStats(AmountTrendStats.builder().currentPeriod(totalMarkup).build())
+        .build();
   }
 
   @Override
-  public ManagedAccountStats getMockManagedAccountStats(
+  public ManagedAccountStats getManagedAccountStats(
       String mspAccountId, String managedAccountId, long startTime, long endTime) {
+    if (managedAccountId == null) {
+      return getManagedAccountStats(mspAccountId, startTime, endTime);
+    }
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
+
+    PerspectiveTrendStats trendStats =
+        perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+            Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, env);
+
     return ManagedAccountStats.builder()
-        .totalSpendStats(AmountTrendStats.builder().currentPeriod(1369.34).trend(10.4).build())
-        .totalMarkupStats(AmountTrendStats.builder().currentPeriod(254.22).trend(7.4).build())
+        .totalSpendStats(AmountTrendStats.builder()
+                             .currentPeriod(trendStats.getCost().getValue().doubleValue())
+                             .trend(trendStats.getCost().getStatsTrend().doubleValue())
+                             .build())
+        .totalMarkupStats(AmountTrendStats.builder()
+                              .currentPeriod(trendStats.getCost().getValue().doubleValue() * 0.2)
+                              .trend(trendStats.getCost().getStatsTrend().doubleValue() * 0.2)
+                              .build())
         .build();
   }
 
   @Override
   public ManagedAccountTimeSeriesData getManagedAccountTimeSeriesData(
       String mspAccountId, String managedAccountId, long startTime, long endTime) {
-    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(managedAccountId);
     QLCEViewPreferences qlCEViewPreferences =
         QLCEViewPreferences.builder().includeOthers(false).includeUnallocatedCost(false).build();
     List<TimeSeriesDataPoints> totalSpendStats =
@@ -126,8 +175,10 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
   List<DataPoint> getUpdatedDataPoint(List<DataPoint> dataPoints) {
     List<DataPoint> updatedDataPoints = new ArrayList<>();
     dataPoints.forEach(dataPoint
-        -> updatedDataPoints.add(
-            DataPoint.builder().key(dataPoint.getKey()).value(dataPoint.getValue().doubleValue() * 0.2).build()));
+        -> updatedDataPoints.add(DataPoint.builder()
+                                     .key(Reference.builder().id("Total markup").name("Total Markup").type("").build())
+                                     .value(dataPoint.getValue().doubleValue() * 0.2)
+                                     .build()));
     return updatedDataPoints;
   }
 
