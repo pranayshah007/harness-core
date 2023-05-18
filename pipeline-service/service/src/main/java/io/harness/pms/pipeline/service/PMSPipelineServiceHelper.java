@@ -71,7 +71,6 @@ import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -79,13 +78,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.bson.Document;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -108,14 +105,21 @@ public class PMSPipelineServiceHelper {
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
   public static String PIPELINE_NAME = "pipelineName";
+  public static String ACCOUNT_ID = "accountId";
   public static String ORG_ID = "orgId";
   public static String PROJECT_ID = "projectId";
+  public static String PIPELINE_ID = "pipelineId";
 
-  public static void validatePresenceOfRequiredFields(Object... fields) {
-    Lists.newArrayList(fields).forEach(field -> {
-      Objects.requireNonNull(field, "One of the required fields is null.");
-      if (ObjectUtils.isEmpty(field)) {
-        throw new InvalidRequestException("One of the required fields is empty.");
+  public static void validatePresenceOfRequiredFields(PipelineEntity pipelineEntity) {
+    HashMap<String, String> requiredFieldMap = new HashMap<>();
+    requiredFieldMap.put(ACCOUNT_ID, pipelineEntity.getAccountId());
+    requiredFieldMap.put(ORG_ID, pipelineEntity.getOrgIdentifier());
+    requiredFieldMap.put(PROJECT_ID, pipelineEntity.getProjectIdentifier());
+    requiredFieldMap.put(PIPELINE_ID, pipelineEntity.getIdentifier());
+
+    requiredFieldMap.forEach((requiredField, value) -> {
+      if (EmptyPredicate.isEmpty(value)) {
+        throw new InvalidRequestException(String.format("Required field [%s] is either null or empty.", requiredField));
       }
     });
   }
