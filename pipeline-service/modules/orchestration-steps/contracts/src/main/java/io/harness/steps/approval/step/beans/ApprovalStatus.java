@@ -34,6 +34,10 @@ public enum ApprovalStatus {
     return FINAL_STATUSES.contains(this);
   }
 
+  public boolean isApprovalAction() {
+    return APPROVED.equals(this) || REJECTED.equals(this);
+  }
+
   public Status toFinalExecutionStatus() {
     switch (this) {
       case APPROVED:

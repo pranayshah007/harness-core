@@ -18,6 +18,7 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -114,13 +115,18 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     try (AutoLogContext ignore = approvalInstance.autoLogContext()) {
       NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
 
-      boolean isApprovalAction = ApprovalStatus.APPROVED.equals(approvalInstance.getStatus())
-          || ApprovalStatus.REJECTED.equals(approvalInstance.getStatus());
-      if (isApprovalAction) {
-        ApprovalSummary approvalSummary =
-            getApprovalSummary(ambiance, approvalInstance, getPipelineExecutionSummary(ambiance));
-        sendNotificationInternal(
-            approvalInstance, approvalInstance.getValidatedUserGroups(), approvalSummary.toParams(), logCallback);
+      if (approvalInstance.getStatus().isApprovalAction()) {
+        try {
+          ApprovalSummary approvalSummary =
+              getApprovalSummary(ambiance, approvalInstance, getPipelineExecutionSummary(ambiance));
+          sendNotificationInternal(
+              approvalInstance, approvalInstance.getValidatedUserGroups(), approvalSummary.toParams(), logCallback);
+        } catch (Exception e) {
+          logCallback.saveExecutionLog(
+              String.format("Error sending notification to user groups for harness approval Action: %s",
+                  ExceptionUtils.getMessage(e)));
+          log.error("Error while sending notification for harness approval Action", e);
+        }
       } else {
         sendNotificationInternal(approvalInstance, ambiance, logCallback);
       }
@@ -270,7 +276,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
       notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
     }
 
-    if (ApprovalStatus.APPROVED.equals(instance.getStatus()) || ApprovalStatus.REJECTED.equals(instance.getStatus())) {
+    if (instance.getStatus().isApprovalAction()) {
       return notificationTemplateForApprovalAction(
           instance, notificationSettingConfig, userGroup, templateData, notifyUserGroupBuilder);
     } else {
@@ -383,21 +389,31 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
       if (HarnessApprovalAction.APPROVE.equals(lastApprovalActivity.getAction())) {
         List<HarnessApprovalActivity> harnessApprovalActivities = approvalInstance.getApprovalActivities();
         for (HarnessApprovalActivity harnessApprovalActivity : harnessApprovalActivities) {
+          String userIdentification = getUserIdentification(harnessApprovalActivity.getUser());
           action = action
-              + (harnessApprovalActivity.getUser().getEmail() + " approved on "
-                  + formatTime(harnessApprovalActivity.getApprovedAt()) + "   \\n");
+              + (userIdentification + " approved on " + formatTime(harnessApprovalActivity.getApprovedAt()) + "   \\n");
         }
         if (!isEmpty(action)) {
           // removing last redundant new line character
           action = action.substring(0, action.length() - 2);
         }
       } else if (HarnessApprovalAction.REJECT.equals(lastApprovalActivity.getAction())) {
-        action = lastApprovalActivity.getUser().getEmail() + " rejected on "
-            + formatTime(lastApprovalActivity.getApprovedAt());
+        String userIdentification = getUserIdentification(lastApprovalActivity.getUser());
+        action = userIdentification + " rejected on " + formatTime(lastApprovalActivity.getApprovedAt());
       }
       return action;
     }
     return action;
+  }
+
+  private String getUserIdentification(EmbeddedUser user) {
+    if (isEmpty(user.getEmail()) && isEmpty(user.getName())) {
+      return "Unknown";
+    } else if (isEmpty(user.getEmail())) {
+      return user.getName();
+    } else {
+      return user.getEmail();
+    }
   }
 
   private String getUser(Ambiance ambiance) {

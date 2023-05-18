@@ -85,8 +85,7 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
       HarnessApprovalInstance instance =
           (HarnessApprovalInstance) approvalInstanceService.get(responseData.getApprovalInstanceId());
 
-      if (ApprovalStatus.APPROVED.equals(instance.getStatus())
-          || ApprovalStatus.REJECTED.equals(instance.getStatus())) {
+      if (instance.getStatus().isApprovalAction()) {
         executorService.submit(() -> approvalNotificationHandler.sendNotification(instance, ambiance));
       }
       return StepResponse.builder()
