@@ -108,9 +108,9 @@ public class ZendeskHelper {
     try {
       String json = "{\n"
           + "    \"userIds\": [\n{"
-          + "        \"name\": \"example\",\n"
-          + "        \"type\": \"type\",\n"
-          + "        \"provider\":\"Security Provider\"\n"
+          + "        \"name\": \"name\",\n"
+          + "        \"type\": \"User\",\n"
+          + "        \"provider\":\"Email Security Provider\"\n"
           + "    }\n]"
           + "}";
       RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), json);
