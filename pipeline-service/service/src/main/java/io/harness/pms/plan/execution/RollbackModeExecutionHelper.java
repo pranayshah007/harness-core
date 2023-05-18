@@ -309,6 +309,18 @@ public class RollbackModeExecutionHelper {
       ExecutionMode executionMode, List<String> stageFQNsToRollback) {
     for (Node planNode : createdPlan.getPlanNodes()) {
       if (EmptyPredicate.isEmpty(planNode.getAdvisorObtainmentsForExecutionMode())) {
+        List<StepCategory> categories = Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY);
+        StepCategory planNodeStepCategory = planNode.getStepCategory();
+        if (categories.contains(planNodeStepCategory)) {
+          List<AdviserObtainment> adviserObtainments = planNode.getAdviserObtainments();
+          IdentityPlanNode updatedNode = (IdentityPlanNode) planNodeIDToUpdatedPlanNodes.get(planNode.getUuid());
+          if (updatedNode == null) {
+            // this means that the stage had failed before the node could start in the previous execution
+            continue;
+          }
+          planNodeIDToUpdatedPlanNodes.put(planNode.getUuid(),
+              updatedNode.withAdviserObtainments(adviserObtainments).withUseAdviserObtainments(true));
+        }
         continue;
       }
       if (executionMode == ExecutionMode.POST_EXECUTION_ROLLBACK) {
@@ -341,13 +353,6 @@ public class RollbackModeExecutionHelper {
 
   boolean isStageOrAncestorOfSomeStage(Node planNode) {
     StepCategory stepCategory = planNode.getStepCategory();
-    if (Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory)) {
-      return true;
-    }
-    // todo: once fork and strategy are divided in sub categories of step and stage, add that check as well
-    // parallel nodes and strategy nodes need to be plan nodes so that we don't take the advisor response from the
-    // previous execution. Previous execution's advisor response would be setting next step as something we dont want in
-    // rollback mode. We want the new advisors set in the Plan Node to be used
-    return Arrays.asList(StepCategory.FORK, StepCategory.STRATEGY).contains(stepCategory);
+    return Arrays.asList(StepCategory.PIPELINE, StepCategory.STAGES, StepCategory.STAGE).contains(stepCategory);
   }
 }

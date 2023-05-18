@@ -9,6 +9,7 @@ package io.harness.plan;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
@@ -119,18 +120,25 @@ public class IdentityPlanNode implements Node {
 
   public static IdentityPlanNode mapPlanNodeToIdentityNode(String newUuid, Node node, String nodeIdentifier,
       String nodeName, StepType stepType, String originalNodeExecutionUuid) {
-    return IdentityPlanNode.builder()
-        .uuid(newUuid != null ? newUuid : node.getUuid())
-        .name(nodeName)
-        .identifier(nodeIdentifier)
-        .group(node.getGroup())
-        .skipGraphType(node.getSkipGraphType())
-        .stepType(stepType)
-        .isSkipExpressionChain(node.isSkipExpressionChain())
-        .serviceName(node.getServiceName())
-        .stageFqn(node.getStageFqn())
-        .whenCondition(node.getWhenCondition())
-        .originalNodeExecutionId(originalNodeExecutionUuid)
-        .build();
+    PlanNode planNode = (PlanNode) node;
+    IdentityPlanNode idp = IdentityPlanNode.builder()
+                               .uuid(newUuid != null ? newUuid : node.getUuid())
+                               .name(nodeName)
+                               .identifier(nodeIdentifier)
+                               .group(node.getGroup())
+                               .skipGraphType(node.getSkipGraphType())
+                               .stepType(stepType)
+                               .isSkipExpressionChain(node.isSkipExpressionChain())
+                               .serviceName(node.getServiceName())
+                               .stageFqn(node.getStageFqn())
+                               .whenCondition(node.getWhenCondition())
+                               .originalNodeExecutionId(originalNodeExecutionUuid)
+                               .build();
+    List<AdviserObtainment> adviserObtainments =
+        planNode.getAdvisorObtainmentsForExecutionMode().get(ExecutionMode.PIPELINE_ROLLBACK);
+    if (EmptyPredicate.isNotEmpty(adviserObtainments)) {
+      return idp.withAdviserObtainments(adviserObtainments).withUseAdviserObtainments(true);
+    }
+    return idp;
   }
 }
