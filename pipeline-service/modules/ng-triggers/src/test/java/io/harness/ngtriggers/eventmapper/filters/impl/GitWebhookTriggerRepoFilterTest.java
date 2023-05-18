@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RAJENDRA_BAVISKAR;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,11 +27,13 @@ import static org.powermock.api.mockito.PowerMockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PRWebhookEvent;
+import io.harness.beans.PushWebhookEvent;
 import io.harness.beans.Repository;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.ngtriggers.NgTriggersTestHelper;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -120,6 +123,27 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                                               .sshURL("git@gitlab.gitlab:venkat/sample.git")
                                               .link("http://gitlab.gitlab/venkat/sample.git")
                                               .build();
+
+  private static Repository repository8 =
+      Repository.builder()
+          .httpURL("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .sshURL("ssh://git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest.git")
+          .link("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .build();
+
+  private static Repository repository9 =
+      Repository.builder()
+          .httpURL("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest1.git")
+          .sshURL("ssh://git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest1.git")
+          .link("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest1.git")
+          .build();
+
+  private static Repository repository10 =
+      Repository.builder()
+          .httpURL("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .sshURL("git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest.git")
+          .link("https://bitbucket.dev.harness.io/scm/har/deepakgitsynctest.git")
+          .build();
 
   static {
     TriggerDetails details1 =
@@ -252,10 +276,87 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
                            .build())
             .build();
 
+    ConnectorResponseDTO connectorResponseDTO6 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(BitbucketConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .url("ssh://git@bitbucket.dev.harness.io:7999")
+                                                .build())
+                           .orgIdentifier("org")
+                           .projectIdentifier("proj")
+                           .identifier("con6")
+                           .build())
+            .build();
+
+    TriggerDetails details4 =
+        TriggerDetails.builder()
+            .ngTriggerEntity(NGTriggerEntity.builder()
+                                 .identifier("details4")
+                                 .accountId("acc")
+                                 .orgIdentifier("org")
+                                 .projectIdentifier("proj")
+                                 .metadata(NGTriggerMetadata.builder()
+                                               .webhook(WebhookMetadata.builder()
+                                                            .type("BITBUCKET")
+                                                            .git(GitMetadata.builder()
+                                                                     .repoName("har/deepakgitsynctest.git")
+                                                                     .connectorIdentifier("con6")
+                                                                     .build())
+                                                            .build())
+                                               .build())
+                                 .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.BITBUCKET).build())
+                                .build())
+                    .build())
+            .build();
+
+    ConnectorResponseDTO connectorResponseDTO7 =
+        ConnectorResponseDTO.builder()
+            .connector(
+                ConnectorInfoDTO.builder()
+                    .connectorConfig(BitbucketConnectorDTO.builder()
+                                         .connectionType(GitConnectionType.REPO)
+                                         .url("ssh://git@bitbucket.dev.harness.io:7999/har/deepakgitsynctest.git")
+                                         .build())
+                    .orgIdentifier("org")
+                    .projectIdentifier("proj")
+                    .identifier("con7")
+                    .build())
+            .build();
+
+    TriggerDetails details5 =
+        TriggerDetails.builder()
+            .ngTriggerEntity(
+                NGTriggerEntity.builder()
+                    .identifier("details5")
+                    .accountId("acc")
+                    .orgIdentifier("org")
+                    .projectIdentifier("proj")
+                    .metadata(NGTriggerMetadata.builder()
+                                  .webhook(WebhookMetadata.builder()
+                                               .type("BITBUCKET")
+                                               .git(GitMetadata.builder().connectorIdentifier("con7").build())
+                                               .build())
+                                  .build())
+                    .build())
+            .ngTriggerConfigV2(
+                NGTriggerConfigV2.builder()
+                    .source(NGTriggerSourceV2.builder()
+                                .type(NGTriggerType.WEBHOOK)
+                                .spec(WebhookTriggerConfigV2.builder().type(WebhookTriggerType.BITBUCKET).build())
+                                .build())
+                    .build())
+            .build();
+
     triggerDetailsList = asList(details1, details2, details3);
-    triggerDetailsList1 = asList(details2, details3);
+    triggerDetailsList1 = asList(details2, details3, details4, details5);
     connectors = asList(connectorResponseDTO1, connectorResponseDTO2, connectorResponseDTO3);
-    connectors1 = asList(connectorResponseDTO4, connectorResponseDTO5);
+    connectors1 = asList(connectorResponseDTO4, connectorResponseDTO5, connectorResponseDTO6, connectorResponseDTO7);
   }
 
   @Before
@@ -322,6 +423,73 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
     triggerDetails = webhookEventMappingResponse.getTriggers();
     assertThat(triggerDetails.size()).isEqualTo(1);
     assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList.get(2));
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void applyRepoUrlFilterTest2() {
+    doReturn(connectors1).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("BITBUCKET").build())
+                    .webhookEvent(PushWebhookEvent.builder().repository(repository8).build())
+                    .repository(repository8)
+                    .build())
+            .details(triggerDetailsList1)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    List<TriggerDetails> triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(2);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList1.get(2));
+    assertThat(triggerDetails.get(1)).isEqualTo(triggerDetailsList1.get(3));
+
+    filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder()
+                                                       .accountId("acc")
+                                                       .createdAt(10L)
+                                                       .sourceRepoType("BITBUCKET")
+                                                       .build())
+                                    .webhookEvent(PushWebhookEvent.builder().repository(repository9).build())
+                                    .repository(repository9)
+                                    .build())
+            .details(triggerDetailsList1)
+            .build();
+
+    webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isTrue();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(0);
+
+    filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(WebhookPayloadData.builder()
+                                    .originalEvent(TriggerWebhookEvent.builder()
+                                                       .accountId("acc")
+                                                       .createdAt(10L)
+                                                       .sourceRepoType("BITBUCKET")
+                                                       .build())
+                                    .webhookEvent(PushWebhookEvent.builder().repository(repository10).build())
+                                    .repository(repository10)
+                                    .build())
+            .details(triggerDetailsList1)
+            .build();
+
+    webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(2);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList1.get(2));
+    assertThat(triggerDetails.get(1)).isEqualTo(triggerDetailsList1.get(3));
   }
 
   @Test
