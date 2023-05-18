@@ -11,8 +11,9 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -52,7 +53,7 @@ public class EcsBGRollbackRoute53DNSWeightStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetTimeoutMillis() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    doReturn(10).when(ecsStateHelper).getEcsStateTimeoutFromContext(any(), anyBoolean());
+    doReturn(10).when(ecsStateHelper).getEcsStateTimeoutFromContext(anyObject(), anyBoolean());
     assertThat(state.getTimeoutMillis(mockContext)).isEqualTo(10);
   }
 

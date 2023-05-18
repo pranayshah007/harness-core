@@ -16,9 +16,9 @@ import static io.harness.rule.OwnerRule.RAFAEL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -54,7 +54,6 @@ import io.harness.tasks.ResponseData;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -63,10 +62,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
 @OwnedBy(PIPELINE)
+@PrepareForTest(CriteriaEvaluator.class)
 public class JiraApprovalCallbackTest extends CategoryTest {
   @Mock private ApprovalInstanceService approvalInstanceService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
@@ -76,7 +77,6 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @Mock ILogStreamingStepClient iLogStreamingStepClient;
   @Mock NGErrorHelper ngErrorHelper;
   @InjectMocks private JiraApprovalCallback jiraApprovalCallback;
-  private MockedStatic<CriteriaEvaluator> aStatic;
   private static String accountId = "accountId";
   private static String orgIdentifier = "orgIdentifier";
   private static String projectIdentifier = "projectIdentifier";
@@ -84,7 +84,6 @@ public class JiraApprovalCallbackTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
     jiraApprovalCallback = spy(JiraApprovalCallback.builder().build());
     on(jiraApprovalCallback).set("approvalInstanceService", approvalInstanceService);
     on(jiraApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
@@ -93,15 +92,11 @@ public class JiraApprovalCallbackTest extends CategoryTest {
     on(jiraApprovalCallback).set("ngErrorHelper", ngErrorHelper);
   }
 
-  @After
-  public void cleanup() {
-    aStatic.close();
-  }
-
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testPush() {
+    MockedStatic<CriteriaEvaluator> aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
     aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
     on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
     Ambiance ambiance = Ambiance.newBuilder()
@@ -150,6 +145,7 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testPushUsingKryoWithoutReference() {
+    MockedStatic<CriteriaEvaluator> aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
     aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
     on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
     Ambiance ambiance = Ambiance.newBuilder()

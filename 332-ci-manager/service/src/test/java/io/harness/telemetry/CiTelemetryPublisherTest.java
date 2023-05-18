@@ -14,6 +14,7 @@ import static io.harness.telemetry.Destination.ALL;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -177,6 +178,6 @@ public class CiTelemetryPublisherTest extends CategoryTest {
     doReturn(accountList).when(telemetryPublisher).getAllAccounts();
 
     telemetryPublisher.recordTelemetry();
-    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), any(), anyMap(), any());
+    verify(telemetryReporter, times(0)).sendGroupEvent(anyString(), anyString(), anyObject(), anyMap(), anyObject());
   }
 }

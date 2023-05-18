@@ -11,7 +11,8 @@ import static io.harness.rule.OwnerRule.GEORGE;
 
 import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -32,9 +33,6 @@ import software.wings.persistence.AppContainer;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.FileService;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.google.inject.Inject;
 import java.util.Date;
 import org.junit.Test;
@@ -44,7 +42,7 @@ import org.mockito.Mock;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
-import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 public class PruneFileJobTest extends WingsBaseTest {
   @Mock private WingsPersistence wingsPersistence;
@@ -128,13 +126,12 @@ public class PruneFileJobTest extends WingsBaseTest {
     JobExecutionContext context = mock(JobExecutionContext.class);
     when(context.getJobDetail()).thenReturn(details(Base.class, ENTITY_ID, FileBucket.PLATFORMS));
 
-    ListAppender<ILoggingEvent> listAppender = initLogger(PruneFileJob.class);
+    Logger mockLogger = mock(Logger.class);
+    setStaticFieldValue(PruneFileJob.class, "log", mockLogger);
 
     job.execute(context);
 
-    assertThat(listAppender.list).hasSize(1);
-    assertThat(listAppender.list.get(0).getFormattedMessage())
-        .isEqualTo(String.format("Unsupported class [%s] was scheduled for pruning.", Base.class.getCanonicalName()));
+    verify(mockLogger, times(1)).error(any(String.class), matches(Base.class.getCanonicalName()));
     verify(fileService, times(0)).deleteAllFilesForEntity(ENTITY_ID, FileBucket.PLATFORMS);
     verify(jobScheduler, times(1)).deleteJob(ENTITY_ID, PruneFileJob.GROUP);
   }
@@ -168,13 +165,5 @@ public class PruneFileJobTest extends WingsBaseTest {
     job.execute(context);
 
     verify(jobScheduler, times(0)).deleteJob(ENTITY_ID, PruneFileJob.GROUP);
-  }
-
-  private <T> ListAppender<ILoggingEvent> initLogger(Class<T> aClass) {
-    Logger logger = (Logger) LoggerFactory.getLogger(aClass);
-    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-    listAppender.start();
-    logger.addAppender(listAppender);
-    return listAppender;
   }
 }

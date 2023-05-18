@@ -28,10 +28,11 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -219,7 +220,7 @@ public class EcsServiceRollbackTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetTimeoutMillis() {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    doReturn(10).when(mockEcsStateHelper).getEcsStateTimeoutFromContext(any(), anyBoolean());
+    doReturn(10).when(mockEcsStateHelper).getEcsStateTimeoutFromContext(anyObject(), anyBoolean());
     assertThat(ecsServiceRollback.getTimeoutMillis(mockContext)).isEqualTo(10);
   }
 }

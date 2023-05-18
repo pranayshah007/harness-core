@@ -22,7 +22,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -134,12 +133,16 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({TaskRequestsUtils.class})
 @OwnedBy(HarnessTeam.CDP)
 public class EcsStepCommonHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -212,23 +215,22 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse =
-          ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
+    TaskChainResponse taskChainResponse =
+        ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
 
-      aStatic.verify(
-          () -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()), times(1));
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
-      EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
-          (EcsGitFetchPassThroughData) taskChainResponse.getPassThroughData();
-      assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-      assertThat(ecsGitFetchPassThroughData.getInfrastructureOutcome())
-          .isEqualTo(EcsInfrastructureOutcome.builder().build());
-      assertNull(ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
-    }
+    EcsGitFetchPassThroughData ecsGitFetchPassThroughData =
+        (EcsGitFetchPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(ecsGitFetchPassThroughData.getInfrastructureOutcome())
+        .isEqualTo(EcsInfrastructureOutcome.builder().build());
+    assertNull(ecsGitFetchPassThroughData.getEcsS3ManifestFileConfigs());
   }
 
   @Test
@@ -275,22 +277,21 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse =
-          ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
+    TaskChainResponse taskChainResponse =
+        ecsStepCommonHelper.startChainLink(ecsStepExecutor, ambiance, stepElementParameters, ecsStepHelper);
 
-      aStatic.verify(
-          () -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()), times(1));
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
-      EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
-          (EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData();
+    EcsS3FetchPassThroughData ecsS3FetchPassThroughData =
+        (EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData();
 
-      assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-      assertThat(ecsS3FetchPassThroughData.getInfrastructureOutcome()).isEqualTo(infrastructureOutcome);
-    }
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(ecsS3FetchPassThroughData.getInfrastructureOutcome()).isEqualTo(infrastructureOutcome);
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -574,38 +575,35 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRolling(ecsStepExecutor, ambiance,
-          stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      EcsS3FetchRequest ecsS3FetchRequest =
-          EcsS3FetchRequest.builder()
-              .accountId(accountId)
-              .ecsServiceDefinitionS3FetchFileConfig(ecsS3ManifestFileConfigs.getEcsS3ServiceDefinitionFileConfig())
-              .ecsScalableTargetS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalableTargetFileConfigs())
-              .ecsScalingPolicyS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalingPolicyFileConfigs())
-              .shouldOpenLogStream(false)
-              .build();
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRolling(ecsStepExecutor, ambiance,
+        stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsS3FetchRequest ecsS3FetchRequest =
+        EcsS3FetchRequest.builder()
+            .accountId(accountId)
+            .ecsServiceDefinitionS3FetchFileConfig(ecsS3ManifestFileConfigs.getEcsS3ServiceDefinitionFileConfig())
+            .ecsScalableTargetS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalableTargetFileConfigs())
+            .ecsScalingPolicyS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalingPolicyFileConfigs())
+            .shouldOpenLogStream(false)
+            .build();
 
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                    .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
-                                    .parameters(new Object[] {ecsS3FetchRequest})
-                                    .build();
-      aStatic.verify(
-          ()
-              -> TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any()),
-          times(1));
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRequest})
+                                  .build();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
-      assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
-                     .getEcsOtherStoreContents()
-                     .getEcsTaskDefinitionFileContent())
-          .isEqualTo(fetchFilesResult.getFiles().get(0).getFileContent());
-    }
+    assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
+                   .getEcsOtherStoreContents()
+                   .getEcsTaskDefinitionFileContent())
+        .isEqualTo(fetchFilesResult.getFiles().get(0).getFileContent());
   }
 
   @Test
@@ -754,38 +752,35 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkBlueGreen(
-          ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData, () -> responseData);
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      EcsS3FetchRequest ecsS3FetchRequest =
-          EcsS3FetchRequest.builder()
-              .accountId(accountId)
-              .ecsServiceDefinitionS3FetchFileConfig(ecsS3ManifestFileConfigs.getEcsS3ServiceDefinitionFileConfig())
-              .ecsScalableTargetS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalableTargetFileConfigs())
-              .ecsScalingPolicyS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalingPolicyFileConfigs())
-              .shouldOpenLogStream(false)
-              .build();
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkBlueGreen(
+        ecsStepExecutor, ambiance, stepElementParameters, ecsGitFetchPassThroughData, () -> responseData);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsS3FetchRequest ecsS3FetchRequest =
+        EcsS3FetchRequest.builder()
+            .accountId(accountId)
+            .ecsServiceDefinitionS3FetchFileConfig(ecsS3ManifestFileConfigs.getEcsS3ServiceDefinitionFileConfig())
+            .ecsScalableTargetS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalableTargetFileConfigs())
+            .ecsScalingPolicyS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalingPolicyFileConfigs())
+            .shouldOpenLogStream(false)
+            .build();
 
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                    .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
-                                    .parameters(new Object[] {ecsS3FetchRequest})
-                                    .build();
-      aStatic.verify(
-          ()
-              -> TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any()),
-          times(1));
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRequest})
+                                  .build();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
-      assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
-                     .getEcsOtherStoreContents()
-                     .getEcsTaskDefinitionFileContent())
-          .isEqualTo(fetchFilesResult.getFiles().get(0).getFileContent());
-    }
+    assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
+                   .getEcsOtherStoreContents()
+                   .getEcsTaskDefinitionFileContent())
+        .isEqualTo(fetchFilesResult.getFiles().get(0).getFileContent());
   }
 
   @Test
@@ -861,38 +856,35 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .build();
     doReturn(content).when(engineExpressionService).renderExpression(any(), eq(content));
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkCanary(ecsStepExecutor, ambiance,
-          stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      EcsS3FetchRequest ecsS3FetchRequest =
-          EcsS3FetchRequest.builder()
-              .accountId(accountId)
-              .ecsServiceDefinitionS3FetchFileConfig(ecsS3ManifestFileConfigs.getEcsS3ServiceDefinitionFileConfig())
-              .ecsScalableTargetS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalableTargetFileConfigs())
-              .ecsScalingPolicyS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalingPolicyFileConfigs())
-              .shouldOpenLogStream(false)
-              .build();
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkCanary(ecsStepExecutor, ambiance,
+        stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    EcsS3FetchRequest ecsS3FetchRequest =
+        EcsS3FetchRequest.builder()
+            .accountId(accountId)
+            .ecsServiceDefinitionS3FetchFileConfig(ecsS3ManifestFileConfigs.getEcsS3ServiceDefinitionFileConfig())
+            .ecsScalableTargetS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalableTargetFileConfigs())
+            .ecsScalingPolicyS3FetchFileConfigs(ecsS3ManifestFileConfigs.getEcsS3ScalingPolicyFileConfigs())
+            .shouldOpenLogStream(false)
+            .build();
 
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                    .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
-                                    .parameters(new Object[] {ecsS3FetchRequest})
-                                    .build();
-      aStatic.verify(
-          ()
-              -> TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any()),
-          times(1));
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRequest})
+                                  .build();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
-      assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
-                     .getEcsOtherStoreContents()
-                     .getEcsTaskDefinitionFileContent())
-          .isEqualTo(fetchFilesResult.getFiles().get(0).getFileContent());
-    }
+    assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
+                   .getEcsOtherStoreContents()
+                   .getEcsTaskDefinitionFileContent())
+        .isEqualTo(fetchFilesResult.getFiles().get(0).getFileContent());
   }
 
   @Test
@@ -1139,19 +1131,18 @@ public class EcsStepCommonHelperTest extends CategoryTest {
     EcsPrepareRollbackDataPassThroughData ecsPrepareRollbackDataPassThroughData =
         EcsPrepareRollbackDataPassThroughData.builder().build();
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse = ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsCommandRequest,
-          ambiance, ecsPrepareRollbackDataPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.queueEcsTask(stepElementParameters, ecsCommandRequest,
+        ambiance, ecsPrepareRollbackDataPassThroughData, false, TaskType.ECS_COMMAND_TASK_NG);
 
-      aStatic.verify(
-          () -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()), times(1));
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
-      assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-      assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsPrepareRollbackDataPassThroughData.class);
-    }
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(EcsPrepareRollbackDataPassThroughData.class);
   }
 
   @Test
@@ -1295,40 +1286,37 @@ public class EcsStepCommonHelperTest extends CategoryTest {
 
     doReturn(EnvironmentType.PROD).when(stepHelper).getEnvironmentType(ambiance);
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      EcsStepHelperImpl ecsStepHelperImpl = new EcsStepHelperImpl();
-      ecsStepCommonHelper.startChainLinkEcsRunTask(ecsStepExecutor, ambiance, stepParameters, ecsStepHelperImpl);
+    EcsStepHelperImpl ecsStepHelperImpl = new EcsStepHelperImpl();
+    ecsStepCommonHelper.startChainLinkEcsRunTask(ecsStepExecutor, ambiance, stepParameters, ecsStepHelperImpl);
 
-      EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig = EcsS3FetchFileConfig.builder()
-                                                                    .s3StoreDelegateConfig(s3StoreDelegateConfig)
-                                                                    .succeedIfFileNotFound(false)
-                                                                    .build();
+    EcsS3FetchFileConfig runTaskDefinitionS3FetchFileConfig = EcsS3FetchFileConfig.builder()
+                                                                  .s3StoreDelegateConfig(s3StoreDelegateConfig)
+                                                                  .succeedIfFileNotFound(false)
+                                                                  .build();
 
-      EcsS3FetchFileConfig runTaskRequestDefinitionS3FetchFileConfig = EcsS3FetchFileConfig.builder()
-                                                                           .s3StoreDelegateConfig(s3StoreDelegateConfig)
-                                                                           .succeedIfFileNotFound(false)
-                                                                           .build();
+    EcsS3FetchFileConfig runTaskRequestDefinitionS3FetchFileConfig = EcsS3FetchFileConfig.builder()
+                                                                         .s3StoreDelegateConfig(s3StoreDelegateConfig)
+                                                                         .succeedIfFileNotFound(false)
+                                                                         .build();
 
-      EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest =
-          EcsS3FetchRunTaskRequest.builder()
-              .runTaskDefinitionS3FetchFileConfig(runTaskDefinitionS3FetchFileConfig)
-              .runTaskRequestDefinitionS3FetchFileConfig(runTaskRequestDefinitionS3FetchFileConfig)
-              .shouldOpenLogStream(false)
-              .build();
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                    .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
-                                    .parameters(new Object[] {ecsS3FetchRunTaskRequest})
-                                    .build();
-      aStatic.verify(
-          ()
-              -> TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any()),
-          times(1));
-    }
+    EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest =
+        EcsS3FetchRunTaskRequest.builder()
+            .runTaskDefinitionS3FetchFileConfig(runTaskDefinitionS3FetchFileConfig)
+            .runTaskRequestDefinitionS3FetchFileConfig(runTaskRequestDefinitionS3FetchFileConfig)
+            .shouldOpenLogStream(false)
+            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRunTaskRequest})
+                                  .build();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
   }
 
   @Test
@@ -1396,34 +1384,31 @@ public class EcsStepCommonHelperTest extends CategoryTest {
                                     .ecsTaskDefinitionFetchFilesResult(fetchFilesResult)
                                     .taskStatus(TaskStatus.SUCCESS)
                                     .build();
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRunTask(ecsStepExecutor, ambiance,
-          stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.executeNextLinkRunTask(ecsStepExecutor, ambiance,
+        stepElementParameters, ecsGitFetchPassThroughData, () -> responseData, ecsStepHelper);
 
-      EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest =
-          EcsS3FetchRunTaskRequest.builder()
-              .runTaskRequestDefinitionS3FetchFileConfig(runTaskRequestDefinitionS3FetchFileConfig)
-              .shouldOpenLogStream(false)
-              .build();
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                    .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
-                                    .parameters(new Object[] {ecsS3FetchRunTaskRequest})
-                                    .build();
-      aStatic.verify(
-          ()
-              -> TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any()),
-          times(1));
+    EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest =
+        EcsS3FetchRunTaskRequest.builder()
+            .runTaskRequestDefinitionS3FetchFileConfig(runTaskRequestDefinitionS3FetchFileConfig)
+            .shouldOpenLogStream(false)
+            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.ECS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {ecsS3FetchRunTaskRequest})
+                                  .build();
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
-      assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
-                     .getEcsOtherStoreRunTaskContent()
-                     .getRunTaskDefinitionFileContent())
-          .isEqualTo(ecsGitFetchPassThroughData.getTaskDefinitionHarnessFileContent());
-    }
+    assertThat(((EcsS3FetchPassThroughData) taskChainResponse.getPassThroughData())
+                   .getEcsOtherStoreRunTaskContent()
+                   .getRunTaskDefinitionFileContent())
+        .isEqualTo(ecsGitFetchPassThroughData.getTaskDefinitionHarnessFileContent());
   }
 
   @Test(expected = InvalidRequestException.class)
@@ -1441,15 +1426,14 @@ public class EcsStepCommonHelperTest extends CategoryTest {
   public void testGetGitFetchFileRunTaskResponse() {
     TaskRequest taskRequest = TaskRequest.getDefaultInstance();
     EcsGitFetchPassThroughData ecsGitFetchPassThroughData = EcsGitFetchPassThroughData.builder().build();
-    try (MockedStatic<TaskRequestsUtils> stepUtilsStaticMock = mockStatic(TaskRequestsUtils.class)) {
-      stepUtilsStaticMock
-          .when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(taskRequest);
-      TaskChainResponse taskChainResponse = ecsStepCommonHelper.getGitFetchFileRunTaskResponse(
-          ambiance, false, stepElementParameters, ecsGitFetchPassThroughData, null, null);
-      assertThat(taskChainResponse.getTaskRequest()).isEqualTo(taskRequest);
-      assertThat(taskChainResponse.isChainEnd()).isFalse();
-      assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsGitFetchPassThroughData);
-    }
+    MockedStatic<TaskRequestsUtils> stepUtilsStaticMock = mockStatic(TaskRequestsUtils.class);
+    stepUtilsStaticMock
+        .when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(taskRequest);
+    TaskChainResponse taskChainResponse = ecsStepCommonHelper.getGitFetchFileRunTaskResponse(
+        ambiance, false, stepElementParameters, ecsGitFetchPassThroughData, null, null);
+    assertThat(taskChainResponse.getTaskRequest()).isEqualTo(taskRequest);
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
+    assertThat(taskChainResponse.getPassThroughData()).isEqualTo(ecsGitFetchPassThroughData);
   }
 }

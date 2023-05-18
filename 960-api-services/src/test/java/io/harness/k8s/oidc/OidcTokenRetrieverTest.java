@@ -13,7 +13,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
@@ -89,7 +90,7 @@ public class OidcTokenRetrieverTest extends CategoryTest {
   @Owner(developers = OwnerRule.ANSHUL)
   @Category(UnitTests.class)
   public void testGetAccessToken() throws Exception {
-    Mockito.doReturn(null).when(spyOidcTokenRetriever).fetchAccessTokenUsingGrantType(any(), any());
+    Mockito.doReturn(null).when(spyOidcTokenRetriever).fetchAccessTokenUsingGrantType(Matchers.any(), Matchers.any());
 
     spyOidcTokenRetriever.getAccessToken(OidcTokenRequestData.builder()
                                              .clientId("clientId")
@@ -101,7 +102,8 @@ public class OidcTokenRetrieverTest extends CategoryTest {
                                              .build());
 
     ArgumentCaptor<OidcTokenRequestData> captor = ArgumentCaptor.forClass(OidcTokenRequestData.class);
-    Mockito.verify(spyOidcTokenRetriever, Mockito.times(1)).fetchAccessTokenUsingGrantType(any(), captor.capture());
+    Mockito.verify(spyOidcTokenRetriever, Mockito.times(1))
+        .fetchAccessTokenUsingGrantType(Matchers.any(), captor.capture());
     OidcTokenRequestData tokenRequestData = captor.getValue();
 
     assertThat(tokenRequestData.getClientId()).isEqualTo("clientId");
@@ -123,7 +125,7 @@ public class OidcTokenRetrieverTest extends CategoryTest {
     oidcTokenRetriever.fetchAccessTokenUsingGrantType(
         service, OidcTokenRequestData.builder().grantType(OidcGrantType.client_credentials.name()).build());
     Mockito.verify(service, Mockito.times(1)).getAccessTokenClientCredentialsGrant();
-    Mockito.verify(service, Mockito.never()).getAccessTokenPasswordGrant(any(), any());
+    Mockito.verify(service, Mockito.never()).getAccessTokenPasswordGrant(Matchers.any(), Matchers.any());
   }
 
   @Test

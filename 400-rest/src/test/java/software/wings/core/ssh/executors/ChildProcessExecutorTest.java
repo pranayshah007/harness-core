@@ -10,7 +10,6 @@ package software.wings.core.ssh.executors;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.PRABU;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -20,15 +19,11 @@ import io.harness.shell.ChildProcessStopper;
 
 import software.wings.WingsBaseTest;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import java.io.File;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
-import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 @OwnedBy(CDC)
@@ -38,21 +33,18 @@ public class ChildProcessExecutorTest extends WingsBaseTest {
   private ProcessExecutor processExecutor = Mockito.mock(ProcessExecutor.class);
   private ChildProcessStopper childProcessStopper =
       new ChildProcessStopper(FILE_NAME, workingDirectory, processExecutor);
-  private ListAppender<ILoggingEvent> listAppender;
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testExecuteScript() throws IllegalAccessException {
     Process process = mock(Process.class);
-    Logger logger = (Logger) LoggerFactory.getLogger(ChildProcessStopper.class);
-    listAppender = new ListAppender<>();
-    listAppender.start();
-    logger.addAppender(listAppender);
+    Logger mockLogger = mock(Logger.class);
+    setStaticFieldValue(ChildProcessStopper.class, "log", mockLogger);
     childProcessStopper.stop(process);
     Mockito.verify(processExecutor).command("/bin/bash", "kill-" + FILE_NAME);
-    assertThat(listAppender.list.get(0).getFormattedMessage())
-        .isEqualTo(String.format("Kill child processes command: %s",
+    Mockito.verify(mockLogger)
+        .info("Kill child processes command: {}",
             "list_descendants ()\n"
                 + "{\n"
                 + "  local children=$(ps -ef | grep -v grep | grep $1 | awk '{print $2}')\n"
@@ -64,7 +56,6 @@ public class ChildProcessExecutorTest extends WingsBaseTest {
                 + "  done\n"
                 + "}\n"
                 + "\n"
-                + "list_descendants $(ps -ef | grep -v grep | grep -m1 FILE | awk '{print $2}')"));
-    assertThat(listAppender.list.get(0).getLevel()).isEqualTo(Level.INFO);
+                + "list_descendants $(ps -ef | grep -v grep | grep -m1 FILE | awk '{print $2}')");
   }
 }

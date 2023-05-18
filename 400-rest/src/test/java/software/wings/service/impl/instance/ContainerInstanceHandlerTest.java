@@ -53,12 +53,13 @@ import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyMapOf;
+import static org.mockito.Matchers.anySet;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -1352,7 +1353,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
     reset(instanceService);
     doReturn(Sets.newHashSet("controllerName"))
         .when(containerSync)
-        .getControllerNames(any(ContainerInfrastructureMapping.class), anyMap(), any());
+        .getControllerNames(any(ContainerInfrastructureMapping.class), anyMapOf(String.class, String.class), any());
     doReturn(getInframapping(InfrastructureMappingType.GCP_KUBERNETES.name()))
         .when(infraMappingService)
         .get(any(), any());
@@ -1368,7 +1369,7 @@ public class ContainerInstanceHandlerTest extends WingsBaseTest {
                                         .collect(Collectors.toList()))
                  .build())
         .when(containerSync)
-        .getInstances(any(ContainerInfrastructureMapping.class), anyList());
+        .getInstances(any(ContainerInfrastructureMapping.class), anyListOf(ContainerMetadata.class));
 
     containerInstanceHandler.handleNewDeployment(
         singletonList(deploymentSummary), false, OnDemandRollbackInfo.builder().build());

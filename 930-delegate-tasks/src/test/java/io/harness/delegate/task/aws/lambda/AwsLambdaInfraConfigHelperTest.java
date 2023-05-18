@@ -31,9 +31,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(AwsLambdaInfraConfigHelper.class)
 @OwnedBy(CDP)
 public class AwsLambdaInfraConfigHelperTest extends CategoryTest {
   @InjectMocks AwsLambdaInfraConfigHelper awsLambdaInfraConfigHelper;

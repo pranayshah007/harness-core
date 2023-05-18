@@ -25,9 +25,9 @@ import static software.wings.beans.loginSettings.LoginSettingsConstants.SAML_SSO
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -286,7 +286,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
     ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
     LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
     assertThat(createdLdapSetting.getConnectionSettings().getPasswordType()).isEqualTo(LdapConnectionSettings.SECRET);
   }
@@ -301,7 +302,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
     LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
     assertThat(createdLdapSetting.getConnectionSettings().getPasswordType())
         .isEqualTo(LdapConnectionSettings.INLINE_SECRET);
@@ -317,7 +319,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
     LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
     assertThat(createdLdapSetting.getConnectionSettings().getBindPassword()).isEqualTo(LdapConstants.MASKED_STRING);
     ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
@@ -336,7 +339,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList(encryptedDataDetail);
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
     ldapSettings.getConnectionSettings().setBindPassword("randomPassword");
     ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
@@ -356,7 +360,8 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
     ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
     ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyList(), eq(false))).thenReturn(null);
+    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+        .thenReturn(null);
     ssoSettingService.createLdapSettings(ldapSettings);
     ldapSettings.getConnectionSettings().setBindPassword("bindPassword");
     LdapSettings updatedLdapSetting = ssoSettingService.updateLdapSettings(ldapSettings);

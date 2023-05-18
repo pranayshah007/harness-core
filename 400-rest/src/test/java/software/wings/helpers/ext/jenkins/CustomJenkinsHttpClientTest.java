@@ -10,8 +10,7 @@ package software.wings.helpers.ext.jenkins;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.any;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -28,11 +27,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(HttpClientBuilder.class)
+@PowerMockIgnore({"javax.net.ssl.*", "javax.security.auth.x500.X500Principal"})
 public class CustomJenkinsHttpClientTest extends CategoryTest {
-  HttpClientBuilder httpClientBuilder = mock(HttpClientBuilder.class);
+  HttpClientBuilder httpClientBuilder = PowerMockito.mock(HttpClientBuilder.class);
   ArgumentCaptor<HttpHost> proxyHostCaptor = ArgumentCaptor.forClass(HttpHost.class);
   ArgumentCaptor<CredentialsProvider> credsProviderCaptor = ArgumentCaptor.forClass(CredentialsProvider.class);
   private static final String JENKINS_URL = "https://jenkins.test.com";

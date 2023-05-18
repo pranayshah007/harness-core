@@ -27,10 +27,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @Slf4j
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
 public class IteratorExecutionHandlerImplTest extends CategoryTest {
   private static final String iteratorConfigPath = System.getProperty("user.dir");
   private static final String iteratorConfigFile = iteratorConfigPath + "/iterator_config.json";

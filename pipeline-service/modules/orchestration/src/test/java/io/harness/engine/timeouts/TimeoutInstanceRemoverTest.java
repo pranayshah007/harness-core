@@ -12,12 +12,12 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyList;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -60,7 +60,7 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
 
     timeoutInstanceRemover.onNodeStatusUpdate(nodeUpdateInfo);
 
-    verifyNoInteractions(timeoutEngine);
+    verifyZeroInteractions(timeoutEngine);
   }
 
   @Test
@@ -72,7 +72,7 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
 
     timeoutInstanceRemover.onNodeStatusUpdate(nodeUpdateInfo);
 
-    verifyNoInteractions(timeoutEngine);
+    verifyZeroInteractions(timeoutEngine);
   }
 
   @Test

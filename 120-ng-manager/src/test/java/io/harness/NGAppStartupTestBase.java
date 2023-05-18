@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.NextGenApplication;
 import io.harness.ng.NextGenConfiguration;
+import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.rule.Owner;
 
 import com.mongodb.ServerAddress;
@@ -32,10 +33,14 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({PmsSdkModule.class})
+@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.management.*"})
 public class NGAppStartupTestBase extends CategoryTest {
   public static MongoServer MONGO_SERVER;
   public static DropwizardTestSupport<NextGenConfiguration> SUPPORT;

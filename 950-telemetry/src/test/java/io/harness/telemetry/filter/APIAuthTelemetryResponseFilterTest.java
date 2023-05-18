@@ -52,7 +52,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @OwnedBy(PL)
 @RunWith(MockitoJUnitRunner.class)
@@ -115,7 +115,7 @@ public class APIAuthTelemetryResponseFilterTest extends CategoryTest {
 
     filter.filter(containerRequestContext, containerResponseContext);
 
-    Mockito.verifyNoInteractions(telemetryReporter);
+    Mockito.verifyZeroInteractions(telemetryReporter);
   }
 
   @Test
@@ -126,7 +126,7 @@ public class APIAuthTelemetryResponseFilterTest extends CategoryTest {
 
     filter.filter(containerRequestContext, containerResponseContext);
 
-    Mockito.verifyNoInteractions(telemetryReporter);
+    Mockito.verifyZeroInteractions(telemetryReporter);
   }
 
   @Test
@@ -137,7 +137,7 @@ public class APIAuthTelemetryResponseFilterTest extends CategoryTest {
 
     filter.filter(containerRequestContext, containerResponseContext);
 
-    Mockito.verifyNoInteractions(telemetryReporter);
+    Mockito.verifyZeroInteractions(telemetryReporter);
   }
 
   @Test

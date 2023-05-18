@@ -9,8 +9,6 @@ package io.harness.engine.pms.resume.publisher;
 
 import static io.harness.rule.OwnerRule.SAHIL;
 
-import static org.mockito.Mockito.mock;
-
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.execution.NodeExecution;
@@ -22,9 +20,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(NodeExecution.class)
 public class ResumeMetadataTest extends CategoryTest {
   @Before
   public void setup() {
@@ -35,7 +36,7 @@ public class ResumeMetadataTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testIfStepParametersSentAreResolvedOne() {
-    NodeExecution nodeExecution = mock(NodeExecution.class);
+    NodeExecution nodeExecution = PowerMockito.mock(NodeExecution.class);
     ResumeMetadata.fromNodeExecution(nodeExecution);
     Mockito.verify(nodeExecution).getUuid();
     Mockito.verify(nodeExecution).getMode();

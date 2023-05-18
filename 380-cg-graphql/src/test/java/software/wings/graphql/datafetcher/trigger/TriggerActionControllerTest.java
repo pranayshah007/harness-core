@@ -77,8 +77,8 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -564,7 +564,7 @@ public class TriggerActionControllerTest extends CategoryTest {
             .action(QLTriggerActionInput.builder().artifactSelections(asList(qlArtifactSelectionInput)).build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(null);
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(null);
 
     triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"));
   }
@@ -607,9 +607,9 @@ public class TriggerActionControllerTest extends CategoryTest {
     Mockito.doReturn(Type.ARTIFACT_SOURCE)
         .when(triggerActionController)
         .validateAndResolveFromTriggeringArtifactArtifactSelectionType(
-            ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
+            Matchers.any(QLCreateOrUpdateTriggerInput.class));
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection returnedArtifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -649,9 +649,9 @@ public class TriggerActionControllerTest extends CategoryTest {
     Mockito.doReturn(Type.PIPELINE_SOURCE)
         .when(triggerActionController)
         .validateAndResolveFromTriggeringPipelineArtifactSelectionType(
-            ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
+            Matchers.any(QLCreateOrUpdateTriggerInput.class));
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection returnedArtifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -690,9 +690,9 @@ public class TriggerActionControllerTest extends CategoryTest {
 
     Mockito.doReturn(Type.LAST_COLLECTED)
         .when(triggerActionController)
-        .validateAndResolveLastCollectedArtifactSelectionType(ArgumentMatchers.any(QLArtifactSelectionInput.class));
+        .validateAndResolveLastCollectedArtifactSelectionType(Matchers.any(QLArtifactSelectionInput.class));
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection returnedArtifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -732,10 +732,9 @@ public class TriggerActionControllerTest extends CategoryTest {
     Mockito.doReturn(Type.WEBHOOK_VARIABLE)
         .when(triggerActionController)
         .validateAndResolveFromPayloadSourceArtifactSelectionType(
-            ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class),
-            ArgumentMatchers.any(QLArtifactSelectionInput.class));
+            Matchers.any(QLCreateOrUpdateTriggerInput.class), Matchers.any(QLArtifactSelectionInput.class));
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection returnedArtifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -774,10 +773,9 @@ public class TriggerActionControllerTest extends CategoryTest {
 
     Mockito.doReturn(Type.LAST_DEPLOYED)
         .when(triggerActionController)
-        .validateAndResolveLastDeployedPipelineArtifactSelectionType(
-            ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
+        .validateAndResolveLastDeployedPipelineArtifactSelectionType(Matchers.any(QLCreateOrUpdateTriggerInput.class));
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection returnedArtifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -816,10 +814,9 @@ public class TriggerActionControllerTest extends CategoryTest {
 
     Mockito.doReturn(Type.LAST_DEPLOYED)
         .when(triggerActionController)
-        .validateAndResolveLastDeployedWorkflowArtifactSelectionType(
-            ArgumentMatchers.any(QLCreateOrUpdateTriggerInput.class));
+        .validateAndResolveLastDeployedWorkflowArtifactSelectionType(Matchers.any(QLCreateOrUpdateTriggerInput.class));
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection returnedArtifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -896,9 +893,7 @@ public class TriggerActionControllerTest extends CategoryTest {
     QLCreateOrUpdateTriggerInput qlCreateOrUpdateTriggerInput =
         QLCreateOrUpdateTriggerInput.builder().action(qlTriggerActionInput).applicationId("appId").build();
 
-    Mockito
-        .when(pipelineService.readPipeline(
-            ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean()))
+    Mockito.when(pipelineService.readPipeline(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean()))
         .thenReturn(null);
 
     triggerActionController.validatePipeline(qlCreateOrUpdateTriggerInput, "pipelineId");
@@ -912,9 +907,7 @@ public class TriggerActionControllerTest extends CategoryTest {
     QLCreateOrUpdateTriggerInput qlCreateOrUpdateTriggerInput =
         QLCreateOrUpdateTriggerInput.builder().action(qlTriggerActionInput).applicationId("appId").build();
 
-    Mockito
-        .when(pipelineService.readPipeline(
-            ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean()))
+    Mockito.when(pipelineService.readPipeline(Matchers.anyString(), Matchers.anyString(), Matchers.anyBoolean()))
         .thenReturn(Pipeline.builder().appId("appId2").build());
 
     triggerActionController.validatePipeline(qlCreateOrUpdateTriggerInput, "pipelineId");
@@ -935,7 +928,7 @@ public class TriggerActionControllerTest extends CategoryTest {
             .action(QLTriggerActionInput.builder().artifactSelections(asList(qlArtifactSelectionInput)).build())
             .build();
 
-    when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(null);
+    when(serviceResourceService.get(Matchers.anyString())).thenReturn(null);
     assertThatThrownBy(()
                            -> triggerActionController.resolveArtifactSelections(
                                qlCreateOrUpdateTriggerInput, Collections.singletonList("S1")))
@@ -966,7 +959,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     ArtifactSelection artifactSelection =
         triggerActionController.resolveArtifactSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"))
@@ -990,8 +983,7 @@ public class TriggerActionControllerTest extends CategoryTest {
     QLCreateOrUpdateTriggerInput qlCreateOrUpdateTriggerInput =
         QLCreateOrUpdateTriggerInput.builder().action(qlTriggerActionInput).applicationId("appId").build();
 
-    Mockito.when(workflowService.readWorkflow(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
-        .thenReturn(null);
+    Mockito.when(workflowService.readWorkflow(Matchers.anyString(), Matchers.anyString())).thenReturn(null);
 
     triggerActionController.validateWorkflow(qlCreateOrUpdateTriggerInput, "workflowId");
   }
@@ -1008,7 +1000,7 @@ public class TriggerActionControllerTest extends CategoryTest {
     QLCreateOrUpdateTriggerInput qlCreateOrUpdateTriggerInput =
         QLCreateOrUpdateTriggerInput.builder().action(qlTriggerActionInput).applicationId("appId").build();
 
-    when(workflowService.readWorkflow(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+    when(workflowService.readWorkflow(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(aWorkflow().appId("appId2").build());
 
     triggerActionController.validateWorkflow(qlCreateOrUpdateTriggerInput, "workflowId");
@@ -1058,7 +1050,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     assertThatThrownBy(()
                            -> triggerActionController.resolveArtifactSelections(
@@ -1147,7 +1139,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
     when(workflowService.readWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(null);
 
     assertThatThrownBy(
@@ -1206,7 +1198,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+    Mockito.when(serviceResourceService.get(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(Mockito.mock(Service.class));
     when(pipelineService.readPipeline(APP_ID, PIPELINE_ID, false)).thenReturn(null);
 
@@ -1270,7 +1262,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     assertThatThrownBy(
         ()
@@ -1305,7 +1297,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
 
     assertThatThrownBy(
         ()
@@ -1340,7 +1332,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(Mockito.mock(Service.class));
+    Mockito.when(serviceResourceService.get(Matchers.anyString())).thenReturn(Mockito.mock(Service.class));
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(CustomArtifactStream.builder().build());
 
     assertThatThrownBy(
@@ -1367,7 +1359,7 @@ public class TriggerActionControllerTest extends CategoryTest {
             .action(QLTriggerActionInput.builder().manifestSelections(asList(qlManifestSelectionInput)).build())
             .build();
 
-    when(serviceResourceService.get(ArgumentMatchers.anyString())).thenReturn(null);
+    when(serviceResourceService.get(Matchers.anyString())).thenReturn(null);
     triggerActionController.resolveManifestSelections(qlCreateOrUpdateTriggerInput, Collections.singletonList("S1"));
   }
 
@@ -1641,7 +1633,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+    Mockito.when(serviceResourceService.get(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(Mockito.mock(Service.class));
     when(pipelineService.readPipeline(APP_ID, PIPELINE_ID, false)).thenReturn(Pipeline.builder().appId(APP_ID).build());
 
@@ -1724,7 +1716,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+    Mockito.when(serviceResourceService.get(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(Mockito.mock(Service.class));
     when(workflowService.readWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(aWorkflow().appId(APP_ID).build());
 
@@ -1807,7 +1799,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+    Mockito.when(serviceResourceService.get(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(Mockito.mock(Service.class));
     when(workflowService.readWorkflow(APP_ID, WORKFLOW_ID)).thenReturn(null);
 
@@ -1841,7 +1833,7 @@ public class TriggerActionControllerTest extends CategoryTest {
                            .build())
             .build();
 
-    Mockito.when(serviceResourceService.get(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+    Mockito.when(serviceResourceService.get(Matchers.anyString(), Matchers.anyString()))
         .thenReturn(Mockito.mock(Service.class));
     when(pipelineService.readPipeline(APP_ID, PIPELINE_ID, false)).thenReturn(null);
 

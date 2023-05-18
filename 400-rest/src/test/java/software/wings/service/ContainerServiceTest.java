@@ -17,9 +17,10 @@ import static software.wings.utils.WingsTestConstants.ECS_SERVICE_NAME;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -171,17 +172,17 @@ public class ContainerServiceTest extends WingsBaseTest {
     when(kubernetesContainerService.listControllers(kubernetesConfig))
         .thenReturn((List) singletonList(replicationController));
     when(kubernetesContainerService.getController(eq(kubernetesConfig), anyString())).thenReturn(replicationController);
-    when(kubernetesContainerService.getServices(eq(kubernetesConfig), any()))
+    when(kubernetesContainerService.getServices(eq(kubernetesConfig), anyObject()))
         .thenReturn(singletonList(kubernetesService));
-    when(kubernetesContainerService.getRunningPodsWithLabels(eq(kubernetesConfig), anyString(), any()))
+    when(kubernetesContainerService.getRunningPodsWithLabels(eq(kubernetesConfig), anyString(), anyObject()))
         .thenReturn(singletonList(pod));
-    when(kubernetesContainerService.getControllers(eq(kubernetesConfig), any()))
+    when(kubernetesContainerService.getControllers(eq(kubernetesConfig), anyObject()))
         .thenReturn((List) singletonList(replicationController));
     when(kubernetesContainerService.getControllerPodCount(eq(kubernetesConfig), anyString()))
         .thenReturn(Optional.of(2));
     when(kubernetesContainerService.getControllerPodCount(any(ReplicationController.class))).thenReturn(2);
     when(kubernetesContainerService.getPodTemplateSpec(replicationController)).thenReturn(podTemplateSpec);
-    doReturn(null).when(encryptionService).decrypt(eq(kubernetesClusterConfig), any(), eq(false));
+    doReturn(null).when(encryptionService).decrypt(eq(kubernetesClusterConfig), anyObject(), eq(false));
 
     Service ecsService = new Service();
     ecsService.setServiceName(ECS_SERVICE_NAME);
@@ -196,9 +197,9 @@ public class ContainerServiceTest extends WingsBaseTest {
     when(awsClusterService.getServices(
              Regions.US_EAST_1.getName(), awsSettingAttribute.toDTO(), Collections.emptyList(), CLUSTER_NAME))
         .thenReturn(singletonList(ecsService));
-    when(awsHelperService.validateAndGetAwsConfig(eq(awsSettingAttribute.toDTO()), any(), eq(false)))
+    when(awsHelperService.validateAndGetAwsConfig(eq(awsSettingAttribute.toDTO()), anyObject(), eq(false)))
         .thenReturn(awsConfig);
-    when(awsHelperService.listTasks(eq("us-east-1"), eq(awsConfig), any(), any(), eq(false)))
+    when(awsHelperService.listTasks(eq("us-east-1"), eq(awsConfig), anyObject(), anyObject(), eq(false)))
         .thenReturn(listTasksResult);
     when(listTasksResult.getTaskArns()).thenReturn(emptyList());
   }
