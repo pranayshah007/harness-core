@@ -28,6 +28,7 @@ import com.amazonaws.auth.policy.Action;
 import com.amazonaws.auth.policy.Policy;
 import com.amazonaws.auth.policy.Resource;
 import com.amazonaws.auth.policy.Statement;
+import com.amazonaws.services.costandusagereport.model.AWSCostAndUsageReportException;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.identitymanagement.model.AmazonIdentityManagementException;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
@@ -186,6 +187,9 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .errorSummary(ex.getMessage())
           .testedAt(Instant.now().toEpochMilli())
           .build();
+    } catch (AWSCostAndUsageReportException ex) {
+      // CCM-12474: Handling error and declaring connector success temporarily, AWS CUR API 404
+      log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
     } catch (Exception ex) {
       // These are unknown errors, they should be identified over time and parsed correctly
       log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
