@@ -527,7 +527,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     retryAbleTaskExecutor.execute(
             ()
                     -> cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-            executionLogCallback, log, retryPolicy, () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatusNG(cfRequestConfig, executionLogCallback));
+            executionLogCallback, log, retryPolicy, () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

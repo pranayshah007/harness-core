@@ -781,7 +781,7 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
-  public boolean checkUnsettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig,
+  public boolean checkUnsettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig,
                                                                LogCallback executionLogCallback) throws PivotalClientApiException {
     ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
     if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {

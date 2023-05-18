@@ -571,7 +571,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     retryAbleTaskExecutor.execute(
         ()
             -> cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy, () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatusNG(cfRequestConfig, executionLogCallback));
+        executionLogCallback, log, retryPolicy, () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
   }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,

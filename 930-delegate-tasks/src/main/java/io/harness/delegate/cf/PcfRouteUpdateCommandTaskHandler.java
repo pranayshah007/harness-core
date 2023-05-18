@@ -440,7 +440,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
     retryAbleTaskExecutor.execute(
             ()
                     -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatusNG(cfRequestConfig, executionLogCallback));
+            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
