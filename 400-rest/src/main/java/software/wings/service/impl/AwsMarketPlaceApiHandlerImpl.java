@@ -76,6 +76,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
   private final String AWS_FREE_TRIAL_DIMENSION = "AWSMPFreeTrial";
+  private final String HARNESS_TEST_2_PRODUCT_CODE = "9g3jcw6iic4tpylipcti8vwcx";
   private final Integer MINIMUM_DIMENSION_V2_LENGTH = 3;
   private final String KILO_CONVERSION = "K";
   private final String MILLION_CONVERSION = "M";
@@ -132,6 +133,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceSrmProductCode());
     awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCdProductCode());
     awsMarketPlaceV2ProductCodes.add(marketPlaceConfig.getAwsMarketPlaceCcmProductCode());
+    awsMarketPlaceV2ProductCodes.add(HARNESS_TEST_2_PRODUCT_CODE);
 
     if (!marketPlaceConfig.getAwsMarketPlaceProductCode().equals(productCode)
         && !marketPlaceConfig.getAwsMarketPlaceCeProductCode().equals(productCode)
@@ -336,7 +338,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     return shouldManuallyProvision;
   }
 
-  private boolean isDimensionV2Provisionable(String dimension, Integer quantity) {
+  public boolean isDimensionV2Provisionable(String dimension, Integer quantity) {
     boolean isProvisionReady = false;
     Edition plan = licenseService.getDimensionPlan(dimension);
 

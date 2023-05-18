@@ -122,6 +122,7 @@ public class UserResourceNG {
   private static final String COMMUNITY_ACCOUNT_EXISTS = "A community account already exists";
   private static final String ACCOUNT_ADMINISTRATOR_USER_GROUP = "Account Administrator";
   private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
+  private static final String MISSING_EMAIL_OR_PASSWORD = "Missing email or password";
   private static final String EXISTING_INVITE_ALREADY_COMPLETED = "Existing invite is already completed";
 
   @Inject private FeatureFlagService featureFlagService;
@@ -230,6 +231,10 @@ public class UserResourceNG {
     userService.verifyRegisteredOrAllowed(email);
 
     User user = convertMarketplaceRequestToUser(email, password, dto);
+    if (user == null) {
+      log.error("Unexpected state: User is null because missing email, {} or password.", email);
+      throw new UserRegistrationException(MISSING_EMAIL_OR_PASSWORD, ErrorCode.INVALID_ARGUMENT, WingsException.USER);
+    }
     Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
     String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
     if (!userInviteID.equals(inviteId)) {

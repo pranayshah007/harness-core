@@ -342,6 +342,12 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
+  private static final String CD = "CD";
+  private static final String CI = "CI";
+  private static final String FF = "FF";
+  private static final String CCM = "CCM";
+  private static final String STO = "STO";
+  private static final String SRM = "SRM";
 
   /**
    * The Executor service.
@@ -4273,15 +4279,21 @@ public class UserServiceImpl implements UserService {
     LicenseType licenseType = licenseService.getModuleLicenseType(plan);
     Integer orderQuantity = awsMarketPlaceApiHandler.getDimensionQuantity(dimension);
 
+    String dimensionModule = "";
+    if (awsMarketPlaceApiHandler.isDimensionV2Provisionable(dimension, orderQuantity)) {
+      dimensionModule = dimension.split("_")[0];
+    }
     log.info("dimension:{}, plan:{}, premiumSupport:{}, licenseType:{}, orderQuantity:{}", dimension, plan,
         premiumSupport, licenseType, orderQuantity);
 
     if (marketPlace.getProductCode().equals(configuration.getMarketPlaceConfig().getAwsMarketPlaceProductCode())) {
+      // TODO: Deprecate listing
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
     } else if (marketPlace.getProductCode().equals(
+                   // TODO: Deprecate listing
                    configuration.getMarketPlaceConfig().getAwsMarketPlaceCeProductCode())) {
       CeLicenseType ceLicenseType = CeLicenseType.PAID;
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
@@ -4296,11 +4308,8 @@ public class UserServiceImpl implements UserService {
               .licenseType(ceLicenseType)
               .build());
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())) {
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
-        licenseInfo.setAccountType(AccountType.TRIAL);
-      }
-
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCdProductCode())
+        || CD.equals(dimensionModule)) {
       accountId = setupAccountForUser(user, userInvite, licenseInfo, true);
       adminLicenseHttpClient.createAccountLicense(accountId,
           CDModuleLicenseDTO.builder()
@@ -4315,13 +4324,9 @@ public class UserServiceImpl implements UserService {
               .startTime(DateTime.now().getMillis())
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
-    } else if (true
-        || marketPlace.getProductCode().equals(
-            configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())) {
-      CeLicenseType ceLicenseType = CeLicenseType.PAID;
-      if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
-        ceLicenseType = CeLicenseType.FULL_TRIAL;
-      }
+    } else if (marketPlace.getProductCode().equals(
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCcmProductCode())
+        || CCM.equals(dimensionModule)) {
       Long spendLimit = Long.valueOf(orderQuantity);
       log.info("spendLimit:{}", spendLimit);
 
@@ -4343,7 +4348,8 @@ public class UserServiceImpl implements UserService {
       log.info("CEModuleLicense {} response", response);
 
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceFfProductCode())
+        || FF.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
@@ -4365,7 +4371,8 @@ public class UserServiceImpl implements UserService {
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceCiProductCode())
+        || CI.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
@@ -4383,7 +4390,8 @@ public class UserServiceImpl implements UserService {
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceSrmProductCode())
+        || SRM.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
@@ -4401,7 +4409,8 @@ public class UserServiceImpl implements UserService {
               .expiryTime(marketPlace.getExpirationDate().getTime())
               .build());
     } else if (marketPlace.getProductCode().equals(
-                   configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())) {
+                   configuration.getMarketPlaceConfig().getAwsMarketPlaceStoProductCode())
+        || STO.equals(dimensionModule)) {
       if (null != marketPlace.getLicenseType() && marketPlace.getLicenseType().equals(AccountType.TRIAL)) {
         licenseInfo.setAccountType(AccountType.TRIAL);
       }
