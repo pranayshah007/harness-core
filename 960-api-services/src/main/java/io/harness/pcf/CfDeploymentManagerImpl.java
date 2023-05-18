@@ -719,12 +719,29 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
+  public boolean checkSettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
+                                                               LogCallback executionLogCallback) throws PivotalClientApiException {
+    ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
+    if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
+      Map<String, Object> userProvided = applicationEnvironments.getUserProvided();
+      if (userProvided.containsKey(HARNESS__STATUS__IDENTIFIER)) {
+        if(activeStatus) {
+          return userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER);
+        } else {
+          userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__STAGE__IDENTIFIER);
+        }
+      }
+    }
+    return false;
+  }
+
+  @Override
   public boolean checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
                                                    LogCallback executionLogCallback) throws PivotalClientApiException {
     ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
     if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
       Map<String, Object> userProvided = applicationEnvironments.getUserProvided();
-      if (userProvided.containsKey(HARNESS__STATUS__INDENTIFIER)) {
+      if (userProvided.containsKey(HARNESS__STATUS__IDENTIFIER)) {
         if(activeStatus) {
           return userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER);
         } else {

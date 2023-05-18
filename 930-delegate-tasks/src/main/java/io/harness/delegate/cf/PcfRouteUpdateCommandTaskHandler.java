@@ -507,7 +507,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
     retryAbleTaskExecutor.execute(
             ()
                     -> pcfDeploymentManager.setEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback),
-            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkSettingEnvironmentVariableForAppStatusNG(cfRequestConfig, isActiveApplication, executionLogCallback));
+            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkSettingEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback));
   }
 
   private void updateRoutesForNewApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

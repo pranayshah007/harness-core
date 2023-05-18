@@ -111,4 +111,7 @@ public interface CfDeploymentManager {
 
   boolean checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
                                                         LogCallback executionLogCallback) throws PivotalClientApiException;
+
+  boolean checkSettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
+                                                        LogCallback executionLogCallback) throws PivotalClientApiException;
 }
