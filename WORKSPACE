@@ -5053,7 +5053,7 @@ plain_artifacts = [
     "javax:javaee-api:8.0",
     "joda-time:joda-time:2.10.6",
     "net.arnx:nashorn-promise:0.1.1",
-    "net.bytebuddy:byte-buddy:1.14.1",
+    "net.bytebuddy:byte-buddy:1.10.1",
     "net.engio:mbassador:1.3.0",
     "net.i2p.crypto:eddsa:0.3.0",
     "net.java.dev.jna:jna-platform:5.5.0",
