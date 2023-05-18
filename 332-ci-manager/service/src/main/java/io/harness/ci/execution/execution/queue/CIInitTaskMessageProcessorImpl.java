@@ -33,7 +33,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject CIBuildEnforcer buildEnforcer;
   @Inject @Named("ciInitTaskExecutor") ExecutorService initTaskExecutor;
-  @Inject AsyncWaitEngine asyncWaitEngine;
+  @Inject @Named("queueAsyncWaitEngine") AsyncWaitEngine asyncWaitEngine;
   @Inject WaitNotifyEngine waitNotifyEngine;
 
   @Inject SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
