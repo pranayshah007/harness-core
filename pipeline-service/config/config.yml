@@ -300,7 +300,7 @@ orchestrationStepConfig:
     defaultInternalImageConnector: 'account.harnessImage'
     pvcDefaultStorageSize: 25600
     #delegateServiceEndpointVariableValue: "delegate-service:8080"
-    delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:13913"
+    delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:15336"
     addonImage: harness/ci-addon:1.16.8
     liteEngineImage: harness/ci-lite-engine:1.16.8
     #isLocal: false
