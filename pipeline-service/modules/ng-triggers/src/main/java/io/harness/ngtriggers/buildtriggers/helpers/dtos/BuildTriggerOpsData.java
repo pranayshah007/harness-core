@@ -14,6 +14,7 @@ import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
 
 import com.google.inject.Inject;
+import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,4 +29,5 @@ public class BuildTriggerOpsData {
   Map<String, Object> pipelineBuildSpecMap;
   TriggerDetails triggerDetails;
   BuildMetadata buildMetadata;
+  List<String> signaturesToLock;
 }

@@ -21,8 +21,9 @@ import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Qualifier;
 
 import com.google.inject.Inject;
-import java.util.Collections;
-import java.util.Optional;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PollingDocumentMapper {
@@ -64,10 +65,12 @@ public class PollingDocumentMapper {
     }
 
     Qualifier qualifier = pollingItem.getQualifier();
+    String signature = pollingItem.getSignature();
     return pollingDocumentBuilder.accountId(qualifier.getAccountId())
         .orgIdentifier(qualifier.getOrganizationId())
         .projectIdentifier(qualifier.getProjectId())
-        .signatures(Collections.singletonList(pollingItem.getSignature()))
+        .signatures(Collections.singletonList(signature))
+        .signaturesLock(Map.of(signature, pollingItem.getSignaturesToLockList()))
         .uuid(EmptyPredicate.isEmpty(pollingItem.getPollingDocId()) ? null : pollingItem.getPollingDocId())
         .failedAttempts(0);
   }

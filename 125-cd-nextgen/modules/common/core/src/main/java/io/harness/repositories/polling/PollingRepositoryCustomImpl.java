@@ -18,6 +18,8 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -31,16 +33,16 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
 
   @Override
   public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String orgId, String projectId,
-      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures) {
+      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures, Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, orgId, projectId, pollingType, pollingInfo);
     Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
   @Override
-  public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuid, List<String> signatures) {
+  public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuid, List<String> signatures, Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, uuid);
-    Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
+    Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures).set(PollingDocumentKeys.signaturesLock+ "." + signatures.get(0), sinaturesLock);
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 

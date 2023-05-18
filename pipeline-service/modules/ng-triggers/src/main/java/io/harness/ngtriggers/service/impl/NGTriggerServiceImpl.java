@@ -15,6 +15,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
+import static io.harness.ngtriggers.Constants.MAX_MULTI_ARTIFACT_TRIGGER_SOURCES;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
@@ -1076,6 +1077,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           validationFailed = true;
           break;
         }
+      }
+      if (triggerConfig.getSources().size() > 10) {
+        msg.append("The maximum number of sources for Multi-Artifact trigger is ").append(MAX_MULTI_ARTIFACT_TRIGGER_SOURCES).append(".\n");
+        validationFailed = true;
       }
     }
     if (validationFailed) {

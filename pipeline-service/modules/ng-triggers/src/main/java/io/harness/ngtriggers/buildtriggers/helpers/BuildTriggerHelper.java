@@ -26,6 +26,7 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.buildtriggers.helpers.dtos.BuildTriggerOpsData;
@@ -253,6 +254,10 @@ public class BuildTriggerHelper {
       Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
       triggerArtifactSpecMap.put("type", source.get("type"));
       triggerArtifactSpecMap.put("spec", source);
+
+      List<BuildMetadata> multiBuildMetadata = triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
+      String thisSourceSignature = multiBuildMetadata.get(buildMetadataIndex).getPollingConfig().getSignature();
+      List<String> signaturesToLock = multiBuildMetadata.stream().filter(metadata -> !metadata.getPollingConfig().getSignature().equals(thisSourceSignature)).map(metadata -> metadata.getPollingConfig().getSignature()).collect(toList());
       /* Here we need to explicitly add `buildMetadata` to BuildTriggerOpsData. This is because MultiRegionArtifact
       triggers have a list of BuildMetadata, so PollingItemGenerator:getBaseInitializedPollingItem needs a way to
       explicitly get the BuildMetadata for each PollingItem it will generate. */
@@ -261,8 +266,8 @@ public class BuildTriggerHelper {
               .pipelineBuildSpecMap(Collections.emptyMap())
               .triggerSpecMap(triggerArtifactSpecMap)
               .triggerDetails(triggerDetails)
-              .buildMetadata(
-                  triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata().get(buildMetadataIndex))
+              .buildMetadata(multiBuildMetadata.get(buildMetadataIndex))
+                  .signaturesToLock(signaturesToLock)
               .build());
       buildMetadataIndex++;
     }
