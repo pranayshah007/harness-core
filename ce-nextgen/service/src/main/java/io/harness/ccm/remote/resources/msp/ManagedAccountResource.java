@@ -27,8 +27,10 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
@@ -59,6 +61,16 @@ public class ManagedAccountResource {
   }
 
   @GET
+  @ApiOperation(value = "Get managed account", nickname = "getManagedAccount")
+  @Operation(operationId = "getManagedAccount", summary = "Get managed account details for given managed account id",
+      responses = { @ApiResponse(description = "Returns managed account record") })
+  public ResponseDTO<ManagedAccount>
+  get(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
+      @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId) {
+    return ResponseDTO.newResponse(managedAccountService.get(accountIdentifier, managedAccountId));
+  }
+
+  @GET
   @Path("list")
   @ApiOperation(value = "List managed accounts", nickname = "listManagedAccounts")
   @Operation(operationId = "listManagedAccounts", summary = "List managed accounts for given msp account",
@@ -67,5 +79,26 @@ public class ManagedAccountResource {
   list(@Parameter(description = "Account id of the msp account") @QueryParam(
       "accountIdentifier") @AccountIdentifier String accountIdentifier) {
     return ResponseDTO.newResponse(managedAccountService.list(accountIdentifier));
+  }
+
+  @PUT
+  @ApiOperation(value = "Update managed account", nickname = "updateManagedAccount")
+  @Operation(operationId = "updateManagedAccount", summary = "Update managed account record",
+      responses = { @ApiResponse(description = "Returns managed account record") })
+  public ResponseDTO<ManagedAccount>
+  update(@Parameter(description = "Account id of the msp account") @QueryParam(
+             "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @RequestBody(required = true, description = "Managed Account") @NotNull @Valid ManagedAccount managedAccount) {
+    return ResponseDTO.newResponse(managedAccountService.update(managedAccount));
+  }
+
+  @DELETE
+  @ApiOperation(value = "Update managed account", nickname = "updateManagedAccount")
+  @Operation(operationId = "updateManagedAccount", summary = "Update managed account record",
+      responses = { @ApiResponse(description = "Returns managed account record") })
+  public ResponseDTO<Boolean>
+  delete(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
+         @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId) {
+    return ResponseDTO.newResponse(managedAccountService.delete(managedAccountId));
   }
 }

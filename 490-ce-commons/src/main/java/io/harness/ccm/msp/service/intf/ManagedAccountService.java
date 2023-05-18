@@ -13,5 +13,9 @@ import java.util.List;
 
 public interface ManagedAccountService {
   String save(ManagedAccount managedAccount);
+  ManagedAccount get(String uuid);
+  ManagedAccount get(String mspAccountId, String managedAccountId);
   List<ManagedAccount> list(String mspAccountId);
+  ManagedAccount update(ManagedAccount managedAccount);
+  boolean delete(String accountId);
 }

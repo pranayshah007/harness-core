@@ -23,7 +23,27 @@ public class ManagedAccountServiceImpl implements ManagedAccountService {
   }
 
   @Override
+  public ManagedAccount get(String uuid) {
+    return managedAccountDao.get(uuid);
+  }
+
+  @Override
+  public ManagedAccount get(String mspAccountId, String managedAccountId) {
+    return managedAccountDao.getDetailsForAccount(mspAccountId, managedAccountId);
+  }
+
+  @Override
   public List<ManagedAccount> list(String mspAccountId) {
     return managedAccountDao.list(mspAccountId);
+  }
+
+  @Override
+  public ManagedAccount update(ManagedAccount managedAccount) {
+    return managedAccountDao.update(managedAccount);
+  }
+
+  @Override
+  public boolean delete(String accountId) {
+    return managedAccountDao.delete(accountId);
   }
 }
