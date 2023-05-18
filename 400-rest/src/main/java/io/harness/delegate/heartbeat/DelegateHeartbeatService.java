@@ -111,7 +111,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private Delegate getExistingDelegateExceptionIfNullOrDeleted(
       @NotNull final String accountId, @NotNull final String delegateId) {
-    final Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    final Delegate delegate = delegateCache.get(accountId, delegateId);
     if (Objects.isNull(delegate) || (delegate.getStatus() == DelegateInstanceStatus.DELETED)) {
       log.warn("Sending self destruct command from register delegate because the existing delegate "
           + (Objects.isNull(delegate) ? "is not found" : "has status deleted."));
@@ -161,7 +161,7 @@ public abstract class DelegateHeartbeatService<T extends Object> {
 
   private void destroyTheCurrentDelegate(
       String accountId, String delegateId, String delegateConnectionId, boolean isPollingMode) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DESTROYED);
     if (isPollingMode) {
       log.warn("Sent self destruct command to delegate {}, with connectionId {}.", delegateId, delegateConnectionId);

@@ -1136,7 +1136,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   public DelegateTaskPackage acquireDelegateTask(
       String accountId, String delegateId, String taskId, String delegateInstanceId) {
     try {
-      Delegate delegate = delegateCache.get(accountId, delegateId, false);
+      Delegate delegate = delegateCache.get(accountId, delegateId);
       if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
         log.warn("Delegate rejected to acquire task, because it was not found to be in {} status.",
             DelegateInstanceStatus.ENABLED);
@@ -2011,7 +2011,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     }
     log.warn("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     final String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
     final String errorMessage = "Delegate [" + delegateName + "] disconnected while executing the task";
     final DelegateTaskResponse delegateTaskResponse =

@@ -18,6 +18,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
@@ -41,6 +42,8 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -49,12 +52,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RMap;
 
 @Singleton
 @ValidateOnExecution
@@ -188,6 +194,34 @@ public class DelegateCacheImpl implements DelegateCache {
     return null;
   }
 
+  @Override
+  public Delegate get(String accountId, String delegateId) {
+    return get(accountId, delegateId, false);
+  }
+
+  @Override
+  public void refreshDelegate(
+      String accountId, String delegateId, long lastHeartbeatTimestamp, DelegateHeartbeatParams params) {
+    try {
+      Delegate delegate = delegateRedisCache.get(delegateId);
+      if (delegate == null) {
+        delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
+        if (delegate == null) {
+          log.warn("Unable to find delegate {} in DB.", delegateId);
+          return;
+        }
+      }
+      delegate.setLastHeartBeat(lastHeartbeatTimestamp);
+      delegate.setDisconnected(false);
+      delegate.setVersion(params.getVersion());
+      delegate.setLocation(params.getLocation());
+      delegate.setDelegateConnectionId(params.getDelegateConnectionId());
+      delegateRedisCache.put(delegateId, delegate);
+    } catch (Exception e) {
+      log.error("Delegate not found exception", e);
+    }
+  }
+
   // only for task assignment logic we should fetch from cache, since we process very heavy number of tasks per minute.
   @Override
   public DelegateGroup getDelegateGroup(String accountId, String delegateGroupId) {
@@ -303,6 +337,12 @@ public class DelegateCacheImpl implements DelegateCache {
     }
   }
 
+  @Override
+  public List<Delegate> getAllDelegatesFromRedisCache() {
+    RLocalCachedMap<String, Delegate> delegates = delegateRedissonCacheManager.getCache(DELEGATE_CACHE,String.class, Delegate.class, LocalCachedMapOptions.defaults());
+    return new ArrayList<>(delegates.values());
+  }
+
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {
     List<Delegate> delegateList = getActiveDelegates(accountId);
     Set<String> supportedTaskTypes = new HashSet<>();
@@ -343,14 +383,21 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   private Delegate getDelegateFromRedisCache(String delegateId, boolean forceRefresh) {
-    if (delegateRedisCache.get(delegateId) == null || forceRefresh) {
-      Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
-      if (delegate == null) {
-        log.warn("Unable to find delegate {} in DB.", delegateId);
-        return null;
-      }
-      delegateRedisCache.put(delegateId, delegate);
+    Delegate delegateFromCache = delegateRedisCache.get(delegateId);
+    if (delegateFromCache != null && !forceRefresh) {
+      return delegateFromCache;
     }
+    Delegate delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
+    if (delegate == null) {
+      log.warn("Unable to find delegate {} in DB.", delegateId);
+      return null;
+    }
+    if (delegateFromCache != null) {
+      // override hb value from cache as cache has the latest HB
+      delegate.setLastHeartBeat(delegateFromCache.getLastHeartBeat());
+      delegate.setVersion(delegateFromCache.getVersion());
+    }
+    delegateRedisCache.put(delegateId, delegate);
     return delegateRedisCache.get(delegateId);
   }
 

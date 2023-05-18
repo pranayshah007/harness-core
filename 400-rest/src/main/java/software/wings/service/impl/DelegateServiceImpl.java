@@ -403,6 +403,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
   @Inject private DelegateJreVersionHelper jreVersionHelper;
+  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
@@ -881,7 +882,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .delegateGroupName(delegate.getDelegateGroupName())
                   .ip(delegate.getIp())
                   .status(delegate.getStatus())
-                  .lastHeartBeat(delegate.getLastHeartBeat())
+                  .lastHeartBeat(getDelegateLastHeartBeat(delegate))
                   // currently, we do not return stale connections, but if we do this must filter them out
                   .activelyConnected(!delegate.isDisconnected() && isDelegateAlive(delegate))
                   .delegateProfileId(delegate.getDelegateProfileId())
@@ -912,8 +913,16 @@ public class DelegateServiceImpl implements DelegateService {
         .collect(toList());
   }
 
+  private Long getDelegateLastHeartBeat(Delegate delegate) {
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
+    if (!enableRedisForDelegateService) {
+      return delegate.getLastHeartBeat();
+    }
+    return delegateFromCache.getLastHeartBeat();
+  }
+
   private boolean isDelegateAlive(Delegate delegate) {
-    return delegate.getLastHeartBeat() > System.currentTimeMillis() - ofMinutes(1).toMillis();
+    return getDelegateLastHeartBeat(delegate) > System.currentTimeMillis() - ofMinutes(1).toMillis();
   }
 
   private List<DelegateConnectionDetails> getDelegateConnectionDetails(Delegate delegate) {
@@ -938,7 +947,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public Delegate update(final Delegate delegate) {
-    final Delegate originalDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    final Delegate originalDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
     final boolean newProfileApplied = originalDelegate != null && !delegate.isNg()
         && compare(originalDelegate.getDelegateProfileId(), delegate.getDelegateProfileId()) != 0;
 
@@ -1140,7 +1149,7 @@ public class DelegateServiceImpl implements DelegateService {
     delegateTaskService.touchExecutingTasks(
         delegate.getAccountId(), delegate.getUuid(), delegate.getCurrentlyExecutingDelegateTasks());
 
-    Delegate existingDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    Delegate existingDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
 
     if (existingDelegate == null) {
       register(delegate);
@@ -1255,7 +1264,7 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private Delegate updateDelegate(Delegate delegate, UpdateOperations<Delegate> updateOperations) {
-    Delegate previousDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    Delegate previousDelegate = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
 
     if (previousDelegate != null && isBlank(delegate.getDelegateProfileId())) {
       updateOperations.unset(DelegateKeys.profileResult)
@@ -2806,6 +2815,7 @@ public class DelegateServiceImpl implements DelegateService {
       } else {
         registeredDelegate = update(delegate);
       }
+      delegateCache.get(delegate.getAccountId(), delegate.getUuid(), true);
     }
 
     // Not needed to be done when polling is enabled for delegate
@@ -2934,7 +2944,7 @@ public class DelegateServiceImpl implements DelegateService {
       return null;
     }
 
-    Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
 
     if (delegate == null) {
       log.warn("Delegate was not found, while checking for profile.");
@@ -3004,7 +3014,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public String getProfileResult(String accountId, String delegateId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
 
     String profileResultFileId = delegate.getProfileResult();
 
@@ -3116,7 +3126,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public void onDelegateDisconnected(String accountId, String delegateId) {
     subject.fireInform(DelegateObserver::onDisconnected, accountId, delegateId);
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_DISCONNECTED);
     remoteObserverInformer.sendEvent(
         ReflectionUtils.getMethod(DelegateObserver.class, "onDisconnected", String.class, String.class),
@@ -3125,7 +3135,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public boolean filter(String accountId, String delegateId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, false);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     return delegate != null && StringUtils.equals(delegate.getAccountId(), accountId);
   }
 
@@ -3631,7 +3641,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public DelegateDTO listDelegateTags(String accountId, String delegateId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     if (delegate == null) {
       throw new InvalidRequestException(
           format("Delegate with accountId: %s and delegateId: %s does not exists.", accountId, delegateId));
@@ -3916,7 +3926,7 @@ public class DelegateServiceImpl implements DelegateService {
 
   @VisibleForTesting
   protected DelegateInitializationDetails getDelegateInitializationDetails(String accountId, String delegateId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
 
     if (delegate.isProfileError()) {
       log.debug("Delegate {} could not be initialized correctly.", delegateId);

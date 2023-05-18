@@ -190,7 +190,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssign(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -616,7 +616,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
           if (!result.isPresent() || result.get().getLastUpdatedAt() < currentTimeMillis() - WHITELIST_TTL
               || !result.get().isValidated()) {
             matching = false;
-            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+            Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
             if (delegate == null) {
               break;
             }
@@ -641,7 +641,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return false;
     }
 
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -836,7 +836,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       } else if (whitelistedDelegates.isEmpty()) {
         StringBuilder msg = new StringBuilder();
         for (String delegateId : activeDelegates) {
-          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId, false);
+          Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateId);
           if (delegate != null) {
             msg.append(" ===> ").append(delegate.getHostName()).append(": ");
             boolean canAssignScope = canAssignDelegateScopes(delegate, delegateTask);
@@ -871,7 +871,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
         errorMessage =
             "None of the active delegates were eligible to complete the task." + taskTagsMsg + "\n\n" + msg.toString();
       } else if (delegateTask.getDelegateId() != null) {
-        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId(), false);
+        Delegate delegate = delegateCache.get(delegateTask.getAccountId(), delegateTask.getDelegateId());
         errorMessage = "Delegate task timed out. Delegate: "
             + (delegate != null ? delegate.getHostName() : "not found: " + delegateTask.getDelegateId());
       } else {
@@ -1000,7 +1000,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTask(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }
@@ -1049,7 +1049,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   @Override
   public boolean canAssignTaskV2(String delegateId, DelegateTask task) {
-    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId);
     if (delegate == null) {
       return false;
     }

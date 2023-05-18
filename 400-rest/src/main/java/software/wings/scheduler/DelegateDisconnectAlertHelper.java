@@ -93,7 +93,7 @@ public class DelegateDisconnectAlertHelper implements DelegateObserver {
 
   @Override
   public void onDisconnected(String accountId, String delegateId) {
-    Delegate delegate = delegateCache.get(accountId, delegateId, true);
+    Delegate delegate = delegateCache.get(accountId, delegateId);
     if (delegate == null) {
       return;
     }

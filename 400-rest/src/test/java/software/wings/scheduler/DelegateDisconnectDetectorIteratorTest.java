@@ -169,7 +169,7 @@ public class DelegateDisconnectDetectorIteratorTest extends WingsBaseTest {
 
   private DelegateTask createDelegateTask(Delegate delegate) throws ExecutionException {
     when(accountDelegatesCache.get(ACCOUNT_ID)).thenReturn(singletonList(delegate));
-    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid(), false)).thenReturn(delegate);
+    when(delegateCache.get(ACCOUNT_ID, delegate.getUuid())).thenReturn(delegate);
     AwsIamRequest request = AwsIamListInstanceRolesRequest.builder().awsConfig(AwsConfig.builder().build()).build();
     DelegateTask delegateTask =
         DelegateTask.builder()

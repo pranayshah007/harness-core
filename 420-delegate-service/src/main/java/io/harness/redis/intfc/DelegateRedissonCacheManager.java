@@ -15,10 +15,12 @@ import io.harness.redis.impl.DelegateRedissonCacheManagerImpl;
 import com.google.inject.ImplementedBy;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
+import org.redisson.api.RMap;
 
 @OwnedBy(DEL)
 @ImplementedBy(DelegateRedissonCacheManagerImpl.class)
 public interface DelegateRedissonCacheManager {
   <K, V> RLocalCachedMap<K, V> getCache(
       String cacheName, Class<K> keyType, Class<V> valueType, LocalCachedMapOptions<K, V> localCachedMapOptions);
+  RMap<Integer, RLocalCachedMap<String, Object>> getMapFromCache(String cacheName);
 }
