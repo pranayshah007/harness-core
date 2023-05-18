@@ -186,6 +186,10 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .errorSummary(ex.getMessage())
           .testedAt(Instant.now().toEpochMilli())
           .build();
+    } catch (AWSCostAndUsageReportException ex) {
+      // CCM-12474: Handling error and declaring connector success temporarily
+      log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
+      log.info(ex.getErrorMessage());
     } catch (Exception ex) {
       // These are unknown errors, they should be identified over time and parsed correctly
       log.error(GENERIC_LOGGING_ERROR, accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, ex);
