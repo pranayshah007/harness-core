@@ -150,7 +150,7 @@ public enum STOStepType {
       new String[] {SECURITY}),
   SNYK("Snyk", null, null, SnykScanNode.class, EntityType.SNYK, new String[] {SCA, SAST, CONTAINER_SECURITY}),
   SONARQUBE("Sonarqube", null, null, SonarqubeScanNode.class, EntityType.SONARQUBE, new String[] {SAST}),
-  SYSDIG("Sysdig", null, FeatureName.STO_STEPS_TEST_MODE, SysdigScanNode.class, EntityType.SYSDIG,
+  SYSDIG("Sysdig", null, FeatureName.STO_STEP_PALETTE_SYSDIG, SysdigScanNode.class, EntityType.SYSDIG,
       new String[] {CONTAINER_SECURITY}),
   TENABLE(
       "Tenable", null, FeatureName.STO_STEPS_TEST_MODE, TenableScanNode.class, EntityType.TENABLE, new String[] {DAST}),

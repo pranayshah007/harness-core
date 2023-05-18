@@ -16,6 +16,8 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.OrchestrationStepEnvVariables;
 import io.harness.ssca.beans.OrchestrationStepSecretVariables;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.CosignAttestation;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
@@ -35,11 +37,12 @@ public class SscaOrchestrationPluginHelper {
 
   public static Map<String, SecretNGVariable> getSscaOrchestrationSecretVars(
       CdSscaOrchestrationSpecParameters stepInfo) {
-    if (stepInfo.getAttestation() != null && stepInfo.getAttestation().getPrivateKey() != null) {
-      OrchestrationStepSecretVariables secretVariables =
-          OrchestrationStepSecretVariables.builder()
-              .attestationPrivateKey(stepInfo.getAttestation().getPrivateKey())
-              .build();
+    if (stepInfo.getAttestation() != null && AttestationType.COSIGN.equals(stepInfo.getAttestation().getType())) {
+      CosignAttestation cosignAttestation = (CosignAttestation) stepInfo.getAttestation().getAttestationSpec();
+      OrchestrationStepSecretVariables secretVariables = OrchestrationStepSecretVariables.builder()
+                                                             .attestationPrivateKey(cosignAttestation.getPrivateKey())
+                                                             .cosignPassword(cosignAttestation.getPassword())
+                                                             .build();
       return SscaOrchestrationStepPluginUtils.getSscaOrchestrationSecretVars(secretVariables);
     }
     return new HashMap<>();
@@ -56,14 +59,15 @@ public class SscaOrchestrationPluginHelper {
     }
 
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    OrchestrationStepEnvVariables envVariables = OrchestrationStepEnvVariables.builder()
-                                                     .sbomGenerationTool(tool)
-                                                     .sbomGenerationFormat(format)
-                                                     .sbomSource(sbomSource)
-                                                     .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getBaseUrl())
-                                                     .stepExecutionId(runtimeId)
-                                                     .stepIdentifier(identifier)
-                                                     .build();
+    OrchestrationStepEnvVariables envVariables =
+        OrchestrationStepEnvVariables.builder()
+            .sbomGenerationTool(tool)
+            .sbomGenerationFormat(format)
+            .sbomSource(sbomSource)
+            .sscaCoreUrl(sscaServiceUtils.getSscaServiceConfig().getHttpClientConfig().getBaseUrl())
+            .stepExecutionId(runtimeId)
+            .stepIdentifier(identifier)
+            .build();
     Map<String, String> envVars = SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
     envVars.putAll(sscaServiceUtils.getSSCAServiceEnvVariables(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)));

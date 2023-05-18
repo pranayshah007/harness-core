@@ -119,7 +119,7 @@ public class CIAccountValidationServiceImpl implements CIAccountValidationServic
     }
 
     if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() != Edition.FREE) {
-      throw new IllegalArgumentException("Got max Max builds per day check for non free license");
+      throw new IllegalArgumentException("Got Max builds per day check for non free license");
     }
 
     int trustLevel = 0;

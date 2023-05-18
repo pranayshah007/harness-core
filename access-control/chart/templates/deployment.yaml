@@ -147,7 +147,6 @@ spec:
             - name: MONGODB_HOSTS
               value: {{ include "access-control.mongohosts" . }}
             {{- end }}
-           
             - name: OFFSET_STORAGE_FILE_FILENAME
               value: {{ include "harnesscommon.dbconnection.mongoConnection" (dict "database" "accesscontrol" "context" $) }}
             {{- if .Values.extraEnvVars }}

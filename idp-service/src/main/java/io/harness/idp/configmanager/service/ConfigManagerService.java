@@ -42,4 +42,6 @@ public interface ConfigManagerService {
   void updateConfigMap(String accountIdentifier, String appConfigYamlData, String configName);
 
   void validateSchemaForPlugin(String config, String configId) throws Exception;
+
+  Boolean isPluginWithNoConfig(String accountIdentifier, String configId);
 }

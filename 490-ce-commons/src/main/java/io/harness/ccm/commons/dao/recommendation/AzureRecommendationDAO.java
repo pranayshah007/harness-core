@@ -96,7 +96,9 @@ public class AzureRecommendationDAO {
             .set(AzureRecommendationKeys.subscriptionId, azureRecommendation.getSubscriptionId())
             .set(AzureRecommendationKeys.tenantId, azureRecommendation.getTenantId())
             .set(AzureRecommendationKeys.duration, azureRecommendation.getDuration())
-            .set(AzureRecommendationKeys.vmId, azureRecommendation.getVmId());
+            .set(AzureRecommendationKeys.vmId, azureRecommendation.getVmId())
+            .set(AzureRecommendationKeys.connectorId, azureRecommendation.getConnectorId())
+            .set(AzureRecommendationKeys.connectorName, azureRecommendation.getConnectorName());
 
     return hPersistence.upsert(query, updateOperations, upsertReturnNewOptions);
   }

@@ -101,12 +101,6 @@ public class LdapGroupScheduledHandler extends IteratorLoopModeHandler implement
     iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
-  public void wakeup() {
-    if (iterator != null) {
-      iterator.wakeup();
-    }
-  }
-
   @Override
   public void handle(LdapSettings settings) {
     ldapGroupSyncJobHelper.syncJob(settings);

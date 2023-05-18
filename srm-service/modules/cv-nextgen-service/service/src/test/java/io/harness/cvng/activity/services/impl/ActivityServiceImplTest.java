@@ -196,8 +196,7 @@ public class ActivityServiceImplTest extends CvNextGenTestBase {
                     .build()))
             .build();
     appService.getSources().setHealthSources(null);
-    appService.getSources().setChangeSources(
-        Sets.newHashSet(builderFactory.getHarnessCDChangeSourceDTOBuilder().build()));
+    appService.getSources().setChangeSources(null);
     monitoredServiceService.create(clusterActivity.getAccountId(), appService);
   }
 

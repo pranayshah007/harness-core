@@ -23,6 +23,7 @@ public interface Constants {
   String BITBUCKET_REPO = "Bitbucket";
   String AWS_CODECOMMIT_REPO = "AwsCodeCommit";
   String CUSTOM_REPO = "Custom";
+  String HARNESS_REPO = "Harness";
 
   // Artifact Trigger
 

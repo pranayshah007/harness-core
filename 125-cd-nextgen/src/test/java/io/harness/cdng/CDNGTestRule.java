@@ -28,6 +28,8 @@ import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.orchestration.NgStepRegistrar;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
+import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
@@ -284,6 +286,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
         bind(ServiceOverridesServiceV2.class).to(ServiceOverridesServiceV2Impl.class);
         bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+        bind(ServiceOverrideV2MigrationService.class).to(ServiceOverrideV2MigrationServiceImpl.class);
         bind(ServiceOverrideValidatorService.class).to(ServiceOverrideValidatorServiceImpl.class);
         bind(AccessControlClient.class).to(NoOpAccessControlClientImpl.class).in(Scopes.SINGLETON);
         bind(OrganizationService.class).toInstance(mock(OrganizationService.class));

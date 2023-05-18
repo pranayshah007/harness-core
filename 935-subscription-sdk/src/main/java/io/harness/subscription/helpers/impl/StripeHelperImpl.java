@@ -408,8 +408,8 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public void payInvoice(String invoiceId) {
-    stripeHandler.payInvoice(invoiceId);
+  public void payInvoice(String invoiceId, String accountIdentifier) {
+    stripeHandler.payInvoice(invoiceId, accountIdentifier);
   }
 
   @Override

@@ -100,16 +100,6 @@ public abstract class AbstractStageVariableCreator<T extends AbstractStageNode> 
           throw new InvalidRequestException(
               "Variable with name \"" + variableName + "\" added without any value. Fqn: " + fqn);
         }
-        // Using variable name as key instead of variable value as name will be unique
-        yamlPropertiesMap.put(variableName,
-            YamlProperties.newBuilder()
-                .setLocalName(localName)
-                .setFqn(fqn)
-                .setVariableName(variableName)
-                .setVisible(true)
-                .build());
-
-        // Have kept this for backward compatible as UI currently uses variable value
         yamlPropertiesMap.put(valueNode.getNode().getCurrJsonNode().textValue(),
             YamlProperties.newBuilder()
                 .setLocalName(localName)

@@ -13,7 +13,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
-import io.harness.delegate.beans.executioncapability.AwsSamInstallationCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -52,7 +51,6 @@ public interface AwsSamCommandRequest extends TaskParameters, ExecutionCapabilit
       capabilities.add(AwsCliInstallationCapability.builder().criteria("AWS CLI Installed").build());
     }
 
-    capabilities.add(AwsSamInstallationCapability.builder().criteria("AWS SAM Installed").build());
     return capabilities;
   }
 }

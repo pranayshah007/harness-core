@@ -85,6 +85,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -142,10 +143,11 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
             if (isNotEmpty(initializeStepInfo.getCiCodebase().getRepoName().getValue())) {
               repoName = initializeStepInfo.getCiCodebase().getRepoName().getValue();
             }
-            if (initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
+            if (StringUtils.isNotBlank(repoName)
+                || initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
               try {
                 ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
-                    baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
+                    baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue(), true);
                 if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
                   url = IntegrationStageUtils.getGitURLFromConnector(
                       connectorDetails, initializeStepInfo.getCiCodebase());

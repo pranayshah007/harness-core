@@ -34,6 +34,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -44,8 +45,8 @@ public class VmBackgroundStepSerializer {
   @Inject CIStepInfoUtils ciStepInfoUtils;
   @Inject CIFeatureFlagService featureFlagService;
 
-  public VmBackgroundStep serialize(
-      BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier, List<CIRegistry> registries) {
+  public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier,
+      List<CIRegistry> registries, String delegateId) {
     String command = RunTimeInputHandler.resolveStringParameter(
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
@@ -83,6 +84,12 @@ public class VmBackgroundStepSerializer {
 
     Map<String, String> envVars = resolveMapParameterV2(
         "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
+    if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HARNESS_DELEGATE_ID", delegateId);
+    }
     envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
         ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 

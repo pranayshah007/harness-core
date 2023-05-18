@@ -244,8 +244,11 @@ public class MigratorUtility {
 
   public static String getIdentifierWithScope(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
-    NgEntityDetail detail =
-        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    NGYamlFile yamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (yamlFile == null) {
+      return NGMigrationConstants.RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = yamlFile.getNgEntityDetail();
     return getIdentifierWithScope(detail);
   }
 

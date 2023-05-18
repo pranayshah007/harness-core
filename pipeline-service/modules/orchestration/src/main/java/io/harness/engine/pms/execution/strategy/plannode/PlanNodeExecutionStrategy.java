@@ -72,8 +72,8 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -149,8 +149,18 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
     if (pmsFeatureFlagService.isEnabled(
             AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
       // Passing the FeatureFlag.
-      resolvedStepParameters = pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(),
-          expressionMode, Collections.singletonList(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION.name()));
+      // TODO(archit): Remove feature flag support in engine
+      List<String> enabledFeatureFlags = new LinkedList<>();
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION)) {
+        enabledFeatureFlags.add(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION.name());
+      }
+      if (pmsFeatureFlagService.isEnabled(
+              AmbianceUtils.getAccountId(ambiance), FeatureName.PIE_EXECUTION_JSON_SUPPORT)) {
+        enabledFeatureFlags.add(FeatureName.PIE_EXECUTION_JSON_SUPPORT.name());
+      }
+      resolvedStepParameters = pmsEngineExpressionService.resolve(
+          ambiance, planNode.getStepParameters(), expressionMode, enabledFeatureFlags);
     } else {
       resolvedStepParameters =
           pmsEngineExpressionService.resolve(ambiance, planNode.getStepParameters(), expressionMode);

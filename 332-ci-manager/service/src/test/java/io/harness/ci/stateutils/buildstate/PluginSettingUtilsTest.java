@@ -66,6 +66,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.utils.CiCodebaseUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -89,6 +90,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Inject public PluginSettingUtils pluginSettingUtils;
 
   @Mock private CodebaseUtils codebaseUtils;
+  @Mock private CiCodebaseUtils ciCodebaseUtils;
+
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
@@ -96,6 +99,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
     on(pluginSettingUtils).set("connectorUtils", connectorUtils);
+    on(pluginSettingUtils).set("ciCodebaseUtils", ciCodebaseUtils);
     on(pluginSettingUtils).set("sscaOrchestrationPluginUtils", sscaOrchestrationPluginUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
@@ -605,10 +609,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -652,10 +659,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -698,10 +708,14 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
+
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()

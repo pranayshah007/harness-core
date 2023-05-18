@@ -22,6 +22,7 @@ RUN chmod +x /opt/harness-delegate/*.sh
 WORKDIR /opt/harness-delegate
 
 ARG TARGETARCH
+ENV LANG=en_US.UTF-8
 
 RUN ./client_tools.sh false $TARGETARCH && chmod -R 755 /opt/harness-delegate
 

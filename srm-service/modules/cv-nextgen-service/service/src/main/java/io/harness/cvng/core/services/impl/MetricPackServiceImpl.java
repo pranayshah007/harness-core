@@ -23,6 +23,7 @@ import io.harness.cvng.core.entities.MetricPack.MetricPackKeys;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.TimeSeriesThresholdService;
+import io.harness.cvng.models.VerificationType;
 import io.harness.persistence.HPersistence;
 import io.harness.serializer.YamlUtils;
 
@@ -41,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -279,7 +281,10 @@ public class MetricPackServiceImpl implements MetricPackService {
 
   @Override
   public void createDefaultMetricPackAndThresholds(String accountId, String orgIdentifier, String projectIdentifier) {
-    List<DataSourceType> dataSourceTypes = DataSourceType.getTimeSeriesTypes();
+    List<DataSourceType> dataSourceTypes =
+        Stream.of(DataSourceType.values())
+            .filter(dataSourceType -> dataSourceType.getVerificationType() == VerificationType.TIME_SERIES)
+            .collect(Collectors.toList());
     for (DataSourceType dataSourceType : dataSourceTypes) {
       getMetricPacks(accountId, orgIdentifier, projectIdentifier, dataSourceType);
     }
@@ -328,6 +333,8 @@ public class MetricPackServiceImpl implements MetricPackService {
         break;
       case SPLUNK_SIGNALFX_METRICS:
         yamlFileNames.addAll(SIGNALFX_METRICS_METRICPACK_FILES);
+        break;
+      case KUBERNETES:
         break;
       default:
         unhandled(dataSourceType);

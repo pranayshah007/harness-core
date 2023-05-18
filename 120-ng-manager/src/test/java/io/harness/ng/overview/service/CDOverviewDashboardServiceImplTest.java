@@ -13,12 +13,14 @@ import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -82,9 +84,11 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
 import org.springframework.data.domain.Page;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -101,6 +105,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
 
   private final String ENVIRONMENT_1 = "env1";
   private final String ENVIRONMENT_2 = "env2";
+  private final String ENVIRONMENT_3 = "env3";
   private final String ENVIRONMENT_GROUP_1 = "group1";
   private final String ENVIRONMENT_GROUP_2 = "group2";
   private final String ENVIRONMENT_NAME_1 = "envN1";
@@ -669,6 +674,7 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
                             .orgIdentifier(ORG_ID)
                             .projectIdentifier(PROJECT_ID)
                             .type(EnvironmentType.Production)
+
                             .identifier(ENVIRONMENT_2)
                             .build());
     return environmentList;
@@ -1155,7 +1161,6 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     Optional<ServiceSequence> serviceSequence = Optional.of(ServiceSequence.builder().build());
     Page<EnvironmentGroupEntity> page = mock(Page.class);
     when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
-    when(serviceSequenceService.upsertDefaultSequence(any())).thenReturn(null);
     when(serviceSequenceService.get(any(), any(), any(), any())).thenReturn(serviceSequence);
     EnvironmentGroupEntity environmentGroupEntity1 = EnvironmentGroupEntity.builder()
                                                          .accountId(ACCOUNT_ID)
@@ -1211,7 +1216,8 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
             .environmentGroupInstanceDetails(getEnvironmentGroupInstanceDetailList())
             .build();
     EnvironmentGroupInstanceDetails environmentInstanceDetailResult =
-        cdOverviewDashboardService1.getEnvironmentInstanceDetails(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, null);
+        cdOverviewDashboardService1.getEnvironmentInstanceDetails(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, null, false);
     assertThat(environmentInstanceDetails.getEnvironmentGroupInstanceDetails().size())
         .isEqualTo(environmentInstanceDetailResult.getEnvironmentGroupInstanceDetails().size());
     verify(instanceDashboardService)
@@ -1600,5 +1606,136 @@ public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
     assertThat(iconDTO.get(0).getIcon()).isEqualTo("IconString");
     iconDTO = new ArrayList<>(resultMap.get("s2"));
     assertThat(iconDTO.get(0).getIcon()).isEqualTo("");
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByEnvironmentListRevamp() {
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
+        Arrays.asList(getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_1, ARTIFACT_PATH_1),
+            getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_2, ARTIFACT_PATH_1),
+            getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_3, ARTIFACT_PATH_1));
+    InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList =
+        InstanceGroupedByEnvironmentList.builder().build();
+    when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false, false))
+        .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
+    when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
+        .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
+
+    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(any(), any(), any(), any()))
+        .thenReturn(getEnvironmentList());
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+
+    when(page.getContent()).thenReturn(Collections.emptyList());
+    ArgumentCaptor<List<ActiveServiceInstanceInfoWithEnvType>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+    Mockito.mockStatic(DashboardServiceHelper.class);
+    PowerMockito
+        .when(DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(any(), any(), anyBoolean(), any()))
+        .thenReturn(instanceGroupedByEnvironmentList);
+
+    InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList1 =
+        cdOverviewDashboardService.getInstanceGroupedByEnvironmentList(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, null, null);
+
+    PowerMockito.verifyStatic(DashboardServiceHelper.class, times(1));
+    DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
+        any(), argumentCaptor.capture(), anyBoolean(), any());
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypes = argumentCaptor.getValue();
+    assertThat(activeServiceInstanceInfoWithEnvTypes.size()).isEqualTo(2);
+    assertThat(activeServiceInstanceInfoWithEnvTypes.get(0).getEnvIdentifier()).isEqualTo(ENVIRONMENT_1);
+    assertThat(activeServiceInstanceInfoWithEnvTypes.get(1).getEnvIdentifier()).isEqualTo(ENVIRONMENT_2);
+
+    assertThat(instanceGroupedByEnvironmentList1).isEqualTo(instanceGroupedByEnvironmentList);
+    verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    verify(instanceDashboardService)
+        .getActiveServiceInstanceInfoWithEnvType(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, SERVICE_ID, null, false, false);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByArtifactListRevamp() {
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
+        Arrays.asList(getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_1, ARTIFACT_PATH_1),
+            getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_2, ARTIFACT_PATH_1),
+            getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_3, ARTIFACT_PATH_1));
+
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
+    when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true))
+        .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
+    when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
+        .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
+
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+
+    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(any(), any(), any(), any()))
+        .thenReturn(getEnvironmentList());
+    mockStatic(DashboardServiceHelper.class);
+
+    when(DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
+             activeServiceInstanceInfoWithEnvTypeList, false, null, null))
+        .thenReturn(instanceGroupedOnArtifactList);
+
+    cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, null, DISPLAY_NAME_1, false);
+
+    verify(instanceDashboardService, times(1))
+        .getActiveServiceInstanceInfoWithEnvType(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    verify(instanceDashboardService)
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, false);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByArtifactListRevampForArtifactFilter() {
+    List<ActiveServiceInstanceInfoWithEnvType> activeServiceInstanceInfoWithEnvTypeList =
+        Arrays.asList(getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_1, null),
+            getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_2, null),
+            getActiveServiceInstanceInfoWithEnvType(ENVIRONMENT_3, null));
+
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList = InstanceGroupedOnArtifactList.builder().build();
+    when(instanceDashboardService.getActiveServiceInstanceInfoWithEnvType(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, DISPLAY_NAME_1, false, true))
+        .thenReturn(activeServiceInstanceInfoWithEnvTypeList);
+    when(serviceEntityServiceImpl.getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
+        .thenReturn(Optional.of(ServiceEntity.builder().gitOpsEnabled(false).build()));
+
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(environmentGroupService.list(any(), any(), any(), any(), any())).thenReturn(page);
+
+    when(environmentService.fetchesNonDeletedEnvironmentFromListOfRefs(any(), any(), any(), any()))
+        .thenReturn(getEnvironmentList());
+    mockStatic(DashboardServiceHelper.class);
+
+    when(DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
+             activeServiceInstanceInfoWithEnvTypeList, false, null, null))
+        .thenReturn(instanceGroupedOnArtifactList);
+
+    cdOverviewDashboardService.getInstanceGroupedOnArtifactList(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_1, null, "", true);
+
+    verify(instanceDashboardService, times(2))
+        .getActiveServiceInstanceInfoWithEnvType(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean());
+    verify(serviceEntityServiceImpl).getService(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    verify(instanceDashboardService)
+        .getActiveServiceInstanceInfoWithEnvType(
+            ACCOUNT_ID, ORG_ID, PROJECT_ID, ENVIRONMENT_1, SERVICE_ID, null, false, true);
+  }
+
+  private ActiveServiceInstanceInfoWithEnvType getActiveServiceInstanceInfoWithEnvType(
+      String envRef, String displayName) {
+    return ActiveServiceInstanceInfoWithEnvType.builder()
+        .envType(EnvironmentType.PreProduction)
+        .envIdentifier(envRef)
+        .displayName(displayName)
+        .build();
   }
 }

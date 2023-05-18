@@ -21,13 +21,13 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.service.instancesync.InstanceSyncService;
 
 import com.google.inject.Inject;
-import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -36,8 +36,6 @@ import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Body;
-import retrofit2.http.GET;
-
 @OwnedBy(HarnessTeam.DX)
 @Api("instancesync")
 @Path("instancesync")
@@ -90,13 +88,11 @@ public class InstanceSyncResource {
   @GET
   @Path("/task/{perpetualTaskId}/details")
   @ApiOperation(value = "Get instance sync perpetual task details", nickname = "fetchTaskDetails")
-  @Produces(ProtocolBufferMediaType.APPLICATION_PROTOBUF)
-  public ResponseDTO<InstanceSyncTaskDetails> fetchTaskDetails(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @PathParam("perpetualTaskId") String perpetualTaskId) {
-    InstanceSyncTaskDetails details = instanceSyncService.fetchTaskDetails(accountIdentifier, perpetualTaskId);
+  public ResponseDTO<InstanceSyncTaskDetails> fetchTaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    InstanceSyncTaskDetails details = instanceSyncService.fetchTaskDetails(perpetualTaskId, accountIdentifier);
     log.info("Found {} instance sync perpetual task details for accountId {} and perpetualTaskId {}",
-        details != null ? details.getDetailsCount() : 0, accountIdentifier, perpetualTaskId);
+        details != null ? (long) details.getDetails().size() : 0, accountIdentifier, perpetualTaskId);
     return ResponseDTO.newResponse(details);
   }
 

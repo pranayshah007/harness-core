@@ -331,11 +331,15 @@ public class AmbianceUtils {
                                  .collect(Collectors.joining("_"));
 
     if (useMatrixFieldName) {
+      List<String> matrixKeysToSkipInName =
+          level.getStrategyMetadata().getMatrixMetadata().getMatrixKeysToSkipInNameList();
       levelIdentifier = level.getStrategyMetadata()
                             .getMatrixMetadata()
                             .getMatrixValuesMap()
                             .entrySet()
                             .stream()
+                            .filter(entry -> !matrixKeysToSkipInName.contains(entry.getKey()))
+                            .sorted(Map.Entry.comparingByKey())
                             .map(t -> t.getValue().replace(".", ""))
                             .collect(Collectors.joining("_"));
     }

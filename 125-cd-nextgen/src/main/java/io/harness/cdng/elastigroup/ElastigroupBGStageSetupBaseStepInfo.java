@@ -7,7 +7,7 @@
 
 package io.harness.cdng.elastigroup;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("elastigroupBGStageSetupBaseStepInfo")
 @FieldNameConstants(innerTypeName = "ElastigroupBGStageSetupBaseStepInfoKeys")
 public class ElastigroupBGStageSetupBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

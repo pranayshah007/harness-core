@@ -21,9 +21,15 @@ public interface SscaConstants {
   String CD_SSCA_ORCHESTRATION_STEP_NODE = "CdSscaOrchestrationStepNode";
   String SSCA_STEPS_FOLDER_NAME = "Supply Chain Assurance";
 
+  String SSCA_ENFORCEMENT_STEP_NODE = "SscaEnforcementStepNode";
+  String SSCA_ENFORCEMENT = "SscaEnforcement";
+
   StepType SSCA_ORCHESTRATION_STEP_TYPE =
       StepType.newBuilder().setType(SSCA_ORCHESTRATION_STEP).setStepCategory(StepCategory.STEP).build();
 
   StepType CD_SSCA_ORCHESTRATION_STEP_TYPE =
       StepType.newBuilder().setType(CD_SSCA_ORCHESTRATION).setStepCategory(StepCategory.STEP).build();
+
+  StepType SSCA_ENFORCEMENT_STEP_TYPE =
+      StepType.newBuilder().setType(SSCA_ENFORCEMENT).setStepCategory(StepCategory.STEP).build();
 }

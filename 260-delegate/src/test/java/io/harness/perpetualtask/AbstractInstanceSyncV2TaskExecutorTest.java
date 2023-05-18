@@ -9,7 +9,6 @@ package io.harness.perpetualtask;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -26,9 +25,9 @@ import io.harness.network.SafeHttpCall;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
-import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
 import io.harness.perpetualtask.instancesync.ResponseBatchConfig;
+import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -88,18 +87,17 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
     namespaces.add("namespace1");
     List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
     K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sDeploymentReleaseDetails.newBuilder().setReleaseName("releaseName").addAllNamespaces(namespaces).build();
+        K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build();
     k8sDeploymentReleaseDetailsList.add(k8sDeploymentReleaseDetails);
     InstanceSyncTaskDetails instanceSyncTaskDetails =
-        InstanceSyncTaskDetails.newBuilder()
-            .addAllDetails(List.of(
-                DeploymentReleaseDetails.newBuilder()
-                    .addAllDeploymentDetails(k8sDeploymentReleaseDetailsList.stream().map(Any::pack).collect(toList()))
-                    .build()))
-            .setResponseBatchConfig(ResponseBatchConfig.newBuilder()
-                                        .setReleaseCount(RELEASE_COUNT_LIMIT)
-                                        .setInstanceCount(INSTANCE_COUNT_LIMIT)
-                                        .build())
+        InstanceSyncTaskDetails.builder()
+            .details(List.of(DeploymentReleaseDetails.builder()
+                                 .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
+                                 .build()))
+            .responseBatchConfig(ResponseBatchConfig.builder()
+                                     .releaseCount(RELEASE_COUNT_LIMIT)
+                                     .instanceCount(INSTANCE_COUNT_LIMIT)
+                                     .build())
             .build();
     aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(instanceSyncTaskDetails);
     when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
@@ -124,13 +122,12 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
                                               .build()))
             .build();
 
-    InstanceSyncTaskDetails instanceSyncTaskDetails =
-        InstanceSyncTaskDetails.newBuilder()
-            .setResponseBatchConfig(ResponseBatchConfig.newBuilder()
-                                        .setReleaseCount(RELEASE_COUNT_LIMIT)
-                                        .setInstanceCount(INSTANCE_COUNT_LIMIT)
-                                        .build())
-            .build();
+    InstanceSyncTaskDetails instanceSyncTaskDetails = InstanceSyncTaskDetails.builder()
+                                                          .responseBatchConfig(ResponseBatchConfig.builder()
+                                                                                   .releaseCount(RELEASE_COUNT_LIMIT)
+                                                                                   .instanceCount(INSTANCE_COUNT_LIMIT)
+                                                                                   .build())
+                                                          .build();
     aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(instanceSyncTaskDetails);
     when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
         .thenReturn(

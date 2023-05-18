@@ -23,7 +23,6 @@ java_library(
     ],
     deps = [
         "//:lombok",
-        "//840-template-service/contracts:module",
         "//890-sm-core:module",
         "//930-ng-core-clients:module",
         "//940-feature-flag:module",
@@ -52,6 +51,7 @@ java_library(
         "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/resource:module",
         "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto:module",
         "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/resource:module",
+        "//template-service/contracts:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_fasterxml_jackson_core_jackson_databind",
         "@maven//:com_google_code_findbugs_annotations",

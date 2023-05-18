@@ -28,6 +28,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.steps.executables.PipelineAsyncExecutable;
@@ -83,6 +84,11 @@ public class HarnessApprovalStep extends PipelineAsyncExecutable {
           (HarnessApprovalResponseData) responseDataMap.values().iterator().next();
       HarnessApprovalInstance instance =
           (HarnessApprovalInstance) approvalInstanceService.get(responseData.getApprovalInstanceId());
+
+      if (ApprovalStatus.APPROVED.equals(instance.getStatus())
+          || ApprovalStatus.REJECTED.equals(instance.getStatus())) {
+        executorService.submit(() -> approvalNotificationHandler.sendNotification(instance, ambiance));
+      }
       return StepResponse.builder()
           .status(instance.getStatus().toFinalExecutionStatus())
           .failureInfo(instance.getFailureInfo())

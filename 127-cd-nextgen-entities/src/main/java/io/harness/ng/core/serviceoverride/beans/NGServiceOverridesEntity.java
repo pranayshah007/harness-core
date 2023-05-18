@@ -73,8 +73,11 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   // for Override 2.0
   @EntityIdentifier String identifier;
   @Trimmed String infraIdentifier;
+  @Trimmed String clusterIdentifier; // will infer scope of the cluster from environment
   ServiceOverridesSpec spec;
   ServiceOverridesType type;
+
+  @Builder.Default Boolean isV2 = Boolean.FALSE;
 
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;

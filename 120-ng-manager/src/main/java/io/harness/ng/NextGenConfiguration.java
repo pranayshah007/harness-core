@@ -47,6 +47,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.signup.SignupDomainDenylistConfiguration;
 import io.harness.signup.SignupNotificationConfiguration;
 import io.harness.subscription.SubscriptionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
@@ -258,6 +259,8 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
   @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
+  @JsonProperty("signupDomainDenylistConfig")
+  private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

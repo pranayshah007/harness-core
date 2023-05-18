@@ -607,7 +607,9 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isDelegateConnected(Delegate delegate) {
-    return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
+    // for active delegate connection check, use DELEGATE_CACHE directly as it has latest HB updated
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    return delegateFromCache.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 
   @Override

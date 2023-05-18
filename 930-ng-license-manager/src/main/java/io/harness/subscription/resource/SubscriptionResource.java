@@ -393,7 +393,7 @@ public class SubscriptionResource {
       @Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(INVOICE_ID) String invoiceId) {
-    subscriptionService.payInvoice(invoiceId);
+    subscriptionService.payInvoice(invoiceId, accountIdentifier);
     return new RestResponse();
   }
 }

@@ -72,6 +72,8 @@ public interface SSOSettingService extends OwnedByAccount {
 
   Iterator<SamlSettings> getSamlSettingsIteratorByOrigin(@NotNull String origin, String accountId);
 
+  Iterator<SamlSettings> getSamlSettingsIteratorByAccountId(@NotNull String accountId);
+
   LdapSettings createLdapSettings(@NotNull LdapSettings settings);
 
   LdapSettings updateLdapSettings(@NotNull LdapSettings settings);

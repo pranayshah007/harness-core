@@ -7,7 +7,7 @@
 
 package io.harness.cdng.helm.rollback;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,7 +34,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("HelmRollbackBaseStepInfo")
 @FieldNameConstants(innerTypeName = "HelmRollbackBaseStepInfoKeys")
 public class HelmRollbackBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String helmRollbackFqn;

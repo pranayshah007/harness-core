@@ -1,0 +1,5 @@
+integrations:
+  bitbucketServer:
+    - host: HOST_VALUE
+      apiBaseUrl: https://HOST_VALUE/rest/api/1.0
+      token: ${HARNESS_BITBUCKET_API_ACCESS_TOKEN}

@@ -11,7 +11,7 @@ config: |-
     '/jira/api':
       target: '<your-jira-url>'
       pathRewrite:
-        'api/proxy/jira/?': '/'
+        'api/proxy/jira/api/?': '/'
       headers:
         Authorization: ${JIRA_TOKEN}
         Accept: 'application/json'

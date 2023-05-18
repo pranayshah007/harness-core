@@ -28,6 +28,8 @@ public class AzureVmRecommendationDTO implements RecommendationDetailsDTO {
   String resourceGroupId;
   String vmName;
   String vmId;
+  String connectorName;
+  String connectorId;
   int duration;
   @Schema(name = "CurrentConfigurations", description = "Current vm configurations") AzureVmDTO current;
   @GraphQLNonNull @Builder.Default Boolean showTerminated = false;

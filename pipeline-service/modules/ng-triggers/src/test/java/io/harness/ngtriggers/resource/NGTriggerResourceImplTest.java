@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -412,11 +413,12 @@ public class NGTriggerResourceImplTest extends CategoryTest {
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(null);
-    NGTriggerDetailsResponseDTO responseDTO =
-        ngTriggerResource
-            .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER)
-            .getData();
-    assertThat(responseDTO).isEqualTo(null);
+    assertThatThrownBy(()
+                           -> ngTriggerResource.getTriggerDetails(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER))
+        .isInstanceOf(EntityNotFoundException.class)
+        .hasMessage(
+            "Trigger " + IDENTIFIER + " does not exist in project " + PROJ_IDENTIFIER + " in org " + ORG_IDENTIFIER);
   }
 
   @Test

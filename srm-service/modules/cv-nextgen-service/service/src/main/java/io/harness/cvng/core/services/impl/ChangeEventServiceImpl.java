@@ -73,6 +73,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -192,7 +193,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       String searchText, List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
       Instant startTime, Instant endTime, Integer pointCount, boolean isMonitoredServiceIdentifierScoped) {
     Map<ChangeCategory, Map<Integer, TimeRangeDetail>> categoryMilliSecondFromStartDetailMap =
-        Arrays.stream(ChangeCategory.values()).collect(Collectors.toMap(Function.identity(), c -> new HashMap<>()));
+        Arrays.stream(ChangeCategory.values())
+            .collect(Collectors.toMap(Function.identity(), c -> new HashMap<>(), (u, v) -> u, LinkedHashMap::new));
 
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
 
@@ -319,7 +321,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime, boolean isMonitoredServiceIdentifierScoped) {
     Map<ChangeCategory, Map<Integer, Integer>> changeCategoryToIndexToCount =
-        Arrays.stream(ChangeCategory.values()).collect(Collectors.toMap(Function.identity(), c -> new HashMap<>()));
+        Arrays.stream(ChangeCategory.values())
+            .collect(Collectors.toMap(Function.identity(), c -> new HashMap<>(), (u, v) -> u, LinkedHashMap::new));
     startTime = roundDownTo5MinBoundary(startTime);
     endTime = roundUpTo5MinBoundary(endTime);
     getTimelineObject(projectParams, monitoredServiceIdentifiers, null, changeCategories, changeSourceTypes,
@@ -356,7 +359,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                    .countInPrecedingWindow(entry.getValue().getOrDefault(0, 0))
                    .percentageChange(
                        getPercentageChange(entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
-                   .build())))
+                   .build(),
+            (u, v) -> u, LinkedHashMap::new)))
         .build();
   }
 

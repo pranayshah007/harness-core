@@ -734,6 +734,7 @@ public class InviteServiceImpl implements InviteService {
       templateData.put(TOTP_URL, twoFactorAuthSettingsInfo.getTotpqrurl());
     }
 
+    templateData.put("name", invite.getEmail());
     templateData.put("url", url);
     if (!isBlank(invite.getProjectIdentifier())) {
       templateData.put("projectname",
