@@ -538,7 +538,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       timeSeriesRecordsQuery = timeSeriesRecordsQuery.filter(TimeSeriesRecordKeys.metricName, metricName);
     }
     // TODO: filter values that are outside of given time range.
-    return timeSeriesRecordsQuery.asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
+    return timeSeriesRecordsQuery.asList();
   }
 
   @Override
