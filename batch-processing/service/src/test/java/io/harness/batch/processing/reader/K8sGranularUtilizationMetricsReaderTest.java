@@ -10,7 +10,6 @@ package io.harness.batch.processing.reader;
 import static io.harness.rule.OwnerRule.ROHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Answers.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.when;
 
 import io.harness.batch.processing.BatchProcessingTestBase;
@@ -24,6 +23,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,16 +31,15 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.StepExecution;
 
 @RunWith(MockitoJUnitRunner.class)
 public class K8sGranularUtilizationMetricsReaderTest extends BatchProcessingTestBase {
   @Inject @InjectMocks private K8sGranularUtilizationMetricsReader k8sGranularUtilizationMetricsReader;
   @Mock private K8sUtilizationGranularDataServiceImpl k8sUtilizationGranularDataService;
   @Mock private JobParameters parameters;
-  @Mock(answer = RETURNS_DEEP_STUBS) StepExecution stepExecution;
+  @Mock private AtomicBoolean runOnlyOnce;
 
   private final Instant NOW = Instant.now();
   private final long START_TIME_MILLIS = NOW.minus(1, ChronoUnit.HOURS).toEpochMilli();
@@ -56,8 +55,7 @@ public class K8sGranularUtilizationMetricsReaderTest extends BatchProcessingTest
     when(parameters.getString(CCMJobConstants.ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
     when(parameters.getString(CCMJobConstants.JOB_START_DATE)).thenReturn(String.valueOf(START_TIME_MILLIS));
     when(parameters.getString(CCMJobConstants.JOB_END_DATE)).thenReturn(String.valueOf(END_TIME_MILLIS));
-    when(stepExecution.getJobExecution().getJobParameters()).thenReturn(parameters);
-    k8sGranularUtilizationMetricsReader.beforeStep(stepExecution);
+    runOnlyOnce = new AtomicBoolean(false);
   }
 
   @Test

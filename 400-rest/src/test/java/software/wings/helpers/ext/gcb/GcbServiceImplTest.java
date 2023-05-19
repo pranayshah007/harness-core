@@ -16,7 +16,7 @@ import static software.wings.helpers.ext.gcb.GcbServiceImpl.GCS_BASE_URL;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
@@ -54,7 +54,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.runners.MockitoJUnitRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -89,7 +89,7 @@ public class GcbServiceImplTest extends CategoryTest {
   public void setUp() throws IOException {
     doReturn(gcbRestClient).when(gcbService).getRestClient(GcbRestClient.class, GCB_BASE_URL);
     doReturn(gcsRestClient).when(gcbService).getRestClient(GcsRestClient.class, GCS_BASE_URL);
-    doReturn(VALID_AUTH_TOKEN).when(gcbService).getBasicAuthHeader(any(), any());
+    doReturn(VALID_AUTH_TOKEN).when(gcbService).getBasicAuthHeader(anyObject(), anyObject());
     when(gcpConfig.getServiceAccountKeyFileContent()).thenReturn("{\"project_id\":\"projectId\"}".toCharArray());
   }
 

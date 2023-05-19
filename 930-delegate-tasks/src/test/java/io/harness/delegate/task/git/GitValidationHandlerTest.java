@@ -12,8 +12,8 @@ import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEEPAK;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -40,6 +40,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 
 import org.junit.Before;
@@ -64,7 +65,9 @@ public class GitValidationHandlerTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doNothing().when(gitDecryptionHelper).decryptGitConfig(any(GitConfigDTO.class), any());
     doReturn(sshSessionConfig).when(gitDecryptionHelper).getSSHSessionConfig(any(), any());
-    doReturn(decryptableEntity).when(decryptionHelper).decrypt(any(DecryptableEntity.class), anyList());
+    doReturn(decryptableEntity)
+        .when(decryptionHelper)
+        .decrypt(any(DecryptableEntity.class), anyListOf(EncryptedDataDetail.class));
   }
 
   @Test
@@ -89,7 +92,7 @@ public class GitValidationHandlerTest extends CategoryTest {
     ConnectorValidationResult validationResult =
         gitValidationHandler.validate(gitValidationParameters, "accountIdentifier");
     assertThat(validationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
-    verify(decryptionHelper, times(0)).decrypt(any(DecryptableEntity.class), anyList());
+    verify(decryptionHelper, times(0)).decrypt(any(DecryptableEntity.class), anyListOf(EncryptedDataDetail.class));
     verify(gitDecryptionHelper, times(1)).decryptGitConfig(any(GitConfigDTO.class), any());
   }
 

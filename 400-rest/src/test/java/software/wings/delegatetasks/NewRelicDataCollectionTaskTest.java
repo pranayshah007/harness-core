@@ -15,9 +15,9 @@ import static software.wings.common.VerificationConstants.CV_24x7_STATE_EXECUTIO
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyObject;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.times;
@@ -121,8 +121,10 @@ public class NewRelicDataCollectionTaskTest extends WingsBaseTest {
     dataCollectionTaskResult = task.initDataCollection(dataCollectionInfo);
     doReturn(txnsToCollect)
         .when(newRelicDelegateService)
-        .getTxnsWithDataInLastHour(any(), any(), any(), anyLong(), anyBoolean(), any());
-    doReturn(instances).when(newRelicDelegateService).getApplicationInstances(any(), any(), anyLong(), any());
+        .getTxnsWithDataInLastHour(anyObject(), anyObject(), anyObject(), anyLong(), anyBoolean(), anyObject());
+    doReturn(instances)
+        .when(newRelicDelegateService)
+        .getApplicationInstances(anyObject(), anyObject(), anyLong(), anyObject());
   }
 
   @Data
@@ -175,8 +177,9 @@ public class NewRelicDataCollectionTaskTest extends WingsBaseTest {
                                            .build();
     doReturn(webMetricData)
         .when(newRelicDelegateService)
-        .getMetricDataApplicationInstance(any(), any(), anyLong(), anyLong(), any(), anyLong(), anyLong(), any());
-    doReturn(Boolean.TRUE).when(task).saveMetrics(any(), any(), any(), any());
+        .getMetricDataApplicationInstance(
+            anyObject(), anyObject(), anyLong(), anyLong(), anyObject(), anyLong(), anyLong(), anyObject());
+    doReturn(Boolean.TRUE).when(task).saveMetrics(anyObject(), anyObject(), anyObject(), anyObject());
     task.getDataCollector(dataCollectionTaskResult).run();
 
     ArgumentCaptor<List> dataRecordCaptors = ArgumentCaptor.forClass(List.class);
@@ -208,8 +211,9 @@ public class NewRelicDataCollectionTaskTest extends WingsBaseTest {
                                            .build();
     doReturn(webMetricData)
         .when(newRelicDelegateService)
-        .getMetricDataApplicationInstance(any(), any(), anyLong(), anyLong(), any(), anyLong(), anyLong(), any());
-    doReturn(Boolean.TRUE).when(task).saveMetrics(any(), any(), any(), any());
+        .getMetricDataApplicationInstance(
+            anyObject(), anyObject(), anyLong(), anyLong(), anyObject(), anyLong(), anyLong(), anyObject());
+    doReturn(Boolean.TRUE).when(task).saveMetrics(anyObject(), anyObject(), anyObject(), anyObject());
     task.getDataCollector(dataCollectionTaskResult).run();
 
     ArgumentCaptor<List> dataRecordCaptors = ArgumentCaptor.forClass(List.class);

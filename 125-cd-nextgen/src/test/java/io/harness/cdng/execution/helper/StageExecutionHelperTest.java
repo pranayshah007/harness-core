@@ -80,7 +80,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.internal.util.collections.Sets;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.runners.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)

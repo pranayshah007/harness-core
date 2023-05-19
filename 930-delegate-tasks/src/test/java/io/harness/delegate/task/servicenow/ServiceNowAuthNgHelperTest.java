@@ -17,15 +17,14 @@ import static io.harness.rule.OwnerRule.NAMANG;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mockConstruction;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.adfs.AdfsAccessTokenResponse;
+import io.harness.adfs.AdfsExceptionHandler;
 import io.harness.adfs.AdfsRestClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -56,16 +55,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedConstruction;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 
 @OwnedBy(CDC)
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Retrofit.class, ServiceNowAuthNgHelper.class, AdfsExceptionHandler.class})
+@PowerMockIgnore({"javax.net.ssl.*"})
 public class ServiceNowAuthNgHelperTest extends CategoryTest {
   private static final String SERVICENOW_URL = "https://test.service-now.com/";
   private static final String USERNAME = "username";
@@ -178,6 +180,7 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
                     .build())
             .build();
     AdfsRestClient adfsRestClient = Mockito.mock(AdfsRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
     Call<AdfsAccessTokenResponse> mockCall = Mockito.mock(Call.class);
     when(adfsRestClient.getAccessToken(anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(mockCall);
@@ -187,31 +190,32 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
     AdfsAccessTokenResponse adfsAccessTokenResponse = JsonUtils.asObject(jsonResponse, new TypeReference<>() {});
     Response<AdfsAccessTokenResponse> accessTokenResponse = Response.success(adfsAccessTokenResponse);
     when(mockCall.execute()).thenReturn(accessTokenResponse);
-    try (MockedConstruction<Retrofit> ignored = mockConstruction(
-             Retrofit.class, (mock, context) -> when(mock.create(AdfsRestClient.class)).thenReturn(adfsRestClient));
-         MockedStatic<ADFSAuthHelper> ignored1 = mockStatic(ADFSAuthHelper.class)) {
-      when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
-               UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
-          .thenReturn(JWT_TOKEN);
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(AdfsRestClient.class)).thenReturn(adfsRestClient);
 
-      String token = ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO);
+    Mockito.mockStatic(ADFSAuthHelper.class);
+    PowerMockito
+        .when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
+            UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
+        .thenReturn(JWT_TOKEN);
 
-      final ArgumentCaptor<String> clientIdArgumentCaptor = ArgumentCaptor.forClass(String.class);
-      final ArgumentCaptor<String> clientAssertionTypeArgumentCaptor = ArgumentCaptor.forClass(String.class);
-      final ArgumentCaptor<String> jwtTokenArgumentCaptor = ArgumentCaptor.forClass(String.class);
-      final ArgumentCaptor<String> grantTypeArgumentCaptor = ArgumentCaptor.forClass(String.class);
-      final ArgumentCaptor<String> resourceIdArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    String token = ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO);
 
-      verify(adfsRestClient, times(1))
-          .getAccessToken(clientIdArgumentCaptor.capture(), clientAssertionTypeArgumentCaptor.capture(),
-              jwtTokenArgumentCaptor.capture(), grantTypeArgumentCaptor.capture(), resourceIdArgumentCaptor.capture());
-      assertThat(clientIdArgumentCaptor.getValue()).isEqualTo(CLIENT_ID);
-      assertThat(clientAssertionTypeArgumentCaptor.getValue()).isEqualTo(ADFS_CLIENT_ASSERTION_TYPE);
-      assertThat(jwtTokenArgumentCaptor.getValue()).isEqualTo(JWT_TOKEN);
-      assertThat(grantTypeArgumentCaptor.getValue()).isEqualTo(ADFS_GRANT_TYPE);
-      assertThat(resourceIdArgumentCaptor.getValue()).isEqualTo(RESOURCE_ID);
-      assertThat(token).isEqualTo(BEARER_TOKEN);
-    }
+    final ArgumentCaptor<String> clientIdArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    final ArgumentCaptor<String> clientAssertionTypeArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    final ArgumentCaptor<String> jwtTokenArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    final ArgumentCaptor<String> grantTypeArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    final ArgumentCaptor<String> resourceIdArgumentCaptor = ArgumentCaptor.forClass(String.class);
+
+    verify(adfsRestClient, times(1))
+        .getAccessToken(clientIdArgumentCaptor.capture(), clientAssertionTypeArgumentCaptor.capture(),
+            jwtTokenArgumentCaptor.capture(), grantTypeArgumentCaptor.capture(), resourceIdArgumentCaptor.capture());
+    assertThat(clientIdArgumentCaptor.getValue()).isEqualTo(CLIENT_ID);
+    assertThat(clientAssertionTypeArgumentCaptor.getValue()).isEqualTo(ADFS_CLIENT_ASSERTION_TYPE);
+    assertThat(jwtTokenArgumentCaptor.getValue()).isEqualTo(JWT_TOKEN);
+    assertThat(grantTypeArgumentCaptor.getValue()).isEqualTo(ADFS_GRANT_TYPE);
+    assertThat(resourceIdArgumentCaptor.getValue()).isEqualTo(RESOURCE_ID);
+    assertThat(token).isEqualTo(BEARER_TOKEN);
   }
 
   @Test
@@ -236,14 +240,14 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
                     .build())
             .build();
 
-    try (MockedStatic<ADFSAuthHelper> ignored = Mockito.mockStatic(ADFSAuthHelper.class)) {
-      when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
-               UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
-          .thenThrow(new AdfsAuthException("Error generating jwt token", ADFS_ERROR, WingsException.USER));
+    Mockito.mockStatic(ADFSAuthHelper.class);
+    PowerMockito
+        .when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
+            UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
+        .thenThrow(new AdfsAuthException("Error generating jwt token", ADFS_ERROR, WingsException.USER));
 
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(WingsException.class);
-    }
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(WingsException.class);
   }
 
   @Test
@@ -285,80 +289,79 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
     when(adfsRestClient.getAccessToken(anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(mockCall);
 
-    try (MockedConstruction<Retrofit> ignored = mockConstruction(
-             Retrofit.class, (mock, context) -> when(mock.create(AdfsRestClient.class)).thenReturn(adfsRestClient));
-         MockedStatic<ADFSAuthHelper> ignored1 = mockStatic(ADFSAuthHelper.class)) {
-      when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
-               UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
-          .thenReturn(JWT_TOKEN);
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(AdfsRestClient.class)).thenReturn(adfsRestClient);
 
-      try {
-        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO);
-        fail("exception expected");
-      } catch (HintException ex) {
-        assertThat(ex.getMessage())
-            .isEqualTo("Check if the ADFS url and credentials are correct and accessible from delegate");
-        assertThat(ex.getCause().getMessage())
-            .isEqualTo(
-                "Not able to access the given ADFS url with the credentials or not able to get access token from ADFS");
-        assertThat(ex.getCause().getCause().getCause()).isInstanceOf(AdfsAuthException.class);
-        assertThat(ex.getCause().getCause().getCause().getMessage()).isEqualTo("400 related error");
-      }
+    Mockito.mockStatic(ADFSAuthHelper.class);
+    PowerMockito
+        .when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
+            UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
+        .thenReturn(JWT_TOKEN);
 
-      // 404 error response
-      Response errorResp1 =
-          Response.error(ResponseBody.create(MediaType.parse("application/json"), "404 related error"),
-              new okhttp3.Response.Builder()
-                  .message("message")
-                  .code(404)
-                  .protocol(Protocol.HTTP_1_1)
-                  .request(new Request.Builder().url("http://localhost/").build())
-                  .build());
-      when(mockCall.execute()).thenReturn(errorResp1);
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class)
-          .hasMessage("Check if the Adfs url is correct and accessible from delegate");
+    try {
+      ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO);
+      fail("exception expected");
+    } catch (HintException ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo("Check if the ADFS url and credentials are correct and accessible from delegate");
+      assertThat(ex.getCause().getMessage())
+          .isEqualTo(
+              "Not able to access the given ADFS url with the credentials or not able to get access token from ADFS");
+      assertThat(ex.getCause().getCause().getCause()).isInstanceOf(AdfsAuthException.class);
+      assertThat(ex.getCause().getCause().getCause().getMessage()).isEqualTo("400 related error");
+    }
 
-      // 401 error response
-      Response errorResp2 =
-          Response.error(ResponseBody.create(MediaType.parse("application/json"), "401 related error"),
-              new okhttp3.Response.Builder()
-                  .message("message")
-                  .code(401)
-                  .protocol(Protocol.HTTP_1_1)
-                  .request(new Request.Builder().url("http://localhost/").build())
-                  .build());
-      when(mockCall.execute()).thenReturn(errorResp2);
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class)
-          .hasMessage(
-              "Check if the ADFS credentials are correct and client have necessary permissions to access the ServiceNow resource");
+    // 404 error response
+    Response errorResp1 = Response.error(ResponseBody.create(MediaType.parse("application/json"), "404 related error"),
+        new okhttp3.Response.Builder()
+            .message("message")
+            .code(404)
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build());
+    when(mockCall.execute()).thenReturn(errorResp1);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class)
+        .hasMessage("Check if the Adfs url is correct and accessible from delegate");
 
-      //  error response with custom code and correct error response
-      String errorJson =
-          "{\"error\":\"invalid_grant\",\"error_description\":\"MSIS9622: Client authentication failed. Please verify the credential provided for client authentication is valid.\"}";
-      Response errorResp3 = Response.error(ResponseBody.create(MediaType.parse("application/json"), errorJson),
-          new okhttp3.Response.Builder()
-              .message("message")
-              .code(400)
-              .protocol(Protocol.HTTP_1_1)
-              .request(new Request.Builder().url("http://localhost/").build())
-              .build());
-      when(mockCall.execute()).thenReturn(errorResp3);
-      try {
-        ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO);
-        fail("exception expected");
-      } catch (HintException ex) {
-        assertThat(ex.getMessage())
-            .isEqualTo("Check if the ADFS url and credentials are correct and accessible from delegate");
-        assertThat(ex.getCause().getMessage())
-            .isEqualTo(
-                "Not able to access the given ADFS url with the credentials or not able to get access token from ADFS");
-        assertThat(ex.getCause().getCause().getCause()).isInstanceOf(AdfsAuthException.class);
-        assertThat(ex.getCause().getCause().getCause().getMessage())
-            .isEqualTo(
-                "[invalid_grant] : MSIS9622: Client authentication failed. Please verify the credential provided for client authentication is valid.");
-      }
+    // 401 error response
+    Response errorResp2 = Response.error(ResponseBody.create(MediaType.parse("application/json"), "401 related error"),
+        new okhttp3.Response.Builder()
+            .message("message")
+            .code(401)
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build());
+    when(mockCall.execute()).thenReturn(errorResp2);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class)
+        .hasMessage(
+            "Check if the ADFS credentials are correct and client have necessary permissions to access the ServiceNow resource");
+
+    //  error response with custom code and correct error response
+    String errorJson =
+        "{\"error\":\"invalid_grant\",\"error_description\":\"MSIS9622: Client authentication failed. Please verify the credential provided for client authentication is valid.\"}";
+    Response errorResp3 = Response.error(ResponseBody.create(MediaType.parse("application/json"), errorJson),
+        new okhttp3.Response.Builder()
+            .message("message")
+            .code(400)
+            .protocol(Protocol.HTTP_1_1)
+            .request(new Request.Builder().url("http://localhost/").build())
+            .build());
+    when(mockCall.execute()).thenReturn(errorResp3);
+    try {
+      ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO);
+      fail("exception expected");
+    } catch (HintException ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo("Check if the ADFS url and credentials are correct and accessible from delegate");
+      assertThat(ex.getCause().getMessage())
+          .isEqualTo(
+              "Not able to access the given ADFS url with the credentials or not able to get access token from ADFS");
+      assertThat(ex.getCause().getCause().getCause()).isInstanceOf(AdfsAuthException.class);
+      assertThat(ex.getCause().getCause().getCause().getMessage())
+          .isEqualTo(
+              "[invalid_grant] : MSIS9622: Client authentication failed. Please verify the credential provided for client authentication is valid.");
     }
   }
   @Test
@@ -393,43 +396,44 @@ public class ServiceNowAuthNgHelperTest extends CategoryTest {
         "{\"access_token\":\"testtoken&&%$%^%$testtoken\",\"token_type\":\"invalid token type\",\"expires_in\":43200}";
     Response<?> accessTokenResponse = Response.success(jsonResponse);
     when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
-    try (MockedConstruction<Retrofit> ignored = mockConstruction(
-             Retrofit.class, (mock, context) -> when(mock.create(AdfsRestClient.class)).thenReturn(adfsRestClient));
-         MockedStatic<ADFSAuthHelper> ignored1 = mockStatic(ADFSAuthHelper.class)) {
-      when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
-               UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
-          .thenReturn(JWT_TOKEN);
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(AdfsRestClient.class)).thenReturn(adfsRestClient);
 
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class);
+    Mockito.mockStatic(ADFSAuthHelper.class);
+    PowerMockito
+        .when(ADFSAuthHelper.generateJwtSignedRequestWithCertificate(PEM_CERT_VALID, PEM_KEY_VALID, CLIENT_ID,
+            UrlUtility.appendPathToBaseUrl(ADFS_URL, ADFS_ACCESS_TOKEN_ENDPOINT)))
+        .thenReturn(JWT_TOKEN);
 
-      // access token blank
-      jsonResponse = "{\"access_token\":\"  \",\"token_type\":\"bearer\",\"expires_in\":43200}";
-      accessTokenResponse = Response.success(jsonResponse);
-      when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class);
 
-      // missing expires in
-      jsonResponse = "{\"access_token\":\" dddd \",\"token_type\":\"bearer\"}";
-      accessTokenResponse = Response.success(jsonResponse);
-      when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class);
+    // access token blank
+    jsonResponse = "{\"access_token\":\"  \",\"token_type\":\"bearer\",\"expires_in\":43200}";
+    accessTokenResponse = Response.success(jsonResponse);
+    when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class);
 
-      // missing token type in
-      jsonResponse = "{\"access_token\":\" dd  \",\"expires_in\":43200}";
-      accessTokenResponse = Response.success(jsonResponse);
-      when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class);
+    // missing expires in
+    jsonResponse = "{\"access_token\":\" dddd \",\"token_type\":\"bearer\"}";
+    accessTokenResponse = Response.success(jsonResponse);
+    when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class);
 
-      // missing access token  in
-      jsonResponse = "{\"token_type\":\"bearer\",\"expires_in\":43200}";
-      accessTokenResponse = Response.success(jsonResponse);
-      when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
-      assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
-          .isInstanceOf(HintException.class);
-    }
+    // missing token type in
+    jsonResponse = "{\"access_token\":\" dd  \",\"expires_in\":43200}";
+    accessTokenResponse = Response.success(jsonResponse);
+    when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class);
+
+    // missing access token  in
+    jsonResponse = "{\"token_type\":\"bearer\",\"expires_in\":43200}";
+    accessTokenResponse = Response.success(jsonResponse);
+    when(mockCall.execute()).thenReturn((Response<AdfsAccessTokenResponse>) accessTokenResponse);
+    assertThatThrownBy(() -> ServiceNowAuthNgHelper.getAuthToken(serviceNowConnectorDTO))
+        .isInstanceOf(HintException.class);
   }
 }

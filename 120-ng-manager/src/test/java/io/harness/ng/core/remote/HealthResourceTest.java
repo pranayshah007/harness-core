@@ -11,8 +11,8 @@ import static io.harness.rule.OwnerRule.PHOENIKX;
 
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -23,30 +23,24 @@ import io.harness.rule.Owner;
 
 import com.codahale.metrics.health.HealthCheck;
 import org.assertj.core.api.Assertions;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.MockedStatic;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(MaintenanceController.class)
 public class HealthResourceTest extends CategoryTest {
   private HealthResource healthResource;
   private HealthService healthService;
-  private MockedStatic<MaintenanceController> aStatic;
 
   @Before
   public void setup() {
     healthService = mock(HealthService.class);
     healthResource = new HealthResource(healthService);
-    aStatic = mockStatic(MaintenanceController.class);
-  }
-
-  @After
-  public void cleanup() {
-    aStatic.close();
+    mockStatic(MaintenanceController.class);
   }
 
   @Test

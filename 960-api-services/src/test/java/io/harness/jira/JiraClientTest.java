@@ -23,10 +23,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(CDC)
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({JiraClient.class})
+@PowerMockIgnore({"javax.net.ssl.*"})
 public class JiraClientTest extends CategoryTest {
   public static JiraClient jiraClient;
 

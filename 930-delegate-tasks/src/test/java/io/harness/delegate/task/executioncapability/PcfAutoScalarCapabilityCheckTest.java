@@ -10,8 +10,8 @@ package io.harness.delegate.task.executioncapability;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -32,11 +32,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({PcfUtils.class})
+@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(HarnessTeam.CDP)
 public class PcfAutoScalarCapabilityCheckTest extends CategoryTest {
   @Mock CfCliDelegateResolver cfCliDelegateResolver;
@@ -46,13 +49,12 @@ public class PcfAutoScalarCapabilityCheckTest extends CategoryTest {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldPerformCapabilityCheck() throws PivotalClientApiException {
-    try (MockedStatic<PcfUtils> ignored = Mockito.mockStatic(PcfUtils.class)) {
-      when(PcfUtils.checkIfAppAutoscalarInstalled(anyString(), any())).thenReturn(true);
-      when(cfCliDelegateResolver.getAvailableCfCliPathOnDelegate(any())).thenReturn(Optional.of("cf-cli-path"));
-      CapabilityResponse capabilityResponse =
-          pcfAutoScalarCapabilityCheck.performCapabilityCheck(PcfAutoScalarCapability.builder().build());
-      assertThat(capabilityResponse).isNotNull();
-      assertThat(capabilityResponse.isValidated()).isTrue();
-    }
+    Mockito.mockStatic(PcfUtils.class);
+    when(PcfUtils.checkIfAppAutoscalarInstalled(anyString(), any())).thenReturn(true);
+    when(cfCliDelegateResolver.getAvailableCfCliPathOnDelegate(any())).thenReturn(Optional.of("cf-cli-path"));
+    CapabilityResponse capabilityResponse =
+        pcfAutoScalarCapabilityCheck.performCapabilityCheck(PcfAutoScalarCapability.builder().build());
+    assertThat(capabilityResponse).isNotNull();
+    assertThat(capabilityResponse.isValidated()).isTrue();
   }
 }

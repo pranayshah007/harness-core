@@ -13,13 +13,11 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -108,13 +106,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({TaskRequestsUtils.class})
 @OwnedBy(CDP)
 public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -183,25 +184,23 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .getGitStoreDelegateConfig(
             gitStoreConfig, connectorInfoDTO, manifestOutcome, Arrays.asList(folderPath), ambiance);
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      TaskChainResponse taskChainResponse =
-          serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
+    TaskChainResponse taskChainResponse =
+        serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
 
-      aStatic.verify(
-          () -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()), times(1));
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
 
-      ServerlessStepPassThroughData serverlessStepPassThroughData =
-          (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
+    ServerlessStepPassThroughData serverlessStepPassThroughData =
+        (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
 
-      assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-      assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getIdentifier()).isEqualTo("sadf");
-      assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getStore()).isEqualTo(gitStoreConfig);
-      assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getType())
-          .isEqualTo("ServerlessAwsLambda");
-    }
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getIdentifier()).isEqualTo("sadf");
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getStore()).isEqualTo(gitStoreConfig);
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getType()).isEqualTo("ServerlessAwsLambda");
   }
 
   @Test
@@ -239,49 +238,45 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         .when(serverlessStepCommonHelper)
         .getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome);
 
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
-      ServerlessStepHelper serverlessStepHelper = new ServerlessAwsLambdaStepHelper();
-      TaskChainResponse taskChainResponse =
-          serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ServerlessStepHelper serverlessStepHelper = new ServerlessAwsLambdaStepHelper();
+    TaskChainResponse taskChainResponse =
+        serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
 
-      ServerlessS3FetchFileConfig serverlessS3FetchFileConfig = ServerlessS3FetchFileConfig.builder()
-                                                                    .s3StoreDelegateConfig(s3StoreDelegateConfig)
-                                                                    .identifier(manifestOutcome.getIdentifier())
-                                                                    .manifestType(manifestOutcome.getType())
-                                                                    .configOverridePath(configOverridePath.getValue())
-                                                                    .succeedIfFileNotFound(false)
-                                                                    .build();
-      String accountId = AmbianceUtils.getAccountId(ambiance);
-      ServerlessS3FetchRequest serverlessS3FetchRequest = ServerlessS3FetchRequest.builder()
-                                                              .accountId(accountId)
-                                                              .serverlessS3FetchFileConfig(serverlessS3FetchFileConfig)
-                                                              .shouldOpenLogStream(true)
-                                                              .build();
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                    .taskType(TaskType.SERVERLESS_S3_FETCH_TASK_NG.name())
-                                    .parameters(new Object[] {serverlessS3FetchRequest})
-                                    .build();
+    ServerlessS3FetchFileConfig serverlessS3FetchFileConfig = ServerlessS3FetchFileConfig.builder()
+                                                                  .s3StoreDelegateConfig(s3StoreDelegateConfig)
+                                                                  .identifier(manifestOutcome.getIdentifier())
+                                                                  .manifestType(manifestOutcome.getType())
+                                                                  .configOverridePath(configOverridePath.getValue())
+                                                                  .succeedIfFileNotFound(false)
+                                                                  .build();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    ServerlessS3FetchRequest serverlessS3FetchRequest = ServerlessS3FetchRequest.builder()
+                                                            .accountId(accountId)
+                                                            .serverlessS3FetchFileConfig(serverlessS3FetchFileConfig)
+                                                            .shouldOpenLogStream(true)
+                                                            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.SERVERLESS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {serverlessS3FetchRequest})
+                                  .build();
 
-      aStatic.verify(
-          ()
-              -> TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any()),
-          times(1));
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
 
-      ServerlessStepPassThroughData serverlessStepPassThroughData =
-          (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
+    ServerlessStepPassThroughData serverlessStepPassThroughData =
+        (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
 
-      assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
-      assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getIdentifier())
-          .isEqualTo(manifestOutcome.getIdentifier());
-      assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getStore())
-          .isEqualTo(manifestOutcome.getStore());
-      assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getType())
-          .isEqualTo("ServerlessAwsLambda");
-    }
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getIdentifier())
+        .isEqualTo(manifestOutcome.getIdentifier());
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getStore())
+        .isEqualTo(manifestOutcome.getStore());
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getType()).isEqualTo("ServerlessAwsLambda");
   }
 
   @Test
@@ -295,15 +290,14 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                                            .manifestContent("content")
                                                            .build();
     ServerlessExecutionPassThroughData executionPassThroughData = ServerlessExecutionPassThroughData.builder().build();
-    try (MockedStatic<TaskRequestsUtils> aStatic = mockStatic(TaskRequestsUtils.class)) {
-      when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
-          .thenReturn(TaskRequest.newBuilder().build());
+    Mockito.mockStatic(TaskRequestsUtils.class);
+    PowerMockito.when(TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
 
-      serverlessStepCommonHelper.queueServerlessTask(
-          stepElementParameters, serverlessCommandRequest, ambiance, executionPassThroughData, false);
-      aStatic.verify(
-          () -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()), times(1));
-    }
+    serverlessStepCommonHelper.queueServerlessTask(
+        stepElementParameters, serverlessCommandRequest, ambiance, executionPassThroughData, false);
+    PowerMockito.verifyStatic(TaskRequestsUtils.class, times(1));
+    TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test(expected = GeneralException.class)

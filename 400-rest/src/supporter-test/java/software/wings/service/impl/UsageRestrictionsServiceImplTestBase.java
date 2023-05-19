@@ -44,7 +44,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.runners.MockitoJUnitRunner;
 
 /**
  * @author rktummala on 06/08/18

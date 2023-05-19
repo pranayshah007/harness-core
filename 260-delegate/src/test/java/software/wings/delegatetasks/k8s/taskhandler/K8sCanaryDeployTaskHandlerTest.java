@@ -27,13 +27,13 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -290,13 +290,12 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     canaryHandlerConfig.setReleaseHistory(releaseHistory);
     canaryHandlerConfig.setCurrentRelease(K8sLegacyRelease.builder().number(2).build());
     canaryHandlerConfig.setTargetInstances(3);
-    canaryHandlerConfig.setManifestFilesDirectory("/manifest/file/dir");
 
     final K8sTaskExecutionResponse response =
         handler.executeTask(K8sCanaryDeployTaskParameters.builder()
                                 .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                                 .build(),
-            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+            K8sDelegateTaskParams.builder().build());
     verify(k8sCanaryBaseHandler, times(1)).wrapUp(any(), any(), any());
     final K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) response.getK8sTaskResponse();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
@@ -312,7 +311,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                 .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                                 .releaseName("release")
                                 .build(),
-            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+            K8sDelegateTaskParams.builder().build());
     verify(k8sCanaryBaseHandler, times(1)).failAndSaveRelease(canaryHandlerConfig);
     assertThat(failureResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
 
@@ -325,7 +324,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                 .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                                 .releaseName("release-Name")
                                 .build(),
-            K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+            K8sDelegateTaskParams.builder().build());
     assertThat(taskExecutionResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
     verify(k8sCanaryBaseHandler, times(1)).failAndSaveRelease(canaryHandlerConfig);
   }
@@ -456,7 +455,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
     handler.executeTask(K8sCanaryDeployTaskParameters.builder()
                             .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                             .build(),
-        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+        K8sDelegateTaskParams.builder().build());
 
     // status check fails
     doReturn(false).when(k8sTaskHelperBase).doStatusCheck(any(), any(), any(), any());
@@ -464,7 +463,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                             .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                             .releaseName("release-name-1")
                             .build(),
-        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+        K8sDelegateTaskParams.builder().build());
     verify(k8sCanaryBaseHandler, times(1)).failAndSaveRelease(handler.getCanaryHandlerConfig());
 
     clearInvocations(k8sCanaryBaseHandler);
@@ -473,7 +472,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                             .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                             .releaseName("release-name-2")
                             .build(),
-        K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+        K8sDelegateTaskParams.builder().build());
     verify(k8sCanaryBaseHandler, times(1)).failAndSaveRelease(handler.getCanaryHandlerConfig());
   }
 
@@ -498,7 +497,7 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
                                                .k8sDelegateManifestConfig(K8sDelegateManifestConfig.builder().build())
                                                .releaseName("releaseName")
                                                .build(),
-                K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build()))
+                K8sDelegateTaskParams.builder().build()))
         .isEqualTo(thrownException);
   }
 
@@ -672,8 +671,8 @@ public class K8sCanaryDeployTaskHandlerTest extends WingsBaseTest {
         .when(k8sCanaryBaseHandler)
         .updateTargetInstances(any(K8sCanaryHandlerConfig.class), anyInt(), any(LogCallback.class));
 
-    K8sTaskExecutionResponse response = k8sCanaryDeployTaskHandler.executeTask(
-        k8sCanaryDeployTaskParameters, K8sDelegateTaskParams.builder().workingDirectory("/some/dir/").build());
+    K8sTaskExecutionResponse response =
+        k8sCanaryDeployTaskHandler.executeTask(k8sCanaryDeployTaskParameters, K8sDelegateTaskParams.builder().build());
     K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) response.getK8sTaskResponse();
 
     // Null value is still valid use case. It's an issue only if workload name wasn't updated

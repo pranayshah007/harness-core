@@ -25,7 +25,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -105,8 +105,8 @@ public class NotificationDispatcherServiceTest extends WingsBaseTest {
                                                .build();
 
     notificationDispatcherService.dispatchNotification(notification, Collections.singletonList(notificationRule));
-    verifyNoInteractions(userGroupService);
-    verifyNoInteractions(userGroupNotificationDispatcher);
+    verifyZeroInteractions(userGroupService);
+    verifyZeroInteractions(userGroupNotificationDispatcher);
 
     verify(notificationGroupDispatcher).dispatch(Collections.singletonList(notification), notificationGroup);
   }
@@ -143,7 +143,7 @@ public class NotificationDispatcherServiceTest extends WingsBaseTest {
                                                .build();
 
     notificationDispatcherService.dispatchNotification(notification, Collections.singletonList(notificationRule));
-    verifyNoInteractions(notificationGroupDispatcher);
+    verifyZeroInteractions(notificationGroupDispatcher);
     verify(userGroupNotificationDispatcher).dispatch(Collections.singletonList(notification), userGroup);
   }
 

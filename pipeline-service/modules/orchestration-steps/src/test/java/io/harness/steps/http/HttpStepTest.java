@@ -14,8 +14,8 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -46,6 +46,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -62,7 +63,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.joor.Reflect;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -71,10 +71,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({StepUtils.class, TaskRequestsUtils.class})
 public class HttpStepTest extends CategoryTest {
   @Inject private StepElementParameters stepElementParameters;
   @Inject private Ambiance ambiance;
@@ -89,21 +92,14 @@ public class HttpStepTest extends CategoryTest {
   @Mock private NGLogCallback ngLogCallback;
   @InjectMocks HttpStep httpStep;
   @Mock private StepHelper stepHelper;
-  private MockedStatic<TaskRequestsUtils> aStatic;
 
   private String TEST_URL = "https://www.google.com";
 
   @Before
   public void setup() {
-    aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     LogStreamingStepClientImpl logClient = mock(LogStreamingStepClientImpl.class);
     Mockito.when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(logClient);
     Reflect.on(httpStep).set("engineExpressionService", engineExpressionService);
-  }
-
-  @After
-  public void cleanup() {
-    aStatic.close();
   }
 
   @Test
@@ -253,6 +249,7 @@ public class HttpStepTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testObtainTask() {
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ambiance = Ambiance.newBuilder().build();
@@ -289,6 +286,7 @@ public class HttpStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleTask() throws Exception {
     ambiance = Ambiance.newBuilder().build();
+    PowerMockito.mockStatic(TaskRequestsUtils.class);
 
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
 
@@ -330,6 +328,7 @@ public class HttpStepTest extends CategoryTest {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testObtainTaskWithExpressionBody() {
+    MockedStatic<TaskRequestsUtils> aStatic = Mockito.mockStatic(TaskRequestsUtils.class);
     // expected task parameters as argument matchers
     HttpTaskParametersNg expectedTaskParams = HttpTaskParametersNg.builder()
                                                   .body("namespace: <+input>")

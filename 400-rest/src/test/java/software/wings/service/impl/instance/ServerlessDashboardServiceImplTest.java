@@ -15,13 +15,13 @@ import static software.wings.service.impl.instance.ServerlessDashboardServiceImp
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -151,7 +151,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     final Mocks mocks = setup_AggregationPipeline();
     doThrow(NoResultFoundException.newBuilder().message("").build())
         .when(serverlessDashboardService)
-        .getServerlessInstanceQueryAtTime(anyString(), anyList(), anyLong());
+        .getServerlessInstanceQueryAtTime(anyString(), anyListOf(String.class), anyLong());
 
     InstanceSummaryStats appInstanceSummaryStats = serverlessDashboardService.getAppInstanceSummaryStats(ACCOUNTID,
         Arrays.asList(APPID_1),
@@ -167,7 +167,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
   public void test_getAppInstanceSummaryStats_error1() {
     doThrow(new RuntimeException("error"))
         .when(serverlessDashboardService)
-        .getServerlessInstanceQueryAtTime(anyString(), anyList(), anyLong());
+        .getServerlessInstanceQueryAtTime(anyString(), anyListOf(String.class), anyLong());
 
     InstanceSummaryStats appInstanceSummaryStats = serverlessDashboardService.getAppInstanceSummaryStats(ACCOUNTID,
         Arrays.asList(APPID_1),
@@ -180,7 +180,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
   private void setup_getInstanceQueryAtTime() {
     doReturn(mock(Query.class))
         .when(serverlessDashboardService)
-        .getServerlessInstanceQueryAtTime(anyString(), anyList(), anyLong());
+        .getServerlessInstanceQueryAtTime(anyString(), anyListOf(String.class), anyLong());
 
     doReturn(mock(Query.class))
         .when(serverlessDashboardService)
@@ -204,7 +204,8 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     PageResponse<InstanceSummaryStatsByService> appInstanceSummaryStatsByService =
         serverlessDashboardService.getAppInstanceSummaryStatsByService(ACCOUNTID, Arrays.asList(APPID_1), 0, 0, 10);
 
-    verify(serverlessDashboardService, times(1)).constructInstanceSummaryStatsByService(anyList(), anyInt(), anyInt());
+    verify(serverlessDashboardService, times(1))
+        .constructInstanceSummaryStatsByService(anyListOf(ServiceInstanceCount.class), anyInt(), anyInt());
   }
 
   private Mocks setup_AggregationPipeline() {
@@ -217,7 +218,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
   public void test_getAppInstanceSummaryStatsByService_error() {
     doThrow(NoResultFoundException.newBuilder().message("").build())
         .when(serverlessDashboardService)
-        .getServerlessInstanceQueryAtTime(anyString(), anyList(), anyLong());
+        .getServerlessInstanceQueryAtTime(anyString(), anyListOf(String.class), anyLong());
 
     PageResponse<InstanceSummaryStatsByService> appInstanceSummaryStatsByService =
         serverlessDashboardService.getAppInstanceSummaryStatsByService(ACCOUNTID, Arrays.asList(APPID_1), 0, 0, 10);
@@ -231,7 +232,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
   public void test_getAppInstanceSummaryStatsByService_error1() {
     doThrow(new RuntimeException("error"))
         .when(serverlessDashboardService)
-        .getServerlessInstanceQueryAtTime(anyString(), anyList(), anyLong());
+        .getServerlessInstanceQueryAtTime(anyString(), anyListOf(String.class), anyLong());
 
     PageResponse<InstanceSummaryStatsByService> appInstanceSummaryStatsByService =
         serverlessDashboardService.getAppInstanceSummaryStatsByService(ACCOUNTID, Arrays.asList(APPID_1), 0, 0, 10);
@@ -251,9 +252,10 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
 
     doReturn(mock(PageResponse.class))
         .when(serverlessDashboardService)
-        .constructInstanceStatsForService(eq(SERVICEID), anyList());
+        .constructInstanceStatsForService(eq(SERVICEID), anyListOf(ServiceAggregationInfo.class));
     List<InstanceStatsByEnvironment> response = serverlessDashboardService.getServiceInstances(ACCOUNTID, SERVICEID, 0);
-    verify(serverlessDashboardService, times(1)).constructInstanceStatsForService(eq(SERVICEID), anyList());
+    verify(serverlessDashboardService, times(1))
+        .constructInstanceStatsForService(eq(SERVICEID), anyListOf(ServiceAggregationInfo.class));
   }
 
   @Test
@@ -276,7 +278,8 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
 
     doReturn(InstanceStatsByEnvironment.builder().build())
         .when(serverlessDashboardService)
-        .getServerlessInstanceStatsByEnvironment(anyString(), anyString(), any(EnvInfo.class), anyList());
+        .getServerlessInstanceStatsByEnvironment(
+            anyString(), anyString(), any(EnvInfo.class), anyListOf(InstanceStatsByArtifact.class));
 
     List<InstanceStatsByEnvironment> instanceStatsByEnvironments =
         serverlessDashboardService.constructInstanceStatsForService(SERVICEID, serviceAggregationInfos);
