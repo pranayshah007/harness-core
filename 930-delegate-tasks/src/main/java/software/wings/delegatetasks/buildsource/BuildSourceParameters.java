@@ -30,6 +30,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.settings.SettingValue;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +64,9 @@ public class BuildSourceParameters implements TaskParameters, ExecutionCapabilit
   // Unique key representing build numbers already present in the DB. It stores different things for different artifact
   // stream types like buildNo, revision or artifactPath.
   private Set<String> savedBuildDetailsKeys;
+
+  private boolean timeoutSupported;
+  private Integer timeout;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
