@@ -7,8 +7,8 @@
 
 package io.harness.delegate.service.core.litek8s;
 
-import static java.util.stream.Collectors.*;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 import io.harness.delegate.core.beans.K8SInfra;
 import io.harness.delegate.core.beans.K8SStep;

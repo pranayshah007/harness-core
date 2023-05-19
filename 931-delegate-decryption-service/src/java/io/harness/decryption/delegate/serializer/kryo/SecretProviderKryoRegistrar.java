@@ -15,7 +15,6 @@ import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
-import java.util.LinkedHashSet;
 
 /**
  * This registrar adds bindings for classes which should probably belong to SecretConfigKryoRegistrar, but are more
