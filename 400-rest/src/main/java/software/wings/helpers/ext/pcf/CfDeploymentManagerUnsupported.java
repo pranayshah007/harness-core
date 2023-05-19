@@ -207,20 +207,20 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
-  public boolean checkUnsettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig,
-                                                          LogCallback executionLogCallback) throws PivotalClientApiException {
+  public boolean checkUnsettingEnvironmentVariableForAppStatus(
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 
   @Override
   public boolean checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
-                                                        LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 
   @Override
   public boolean checkSettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
-                                                               LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 }

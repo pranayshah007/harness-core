@@ -512,7 +512,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
         "# Application Being Downsized To 0: " + encodeColor(applicationSummary.getName()));
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables = RetryAbleTaskExecutorForEnvVariables.getExecutor();
+    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables =
+        RetryAbleTaskExecutorForEnvVariables.getExecutor();
     if (setupRequestNG.isUseAppAutoScalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -554,8 +555,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void unsetEnvVariables(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor) {
+  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
+      RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor) {
     // TODO this only for BG
     // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
     RetryPolicy retryPolicy =
@@ -571,7 +572,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     retryAbleTaskExecutor.execute(
         ()
             -> cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy, () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
+        executionLogCallback, log, retryPolicy,
+        () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
   }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,

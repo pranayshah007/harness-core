@@ -673,8 +673,8 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
             .build());
 
     assertThatThrownBy(()
-                           -> pcfCommandTaskHelper.findCurrentActiveApplication(
-                               previousReleases1, CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback))
+                           -> pcfCommandTaskHelper.findCurrentActiveApplication(previousReleases1,
+                               CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback))
         .isInstanceOf(InvalidPcfStateException.class);
 
     doReturn(false).doReturn(true).when(pcfDeploymentManager).isActiveApplication(any(), any());
@@ -705,31 +705,32 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     assertThat(currentActiveApplication.getName()).isEqualTo("a_s_e__6");
     assertThat(currentActiveApplication.getUrls()).containsExactly("url5", "url6");
 
-    // when none of the releases have Active Env Variable set, then pick the application which has same name as release name
+    // when none of the releases have Active Env Variable set, then pick the application which has same name as release
+    // name
     doReturn(false).doReturn(false).when(pcfDeploymentManager).isActiveApplication(any(), any());
     final List<ApplicationSummary> previousReleases3 = Arrays.asList(ApplicationSummary.builder()
-                    .name("a_s_e")
-                    .diskQuota(1)
-                    .requestedState(RUNNING)
-                    .id("1")
-                    .urls(new String[] {"url5", "url6"})
-                    .instances(2)
-                    .memoryLimit(1)
-                    .runningInstances(0)
-                    .build(),
-            ApplicationSummary.builder()
-                    .name("a_s_e__7")
-                    .diskQuota(1)
-                    .requestedState(RUNNING)
-                    .id("1")
-                    .urls(new String[] {"url7", "url8"})
-                    .instances(2)
-                    .memoryLimit(1)
-                    .runningInstances(0)
-                    .build());
+                                                                         .name("a_s_e")
+                                                                         .diskQuota(1)
+                                                                         .requestedState(RUNNING)
+                                                                         .id("1")
+                                                                         .urls(new String[] {"url5", "url6"})
+                                                                         .instances(2)
+                                                                         .memoryLimit(1)
+                                                                         .runningInstances(0)
+                                                                         .build(),
+        ApplicationSummary.builder()
+            .name("a_s_e__7")
+            .diskQuota(1)
+            .requestedState(RUNNING)
+            .id("1")
+            .urls(new String[] {"url7", "url8"})
+            .instances(2)
+            .memoryLimit(1)
+            .runningInstances(0)
+            .build());
 
     currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(
-            previousReleases3, CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback);
+        previousReleases3, CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback);
     assertThat(currentActiveApplication).isNotNull();
     assertThat(currentActiveApplication.getName()).isEqualTo("a_s_e");
     assertThat(currentActiveApplication.getUrls()).containsExactly("url5", "url6");

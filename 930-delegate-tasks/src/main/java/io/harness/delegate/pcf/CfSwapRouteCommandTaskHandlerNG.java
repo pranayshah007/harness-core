@@ -34,7 +34,6 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfSwapRouteCommandResult;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutorForEnvVariables;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
@@ -413,20 +412,22 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     cfRequestConfig.setApplicationName(appName);
     RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     RetryPolicy retryPolicy =
-            RetryPolicy.builder()
-                    .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
-                            encodeColor(cfRequestConfig.getApplicationName())))
-                    .finalErrorMessage(String.format(
-                            "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
-                            encodeColor(cfRequestConfig.getApplicationName())))
-                    .retry(3)
-                    .build();
+        RetryPolicy.builder()
+            .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
+                encodeColor(cfRequestConfig.getApplicationName())))
+            .finalErrorMessage(String.format(
+                "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
+                encodeColor(cfRequestConfig.getApplicationName())))
+            .retry(3)
+            .build();
 
-    retryAbleTaskExecutor.execute(
-            ()
-                    -> cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
-                    cfRequestConfig, isActiveApplication, executionLogCallback),
-            executionLogCallback, log, retryPolicy, () -> cfDeploymentManager.checkSettingEnvironmentVariableForAppStatusNG(cfRequestConfig, isActiveApplication, executionLogCallback));
+    retryAbleTaskExecutor.execute(()
+                                      -> cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
+                                          cfRequestConfig, isActiveApplication, executionLogCallback),
+        executionLogCallback, log, retryPolicy,
+        ()
+            -> cfDeploymentManager.checkSettingEnvironmentVariableForAppStatusNG(
+                cfRequestConfig, isActiveApplication, executionLogCallback));
   }
 
   private CfInBuiltVariablesUpdateValues performAppRenaming(NamingTransition transition,

@@ -29,9 +29,7 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutorForEnvVariables;
-import io.harness.delegate.cf.retry.RetryAbleTaskForVerfication;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.request.CfCommandRouteUpdateRequest;
@@ -52,7 +50,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
@@ -428,19 +425,22 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
     cfRequestConfig.setApplicationName(appName);
     RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     RetryPolicy retryPolicy =
-            RetryPolicy.builder()
-                    .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
-                            encodeColor(cfRequestConfig.getApplicationName())))
-                    .finalErrorMessage(String.format(
-                            "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
-                            encodeColor(cfRequestConfig.getApplicationName())))
-                    .retry(3)
-                    .build();
+        RetryPolicy.builder()
+            .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
+                encodeColor(cfRequestConfig.getApplicationName())))
+            .finalErrorMessage(String.format(
+                "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
+                encodeColor(cfRequestConfig.getApplicationName())))
+            .retry(3)
+            .build();
 
     retryAbleTaskExecutor.execute(
-            ()
-                    -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
+        ()
+            -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
+        executionLogCallback, log, retryPolicy,
+        ()
+            -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(
+                cfRequestConfig, executionLogCallback));
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
@@ -495,19 +495,22 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
     cfRequestConfig.setApplicationName(appName);
     RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor = RetryAbleTaskExecutorForEnvVariables.getExecutor();
     RetryPolicy retryPolicy =
-            RetryPolicy.builder()
-                    .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
-                            encodeColor(cfRequestConfig.getApplicationName())))
-                    .finalErrorMessage(String.format(
-                            "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
-                            encodeColor(cfRequestConfig.getApplicationName())))
-                    .retry(3)
-                    .build();
+        RetryPolicy.builder()
+            .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
+                encodeColor(cfRequestConfig.getApplicationName())))
+            .finalErrorMessage(String.format(
+                "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
+                encodeColor(cfRequestConfig.getApplicationName())))
+            .retry(3)
+            .build();
 
-    retryAbleTaskExecutor.execute(
-            ()
-                    -> pcfDeploymentManager.setEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback),
-            executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkSettingEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback));
+    retryAbleTaskExecutor.execute(()
+                                      -> pcfDeploymentManager.setEnvironmentVariableForAppStatus(
+                                          cfRequestConfig, isActiveApplication, executionLogCallback),
+        executionLogCallback, log, retryPolicy,
+        ()
+            -> pcfDeploymentManager.checkSettingEnvironmentVariableForAppStatus(
+                cfRequestConfig, isActiveApplication, executionLogCallback));
   }
 
   private void updateRoutesForNewApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

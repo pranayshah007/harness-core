@@ -797,7 +797,8 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
                                               .toString());
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables = RetryAbleTaskExecutorForEnvVariables.getExecutor();
+    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables =
+        RetryAbleTaskExecutorForEnvVariables.getExecutor();
     if (cfCommandSetupRequest.isUseAppAutoscalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -809,7 +810,8 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     cfRequestConfig.setDesiredCount(0);
 
     unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
-    unsetEnvVariables(cfRequestConfig, cfCommandSetupRequest, executionLogCallback, retryAbleTaskExecutorForEnvVariables);
+    unsetEnvVariables(
+        cfRequestConfig, cfCommandSetupRequest, executionLogCallback, retryAbleTaskExecutorForEnvVariables);
     downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
   }
 
@@ -858,7 +860,10 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     retryAbleTaskExecutor.execute(
         ()
             -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy, () -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
+        executionLogCallback, log, retryPolicy,
+        ()
+            -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(
+                cfRequestConfig, executionLogCallback));
   }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,

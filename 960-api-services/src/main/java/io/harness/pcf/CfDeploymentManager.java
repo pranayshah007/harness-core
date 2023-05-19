@@ -106,12 +106,12 @@ public interface CfDeploymentManager {
   List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
       throws PivotalClientApiException;
 
-  boolean checkUnsettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig,
-                                                                 LogCallback executionLogCallback) throws PivotalClientApiException;
+  boolean checkUnsettingEnvironmentVariableForAppStatus(
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException;
 
   boolean checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
-                                                        LogCallback executionLogCallback) throws PivotalClientApiException;
+      LogCallback executionLogCallback) throws PivotalClientApiException;
 
   boolean checkSettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, boolean activeStatus,
-                                                        LogCallback executionLogCallback) throws PivotalClientApiException;
+      LogCallback executionLogCallback) throws PivotalClientApiException;
 }

@@ -7,18 +7,19 @@
 
 package io.harness.delegate.cf.retry;
 
+import static io.harness.threading.Morpheus.sleep;
+
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.pcf.PivotalClientApiException;
-import org.slf4j.Logger;
 
 import java.time.Duration;
-
-import static io.harness.threading.Morpheus.sleep;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
+import org.slf4j.Logger;
 
 public class RetryAbleTaskExecutorForEnvVariables {
   public static final int MIN_RETRY = 3;
@@ -28,7 +29,8 @@ public class RetryAbleTaskExecutorForEnvVariables {
     return new RetryAbleTaskExecutorForEnvVariables();
   }
 
-  public void execute(RetryAbleTask task, LogCallback executionLogCallback, Logger log, RetryPolicy policy, RetryAbleTaskForVerfication task1) {
+  public void execute(RetryAbleTask task, LogCallback executionLogCallback, Logger log, RetryPolicy policy,
+      RetryAbleTaskForVerfication task1) {
     int attempt = 0;
     boolean isComplete = false;
     int retry = policy.getRetry() == 0 ? MIN_RETRY : policy.getRetry();
@@ -38,13 +40,13 @@ public class RetryAbleTaskExecutorForEnvVariables {
       try {
         task.execute();
         boolean status = task1.execute();
-        if(status) {
+        if (status) {
           isComplete = true;
         } else {
           executionLogCallback.saveExecutionLog(policy.getUserMessageOnFailure(), LogLevel.ERROR);
           int seconds = exponentialBackOffTime[attempt];
           executionLogCallback.saveExecutionLog(
-                  String.format("Sleeping for %d seconds. Retry attempt - [%d]", seconds, attempt + 1));
+              String.format("Sleeping for %d seconds. Retry attempt - [%d]", seconds, attempt + 1));
           sleep(Duration.ofSeconds(seconds));
           attempt++;
         }
@@ -55,7 +57,7 @@ public class RetryAbleTaskExecutorForEnvVariables {
 
         int seconds = exponentialBackOffTime[attempt];
         executionLogCallback.saveExecutionLog(
-                String.format("Sleeping for %d seconds. Retry attempt - [%d]", seconds, attempt + 1));
+            String.format("Sleeping for %d seconds. Retry attempt - [%d]", seconds, attempt + 1));
         sleep(Duration.ofSeconds(seconds));
         attempt++;
       }

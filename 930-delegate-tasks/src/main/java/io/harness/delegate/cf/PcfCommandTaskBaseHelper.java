@@ -544,7 +544,7 @@ public class PcfCommandTaskBaseHelper {
       }
     }
 
-    if(!logPrinted) {
+    if (!logPrinted) {
       for (int i = previousReleases.size() - 1; i >= 0; i--) {
         ApplicationSummary applicationSummary = previousReleases.get(i);
 
@@ -553,8 +553,8 @@ public class PcfCommandTaskBaseHelper {
           activeVersions.add(applicationSummary);
           logPrinted = true;
           executionLogCallback.saveExecutionLog(
-                  String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
-                          PcfUtils.encodeColor(activeApplication.getName())));
+              String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+                  PcfUtils.encodeColor(activeApplication.getName())));
         }
       }
     }
