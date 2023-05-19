@@ -18,7 +18,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.DelegateHeartbeatParams;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.delegate.beans.Delegate;
@@ -194,29 +193,6 @@ public class DelegateCacheImpl implements DelegateCache {
   @Override
   public Delegate get(String accountId, String delegateId) {
     return get(accountId, delegateId, false);
-  }
-
-  @Override
-  public void refreshDelegate(
-      String accountId, String delegateId, long lastHeartbeatTimestamp, DelegateHeartbeatParams params) {
-    try {
-      Delegate delegate = delegateRedisCache.get(delegateId);
-      if (delegate == null) {
-        delegate = persistence.createQuery(Delegate.class).filter(DelegateKeys.uuid, delegateId).get();
-        if (delegate == null) {
-          log.warn("Unable to find delegate {} in DB.", delegateId);
-          return;
-        }
-      }
-      delegate.setLastHeartBeat(lastHeartbeatTimestamp);
-      delegate.setDisconnected(false);
-      delegate.setVersion(params.getVersion());
-      delegate.setLocation(params.getLocation());
-      delegate.setDelegateConnectionId(params.getDelegateConnectionId());
-      delegateRedisCache.put(delegateId, delegate);
-    } catch (Exception e) {
-      log.error("Delegate not found exception", e);
-    }
   }
 
   // only for task assignment logic we should fetch from cache, since we process very heavy number of tasks per minute.

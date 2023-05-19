@@ -403,7 +403,6 @@ public class DelegateServiceImpl implements DelegateService {
   @Inject private DelegateVersionService delegateVersionService;
   @Inject private AgentMtlsEndpointService agentMtlsEndpointService;
   @Inject private DelegateJreVersionHelper jreVersionHelper;
-  @Inject @Named("enableRedisForDelegateService") private boolean enableRedisForDelegateService;
 
   @Inject private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
 
@@ -2905,7 +2904,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegate == null) {
       return null;
     }
-
+    delegateCache.get(delegate.getAccountId(), delegate.getUuid(), true);
     return DelegateRegisterResponse.builder()
         .delegateId(delegate.getUuid())
         .sequenceNum(delegate.getSequenceNum())
