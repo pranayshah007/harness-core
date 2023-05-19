@@ -7,12 +7,8 @@
 
 package software.wings.service.impl;
 
-import static io.harness.ng.core.common.beans.Generation.CG;
-import static io.harness.ng.core.common.beans.Generation.NG;
-import static io.harness.ng.core.common.beans.UserSource.MANUAL;
 import static io.harness.ng.core.user.NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK;
 import static io.harness.rule.OwnerRule.BOOPESH;
-import static io.harness.rule.OwnerRule.SHASHANK;
 
 import static software.wings.beans.Account.Builder.anAccount;
 
@@ -22,12 +18,9 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ff.FeatureFlagService;
-import io.harness.ng.core.common.beans.Generation;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 
@@ -51,7 +44,6 @@ import org.mockito.Mockito;
 @OwnedBy(HarnessTeam.PL)
 public class UserServiceHelperTest extends WingsBaseTest {
   @Inject @InjectMocks UserServiceHelper userServiceHelper;
-  @Mock private FeatureFlagService featureFlagService;
 
   @Mock AccountService accountService;
   @Inject private WingsPersistence wingsPersistence;
@@ -62,9 +54,16 @@ public class UserServiceHelperTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testIfUserPartOfDeletedAccount() {
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-    boolean result = userServiceHelper.isUserPartOfDeletedAccount(user, ACCOUNT_ID);
+    Account account = anAccount().withUuid(ACCOUNT_ID).build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
+    boolean result = userServiceHelper.isUserPartOfDeletedAccount(user1, ACCOUNT_ID);
     assertThat(result).isEqualTo(true);
   }
 
@@ -72,224 +71,37 @@ public class UserServiceHelperTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testIfUserPartOfPendingDeletedAccount() {
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = User.Builder.anUser()
-                    .uuid(UUIDGenerator.generateUuid())
-                    .pendingAccounts(Collections.singletonList(account))
-                    .email("abc@harness.io")
-                    .name("abc")
-                    .build();
-    wingsPersistence.save(user);
-    boolean result = userServiceHelper.isUserPartOfDeletedAccount(user, ACCOUNT_ID);
+    Account account = anAccount().withUuid(ACCOUNT_ID).build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .pendingAccounts(Collections.singletonList(account))
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
+    boolean result = userServiceHelper.isUserPartOfDeletedAccount(user1, ACCOUNT_ID);
     assertThat(result).isEqualTo(true);
   }
 
   @Test
-  @Owner(developers = {BOOPESH, SHASHANK})
+  @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testIsUserActiveInNG() {
     when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    // With FF On
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-    boolean result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
+    Account account = anAccount().withUuid(ACCOUNT_ID).build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("aBc@harness.io")
+                     .name("pqr")
+                     .build();
+    wingsPersistence.save(user1);
+    boolean result = userServiceHelper.isUserActiveInNG(user1, ACCOUNT_ID);
     assertThat(result).isEqualTo(true);
-    // With FF Off
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
-    result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testCGUserIsActiveInNGWithFFOn() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
-    userServiceHelper.populateAccountToUserMapping(user, account.getUuid(), CG, MANUAL);
-    boolean result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
-    assertThat(result).isEqualTo(false);
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testCGUserIsActiveInNGWithFFOff() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(false);
-    boolean result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
-    assertThat(result).isEqualTo(true); // Because when there is no data, older method will be used
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
-    result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testNGUserIsActiveInNGWithFFOn() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
-    userServiceHelper.populateAccountToUserMapping(user, account.getUuid(), Generation.NG, MANUAL);
-    boolean result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
-    assertThat(result).isEqualTo(true);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testNGUserIsActiveInNGWithFFOff() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(false);
-    boolean result = userServiceHelper.isUserActiveInNG(user, ACCOUNT_ID);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testIsUserProvisionedInThisGenerationInThisAccountWithNoData() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
-    boolean result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), CG);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testIsUserProvisionedWithDifferentAccount() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID_2)).thenReturn(true);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID_2, CG, MANUAL);
-    boolean result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), CG);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testIsUserProvisionedWithCorrectAccountInCG() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, MANUAL);
-    boolean result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), CG);
-    assertThat(result).isEqualTo(true);
-    result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), NG);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testIsUserProvisionedWithCorrectAccountInCGButFFIsOff() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(false);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, NG, MANUAL);
-    boolean result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), CG);
-    assertThat(result).isEqualTo(false);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testIsUserProvisionedInBothGen() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, NG, MANUAL);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, MANUAL);
-    boolean result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), NG);
-    assertThat(result).isEqualTo(true);
-    result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), CG);
-    assertThat(result).isEqualTo(true);
-
-    mockRestStatic.close();
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testIsUserProvisionedInBothGenThenRemovedFromCG() {
-    when(accountService.isNextGenEnabled(ACCOUNT_ID)).thenReturn(true);
-    MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
-    mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(true);
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
-
-    when(featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, ACCOUNT_ID)).thenReturn(true);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, NG, MANUAL);
-    userServiceHelper.populateAccountToUserMapping(user, ACCOUNT_ID, CG, MANUAL);
-    user.getUserAccountLevelDataMap().get(ACCOUNT_ID).getUserProvisionedTo().remove(CG);
-    boolean result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), CG);
-    assertThat(result).isEqualTo(false);
-    result = userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, account.getUuid(), NG);
-    assertThat(result).isEqualTo(true);
-
-    mockRestStatic.close();
   }
 
   @Test
@@ -302,14 +114,14 @@ public class UserServiceHelperTest extends WingsBaseTest {
     accountList.add(account);
     accountList.add(account2);
     wingsPersistence.save(account);
-    User user = User.Builder.anUser()
-                    .uuid(UUIDGenerator.generateUuid())
-                    .accounts(accountList)
-                    .email("abc@harness.io")
-                    .name("abc")
-                    .build();
-    wingsPersistence.save(user);
-    List<Account> updatedAccounts = userServiceHelper.updatedActiveAccounts(user, ACCOUNT_ID);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(accountList)
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
+    List<Account> updatedAccounts = userServiceHelper.updatedActiveAccounts(user1, ACCOUNT_ID);
     assertThat(updatedAccounts).doesNotContain(account);
   }
 
@@ -322,10 +134,15 @@ public class UserServiceHelperTest extends WingsBaseTest {
     List<Account> accountList = new ArrayList<>();
     accountList.add(account2);
     wingsPersistence.save(account);
-    User user = getUserWithAccount(account);
-    user.setPendingAccounts(Collections.singletonList(account2));
-
-    List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user, ACCOUNT_ID_2);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .pendingAccounts(Collections.singletonList(account2))
+                     .accounts(Collections.singletonList(account))
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
+    List<Account> updatedPendingAccounts = userServiceHelper.updatedPendingAccount(user1, ACCOUNT_ID_2);
     assertThat(updatedPendingAccounts).doesNotContain(account2);
   }
 
@@ -333,28 +150,17 @@ public class UserServiceHelperTest extends WingsBaseTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteUserFromNG() {
-    Account account = getAccountWithUUID(ACCOUNT_ID);
-    User user = getUserWithAccount(account);
+    Account account = anAccount().withUuid(ACCOUNT_ID).build();
+    wingsPersistence.save(account);
+    User user1 = User.Builder.anUser()
+                     .uuid(UUIDGenerator.generateUuid())
+                     .accounts(Collections.singletonList(account))
+                     .email("abc@harness.io")
+                     .name("abc")
+                     .build();
+    wingsPersistence.save(user1);
     MockedStatic<NGRestUtils> mockRestStatic = Mockito.mockStatic(NGRestUtils.class);
     mockRestStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(false);
-    userServiceHelper.deleteUserFromNG(user.getUuid(), ACCOUNT_ID, ACCOUNT_LAST_ADMIN_CHECK);
-    mockRestStatic.close();
-  }
-
-  private User getUserWithAccount(Account account) {
-    User user = User.Builder.anUser()
-                    .uuid(UUIDGenerator.generateUuid())
-                    .accounts(Collections.singletonList(account))
-                    .email("abc@harness.io")
-                    .name("abc")
-                    .build();
-    wingsPersistence.save(user);
-    return user;
-  }
-
-  private Account getAccountWithUUID(String uuid) {
-    Account account = anAccount().withUuid(uuid).build();
-    wingsPersistence.save(account);
-    return account;
+    userServiceHelper.deleteUserFromNG(user1.getUuid(), ACCOUNT_ID, ACCOUNT_LAST_ADMIN_CHECK);
   }
 }

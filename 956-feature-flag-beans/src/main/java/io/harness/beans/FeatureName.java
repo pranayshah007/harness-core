@@ -728,8 +728,6 @@ public enum FeatureName {
       HarnessTeam.CDP),
   PL_USER_ACCOUNT_LEVEL_DATA_FLOW(
       "Enables the new flow for all User CRUD where User's Account level Data is also considered.", HarnessTeam.PL),
-  PL_USER_ACCOUNT_LEVEL_DATA_MIGRATION(
-      "Enables Migration to create user account level data map for this account", HarnessTeam.PL),
   CDS_BG_STAGE_SCALE_DOWN_STEP_NG(
       "Enables Blue Green Scale Down Stage Scale Down Step. This will help bring down the stage environment in Blue Green Deployment. Epic: https://harness.atlassian.net/browse/CDS-55822",
       HarnessTeam.CDP),
@@ -740,6 +738,7 @@ public enum FeatureName {
       HarnessTeam.CDC),
   CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI);
+
 
   @Deprecated
   FeatureName() {

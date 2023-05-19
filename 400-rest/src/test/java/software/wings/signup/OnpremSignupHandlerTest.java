@@ -9,16 +9,13 @@ package software.wings.signup;
 
 import static io.harness.annotations.dev.HarnessModule._950_NG_SIGNUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.core.common.beans.Generation.CG;
-import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.rule.OwnerRule.AMAN;
 import static io.harness.rule.OwnerRule.KAPIL_GARG;
-import static io.harness.rule.OwnerRule.SHASHANK;
 
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -107,7 +104,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = {KAPIL_GARG, SHASHANK})
+  @Owner(developers = KAPIL_GARG)
   @Category(UnitTests.class)
   public void handle_noExistingAccount_signupCompleted() {
     when(accountService.getOnPremAccount()).thenReturn(Optional.empty());
@@ -116,12 +113,12 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
 
     onpremSignupHandler.handle(userInvite);
     Mockito.verify(userService, times(1)).saveUserInvite(userInvite);
-    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite, true);
-    Mockito.verify(userService, times(0)).createNewUserAndSignIn(Mockito.any(), Mockito.anyString(), Mockito.any());
+    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(0)).createNewUserAndSignIn(Mockito.any(), Mockito.anyString());
   }
 
   @Test
-  @Owner(developers = {KAPIL_GARG, SHASHANK})
+  @Owner(developers = KAPIL_GARG)
   @Category(UnitTests.class)
   public void handle_existingAccount_signupCompleted() {
     Account account = Account.Builder.anAccount().build();
@@ -132,26 +129,8 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
 
     onpremSignupHandler.handle(userInvite);
     Mockito.verify(userService, times(0)).saveUserInvite(userInvite);
-    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite, true);
-    Mockito.verify(userService, times(1))
-        .createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()), Mockito.any());
-  }
-
-  @Test
-  @Owner(developers = SHASHANK)
-  @Category(UnitTests.class)
-  public void testUserCreatedWithAccountLevelDataForCG() {
-    Account account = Account.Builder.anAccount().build();
-    account.setUuid("test");
-    when(accountService.getOnPremAccount()).thenReturn(Optional.of(account));
-    UserInvite userInvite = createUserInvite();
-    setupUserAndAccountQueries(0, 1);
-    onpremSignupHandler.handle(userInvite);
-
-    Mockito.verify(userService, times(1))
-        .createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()), Mockito.eq(CG));
-    Mockito.verify(userService, times(0))
-        .createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()), Mockito.eq(NG));
+    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(1)).createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()));
   }
 
   @Test(expected = SignupException.class)
