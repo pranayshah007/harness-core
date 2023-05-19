@@ -49,17 +49,8 @@ public class RancherTestConnectionDelegateTask extends AbstractDelegateRunnableT
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     final RancherTaskParams rancherTaskParams = (RancherTaskParams) parameters;
-    final RancherTaskType rancherTaskType = rancherTaskParams.getRancherTaskType();
-    if (Objects.isNull(rancherTaskType)) {
-      throw new InvalidRequestException("Task type not provided");
-    }
-
     final List<EncryptedDataDetail> encryptionDetails = rancherTaskParams.getEncryptionDetails();
-    if (rancherTaskType == RancherTaskType.VALIDATE) {
-      return handleValidateTask(rancherTaskParams, encryptionDetails);
-    } else {
-      throw new InvalidRequestException("Task type not identified");
-    }
+    return handleValidateTask(rancherTaskParams, encryptionDetails);
   }
 
   public DelegateResponseData handleValidateTask(

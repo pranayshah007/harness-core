@@ -38,7 +38,7 @@ public class RancherConnectionValidator extends AbstractKubernetesConnectorValid
 
   @Override
   public String getTaskType() {
-    return TaskType.CONNECTIVITY_VALIDATION.name();
+    return TaskType.RANCHER_TEST_CONNECTION_TASK_NG.name();
   }
 
   @Override

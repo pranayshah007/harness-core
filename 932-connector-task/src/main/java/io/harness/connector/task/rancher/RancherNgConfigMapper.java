@@ -35,7 +35,6 @@ public class RancherNgConfigMapper {
       RancherConnectorDTO rancherConnectorDTO, List<EncryptedDataDetail> encryptionDetails) {
     RancherConnectorConfigDTO rancherConnectorConfigDTO = rancherConnectorDTO.getConfig();
     RancherConfigType rancherConfigType = rancherConnectorConfigDTO.getConfigType();
-    RancherConfig rancherConfig = null;
 
     if (rancherConfigType == RancherConfigType.MANUAL_CONFIG) {
       RancherConnectorConfigAuthDTO rancherConnectorConfigAuthDTO = rancherConnectorConfigDTO.getConfig();
@@ -43,29 +42,30 @@ public class RancherNgConfigMapper {
           rancherConnectorConfigAuthDTO.getCredentials();
       RancherConnectorBearerTokenAuthenticationDTO rancherConnectorBearerTokenAuthenticationDTO =
           (RancherConnectorBearerTokenAuthenticationDTO) rancherConnectorConfigAuthCredentialsDTO.getAuth();
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-          rancherConnectorBearerTokenAuthenticationDTO, encryptionDetails);
-      rancherConfig =
-          RancherConfig.builder()
-              .credential(RancherManualConfigCredentials.builder()
-                              .rancherUrl(rancherConnectorConfigAuthDTO.getRancherUrl())
-                              .password(RancherBearerTokenAuthPassword.builder()
-                                            .rancherPassword(getDecryptedValueWithNullCheck(
-                                                rancherConnectorBearerTokenAuthenticationDTO.getPasswordRef()))
-                                            .build())
-                              .build())
-
-              /*.spotAccountId(getSecretAsStringFromPlainTextOrSecretRef(
-                                           config.getSpotAccountId(), config.getSpotAccountIdRef()))
-                                       .appTokenId(getDecryptedValueWithNullCheck(config.getApiTokenRef()))
-                                      .build())
-           */
-              .build();
-    } else {
-      Switch.unhandled(rancherConfigType);
+      rancherConnectorBearerTokenAuthenticationDTO =
+          validateAndDecryptCredentials(rancherConnectorBearerTokenAuthenticationDTO, encryptionDetails);
+      return RancherConfig.builder()
+          .credential(RancherManualConfigCredentials.builder()
+                          .rancherUrl(rancherConnectorConfigAuthDTO.getRancherUrl())
+                          .password(RancherBearerTokenAuthPassword.builder()
+                                        .rancherPassword(getDecryptedValueWithNullCheck(
+                                            rancherConnectorBearerTokenAuthenticationDTO.getPasswordRef()))
+                                        .build())
+                          .build())
+          .build();
     }
 
-    return rancherConfig;
+    throw new IllegalArgumentException("Unsupported rancher connector type provided: " + rancherConfigType);
+  }
+
+  private RancherConnectorBearerTokenAuthenticationDTO validateAndDecryptCredentials(
+      RancherConnectorBearerTokenAuthenticationDTO rancherConnectorBearerTokenAuthenticationDTO,
+      List<EncryptedDataDetail> encryptionDetails) {
+    RancherConnectorBearerTokenAuthenticationDTO authenticationDTO =
+        (RancherConnectorBearerTokenAuthenticationDTO) decryptionHelper.decrypt(
+            rancherConnectorBearerTokenAuthenticationDTO, encryptionDetails);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(authenticationDTO, encryptionDetails);
+    return authenticationDTO;
   }
 
   private String getDecryptedValueWithNullCheck(SecretRefData passwordRef) {
