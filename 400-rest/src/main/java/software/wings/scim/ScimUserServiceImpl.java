@@ -11,14 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.PL_NEW_SCIM_STANDARDS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.common.beans.Generation.CG;
-import static io.harness.ng.core.common.beans.UserSource.SCIM;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.ng.core.common.beans.Generation;
+import io.harness.ng.core.common.beans.UserSource;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
@@ -87,7 +87,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       userQuery.setActive(true);
       if (shouldUpdateUser(userQuery, user)) {
         updateUser(user.getUuid(), accountId, userQuery);
-        userService.updateUserAccountLevelDataForThisGen(accountId, user, CG, SCIM);
+        userService.updateUserAccountLevelDataForThisGen(accountId, user, Generation.CG, UserSource.SCIM);
         log.info("SCIM: Creating user call for accountId {} with updation {}", accountId, userQuery);
       } else {
         log.info("SCIM: Creating user call for accountId {} with conflict {}", accountId, userQuery);

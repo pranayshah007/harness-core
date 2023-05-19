@@ -16,7 +16,6 @@ import static io.harness.mongo.MongoUtils.setUnset;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
-import static software.wings.beans.UserInviteSource.SourceType.SSO;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -284,14 +283,15 @@ public class LdapGroupSyncJobHelper {
             log.info("LDAPIterator: adding existing user {} to groups {}  in accountId {}", user.getUuid(),
                 Lists.newArrayList(userGroups), accountId);
           } else {
-            UserInvite userInvite = anUserInvite()
-                                        .withAccountId(accountId)
-                                        .withEmail(ldapUserResponse.getEmail())
-                                        .withName(ldapUserResponse.getName())
-                                        .withUserGroups(Lists.newArrayList(userGroups))
-                                        .withUserId(ldapUserResponse.getUserId())
-                                        .withSource(UserInviteSource.builder().type(SSO).build())
-                                        .build();
+            UserInvite userInvite =
+                anUserInvite()
+                    .withAccountId(accountId)
+                    .withEmail(ldapUserResponse.getEmail())
+                    .withName(ldapUserResponse.getName())
+                    .withUserGroups(Lists.newArrayList(userGroups))
+                    .withUserId(ldapUserResponse.getUserId())
+                    .withSource(UserInviteSource.builder().type(UserInviteSource.SourceType.SSO).build())
+                    .build();
             log.info(
                 "LDAPIterator: creating user invite for account {} and user Invite {} and user Groups {} and externalUserId {}",
                 accountId, userInvite.getEmail(), Lists.newArrayList(userGroups), ldapUserResponse.getUserId());

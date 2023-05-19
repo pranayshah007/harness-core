@@ -197,7 +197,7 @@ public class User extends Base implements Principal {
   private Set<String> reportedSegmentTracks = new HashSet<>();
   private UtmInfo utmInfo;
 
-  @Getter @Setter private Map<String, UserAccountLevelData> userAccountLevelDataMap = new HashMap<>();
+  private Map<String, UserAccountLevelData> userAccountLevelDataMap = new HashMap<>();
 
   /**
    * Return partial user object without sensitive information.
@@ -786,6 +786,14 @@ public class User extends Base implements Principal {
 
   public void setTwoFactorJwtToken(String twoFactorJwtToken) {
     this.twoFactorJwtToken = twoFactorJwtToken;
+  }
+
+  public Map<String, UserAccountLevelData> getUserAccountLevelDataMap() {
+    return userAccountLevelDataMap;
+  }
+
+  public void setUserAccountLevelDataMap(Map<String, UserAccountLevelData> userAccountLevelDataMap) {
+    this.userAccountLevelDataMap = userAccountLevelDataMap;
   }
 
   public static final class Builder {

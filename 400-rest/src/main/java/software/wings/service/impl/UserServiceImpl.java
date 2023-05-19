@@ -19,11 +19,6 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
-import static io.harness.ng.core.common.beans.Generation.CG;
-import static io.harness.ng.core.common.beans.Generation.NG;
-import static io.harness.ng.core.common.beans.UserSource.LDAP;
-import static io.harness.ng.core.common.beans.UserSource.MANUAL;
-import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.ACCOUNT_INVITE_ACCEPTED_NEED_PASSWORD;
 import static io.harness.ng.core.invites.dto.InviteOperationResponse.FAIL;
@@ -439,7 +434,7 @@ public class UserServiceImpl implements UserService {
 
     User savedUser = null;
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-      savedUser = createUserWithAccountLevelData(user, accountId, MANUAL, generation);
+      savedUser = createUserWithAccountLevelData(user, accountId, UserSource.MANUAL, generation);
     } else {
       savedUser = createUser(user, accountId);
     }
@@ -457,7 +452,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User createNewOAuthUser(User user, String accountId) {
-    User savedUser = createNewUser(user, accountId, NG);
+    User savedUser = createNewUser(user, accountId, Generation.NG);
 
     createSSOSettingsAndMarkAsDefaultAuthMechanism(accountId);
 
@@ -631,7 +626,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
-    return createNewUserAndSignIn(user, createdAccount.getUuid(), NG);
+    return createNewUserAndSignIn(user, createdAccount.getUuid(), Generation.NG);
   }
 
   @Override
@@ -671,7 +666,7 @@ public class UserServiceImpl implements UserService {
                     .utmInfo(userInvite.getUtmInfo())
                     .build();
     completeUserInviteForSignup(userInvite, createdAccount.getUuid());
-    return createNewUserAndSignIn(user, createdAccount.getUuid(), NG);
+    return createNewUserAndSignIn(user, createdAccount.getUuid(), Generation.NG);
   }
 
   @Override
@@ -934,10 +929,11 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public void addUserToAccount(String userId, String accountId) {
-    UserSource userSource = MANUAL;
+    UserSource userSource = UserSource.MANUAL;
     User user = get(userId);
-    if (user != null && userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, NG)) {
-      userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(NG);
+    if (user != null
+        && userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, Generation.NG)) {
+      userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(Generation.NG);
     }
     addUserToAccount(userId, accountId, userSource);
   }
@@ -969,7 +965,7 @@ public class UserServiceImpl implements UserService {
     }
 
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-      userServiceHelper.populateAccountToUserMapping(user, accountId, NG, userSource);
+      userServiceHelper.populateAccountToUserMapping(user, accountId, Generation.NG, userSource);
       updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
     }
 
@@ -1091,7 +1087,7 @@ public class UserServiceImpl implements UserService {
         user.setPasswordChangedAt(System.currentTimeMillis());
         user.setRoles(newArrayList(roleService.getAccountAdminRole(account.getUuid())));
         if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-          return createUserWithAccountLevelData(user, accountId, MANUAL, CG);
+          return createUserWithAccountLevelData(user, accountId, UserSource.MANUAL, Generation.CG);
         } else {
           return createUser(user, accountId);
         }
@@ -1103,7 +1099,7 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.passwordHash, hashpw(new String(user.getPassword()), BCrypt.gensalt()));
       if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
           && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-        userServiceHelper.populateAccountToUserMapping(user, accountId, NG, MANUAL);
+        userServiceHelper.populateAccountToUserMapping(user, accountId, Generation.NG, UserSource.MANUAL);
         updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
       }
       updateUser(existingUser.getUuid(), updateOperations);
@@ -1556,7 +1552,7 @@ public class UserServiceImpl implements UserService {
 
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
       UserSource userSource = getUserSource(userInvite.getImportedByScim(), SSO == userInvite.getSource().getType());
-      user = createUserWithAccountLevelData(user, accountId, userSource, CG);
+      user = createUserWithAccountLevelData(user, accountId, userSource, Generation.CG);
     } else {
       user = createUser(user, accountId);
     }
@@ -2072,7 +2068,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public void completeNGInviteWithAccountLevelData(
       UserInviteDTO userInvite, boolean shouldSendTwoFactorAuthResetEmail) {
-    completeNGInvite(userInvite, SCIM == userInvite.getUserSource(), shouldSendTwoFactorAuthResetEmail);
+    completeNGInvite(userInvite, UserSource.SCIM == userInvite.getUserSource(), shouldSendTwoFactorAuthResetEmail);
   }
   @Override
   public void completeNGInvite(
@@ -2112,8 +2108,8 @@ public class UserServiceImpl implements UserService {
     }
 
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-      UserSource userSource = null == userInvite.getUserSource() ? MANUAL : userInvite.getUserSource();
-      createUserWithAccountLevelData(user, accountId, userSource, NG);
+      UserSource userSource = null == userInvite.getUserSource() ? UserSource.MANUAL : userInvite.getUserSource();
+      createUserWithAccountLevelData(user, accountId, userSource, Generation.NG);
     } else {
       user = createUser(user, accountId);
     }
@@ -2131,11 +2127,11 @@ public class UserServiceImpl implements UserService {
   }
 
   private UserSource getUserSource(boolean isScimInvite, boolean isLDAPInvite) {
-    UserSource userSource = MANUAL;
+    UserSource userSource = UserSource.MANUAL;
     if (isScimInvite) {
-      userSource = SCIM;
+      userSource = UserSource.SCIM;
     } else if (isLDAPInvite) {
-      userSource = LDAP;
+      userSource = UserSource.LDAP;
     }
     return userSource;
   }
@@ -2236,7 +2232,7 @@ public class UserServiceImpl implements UserService {
     user.getAccounts().add(account);
     user.setUserGroups(accountAdminGroups);
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, account.getUuid())) {
-      createUserWithAccountLevelData(user, account.getUuid(), MANUAL, CG);
+      createUserWithAccountLevelData(user, account.getUuid(), UserSource.MANUAL, Generation.CG);
     } else {
       createUser(user, account.getUuid());
     }
@@ -2404,7 +2400,7 @@ public class UserServiceImpl implements UserService {
     user.getAccounts().add(account);
     user.setUserGroups(accountAdminGroups);
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, account.getUuid())) {
-      createUserWithAccountLevelData(user, account.getUuid(), MANUAL, CG);
+      createUserWithAccountLevelData(user, account.getUuid(), UserSource.MANUAL, Generation.CG);
     } else {
       user = createUser(user, account.getUuid());
     }
@@ -3062,13 +3058,13 @@ public class UserServiceImpl implements UserService {
   public boolean delete(String accountId, String userId, Generation generation) {
     User user = get(userId);
     if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-      if (CG.equals(generation)) {
+      if (Generation.CG.equals(generation)) {
         removeAllUserGroupsFromUser(user, accountId);
         removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
         }
-      } else if (NG.equals(generation) && isUserPresent(userId)) {
+      } else if (Generation.NG.equals(generation) && isUserPresent(userId)) {
         removeUserFromThisGenInAccount(accountId, userId, generation, user);
         if (!userServiceHelper.isUserProvisionedInThisAccount(user, accountId)) {
           delete(accountId, userId);
@@ -3102,7 +3098,7 @@ public class UserServiceImpl implements UserService {
         log.warn("User is removed from all user groups in CG");
         removeAllUserGroupsFromUser(user, accountId);
         if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-          removeUserFromThisGenInAccount(accountId, userId, CG, user);
+          removeUserFromThisGenInAccount(accountId, userId, Generation.CG, user);
         }
         log.error(
             "User {} cannot be deleted in CG, since it is active on NG in account {}", user.getEmail(), accountId);
@@ -4137,7 +4133,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public InviteOperationResponse checkInviteStatus(UserInvite userInvite, Generation gen) {
-    if (gen != null && gen.equals(NG)) {
+    if (gen != null && gen.equals(Generation.NG)) {
       return checkNgInviteStatus(userInvite);
     }
 

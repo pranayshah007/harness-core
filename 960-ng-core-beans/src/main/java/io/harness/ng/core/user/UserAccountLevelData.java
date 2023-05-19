@@ -16,18 +16,31 @@ import io.harness.ng.core.common.beans.UserSource;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Map;
 import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @OwnedBy(PL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserAccountLevelData {
   private Map<Generation, UserSource> sourceOfProvisioning;
   private Set<Generation> userProvisionedTo;
+
+  public UserAccountLevelData(Map<Generation, UserSource> sourceOfProvisioning, Set<Generation> userProvisionedTo) {
+    this.sourceOfProvisioning = sourceOfProvisioning;
+    this.userProvisionedTo = userProvisionedTo;
+  }
+
+  public Map<Generation, UserSource> getSourceOfProvisioning() {
+    return sourceOfProvisioning;
+  }
+
+  public void setSourceOfProvisioning(Map<Generation, UserSource> sourceOfProvisioning) {
+    this.sourceOfProvisioning = sourceOfProvisioning;
+  }
+
+  public Set<Generation> getUserProvisionedTo() {
+    return userProvisionedTo;
+  }
+
+  public void setUserProvisionedTo(Set<Generation> userProvisionedTo) {
+    this.userProvisionedTo = userProvisionedTo;
+  }
 }

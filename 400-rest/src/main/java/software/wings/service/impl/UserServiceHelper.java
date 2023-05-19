@@ -9,7 +9,6 @@ package software.wings.service.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.common.beans.Generation.NG;
 
 import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
@@ -57,7 +56,7 @@ public class UserServiceHelper {
    */
   public boolean isUserActiveInNG(User user, String accountId) {
     if (accountService.isNextGenEnabled(accountId) && isUserPartOfDeletedAccount(user, accountId)) {
-      if (isUserProvisionedInThisGenerationInThisAccount(user, accountId, NG)) {
+      if (isUserProvisionedInThisGenerationInThisAccount(user, accountId, Generation.NG)) {
         return true;
       } else {
         Boolean userMembershipCheck =
@@ -176,9 +175,7 @@ public class UserServiceHelper {
 
     userProvisionedTo.add(generation);
     userSourceMap.put(generation, userSource);
-    UserAccountLevelData userAccountLevelData =
-        UserAccountLevelData.builder().userProvisionedTo(userProvisionedTo).sourceOfProvisioning(userSourceMap).build();
-
+    UserAccountLevelData userAccountLevelData = new UserAccountLevelData(userSourceMap, userProvisionedTo);
     userAccountLevelDataMapping.put(accountId, userAccountLevelData);
     user.setUserAccountLevelDataMap(userAccountLevelDataMapping);
   }
