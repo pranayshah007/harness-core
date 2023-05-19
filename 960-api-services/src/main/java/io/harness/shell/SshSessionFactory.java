@@ -88,12 +88,12 @@ public class SshSessionFactory {
         retryCount++;
         session = fetchSSHSession(config, logCallback);
       } catch (InterruptedException ie) {
-        log.error("exception while fetching ssh session", ie);
+        log.error("Interrupted exception while fetching ssh session", ie);
       } catch (JSchException jse) {
         if (retryCount == 6) {
           return fetchSSHSession(config, logCallback);
         }
-        log.error("Jschexception while SSH connection with retry count {}", retryCount, jse);
+        log.error("Jschexception while SSH connection with retry count {}, cause {}", retryCount, jse.getMessage());
       }
     }
 

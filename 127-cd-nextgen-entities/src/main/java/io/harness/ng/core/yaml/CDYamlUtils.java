@@ -23,6 +23,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.net.URL;
@@ -38,7 +39,7 @@ public class CDYamlUtils {
                                   .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
                                   .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
                                   .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS));
-
+    mapper.registerModule(new EdgeCaseRegexModule());
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);

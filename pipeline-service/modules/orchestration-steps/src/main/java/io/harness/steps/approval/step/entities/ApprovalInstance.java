@@ -18,6 +18,7 @@ import io.harness.eraro.Level;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -33,6 +34,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
+import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance.HarnessApprovalInstanceKeys;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.yaml.core.timeout.Timeout;
 
@@ -86,6 +88,18 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                  .field(ApprovalInstanceKeys.type)
                  .descSortField(ApprovalInstanceKeys.nextIteration)
                  .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled")
+                .field(ApprovalInstanceKeys.accountId)
+                .field(ApprovalInstanceKeys.orgIdentifier)
+                .field(ApprovalInstanceKeys.projectIdentifier)
+                .field(ApprovalInstanceKeys.pipelineIdentifier)
+                .field(HarnessApprovalInstanceKeys.approvalKey)
+                .field(ApprovalInstanceKeys.status)
+                .field(HarnessApprovalInstanceKeys.isAutoRejectEnabled)
+                .build())
         .build();
   }
 

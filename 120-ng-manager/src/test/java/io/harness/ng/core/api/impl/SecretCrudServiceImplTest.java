@@ -171,6 +171,34 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCheckIfSecretManagerUsedIsHarnessManagedForSSHSecret() {
+    SecretDTOV2 secretDTO = SecretDTOV2.builder()
+                                .name(randomAlphabetic(10))
+                                .identifier(randomAlphabetic(10))
+                                .type(SecretType.SSHKey)
+                                .spec(SSHKeySpecDTO.builder().auth(SSHAuthDTO.builder().build()).build())
+                                .build();
+    boolean response = secretCrudServiceSpy.checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, secretDTO);
+    assertThat(response).isFalse();
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testCheckIfSecretManagerUsedIsHarnessManagedForWinRmSecret() {
+    SecretDTOV2 secretDTO = SecretDTOV2.builder()
+                                .name(randomAlphabetic(10))
+                                .identifier(randomAlphabetic(10))
+                                .type(SecretType.WinRmCredentials)
+                                .spec(WinRmCredentialsSpecDTO.builder().auth(WinRmAuthDTO.builder().build()).build())
+                                .build();
+    boolean response = secretCrudServiceSpy.checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, secretDTO);
+    assertThat(response).isFalse();
+  }
+
+  @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
   public void testCreateSecretWhenDefaultSMIsDisabled() throws IOException {

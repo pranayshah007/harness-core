@@ -19,6 +19,7 @@ import static io.harness.beans.ExecutionStatus.resumableStatuses;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.VIKAS_S;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
@@ -505,22 +507,47 @@ public class PipelineResumeUtilsTest extends WingsBaseTest {
 
     WorkflowExecution currWorkflowExecution = prepareFailedPipelineExecution();
     WorkflowExecution prevWorkflowExecution = prepareFailedPipelineExecution();
-    verifyUpdatePipelineExecutionsAfterResume(pipelineId, currWorkflowExecution, prevWorkflowExecution);
+    verifyUpdatePipelineExecutionsAfterResume(pipelineId, currWorkflowExecution, prevWorkflowExecution, false);
     verify(mockWingsPersistence, times(2)).update(any(Query.class), any(UpdateOperations.class));
 
     currWorkflowExecution = prepareFailedPipelineExecution();
     prevWorkflowExecution = prepareLatestResumedFailedPipelineExecution();
-    verifyUpdatePipelineExecutionsAfterResume(pipelineResumeId, currWorkflowExecution, prevWorkflowExecution);
+    verifyUpdatePipelineExecutionsAfterResume(pipelineResumeId, currWorkflowExecution, prevWorkflowExecution, false);
     verify(mockWingsPersistence, times(4)).update(any(Query.class), any(UpdateOperations.class));
   }
 
-  private void verifyUpdatePipelineExecutionsAfterResume(
-      String pipelineResumeId, WorkflowExecution currWorkflowExecution, WorkflowExecution prevWorkflowExecution) {
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineExecutionsAfterResumeAndEnabledDisplayResumePipelineFF() {
+    when(featureFlagService.isEnabled(FeatureName.SPG_CG_LIST_RESUMED_PIPELINES, ACCOUNT_ID)).thenReturn(true);
+
+    Query<WorkflowExecution> query = mock(Query.class);
+    when(mockWingsPersistence.createQuery(eq(WorkflowExecution.class))).thenReturn(query);
+    when(query.filter(any(), any())).thenReturn(query);
+    UpdateOperations<WorkflowExecution> updateOperations = mock(UpdateOperations.class);
+    when(mockWingsPersistence.createUpdateOperations(eq(WorkflowExecution.class))).thenReturn(updateOperations);
+
+    WorkflowExecution currWorkflowExecution = prepareFailedPipelineExecution();
+    WorkflowExecution prevWorkflowExecution = prepareFailedPipelineExecution();
+    verifyUpdatePipelineExecutionsAfterResume(pipelineId, currWorkflowExecution, prevWorkflowExecution, true);
+    verify(mockWingsPersistence, times(2)).update(any(Query.class), any(UpdateOperations.class));
+
+    currWorkflowExecution = prepareFailedPipelineExecution();
+    prevWorkflowExecution = prepareLatestResumedFailedPipelineExecution();
+    verifyUpdatePipelineExecutionsAfterResume(pipelineResumeId, currWorkflowExecution, prevWorkflowExecution, true);
+    verify(mockWingsPersistence, times(4)).update(any(Query.class), any(UpdateOperations.class));
+  }
+
+  private void verifyUpdatePipelineExecutionsAfterResume(String pipelineResumeId,
+      WorkflowExecution currWorkflowExecution, WorkflowExecution prevWorkflowExecution, boolean prevCdPageCandidate) {
     pipelineResumeUtils.updatePipelineExecutionsAfterResume(currWorkflowExecution, prevWorkflowExecution);
     assertThat(currWorkflowExecution.getPipelineResumeId()).isEqualTo(pipelineResumeId);
     assertThat(currWorkflowExecution.isLatestPipelineResume()).isTrue();
+    assertThat(currWorkflowExecution.isCdPageCandidate()).isTrue();
     assertThat(prevWorkflowExecution.getPipelineResumeId()).isEqualTo(pipelineResumeId);
     assertThat(prevWorkflowExecution.isLatestPipelineResume()).isFalse();
+    assertThat(prevWorkflowExecution.isCdPageCandidate()).isEqualTo(prevCdPageCandidate);
   }
 
   private PipelineStage createPipelineStage(String stateName, int index) {

@@ -8,7 +8,7 @@
 # --global.imagePullSecrets Global Docker registry secret names as an array
 # --global.storageClass Global StorageClass for Persistent Volume(s)
 global:
-  ha: false
+  ha: true
   stackDriverLoggingEnabled: false
   database:
     postgres:

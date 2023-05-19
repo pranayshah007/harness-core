@@ -155,6 +155,4 @@ spec:
       resources:
         requests:
           storage: {{ .Values.volumeClaimTemplate.resources.requests.storage }}
-      {{- if .Values.global.storageClassName }}
-      storageClassName: {{ .Values.global.storageClassName }}
-      {{- end }}
+      {{ include "redis.storage.class" (dict "global" .Values.global) }}

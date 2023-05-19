@@ -1,7 +1,11 @@
 # This file and its contents are licensed under the Apache License 2.0.
 # Please see the included NOTICE for copyright information and LICENSE for a copy of the license.
-
+global:
+  storageClass: ""
+  imagePullSecrets: []
+  
 replicaCount: 3
+  
 
 # To prevent very long names, we override the name, otherwise it would default to
 # timescaledb-single (the name of the chart)
@@ -21,16 +25,17 @@ image:
   # https://github.com/timescale/timescaledb-docker-ha
   registry: docker.io
   repository: timescale/timescaledb-ha
-  tag: pg13-ts2.9-oss-latest
+  tag: pg13-ts2.6-oss-latest
   pullPolicy: Always
   digest: ""
-
+  imagePullSecrets: []
 curlImage:
   registry: docker.io
   repository: curlimages/curl
   tag: "latest"
   pullPolicy: Always
   digest: ""
+  imagePullSecrets: []
 
 # By default those secrets are randomly generated.
 # To prevent misconfiguration, modifications from helm upgrade won't be applied to those secrets.

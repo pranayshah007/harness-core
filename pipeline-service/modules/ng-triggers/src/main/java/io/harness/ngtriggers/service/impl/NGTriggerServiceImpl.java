@@ -71,7 +71,9 @@ import io.harness.ngtriggers.beans.source.GitMoveOperationType;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 import io.harness.ngtriggers.beans.source.NGTriggerSpecV2;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.BuildAware;
+import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -783,6 +785,15 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         validateStageIdentifierAndBuildRef(
             (BuildAware) spec, "artifactRef", triggerDetails.getNgTriggerEntity().getWithServiceV2());
         return;
+      case MULTI_ARTIFACT:
+        if (!pmsFeatureFlagService.isEnabled(
+                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS)) {
+          throw new InvalidRequestException(
+              "Feature Flag CDS_NG_TRIGGER_MULTI_ARTIFACTS must be enabled for creation of multi-artifact triggers.");
+        }
+        validateMultiArtifactTriggerConfig(
+            (MultiArtifactTriggerConfig) spec, triggerDetails.getNgTriggerEntity().getWithServiceV2());
+        return;
       default:
         return; // not implemented
     }
@@ -908,6 +919,35 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       validationFailed = true;
     }
 
+    if (validationFailed) {
+      throw new InvalidArgumentsException(msg.toString());
+    }
+  }
+
+  private void validateMultiArtifactTriggerConfig(MultiArtifactTriggerConfig triggerConfig, boolean serviceV2) {
+    StringBuilder msg = new StringBuilder(128);
+    boolean validationFailed = false;
+    if (!serviceV2) {
+      msg.append("Multi-Artifact triggers are only supported with Service V2.\n");
+      validationFailed = true;
+    }
+    if (triggerConfig.getType() == null) {
+      msg.append("Multi-Artifact trigger source type must have a valid artifact source type value.\n");
+    }
+    if (isEmpty(triggerConfig.getSources())) {
+      msg.append("Multi-Artifact trigger sources list must have at least one element.\n");
+      validationFailed = true;
+    }
+    if (isNotEmpty(triggerConfig.getSources())) {
+      String artifactBuildType = triggerConfig.fetchBuildType();
+      for (ArtifactTypeSpec artifactSource : triggerConfig.getSources()) {
+        if (!artifactBuildType.equals(artifactSource.fetchBuildType())) {
+          msg.append("Multi-Artifact sources must all be of type ").append(artifactBuildType).append(".\n");
+          validationFailed = true;
+          break;
+        }
+      }
+    }
     if (validationFailed) {
       throw new InvalidArgumentsException(msg.toString());
     }

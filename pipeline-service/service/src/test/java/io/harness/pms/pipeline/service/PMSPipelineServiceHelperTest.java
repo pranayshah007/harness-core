@@ -88,12 +88,18 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   String repoName = "testRepo";
 
   @Test
-  @Owner(developers = NAMAN)
+  @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testValidatePresenceOfRequiredFields() {
-    assertThatThrownBy(() -> PMSPipelineServiceHelper.validatePresenceOfRequiredFields("", null, "2"))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessageContaining("One of the required fields is null.");
+    assertThatThrownBy(
+        ()
+            -> PMSPipelineServiceHelper.validatePresenceOfRequiredFields(PipelineEntity.builder()
+                                                                             .accountId(accountIdentifier)
+                                                                             .orgIdentifier(orgIdentifier)
+                                                                             .identifier(pipelineIdentifier)
+                                                                             .build()))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Required field [projectId] is either null or empty.");
   }
 
   @Test

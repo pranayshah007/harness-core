@@ -10,7 +10,7 @@ package io.harness.cvng.servicelevelobjective.services.api;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,9 +28,6 @@ public interface SLIRecordService {
       Instant startTime, Instant endTime);
   List<SLIRecord> getSLIRecordsOfMinutes(String sliId, List<Instant> minutes);
 
-  Map<String, SLIRecord> getLastCompositeSLOsSLIRecord(
-      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
-      Instant startTime);
   List<SLIRecord> getLatestCountSLIRecords(String sliId, int count);
   List<SLIRecord> getSLIRecords(String sliId, Instant startTime, Instant endTime);
   List<SLIRecord> getSLIRecordsWithSLIVersion(String sliId, Instant startTime, Instant endTime, int sliVersion);

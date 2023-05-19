@@ -63,8 +63,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
       InstanceSyncTaskDetails instanceSyncTaskDetails =
           execute(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), accountId));
 
-      if (Objects.isNull(instanceSyncTaskDetails)
-          || CollectionUtils.isEmpty(instanceSyncTaskDetails.getDetailsList())) {
+      if (Objects.isNull(instanceSyncTaskDetails) || CollectionUtils.isEmpty(instanceSyncTaskDetails.getDetails())) {
         log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
         publishInstanceSyncResult(taskId, accountId,
             InstanceSyncResponseV2.newBuilder()
@@ -75,7 +74,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                 .build());
         return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
       }
-      List<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetailsList();
+      List<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetails();
 
       for (DeploymentReleaseDetails deploymentReleaseDetails : deploymentReleaseDetailsList) {
         InstanceSyncData.Builder instanceSyncData = InstanceSyncData.newBuilder();
@@ -88,8 +87,10 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
       if (batchInstanceCount.get() != 0 || batchReleaseDetailsCount.get() != 0) {
         publishInstanceSyncResult(taskId, accountId,
             responseBuilder
-                .setStatus(
-                    InstanceSyncStatus.newBuilder().setExecutionStatus(CommandExecutionStatus.SUCCESS.name()).build())
+                .setStatus(InstanceSyncStatus.newBuilder()
+                               .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                               .setIsSuccessful(true)
+                               .build())
                 .build());
       }
       return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();

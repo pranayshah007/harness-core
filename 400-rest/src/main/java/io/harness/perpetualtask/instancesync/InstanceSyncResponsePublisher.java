@@ -82,12 +82,12 @@ public class InstanceSyncResponsePublisher {
 
   public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountId) {
     try {
-      return getResponse(instanceSyncResourceClient.getInstanceSyncTaskDetails(accountId, perpetualTaskId));
+      return getResponse(instanceSyncResourceClient.getInstanceSyncTaskDetails(perpetualTaskId, accountId));
     } catch (Exception exception) {
       log.error(
           "Error occurred while sending fetch Task Details response from NG to CG for accountIdentifier : {} and perpetualTaskId : {}",
           accountId, perpetualTaskId, exception);
     }
-    return InstanceSyncTaskDetails.newBuilder().addAllDetails(emptyList()).build();
+    return InstanceSyncTaskDetails.builder().details(emptyList()).build();
   }
 }

@@ -7,13 +7,15 @@
 
 package io.harness.cdlicense.impl;
 
+import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.FETCH_DEPLOYED_SERVICES_IN_LAST_N_DAYS;
+import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.FETCH_PERCENTILE_INSTANCE_AND_LICENSE_USAGE_FOR_SERVICES;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.INSTANCE_COUNT_PERCENTILE_DISC;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.MAX_RETRY;
-import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.QUERY_FECTH_PERCENTILE_INSTANCE_COUNT_FOR_SERVICES;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.QUERY_FECTH_SERVICES_IN_LAST_N_DAYS_DEPLOYMENT;
 import static io.harness.cdlicense.bean.CgCdLicenseUsageConstants.QUERY_FETCH_SERVICE_INSTANCE_USAGE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.cdlicense.bean.CgServiceUsage;
@@ -76,12 +78,11 @@ public class CgCdLicenseUsageQueryHelper {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          log.error(String.format("Failed to fetch service instance usage for accountId %s after %d retries", accountId,
-                        MAX_RETRY),
-              exception);
-          throw new CgLicenseUsageException(
-              "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries", exception);
+          String errorLog = "MAX RETRY FAILURE: Failed to fetch service instance usage after " + MAX_RETRY + " retries";
+          throw new CgLicenseUsageException(errorLog, exception);
         }
+        log.warn(
+            "Failed to fetch service instance usage for accountId: [{}] , retry: [{}]", accountId, retry, exception);
         retry++;
       }
     }
@@ -107,14 +108,14 @@ public class CgCdLicenseUsageQueryHelper {
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          log.error(
-              String.format(
-                  "Failed to fetch serviceIds within interval for last [%d days] deployments for accountId %s after %d retries",
-                  timePeriod, accountId, MAX_RETRY),
-              exception);
-          throw new CgLicenseUsageException(
-              "MAX RETRY FAILURE : Failed to fetch serviceIds within interval", exception);
+          String errorLog = format(
+              "MAX RETRY FAILURE: Failed to fetch serviceIds within interval for last [%d days] deployments for accountId %s after %d retries",
+              timePeriod, accountId, MAX_RETRY);
+          throw new CgLicenseUsageException(errorLog, exception);
         }
+        log.warn(
+            "Failed to fetch serviceIds within interval for last [{} days] deployments for accountId: [{}] , retry: [{}]",
+            timePeriod, accountId, retry, exception);
         retry++;
       }
     }
@@ -131,7 +132,37 @@ public class CgCdLicenseUsageQueryHelper {
   }
 
   @NonNull
-  public Map<String, CgServiceUsage> getPercentileInstanceForServices(
+  public List<CgServiceUsage> getDeployedServices(String accountId, int days) {
+    int retry = 0;
+    boolean successfulOperation = false;
+    List<CgServiceUsage> deploymentServices = new ArrayList<>();
+
+    while (!successfulOperation && retry <= MAX_RETRY) {
+      try (Connection dbConnection = timeScaleDBService.getDBConnection();
+           PreparedStatement fetchStatement = dbConnection.prepareStatement(FETCH_DEPLOYED_SERVICES_IN_LAST_N_DAYS)) {
+        fetchStatement.setString(1, accountId);
+        fetchStatement.setInt(2, days);
+
+        ResultSet resultSet = fetchStatement.executeQuery();
+        deploymentServices = populateActiveServiceList(resultSet);
+        successfulOperation = true;
+      } catch (SQLException exception) {
+        if (retry >= MAX_RETRY) {
+          String errorLog =
+              format("MAX RETRY FAILURE: Failed to fetch deployed services for last [%d days], accountId: %s", days,
+                  accountId);
+          throw new CgLicenseUsageException(errorLog, exception);
+        }
+        log.warn("Failed to fetch deployed services for accountId: [{}] , retry: [{}]", accountId, retry, exception);
+        retry++;
+      }
+    }
+
+    return deploymentServices;
+  }
+
+  @NonNull
+  public Map<String, Pair<Long, Integer>> getServicesPercentileInstanceCountAndLicenseUsage(
       String accountId, List<String> svcIds, int timePeriod, double percentile) {
     if (isEmpty(svcIds)) {
       return Collections.emptyMap();
@@ -139,44 +170,35 @@ public class CgCdLicenseUsageQueryHelper {
 
     int retry = 0;
     boolean successfulOperation = false;
-    Map<String, CgServiceUsage> serviceUsageMap = new HashMap<>();
+    Map<String, Pair<Long, Integer>> percentileInstances = new HashMap<>();
 
     while (!successfulOperation && retry <= MAX_RETRY) {
       try (Connection dbConnection = timeScaleDBService.getDBConnection();
            PreparedStatement fetchStatement =
-               dbConnection.prepareStatement(QUERY_FECTH_PERCENTILE_INSTANCE_COUNT_FOR_SERVICES)) {
+               dbConnection.prepareStatement(FETCH_PERCENTILE_INSTANCE_AND_LICENSE_USAGE_FOR_SERVICES)) {
         fetchStatement.setDouble(1, percentile);
         fetchStatement.setString(2, accountId);
-        fetchStatement.setArray(3, dbConnection.createArrayOf("text", svcIds.toArray()));
-        fetchStatement.setInt(4, timePeriod);
+        fetchStatement.setInt(3, timePeriod);
+        fetchStatement.setArray(4, dbConnection.createArrayOf("text", svcIds.toArray()));
 
         ResultSet resultSet = fetchStatement.executeQuery();
-        serviceUsageMap = fetchServiceUsageDetails(resultSet);
+        percentileInstances = populatePercentileServiceInstance(resultSet);
         successfulOperation = true;
       } catch (SQLException exception) {
         if (retry >= MAX_RETRY) {
-          log.error(
-              String.format("Failed to fetch percentile instance count for services of accountId %s after %d retries",
-                  accountId, MAX_RETRY),
-              exception);
-          throw new CgLicenseUsageException(
-              "MAX RETRY FAILURE : Failed to fetch percentile instance count for services", exception);
+          String errorLog = format(
+              "MAX RETRY FAILURE: Failed to fetch services percentile instance count and license usage for accountId %s after %d retries",
+              accountId, MAX_RETRY);
+          throw new CgLicenseUsageException(errorLog, exception);
         }
+        log.warn(
+            "Failed to fetch percentile services instance count and license usage for accountId: [{}] , retry: [{}]",
+            accountId, retry, exception);
         retry++;
       }
     }
 
-    return serviceUsageMap;
-  }
-
-  private Map<String, CgServiceUsage> fetchServiceUsageDetails(ResultSet resultSet) throws SQLException {
-    Map<String, CgServiceUsage> serviceUsageMap = new HashMap<>();
-    while (resultSet != null && resultSet.next()) {
-      String svcId = resultSet.getString(1);
-      serviceUsageMap.put(svcId, CgServiceUsage.builder().serviceId(svcId).instanceCount(resultSet.getInt(2)).build());
-    }
-
-    return serviceUsageMap;
+    return percentileInstances;
   }
 
   public Map<String, Pair<String, String>> fetchServicesNames(String accountId, List<String> serviceUuids) {
@@ -210,5 +232,37 @@ public class CgCdLicenseUsageQueryHelper {
                                          .asList(wingsPersistence.analyticNodePreferenceOptions());
 
     return applications.parallelStream().collect(Collectors.toMap(Application::getAppId, Application::getName));
+  }
+
+  private List<CgServiceUsage> populateActiveServiceList(ResultSet resultSet) throws SQLException {
+    List<CgServiceUsage> deploymentServices = new ArrayList<>();
+    while (resultSet != null && resultSet.next()) {
+      String appId = resultSet.getString(1);
+      String appName = resultSet.getString(2);
+      String serviceId = resultSet.getString(3);
+      String serviceName = resultSet.getString(4);
+      deploymentServices.add(CgServiceUsage.builder()
+                                 .appId(appId)
+                                 .appName(appName)
+                                 .serviceId(serviceId)
+                                 .name(serviceName)
+                                 .licensesUsed(1)
+                                 .instanceCount(0)
+                                 .build());
+    }
+
+    return deploymentServices;
+  }
+
+  private Map<String, Pair<Long, Integer>> populatePercentileServiceInstance(ResultSet resultSet) throws SQLException {
+    Map<String, Pair<Long, Integer>> percentileInstances = new HashMap<>();
+    while (resultSet != null && resultSet.next()) {
+      String serviceId = resultSet.getString(1);
+      long instanceCount = resultSet.getLong(2);
+      int serviceLicenses = resultSet.getInt(3);
+      percentileInstances.put(serviceId, Pair.of(instanceCount, serviceLicenses));
+    }
+
+    return percentileInstances;
   }
 }

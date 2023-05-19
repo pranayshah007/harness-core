@@ -14,6 +14,7 @@ import static io.harness.ngtriggers.Constants.BITBUCKET_REPO;
 import static io.harness.ngtriggers.Constants.CUSTOM_REPO;
 import static io.harness.ngtriggers.Constants.GITHUB_REPO;
 import static io.harness.ngtriggers.Constants.GITLAB_REPO;
+import static io.harness.ngtriggers.Constants.HARNESS_REPO;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -28,7 +29,8 @@ public enum WebhookTriggerType {
   @JsonProperty(GITLAB_REPO) GITLAB(GITLAB_REPO, "GITLAB"),
   @JsonProperty(BITBUCKET_REPO) BITBUCKET(BITBUCKET_REPO, "BITBUCKET"),
   @JsonProperty(CUSTOM_REPO) CUSTOM(CUSTOM_REPO, "CUSTOM"),
-  @JsonProperty(AWS_CODECOMMIT_REPO) AWS_CODECOMMIT(AWS_CODECOMMIT_REPO, "AWS_CODECOMMIT");
+  @JsonProperty(AWS_CODECOMMIT_REPO) AWS_CODECOMMIT(AWS_CODECOMMIT_REPO, "AWS_CODECOMMIT"),
+  @JsonProperty(HARNESS_REPO) HARNESS(HARNESS_REPO, "HARNESS");
 
   private String value;
   private String entityMetadataName;

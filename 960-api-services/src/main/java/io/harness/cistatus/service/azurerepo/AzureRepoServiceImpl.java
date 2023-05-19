@@ -56,6 +56,12 @@ public class AzureRepoServiceImpl implements AzureRepoService {
               .createStatus(getAuthToken(token), org, project, repo, sha, bodyObjectMap)
               .execute();
 
+      if (!statusCreationResponseResponse.isSuccessful()) {
+        log.error("Failed to send status for gitlab url {} and sha {} error {}, message {}",
+            azureRepoConfig.getAzureRepoUrl(), sha, statusCreationResponseResponse.errorBody().string(),
+            statusCreationResponseResponse.message());
+      }
+
       return statusCreationResponseResponse.isSuccessful();
     } catch (Exception e) {
       throw new InvalidRequestException(

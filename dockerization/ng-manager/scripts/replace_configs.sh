@@ -608,3 +608,7 @@ replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLI
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 
 replace_key_value enableOpentelemetry "$ENABLE_OPENTELEMETRY"
+
+replace_key_value signupDomainDenylistConfig.gcsCreds "$MINING_GCS_CREDS"
+replace_key_value signupDomainDenylistConfig.projectId "$MINING_GCS_PROJECT_ID"
+replace_key_value signupDomainDenylistConfig.bucketName "$MINING_GCS_BUCKET_NAME"

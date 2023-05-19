@@ -9,8 +9,6 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static java.util.stream.Collectors.toList;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -25,6 +23,7 @@ import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
@@ -32,10 +31,9 @@ import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
-import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 
 import com.google.inject.Singleton;
-import com.google.protobuf.Any;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -82,9 +80,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   @Override
   public DeploymentReleaseDetails getDeploymentReleaseDetails(
-      List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
     List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
-
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList =
+        instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList();
     for (DeploymentInfoDetailsDTO deploymentInfoDetailsDTO : deploymentInfoDetailsDTOList) {
       DeploymentInfoDTO deploymentInfoDTO = deploymentInfoDetailsDTO.getDeploymentInfoDTO();
 
@@ -94,14 +93,15 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
       } else {
         // Todo: Add Cluster Name as well
         K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
-        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.newBuilder()
-                                                .setReleaseName(k8sDeploymentInfoDTO.getReleaseName())
-                                                .addAllNamespaces(k8sDeploymentInfoDTO.getNamespaces())
+        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.builder()
+                                                .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+                                                .namespaces(k8sDeploymentInfoDTO.getNamespaces())
                                                 .build());
       }
     }
-    return DeploymentReleaseDetails.newBuilder()
-        .addAllDeploymentDetails(k8sDeploymentReleaseDetailsList.stream().map(Any::pack).collect(toList()))
+    return DeploymentReleaseDetails.builder()
+        .taskInfoId(instanceSyncPerpetualTaskInfoDTO.getId())
+        .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
         .build();
   }
 

@@ -22,6 +22,7 @@ import io.harness.notification.FreezeEventType;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.api.client.util.ArrayMap;
@@ -39,6 +40,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class NotificationHelper {
   @Inject NotificationClient notificationClient;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private HtmlInputSanitizer userNameSanitizer;
 
   public void sendNotification(String yaml, boolean pipelineRejectedNotification, boolean freezeWindowNotification,
       Ambiance ambiance, String accountId, String executionUrl, String baseUrl, boolean globalFreeze)
@@ -113,7 +115,8 @@ public class NotificationHelper {
       data.put("ACCOUNT_ID", accountId);
     }
     if (freezeEventType.equals(FreezeEventType.DEPLOYMENT_REJECTED_DUE_TO_FREEZE) && ambiance != null) {
-      data.put("USER_NAME", ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier());
+      data.put("USER_NAME",
+          userNameSanitizer.sanitizeInput(ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getIdentifier()));
       data.put("WORKFLOW_NAME", ambiance.getMetadata().getPipelineIdentifier());
       data.put("WORKFLOW_URL", executionUrl);
     }

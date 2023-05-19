@@ -104,6 +104,13 @@ public final class RuleExecution implements PersistentEntity, UuidAware, Created
                  .field(RuleExecutionKeys.cloudProvider)
                  .sortField(RuleExecutionKeys.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("recommendation")
+                 .field(RuleExecutionKeys.executionCompletedAt)
+                 .field(RuleExecutionKeys.cost)
+                 .field(RuleExecutionKeys.costType)
+                 .build())
+        .add(CompoundMongoIndex.builder().name("ruleIdentifier").field(RuleExecutionKeys.ruleIdentifier).build())
         .build();
   }
 

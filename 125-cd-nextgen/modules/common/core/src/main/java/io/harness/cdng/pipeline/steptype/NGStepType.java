@@ -19,6 +19,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -302,7 +303,11 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK)
   GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK("Google Cloud Functions Rollback",
       Arrays.asList(ServiceDefinitionType.GOOGLE_CLOUD_FUNCTIONS), "Google Functions Gen One",
-      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK);
+      StepSpecTypeConstants.GOOGLE_CLOUD_FUNCTIONS_GEN_ONE_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
+  BLUE_GREEN_STAGE_SCALE_DOWN("Blue Green Stage Scale Down",
+      Collections.singletonList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

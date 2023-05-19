@@ -222,6 +222,8 @@ public interface UserService extends OwnedByAccount {
 
   User updateUser(String userId, UpdateOperations<User> updateOperations);
 
+  void validateName(String name);
+
   /**
    * Gets the.
    *

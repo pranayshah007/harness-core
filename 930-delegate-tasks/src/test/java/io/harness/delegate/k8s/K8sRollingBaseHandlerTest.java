@@ -42,6 +42,7 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -257,15 +258,17 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
     KubernetesResource resource = mock(KubernetesResource.class);
     prepareMockedKubernetesResource(resource);
     List<KubernetesResource> resources = singletonList(resource);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resources);
 
-    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources, false);
-    verify(resource, never()).addLabelsInDeploymentSelector(anyMap());
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources, false, context);
+    verify(resource, never()).addLabelsInResourceSelector(anyMap(), any());
 
-    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources, true);
-    verify(resource, times(1)).addLabelsInDeploymentSelector(anyMap());
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(false, resources, true, context);
+    verify(resource, times(1)).addLabelsInResourceSelector(anyMap(), any());
 
-    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(true, resources, false);
-    verify(resource, times(2)).addLabelsInDeploymentSelector(anyMap());
+    k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(true, resources, false, context);
+    verify(resource, times(2)).addLabelsInResourceSelector(anyMap(), any());
   }
 
   @Test
@@ -274,27 +277,30 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
   public void testAddLabelsInDeploymentSelectorWrapper() {
     KubernetesResource resource1 = mock(KubernetesResource.class);
     KubernetesResource resource2 = mock(KubernetesResource.class);
-    prepareMockedKubernetesResourceList(asList(resource1, resource2));
+    List<KubernetesResource> resources = asList(resource1, resource2);
+    prepareMockedKubernetesResourceList(resources);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resources);
 
     k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
-        true, true, asList(resource1, resource2), singletonList(resource1));
-    verify(resource1, times(1)).addLabelsInDeploymentSelector(anyMap());
-    verify(resource2, never()).addLabelsInDeploymentSelector(anyMap());
+        true, true, asList(resource1, resource2), singletonList(resource1), context);
+    verify(resource1, times(1)).addLabelsInResourceSelector(anyMap(), any());
+    verify(resource2, never()).addLabelsInResourceSelector(anyMap(), any());
 
     k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
-        true, false, asList(resource1, resource2), singletonList(resource1));
-    verify(resource1, times(2)).addLabelsInDeploymentSelector(anyMap());
-    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+        true, false, asList(resource1, resource2), singletonList(resource1), context);
+    verify(resource1, times(2)).addLabelsInResourceSelector(anyMap(), any());
+    verify(resource2, times(1)).addLabelsInResourceSelector(anyMap(), any());
 
     k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
-        false, true, asList(resource1, resource2), singletonList(resource1));
-    verify(resource1, times(3)).addLabelsInDeploymentSelector(anyMap());
-    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+        false, true, asList(resource1, resource2), singletonList(resource1), context);
+    verify(resource1, times(3)).addLabelsInResourceSelector(anyMap(), any());
+    verify(resource2, times(1)).addLabelsInResourceSelector(anyMap(), any());
 
     k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
-        false, false, asList(resource1, resource2), singletonList(resource1));
-    verify(resource1, times(3)).addLabelsInDeploymentSelector(anyMap());
-    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+        false, false, asList(resource1, resource2), singletonList(resource1), context);
+    verify(resource1, times(3)).addLabelsInResourceSelector(anyMap(), any());
+    verify(resource2, times(1)).addLabelsInResourceSelector(anyMap(), any());
   }
 
   @Test
@@ -303,12 +309,15 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
   public void testAddLabelsInDeploymentSelectorWrapperFfOf() {
     KubernetesResource resource1 = mock(KubernetesResource.class);
     KubernetesResource resource2 = mock(KubernetesResource.class);
-    prepareMockedKubernetesResourceList(asList(resource1, resource2));
+    List<KubernetesResource> resources = asList(resource1, resource2);
+    prepareMockedKubernetesResourceList(resources);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resources);
 
     k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(
-        true, false, asList(resource1, resource2), singletonList(resource1));
-    verify(resource1, times(1)).addLabelsInDeploymentSelector(anyMap());
-    verify(resource2, times(1)).addLabelsInDeploymentSelector(anyMap());
+        true, false, asList(resource1, resource2), singletonList(resource1), context);
+    verify(resource1, times(1)).addLabelsInResourceSelector(anyMap(), any());
+    verify(resource2, times(1)).addLabelsInResourceSelector(anyMap(), any());
   }
 
   @Test

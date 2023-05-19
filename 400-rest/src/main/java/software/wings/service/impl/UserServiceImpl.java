@@ -288,6 +288,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.cache.Cache;
@@ -340,6 +342,7 @@ public class UserServiceImpl implements UserService {
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
   private static final String USER_INVITE = "user_invite";
+  private static final Pattern NAME_PATTERN = Pattern.compile("^[^:<>()=\\/]*$");
 
   /**
    * The Executor service.
@@ -731,7 +734,7 @@ public class UserServiceImpl implements UserService {
   public boolean trialSignup(UserInvite userInvite) {
     final String emailAddress = userInvite.getEmail().toLowerCase();
     validateTrialSignup(emailAddress);
-    signupService.validateName(userInvite.getName());
+    validateName(userInvite.getName());
     signupService.validatePassword(userInvite.getPassword());
 
     UserInvite userInviteInDB = signupService.getUserInviteByEmail(emailAddress);
@@ -780,11 +783,11 @@ public class UserServiceImpl implements UserService {
   @Override
   public boolean accountJoinRequest(AccountJoinRequest accountJoinRequest) {
     final String emailAddress = accountJoinRequest.getEmail().toLowerCase();
-    signupService.validateName(accountJoinRequest.getName());
+    validateName(accountJoinRequest.getName());
     signupService.validateEmail(emailAddress);
     Map<String, String> params = new HashMap<>();
     params.put("email", emailAddress);
-    params.put("name", accountJoinRequest.getName());
+    params.put("name", sanitizeUserName(accountJoinRequest.getName()));
     params.put("url", "https://app.harness.io/#/login");
     params.put("companyName", accountJoinRequest.getCompanyName());
     params.put("note", accountJoinRequest.getNote());
@@ -1102,7 +1105,10 @@ public class UserServiceImpl implements UserService {
 
     } else {
       UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-      updateOperations.set(UserKeys.name, user.getName());
+      if (isNotEmpty(user.getName())) {
+        validateName(user.getName());
+        updateOperations.set(UserKeys.name, user.getName());
+      }
       updateOperations.set(UserKeys.passwordHash, hashpw(new String(user.getPassword()), BCrypt.gensalt()));
       if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
           && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
@@ -1223,17 +1229,11 @@ public class UserServiceImpl implements UserService {
             account.getUuid());
     Map<String, String> model = getTemplateModel(user.getName(), loginUrl);
     model.put("company", account.getCompanyName());
-    model.put(
-        "subject", "You have been invited to the " + account.getCompanyName().toUpperCase() + " account at Harness");
+    model.put("subject", "You have been added to the account " + account.getAccountName() + " on Harness");
     model.put("email", user.getEmail());
     model.put("name", user.getEmail());
     model.put("authenticationMechanism", account.getAuthenticationMechanism().getType());
-    model.put("message",
-        "You have been added to account " + account.getAccountName() + " on Harness Platform."
-            + " CLick below to Sign-in");
-
-    SSOSettings ssoSettings = getSSOSettings(account);
-    model.put("ssoUrl", checkGetDomainName(account, ssoSettings.getUrl()));
+    model.put("message", "You have been added to the account " + account.getAccountName() + " on Harness Platform.");
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));
@@ -1911,7 +1911,7 @@ public class UserServiceImpl implements UserService {
     if (existingInvite.isCompleted()) {
       return FAIL;
     }
-    signupService.validateName(userInvite.getName());
+    validateName(userInvite.getName());
     if (userInvite.getPassword() == null) {
       throw new InvalidRequestException("User name/password is not provided", USER);
     }
@@ -1960,7 +1960,7 @@ public class UserServiceImpl implements UserService {
 
     HashMap<String, Object> properties = new HashMap<>();
     properties.put("email", userEmail);
-    properties.put("name", user.getName());
+    properties.put("name", sanitizeUserName(user.getName()));
     properties.put("id", user.getUuid());
     properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
     properties.put("accountId", accountId);
@@ -2001,7 +2001,7 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public User completeNGInviteAndSignIn(UserInviteDTO userInvite) {
-    signupService.validateName(userInvite.getName());
+    validateName(userInvite.getName());
     if (!validateNgInvite(userInvite)) {
       throw new InvalidRequestException("User invite token invalid");
     }
@@ -2780,6 +2780,9 @@ public class UserServiceImpl implements UserService {
   @Override
   public User createUser(User user, String accountId) {
     boolean isExistingUser = user.getUuid() != null;
+    if (null != user.getName()) {
+      validateName(user.getName());
+    }
     user = wingsPersistence.saveAndGet(User.class, user);
     if (isExistingUser) {
       evictUserFromCache(user.getUuid());
@@ -2793,6 +2796,7 @@ public class UserServiceImpl implements UserService {
   public User updateUserProfile(@NotNull User user) {
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
     if (user.getName() != null) {
+      validateName(user.getName());
       updateOperations.set(UserKeys.name, user.getName());
     } else {
       updateOperations.unset(UserKeys.name);
@@ -2869,6 +2873,7 @@ public class UserServiceImpl implements UserService {
     }
 
     if (user.getName() != null) {
+      validateName(user.getName());
       updateOperations.set(UserKeys.name, user.getName());
     } else {
       updateOperations.unset(UserKeys.name);
@@ -3189,6 +3194,18 @@ public class UserServiceImpl implements UserService {
     evictUserFromCache(userId);
     publishUserEvent(oldUser, updatedUser);
     return updatedUser;
+  }
+
+  @Override
+  public void validateName(String name) {
+    if (isBlank(name)) {
+      throw new InvalidRequestException("Name cannot be empty", USER);
+    }
+
+    Matcher matcher = NAME_PATTERN.matcher(name);
+    if (!matcher.matches()) {
+      throw new InvalidRequestException("Name is not valid. It should not contain :, <, >, (, ), =, /", USER);
+    }
   }
 
   private void deleteUser(User user) {
@@ -4239,7 +4256,9 @@ public class UserServiceImpl implements UserService {
 
   private void completeUserInfo(UserInvite userInvite, User existingUser) {
     UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
-    updateOperations.set(UserKeys.name, userInvite.getName().trim());
+    String userName = userInvite.getName().trim();
+    validateName(userName);
+    updateOperations.set(UserKeys.name, userName);
     updateOperations.set(UserKeys.passwordHash, hashpw(new String(userInvite.getPassword()), BCrypt.gensalt()));
     updateUser(existingUser.getUuid(), updateOperations);
   }

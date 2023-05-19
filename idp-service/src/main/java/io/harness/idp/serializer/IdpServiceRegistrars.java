@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.idp.serializer.kryo.IdpServiceKryoRegistrar;
 import io.harness.idp.serializer.morphia.IdpServiceMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.ConnectorBeansRegistrars;
+import io.harness.serializer.DelegateTaskRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
 import io.harness.serializer.kryo.CommonsKryoRegistrar;
@@ -34,6 +36,8 @@ public class IdpServiceRegistrars {
           .add(CommonsKryoRegistrar.class)
           .add(ApiServiceBeansKryoRegister.class)
           .add(DelegateBeansKryoRegistrar.class)
+          .addAll(ConnectorBeansRegistrars.kryoRegistrars)
+          .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .build();
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(IdpServiceMorphiaRegistrar.class).build();

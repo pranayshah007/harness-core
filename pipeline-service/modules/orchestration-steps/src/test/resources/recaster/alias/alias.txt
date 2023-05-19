@@ -128,7 +128,6 @@ parameterField
 io.harness.steps.policy.custom.CustomPolicyStepSpec
 io.harness.beans.yaml.extended.beans.Splitting
 io.harness.logging.CommandExecutionStatus
-io.harness.beans.steps.stepinfo.CleanupStepInfo
 io.harness.beans.yaml.extended.volumes.V1.HostVolume
 io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails
 io.harness.beans.sweepingoutputs.ContainerPortDetails

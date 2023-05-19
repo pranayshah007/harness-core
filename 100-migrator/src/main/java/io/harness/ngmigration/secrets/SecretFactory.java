@@ -19,16 +19,12 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
-import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
-import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
-import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
-import io.harness.secretmanagerclient.ValueType;
 
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;
@@ -194,30 +190,6 @@ public class SecretFactory {
     }
     // Support secret text
     return getSecretMigrator(secretManagerConfig).getEncryptionValue(encryptedData, secretManagerConfig);
-  }
-
-  public static SecretDTOV2 getHarnessSecretManagerSpec(
-      NgEntityDetail entityDetail, String secretName, String secretValue) {
-    SecretSpecDTO secretSpecDTO = SecretTextSpecDTO.builder()
-                                      .valueType(ValueType.Inline)
-                                      .value(secretValue)
-                                      .secretManagerIdentifier(MigratorUtility.getIdentifierWithScope(
-                                          NgEntityDetail.builder()
-                                              .entityType(NGMigrationEntityType.SECRET_MANAGER)
-                                              .identifier("harnessSecretManager")
-                                              .orgIdentifier(entityDetail.getOrgIdentifier())
-                                              .projectIdentifier(entityDetail.getProjectIdentifier())
-                                              .build()))
-                                      .build();
-    return SecretDTOV2.builder()
-        .type(SecretText)
-        .name(secretName)
-        .identifier(entityDetail.getIdentifier())
-        .description(null)
-        .orgIdentifier(entityDetail.getOrgIdentifier())
-        .projectIdentifier(entityDetail.getProjectIdentifier())
-        .spec(secretSpecDTO)
-        .build();
   }
 
   public SecretManagerCreatedDTO getConfigDTO(SecretManagerConfig secretManagerConfig, MigrationInputDTO inputDTO,

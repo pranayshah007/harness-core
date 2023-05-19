@@ -54,30 +54,162 @@ public class SerializerUtils {
     return entrypoint;
   }
 
-  public static String getK8sDebugCommand(String accountId, int timeoutSeconds) {
-    return String.format("remote_debug() %n  { %n  if [ "
-            + " \"$?\" -ne \"0\" ]; then %n"
-            + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
-            + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
-            + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
-            + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
-            + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
-            + " timeout " + Integer.toString(timeoutSeconds) + "s /addon/bin/tmate -f tmate.conf -F;  "
-            + " %n fi %n } %n trap remote_debug EXIT",
-        accountId);
+  public static String getK8sDebugCommand(
+      String accountId, int timeoutSeconds, ParameterField<CIShellType> parametrizedShellType) {
+    CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
+    if (shellType == CIShellType.PYTHON) {
+      return String.format("import atexit %n"
+              + "import sys %n"
+              + "import os %n"
+              + "import subprocess %n"
+              + "import signal %n"
+              + "class ExitHooks(object):%n"
+              + "    def __init__(self):%n"
+              + "        self.exit_code = None%n"
+              + "        self.exception = None%n"
+              + "    def hook(self):%n"
+              + "        self._orig_exit = sys.exit %n"
+              + "        self._orig_exception = sys.excepthook%n"
+              + "        sys.exit = self.exit %n"
+              + "        sys.excepthook = self.exc_handler %n"
+              + "    def exit(self, code=0):%n"
+              + "        self.exit_code = code%n"
+              + "        self._orig_exit(code)%n"
+              + "    def exc_handler(self, exc_type, exc, *args):%n"
+              + "        self.exception = exc%n"
+              + "        self._orig_exception(exc_type, exc, *args)%n"
+              + "hooks = ExitHooks()%n"
+              + "hooks.hook()%n"
+              + "def exit_func():%n"
+              + "    if (hooks.exit_code is not None and hooks.exit_code != 0) or hooks.exception is not None: %n"
+              + "        with open(\'tmate.conf\', \'w+\') as f: %n"
+              + "           f.write(\"set -g tmate-server-host ssh.harness.io\\n \") %n"
+              + "           f.write(\"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\\n\") %n"
+              + "           f.write(\"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\\n\") %n"
+              + "           f.write(\"set -g tmate-server-port 22\\n\") %n"
+              + "           f.write(\"set -g tmate-user %s \\n\") %n"
+              + "        cmd = [\"/addon/bin/tmate\", \"-f\", \"tmate.conf\", \"-F\"] %n"
+              + "        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) %n"
+              + "        def alarm_handler(signum, frame):%n"
+              + "           proc.kill() %n"
+              + "        signal.signal(signal.SIGALRM, alarm_handler) %n"
+              + "        signal.alarm(" + Integer.toString(timeoutSeconds) + ")  %n"
+              + "        while True: %n"
+              + "           output = proc.stdout.readline().decode('utf-8')%n"
+              + "           if output == '' and proc.poll() is not None:%n"
+              + "               break%n"
+              + "           if output:%n"
+              + "               print(output.strip())%n"
+              + "        proc.communicate() %n"
+              + "atexit.register(exit_func)%n",
+          accountId);
+    } else if (shellType == CIShellType.BASH || shellType == CIShellType.SH) {
+      return String.format("remote_debug() %n  { %n  if [ "
+              + " \"$?\" -ne \"0\" ]; then %n"
+              + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
+              + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
+              + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
+              + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
+              + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
+              + " timeout " + Integer.toString(timeoutSeconds) + "s /addon/bin/tmate -f tmate.conf -F;  "
+              + " %n fi %n } %n trap remote_debug EXIT",
+          accountId);
+    } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
+      return String.format("function remote_debug () { %n "
+              + "     \"set tmate-server-host ssh.harness.io\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-port 22\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-user %s\" | Out-File tmate.conf -Append %n "
+              + "      $process = Start-Process -FilePath /addon/bin/tmate -ArgumentList \"-f tmate.conf -F \" -NoNewWindow -PassThru %n"
+              + "      Start-Sleep -Seconds " + Integer.toString(timeoutSeconds) + " %n"
+              + "      if ($process.HasExited -eq $false) { %n "
+              + "      Stop-Process -Id $process.Id  %n "
+              + "       } %n } %n "
+              + "      trap {remote_debug}",
+          accountId);
+    } else {
+      return String.format("");
+    }
   }
 
-  public static String getVmDebugCommand(String accountId, int timeoutSeconds) {
-    return String.format("remote_debug() %n  { %n  if [ "
-            + " \"$?\" -ne \"0\" ]; then %n"
-            + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
-            + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
-            + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
-            + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
-            + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
-            + "timeout " + Integer.toString(timeoutSeconds) + "s  /addon/tmate -f tmate.conf -F; "
-            + " %n fi %n } %n trap remote_debug EXIT",
-        accountId);
+  public static String getVmDebugCommand(
+      String accountId, int timeoutSeconds, ParameterField<CIShellType> parametrizedShellType) {
+    CIShellType shellType = RunTimeInputHandler.resolveShellType(parametrizedShellType);
+    if (shellType == CIShellType.PYTHON) {
+      return String.format("import atexit %n"
+              + "import sys %n"
+              + "import os %n"
+              + "import subprocess %n"
+              + "import signal %n"
+              + "class ExitHooks(object):%n"
+              + "    def __init__(self):%n"
+              + "        self.exit_code = None%n"
+              + "        self.exception = None%n"
+              + "    def hook(self):%n"
+              + "        self._orig_exit = sys.exit %n"
+              + "        self._orig_exception = sys.excepthook%n"
+              + "        sys.exit = self.exit %n"
+              + "        sys.excepthook = self.exc_handler %n"
+              + "    def exit(self, code=0):%n"
+              + "        self.exit_code = code%n"
+              + "        self._orig_exit(code)%n"
+              + "    def exc_handler(self, exc_type, exc, *args):%n"
+              + "        self.exception = exc%n"
+              + "        self._orig_exception(exc_type, exc, *args)%n"
+              + "hooks = ExitHooks()%n"
+              + "hooks.hook()%n"
+              + "def exit_func():%n"
+              + "    if (hooks.exit_code is not None and hooks.exit_code != 0) or hooks.exception is not None: %n"
+              + "        with open(\'tmate.conf\', \'w+\') as f: %n"
+              + "           f.write(\"set -g tmate-server-host ssh.harness.io\\n \") %n"
+              + "           f.write(\"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\\n\") %n"
+              + "           f.write(\"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\\n\") %n"
+              + "           f.write(\"set -g tmate-server-port 22\\n\") %n"
+              + "           f.write(\"set -g tmate-user %s \\n\") %n"
+              + "        cmd = [\"/addon/tmate\", \"-f\", \"tmate.conf\", \"-F\"] %n"
+              + "        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE) %n"
+              + "        def alarm_handler(signum, frame):%n"
+              + "           proc.kill() %n"
+              + "        signal.signal(signal.SIGALRM, alarm_handler) %n"
+              + "        signal.alarm(" + Integer.toString(timeoutSeconds) + ")  %n"
+              + "        while True: %n"
+              + "           output = proc.stdout.readline().decode('utf-8')%n"
+              + "           if output == '' and proc.poll() is not None:%n"
+              + "               break%n"
+              + "           if output:%n"
+              + "               print(output.strip())%n"
+              + "        proc.communicate() %n"
+              + "atexit.register(exit_func)%n",
+          accountId);
+    } else if (shellType == CIShellType.BASH || shellType == CIShellType.SH) {
+      return String.format("remote_debug() %n  { %n  if [ "
+              + " \"$?\" -ne \"0\" ]; then %n"
+              + " %n echo \"set -g tmate-server-host ssh.harness.io\"  >> tmate.conf;"
+              + " %n echo \"set -g tmate-server-port 22\" >>  tmate.conf ;"
+              + " %n echo \"set -g tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\"  >>  tmate.conf ;"
+              + " %n echo \"set -g tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" >>  tmate.conf ;"
+              + " %n echo \"set -g tmate-user %s\" >>  tmate.conf ;"
+              + "timeout " + Integer.toString(timeoutSeconds) + "s  /addon/tmate -f tmate.conf -F; "
+              + " %n fi %n } %n trap remote_debug EXIT",
+          accountId);
+    } else if (shellType == CIShellType.POWERSHELL || shellType == CIShellType.PWSH) {
+      return String.format("function remote_debug () { %n "
+              + "     \"set tmate-server-host ssh.harness.io\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-port 22\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-rsa-fingerprint SHA256:qipNUtbscEcff+dGOs5cChUigjwN1nAmsx48Em/uBgo\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-server-ed25519-fingerprint SHA256:eGCUzSOn6vtcPVVNEGWis7G4cVBUiI/ZWAw+SrptaNg\" | Out-File tmate.conf -Append %n "
+              + "     \"set tmate-user %s\" | Out-File tmate.conf -Append %n "
+              + "      $process = Start-Process -FilePath /addon/tmate -ArgumentList \"-f tmate.conf -F \" -NoNewWindow -PassThru %n"
+              + "      Start-Sleep -Seconds " + Integer.toString(timeoutSeconds) + " %n"
+              + "      if ($process.HasExited -eq $false) { %n "
+              + "      Stop-Process -Id $process.Id  %n "
+              + "       } %n } %n "
+              + "      trap {remote_debug}",
+          accountId);
+    } else {
+      return String.format("");
+    }
   }
 
   public static String getEarlyExitCommand(ParameterField<CIShellType> parametrizedShellType) {

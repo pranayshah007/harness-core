@@ -82,10 +82,17 @@ public class CIStagePlanCreationUtils {
           String day = yearMonth + "-" + startDate.getDayOfMonth();
           Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
           if (countPerDay != null) {
-            if (countPerDay.getOrDefault(day, 0L) >= validationService.getMaxBuildPerDay(accountId)) {
-              log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
-              throw new CIStageExecutionException(
-                  "You have reached the daily execution limit for your account. To increase the limit, contact support: support@harness.io");
+            long maxBuildsPerDay = validationService.getMaxBuildPerDay(accountId);
+            if (countPerDay.getOrDefault(day, 0L) >= maxBuildsPerDay) {
+              if (maxBuildsPerDay == 0) {
+                log.error("Your account is not verified. To request verification, contact support: support@harness.io");
+                throw new CIStageExecutionException(
+                    "Your account is not verified. To request verification, contact support: support@harness.io");
+              } else {
+                log.error("You have reached your account limits. Please contact support: support@harness.io");
+                throw new CIStageExecutionException(
+                    "You have reached your account limits. Please contact support: support@harness.io");
+              }
             }
           }
         }

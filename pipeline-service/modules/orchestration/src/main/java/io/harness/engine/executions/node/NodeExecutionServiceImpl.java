@@ -44,6 +44,7 @@ import io.harness.execution.expansion.PlanExpansionService;
 import io.harness.interrupts.InterruptEffect;
 import io.harness.observer.Subject;
 import io.harness.plan.Node;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.events.OrchestrationEvent;
@@ -394,7 +395,8 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
                               .setEventType(OrchestrationEventType.NODE_EXECUTION_START)
                               .setServiceName(nodeExecution.getModule());
 
-        if (nodeExecution.getResolvedStepParameters() != null) {
+        // @Todo(Archit): Send Original StepParameters incase of PipelineRollback
+        if (checkPresenceOfResolvedParametersForNonIdentityNodes(nodeExecution)) {
           builder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
         }
         eventEmitter.emitEvent(builder.build());
@@ -412,6 +414,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       }
       return savedNodeExecution;
     }
+  }
+
+  @VisibleForTesting
+  boolean checkPresenceOfResolvedParametersForNonIdentityNodes(NodeExecution nodeExecution) {
+    return nodeExecution.getNodeType() != null && NodeType.IDENTITY_PLAN_NODE != nodeExecution.getNodeType()
+        && nodeExecution.getResolvedStepParameters() != null;
   }
 
   // Save a collection nodeExecutions.
@@ -702,11 +710,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     Builder eventBuilder = OrchestrationEvent.newBuilder()
                                .setAmbiance(nodeExecution.getAmbiance())
                                .setStatus(nodeExecution.getStatus())
-                               .setStepParameters(nodeExecution.getResolvedStepParametersBytes())
                                .setEventType(orchestrationEventType)
                                .setServiceName(nodeExecution.getModule())
                                .setTriggerPayload(triggerPayload)
                                .setEndTs(nodeExecution.getEndTs() == null ? 0 : nodeExecution.getEndTs());
+
+    if (checkPresenceOfResolvedParametersForNonIdentityNodes(nodeExecution)) {
+      eventBuilder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
+    }
 
     updateEventIfCausedByAutoAbortThroughTrigger(nodeExecution, orchestrationEventType, eventBuilder);
     eventEmitter.emitEvent(eventBuilder.build());

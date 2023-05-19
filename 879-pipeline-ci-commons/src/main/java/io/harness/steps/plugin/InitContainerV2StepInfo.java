@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.NotExpression;
 import io.harness.plancreator.execution.StepsExecutionConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
@@ -47,7 +47,7 @@ public class InitContainerV2StepInfo implements Visitable, SpecParameters, Conta
 
   @NotNull @Valid private ContainerStepInfra infrastructure;
   @NotExpression private StepsExecutionConfig stepsExecutionConfig;
-  @NotExpression Map<StepInfo, PluginCreationResponse> pluginsData;
+  @NotExpression Map<StepInfo, PluginCreationResponseList> pluginsData;
   Map<String, StrategyExpansionData> strategyExpansionMap;
   ParameterField<List<String>> sharedPaths;
   @Override

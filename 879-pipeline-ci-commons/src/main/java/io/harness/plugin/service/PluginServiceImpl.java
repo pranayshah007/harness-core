@@ -260,7 +260,7 @@ public class PluginServiceImpl implements PluginService {
   }
 
   @Override
-  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step) {
+  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step, String identifier) {
     return new HashMap<>();
   }
 }

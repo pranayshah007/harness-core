@@ -18,6 +18,7 @@ public enum ServiceHookContext {
   CUSTOM_WORKLOADS("CUSTOM_WORKLOADS"),
   GOOGLE_APPLICATION_CREDENTIALS("GOOGLE_APPLICATION_CREDENTIALS"),
   KUBE_CONFIG("KUBE_CONFIG");
+
   private String name;
 
   ServiceHookContext(String hookContext) {

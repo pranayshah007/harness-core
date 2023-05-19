@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
+import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -40,4 +41,5 @@ public class NGTriggerEventHistoryBaseDTO {
   String message;
   Boolean exceptionOccurred;
   Long createdAt;
+  TriggerEventStatus triggerEventStatus;
 }

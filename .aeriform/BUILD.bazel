@@ -189,10 +189,6 @@ aeriform("//490-ce-commons:tests")
 
 aeriform("//815-cg-triggers:module")
 
-aeriform("//template-service:module")
-
-aeriform("//template-service:tests")
-
 aeriform("//865-cg-events:module")
 
 aeriform("//865-cg-events:tests")
