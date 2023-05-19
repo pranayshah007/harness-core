@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -83,6 +84,10 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.springdata.TransactionHelper;
+import io.harness.template.async.beans.Action;
+import io.harness.template.async.beans.SetupUsageEventStatus;
+import io.harness.template.async.beans.SetupUsageParams;
+import io.harness.template.async.beans.TemplateSetupUsageEvent;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.helpers.InputsValidator;
@@ -149,6 +154,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock private AccountClient accountClient;
   @Mock private NGSettingsClient settingsClient;
 
+  @Mock TemplateAsyncSetupUsageService templateAsyncSetupUsageService;
+
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock NGTemplateSchemaServiceImpl templateSchemaService;
   @Mock AccessControlClient accessControlClient;
@@ -161,6 +168,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
   @InjectMocks TemplateMergeServiceImpl templateMergeService;
+
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
@@ -1344,5 +1352,42 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     inOrder.verify(gitXSettingsHelper).enforceGitExperienceIfApplicable(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setConnectorRefForRemoteEntity(any(), any(), any());
     inOrder.verify(gitXSettingsHelper).setDefaultStoreTypeForEntities(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void testGetAsyncSetUpUsageUUID() {
+    entity = TemplateEntity.builder()
+                 .accountId(ACCOUNT_ID)
+                 .orgIdentifier(ORG_IDENTIFIER)
+                 .projectIdentifier(PROJ_IDENTIFIER)
+                 .identifier(TEMPLATE_IDENTIFIER)
+                 .name(TEMPLATE_IDENTIFIER)
+                 .versionLabel(TEMPLATE_VERSION_LABEL)
+                 .yaml(yaml)
+                 .templateEntityType(TemplateEntityType.STEP_TEMPLATE)
+                 .childType(TEMPLATE_CHILD_TYPE)
+                 .fullyQualifiedIdentifier("account_id/orgId/projId/template1/version1/")
+                 .templateScope(Scope.PROJECT)
+                 .storeType(StoreType.REMOTE)
+                 .build();
+    TemplateSetupUsageEvent templateSetupUsageEvent =
+        TemplateSetupUsageEvent.builder()
+            .status(SetupUsageEventStatus.SUCCESS)
+            .action(Action.GET)
+            .params(SetupUsageParams.builder().templateEntity(entity).build())
+            .startTs(System.currentTimeMillis())
+            .uuid("uuid")
+            .build();
+    when(templateAsyncSetupUsageService.startEvent(eq(entity), any(), eq(Action.GET)))
+        .thenReturn(templateSetupUsageEvent);
+    String uuid = templateService.getAsyncSetUpUsageUUID(entity);
+    assertThat(uuid).isNotNull();
+    assertThat(uuid).isEqualTo(templateSetupUsageEvent.getUuid());
+
+    entity.setStoreType(StoreType.INLINE);
+    uuid = templateService.getAsyncSetUpUsageUUID(entity);
+    assertThat(uuid).isNull();
   }
 }
