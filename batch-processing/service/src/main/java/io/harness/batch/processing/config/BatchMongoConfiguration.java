@@ -7,16 +7,11 @@
 
 package io.harness.batch.processing.config;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.event.app.EventServiceApplication.EVENTS_STORE;
-
+import com.mongodb.ReadPreference;
+import dev.morphia.AdvancedDatastore;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
-
-import software.wings.security.ThreadLocalUserProvider;
-
-import dev.morphia.AdvancedDatastore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +19,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDatabaseFactory;
+import software.wings.security.ThreadLocalUserProvider;
+
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.event.app.EventServiceApplication.EVENTS_STORE;
 
 @Configuration
 @Slf4j
@@ -46,7 +45,10 @@ public class BatchMongoConfiguration {
 
   @Bean
   public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
-    return new MongoTemplate(mongoDbFactory);
+    MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory);
+    log.info("Here. Setting preference as secondary");
+    mongoTemplate.setReadPreference(ReadPreference.secondary());
+    return mongoTemplate;
   }
 
   @Bean
