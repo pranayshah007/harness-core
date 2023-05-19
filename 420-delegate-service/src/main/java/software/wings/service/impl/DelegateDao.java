@@ -57,7 +57,7 @@ public class DelegateDao {
   public boolean checkDelegateConnected(String accountId, String delegateId, String version) {
     if (enableRedisForDelegateService) {
       Delegate delegate = delegateCache.get(accountId, delegateId);
-      return delegate.getLastHeartBeat() > (currentTimeMillis() - EXPIRY_TIME.toMillis());
+      return delegateCache.getDelegateLastHeartBeat(delegate) > (currentTimeMillis() - EXPIRY_TIME.toMillis());
     }
     Query<Delegate> query = persistence.createQuery(Delegate.class)
                                 .filter(DelegateKeys.accountId, accountId)
@@ -88,7 +88,7 @@ public class DelegateDao {
   public boolean checkDelegateLiveness(String accountId, String delegateId) {
     if (enableRedisForDelegateService) {
       Delegate delegate = delegateCache.get(accountId, delegateId);
-      return delegate.getLastHeartBeat() > (currentTimeMillis() - EXPIRY_TIME.toMillis());
+      return delegateCache.getDelegateLastHeartBeat(delegate) > (currentTimeMillis() - EXPIRY_TIME.toMillis());
     }
 
     Query<Delegate> query = persistence.createQuery(Delegate.class)

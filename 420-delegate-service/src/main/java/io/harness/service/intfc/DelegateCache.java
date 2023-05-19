@@ -50,4 +50,6 @@ public interface DelegateCache {
   void removeFromAbortedTaskList(String accountId, String delegateTaskId);
 
   List<Delegate> getAllDelegatesFromRedisCache();
+
+  long getDelegateLastHeartBeat(Delegate delegate);
 }

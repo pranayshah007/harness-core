@@ -441,8 +441,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     List<DelegateGroupListing.DelegateInner> delegateInstanceDetails =
         groupDelegates.stream()
             .map(delegate -> {
-              boolean isDelegateConnected =
-                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+              boolean isDelegateConnected = isDelegateConnected(delegate);
               countOfDelegatesConnected.addAndGet(isDelegateConnected ? 1 : 0);
 
               String delegateTokenName = delegate.getDelegateTokenName();
@@ -460,7 +459,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
               }
               return DelegateGroupListing.DelegateInner.builder()
                   .uuid(delegate.getUuid())
-                  .lastHeartbeat(delegate.getLastHeartBeat())
+                  .lastHeartbeat(delegateCache.getDelegateLastHeartBeat(delegate))
                   .activelyConnected(isDelegateConnected)
                   .hostName(delegate.getHostName())
                   .tokenActive(isTokenActive)
@@ -596,6 +595,15 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
         .collect(toList());
   }
 
+  private boolean isDelegateConnected(Delegate delegate) {
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    if (delegateFromCache != null) {
+      return delegateFromCache.getLastHeartBeat()
+          > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+    }
+    return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+  }
+
   private DelegateListResponse buildDelegateGroupResponse(DelegateGroup delegateGroup, List<Delegate> groupDelegates) {
     if (groupDelegates == null) {
       log.debug("There are no delegates related to this delegate group.");
@@ -612,11 +620,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAc
     List<DelegateListResponse.DelegateReplica> delegateReplicas =
         groupDelegates.stream()
             .map(delegate -> {
-              boolean isDelegateConnected =
-                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
+              boolean isDelegateConnected = isDelegateConnected(delegate);
               return DelegateListResponse.DelegateReplica.builder()
                   .uuid(delegate.getUuid())
-                  .lastHeartbeat(delegate.getLastHeartBeat())
+                  .lastHeartbeat(delegateCache.getDelegateLastHeartBeat(delegate))
                   .connected(isDelegateConnected)
                   .hostName(delegate.getHostName())
                   .expiringAt(delegate.getExpirationTime())

@@ -42,7 +42,6 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -52,7 +51,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +58,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.redisson.api.LocalCachedMapOptions;
 import org.redisson.api.RLocalCachedMap;
-import org.redisson.api.RMap;
 
 @Singleton
 @ValidateOnExecution
@@ -339,8 +336,18 @@ public class DelegateCacheImpl implements DelegateCache {
 
   @Override
   public List<Delegate> getAllDelegatesFromRedisCache() {
-    RLocalCachedMap<String, Delegate> delegates = delegateRedissonCacheManager.getCache(DELEGATE_CACHE,String.class, Delegate.class, LocalCachedMapOptions.defaults());
+    RLocalCachedMap<String, Delegate> delegates = delegateRedissonCacheManager.getCache(
+        DELEGATE_CACHE, String.class, Delegate.class, LocalCachedMapOptions.defaults());
     return new ArrayList<>(delegates.values());
+  }
+
+  @Override
+  public long getDelegateLastHeartBeat(Delegate delegate) {
+    Delegate delegateFromCache = get(delegate.getAccountId(), delegate.getUuid(), false);
+    if (delegateFromCache != null) {
+      return delegateFromCache.getLastHeartBeat();
+    }
+    return delegate.getLastHeartBeat();
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {

@@ -474,7 +474,7 @@ public class DelegateServiceImpl implements DelegateService {
                                                    .delegateName(delegate.getDelegateName())
                                                    .delegateType(delegate.getDelegateType())
                                                    .uuid(delegate.getUuid())
-                                                   .lastHeartBeat(delegate.getLastHeartBeat())
+                                                   .lastHeartBeat(delegateCache.getDelegateLastHeartBeat(delegate))
                                                    .status(delegate.getStatus())
                                                    .build()
                                                    .toBuilder();
@@ -489,7 +489,7 @@ public class DelegateServiceImpl implements DelegateService {
     return ceDelegateStatus
         .connections(Collections.singletonList(DelegateConnectionDetails.builder()
                                                    .uuid(delegate.getDelegateConnectionId())
-                                                   .lastHeartbeat(delegate.getLastHeartBeat())
+                                                   .lastHeartbeat(delegateCache.getDelegateLastHeartBeat(delegate))
                                                    .version(delegate.getVersion())
                                                    .build()))
         .metricsServerCheck(cek8sDelegatePrerequisite.getMetricsServer())
@@ -882,7 +882,7 @@ public class DelegateServiceImpl implements DelegateService {
                   .delegateGroupName(delegate.getDelegateGroupName())
                   .ip(delegate.getIp())
                   .status(delegate.getStatus())
-                  .lastHeartBeat(getDelegateLastHeartBeat(delegate))
+                  .lastHeartBeat(delegateCache.getDelegateLastHeartBeat(delegate))
                   // currently, we do not return stale connections, but if we do this must filter them out
                   .activelyConnected(!delegate.isDisconnected() && isDelegateAlive(delegate))
                   .delegateProfileId(delegate.getDelegateProfileId())
@@ -913,25 +913,18 @@ public class DelegateServiceImpl implements DelegateService {
         .collect(toList());
   }
 
-  private Long getDelegateLastHeartBeat(Delegate delegate) {
-    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid());
-    if (!enableRedisForDelegateService) {
-      return delegate.getLastHeartBeat();
-    }
-    return delegateFromCache.getLastHeartBeat();
-  }
-
   private boolean isDelegateAlive(Delegate delegate) {
-    return getDelegateLastHeartBeat(delegate) > System.currentTimeMillis() - ofMinutes(1).toMillis();
+    return delegateCache.getDelegateLastHeartBeat(delegate) > System.currentTimeMillis() - ofMinutes(1).toMillis();
   }
 
   private List<DelegateConnectionDetails> getDelegateConnectionDetails(Delegate delegate) {
-    return isDelegateAlive(delegate) ? Collections.singletonList(DelegateConnectionDetails.builder()
-                                                                     .lastHeartbeat(delegate.getLastHeartBeat())
-                                                                     .version(delegate.getVersion())
-                                                                     .uuid(delegate.getDelegateConnectionId())
-                                                                     .build())
-                                     : Collections.emptyList();
+    return isDelegateAlive(delegate)
+        ? Collections.singletonList(DelegateConnectionDetails.builder()
+                                        .lastHeartbeat(delegateCache.getDelegateLastHeartBeat(delegate))
+                                        .version(delegate.getVersion())
+                                        .uuid(delegate.getDelegateConnectionId())
+                                        .build())
+        : Collections.emptyList();
   }
 
   private List<String> getUnionOfTags(Delegate delegate) {
