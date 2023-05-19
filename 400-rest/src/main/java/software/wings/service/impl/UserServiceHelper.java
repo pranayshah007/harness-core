@@ -84,9 +84,9 @@ public class UserServiceHelper {
   public boolean isUserProvisionedInThisAccount(User user, String accountId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
         && validationForUserAccountLevelDataFlow(user, accountId)) {
-      return isNotEmpty(user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo());
+      return isEmpty(user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo());
     }
-    return true;
+    return false;
   }
 
   public boolean isUserPartOfDeletedAccount(User user, String deletedAccountId) {

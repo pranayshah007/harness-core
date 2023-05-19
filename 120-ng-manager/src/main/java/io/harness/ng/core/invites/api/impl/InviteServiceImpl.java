@@ -626,7 +626,7 @@ public class InviteServiceImpl implements InviteService {
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false, invite.getGivenName(),
-            invite.getFamilyName(), invite.getExternalId(), scimLdapArray[1] ? LDAP : MANUAL);
+            invite.getFamilyName(), invite.getExternalId(), LDAP);
         updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
       }
 

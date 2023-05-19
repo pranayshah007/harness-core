@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.AddUsersDTO;
@@ -40,7 +39,6 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(PL)
 public interface NgUserService {
   void addUserToCG(String userId, Scope scope);
-  void updateNGUserToCGWithSource(String userId, Scope scope, UserSource userSource);
 
   Optional<UserInfo> getUserById(String userId);
 
