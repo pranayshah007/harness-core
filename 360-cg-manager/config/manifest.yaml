@@ -1,4 +1,4 @@
 ARTIFACT_REPO: harness/feature-manager-openjdk-8u242
-HELM_CHART_SOURCE_DIRECTORY: 360-cg-manager/chart
+HELM_CHART_SOURCE_DIRECTORY: harness-core/360-cg-manager/chart
 HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
 
