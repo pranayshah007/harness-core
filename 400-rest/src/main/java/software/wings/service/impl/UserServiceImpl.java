@@ -131,6 +131,7 @@ import io.harness.ng.core.switchaccount.SamlIdentificationInfo;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
+import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -1516,7 +1517,6 @@ public class UserServiceImpl implements UserService {
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
-
     if (isUserAssignedToAccount(user, accountId)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
@@ -2979,6 +2979,7 @@ public class UserServiceImpl implements UserService {
     if (loadUserGroups) {
       loadUserGroupsForUsers(pageResponse.getResponse(), accountId);
     }
+    processForSCIMUsers(accountId, pageResponse.getResponse());
     return pageResponse;
   }
   private List<UserGroup> getUserGroupsOfAccount(String accountId) {
@@ -3723,6 +3724,16 @@ public class UserServiceImpl implements UserService {
 
   @Override
   public boolean isUserAssignedToAccount(User user, String accountId) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (null != user.getUserAccountLevelDataMap().get(accountId)
+          && user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(CG)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
     return user != null && isNotEmpty(user.getAccounts())
         && user.getAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
   }
@@ -4065,9 +4076,11 @@ public class UserServiceImpl implements UserService {
     if (!includeDisabled) {
       query.criteria(UserKeys.disabled).notEqual(true);
     }
+    filterOnlyCGUsers(accountId, query);
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
+    processForSCIMUsers(accountId, userList);
     if (loadUserGroups) {
       loadUserGroupsForUsers(userList, accountId);
     }
@@ -4093,6 +4106,7 @@ public class UserServiceImpl implements UserService {
   public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance) {
     Query<User> query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
     query.criteria(UserKeys.disabled).notEqual(true);
+    filterOnlyCGUsers(accountId, query);
     return query.count();
   }
 
@@ -4459,6 +4473,28 @@ public class UserServiceImpl implements UserService {
       UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
       updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
       updateUser(user.getUuid(), updateOperations);
+    }
+  }
+
+  private void filterOnlyCGUsers(String accountId, Query<User> query) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      query.and(query
+                    .criteria(UserKeys.userAccountLevelDataMap + "." + accountId + "."
+                        + UserAccountLevelDataKeys.userProvisionedTo)
+                    .equal(CG.name()));
+    }
+  }
+
+  private void processForSCIMUsers(String accountId, List<User> userList) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      for (User user : userList) {
+        UserSource userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(CG);
+        if (SCIM.equals(userSource)) {
+          user.setImported(true);
+        } else {
+          user.setImported(false);
+        }
+      }
     }
   }
 }
