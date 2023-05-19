@@ -14,9 +14,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
-import lombok.NonNull;
-
 import java.util.Map;
+import lombok.NonNull;
 
 public class K8SSecret extends V1Secret {
   public static K8SSecret secret(@NonNull final String name, @NonNull final String namespace) {
@@ -37,12 +36,12 @@ public class K8SSecret extends V1Secret {
     return this;
   }
 
-  public K8SSecret putAllDataItems(final Map<String, byte []> dataItems) {
+  public K8SSecret putAllDataItems(final Map<String, byte[]> dataItems) {
     dataItems.forEach(this::putDataItem);
     return this;
   }
 
-  public K8SSecret putAllCharDataItems(final Map<String, char []> dataItems) {
+  public K8SSecret putAllCharDataItems(final Map<String, char[]> dataItems) {
     dataItems.forEach((key, value) -> putDataItem(key, String.valueOf(value).getBytes(Charsets.UTF_8)));
     return this;
   }

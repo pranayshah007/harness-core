@@ -15,7 +15,7 @@ option java_multiple_files = true;
   Top level request object for acquiring tasks
  */
 message AcquireTasksResponse {
-  string id = 1; // Id for the entire transaction
+  string id = 1;  // Id for the entire transaction
   // There will be only one payload per request at current stage of implementation.
   // But it's always good to keep API definition plural for future extensibility.
   repeated TaskPayload tasks = 2;

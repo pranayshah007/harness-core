@@ -17,7 +17,7 @@ option java_multiple_files = true;
 
 message K8SInfra {
   repeated K8SStep steps = 1;
-  repeated Secret infra_secrets = 2;  // Secret needed to setup execution environment (e.g. imagePullSecrets)
+  repeated Secret infra_secrets = 2;     // Secret needed to setup execution environment (e.g. imagePullSecrets)
   ResourceRequirements resource = 3;     // Global resource requirements for infra types that need it (e.g. K8S CPU/Mem)
   map<string, string> env = 4;           // Any global env variables
   SecurityContext security_context = 5;  // Startup user id for the execution infra

@@ -30,7 +30,7 @@ public class SecretsKryoModule extends AbstractModule {
         .add(SecretConfigKryoRegistrar.class)
         .add(SecretProviderKryoRegistrar.class)
         .add(SecretManagerClientKryoRegistrar.class)
-            .add(ConnectorBeansKryoRegistrar.class)
+        .add(ConnectorBeansKryoRegistrar.class)
         .build();
   }
 

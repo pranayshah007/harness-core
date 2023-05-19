@@ -14,7 +14,6 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
-
 import java.io.IOException;
 
 public class ApiClientModule extends AbstractModule {

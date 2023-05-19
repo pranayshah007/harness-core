@@ -12,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretEnvSource;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,8 +23,8 @@ public class K8SEnvVar extends V1EnvVar {
 
   public static List<V1EnvVar> fromMap(final Map<String, String> envMap) {
     return envMap.entrySet()
-            .stream()
-            .map(entry -> new V1EnvVarBuilder().withName(entry.getKey()).withValue(entry.getValue()).build())
-            .collect(Collectors.toList());
+        .stream()
+        .map(entry -> new V1EnvVarBuilder().withName(entry.getKey()).withValue(entry.getValue()).build())
+        .collect(Collectors.toList());
   }
 }
