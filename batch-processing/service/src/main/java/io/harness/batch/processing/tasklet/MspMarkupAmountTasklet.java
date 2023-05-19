@@ -70,8 +70,13 @@ public class MspMarkupAmountTasklet implements Tasklet {
             throw new IllegalArgumentException("Invalid interval");
         }
       }
-      marginDetailsService.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetailsBuilder.build());
-      marginDetailsService.updateTotalSpend(mspAccountId, managedAccountId, totalSpendDetailsBuilder.build());
+      AmountDetails markupAmountDetails = markupAmountDetailsBuilder.build();
+      AmountDetails totalSpendDetails = totalSpendDetailsBuilder.build();
+      log.info(
+          "Updating Markup and total spends in mongo for mspAccount: {}, managedAccount: {}, markupAmountDetails: {}, totalSpendDetails: {}",
+          mspAccountId, managedAccountId, markupAmountDetails, totalSpendDetails);
+      marginDetailsService.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails);
+      marginDetailsService.updateTotalSpend(mspAccountId, managedAccountId, totalSpendDetails);
     }
     return null;
   }
