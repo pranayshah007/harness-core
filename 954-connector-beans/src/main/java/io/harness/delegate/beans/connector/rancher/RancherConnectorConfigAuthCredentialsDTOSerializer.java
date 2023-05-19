@@ -33,7 +33,7 @@ public class RancherConnectorConfigAuthCredentialsDTOSerializer
       JsonParser jp, DeserializationContext deserializationContext) throws IOException {
     JsonNode parentJsonNode = jp.getCodec().readTree(jp);
     JsonNode typeNode = parentJsonNode.get("type");
-    JsonNode authSpec = parentJsonNode.get("auth");
+    JsonNode authSpec = parentJsonNode.get("spec");
 
     RancherAuthType type = getType(typeNode);
     ObjectMapper mapper = (ObjectMapper) jp.getCodec();

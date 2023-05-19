@@ -388,11 +388,11 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.SIGNALFX,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, SignalFXDTOToEntity.class, SignalFXEntityToDTO.class,
-            NotSupportedValidationHandler.class)),
-        registrar.put(ConnectorType.RANCHER,
-            new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, RancherConnectionValidator.class,
-                RancherConnectorValidationParamsProvider.class, RancherDTOToEntity.class, RancherEntityToDTO.class,
-                RancherValidationHandler.class));
+            NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.RANCHER,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, RancherConnectionValidator.class,
+            RancherConnectorValidationParamsProvider.class, RancherDTOToEntity.class, RancherEntityToDTO.class,
+            RancherValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

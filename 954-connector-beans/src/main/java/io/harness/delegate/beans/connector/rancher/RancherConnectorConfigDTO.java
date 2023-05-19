@@ -27,9 +27,5 @@ import lombok.Data;
 public class RancherConnectorConfigDTO {
   @NotNull @JsonProperty("type") RancherConfigType configType;
 
-  @JsonProperty("spec")
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
-  @Valid
-  RancherConnectorConfigAuthDTO config;
+  @JsonProperty("spec") RancherConnectorConfigAuthDTO config;
 }

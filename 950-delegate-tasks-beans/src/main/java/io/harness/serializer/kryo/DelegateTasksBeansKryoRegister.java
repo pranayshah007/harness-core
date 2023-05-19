@@ -2485,11 +2485,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(S3StoreTFDelegateConfig.class, 10000524);
     kryo.register(HttpCertificateNG.class, 10000526);
-    kryo.register(RancherTaskParams.class, 10000527);
-    kryo.register(RancherDelegateTaskResponse.class, 10000528);
-    kryo.register(RancherTestConnectionTaskParams.class, 10000529);
-    kryo.register(RancherTestConnectionTaskResponse.class, 10000530);
-    kryo.register(RancherTaskType.class, 10000531);
+    kryo.register(RancherTaskParams.class, 20000501);
+    kryo.register(RancherDelegateTaskResponse.class, 20000502);
+    kryo.register(RancherTestConnectionTaskParams.class, 20000503);
+    kryo.register(RancherTestConnectionTaskResponse.class, 20000504);
+    kryo.register(RancherTaskType.class, 20000505);
 
     kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
     kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);

@@ -541,14 +541,14 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSdkClientBackoffStrategyType.class, 10000460);
     kryo.register(SignalFXConnectorDTO.class, 9145);
 
-    kryo.register(RancherAuthType.class, 20000501);
-    kryo.register(RancherConfigType.class, 20000502);
-    kryo.register(RancherConnectorBearerTokenAuthenticationDTO.class, 20000503);
-    kryo.register(RancherConnectorConfigAuthCredentialsDTO.class, 20000504);
-    kryo.register(RancherConnectorConfigAuthCredentialsDTOSerializer.class, 20000505);
-    kryo.register(RancherConnectorConfigAuthDTO.class, 20000506);
-    kryo.register(RancherConnectorConfigAuthenticationSpecDTO.class, 20000507);
-    kryo.register(RancherConnectorConfigDTO.class, 20000508);
-    kryo.register(RancherConnectorDTO.class, 20000509);
+    kryo.register(RancherAuthType.class, 20000601);
+    kryo.register(RancherConfigType.class, 20000602);
+    kryo.register(RancherConnectorBearerTokenAuthenticationDTO.class, 20000603);
+    kryo.register(RancherConnectorConfigAuthCredentialsDTO.class, 20000604);
+    kryo.register(RancherConnectorConfigAuthCredentialsDTOSerializer.class, 20000605);
+    kryo.register(RancherConnectorConfigAuthDTO.class, 20000606);
+    kryo.register(RancherConnectorConfigAuthenticationSpecDTO.class, 20000607);
+    kryo.register(RancherConnectorConfigDTO.class, 20000608);
+    kryo.register(RancherConnectorDTO.class, 20000609);
   }
 }
