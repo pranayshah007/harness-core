@@ -79,7 +79,7 @@ public class SshDownloadArtifactCommandHandlerTest {
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testShouldDownloadArtifactWithSshExecutor() {
-    when(executor.executeCommandString(COMMAND_STRING, false, false)).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(executor.executeCommandString(COMMAND_STRING)).thenReturn(CommandExecutionStatus.SUCCESS);
 
     SshCommandTaskParameters winrmTaskParameters =
         getSshCommandTaskParameters(downloadArtifactCommandUnit, Collections.emptyList());
