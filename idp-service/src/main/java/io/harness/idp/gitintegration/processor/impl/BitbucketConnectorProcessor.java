@@ -73,7 +73,7 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
 
   @Override
   public void performPushOperation(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo,
-      String locationParentPath, List<String> filesToPush, boolean throughGrpc) {
+      String locationParentPath, List<String> filesToPush) {
     ConnectorInfoDTO connectorInfoDTO =
         getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     Map<String, BackstageEnvVariable> connectorSecretsInfo =
@@ -89,6 +89,6 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
     BitbucketUsernamePasswordDTO spec = (BitbucketUsernamePasswordDTO) outcome.getSpec();
 
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), bitbucketConnectorSecret, throughGrpc);
+        spec.getUsername(), bitbucketConnectorSecret);
   }
 }

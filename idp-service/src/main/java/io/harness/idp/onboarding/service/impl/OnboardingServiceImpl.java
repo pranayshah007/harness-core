@@ -225,8 +225,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         writeEntityAsYamlInFile(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
             backstageCatalogEntityInitial.getSecond().getFirst());
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), initialFileToPush,
-        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
+        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), initialFileToPush);
 
     io.harness.security.dto.UserPrincipal userPrincipalFromContext =
         (io.harness.security.dto.UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal();
@@ -261,7 +260,7 @@ public class OnboardingServiceImpl implements OnboardingService {
       filesToPush.remove(initialFileToPush.get(0));
 
       connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-          onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), filesToPush, false);
+          onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), filesToPush);
 
       registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
       onboardingModuleConfig.getSampleEntities().forEach(sampleEntity
@@ -309,8 +308,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         ConnectorType.fromString(catalogConnectorEntity.getConnectorProviderType()));
     connectorProcessor.performPushOperation(harnessAccount, catalogConnectorInfo,
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(),
-        Collections.singletonList(catalogInfoLocationFilePath),
-        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
+        Collections.singletonList(catalogInfoLocationFilePath));
 
     registerLocationInBackstage(
         harnessAccount, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(entityTargetFilePath));
@@ -445,8 +443,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     sampleEntityFileToPush.add(sampleEntityYamlFilePath);
 
     connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), sampleEntityFileToPush,
-        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
+        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), sampleEntityFileToPush);
 
     List<String> locationTargets = new ArrayList<>();
     locationTargets.add(catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER

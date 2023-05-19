@@ -24,7 +24,6 @@ import lombok.experimental.FieldDefaults;
 public class OnboardingModuleConfig {
   String descriptionForEntitySelected;
   String descriptionForSampleEntity;
-  boolean useGitServiceGrpcForSingleEntityPush;
   String tmpPathForCatalogInfoYamlStore;
   String catalogInfoLocationDefaultPath;
   List<String> sampleEntities;
