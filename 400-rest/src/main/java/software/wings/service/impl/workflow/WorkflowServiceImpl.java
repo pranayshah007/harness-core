@@ -1322,6 +1322,7 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (orchestrationWorkflow instanceof CanaryOrchestrationWorkflow) {
       CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
 
+      // todo: remove this validation when timeout support on wf ff is enabled
       validateOrchestrationLevelFailureStrategies(canaryOrchestrationWorkflow);
 
       if (featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, accountId)) {
