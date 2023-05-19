@@ -23,6 +23,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -61,6 +62,7 @@ import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.exception.exceptionmanager.ExceptionManager;
+import io.harness.execution.CIDelegateTaskExecutor;
 import io.harness.helper.SerializedResponseDataHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -228,7 +230,10 @@ public class RunStepTest extends CIExecutionTestBase {
     when(outcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(POD_DETAILS_OUTCOME)))
         .thenReturn(liteEnginePodDetailsOutcome);
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
+
+    when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any())).thenReturn(callbackId);
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
              any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
@@ -411,7 +416,7 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmRunStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
 
@@ -459,7 +464,7 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmRunStep.builder().build());
     when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
 
@@ -506,7 +511,7 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmRunStep.builder().build());
     when(vmStepSerializer.getStepSecrets(any(), any())).thenReturn(new HashSet<>());
     when(vmExecuteStepUtils.convertStep(any())).thenReturn(ExecuteStepRequest.builder());

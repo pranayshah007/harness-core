@@ -10,10 +10,12 @@ package io.harness.cvng.verificationjob.entities;
 import static java.util.stream.Collectors.groupingBy;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.cvng.CVConstants;
 import io.harness.cvng.beans.DataCollectionExecutionStatus;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
@@ -72,6 +74,9 @@ import lombok.experimental.SuperBuilder;
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "verificationJobInstances", noClassnameStored = true)
 @HarnessEntity(exportable = true)
+@ChangeDataCapture(
+    table = "verify_step_execution_cvng", dataStore = "cvng", fields = {}, handler = "VerifyStepExecutionHandler")
+@ChangeDataCapture(table = "health_source_cvng", dataStore = "cvng", fields = {}, handler = "HealthSourceHandler")
 public final class VerificationJobInstance
     implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess, PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
@@ -123,6 +128,10 @@ public final class VerificationJobInstance
   private VerificationJob resolvedJob;
   private Map<String, CVConfig> cvConfigMap;
   private Map<String, AppliedDeploymentAnalysisType> appliedDeploymentAnalysisTypeMap;
+  private String planExecutionId;
+  private String stageStepId;
+  private String nodeExecutionId;
+  private MonitoredServiceSpecType monitoredServiceType;
 
   @Builder.Default
   @FdTtlIndex

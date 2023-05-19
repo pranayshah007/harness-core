@@ -13,7 +13,11 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,8 +28,17 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
-import io.harness.delegate.beans.connector.scm.azurerepo.*;
-import io.harness.delegate.beans.connector.scm.bitbucket.*;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
@@ -34,7 +47,11 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.*;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.idp.common.Constants;
 import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
@@ -50,6 +67,7 @@ import io.harness.idp.gitintegration.processor.impl.GithubConnectorProcessor;
 import io.harness.idp.gitintegration.processor.impl.GitlabConnectorProcessor;
 import io.harness.idp.gitintegration.repositories.CatalogConnectorRepository;
 import io.harness.idp.gitintegration.utils.GitIntegrationUtils;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -59,7 +77,14 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.BackstageEnvVariable;
 import io.harness.spec.server.idp.v1.model.ConnectorDetails;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,6 +101,10 @@ public class GitIntegrationServiceImplTest {
   private static final String DELEGATE_SELECTOR2 = "ds2";
   private static final String PROXY_MAP1 = "{\"github.com\":true, \"gitlab.com\": false}";
   private static final String PROXY_MAP2 = "{\"github.com\":false, \"gitlab.com\": false}";
+  private static final String TEST_IDENTIFIER = "123";
+  private static final String TEST_GITLAB_URL =
+      "https://gitlab.com/sathish1293/sathish/-/blob/main/sathish/Organization/default.yaml";
+  private static final String GITHUB_HOST = "github.com";
   @InjectMocks GithubConnectorProcessor githubConnectorProcessor;
   @InjectMocks GitlabConnectorProcessor gitlabConnectorProcessor;
   @InjectMocks BitbucketConnectorProcessor bitbucketConnectorProcessor;
@@ -87,6 +116,7 @@ public class GitIntegrationServiceImplTest {
   @Mock ConnectorProcessorFactory connectorProcessorFactory;
   @Mock private BackstageEnvVariableService backstageEnvVariableService;
   @Mock ConfigManagerService configManagerService;
+  @Mock DelegateSelectorsCache delegateSelectorsCache;
 
   String ACCOUNT_IDENTIFIER = "test-secret-identifier";
   String USER_NAME = "test-username";
@@ -438,7 +468,7 @@ public class GitIntegrationServiceImplTest {
     doNothing().when(backstageEnvVariableService).findAndSync(any());
     MockedStatic<GitIntegrationUtils> gitIntegrationUtilsMockedStatic = Mockito.mockStatic(GitIntegrationUtils.class);
     MockedStatic<ConfigManagerUtils> configManagerUtilsMockedStatic = Mockito.mockStatic(ConfigManagerUtils.class);
-    when(GitIntegrationUtils.getHostForConnector(any(), any())).thenReturn("dummyUrl");
+    when(GitIntegrationUtils.getHostForConnector(any())).thenReturn("dummyUrl");
     when(ConfigManagerUtils.getIntegrationConfigBasedOnConnectorType(any())).thenReturn("Sample Config");
     when(ConfigManagerUtils.getJsonSchemaBasedOnConnectorTypeForIntegrations(any())).thenReturn("Sample Json Schema");
     when(ConfigManagerUtils.isValidSchema(any(), any())).thenReturn(false);
@@ -449,6 +479,7 @@ public class GitIntegrationServiceImplTest {
     when(catalogConnectorRepository.saveOrUpdate(any())).thenReturn(catalogConnectorEntity);
     CatalogConnectorEntity result =
         gitIntegrationServiceImpl.saveConnectorDetails(ACCOUNT_IDENTIFIER, connectorDetails);
+    verify(delegateSelectorsCache).put(eq(ACCOUNT_IDENTIFIER), any(), any());
     assertEquals("testGitlab", result.getConnectorIdentifier());
     assertEquals(delegateSelectors, result.getDelegateSelectors());
     gitIntegrationUtilsMockedStatic.close();
@@ -476,7 +507,7 @@ public class GitIntegrationServiceImplTest {
     when(backstageEnvVariableService.findByEnvNameAndAccountIdentifier(PROXY_ENV_NAME, ACCOUNT_IDENTIFIER))
         .thenReturn(Optional.of(variable));
     gitIntegrationServiceImpl.createOrUpdateConnectorConfigEnvVariable(
-        ACCOUNT_IDENTIFIER, ConnectorType.GITHUB, CatalogInfraConnectorType.DIRECT);
+        ACCOUNT_IDENTIFIER, GITHUB_HOST, CatalogInfraConnectorType.DIRECT);
     variable.setValue(PROXY_MAP2);
     verify(backstageEnvVariableService).update(variable, ACCOUNT_IDENTIFIER);
   }
@@ -507,7 +538,9 @@ public class GitIntegrationServiceImplTest {
 
   private ConnectorInfoDTO getConnectorInfoDTO(Set<String> delegateSelectors) {
     return ConnectorInfoDTO.builder()
-        .connectorConfig(GithubConnectorDTO.builder().delegateSelectors(delegateSelectors).build())
+        .identifier(TEST_IDENTIFIER)
+        .connectorType(ConnectorType.GITLAB)
+        .connectorConfig(GithubConnectorDTO.builder().url(TEST_GITLAB_URL).delegateSelectors(delegateSelectors).build())
         .build();
   }
 }

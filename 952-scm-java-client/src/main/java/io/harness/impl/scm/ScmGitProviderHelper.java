@@ -13,11 +13,13 @@ import static io.harness.encryption.FieldWithPlainTextOrSecretValueHelper.getSec
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.GitClientHelper;
@@ -39,11 +41,13 @@ public class ScmGitProviderHelper {
     if (scmConnector instanceof GithubConnectorDTO) {
       return getSlugFromUrl(((GithubConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof GitlabConnectorDTO) {
-      return getSlugFromUrl(((GitlabConnectorDTO) scmConnector).getUrl());
+      return getSlugFromUrlForGitlab((GitlabConnectorDTO) scmConnector);
     } else if (scmConnector instanceof BitbucketConnectorDTO) {
       return getSlugFromUrlForBitbucket(((BitbucketConnectorDTO) scmConnector).getUrl());
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return getSlugFromUrlForAzureRepo(((AzureRepoConnectorDTO) scmConnector).getUrl());
+    } else if (scmConnector instanceof HarnessConnectorDTO) {
+      return getSlugFromHarnessUrl(((HarnessConnectorDTO) scmConnector).getUrl());
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -55,6 +59,25 @@ public class ScmGitProviderHelper {
   }
 
   private String getSlugFromUrl(String url) {
+    String repoName = gitClientHelper.getGitRepo(url);
+    String ownerName = gitClientHelper.getGitOwner(url, false);
+    return ownerName + "/" + repoName;
+  }
+
+  private String getSlugFromHarnessUrl(String url) {
+    String repoName = gitClientHelper.getGitRepo(url);
+    String ownerName = gitClientHelper.getGitOwner(url, true);
+    return ownerName + "/" + repoName + "/+";
+  }
+
+  private String getSlugFromUrlForGitlab(GitlabConnectorDTO gitlabConnectorDTO) {
+    String url = gitlabConnectorDTO.getUrl();
+    String apiUrl = ScmGitProviderMapper.getGitlabApiUrl(gitlabConnectorDTO);
+    if (!StringUtils.isBlank(apiUrl) && gitlabConnectorDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+      apiUrl = StringUtils.stripEnd(apiUrl, "/") + "/";
+      String slug = StringUtils.removeStart(url, apiUrl);
+      return StringUtils.removeEnd(slug, ".git");
+    }
     String repoName = gitClientHelper.getGitRepo(url);
     String ownerName = gitClientHelper.getGitOwner(url, false);
     return ownerName + "/" + repoName;

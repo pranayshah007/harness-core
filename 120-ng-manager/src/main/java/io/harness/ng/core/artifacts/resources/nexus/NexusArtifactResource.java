@@ -14,6 +14,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
@@ -130,11 +131,12 @@ public class NexusArtifactResource {
   @ApiOperation(
       value = "Gets nexus artifact last successful build", nickname = "getLastSuccessfulBuildForNexusArtifact")
   public ResponseDTO<NexusBuildDetailsDTO>
-  getLastSuccessfulBuild(@QueryParam("repository") String repository,
-      @QueryParam("repositoryPort") String repositoryPort, @QueryParam("artifactPath") String artifactPath,
-      @QueryParam("repositoryFormat") String repositoryFormat,
-      @QueryParam("repositoryUrl") String artifactRepositoryUrl,
-      @QueryParam("connectorRef") String dockerConnectorIdentifier,
+  getLastSuccessfulBuild(@QueryParam(NGArtifactConstants.REPOSITORY) String repository,
+      @QueryParam(NGArtifactConstants.REPOSITORY_PORT) String repositoryPort,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
+      @QueryParam(NGArtifactConstants.REPOSITORY_FORMAT) String repositoryFormat,
+      @QueryParam(NGArtifactConstants.REPOSITORY_URL) String artifactRepositoryUrl,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, NexusRequestDTO requestDTO) {
@@ -143,6 +145,29 @@ public class NexusArtifactResource {
     NexusBuildDetailsDTO buildDetails =
         nexusResourceService.getSuccessfulBuild(connectorRef, repository, repositoryPort, artifactPath,
             repositoryFormat, artifactRepositoryUrl, requestDTO, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(value = "Gets nexus artifact last successful build with yaml input for expression resolution",
+      nickname = "getLastSuccessfulBuildForNexusArtifactWithYaml")
+  public ResponseDTO<NexusBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.REPOSITORY) String repository,
+      @QueryParam(NGArtifactConstants.REPOSITORY_PORT) String repositoryPort,
+      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
+      @QueryParam(NGArtifactConstants.REPOSITORY_FORMAT) String repositoryFormat,
+      @QueryParam(NGArtifactConstants.REPOSITORY_URL) String artifactRepositoryUrl,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String nexusConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef, @NotNull NexusRequestDTO nexusRequestDTO) {
+    NexusBuildDetailsDTO buildDetails = artifactResourceUtils.getLastSuccessfulBuildV2Nexus3(repository, repositoryPort,
+        artifactPath, repositoryFormat, artifactRepositoryUrl, nexusConnectorIdentifier, accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, fqnPath, gitEntityBasicInfo, serviceRef, nexusRequestDTO);
     return ResponseDTO.newResponse(buildDetails);
   }
 

@@ -43,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 @Singleton
 public class MigratorExpressionUtils {
-  private static final int MAX_DEPTH = 8;
+  private static final int MAX_DEPTH = 32;
 
   public static Object render(MigrationContext context, Object object, Map<String, Object> customExpressions) {
     return render(context, object, MigExpressionOverrides.builder().customExpressions(customExpressions).build());
@@ -102,6 +102,7 @@ public class MigratorExpressionUtils {
     context.put("env.description", "<+env.description>");
     context.put("env.environmentType", "<+env.type>");
     context.put("env.uuid", "<+env.identifier>");
+    context.put("env.accountId", "<+account.identifier>");
 
     // Service Expressions
     context.put("service.name", "<+service.name>");
@@ -110,6 +111,9 @@ public class MigratorExpressionUtils {
     context.put("service.tag", "<+service.tags>");
     context.put("service.uuid", "<+service.identifier>");
     context.put("service.description", "<+service.description>");
+    context.put("service.accountId", "<+account.identifier>");
+    context.put("service.manifest", "<+manifest.name>");
+    context.put("service.manifest.repoRoot", "<+manifest.repoName>");
 
     Map<String, String> artifactExpressions = new HashMap<>();
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.metadata.image", "<+ARTIFACT_PLACEHOLDER.image>");
@@ -140,6 +144,8 @@ public class MigratorExpressionUtils {
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.fileName", "<+ARTIFACT_PLACEHOLDER.metadata.fileName>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.key", "<+artifact.metadata.key>");
     artifactExpressions.put("ARTIFACT_PLACEHOLDER.bucketName", "<+ARTIFACT_PLACEHOLDER.metadata.bucketName>");
+    artifactExpressions.put(
+        "ARTIFACT_PLACEHOLDER.source.repositoryName", "<+ARTIFACT_PLACEHOLDER.metadata.repositoryName>");
 
     artifactExpressions.forEach((k, v) -> {
       // Artifact Expressions
@@ -149,12 +155,21 @@ public class MigratorExpressionUtils {
           k.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"), v.replace("ARTIFACT_PLACEHOLDER", "rollbackArtifact"));
     });
 
+    context.put("artifact.label", new ArtifactLabelMigratorFunctor());
+    context.put("rollbackArtifact.label", new ArtifactLabelMigratorFunctor());
+    context.put("artifact.metadata.getSHA()", "artifact.metadata.SHA");
+
     // Application Expressions
     context.put("app.name", "<+project.name>");
     context.put("app.description", "<+project.description>");
+    context.put("app.accountId", "<+account.identifier>");
     context.put("pipeline.name", "<+pipeline.name>");
     context.put("workflow.name", "<+stage.name>");
+    context.put("workflow.description", "<+stage.description>");
     context.put("workflow.releaseNo", "<+pipeline.sequenceId>");
+    context.put("workflow.pipelineResumeUuid", "<+pipeline.executionId>");
+    context.put("workflow.pipelineDeploymentUuid", "<+pipeline.executionId>");
+    context.put("workflow.startTs", "<+pipeline.startTs>");
 
     // Variables
     context.put("workflow.variables",
@@ -180,6 +195,30 @@ public class MigratorExpressionUtils {
     context.put("httpResponseBody", "<+httpResponseBody>");
     context.put("httpMethod", "<+httpMethod>");
     context.put("httpUrl", "<+httpUrl>");
+
+    // Instance
+    context.put("instance.hostName", "<+instance.hostName>");
+    context.put("instance.host.hostName", "<+instance.host.hostName>");
+    context.put("instance.host.ip", "<+instance.host.privateIp>");
+
+    // PCF
+    context.put("pcf.finalRoutes", "<+pcf.finalRoutes>");
+    context.put("pcf.oldAppRoutes", "<+pcf.oldAppRoutes>");
+    context.put("pcf.tempRoutes", "<+pcf.tempRoutes>");
+    context.put("pcf.newAppRoutes", "<+pcf.newAppRoutes>");
+    context.put("pcf.newAppRoutes[0]", "<+pcf.newAppRoutes[0]>");
+    context.put("pcf.newAppName", "<+pcf.newAppName>");
+    context.put("pcf.newAppGuid", "<+pcf.newAppGuid>");
+    context.put("pcf.oldAppName", "<+pcf.oldAppName>");
+    context.put("pcf.activeAppName", "<+pcf.activeAppName>");
+    context.put("pcf.inActiveAppName", "<+pcf.inActiveAppName>");
+    context.put("pcf.oldAppGuid", "<+pcf.oldAppGuid>");
+    context.put("pcf.oldAppRoutes[0]", "<+pcf.oldAppRoutes[0]>");
+    context.put("infra.pcf.cloudProvider.name", "<+infra.connector.name>");
+    context.put("infra.pcf.organization", "<+infra.organization>");
+    context.put("infra.pcf.space", "<+infra.space>");
+    context.put("host.pcfElement.applicationId", "<+pcf.newAppGuid>");
+    context.put("host.pcfElement.displayName", "<+pcf.newAppName>");
 
     if (overrides != null && EmptyPredicate.isNotEmpty(overrides.getCustomExpressions())) {
       context.putAll(overrides.getCustomExpressions());

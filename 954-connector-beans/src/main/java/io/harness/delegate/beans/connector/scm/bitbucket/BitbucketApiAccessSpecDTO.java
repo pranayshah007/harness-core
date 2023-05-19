@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonSubTypes({
   @JsonSubTypes.
   Type(value = BitbucketUsernameTokenApiAccessDTO.class, name = BitbucketConnectorConstants.USERNAME_AND_TOKEN)
+  ,
+      @JsonSubTypes.Type(value = BitbucketOAuthDTO.class, name = BitbucketConnectorConstants.OAUTH)
 })
 @Schema(name = "BitbucketApiAccess",
     description =

@@ -28,6 +28,7 @@ import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.ExecutionModeUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -66,8 +67,7 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
       }
     }
 
-    List<ChildrenExecutableResponse.Child> children =
-        getChildrenFromNodeExecutions(childrenNodeExecutions, ambiance.getPlanId());
+    List<ChildrenExecutableResponse.Child> children = getChildrenFromNodeExecutions(childrenNodeExecutions, ambiance);
     long maxConcurrency =
         originalStrategyNodeExecution.getExecutableResponses().get(0).getChildren().getMaxConcurrency();
 
@@ -87,11 +87,19 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
   }
 
   private List<ChildrenExecutableResponse.Child> getChildrenFromNodeExecutions(
-      List<NodeExecution> childrenNodeExecutions, String planId) {
+      List<NodeExecution> childrenNodeExecutions, Ambiance ambiance) {
+    String planId = ambiance.getPlanId();
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     List<Node> identityNodesToBeCreated = new ArrayList<>();
     for (NodeExecution nodeExecution : childrenNodeExecutions) {
-      if (StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {
+      // Current node (if failed) needs to be added into children as execution node only if its part of the retry stage.
+      // If we see a failed step that isn't part of the retry stage, it should be added as an identity stage.
+      // This allows us to create an identity node for all such executions and not just use the same IdentityPlanNode
+      // pointing to one of the executions (hence copying the status).
+      Node node = planService.fetchNode(nodeExecution.getPlanId(), nodeExecution.getNodeId());
+      if ((ExecutionModeUtils.isRollbackMode(ambiance.getMetadata().getExecutionMode())
+              || !(node instanceof IdentityPlanNode))
+          && StatusUtils.brokeAndAbortedStatuses().contains(nodeExecution.getStatus())) {
         children.add(ChildrenExecutableResponse.Child.newBuilder()
                          .setChildNodeId(nodeExecution.getNode().getUuid())
                          .setStrategyMetadata(
@@ -99,15 +107,15 @@ public class IdentityStrategyStep implements ChildrenExecutable<IdentityStepPara
                          .build());
       } else {
         // Copy identifier from nodeExecution.
-        Node node = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(), nodeExecution.getNode(),
-            nodeExecution.getIdentifier(), nodeExecution.getName(), nodeExecution.getNode().getStepType(),
-            nodeExecution.getUuid());
+        Node identityNode = IdentityPlanNode.mapPlanNodeToIdentityNode(UUIDGenerator.generateUuid(),
+            nodeExecution.getNode(), nodeExecution.getIdentifier(), nodeExecution.getName(),
+            nodeExecution.getNode().getStepType(), nodeExecution.getUuid());
         children.add(ChildrenExecutableResponse.Child.newBuilder()
-                         .setChildNodeId(node.getUuid())
+                         .setChildNodeId(identityNode.getUuid())
                          .setStrategyMetadata(
                              AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata())
                          .build());
-        identityNodesToBeCreated.add(node);
+        identityNodesToBeCreated.add(identityNode);
       }
     }
 

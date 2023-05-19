@@ -14,6 +14,7 @@ import io.harness.connector.migration.AddOnDelegateFieldToCustomSecretManagerCon
 import io.harness.migration.MigrationDetails;
 import io.harness.migration.NGMigration;
 import io.harness.migration.beans.MigrationType;
+import io.harness.ng.core.migration.CustomDeploymentDetailsClassMigration;
 import io.harness.ng.core.migration.DeleteCVSetupUsageEventsMigration;
 import io.harness.ng.core.migration.DisableBuiltInHarnessSMSettingsMigration;
 import io.harness.ng.core.migration.DisableHarnessSMSettingCategoryMigration;
@@ -54,6 +55,7 @@ public class NGCoreMigrationDetails implements MigrationDetails {
         .add(Pair.of(10, DisableBuiltInHarnessSMSettingsMigration.class))
         .add(Pair.of(11, DisableHarnessSMSettingCategoryMigration.class))
         .add(Pair.of(12, NGUpdatePollingDocumentClassMigration.class))
+        .add(Pair.of(13, CustomDeploymentDetailsClassMigration.class))
         .build();
   }
 }

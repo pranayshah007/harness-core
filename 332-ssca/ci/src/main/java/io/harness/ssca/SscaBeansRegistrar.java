@@ -23,7 +23,6 @@ import io.harness.yaml.schema.beans.YamlSchemaMetadata;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 
 import com.google.common.collect.ImmutableList;
-import java.util.Collections;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaBeansRegistrar {
@@ -39,7 +38,6 @@ public class SscaBeansRegistrar {
                                            .namespace(SchemaNamespaceConstants.CI)
                                            .modulesSupported(ImmutableList.of(ModuleType.CI))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .featureFlags(Collections.singletonList(FeatureName.SSCA_ENABLED.name()))
                                            .build())
                    .build())
           .build();

@@ -9,6 +9,7 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.budget.utils.BudgetUtils.MONTHS;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.PERMISSION_MISSING_MESSAGE;
 import static io.harness.ccm.rbac.CCMRbacHelperImpl.RESOURCE_FOLDER;
 import static io.harness.ccm.rbac.CCMRbacPermissions.PERSPECTIVE_CREATE_AND_EDIT;
@@ -74,6 +75,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -231,10 +233,12 @@ public class PerspectiveResource {
           required = true, description = "Only support for MONTHLY breakdown") BudgetBreakdown breakdown) {
     rbacHelper.checkPerspectiveViewPermission(accountId, null, null, ceViewService.get(perspectiveId).getFolderId());
     List<ValueDataPoint> response = null;
-    if (period == BudgetPeriod.YEARLY && type == BudgetType.PREVIOUS_PERIOD_SPEND
-        && breakdown == BudgetBreakdown.MONTHLY) {
-      Double[] lastYearMonthlyCost =
-          budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
+    if (period == BudgetPeriod.YEARLY && breakdown == BudgetBreakdown.MONTHLY) {
+      Double[] lastYearMonthlyCost = new Double[MONTHS];
+      Arrays.fill(lastYearMonthlyCost, 0.0);
+      if (type == BudgetType.PREVIOUS_PERIOD_SPEND) {
+        lastYearMonthlyCost = budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
+      }
       response = BudgetUtils.getYearlyMonthWiseKeyValuePairs(
           BudgetUtils.getStartOfLastPeriod(startTime, period), lastYearMonthlyCost);
     }

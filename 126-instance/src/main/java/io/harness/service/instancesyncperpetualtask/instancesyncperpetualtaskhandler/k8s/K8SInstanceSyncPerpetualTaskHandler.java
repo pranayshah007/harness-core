@@ -35,6 +35,7 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.ng.core.NGAccess;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesync.K8sDeploymentRelease;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.jooq.tools.StringUtils;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -76,8 +78,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
     List<ExecutionCapability> executionCapabilities = getExecutionCapabilities(deploymentReleaseList);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier(),
-        infrastructure.getAccountIdentifier());
+        infrastructure.getOrgIdentifier(), infrastructure.getProjectIdentifier());
   }
 
   @Override
@@ -89,8 +90,7 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
         getExecutionCapabilitiesV2(connectorInfoDTO, infrastructureMappingDTO);
 
     return createPerpetualTaskExecutionBundle(perpetualTaskPack, executionCapabilities,
-        connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
-        infrastructureMappingDTO.getAccountIdentifier());
+        connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier());
   }
 
   private List<K8sDeploymentReleaseData> populateDeploymentReleaseList(
@@ -173,12 +173,18 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
 
   private K8sInstanceSyncPerpetualTaskParamsV2 createK8sInstanceSyncPerpetualTaskV2Params(
       InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(infrastructureMappingDTO.getAccountIdentifier())
+                            .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
+                            .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
+                            .build();
     return K8sInstanceSyncPerpetualTaskParamsV2.newBuilder()
         .setAccountId(infrastructureMappingDTO.getAccountIdentifier())
-        .setOrgId(connectorInfoDTO.getOrgIdentifier())
-        .setProjectId(connectorInfoDTO.getProjectIdentifier())
-        .setConnectorInfoDto(ByteString.copyFrom(
-            getKryoSerializer(infrastructureMappingDTO.getAccountIdentifier()).asBytes(connectorInfoDTO)))
+        .setOrgId(StringUtils.defaultIfEmpty(connectorInfoDTO.getOrgIdentifier(), StringUtils.EMPTY))
+        .setProjectId(StringUtils.defaultIfEmpty(connectorInfoDTO.getProjectIdentifier(), StringUtils.EMPTY))
+        .setConnectorInfoDto(ByteString.copyFrom(kryoSerializer.asBytes(connectorInfoDTO)))
+        .setEncryptedData(ByteString.copyFrom(
+            kryoSerializer.asBytes(k8sEntityHelper.getEncryptionDataDetails(connectorInfoDTO, ngAccess))))
         .build();
   }
 
@@ -186,23 +192,19 @@ public class K8SInstanceSyncPerpetualTaskHandler extends InstanceSyncPerpetualTa
       String accountIdentifier, List<K8sDeploymentReleaseData> deploymentReleaseData) {
     return K8sInstanceSyncPerpetualTaskParams.newBuilder()
         .setAccountId(accountIdentifier)
-        .addAllK8SDeploymentReleaseList(toK8sDeploymentReleaseList(deploymentReleaseData, accountIdentifier))
+        .addAllK8SDeploymentReleaseList(toK8sDeploymentReleaseList(deploymentReleaseData))
         .build();
   }
 
-  private List<K8sDeploymentRelease> toK8sDeploymentReleaseList(
-      List<K8sDeploymentReleaseData> deploymentReleaseData, String accountIdentifier) {
-    return deploymentReleaseData.stream()
-        .map(data -> toK8sDeploymentRelease(data, accountIdentifier))
-        .collect(Collectors.toList());
+  private List<K8sDeploymentRelease> toK8sDeploymentReleaseList(List<K8sDeploymentReleaseData> deploymentReleaseData) {
+    return deploymentReleaseData.stream().map(this::toK8sDeploymentRelease).collect(Collectors.toList());
   }
 
-  private K8sDeploymentRelease toK8sDeploymentRelease(K8sDeploymentReleaseData releaseData, String accountIdentifier) {
+  private K8sDeploymentRelease toK8sDeploymentRelease(K8sDeploymentReleaseData releaseData) {
     return K8sDeploymentRelease.newBuilder()
         .setReleaseName(releaseData.getReleaseName())
         .addAllNamespaces(releaseData.getNamespaces())
-        .setK8SInfraDelegateConfig(
-            ByteString.copyFrom(getKryoSerializer(accountIdentifier).asBytes(releaseData.getK8sInfraDelegateConfig())))
+        .setK8SInfraDelegateConfig(ByteString.copyFrom(kryoSerializer.asBytes(releaseData.getK8sInfraDelegateConfig())))
         .build();
   }
 

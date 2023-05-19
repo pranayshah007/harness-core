@@ -99,21 +99,19 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private final EventPublisher eventPublisher;
   private final Clock clock;
   private final KryoSerializer kryoSerializer;
-  private KryoSerializer referenceFalseKryoSerializer;
 
   private Cache<String, EcsActiveInstancesCache> cache = Caffeine.newBuilder().build();
 
   @Inject
   public EcsPerpetualTaskExecutor(AwsEcsHelperServiceDelegate ecsHelperServiceDelegate,
       AwsEc2HelperServiceDelegate ec2ServiceDelegate, EcsMetricClient ecsMetricClient, EventPublisher eventPublisher,
-      Clock clock, KryoSerializer kryoSerializer, KryoSerializer referenceFalseKryoSerializer) {
+      Clock clock, KryoSerializer kryoSerializer) {
     this.ecsHelperServiceDelegate = ecsHelperServiceDelegate;
     this.ec2ServiceDelegate = ec2ServiceDelegate;
     this.ecsMetricClient = ecsMetricClient;
     this.eventPublisher = eventPublisher;
     this.clock = clock;
     this.kryoSerializer = kryoSerializer;
-    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
   }
 
   @Override
@@ -127,9 +125,8 @@ public class EcsPerpetualTaskExecutor implements PerpetualTaskExecutor {
         String clusterId = ecsPerpetualTaskParams.getClusterId();
         String settingId = ecsPerpetualTaskParams.getSettingId();
         log.info("Task params cluster name {} region {} ", clusterName, region);
-        AwsConfig awsConfig =
-            (AwsConfig) referenceFalseKryoSerializer.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
-        List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) referenceFalseKryoSerializer.asObject(
+        AwsConfig awsConfig = (AwsConfig) kryoSerializer.asObject(ecsPerpetualTaskParams.getAwsConfig().toByteArray());
+        List<EncryptedDataDetail> encryptionDetails = (List<EncryptedDataDetail>) kryoSerializer.asObject(
             ecsPerpetualTaskParams.getEncryptionDetail().toByteArray());
         Instant now = Instant.now(clock);
 

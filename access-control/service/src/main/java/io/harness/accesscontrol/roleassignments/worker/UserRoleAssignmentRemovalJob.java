@@ -28,14 +28,12 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.ng.core.dto.AccountDTO;
-import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
 
@@ -60,7 +58,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class UserRoleAssignmentRemovalJob implements Runnable {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final FeatureFlagService featureFlagService;
-  private final AccountClient accountClient;
+  private final AccountUtils accountUtils;
   private final ScopeService scopeService;
   private final PersistentLocker persistentLocker;
   private final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob: ";
@@ -68,11 +66,11 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
 
   @Inject
   public UserRoleAssignmentRemovalJob(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService,
+      FeatureFlagService featureFlagService, AccountUtils accountUtils, ScopeService scopeService,
       PersistentLocker persistentLocker) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagService = featureFlagService;
-    this.accountClient = accountClient;
+    this.accountUtils = accountUtils;
     this.scopeService = scopeService;
     this.persistentLocker = persistentLocker;
   }
@@ -103,14 +101,9 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
   }
 
   @VisibleForTesting
-  protected void execute() {
-    List<AccountDTO> accountDTOS = new ArrayList<>();
-    try {
-      accountDTOS = CGRestUtils.getResponse(accountClient.getAllAccounts());
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to fetch all accounts", ex);
-    }
-    List<String> targetAccounts = filterAccountsForFFEnabled(accountDTOS);
+  void execute() {
+    List<String> targetAccounts = getAccountsForFFEnabled();
+
     if (isEmpty(targetAccounts)) {
       return;
     }
@@ -131,6 +124,23 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     }
   }
 
+  private List<String> getAccountsForFFEnabled() {
+    List<String> accountIds = accountUtils.getAllAccountIds();
+    List<String> targetAccounts = new ArrayList<>();
+    try {
+      for (String accountId : accountIds) {
+        boolean isRemoveUserViewerRoleAssignment =
+            featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountId);
+        if (isRemoveUserViewerRoleAssignment) {
+          targetAccounts.add(accountId);
+        }
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS");
+    }
+    return targetAccounts;
+  }
+
   private List<String> filterAccountsForAccountBasicRoleOnlyFF(List<String> accountIds) {
     List<String> filteredAccounts = new ArrayList<>();
     try {
@@ -144,22 +154,6 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
       log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF ACCOUNT_BASIC_ROLE_ONLY");
     }
     return filteredAccounts;
-  }
-
-  private List<String> filterAccountsForFFEnabled(List<AccountDTO> ngEnabledAccounts) {
-    List<String> targetAccounts = new ArrayList<>();
-    try {
-      for (AccountDTO accountDTO : ngEnabledAccounts) {
-        boolean isRemoveUserViewerRoleAssignment =
-            featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountDTO.getIdentifier());
-        if (isRemoveUserViewerRoleAssignment) {
-          targetAccounts.add(accountDTO.getIdentifier());
-        }
-      }
-    } catch (Exception ex) {
-      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS");
-    }
-    return targetAccounts;
   }
 
   private void deleteAccountScopeRoleAssignments(String accountId) {

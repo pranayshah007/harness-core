@@ -31,6 +31,7 @@ java_library(
         "//960-api-services/src/main/java/io/harness/azure/client:module",
         "//960-api-services/src/main/java/io/harness/git:module",
         "//960-api-services/src/main/java/io/harness/helm:module",
+        "//960-api-services/src/main/java/io/harness/k8s/model:module",
         "//960-api-services/src/main/java/io/harness/ssh:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/k8s:module",
         "//960-ng-core-beans/src/main/java/io/harness/serializer:module",

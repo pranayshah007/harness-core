@@ -45,11 +45,5 @@ sources:
           - identifier: Performance
             metricThresholds: []
   changeSources:
-    - name: Harness CD Next Gen
-      identifier: harness_cd_next_gen
-      type: HarnessCDNextGen
-      enabled: true
-      category: Deployment
-      spec: {}
 dependencies: []
 type: Application

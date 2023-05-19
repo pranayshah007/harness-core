@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
@@ -48,6 +50,9 @@ import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.beans.TaskType;
 
@@ -55,6 +60,7 @@ import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -400,5 +406,69 @@ public class HttpStepTest extends CategoryTest {
                                                              .certificateKey(ParameterField.createValueField("value"))
                                                              .build()))
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testObtainTaskWithInputVariables() {
+    aStatic.when(() -> TaskRequestsUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ambiance = Ambiance.newBuilder().build();
+
+    List<NGVariable> inputVariables = new ArrayList<>();
+    inputVariables.add(
+        StringNGVariable.builder().name("URL").value(ParameterField.createValueField("https://www.abc.xyz")).build());
+    inputVariables.add(
+        StringNGVariable.builder().name("MY_CODE").value(ParameterField.createValueField("200")).build());
+
+    httpStepParameters =
+        HttpStepParameters.infoBuilder()
+            .method(ParameterField.createValueField("GET"))
+            .url(ParameterField.createValueField(TEST_URL))
+            .delegateSelectors(ParameterField.createValueField(
+                CollectionUtils.emptyIfNull(delegateSelectors != null ? delegateSelectors.getValue() : null)))
+            .inputVariables(NGVariablesUtils.getMapOfVariables(inputVariables))
+            .assertion(ParameterField.createValueField("<+httpResponseCode>==<+spec.inputVariables.MY_CODE>"))
+            .build();
+
+    assertThat(httpStepParameters.getInputVariables().getValue().get("MY_CODE")).isNotNull();
+    assertThat(httpStepParameters.getInputVariables().getValue().get("URL")).isNotNull();
+
+    // adding a timeout field
+    stepElementParameters = StepElementParameters.builder()
+                                .spec(httpStepParameters)
+                                .timeout(ParameterField.createValueField("20m"))
+                                .build();
+
+    assertThat(httpStep.obtainTask(ambiance, stepElementParameters, null)).isEqualTo(TaskRequest.newBuilder().build());
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testEncodeURL() {
+    NGLogCallback logCallback = mock(NGLogCallback.class);
+    String url1 = "https://www.example.com/path%20with%20encoded%20spaces";
+    assertThat(httpStep.encodeURL(url1, logCallback)).isEqualTo(url1);
+
+    String url2 =
+        "https://www.example.com/Apply MS patches AMA Prod servers (Monthly-Sun)?api-version=2017-05-15-preview";
+    String expected2 =
+        "https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview";
+    assertThat(httpStep.encodeURL(url2, logCallback)).isEqualTo(expected2);
+    verify(logCallback)
+        .saveExecutionLog(eq(
+            "Encoded URL: https://www.example.com/Apply%20MS%20patches%20AMA%20Prod%20servers%20(Monthly-Sun)?api-version=2017-05-15-preview"));
+
+    String url3 = "https://www.example.com/@user?param=value";
+    assertThat(httpStep.encodeURL(url3, logCallback)).isEqualTo(url3);
+    verify(logCallback).saveExecutionLog(eq("Encoded URL: https://www.example.com/@user?param=value"));
+
+    String url4 = "https://www.example.com/already%20encoded?param=value";
+    assertThat(httpStep.encodeURL(url4, logCallback)).isEqualTo(url4);
+
+    String url5 = "";
+    assertThat(httpStep.encodeURL(url5, logCallback)).isEqualTo(url5);
   }
 }

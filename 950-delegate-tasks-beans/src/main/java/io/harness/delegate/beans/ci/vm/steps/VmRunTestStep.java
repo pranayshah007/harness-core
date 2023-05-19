@@ -45,6 +45,8 @@ public class VmRunTestStep implements VmStepInfo {
   private String testSplitStrategy;
   private boolean parallelizeTests;
   private String testGlobs;
+  private String pythonVersion;
+  private String testRoot;
 
   @Override
   public VmStepInfo.Type getType() {

@@ -10,6 +10,7 @@ package software.wings.licensing;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.validation.Validator.notNullCheck;
 
@@ -526,7 +527,7 @@ public class LicenseServiceImpl implements LicenseService {
         throw new InvalidRequestException(msg);
       }
 
-      try (HIterator<Account> accountList = new HIterator<>(query.fetch())) {
+      try (HIterator<Account> accountList = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
         accountList.forEach(account -> {
           if (!account.getAccountName().equalsIgnoreCase("Global")) {
             byte[] encryptedLicenseInfo = Base64.getDecoder().decode(encryptedLicenseInfoBase64String.getBytes());
@@ -647,8 +648,8 @@ public class LicenseServiceImpl implements LicenseService {
   public boolean updateLicenseForProduct(
       String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension) {
     final MarketPlaceConfig marketPlaceConfig = mainConfiguration.getMarketPlaceConfig();
-    log.info("marketPlaceConfig: {}, productCode:{}, accountId:{}, orderQuantity:{}, expirationTime:{}, dimension:{}",
-        marketPlaceConfig, productCode, accountId, orderQuantity, expirationTime, dimension);
+    log.info("productCode:{}, accountId:{}, orderQuantity:{}, expirationTime:{}, dimension:{}", productCode, accountId,
+        orderQuantity, expirationTime, dimension);
 
     boolean premiumSupport = hasPremierSupport(dimension);
     Edition plan = getDimensionPlan(dimension);

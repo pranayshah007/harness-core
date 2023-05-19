@@ -472,26 +472,22 @@ public class ProjectServiceImpl implements ProjectService {
     Criteria criteria = createProjectFilterCriteria(
         Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE),
         projectFilterDTO);
-    List<Scope> projects = projectRepository.findAllProjects(criteria);
-    List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(projects);
+    List<Project> projects = projectRepository.findAll(criteria);
+
+    Map<Scope, String> scopeToProjectIdMap = projects.stream().collect(Collectors.toMap(project
+        -> Scope.of(project.getAccountIdentifier(), project.getOrgIdentifier(), project.getIdentifier()),
+        Project::getId));
+    List<Scope> permittedProjects =
+        scopeAccessHelper.getPermittedScopes(Lists.newArrayList(scopeToProjectIdMap.keySet()));
+    List<String> permittedIds = permittedProjects.stream().map(scopeToProjectIdMap::get).collect(Collectors.toList());
 
     if (permittedProjects.isEmpty()) {
       return null;
     }
-
-    criteria = Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE);
-    Criteria[] subCriteria = permittedProjects.stream()
-                                 .map(project
-                                     -> Criteria.where(ProjectKeys.orgIdentifier)
-                                            .is(project.getOrgIdentifier())
-                                            .and(ProjectKeys.identifier)
-                                            .is(project.getProjectIdentifier()))
-                                 .toArray(Criteria[] ::new);
-    criteria.orOperator(subCriteria);
+    criteria = Criteria.where(ProjectKeys.id).in(permittedIds);
     return criteria;
   }
 
-  @Override
   public ActiveProjectsCountDTO permittedProjectsCount(
       String accountIdentifier, ProjectFilterDTO projectFilterDTO, long startInterval, long endInterval) {
     Criteria criteria = createProjectFilterCriteria(

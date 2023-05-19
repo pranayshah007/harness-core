@@ -7,7 +7,6 @@
 
 package com.google.devtools.coverageoutputgenerator;
 
-import static com.google.devtools.coverageoutputgenerator.Constants.CC_EXTENSIONS;
 import static com.google.devtools.coverageoutputgenerator.Constants.GCOV_EXTENSION;
 import static com.google.devtools.coverageoutputgenerator.Constants.GCOV_JSON_EXTENSION;
 import static com.google.devtools.coverageoutputgenerator.Constants.PROFDATA_EXTENSION;
@@ -17,6 +16,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import java.io.BufferedReader;
@@ -29,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -75,7 +74,7 @@ public class SonarQubeCoverageGenerator {
     File outputFile = new File(flags.outputFile());
 
     List<File> filesInCoverageDir =
-        flags.coverageDir() != null ? getCoverageFilesInDir(flags.coverageDir()) : Collections.emptyList();
+        flags.coverageDir() != null ? getCoverageFilesInDir(flags.coverageDir()) : ImmutableList.of();
     Coverage coverage = Coverage.merge(
         parseFiles(getTracefiles(flags, filesInCoverageDir), LcovParser::parse, flags.parseParallelism()),
         parseFiles(getGcovInfoFiles(filesInCoverageDir), GcovParser::parse, flags.parseParallelism()),
@@ -131,12 +130,7 @@ public class SonarQubeCoverageGenerator {
     }
 
     if (flags.hasSourceFileManifest()) {
-      // The source file manifest is only required for C++ code coverage.
-      Set<String> ccSources = getCcSourcesFromSourceFileManifest(flags.sourceFileManifest());
-      if (!ccSources.isEmpty()) {
-        // Only filter out coverage if there were C++ sources found in the coverage manifest.
-        coverage = Coverage.getOnlyTheseCcSources(coverage, ccSources);
-      }
+      coverage = Coverage.getOnlyTheseSources(coverage, getSourcesFromSourceFileManifest(flags.sourceFileManifest()));
     }
 
     if (coverage.isEmpty()) {
@@ -173,13 +167,13 @@ public class SonarQubeCoverageGenerator {
    * <p>This method only returns the C++ source files, ignoring the other files as they are not
    * necessary when putting together the final coverage report.
    */
-  private static Set<String> getCcSourcesFromSourceFileManifest(String sourceFileManifest) {
+  private static Set<String> getSourcesFromSourceFileManifest(String sourceFileManifest) {
     Set<String> sourceFiles = new HashSet<>();
     try (FileInputStream inputStream = new FileInputStream(new File(sourceFileManifest));
          InputStreamReader inputStreamReader = new InputStreamReader(inputStream, UTF_8);
          BufferedReader reader = new BufferedReader(inputStreamReader)) {
       for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-        if (!isMetadataFile(line) && isCcFile(line)) {
+        if (!isMetadataFile(line)) {
           sourceFiles.add(line);
         }
       }
@@ -191,15 +185,6 @@ public class SonarQubeCoverageGenerator {
 
   private static boolean isMetadataFile(String filename) {
     return filename.endsWith(".gcno") || filename.endsWith(".em");
-  }
-
-  private static boolean isCcFile(String filename) {
-    for (String ccExtension : CC_EXTENSIONS) {
-      if (filename.endsWith(ccExtension)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private static List<File> getGcovInfoFiles(List<File> filesInCoverageDir) {
@@ -278,7 +263,7 @@ public class SonarQubeCoverageGenerator {
     } catch (IOException e) {
       logger.log(Level.SEVERE, "Error reading file " + file + ": " + e.getMessage());
     }
-    return mapBuilder.build();
+    return mapBuilder.buildOrThrow();
   }
 
   static Coverage parseFiles(List<File> files, Parser parser, int parallelism)

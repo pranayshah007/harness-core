@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
@@ -128,8 +129,9 @@ public class EcrArtifactResource {
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets ecr last successful build", nickname = "getLastSuccessfulBuildForEcr")
-  public ResponseDTO<EcrBuildDetailsDTO> getLastSuccessfulBuild(@NotNull @QueryParam("imagePath") String imagePath,
-      @NotNull @QueryParam("connectorRef") String ecrConnectorIdentifier,
+  public ResponseDTO<EcrBuildDetailsDTO> getLastSuccessfulBuild(
+      @NotNull @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @NotNull @QueryParam(NGArtifactConstants.CONNECTOR_REF) String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, EcrRequestDTO requestDTO) {
@@ -138,6 +140,26 @@ public class EcrArtifactResource {
     EcrBuildDetailsDTO buildDetails =
         ecrResourceService.getSuccessfulBuild(connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);
+  }
+
+  @POST
+  @Path("getLastSuccessfulBuildV2")
+  @ApiOperation(
+      value = "Gets ecr last successful build with yaml expression", nickname = "getLastSuccessfulBuildForEcrWithYaml")
+  public ResponseDTO<EcrBuildDetailsDTO>
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String ecrConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull EcrRequestDTO ecrRequestDTO) {
+    EcrBuildDetailsDTO ecrBuildDetailsDTO =
+        artifactResourceUtils.getLastSuccessfulBuildV2ECR(imagePath, ecrConnectorIdentifier, accountId, orgIdentifier,
+            projectIdentifier, fqnPath, serviceRef, pipelineIdentifier, gitEntityBasicInfo, ecrRequestDTO);
+    return ResponseDTO.newResponse(ecrBuildDetailsDTO);
   }
 
   @GET
@@ -218,11 +240,11 @@ public class EcrArtifactResource {
   public ResponseDTO<EcrListImagesDTO> getImages(@QueryParam("region") String region,
       @QueryParam("connectorRef") String ecrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("fqnPath") String fqnPath,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier, @QueryParam("fqnPath") String fqnPath,
       String runtimeInputYaml, @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
           accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);

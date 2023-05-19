@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.analysis.beans.Risk;
-import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
@@ -23,6 +22,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.TimeSeriesAnalysisFilter;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.TimeSeriesRecord;
+import io.harness.cvng.core.services.DeeplinkURLService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.dashboard.beans.TimeSeriesMetricDataDTO;
@@ -47,12 +47,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TimeSeriesDashboardServiceImpl implements TimeSeriesDashboardService {
   @Inject private CVConfigService cvConfigService;
   @Inject private TimeSeriesRecordService timeSeriesRecordService;
   @Inject private CVNGParallelExecutor cvngParallelExecutor;
+  @Inject private DeeplinkURLService deeplinkURLService;
 
   @Override
   public PageResponse<TimeSeriesMetricDataDTO> getTimeSeriesMetricData(MonitoredServiceParams monitoredServiceParams,
@@ -63,9 +65,11 @@ public class TimeSeriesDashboardServiceImpl implements TimeSeriesDashboardServic
     } else {
       cvConfigs = cvConfigService.list(monitoredServiceParams);
     }
+    Map<String, CVConfig> cvConfigIdToConfigMap =
+        cvConfigs.stream().collect(Collectors.toMap(CVConfig::getUuid, Function.identity()));
     List<String> cvConfigIds = cvConfigs.stream().map(CVConfig::getUuid).collect(Collectors.toList());
     PageResponse<TimeSeriesMetricDataDTO> timeSeriesMetricDataDTOPageResponse =
-        getMetricData(cvConfigIds, monitoredServiceParams, null, timeRangeParams.getStartTime(),
+        getMetricData(cvConfigIds, cvConfigIdToConfigMap, monitoredServiceParams, timeRangeParams.getStartTime(),
             timeRangeParams.getEndTime(), timeRangeParams.getStartTime(), pageParams, timeSeriesAnalysisFilter);
     setUpMetricDataForFullTimeRange(timeRangeParams, timeSeriesMetricDataDTOPageResponse);
     return timeSeriesMetricDataDTOPageResponse;
@@ -94,7 +98,7 @@ public class TimeSeriesDashboardServiceImpl implements TimeSeriesDashboardServic
   }
 
   private PageResponse<TimeSeriesMetricDataDTO> getMetricData(List<String> cvConfigIds,
-      MonitoredServiceParams monitoredServiceParams, CVMonitoringCategory monitoringCategory, Instant startTime,
+      Map<String, CVConfig> cvConfigIdToConfigMap, MonitoredServiceParams monitoredServiceParams, Instant startTime,
       Instant endTime, Instant analysisStartTime, PageParams pageParams,
       TimeSeriesAnalysisFilter timeSeriesAnalysisFilter) {
     List<Callable<List<TimeSeriesRecord>>> recordsPerId = new ArrayList<>();
@@ -172,11 +176,14 @@ public class TimeSeriesDashboardServiceImpl implements TimeSeriesDashboardServic
         }
         if (!transactionMetricDataMap.containsKey(key)) {
           DataSourceType dataSourceType = cvConfigIdToDataSourceTypeMap.get(record.getVerificationTaskId());
+          Optional<String> deeplinkURL =
+              deeplinkURLService.buildDeeplinkURLFromCVConfig(cvConfigIdToConfigMap.get(record.getVerificationTaskId()),
+                  record.getMetricIdentifier(), startTime, endTime);
           transactionMetricDataMap.put(key,
               TimeSeriesMetricDataDTO.builder()
                   .metricName(metricName)
+                  .deeplinkURL(deeplinkURL.orElse(null))
                   .groupName(txnName)
-                  .category(monitoringCategory)
                   .projectIdentifier(monitoredServiceParams.getProjectIdentifier())
                   .orgIdentifier(monitoredServiceParams.getOrgIdentifier())
                   .environmentIdentifier(monitoredServiceParams.getEnvironmentIdentifier())

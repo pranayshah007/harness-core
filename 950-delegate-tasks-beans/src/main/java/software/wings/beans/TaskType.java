@@ -470,8 +470,8 @@ public enum TaskType {
   ECS_TASK_ARN_CANARY_DEPLOY_NG(TaskGroup.ECS, "ECS Canary Task"),
   ECS_TASK_ARN_BLUE_GREEN_CREATE_SERVICE_NG(TaskGroup.ECS, "ECS Blue Green Task"),
 
-  BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO, "Bamboo Connection Task", true),
-  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task", true),
+  BAMBOO_CONNECTIVITY_TEST_TASK(TaskGroup.BAMBOO, "Bamboo Connection Task"),
+  BAMBOO_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Bamboo Task"),
   AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Prepare Rollback Task NG"),
   AWS_LAMBDA_ROLLBACK_COMMAND_TASK_NG(TaskGroup.AWS_LAMBDA_NG, "AWS Lambda Function Rollback Task NG"),
   TERRAFORM_TASK_NG_V3(TaskGroup.TERRAFORM_NG, "Terraform Task NG V3"),
@@ -489,8 +489,8 @@ public enum TaskType {
   K8S_COMMAND_TASK_NG_V2(TaskGroup.K8S_NG, "K8s Task with service Hooks"),
   HELM_COMMAND_TASK_NG_V2(TaskGroup.HELM, "Helm Command Task with service Hooks"),
   INSTANCE_SYNC_V2_CG_SUPPORT(TaskGroup.K8S, "Instance sync V2 support for CG"),
-  // Dummy Task type to support referenceFalseSerialization
-  PT_SERIALIZATION_SUPPORT(TaskGroup.CAPABILITY_VALIDATION);
+  COMMAND_TASK_NG_WITH_GIT_CONFIGS(TaskGroup.COMMAND_TASK_NG, "Command Task"),
+  K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK(TaskGroup.K8S_NG, "K8s Task with Blue Green Stage Scale down step", true);
 
   private final TaskGroup taskGroup;
   private final String displayName;

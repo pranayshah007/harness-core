@@ -9,20 +9,21 @@ package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.ng.userprofile.commons.SCMType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Value;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@Value
+@Data
+@NoArgsConstructor
 @JsonTypeName("GITLAB")
 @SuperBuilder
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitlabSCMRequestDTO extends UserSourceCodeManagerRequestDTO {
-  @JsonProperty("apiAccess") GitlabApiAccessDTO apiAccess;
+  @JsonProperty("authentication") GitlabAuthenticationDTO authentication;
 
   @Override
   public SCMType getType() {

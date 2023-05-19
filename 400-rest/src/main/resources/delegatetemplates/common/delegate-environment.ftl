@@ -61,6 +61,10 @@
           value: "true"
         - name: LOG_STREAMING_SERVICE_URL
           value: "${logStreamingServiceBaseUrl}"
+        - name: DELEGATE_RESOURCE_THRESHOLD
+          value: ""
+        - name: DYNAMIC_REQUEST_HANDLING
+          value: "${dynamicHandlingOfRequestEnabled}"
 </#macro>
 <#macro cgSpecific>
         - name: DELEGATE_PROFILE

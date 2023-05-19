@@ -92,7 +92,7 @@ public class ConnectorInfoApiImplTest {
   @Test
   @Owner(developers = VIGNESWARA)
   @Category(UnitTests.class)
-  public void testSaveConnectorInfo() {
+  public void testSaveConnectorInfo() throws Exception {
     ConnectorInfoRequest request = new ConnectorInfoRequest();
     ConnectorDetails connectorDetails = new ConnectorDetails();
     connectorDetails.setIdentifier(GITHUB_IDENTIFIER);

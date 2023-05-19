@@ -43,6 +43,9 @@ public class EventsFrameworkModule extends AbstractModule {
       bind(Producer.class)
           .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
           .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
+          .toInstance(NoOpProducer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME));
     } else {
       RedissonClient redissonClient = RedissonClientFactory.getClient(redisConfig);
       bind(Consumer.class)
@@ -54,6 +57,11 @@ public class EventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
           .toInstance(RedisProducer.of(EventsFrameworkConstants.SETUP_USAGE, redissonClient,
               EventsFrameworkConstants.SETUP_USAGE_MAX_TOPIC_SIZE, IDP_SERVICE.getServiceId(),
+              redisConfig.getEnvNamespace()));
+      bind(Producer.class)
+          .annotatedWith(Names.named(EventsFrameworkConstants.ENTITY_CRUD))
+          .toInstance(RedisProducer.of(EventsFrameworkConstants.ENTITY_CRUD, redissonClient,
+              EventsFrameworkConstants.ENTITY_CRUD_MAX_TOPIC_SIZE, IDP_SERVICE.getServiceId(),
               redisConfig.getEnvNamespace()));
     }
   }

@@ -552,7 +552,7 @@ public class DockerRegistryServiceImpl implements DockerRegistryService {
       return true;
     }
 
-    log.error("Request not successful. Reason: {}", response);
+    log.info("Request not successful. Reason: {}", response);
     int code = response.code();
     switch (code) {
       case 403:

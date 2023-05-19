@@ -19,6 +19,7 @@ import io.harness.account.AccountConfig;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cf.CfClientConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
@@ -46,12 +47,14 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.remote.ResourceGroupClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.signup.SignupDomainDenylistConfiguration;
 import io.harness.signup.SignupNotificationConfiguration;
 import io.harness.subscription.SubscriptionConfig;
 import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.threading.ThreadPoolConfig;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
+import software.wings.security.authentication.oauth.BitbucketConfig;
 import software.wings.security.authentication.oauth.GitlabConfig;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -119,6 +122,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String CLUSTER_GCP_PACKAGE = "io.harness.ng.core.k8s.cluster.resources.gcp";
   public static final String WEBHOOK_PACKAGE = "io.harness.ng.webhook.resources";
   public static final String ENVIRONMENT_PACKAGE = "io.harness.ng.core.environment.resources";
+  public static final String SERVICE_OVERRIDES_PACKAGE = "io.harness.ng.core.serviceoverrides.resources";
   public static final String USERPROFILE_PACKAGE = "io.harness.ng.userprofile.resource";
   public static final String USER_PACKAGE = "io.harness.ng.core.user.remote";
   public static final String JIRA_PACKAGE = "io.harness.ng.jira.resources";
@@ -237,6 +241,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "signupTargetEnv") private String signupTargetEnv;
   @JsonProperty(value = "delegateStatusEndpoint") private String delegateStatusEndpoint;
   @JsonProperty(value = "gitlabConfig") private GitlabConfig gitlabConfig;
+  @JsonProperty(value = "bitbucketConfig") private BitbucketConfig bitbucketConfig;
   @JsonProperty(value = "oauthRefreshFrequency") private long oauthRefreshFrequency;
   @JsonProperty(value = "oauthRefreshEnabled") private boolean oauthRefreshEnabled;
   @JsonProperty(value = "opaConnectivityEnabled") private boolean opaConnectivityEnabled;
@@ -253,6 +258,9 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty("gitService") private GitServiceConfiguration gitServiceConfiguration;
   @JsonProperty(value = "disableFreezeNotificationTemplate") private boolean disableFreezeNotificationTemplate;
+  @JsonProperty(value = "pluginExecutionConfig") private PluginExecutionConfig pluginExecutionConfig;
+  @JsonProperty("signupDomainDenylistConfig")
+  private SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -311,7 +319,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.TAS_PACKAGE, NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE,
                 NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
-                NextGenConfiguration.IP_ALLOWLIST_PACKAGE))
+                NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE))
         .collect(Collectors.toSet());
   }
 

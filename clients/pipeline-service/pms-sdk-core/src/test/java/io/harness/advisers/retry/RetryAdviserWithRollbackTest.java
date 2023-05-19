@@ -26,13 +26,19 @@ import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.commons.RepairActionCode;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.adviser.AdvisingEvent;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualFailureSpecConfig;
+import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
+import io.harness.yaml.core.timeout.Timeout;
 
+import com.google.protobuf.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -61,6 +67,14 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
     doReturn(RetryAdviserRollbackParameters.builder()
                  .repairActionCodeAfterRetry(RepairActionCode.MANUAL_INTERVENTION)
                  .waitIntervalList(Collections.singletonList(10))
+                 .retryActionConfig(
+                     ManualInterventionFailureActionConfig.builder()
+                         .specConfig(ManualFailureSpecConfig.builder()
+                                         .timeout(ParameterField.<Timeout>builder()
+                                                      .value(Timeout.builder().timeoutInMillis(432000000).build())
+                                                      .build())
+                                         .build())
+                         .build())
                  .retryCount(1)
                  .build())
         .when(kryoSerializer)
@@ -72,6 +86,7 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
         AdvisingEvent.builder()
             .adviserParameters(null)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
+            .toStatus(Status.FAILED)
             .build();
     AdviserResponse adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.RETRY);
@@ -81,9 +96,42 @@ public class RetryAdviserWithRollbackTest extends CategoryTest {
             .adviserParameters(null)
             .retryIds(retryIds)
             .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
+            .toStatus(Status.FAILED)
             .build();
     adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
     assertEquals(adviserResponse.getType(), AdviseType.INTERVENTION_WAIT);
+    assertEquals(adviserResponse.getInterventionWaitAdvise().getTimeout().getSeconds(),
+        Duration.newBuilder().setSeconds(432000).getSeconds());
+
+    doReturn(RetryAdviserRollbackParameters.builder()
+                 .repairActionCodeAfterRetry(RepairActionCode.MANUAL_INTERVENTION)
+                 .retryCount(1)
+                 .build())
+        .when(kryoSerializer)
+        .asObject((byte[]) any());
+    retryIds = new ArrayList<>();
+    retryIds.add("id1");
+    retryIds.add("id2");
+    advisingEvent =
+        AdvisingEvent.builder()
+            .adviserParameters(null)
+            .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
+            .toStatus(Status.FAILED)
+            .build();
+    adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
+    assertEquals(adviserResponse.getType(), AdviseType.RETRY);
+
+    advisingEvent =
+        AdvisingEvent.builder()
+            .adviserParameters(null)
+            .retryIds(retryIds)
+            .ambiance(Ambiance.newBuilder().addLevels(Level.newBuilder().setRuntimeId("runtimeId").build()).build())
+            .toStatus(Status.FAILED)
+            .build();
+    adviserResponse = retryAdviserWithRollback.onAdviseEvent(advisingEvent);
+    assertEquals(adviserResponse.getType(), AdviseType.INTERVENTION_WAIT);
+    assertEquals(adviserResponse.getInterventionWaitAdvise().getTimeout().getSeconds(),
+        Duration.newBuilder().setSeconds(86400).getSeconds());
 
     doReturn(RetryAdviserRollbackParameters.builder()
                  .repairActionCodeAfterRetry(RepairActionCode.END_EXECUTION)

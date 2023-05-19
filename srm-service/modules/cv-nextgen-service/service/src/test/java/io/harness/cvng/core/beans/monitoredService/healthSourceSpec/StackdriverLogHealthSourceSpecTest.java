@@ -20,7 +20,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec;
-import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec.QueryDTO;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.StackdriverLogHealthSourceSpec.StackdriverLogHealthSourceQueryDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -51,7 +51,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
   String identifier;
   String name;
   String monitoredServiceIdentifier;
-  List<QueryDTO> queryDTOS;
+  List<StackdriverLogHealthSourceQueryDTO> queryDTOS;
   BuilderFactory builderFactory;
 
   @Inject MetricPackService metricPackService;
@@ -69,7 +69,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
     monitoredServiceIdentifier = generateUuid();
     identifier = "identifier";
     name = "some-name";
-    queryDTOS = Lists.newArrayList(QueryDTO.builder()
+    queryDTOS = Lists.newArrayList(StackdriverLogHealthSourceQueryDTO.builder()
                                        .name(randomAlphabetic(10))
                                        .query(randomAlphabetic(10))
                                        .messageIdentifier(randomAlphabetic(10))
@@ -105,7 +105,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void getCVConfigUpdateResult_checkDeleted() {
     List<CVConfig> cvConfigs = new ArrayList<>();
-    cvConfigs.add(createCVConfig(QueryDTO.builder()
+    cvConfigs.add(createCVConfig(StackdriverLogHealthSourceQueryDTO.builder()
                                      .name(randomAlphabetic(10))
                                      .query(randomAlphabetic(10))
                                      .messageIdentifier(randomAlphabetic(10))
@@ -124,7 +124,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void getCVConfigUpdateResult_checkAdded() {
     List<CVConfig> cvConfigs = new ArrayList<>();
-    cvConfigs.add(createCVConfig(QueryDTO.builder()
+    cvConfigs.add(createCVConfig(StackdriverLogHealthSourceQueryDTO.builder()
                                      .name(randomAlphabetic(10))
                                      .query(randomAlphabetic(10))
                                      .messageIdentifier(randomAlphabetic(10))
@@ -144,7 +144,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void getCVConfigUpdateResult_checkUpdated() {
     List<CVConfig> cvConfigs = new ArrayList<>();
-    cvConfigs.add(createCVConfig(QueryDTO.builder()
+    cvConfigs.add(createCVConfig(StackdriverLogHealthSourceQueryDTO.builder()
                                      .name(queryDTOS.get(0).getName())
                                      .query(randomAlphabetic(10))
                                      .messageIdentifier(queryDTOS.get(0).getMessageIdentifier())
@@ -163,7 +163,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void validate() {
-    queryDTOS.add(QueryDTO.builder()
+    queryDTOS.add(StackdriverLogHealthSourceQueryDTO.builder()
                       .name(queryDTOS.get(0).getName())
                       .query(randomAlphabetic(10))
                       .messageIdentifier(randomAlphabetic(10))
@@ -189,7 +189,7 @@ public class StackdriverLogHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(cvConfig.getMessageIdentifier()).isEqualTo(queryDTOS.get(0).getMessageIdentifier());
   }
 
-  private CVConfig createCVConfig(QueryDTO queryDTO) {
+  private CVConfig createCVConfig(StackdriverLogHealthSourceQueryDTO queryDTO) {
     return builderFactory.stackdriverLogCVConfigBuilder()
         .serviceInstanceIdentifier(queryDTO.getServiceInstanceIdentifier())
         .messageIdentifier(queryDTO.getMessageIdentifier())

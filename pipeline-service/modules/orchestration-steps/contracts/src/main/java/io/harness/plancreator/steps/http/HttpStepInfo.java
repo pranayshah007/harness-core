@@ -8,7 +8,7 @@
 package io.harness.plancreator.steps.http;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -68,12 +68,13 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
+  List<NGVariable> inputVariables;
   List<HttpHeaderConfig> headers;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> certificate;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> certificateKey;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @Builder(builderMethodName = "infoBuilder")
@@ -118,6 +119,7 @@ public class HttpStepInfo extends HttpBaseStepInfo implements PMSStepInfo, Visit
         .certificateKey(getCertificateKey())
         .method(getMethod())
         .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
+        .inputVariables(NGVariablesUtils.getMapOfVariables(inputVariables, 0L))
         .requestBody(getRequestBody())
         .delegateSelectors(ParameterField.createValueField(
             CollectionUtils.emptyIfNull(delegateSelectors != null ? delegateSelectors.getValue() : null)))

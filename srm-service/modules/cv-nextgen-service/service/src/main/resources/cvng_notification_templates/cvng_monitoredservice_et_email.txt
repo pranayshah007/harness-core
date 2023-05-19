@@ -33,7 +33,7 @@ body: "<html>
               </p>
               <p style=\"color: #0b0b0d; font-weight: 600\">
                 Monitored Service ${EMAIL_MONITORED_SERVICE_NAME_HYPERLINK} has
-                observed error events for code errors
+                observed error events
               </p>
 
               <div>${EMAIL_FORMATTED_VERSION_LIST}</div>
@@ -48,8 +48,7 @@ body: "<html>
                   <span style=\"color: #6b6d85\">Trigger </span>
                   <span
                     >When ${EVENT_STATUS} with the event type
-                    (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed for code
-                    errors.</span
+                    (${NOTIFICATION_EVENT_TRIGGER_LIST}) are observed.</span
                   >
                 </div>
               </div>

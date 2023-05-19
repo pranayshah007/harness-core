@@ -81,6 +81,7 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -523,6 +524,12 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
+  PluginExecutionConfig pluginExecutionConfig() {
+    return this.appConfig.getPluginExecutionConfig();
+  }
+
+  @Provides
+  @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
     return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
@@ -657,7 +664,8 @@ public class NextGenModule extends AbstractModule {
     install(new InviteModule(appConfig.isNgAuthUIEnabled()));
     install(new SignupModule(this.appConfig.getManagerClientConfig(),
         this.appConfig.getNextGenConfig().getManagerServiceSecret(), NG_MANAGER.getServiceId(),
-        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration()));
+        appConfig.getSignupNotificationConfiguration(), appConfig.getAccessControlClientConfiguration(),
+        appConfig.getSignupDomainDenylistConfiguration()));
     install(GitopsModule.getInstance());
     install(new AbstractWaiterModule() {
       @Override

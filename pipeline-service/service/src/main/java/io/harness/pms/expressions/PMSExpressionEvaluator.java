@@ -19,7 +19,6 @@ import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
-import io.harness.ngtriggers.expressions.functors.LastPublishedFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -85,7 +84,6 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     // Trigger functors
     addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));
     addToContext(SetupAbstractionKeys.trigger, new TriggerFunctor(ambiance, planExecutionMetadataService));
-    addToContext(SetupAbstractionKeys.lastPublished, new LastPublishedFunctor(ambiance));
     Map<String, PmsSdkInstance> cacheValueMap = pmsSdkInstanceService.getSdkInstanceCacheValue();
     cacheValueMap.values().forEach(e -> {
       for (Map.Entry<String, String> entry : CollectionUtils.emptyIfNull(e.getStaticAliases()).entrySet()) {

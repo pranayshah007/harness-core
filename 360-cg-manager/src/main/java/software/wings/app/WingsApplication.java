@@ -262,6 +262,7 @@ import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.impl.UserAccountLevelDataMigrationJob;
+import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.service.impl.applicationmanifest.AppManifestSettingAttributePTaskManager;
 import software.wings.service.impl.applicationmanifest.ManifestPerpetualTaskManger;
@@ -307,6 +308,7 @@ import software.wings.sm.StateStatusUpdate;
 import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
 import software.wings.yaml.gitSync.GitSyncPollingIterator;
+import software.wings.yaml.gitSync.GitSyncPollingJob;
 
 import com.codahale.metrics.InstrumentedExecutorService;
 import com.codahale.metrics.MetricRegistry;
@@ -789,7 +791,7 @@ public class WingsApplication extends Application<MainConfiguration> {
           new IteratorExecutionHandlerImpl(iteratorConfigPath, iteratorConfigFile);
 
       if (isManager()) {
-        registerIteratorsManager(injector, iteratorExecutionHandler);
+        registerIteratorsManager(injector, iteratorExecutionHandler, configuration);
       }
       if (shouldEnableDelegateMgmt) {
         registerIteratorsDelegateService(injector, iteratorExecutionHandler);
@@ -1004,6 +1006,16 @@ public class WingsApplication extends Application<MainConfiguration> {
     });
 
     modules.add(DmsModule.getInstance(shouldEnableDelegateMgmt(configuration)));
+
+    // WE SHOULD AVOID STATIC INJECTS, EXCEPT TO RESOLVE P0/P1 ISSUES.
+    // PLEASE READ ABOUT HOW DO IT AT GUICE OFFICE DOC SITE
+    // https://github.com/google/guice/wiki/Injections#static-injections
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        requestStaticInjection(WorkflowExecutionServiceHelper.class);
+      }
+    });
   }
 
   private void registerEventConsumers(final Injector injector) {
@@ -1303,7 +1315,11 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitChangeSet")))
         .scheduleWithFixedDelay(
             injector.getInstance(GitChangeSetRunnable.class), random.nextInt(5), 5L, TimeUnit.SECONDS);
-
+    if (configuration.isMoveGitPollingToRunnable()) {
+      injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("gitPolling")))
+          .scheduleWithFixedDelay(
+              injector.getInstance(GitSyncPollingJob.class), random.nextInt(5), 60L, TimeUnit.SECONDS);
+    }
     if (configuration.getDataReconciliationConfig() == null) {
       injector.getInstance(DeploymentReconExecutorService.class)
           .scheduleWithFixedDelay(
@@ -1449,9 +1465,10 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   /**
    * All the observers that belong to Delegate heart beat service.
+   *
    * @param injector
    * @param delegatePollingHeartbeatService singleton polling heartbeat processing class
-   * @param delegateStreamHeartbeatService singleton streaming heartbeat processing class
+   * @param delegateStreamHeartbeatService  singleton streaming heartbeat processing class
    */
   private void registerHeartbeatServiceObservers(Injector injector,
       DelegatePollingHeartbeatService delegatePollingHeartbeatService,
@@ -1532,7 +1549,8 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(DelegateTelemetryPublisher.class).registerIterator(iteratorExecutionHandler);
   }
 
-  public static void registerIteratorsManager(Injector injector, IteratorExecutionHandler iteratorExecutionHandler) {
+  public static void registerIteratorsManager(
+      Injector injector, IteratorExecutionHandler iteratorExecutionHandler, MainConfiguration configuration) {
     injector.getInstance(AlertReconciliationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(ArtifactCollectionHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(ArtifactCleanupHandler.class).registerIterator(iteratorExecutionHandler);
@@ -1564,7 +1582,9 @@ public class WingsApplication extends Application<MainConfiguration> {
     injector.getInstance(LdapGroupScheduledHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
     injector.getInstance(TimeoutEngine.class).registerIterator(iteratorExecutionHandler);
-    injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
+    if (!configuration.isMoveGitPollingToRunnable()) {
+      injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
+    }
   }
 
   private void registerCronJobs(Injector injector) {

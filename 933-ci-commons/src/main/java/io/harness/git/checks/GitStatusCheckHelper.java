@@ -33,9 +33,12 @@ import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.git.GitClientHelper;
 import io.harness.git.GitTokenRetriever;
+import io.harness.impl.scm.ScmGitProviderMapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,6 +87,9 @@ public class GitStatusCheckHelper {
         statusSent = sendBuildStatusToGitLab(gitStatusCheckParams);
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.AZURE_REPO) {
         statusSent = sendBuildStatusToAzureRepo(gitStatusCheckParams);
+      } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.HARNESS) {
+        log.info("Status API not yet implemented for Harness inbuilt SCM");
+        return false;
       } else {
         throw new UnsupportedOperationException("Not supported");
       }
@@ -209,8 +215,10 @@ public class GitStatusCheckHelper {
 
       return Failsafe.with(retryPolicy)
           .get(()
-                   -> gitlabService.sendStatus(
-                       GitlabConfig.builder().gitlabUrl(getGitlabApiURL(gitConfigDTO.getUrl())).build(),
+                   -> gitlabService.sendStatus(GitlabConfig.builder()
+                                                   .gitlabUrl(getGitlabApiURL(gitConfigDTO.getUrl(),
+                                                       ScmGitProviderMapper.getGitlabApiUrl(gitConfigDTO)))
+                                                   .build(),
                        gitStatusCheckParams.getUserName(), token, null, gitStatusCheckParams.getSha(),
                        gitStatusCheckParams.getOwner(), gitStatusCheckParams.getRepo(), bodyObjectMap));
     } else {
@@ -251,8 +259,9 @@ public class GitStatusCheckHelper {
         orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(completeUrl);
       }
 
-      String project = GitClientHelper.getAzureRepoProject(orgAndProject);
-      String repo = StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR);
+      String project = URLDecoder.decode(GitClientHelper.getAzureRepoProject(orgAndProject), StandardCharsets.UTF_8);
+      String repo =
+          URLDecoder.decode(StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR), StandardCharsets.UTF_8);
 
       RetryPolicy<Object> retryPolicy =
           getRetryPolicy(format("[Retrying failed call to send status for azure repo check: [%s], attempt: {}",
@@ -317,9 +326,11 @@ public class GitStatusCheckHelper {
     return domain + customEndpoint;
   }
 
-  private String getGitlabApiURL(String url) {
+  private String getGitlabApiURL(String url, String apiUrl) {
     if (url.contains("gitlab.com")) {
       return GITLAB_API_URL;
+    } else if (!StringUtils.isBlank(apiUrl)) {
+      return StringUtils.stripEnd(apiUrl, "/") + "/api/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
       return "https://" + domain + "/api/";

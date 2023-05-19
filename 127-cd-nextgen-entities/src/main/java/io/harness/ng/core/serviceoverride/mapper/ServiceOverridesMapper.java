@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.serviceoverride.mapper;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.IdentifierRefHelper.MAX_RESULT_THRESHOLD_FOR_SPLIT;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -38,27 +39,34 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 public class ServiceOverridesMapper {
   public NGServiceOverridesEntity toServiceOverridesEntity(
-      String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO, boolean isOverrideV2) {
-    NGServiceOverridesEntity serviceOverridesEntity =
-        NGServiceOverridesEntity.builder()
-            .accountId(accountId)
-            .orgIdentifier(serviceOverrideRequestDTO.getOrgIdentifier())
-            .projectIdentifier(serviceOverrideRequestDTO.getProjectIdentifier())
-            .environmentRef(serviceOverrideRequestDTO.getEnvironmentIdentifier())
-            .serviceRef(serviceOverrideRequestDTO.getServiceIdentifier())
-            .yaml(serviceOverrideRequestDTO.getYaml())
-            .build();
+      String accountId, ServiceOverrideRequestDTO serviceOverrideRequestDTO) {
+    String orgIdentifier = serviceOverrideRequestDTO.getOrgIdentifier();
+    String projectIdentifier = serviceOverrideRequestDTO.getProjectIdentifier();
+    String environmentIdentifier = serviceOverrideRequestDTO.getEnvironmentIdentifier();
+    if (isNotEmpty(environmentIdentifier)) {
+      String[] environmentRefSplit = StringUtils.split(environmentIdentifier, ".", MAX_RESULT_THRESHOLD_FOR_SPLIT);
+      if (environmentRefSplit.length > 1 && isNotEmpty(projectIdentifier)) {
+        throw new InvalidRequestException(
+            "Project Identifier should not be passed when environment used in service override is at organisation or account scope");
+      }
+    }
+    NGServiceOverridesEntity serviceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                          .accountId(accountId)
+                                                          .orgIdentifier(orgIdentifier)
+                                                          .projectIdentifier(projectIdentifier)
+                                                          .environmentRef(environmentIdentifier)
+                                                          .serviceRef(serviceOverrideRequestDTO.getServiceIdentifier())
+                                                          .yaml(serviceOverrideRequestDTO.getYaml())
+                                                          .build();
 
     // validating the yaml
     NGServiceOverrideConfig ngServiceOverrideConfig =
         NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity);
 
-    if (isOverrideV2) {
-      String updatedYaml =
-          getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
-      if (isNotBlank(updatedYaml)) {
-        serviceOverridesEntity.setYaml(updatedYaml);
-      }
+    String updatedYaml =
+        getUpdatedYamlIfEnvRefIsNotQualifiedRef(accountId, serviceOverrideRequestDTO, ngServiceOverrideConfig);
+    if (isNotBlank(updatedYaml)) {
+      serviceOverridesEntity.setYaml(updatedYaml);
     }
 
     return serviceOverridesEntity;

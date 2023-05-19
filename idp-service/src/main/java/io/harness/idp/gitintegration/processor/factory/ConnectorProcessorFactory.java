@@ -27,7 +27,7 @@ public class ConnectorProcessorFactory {
 
   public ConnectorProcessor getConnectorProcessor(ConnectorType connectorType) {
     if (connectorType == null) {
-      return null;
+      throw new IllegalArgumentException("Connector type cannot be null for git integrations");
     }
 
     switch (connectorType) {

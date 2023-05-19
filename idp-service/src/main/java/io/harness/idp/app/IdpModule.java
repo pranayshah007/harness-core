@@ -13,6 +13,7 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallback;
@@ -48,6 +49,8 @@ import io.harness.idp.gitintegration.processor.factory.ConnectorProcessorFactory
 import io.harness.idp.gitintegration.resources.ConnectorInfoApiImpl;
 import io.harness.idp.gitintegration.service.GitIntegrationService;
 import io.harness.idp.gitintegration.service.GitIntegrationServiceImpl;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
+import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsInMemoryCache;
 import io.harness.idp.health.resources.HealthResource;
 import io.harness.idp.health.service.HealthResourceImpl;
 import io.harness.idp.k8s.client.K8sApiClient;
@@ -240,6 +243,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getAccessControlClientConfiguration(), IDP_SERVICE.getServiceId()));
     install(
         new NgConnectorManagerClientModule(appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret()));
+    install(new AccountClientModule(
+        appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new OrganizationClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ProjectClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
@@ -252,7 +257,7 @@ public class IdpModule extends AbstractModule {
     install(new AbstractWaiterModule() {
       @Override
       public WaiterConfiguration waiterConfiguration() {
-        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.MORPHIA).build();
+        return WaiterConfiguration.builder().persistenceLayer(WaiterConfiguration.PersistenceLayer.SPRING).build();
       }
     });
     install(new DelegateServiceDriverGrpcClientModule(
@@ -313,6 +318,7 @@ public class IdpModule extends AbstractModule {
         .annotatedWith(Names.named("DefaultPREnvAccountIdToNamespaceMappingCreator"))
         .toInstance(new ManagedExecutorService(Executors.newSingleThreadExecutor()));
     bind(HealthResource.class).to(HealthResourceImpl.class);
+    bind(DelegateSelectorsCache.class).to(DelegateSelectorsInMemoryCache.class);
 
     MapBinder<BackstageEnvVariableType, BackstageEnvVariableMapper> backstageEnvVariableMapBinder =
         MapBinder.newMapBinder(binder(), BackstageEnvVariableType.class, BackstageEnvVariableMapper.class);
@@ -320,6 +326,10 @@ public class IdpModule extends AbstractModule {
         .to(BackstageEnvConfigVariableMapper.class);
     backstageEnvVariableMapBinder.addBinding(BackstageEnvVariableType.SECRET)
         .to(BackstageEnvSecretVariableMapper.class);
+
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("taskPollExecutor"))
+        .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
   }
 
   @Provides

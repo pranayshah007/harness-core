@@ -10,12 +10,14 @@ package io.harness.docker;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
 
 @OwnedBy(HarnessTeam.CDP)
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DockerApiTagsListResponse {
   String name;
   List<String> tags = new ArrayList();

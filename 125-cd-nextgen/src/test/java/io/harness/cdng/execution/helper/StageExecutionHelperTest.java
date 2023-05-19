@@ -36,7 +36,7 @@ import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.configfile.ConfigFilesOutcome;
-import io.harness.cdng.customDeployment.beans.CustomDeploymentExecutionDetails;
+import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
 import io.harness.cdng.execution.DefaultExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;

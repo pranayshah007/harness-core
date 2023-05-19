@@ -403,7 +403,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
                                                 .commitMessage(commitMessage)
                                                 .build();
 
-    return ngGitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig);
+    return ngGitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig, true);
   }
 
   private LogCallback markDoneAndStartNew(

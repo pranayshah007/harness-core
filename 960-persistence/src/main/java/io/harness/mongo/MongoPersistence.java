@@ -105,6 +105,12 @@ public class MongoPersistence implements HPersistence {
     return query(cls, req, allChecks);
   }
 
+  @Override
+  public void invalidateCacheAndPut(String cls) {
+    delegateMigrationFlagCache.invalidate(cls);
+    delegateMigrationFlagCache.put(cls, true);
+  }
+
   public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req) {
     return querySecondary(cls, req, allChecks);
   }

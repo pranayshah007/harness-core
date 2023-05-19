@@ -37,7 +37,7 @@ public class ELKSourceSpecTransformerTest extends CvNextGenTestBase {
   private static final int QUERY_COUNT = 5;
   private static final String MOCKED_GROUP_IDENTIFIER = "mockedGroupIdentifier";
 
-  private List<ELKHealthSourceSpec.QueryDTO> queries;
+  private List<ELKHealthSourceSpec.ELKHealthSourceQueryDTO> queries;
 
   @Inject ELKHealthSourceSpecTransformer classUnderTest;
 
@@ -46,7 +46,7 @@ public class ELKSourceSpecTransformerTest extends CvNextGenTestBase {
     builderFactory = BuilderFactory.getDefault();
     queries = IntStream.range(1, QUERY_COUNT)
                   .mapToObj(index
-                      -> ELKHealthSourceSpec.QueryDTO.builder()
+                      -> ELKHealthSourceSpec.ELKHealthSourceQueryDTO.builder()
                              .name(randomAlphabetic(10))
                              .query(randomAlphabetic(10))
                              .build())

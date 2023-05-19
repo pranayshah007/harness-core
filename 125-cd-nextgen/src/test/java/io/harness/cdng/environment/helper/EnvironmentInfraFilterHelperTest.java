@@ -7,6 +7,7 @@
 
 package io.harness.cdng.environment.helper;
 
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -848,5 +849,50 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     assertThat(envClusterRefs.get(0).getEnvRef()).isEqualTo("account.env1");
     assertThat(envClusterRefs.get(0).getClusterRefs()).hasSize(1);
     assertThat(envClusterRefs.get(0).getClusterRefs()).contains("account.c1");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void shouldProcessEnvInfraFilteringForEnvironmentValuesAndFiltersProvided() {
+    FilterYaml envFilter =
+        FilterYaml.builder().entities(new HashSet<>(Arrays.asList(Entity.environments))).type(FilterType.all).build();
+    Environment env1 = getEnv("env1");
+    Environment env2 = getEnv("env2");
+    FilterYaml infraFilter = FilterYaml.builder()
+                                 .entities(new HashSet<>(Arrays.asList(Entity.infrastructures)))
+                                 .type(FilterType.all)
+                                 .build();
+    InfrastructureEntity infra1 = InfrastructureEntity.builder().identifier("infra1").build();
+    InfrastructureEntity infra2 = InfrastructureEntity.builder().identifier("infra2").build();
+
+    EnvironmentYamlV2 fixedEnvYamlProvidedInSetup =
+        EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField("env1")).build();
+
+    EnvironmentsYaml environmentsYaml =
+        EnvironmentsYaml.builder()
+            .values(ParameterField.createValueField(Collections.singletonList(fixedEnvYamlProvidedInSetup)))
+            .filters(ParameterField.createValueField(Arrays.asList(envFilter, infraFilter)))
+            .build();
+
+    doReturn(true).when(featureFlagHelperService).isEnabled(ACC_ID, FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS);
+    doReturn(new PageImpl<>(Arrays.asList(env1, env2))).when(environmentService).list(any(), any());
+    doReturn(Arrays.asList(infra1, infra2))
+        .when(infrastructureEntityService)
+        .getAllInfrastructureFromEnvRefAndDeploymentType(
+            ACC_ID, ORG_ID, PROJ_ID, "env1", ServiceDefinitionType.KUBERNETES);
+
+    environmentInfraFilterHelper.processEnvInfraFiltering(
+        ACC_ID, ORG_ID, PROJ_ID, environmentsYaml, null, ServiceDefinitionType.KUBERNETES);
+
+    assertThat(environmentsYaml.getValues()).isNotNull();
+    assertThat(environmentsYaml.getValues().getValue()).isNotNull();
+    // 1 environment was provided in values but filters were provided for 2
+    // happens when envRef is runtime
+    assertThat(environmentsYaml.getValues().getValue().size()).isEqualTo(1);
+
+    EnvironmentYamlV2 environmentYamlV2 = environmentsYaml.getValues().getValue().get(0);
+
+    assertThat(environmentYamlV2.getEnvironmentRef().getValue()).isEqualTo("env1");
   }
 }

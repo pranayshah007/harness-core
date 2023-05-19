@@ -32,6 +32,7 @@ import static org.apache.cxf.common.util.UrlUtils.urlDecode;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.authenticationservice.beans.SSORequest;
 import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.eraro.ErrorCode;
@@ -53,12 +54,10 @@ import software.wings.beans.Event;
 import software.wings.beans.User;
 import software.wings.beans.loginSettings.LoginSettingsService;
 import software.wings.security.JWT_CATEGORY;
-import software.wings.security.authentication.LoginTypeResponse.LoginTypeResponseBuilder;
 import software.wings.security.authentication.oauth.OauthBasedAuthHandler;
 import software.wings.security.authentication.oauth.OauthOptions;
 import software.wings.security.authentication.recaptcha.FailedLoginAttemptCountChecker;
 import software.wings.security.authentication.recaptcha.MaxLoginAttemptExceededException;
-import software.wings.security.saml.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.AccountService;
@@ -71,6 +70,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -170,6 +170,87 @@ public class AuthenticationManager {
     return getLoginTypeResponse(userName, null);
   }
 
+  public LoginTypeResponse getLoginTypeResponse(String userName, String accountId) {
+    LoginTypeResponse response = LoginTypeResponse.builder().build();
+    List<SSORequest> ssoRequests = getSSORequestsListForLoginTypeResponseInternal(userName, accountId, response, false);
+    if (isNotEmpty(ssoRequests) && ssoRequests.size() > 0) {
+      response.setSSORequest(ssoRequests.get(0));
+    }
+    return response;
+  }
+
+  public LoginTypeResponseV2 getLoginTypeResponseV2(String userName, String accountId) {
+    LoginTypeResponseV2 responseV2 = LoginTypeResponseV2.builder().build();
+    responseV2.setSsoRequests(getSSORequestsListForLoginTypeResponseInternal(userName, accountId, responseV2, true));
+    return responseV2;
+  }
+
+  private <T extends LoginTypeBaseResponse> List<SSORequest> getSSORequestsListForLoginTypeResponseInternal(
+      String userName, String accountId, T baseResponse, boolean isV2) {
+    User user;
+    List<SSORequest> ssoRequests = new ArrayList<>();
+    try {
+      user = authenticationUtils.getUser(userName, USER);
+    } catch (WingsException ex) {
+      if (ex.getCode() == ErrorCode.USER_DOES_NOT_EXIST && mainConfiguration.getDeployMode() != null
+          && DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+        baseResponse.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
+        return ssoRequests;
+      }
+      throw ex;
+    }
+
+    if (!DeployVariant.COMMUNITY.equals(deployVariant)) {
+      boolean showCaptcha = false;
+      try {
+        failedLoginAttemptCountChecker.check(user);
+      } catch (MaxLoginAttemptExceededException e) {
+        log.info("User exceeded max failed login attempts. {}", e.getMessage());
+        showCaptcha = true;
+      }
+
+      baseResponse.setShowCaptcha(showCaptcha);
+    }
+
+    if (user.getAccounts().isEmpty()) {
+      baseResponse.setAuthenticationMechanism(AuthenticationMechanism.USER_PASSWORD);
+      return ssoRequests;
+    }
+
+    Account account = userService.getAccountByIdIfExistsElseGetDefaultAccount(
+        user, isEmpty(accountId) ? Optional.empty() : Optional.of(accountId));
+    io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
+    if (null == authenticationMechanism) {
+      authenticationMechanism = AuthenticationMechanism.USER_PASSWORD;
+    }
+    baseResponse.setOauthEnabled(account.isOauthEnabled());
+    if (account.isOauthEnabled()) {
+      ssoRequests.add(oauthOptions.createOauthSSORequest(account.getUuid()));
+    }
+
+    switch (authenticationMechanism) {
+      case USER_PASSWORD:
+        if (!user.isEmailVerified() && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().getDeployedAs())) {
+          // HAR-7984: Return 401 http code if user email not verified yet.
+          throw new WingsException(EMAIL_NOT_VERIFIED, USER);
+        }
+        break;
+      case SAML:
+        if (isV2) {
+          ssoRequests.addAll(samlClientService.generateSamlRequestListFromAccount(account, false));
+        } else {
+          ssoRequests.add(samlClientService.generateSamlRequestFromAccount(account, false));
+        }
+        break;
+      case OAUTH:
+      case LDAP: // No need to build anything extra for the response.
+      default:
+        // Nothing to do by default
+    }
+    baseResponse.setAuthenticationMechanism(authenticationMechanism);
+    return ssoRequests;
+  }
+
   public LoginTypeResponse getLoginTypeResponseForOnPrem() {
     if (mainConfiguration.getDeployMode() != null && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
       throw new InvalidRequestException("This API should only be called for on-prem deployments.");
@@ -184,73 +265,6 @@ public class AuthenticationManager {
         () -> new InvalidRequestException("No Account found in the database"));
     User user = userService.getUsersOfAccount(account.getUuid()).get(0);
     return getLoginTypeResponse(urlDecode(user.getEmail()), account.getUuid());
-  }
-
-  public LoginTypeResponse getLoginTypeResponse(String userName, String accountId) {
-    final LoginTypeResponseBuilder builder = LoginTypeResponse.builder();
-
-    /*
-     * To prevent possibility of user enumeration (https://harness.atlassian.net/browse/HAR-7188),
-     * instead of throwing the USER_DOES_NOT_EXIST exception, send USER_PASSWORD as the login mechanism.
-     * The next page throws INVALID_CREDENTIAL exception in case of wrong userId/password which doesn't reveals any
-     * information.
-     */
-    User user = null;
-    try {
-      user = authenticationUtils.getUser(userName, USER);
-    } catch (WingsException ex) {
-      if (ex.getCode() == ErrorCode.USER_DOES_NOT_EXIST && mainConfiguration.getDeployMode() != null
-          && DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-        return builder.authenticationMechanism(AuthenticationMechanism.USER_PASSWORD).build();
-      }
-      throw ex;
-    }
-
-    if (!DeployVariant.COMMUNITY.equals(deployVariant)) {
-      boolean showCaptcha = false;
-      try {
-        failedLoginAttemptCountChecker.check(user);
-      } catch (MaxLoginAttemptExceededException e) {
-        log.info("User exceeded max failed login attemts. {}", e.getMessage());
-        showCaptcha = true;
-      }
-
-      builder.showCaptcha(showCaptcha);
-    }
-
-    if (user.getAccounts().isEmpty()) {
-      return builder.authenticationMechanism(AuthenticationMechanism.USER_PASSWORD).build();
-    }
-
-    Account account = userService.getAccountByIdIfExistsElseGetDefaultAccount(
-        user, isEmpty(accountId) ? Optional.empty() : Optional.of(accountId));
-    io.harness.ng.core.account.AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
-    if (null == authenticationMechanism) {
-      authenticationMechanism = AuthenticationMechanism.USER_PASSWORD;
-    }
-    builder.isOauthEnabled(account.isOauthEnabled());
-    if (account.isOauthEnabled()) {
-      builder.SSORequest(oauthOptions.createOauthSSORequest(account.getUuid()));
-    }
-
-    SSORequest ssoRequest;
-    switch (authenticationMechanism) {
-      case USER_PASSWORD:
-        if (!user.isEmailVerified() && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().getDeployedAs())) {
-          // HAR-7984: Return 401 http code if user email not verified yet.
-          throw new WingsException(EMAIL_NOT_VERIFIED, USER);
-        }
-        break;
-      case SAML:
-        ssoRequest = samlClientService.generateSamlRequestFromAccount(account, false);
-        builder.SSORequest(ssoRequest);
-        break;
-      case OAUTH:
-      case LDAP: // No need to build anything extra for the response.
-      default:
-        // Nothing to do by default
-    }
-    return builder.authenticationMechanism(authenticationMechanism).build();
   }
 
   public User switchAccount(String bearerToken, String accountId) {

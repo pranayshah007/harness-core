@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.VGLIJIN;
 
@@ -305,6 +306,47 @@ public class GcbStateTest extends CategoryTest {
                        .taskType(GCB.name())
                        .parameters(new Object[] {gcbTaskParams})
                        .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                       .build());
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldQueuePollDelegateTaskUsingTimeout() {
+    GcbTaskParams gcbTaskParams = GcbTaskParams.builder().build();
+    when(infrastructureMappingService.get(anyString(), anyString()))
+        .thenReturn(PcfInfrastructureMapping.builder().serviceId("serviceId").build());
+    GcbDelegateResponse delegateResponse =
+        gcbDelegateResponseOf(gcbTaskParams, GcbBuildDetails.builder().status(GcbBuildStatus.WORKING).build());
+    GcbExecutionData gcbExecutionData = new GcbExecutionData();
+
+    doReturn(gcbExecutionData).when(context).getStateExecutionData();
+    when(context.fetchInfraMappingId()).thenReturn("infrastructureId");
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any(DelegateTaskDetails.class));
+    when(context.getStateExecutionInstanceId()).thenReturn("id");
+
+    when(state.getTimeoutMillis()).thenReturn(120000);
+    ExecutionResponse actual = state.startPollTask(context, delegateResponse);
+    ArgumentCaptor<DelegateTask> delegateTaskCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTaskV2(delegateTaskCaptor.capture());
+
+    assertThat(actual.isAsync()).isTrue();
+    assertThat(actual.getStateExecutionData()).isEqualTo(gcbExecutionData);
+    assertThat(actual.getExecutionStatus()).isEqualTo(RUNNING);
+
+    DelegateTask delegateTask = delegateTaskCaptor.getValue();
+
+    assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.APP_ID_FIELD)).isEqualTo(APP_ID);
+    assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD))
+        .isEqualTo("infrastructureId");
+    assertThat(delegateTask.getSetupAbstractions().get(Cd1SetupFields.SERVICE_ID_FIELD)).isEqualTo("serviceId");
+    assertThat(delegateTask.getData())
+        .isEqualTo(TaskData.builder()
+                       .async(true)
+                       .taskType(GCB.name())
+                       .parameters(new Object[] {gcbTaskParams})
+                       .timeout(120000L)
                        .build());
   }
 

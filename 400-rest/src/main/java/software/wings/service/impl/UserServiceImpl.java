@@ -133,6 +133,7 @@ import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
 import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
+import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
@@ -467,7 +468,8 @@ public class UserServiceImpl implements UserService {
 
   public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm) {
-    User user = get(userId, true);
+    User user = get(userId);
+    loadSupportAccounts(user);
     Account defaultAccount = null;
     List<Account> userAccounts = user.getAccounts();
     for (Account account : userAccounts) {
@@ -869,6 +871,7 @@ public class UserServiceImpl implements UserService {
       List<UserInvite> userInviteList = wingsPersistence.createQuery(UserInvite.class)
                                             .filter(UserInviteKeys.email, email)
                                             .order(Sort.descending("createdAt"))
+                                            .limit(1)
                                             .asList();
       if (isNotEmpty(userInviteList)) {
         return userInviteList.get(0).getUuid();
@@ -1113,13 +1116,10 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User getUserByEmail(String email, boolean loadSupportAccounts) {
+  public User getUserByEmail(String email) {
     User user = null;
     if (isNotEmpty(email)) {
       user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
-      if (loadSupportAccounts) {
-        loadSupportAccounts(user);
-      }
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
       }
@@ -1129,11 +1129,6 @@ public class UserServiceImpl implements UserService {
     }
 
     return user;
-  }
-
-  @Override
-  public User getUserByEmail(String email) {
-    return getUserByEmail(email, false);
   }
 
   @Override
@@ -1178,7 +1173,7 @@ public class UserServiceImpl implements UserService {
   @Override
   public List<User> getUsersEmails(String accountId) {
     Query<User> query = wingsPersistence.createQuery(User.class);
-    query.project(UserKeys.email, true).criteria(UserKeys.accounts).hasThisOne(accountId);
+    query.project(UserKeys.email, true).limit(NO_LIMIT).criteria(UserKeys.accounts).hasThisOne(accountId);
 
     return query.asList();
   }
@@ -1229,17 +1224,11 @@ public class UserServiceImpl implements UserService {
             account.getUuid());
     Map<String, String> model = getTemplateModel(user.getName(), loginUrl);
     model.put("company", account.getCompanyName());
-    model.put(
-        "subject", "You have been invited to the " + account.getCompanyName().toUpperCase() + " account at Harness");
+    model.put("subject", "You have been added to the account " + account.getAccountName() + " on Harness");
     model.put("email", user.getEmail());
     model.put("name", user.getEmail());
     model.put("authenticationMechanism", account.getAuthenticationMechanism().getType());
-    model.put("message",
-        "You have been added to account " + account.getAccountName() + " on Harness Platform."
-            + " CLick below to Sign-in");
-
-    SSOSettings ssoSettings = getSSOSettings(account);
-    model.put("ssoUrl", checkGetDomainName(account, ssoSettings.getUrl()));
+    model.put("message", "You have been added to the account " + account.getAccountName() + " on Harness Platform.");
 
     boolean shouldMailContainTwoFactorInfo = user.isTwoFactorAuthenticationEnabled();
     model.put("shouldMailContainTwoFactorInfo", Boolean.toString(shouldMailContainTwoFactorInfo));
@@ -1496,7 +1485,7 @@ public class UserServiceImpl implements UserService {
     Account account = accountService.get(accountId);
 
     User user = getUserByEmail(userInvite.getEmail());
-    if (user == null) {
+    if (user == null && featureFlagService.isEnabled(FeatureName.LDAP_SYNC_WITH_USERID, accountId)) {
       user = getUserByUserId(account.getUuid(), userInvite.getExternalUserId());
     }
 
@@ -1902,8 +1891,8 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public List<UserInvite> getInvitesFromAccountId(String accountId) {
-    return wingsPersistence.createQuery(UserInvite.class).filter(UserInvite.ACCOUNT_ID_KEY2, accountId).asList();
+  public Query<UserInvite> getInvitesQueryFromAccountId(String accountId) {
+    return wingsPersistence.createQuery(UserInvite.class).filter(UserInvite.ACCOUNT_ID_KEY2, accountId);
   }
 
   @Override
@@ -2447,7 +2436,7 @@ public class UserServiceImpl implements UserService {
             .build();
     ssoSettingService.saveOauthSettings(oauthSettings);
     log.info("Setting authentication mechanism as oauth for account id: {}", accountId);
-    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH);
+    ssoService.setAuthenticationMechanism(accountId, AuthenticationMechanism.OAUTH, false);
   }
 
   @Override
@@ -2487,6 +2476,15 @@ public class UserServiceImpl implements UserService {
     } catch (JWTDecodeException | SignatureVerificationException e) {
       throw new InvalidCredentialsException("Invalid JWTToken received, failed to decode the token", USER);
     }
+  }
+
+  @Override
+  public List<UserInvite> getInvitesFromAccountIdAndUserGroupId(String accountId, String userGroupId) {
+    Query<UserInvite> userInviteQuery = wingsPersistence.createQuery(UserInvite.class)
+                                            .filter(ACCOUNT_ID_KEY, accountId)
+                                            .field(UserInviteKeys.userGroups)
+                                            .hasThisOne(userGroupId);
+    return userInviteQuery.asList();
   }
 
   @Override
@@ -3248,18 +3246,9 @@ public class UserServiceImpl implements UserService {
    */
   @Override
   public User get(String userId) {
-    return get(userId, false);
-  }
-
-  @Override
-  public User get(String userId, boolean includeSupportAccounts) {
     User user = wingsPersistence.get(User.class, userId);
     if (user == null) {
       throw new UnauthorizedException(EXC_MSG_USER_DOESNT_EXIST, USER);
-    }
-
-    if (includeSupportAccounts) {
-      loadSupportAccounts(user);
     }
 
     List<Account> accounts = user.getAccounts();
@@ -4474,6 +4463,32 @@ public class UserServiceImpl implements UserService {
       updateOperations.set(UserKeys.userAccountLevelDataMap, user.getUserAccountLevelDataMap());
       updateUser(user.getUuid(), updateOperations);
     }
+  }
+
+  @Override
+  public boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged) {
+    boolean updated = true;
+    if (Generation.NG.equals(generation)) {
+      try {
+        UserMetadataDTO userMetadata =
+            UserMetadataDTO.builder().uuid(userId).externallyManaged(externallyManaged).build();
+        UserMetadataDTO updatedUserMetadata =
+            NGRestUtils.getResponse(ngInviteClient.updateUserMetadata(userId, userMetadata));
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update externallyManaged status for user- {}", userId, ex);
+        updated = false;
+      }
+    } else {
+      try {
+        UpdateOperations<User> updateOperations = wingsPersistence.createUpdateOperations(User.class);
+        updateOperations.set(UserKeys.imported, externallyManaged);
+        updateUser(userId, updateOperations);
+      } catch (Exception ex) {
+        log.error("Exception occurred while trying to update imported status for user- {}", userId, ex);
+        updated = false;
+      }
+    }
+    return updated;
   }
 
   private void filterOnlyCGUsers(String accountId, Query<User> query) {

@@ -16,7 +16,6 @@ import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.remote.SecretValidationMetaData;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -46,7 +45,7 @@ public interface NGSecretServiceV2 {
 
   Page<Secret> list(Criteria criteria, Pageable pageable);
 
-  List<Secret> getPermitted(Collection<Secret> secrets);
+  List<Secret> getPermitted(List<Secret> secrets);
 
   Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size);
 

@@ -71,13 +71,15 @@ public class RollbackModeExecutionHelper {
   public ExecutionMetadata transformExecutionMetadata(ExecutionMetadata executionMetadata, String planExecutionID,
       ExecutionTriggerInfo triggerInfo, String accountId, String orgIdentifier, String projectIdentifier,
       ExecutionMode executionMode, PipelineStageInfo parentStageInfo, List<String> stageNodeExecutionIds) {
+    String originalPlanExecutionId = executionMetadata.getExecutionUuid();
     Builder newMetadata = executionMetadata.toBuilder()
                               .setExecutionUuid(planExecutionID)
                               .setTriggerInfo(triggerInfo)
                               .setRunSequence(pipelineMetadataService.incrementExecutionCounter(accountId,
                                   orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
                               .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-                              .setExecutionMode(executionMode);
+                              .setExecutionMode(executionMode)
+                              .setOriginalPlanExecutionIdForRollbackMode(originalPlanExecutionId);
     if (parentStageInfo != null) {
       newMetadata = newMetadata.setPipelineStageInfo(parentStageInfo);
     }
@@ -105,16 +107,19 @@ public class RollbackModeExecutionHelper {
       stageId = AmbianceUtils.obtainCurrentSetupId(ambiance);
     }
     builder.setPostExecutionRollbackStageId(stageId);
+    String stageExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+    builder.setOriginalStageExecutionId(stageExecutionId);
     return builder.build();
   }
 
   public PlanExecutionMetadata transformPlanExecutionMetadata(PlanExecutionMetadata planExecutionMetadata,
-      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds) {
+      String planExecutionID, ExecutionMode executionMode, List<String> stageNodeExecutionIds, String updatedNotes) {
     String originalPlanExecutionId = planExecutionMetadata.getPlanExecutionId();
     PlanExecutionMetadata metadata =
         planExecutionMetadata.withPlanExecutionId(planExecutionID)
             .withProcessedYaml(transformProcessedYaml(
                 planExecutionMetadata.getProcessedYaml(), executionMode, originalPlanExecutionId))
+            .withNotes(updatedNotes) // these are updated notes given for a pipelineRollback.
             .withUuid(null); // this uuid is the mongo uuid. It is being set as null so that when this Plan Execution
                              // Metadata is saved later on in the execution, a new object is stored rather than
                              // replacing the Metadata for the original execution

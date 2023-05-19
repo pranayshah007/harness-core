@@ -100,13 +100,13 @@ public class ArtifactoryClientImpl {
       Map<String, Map<String, List<String>>> responseList = response.parseBody(Map.class);
       Map<String, List<String>> properties = responseList.get("properties");
       if (EmptyPredicate.isEmpty(labels) || EmptyPredicate.isEmpty(labels.get(0))) {
-        log.warn("Docker image doesn't have labels. Properties: {}", properties);
+        log.info("Docker image doesn't have labels. Properties: {}", properties);
       } else {
         log.debug("Retrieving labels {} for image {} for repository {} for version {} was success", labels.get(0),
             imageName, repositoryName, buildNos);
       }
     } catch (Exception e) {
-      log.error("Failed to retrieve docker label in artifactory. Image name: {}, Repository Name: {}, Version: {}",
+      log.info("Failed to retrieve docker label in artifactory. Image name: {}, Repository Name: {}, Version: {}",
           imageName, repositoryName, buildNos);
       handleAndRethrow(e, USER);
     }
@@ -162,7 +162,7 @@ public class ArtifactoryClientImpl {
       List<Map<String, String>> labels = getLabels(response);
       artifactMetaInfo.setLabels(labels.get(0));
     } catch (Exception e) {
-      log.error(
+      log.info(
           "Failed to retrieve docker image manifest in artifactory. Image name: {}, Repository Name: {}, Version: {}",
           imageName, repositoryName, build);
       handleAndRethrow(e, USER);
@@ -195,7 +195,7 @@ public class ArtifactoryClientImpl {
       log.error("Runtime exception occurred while validating artifactory", e);
       handleAndRethrow(e, USER);
     } catch (SocketTimeoutException e) {
-      log.error("Exception occurred while validating artifactory", e);
+      log.info("Exception occurred while validating artifactory", e);
       return true;
     } catch (Exception e) {
       log.error("Exception occurred while validating artifactory", e);
@@ -339,10 +339,10 @@ public class ArtifactoryClientImpl {
         log.debug("Retrieving repositories for packages {} success", packageTypes.toArray());
       }
     } catch (SocketTimeoutException e) {
-      log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
+      log.info(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
       return repositories;
     } catch (Exception e) {
-      log.error(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
+      log.info(ERROR_OCCURRED_WHILE_RETRIEVING_REPOSITORIES, e);
       handleAndRethrow(e, USER);
     }
     return repositories;
@@ -454,7 +454,7 @@ public class ArtifactoryClientImpl {
         throw new ArtifactoryServerException("Artifact path can not be empty", INVALID_ARTIFACT_SERVER, USER);
       }
     } catch (Exception e) {
-      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
+      log.info("Error occurred while retrieving File Paths from Artifactory server {}",
           artifactoryConfig.getArtifactoryUrl(), e);
       handleAndRethrow(e, USER);
     }
@@ -480,7 +480,7 @@ public class ArtifactoryClientImpl {
         }
       }
     } catch (Exception e) {
-      log.error("Failed to download the artifact of repository {} from path {}", repoKey, artifactPath, e);
+      log.info("Failed to download the artifact of repository {} from path {}", repoKey, artifactPath, e);
       String msg =
           "Failed to download the latest artifacts  of repository [" + repoKey + "] file path [" + artifactPath;
       throw new ArtifactoryServerException(
@@ -511,7 +511,7 @@ public class ArtifactoryClientImpl {
             "Unable to get artifact file size. The file probably does not exist", INVALID_ARTIFACT_SERVER, USER);
       }
     } catch (Exception e) {
-      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
+      log.info("Error occurred while retrieving File Paths from Artifactory server {}",
           artifactoryConfig.getArtifactoryUrl(), e);
       handleAndRethrow(e, USER);
     }
@@ -625,7 +625,7 @@ public class ArtifactoryClientImpl {
       }
       return artifactPaths;
     } catch (Exception e) {
-      log.error(
+      log.info(
           format("Error occurred while retrieving File Paths from Artifactory server %s", artifactory.getUsername()),
           e);
       handleAndRethrow(e, USER);

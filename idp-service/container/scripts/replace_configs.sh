@@ -182,6 +182,14 @@ if [[ "" != "$NG_MANAGER_AUTHORITY" ]]; then
   export NG_MANAGER_AUTHORITY; yq -i '.gitManagerGrpcClientConfig.authority=env(NG_MANAGER_AUTHORITY)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MANAGER_TARGET" ]]; then
+  export MANAGER_TARGET; yq -i '.managerTarget=env(MANAGER_TARGET)' $CONFIG_FILE
+fi
+
+if [[ "" != "$MANAGER_AUTHORITY" ]]; then
+  export MANAGER_AUTHORITY; yq -i '.managerAuthority=env(MANAGER_AUTHORITY)' $CONFIG_FILE
+fi
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL

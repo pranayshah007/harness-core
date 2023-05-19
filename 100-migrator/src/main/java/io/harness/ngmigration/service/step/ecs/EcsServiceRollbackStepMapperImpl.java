@@ -16,7 +16,6 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -28,7 +27,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
-public class EcsServiceRollbackStepMapperImpl extends StepMapper {
+public class EcsServiceRollbackStepMapperImpl extends EcsBaseStepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.MANUAL_EFFORT;

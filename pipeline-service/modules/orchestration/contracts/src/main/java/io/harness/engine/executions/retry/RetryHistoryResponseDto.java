@@ -23,4 +23,5 @@ public class RetryHistoryResponseDto {
   String errorMessage;
   String latestExecutionId;
   List<ExecutionInfo> executionInfos;
+  RetryStagesMetadataDTO retryStagesMetadata;
 }

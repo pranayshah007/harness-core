@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -224,12 +225,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureSshInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .subscriptionId("subscriptionId")
                         .hostConnectionType("Hostname")
-                        .tags(Map.of("Env", "Dev"))
+                        .hostTags(Map.of("Env", "Dev"))
                         .credentialsRef("sshKeyRef")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("572beaec293c79ba725f68bea0a8a1c7806dc878")
@@ -259,12 +260,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsSshInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .region("region")
                         .hostConnectionType("Hostname")
-                        .tags(Map.of("testTag", "test"))
+                        .hostTags(Map.of("testTag", "test"))
                         .credentialsRef("sshKeyRef")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("70dd2bc5aa8fc8920b04247e4151e8e1074332d3")
@@ -294,12 +295,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(azureWinrmInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAzureInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .subscriptionId("subscriptionId")
                         .resourceGroup("resourceGroup")
-                        .tags(Map.of("Env", "Dev"))
+                        .hostTags(Map.of("Env", "Dev"))
                         .credentialsRef("sshKeyRef")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("572beaec293c79ba725f68bea0a8a1c7806dc878")
@@ -329,12 +330,12 @@ public class InfrastructureTaskExecutableStepTest extends CategoryTest {
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.WINRM).build());
     when(cdStepHelper.getWinRmInfraDelegateConfig(any(), eq(ambiance))).thenReturn(awsWinrmInfraDelegateConfig);
-    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any()))
+    when(infrastructureOutcomeProvider.getOutcome(any(), any(), any(), any(), any(), any(), any(), anyMap()))
         .thenReturn(SshWinRmAwsInfrastructureOutcome.builder()
                         .connectorRef("connectorRef")
                         .credentialsRef("sshKeyRef")
                         .region("regionId")
-                        .tags(Map.of("testTag", "test"))
+                        .hostTags(Map.of("testTag", "test"))
                         .hostConnectionType("Hostname")
                         .environment(EnvironmentOutcome.builder().build())
                         .infrastructureKey("70dd2bc5aa8fc8920b04247e4151e8e1074332d3")

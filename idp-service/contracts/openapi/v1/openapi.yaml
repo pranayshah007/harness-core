@@ -1101,14 +1101,7 @@ components:
         category:
           type: string
           x-stoplight:
-            id: ql3oqpkls4fft
-          enum:
-            - Monitoring
-            - CI/CD
-            - Discovery
-            - Quality
-            - Security
-            - Source Control Mgmt
+            id: 8rqc7h1vyq7sh
         source:
           type: string
           x-stoplight:
@@ -1509,12 +1502,15 @@ components:
         id: e8du2q55p26u5
       type: object
       properties:
-        plugin:
-          $ref: '#/components/schemas/PluginDetails'
+        operation_type:
+          type: string
           x-stoplight:
-            id: jqr3z1zl2f5vs
+            id: nv99llfqqfl3n
+        exports:
+          $ref: '#/components/schemas/Exports'
       required:
-        - plugin
+        - operation_type
+        - exports
     GenerateYamlRequest:
       title: GenerateYamlRequest
       x-stoplight:
@@ -1713,14 +1709,6 @@ components:
       required: true
       schema:
         type: string
-        enum:
-          - pager-duty
-          - snyk-security
-          - harness-ci-cd
-          - github-pull-requests-board
-          - kafka
-          - lighthouse
-          - todo
     PluginName:
       name: PluginId
       in: query

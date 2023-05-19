@@ -127,6 +127,8 @@ public class EntityYamlRootNames {
   public static final String PROWLER = "Prowler";
   public static final String QUALYS = "Qualys";
   public static final String REAPSAW = "Reapsaw";
+
+  public static final String SEMGREP = "Semgrep";
   public static final String SHIFT_LEFT = "ShiftLeft";
   public static final String SNIPER = "Sniper";
   public static final String SNYK = "Snyk";
@@ -225,6 +227,7 @@ public class EntityYamlRootNames {
   public static final String TAS_ROLLING_DEPLOY = "TasRollingDeploy";
   public static final String TAS_ROLLING_ROLLBACK = "TasRollingRollback";
   public static final String K8S_DRY_RUN_MANIFEST = "K8sDryRun";
+  public static final String K8S_BLUE_GREEN_STAGE_SCALE_DOWN = "K8sBlueGreenStageScaleDown";
   public static final String ASG_BLUE_GREEN_SWAP_SERVICE_STEP = "AsgBlueGreenSwapService";
   public static final String TERRAFORM_CLOUD_RUN = "TerraformCloudRun";
   public static final String TERRAFORM_CLOUD_ROLLBACK = "TerraformCloudRollback";
@@ -233,8 +236,9 @@ public class EntityYamlRootNames {
 
   // AWS SAM
   public static final String AWS_SAM_DEPLOY = "AwsSamDeploy";
+  public static final String AWS_SAM_BUILD = "AwsSamBuild";
   public static final String AWS_SAM_ROLLBACK = "AwsSamRollback";
 
   public static final String AWS_LAMBDA_ROLLBACK = "AwsLambdaRollback";
-  public static final String TAS_ROUTE_MAPPING = "TasRouteMapping";
+  public static final String TAS_ROUTE_MAPPING = "RouteMapping";
 }

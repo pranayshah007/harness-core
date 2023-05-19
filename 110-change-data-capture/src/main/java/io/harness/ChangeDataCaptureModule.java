@@ -11,10 +11,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
+import io.harness.entities.CDStageExecutionCDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
 import io.harness.entities.ConnectorCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
 import io.harness.entities.InfrastructureEntityTimeScale;
+import io.harness.entities.InterruptCDCEntity;
 import io.harness.entities.OrganizationEntity;
 import io.harness.entities.PipelineCDCEntity;
 import io.harness.entities.PipelineExecutionSummaryEntityCDCEntity;
@@ -22,6 +24,7 @@ import io.harness.entities.PipelineExecutionSummaryEntityCDCEntityWithDebeziumEn
 import io.harness.entities.ProjectEntity;
 import io.harness.entities.ServiceCDCEntity;
 import io.harness.entities.UserEntity;
+import io.harness.entities.VerifyStepCDCEntity;
 import io.harness.persistence.HPersistence;
 import io.harness.threading.ExecutorModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -96,6 +99,9 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(EnvironmentCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(InfrastructureEntityTimeScale.class);
     cdcEntityMultibinder.addBinding().to(UserEntity.class);
+    cdcEntityMultibinder.addBinding().to(CDStageExecutionCDCEntity.class);
+    cdcEntityMultibinder.addBinding().to(VerifyStepCDCEntity.class);
+    cdcEntityMultibinder.addBinding().to(InterruptCDCEntity.class);
   }
 
   @Provides

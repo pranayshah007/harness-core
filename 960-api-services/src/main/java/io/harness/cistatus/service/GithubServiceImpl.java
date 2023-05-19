@@ -103,6 +103,7 @@ public class GithubServiceImpl implements GithubService {
       Response<StatusCreationResponse> githubStatusCreationResponseResponse =
           getGithubClient(githubAppConfig).createStatus(getAuthToken(token), owner, repo, sha, bodyObjectMap).execute();
       if (!githubStatusCreationResponseResponse.isSuccessful()) {
+        log.error("Please check if your github credentials has proper permissions");
         log.error("Failed to send status for github url {} and sha {} error {}, message {}",
             githubAppConfig.getGithubUrl(), sha, githubStatusCreationResponseResponse.errorBody().string(),
             githubStatusCreationResponseResponse.message());

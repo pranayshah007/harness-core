@@ -13,4 +13,4 @@ build --experimental_inmemory_dotd_files
 build --experimental_inmemory_jdeps_files
 build --nobuild_runfile_links
 
-test --flaky_test_attempts=3
+test --flaky_test_attempts=2

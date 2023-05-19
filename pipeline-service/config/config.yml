@@ -411,6 +411,8 @@ pipelineEventConsumersConfig:
     threads: 1
   pollingEvent:
     threads: 1
+  triggerExecutionEvent:
+    threads: 1
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -601,3 +603,6 @@ triggerAuthenticationPoolConfig:
   maxPoolSize: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_MAX_SIZE:-25}
   idleTime: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+expandedJsonConfig:
+  lockTimeOutInMinutes: 2

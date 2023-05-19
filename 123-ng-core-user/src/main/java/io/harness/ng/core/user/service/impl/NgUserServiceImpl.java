@@ -33,6 +33,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.FALSE;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -322,7 +323,7 @@ public class NgUserServiceImpl implements NgUserService {
 
   public Optional<UserMetadataDTO> getUserByEmail(String email, boolean fetchFromCurrentGen) {
     if (!fetchFromCurrentGen) {
-      Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmail(email);
+      Optional<UserMetadata> user = userMetadataRepository.findDistinctByEmailIgnoreCase(email);
       return user.map(UserMetadataMapper::toDTO);
     } else {
       Optional<UserInfo> userInfo = CGRestUtils.getResponse(userClient.getUserByEmailId(email));
@@ -1060,5 +1061,21 @@ public class NgUserServiceImpl implements NgUserService {
                    .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                    .is(scope.getProjectIdentifier());
     return UsersCountDTO.builder().totalCount(userMembershipRepository.count(criteria)).newCount(newUsersCount).build();
+  }
+
+  @Override
+  public UserMetadata updateUserMetadataInternal(UserMetadataDTO user) {
+    Optional<UserMetadata> savedUserOpt = userMetadataRepository.findDistinctByUserId(user.getUuid());
+    if (!savedUserOpt.isPresent()) {
+      return null;
+    }
+
+    Update update = new Update();
+
+    if (!isNull(user.isExternallyManaged())) {
+      update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+    }
+
+    return userMetadataRepository.updateFirst(user.getUuid(), update);
   }
 }

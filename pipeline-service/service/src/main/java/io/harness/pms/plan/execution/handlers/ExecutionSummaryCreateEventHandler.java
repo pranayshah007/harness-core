@@ -18,7 +18,6 @@ import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.plancreator.strategy.StrategyType;
@@ -30,7 +29,6 @@ import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
-import io.harness.pms.merger.helpers.InputSetTagsHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
 import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
@@ -44,7 +42,6 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PmsExecutionSummaryService;
-import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 
 import com.google.common.collect.Lists;
@@ -181,8 +178,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .executionTriggerInfo(metadata.getTriggerInfo())
             .parentStageInfo(ambiance.getMetadata().getPipelineStageInfo())
             .entityGitDetails(pmsGitSyncHelper.getEntityGitDetailsFromBytes(metadata.getGitSyncBranchContext()))
-            .tags(getResolvedTags(planExecutionMetadata.getYaml(), ambiance, pipelineEntity.get().getTags(),
-                pipelineEntity.get().getHarnessVersion()))
+            .tags(pipelineEntity.get().getTags())
             .modules(new ArrayList<>(modules))
             .isLatestExecution(true)
             .retryExecutionMetadata(RetryExecutionMetadata.builder()
@@ -210,17 +206,6 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
           pipelineEntity.getYaml(), stagesExecutionMetadata.getStageIdentifiers());
     }
     return InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml());
-  }
-
-  private List<NGTag> getResolvedTags(String yaml, Ambiance ambiance, List<NGTag> unResolvedTags, String version) {
-    if (version != null && version.equals(PipelineVersion.V0)) {
-      // We don't have tags V1 pipeline version. We will add handling for them once tags are added for V1 pipelines
-      List<NGTag> resolvedTags = InputSetTagsHelper.getTagsFromYaml(yaml, ambiance);
-      if (!resolvedTags.isEmpty()) {
-        return resolvedTags;
-      }
-    }
-    return unResolvedTags;
   }
 
   private void updateExecutionInfoInPipelineEntity(String accountId, String orgId, String projectId, String pipelineId,

@@ -554,7 +554,12 @@ public class AuthServiceImpl implements AuthService {
           return null;
         }
 
+        // if value is empty, then we should have a fallback!
         value = getUserPermissionInfoFromDB(accountId, user);
+        // Add a log message when UserPermissionInfo is empty. Context: PL-32390
+        if (isUserPermissionInfoEmpty(value)) {
+          log.warn("Adding empty user permission for accountId: {} and user: {}", accountId, user.getEmail());
+        }
         userPermissionInfoCache.put(key, value);
       }
       return value;
@@ -612,6 +617,10 @@ public class AuthServiceImpl implements AuthService {
       }
 
       value = getUserPermissionInfoFromDB(accountId, user);
+      // Add a log message when UserPermissionInfo is empty. Context: PL-32390
+      if (isUserPermissionInfoEmpty(value)) {
+        log.warn("Updating empty user permission for accountId: {} and user: {}", accountId, user.getEmail());
+      }
       userPermissionInfoCache.put(key, value);
 
     } catch (Exception e) {
@@ -692,6 +701,10 @@ public class AuthServiceImpl implements AuthService {
 
   private UserPermissionInfo getUserPermissionInfoFromDB(String accountId, User user) {
     List<UserGroup> userGroups = getUserGroups(accountId, user);
+    if (userGroups.isEmpty()) {
+      log.info("Attempting to evaluate user permission info with empty user-groups list. AccountId: {} User: {}",
+          accountId, user.getEmail());
+    }
     return authHandler.evaluateUserPermissionInfo(accountId, userGroups, user);
   }
 
@@ -1359,5 +1372,13 @@ public class AuthServiceImpl implements AuthService {
             USER);
       }
     });
+  }
+
+  private boolean isUserPermissionInfoEmpty(UserPermissionInfo value) {
+    return (value.getAppPermissionMap() == null || value.getAppPermissionMap().isEmpty())
+        && (value.getAppPermissionMapInternal() == null || value.getAppPermissionMapInternal().isEmpty())
+        && (value.getDashboardPermissions() == null || value.getDashboardPermissions().isEmpty())
+        && (value.getAccountPermissionSummary() == null
+            || value.getAccountPermissionSummary().getPermissions().isEmpty());
   }
 }

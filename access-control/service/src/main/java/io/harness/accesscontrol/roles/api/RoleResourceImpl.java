@@ -24,6 +24,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.roles.Role;
 import io.harness.accesscontrol.roles.RoleService;
 import io.harness.accesscontrol.roles.RoleUpdateResult;
+import io.harness.accesscontrol.roles.api.RoleDTO.ScopeLevel;
 import io.harness.accesscontrol.roles.events.RoleCreateEvent;
 import io.harness.accesscontrol.roles.events.RoleDeleteEvent;
 import io.harness.accesscontrol.roles.events.RoleUpdateEvent;
@@ -144,7 +145,7 @@ public class RoleResourceImpl implements RoleResource {
         Resource.of(ROLE, null), EDIT_ROLE_PERMISSION);
     Scope scope = scopeService.getOrCreate(ScopeMapper.fromParams(harnessScopeParams));
     if (isEmpty(roleDTO.getAllowedScopeLevels())) {
-      roleDTO.setAllowedScopeLevels(Sets.newHashSet(scope.getLevel().toString()));
+      roleDTO.setAllowedScopeLevels(Sets.newHashSet(ScopeLevel.fromString(scope.getLevel().toString())));
     }
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       RoleResponseDTO response = roleDTOMapper.toResponseDTO(roleService.create(fromDTO(scope.toString(), roleDTO)));

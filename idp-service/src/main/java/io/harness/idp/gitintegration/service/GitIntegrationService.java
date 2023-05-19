@@ -22,13 +22,12 @@ import java.util.Optional;
 @OwnedBy(HarnessTeam.IDP)
 public interface GitIntegrationService {
   void createConnectorSecretsEnvVariable(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO);
-  void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO);
-
-  void createConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
-      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier);
-
+  void processConnectorUpdate(Message message, EntityChangeDTO entityChangeDTO) throws Exception;
+  void createOrUpdateConnectorInBackstage(String accountIdentifier, ConnectorInfoDTO connectorInfoDTO,
+      CatalogInfraConnectorType catalogConnectorEntityType, String connectorIdentifier) throws Exception;
   List<CatalogConnectorEntity> getAllConnectorDetails(String accountIdentifier);
   Optional<CatalogConnectorEntity> findByAccountIdAndProviderType(String accountIdentifier, String providerType);
-  CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails);
+  CatalogConnectorEntity saveConnectorDetails(String accountIdentifier, ConnectorDetails connectorDetails)
+      throws Exception;
   CatalogConnectorEntity findDefaultConnectorDetails(String accountIdentifier);
 }

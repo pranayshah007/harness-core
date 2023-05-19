@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.AMAN;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.LAZAR;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -42,6 +44,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.authenticationservice.beans.SSORequest;
 import io.harness.category.element.UnitTests;
 import io.harness.configuration.DeployMode;
 import io.harness.eraro.ErrorCode;
@@ -57,22 +60,29 @@ import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.Account;
 import software.wings.beans.User;
+import software.wings.beans.sso.SamlSettings;
 import software.wings.security.UserPermissionInfo;
 import software.wings.security.authentication.recaptcha.FailedLoginAttemptCountChecker;
 import software.wings.security.authentication.recaptcha.MaxLoginAttemptExceededException;
-import software.wings.security.saml.SSORequest;
 import software.wings.security.saml.SamlClientService;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AuthService;
+import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserService;
+import software.wings.utils.WingsTestConstants;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -101,6 +111,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
   @Mock private AccountService accountService;
   @Mock private UserMembershipClient userMembershipClient;
   @Mock private FailedLoginAttemptCountChecker failedLoginAttemptCountChecker;
+  @Mock SSOSettingService ssoSettingService;
 
   @Captor ArgumentCaptor<String[]> argCaptor = ArgumentCaptor.forClass(String[].class);
 
@@ -537,5 +548,57 @@ public class AuthenticationManagerTest extends WingsBaseTest {
     when(USER_SERVICE.isUserAccountAdmin(any(), any())).thenReturn(false);
 
     assertThat(authenticationManager.loginUsingHarnessPassword(basicToken, accountId)).isEqualTo(WingsException.class);
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void getLoginTypeResponseV2() throws IOException {
+    User mockUser = mock(User.class);
+    String uuidString = java.util.UUID.randomUUID().toString();
+
+    Account testAccount = anAccount()
+                              .withUuid("testAccountId")
+                              .withAccountName(WingsTestConstants.ACCOUNT_NAME)
+                              .withCompanyName(WingsTestConstants.COMPANY_NAME)
+                              .withAuthenticationMechanism(SAML)
+                              .build();
+
+    SSORequest ssoRequest = new SSORequest();
+    ssoRequest.setIdpRedirectUrl("TestURL");
+
+    when(ssoSettingService.getSamlSettingsListByAccountId("testAccountId")).thenReturn(getSamlSettingsList(uuidString));
+    when(SAML_CLIENT_SERVICE.generateSamlRequestListFromAccount(any(Account.class), anyBoolean()))
+        .thenReturn(Collections.singletonList(ssoRequest));
+
+    when(mockUser.getAccounts()).thenReturn(List.of(testAccount));
+    when(mockUser.isEmailVerified()).thenReturn(true);
+
+    when(mockUser.getAccounts()).thenReturn(List.of(testAccount));
+    when(AUTHENTICATION_UTL.getUser(ArgumentMatchers.anyString(), any(EnumSet.class))).thenReturn(mockUser);
+    when(USER_SERVICE.getAccountByIdIfExistsElseGetDefaultAccount(any(User.class), any())).thenReturn(testAccount);
+    LoginTypeResponseV2 loginTypeResponse =
+        authenticationManager.getLoginTypeResponseV2("testUser", testAccount.getUuid());
+    assertThat(loginTypeResponse.getAuthenticationMechanism()).isEqualTo(SAML);
+    assertThat(loginTypeResponse.getSsoRequests()).isNotNull();
+    assertThat(loginTypeResponse.getSsoRequests().size()).isGreaterThan(0);
+    assertThat(loginTypeResponse.getSsoRequests().get(0)).isNotNull();
+  }
+
+  private List<SamlSettings> getSamlSettingsList(String uuidString) throws IOException {
+    String xml = IOUtils.toString(getClass().getResourceAsStream("/Azure-1-metadata.xml"), Charset.defaultCharset());
+
+    SamlSettings azureSetting1 =
+        SamlSettings.builder()
+            .metaDataFile(xml)
+            .url("https://login.microsoftonline.com/b229b2bb-5f33-4d22-bce0-730f6474e906/saml2")
+            .accountId("TestAzureAccount1")
+            .displayName("Azure001")
+            .origin("login.microsoftonline.com")
+            .build();
+    azureSetting1.setUuid(uuidString);
+    List<SamlSettings> samlSettingsList = new ArrayList<>();
+    samlSettingsList.add(azureSetting1);
+    return samlSettingsList;
   }
 }

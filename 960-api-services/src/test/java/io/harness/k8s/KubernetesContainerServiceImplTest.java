@@ -75,8 +75,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ReplicationController;
 import io.fabric8.kubernetes.api.model.ReplicationControllerList;
@@ -97,16 +95,15 @@ import io.fabric8.kubernetes.api.model.extensions.DaemonSetSpec;
 import io.fabric8.kubernetes.api.model.extensions.Deployment;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentList;
 import io.fabric8.kubernetes.api.model.extensions.DeploymentSpec;
-import io.fabric8.kubernetes.client.AppsAPIGroupClient;
-import io.fabric8.kubernetes.client.ExtensionsAPIGroupClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
+import io.fabric8.kubernetes.client.impl.AppsAPIGroupClient;
+import io.fabric8.kubernetes.client.impl.ExtensionsAPIGroupClient;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.api.model.DeploymentConfigSpec;
@@ -199,8 +196,6 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   @Mock private ServiceResource<Service> serviceResource;
   @Mock private Resource<Secret> secretResource;
   @Mock private Resource<ConfigMap> configMapResource;
-  @Mock private MixedOperation<Pod, PodList, PodResource<Pod>> pods;
-
   @Mock
   private MixedOperation<DeploymentConfig, DeploymentConfigList, DeployableScalableResource<DeploymentConfig>>
       deploymentConfigsOperation;
@@ -214,7 +209,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   @Mock
   private NonNamespaceOperation<Deployment, DeploymentList, RollableScalableResource<Deployment>> namespacedDeployments;
   @Mock private RollableScalableResource<Deployment> scalableDeployment;
-  @Mock private FilterWatchListDeletable<Deployment, DeploymentList> deploymentFilteredList;
+  @Mock private FilterWatchListDeletable<Deployment, DeploymentList, Boolean> deploymentFilteredList;
 
   // Statefulsets
   @Mock
@@ -657,40 +652,6 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     verify(kubernetesHelperService).hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v1alpha1");
     verify(v2Beta1HorizontalPodAutoscalerResource, times(1)).get();
   }
-
-  @Test
-  @Owner(developers = ANSHUL)
-  @Category(UnitTests.class)
-  public void testCreateOrReplaceAutoscaler() {
-    String autoscalerYaml = "apiVersion: autoscaling/v2beta1\n"
-        + "kind: HorizontalPodAutoscaler\n"
-        + "metadata:\n"
-        + "  name: hpa-name\n"
-        + "spec:\n"
-        + "  minReplicas: 2\n";
-
-    when(kubernetesHelperService.trimVersion("autoscaling/v2beta1")).thenReturn("v2beta1");
-    when(kubernetesHelperService.hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v2beta1"))
-        .thenReturn(v2Beta1NamespacedHpa);
-    kubernetesContainerService.createOrReplaceAutoscaler(KUBERNETES_CONFIG, autoscalerYaml);
-    verify(kubernetesHelperService).hpaOperationsForCustomMetricHPA(KUBERNETES_CONFIG, "v2beta1");
-    verify(v2Beta1NamespacedHpa)
-        .createOrReplace(any(io.fabric8.kubernetes.api.model.autoscaling.v2beta1.HorizontalPodAutoscaler.class));
-
-    autoscalerYaml = "apiVersion: autoscaling/v1\n"
-        + "kind: HorizontalPodAutoscaler\n"
-        + "metadata:\n"
-        + "  name: hpa-name\n"
-        + "spec:\n"
-        + "  minReplicas: 2\n";
-
-    when(kubernetesHelperService.trimVersion("autoscaling/v1")).thenReturn("v1");
-    when(kubernetesHelperService.hpaOperations(KUBERNETES_CONFIG)).thenReturn(namespacedHpa);
-    kubernetesContainerService.createOrReplaceAutoscaler(KUBERNETES_CONFIG, autoscalerYaml);
-    verify(kubernetesHelperService).hpaOperations(KUBERNETES_CONFIG);
-    verify(namespacedHpa, times(1)).createOrReplace(any(HorizontalPodAutoscaler.class));
-  }
-
   @Test
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)

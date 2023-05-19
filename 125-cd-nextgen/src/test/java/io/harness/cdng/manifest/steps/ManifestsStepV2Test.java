@@ -49,6 +49,7 @@ import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -91,6 +92,7 @@ public class ManifestsStepV2Test extends CategoryTest {
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Mock private PipelineRbacHelper pipelineRbacHelper;
   @Mock private ServiceStepsHelper serviceStepsHelper;
+  @Mock private NGLogCallback logCallback;
   @InjectMocks private ManifestsStepV2 step = new ManifestsStepV2();
 
   private AutoCloseable mocks;
@@ -106,6 +108,7 @@ public class ManifestsStepV2Test extends CategoryTest {
                              .build()))
         .when(connectorService)
         .get(anyString(), anyString(), anyString(), anyString());
+    doReturn(logCallback).when(serviceStepsHelper).getServiceLogCallback(any());
   }
 
   @After

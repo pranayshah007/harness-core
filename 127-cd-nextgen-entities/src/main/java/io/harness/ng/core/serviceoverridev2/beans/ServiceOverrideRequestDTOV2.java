@@ -38,9 +38,10 @@ public class ServiceOverrideRequestDTOV2 {
   @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) String orgIdentifier;
   @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) String projectIdentifier;
   @Schema(description = NGCommonEntityConstants.ENV_REF_PARAM_MESSAGE) @NotNull String environmentRef;
-  @Schema(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) String serviceRef;
+  @Schema(description = NGCommonEntityConstants.SERVICE_REF_PARAM_MESSAGE) String serviceRef;
 
   @Schema(description = NGCommonEntityConstants.INFRA_IDENTIFIER) String infraIdentifier;
+  @Schema(description = NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterIdentifier;
 
   @Schema(description = "Type of the override which is based on source of overrides")
   @NotNull
@@ -48,5 +49,5 @@ public class ServiceOverrideRequestDTOV2 {
 
   @Schema(description = "Spec for overrides, containing overriding fields like manifests, variables, config files")
   @NotNull
-  ServiceOverridesSpec overrideSpec;
+  ServiceOverridesSpec spec;
 }

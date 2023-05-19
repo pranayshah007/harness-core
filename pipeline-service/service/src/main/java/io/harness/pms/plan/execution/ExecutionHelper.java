@@ -37,13 +37,16 @@ import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
+import io.harness.execution.RetryStagesMetadata;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
-import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.ngsettings.dto.SettingDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.plan.Plan;
@@ -95,6 +98,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.threading.Morpheus;
+import io.harness.utils.NGPipelineSettingsConstant;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -112,6 +116,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
@@ -124,7 +129,6 @@ import retrofit2.Call;
 @Slf4j
 public class ExecutionHelper {
   NGSettingsClient settingsClient;
-
   PMSPipelineService pmsPipelineService;
   PipelineMetadataService pipelineMetadataService;
   PMSPipelineServiceHelper pmsPipelineServiceHelper;
@@ -151,7 +155,7 @@ public class ExecutionHelper {
   RollbackModeExecutionHelper rollbackModeExecutionHelper;
   RollbackGraphGenerator rollbackGraphGenerator;
 
-  public static final String ENABLE_MATRIX_FIELD_NAME_SETTING = "enable_matrix_label_by_name";
+  public static final String PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER = "pms_execution_settings";
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -198,11 +202,20 @@ public class ExecutionHelper {
 
     return (modules != null) && (modules.contains("ci"));
   }
-  @SneakyThrows
+
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
       boolean isDebug) {
+    return buildExecutionArgs(pipelineEntity, moduleType, mergedRuntimeInputYaml, stagesToRun, expressionValues,
+        triggerInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, isDebug, null);
+  }
+
+  @SneakyThrows
+  public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
+      List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
+      String originalExecutionId, RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser,
+      boolean isDebug, String notes) {
     long start = System.currentTimeMillis();
     final String executionId = generateUuid();
 
@@ -257,7 +270,7 @@ public class ExecutionHelper {
       }
 
       Builder planExecutionMetadataBuilder = obtainPlanExecutionMetadata(mergedRuntimeInputYaml, executionId,
-          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version);
+          stagesExecutionInfo, originalExecutionId, retryExecutionParameters, notifyOnlyUser, version, notes);
       if (stagesExecutionInfo.isStagesExecution()) {
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity.getAccountId(),
             YamlUtils.extractPipelineField(planExecutionMetadataBuilder.build().getProcessedYaml()));
@@ -268,9 +281,16 @@ public class ExecutionHelper {
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
           OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_RUN);
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
+      boolean isRetry = retryExecutionParameters.isRetry();
+      if (isRetry) {
+        planExecutionMetadataBuilder.retryStagesMetadata(
+            RetryStagesMetadata.builder()
+                .retryStagesIdentifier(retryExecutionParameters.getRetryStagesIdentifier())
+                .skipStagesIdentifier(retryExecutionParameters.getIdentifierOfSkipStages())
+                .build());
+      }
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
 
-      boolean isRetry = retryExecutionParameters.isRetry();
       // RetryExecutionInfo
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
@@ -294,19 +314,17 @@ public class ExecutionHelper {
   private ExecutionMetadata buildExecutionMetadata(@NotNull String pipelineIdentifier, String moduleType,
       ExecutionTriggerInfo triggerInfo, PipelineEntity pipelineEntity, String executionId,
       RetryExecutionInfo retryExecutionInfo, List<NotificationRules> notificationRules, boolean isDebug) {
-    ExecutionMetadata.Builder builder =
-        ExecutionMetadata.newBuilder()
-            .setExecutionUuid(executionId)
-            .setTriggerInfo(triggerInfo)
-            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
-            .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
-            .setPipelineIdentifier(pipelineIdentifier)
-            .setRetryInfo(retryExecutionInfo)
-            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
-            .setIsNotificationConfigured(isNotEmpty(notificationRules))
-            .setHarnessVersion(pipelineEntity.getHarnessVersion())
-            .setIsDebug(isDebug)
-            .setExecutionMode(ExecutionMode.NORMAL);
+    ExecutionMetadata.Builder builder = ExecutionMetadata.newBuilder()
+                                            .setExecutionUuid(executionId)
+                                            .setTriggerInfo(triggerInfo)
+                                            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
+                                            .setPipelineIdentifier(pipelineIdentifier)
+                                            .setRetryInfo(retryExecutionInfo)
+                                            .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
+                                            .setIsNotificationConfigured(isNotEmpty(notificationRules))
+                                            .setHarnessVersion(pipelineEntity.getHarnessVersion())
+                                            .setIsDebug(isDebug)
+                                            .setExecutionMode(ExecutionMode.NORMAL);
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo(), pipelineEntity.getConnectorRef());
     if (gitSyncBranchContext != null) {
@@ -319,19 +337,8 @@ public class ExecutionHelper {
     if (pipelineEntity.getConnectorRef() != null) {
       builder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
     }
-    try {
-      Call<ResponseDTO<SettingValueResponseDTO>> setting =
-          settingsClient.getSetting(ENABLE_MATRIX_FIELD_NAME_SETTING, pipelineEntity.getAccountIdentifier(),
-              pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier());
-
-      SettingValueResponseDTO response = NGRestUtils.getResponse(setting);
-
-      if (response.getValue().equals("true")) {
-        builder.setUseMatrixFieldName(true);
-      }
-    } catch (Exception e) {
-      log.error("Error in fetching pipeline Setting {} due to {}", ENABLE_MATRIX_FIELD_NAME_SETTING, e.getMessage());
-    }
+    // adding metadata populated by Pipeline NG Settings
+    updateSettingsInExecutionMetadataBuilder(pipelineEntity, builder);
     return builder.build();
   }
 
@@ -342,9 +349,6 @@ public class ExecutionHelper {
     } else {
       YamlConfig pipelineEntityYamlConfig = new YamlConfig(pipelineEntity.getYaml());
       YamlConfig runtimeInputYamlConfig = new YamlConfig(mergedRuntimeInputYaml);
-      pipelineYamlConfigForSchemaValidations = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
-          pipelineEntityYamlConfig, runtimeInputYamlConfig, false, true);
-
       /*
       For schema validations, we don't want input set validators to be appended. For example, if some timeout field in
       the pipeline is <+input>.allowedValues(12h, 1d), and the runtime input gives a value 12h, the value for this field
@@ -407,7 +411,7 @@ public class ExecutionHelper {
 
   private PlanExecutionMetadata.Builder obtainPlanExecutionMetadata(String mergedRuntimeInputYaml, String executionId,
       StagesExecutionInfo stagesExecutionInfo, String originalExecutionId,
-      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version) {
+      RetryExecutionParameters retryExecutionParameters, boolean notifyOnlyUser, String version, String notes) {
     long start = System.currentTimeMillis();
     boolean isRetry = retryExecutionParameters.isRetry();
     String pipelineYaml = stagesExecutionInfo.getPipelineYamlToRun();
@@ -418,7 +422,8 @@ public class ExecutionHelper {
             .yaml(pipelineYaml)
             .stagesExecutionMetadata(stagesExecutionInfo.toStagesExecutionMetadata())
             .allowStagesExecution(stagesExecutionInfo.isAllowStagesExecution())
-            .notifyOnlyUser(notifyOnlyUser);
+            .notifyOnlyUser(notifyOnlyUser)
+            .notes(notes);
     String currentProcessedYaml;
     try {
       switch (version) {
@@ -511,7 +516,19 @@ public class ExecutionHelper {
       }
       plan = transformPlan(plan, isRetry, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier,
           executionMode, rollbackStageIds);
-      return orchestrationService.startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
+
+      // Currently not adding transaction here to validate if there are errors after plan creation
+      ExecutionMetadata finalExecutionMetadata =
+          executionMetadata.toBuilder()
+              .setRunSequence(pipelineMetadataService.incrementRunSequence(
+                  accountId, orgIdentifier, projectIdentifier, executionMetadata.getPipelineIdentifier()))
+              .build();
+      try {
+        return orchestrationService.startExecution(plan, abstractions, finalExecutionMetadata, planExecutionMetadata);
+      } catch (Exception e) {
+        log.warn("Add transaction for increment and startExecution as execution failed after plan creation");
+        throw new InternalServerErrorException(e.getMessage());
+      }
     }
   }
 
@@ -558,8 +575,7 @@ public class ExecutionHelper {
       return PlanExecution.builder().build();
     }
     if (isRetry) {
-      Plan newPlan =
-          retryExecutionHelper.transformPlan(plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
+      retryExecutionHelper.transformPlan(plan, identifierOfSkipStages, previousExecutionId, retryStagesIdentifier);
       return orchestrationService.startExecutionV2(
           planCreationId, abstractions, executionMetadata, planExecutionMetadata);
     }
@@ -664,5 +680,31 @@ public class ExecutionHelper {
         .stagesExecutionInfo(stagesExecutionInfo)
         .filteredPipelineYamlWithTemplateRef(pipelineYamlWithTemplateRef)
         .build();
+  }
+
+  public void updateSettingsInExecutionMetadataBuilder(
+      PipelineEntity pipelineEntity, ExecutionMetadata.Builder builder) {
+    try {
+      Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall =
+          settingsClient.listSettings(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+              pipelineEntity.getProjectIdentifier(), SettingCategory.PMS, PMS_EXECUTION_SETTINGS_GROUP_IDENTIFIER);
+
+      List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
+
+      // TODO: The filed useMatrixFieldName is redundant, we can make use of the settingToValueMap values. Please make
+      // sure before removing the field from proto that its not being used anywhere. Also there has been some releases
+      // after removing the usages of the field to maintain Backward compatibility.
+      for (SettingResponseDTO settingDto : response) {
+        SettingDTO setting = settingDto.getSetting();
+        if (setting.getIdentifier().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
+            && setting.getValue().equals("true")) {
+          builder.setUseMatrixFieldName(true);
+        } else {
+          builder.putSettingToValueMap(setting.getIdentifier(), setting.getValue());
+        }
+      }
+    } catch (Exception e) {
+      log.error("Error in fetching pipeline Settings due to {}", e.getMessage());
+    }
   }
 }

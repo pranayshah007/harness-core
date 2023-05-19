@@ -15,5 +15,6 @@ import lombok.Data;
 public class RecommendatioAdhocDTO {
   String roleArn;
   String externalId;
+  String identifier;
   String targetAccountId;
 }

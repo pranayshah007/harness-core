@@ -100,6 +100,8 @@ public class ApprovalInstanceResponseMapper {
                                                                           .collect(Collectors.toList()))
                 .orElse(instance.getApproverInputs()))
         .validatedApprovalUserGroups(instance.getValidatedApprovalUserGroups())
+        .isAutoRejectEnabled(
+            instance.getIsAutoRejectEnabled() == null ? Boolean.FALSE : instance.getIsAutoRejectEnabled())
         .build();
   }
 

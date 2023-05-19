@@ -52,13 +52,13 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.datacollection.entity.TimeSeriesRecord;
@@ -67,7 +67,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
@@ -95,7 +94,6 @@ import org.apache.commons.lang3.StringUtils;
 public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorService {
   private static final int INTERVAL_HOURS = 12;
   @Inject private HPersistence hPersistence;
-  @Inject private Map<String, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder;
   @Inject private ServiceLevelIndicatorEntityAndDTOTransformer serviceLevelIndicatorEntityAndDTOTransformer;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private HealthSourceService healthSourceService;
@@ -222,7 +220,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                 -> metricPackService.populateDataCollectionDsl(
                     metricCVConfig.getType(), metricCVConfig.getMetricPack()))
             .collect(Collectors.toList());
-    Preconditions.checkArgument(isNotEmpty(cvConfigs), "Health source not present");
+    if (cvConfigs.isEmpty()) {
+      throw new InvalidArgumentsException("Health source not present");
+    }
     return cvConfigs;
   }
 
@@ -396,9 +396,13 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         if (intervalEndTime.isAfter(endTime)) {
           intervalEndTime = endTime;
         }
-        orchestrationService.queueAnalysis(verificationTaskService.getSLIVerificationTaskId(
-                                               serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()),
-            intervalStartTime, intervalEndTime);
+        orchestrationService.queueAnalysis(
+            AnalysisInput.builder()
+                .verificationTaskId(verificationTaskService.getSLIVerificationTaskId(
+                    serviceLevelIndicator.getAccountId(), serviceLevelIndicator.getUuid()))
+                .startTime(intervalStartTime)
+                .endTime(intervalEndTime)
+                .build());
         intervalStartTime = intervalEndTime;
       }
     } else {
@@ -610,7 +614,11 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       if (intervalEndTime.isAfter(endTime)) {
         intervalEndTime = endTime;
       }
-      orchestrationService.queueAnalysis(verificationTaskId, intervalStartTime, intervalEndTime);
+      orchestrationService.queueAnalysis(AnalysisInput.builder()
+                                             .verificationTaskId(verificationTaskId)
+                                             .startTime(intervalStartTime)
+                                             .endTime(intervalEndTime)
+                                             .build());
       intervalStartTime = intervalEndTime;
     }
   }

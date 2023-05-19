@@ -82,7 +82,7 @@ public abstract class StepMapper {
 
   public abstract State getState(GraphNode stepYaml);
 
-  String getSweepingOutputName(GraphNode graphNode) {
+  public String getSweepingOutputName(GraphNode graphNode) {
     State state = getState(graphNode);
     if (state instanceof SweepingOutputStateMixin) {
       return ((SweepingOutputStateMixin) state).getSweepingOutputName();
@@ -151,7 +151,7 @@ public abstract class StepMapper {
   }
 
   void baseOverrideTemplateInputs(PhaseStep phaseStep, GraphNode step, JsonNode templateInputs, String skipCondition) {
-    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : skipCondition;
+    String newSkip = StringUtils.isBlank(skipCondition) ? "true" : "!(" + skipCondition + ")";
     JsonNode failureStrategies = templateInputs.get("failureStrategies");
     if (failureStrategies != null) {
       List<FailureStrategyConfig> strategies =

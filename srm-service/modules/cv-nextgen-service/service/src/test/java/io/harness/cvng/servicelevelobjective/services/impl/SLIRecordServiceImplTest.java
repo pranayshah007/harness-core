@@ -7,19 +7,17 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
-import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.data.Offset.offset;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -31,8 +29,8 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.persistence.HPersistence;
@@ -72,7 +70,6 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
     MockitoAnnotations.initMocks(this);
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 5;
     verificationTaskId = generateUuid();
     /*sliId = generateUuid();*/
     monitoredService = createMonitoredService();
@@ -305,17 +302,6 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
     assertThat(updatedLastRecord.getTimestamp()).isEqualTo(Instant.parse("2020-07-27T10:14:00Z"));
-  }
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testGetErrorBudgetBurnRate() {
-    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(20));
-    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
-    createData(startTime, sliStates);
-    double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(
-        serviceLevelIndicator.getUuid(), Duration.ofMinutes(10).toMillis(), 120);
-    assertThat(errorBudgetBurnRate).isCloseTo(3.333, offset(0.001));
   }
 
   private void createData(Instant startTime, List<SLIState> sliStates) {

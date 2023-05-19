@@ -9,11 +9,14 @@ package io.harness.cdng.service.steps.helpers;
 
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.common.beans.StepDelegateInfo;
+import io.harness.cdng.common.beans.StepDetailsDelegateInfo;
 import io.harness.cdng.execution.ServiceExecutionSummaryDetails;
 import io.harness.cdng.execution.StageExecutionInfoUpdateDTO;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
@@ -39,6 +42,7 @@ import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.sdk.core.data.Outcome;
+import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
@@ -70,6 +74,7 @@ public class ServiceStepsHelper {
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject private StageExecutionInfoService stageExecutionInfoService;
+  @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
 
   public void checkForVariablesAccessOrThrow(Ambiance ambiance, NGServiceConfig serviceConfig, String serviceRef) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
@@ -203,5 +208,13 @@ public class ServiceStepsHelper {
       }
     }
     return ServiceExecutionSummaryDetails.builder().build();
+  }
+
+  public void publishTaskIdsStepDetailsForServiceStep(
+      Ambiance ambiance, List<StepDelegateInfo> stepDelegateInfos, String name) {
+    if (isNotEmpty(stepDelegateInfos)) {
+      sdkGraphVisualizationDataService.publishStepDetailInformation(prepareServiceAmbiance(ambiance),
+          StepDetailsDelegateInfo.builder().stepDelegateInfos(stepDelegateInfos).build(), name);
+    }
   }
 }

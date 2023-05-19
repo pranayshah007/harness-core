@@ -38,6 +38,8 @@ import io.harness.perpetualtask.PerpetualTaskContextResponse;
 import io.harness.perpetualtask.PerpetualTaskFailureRequest;
 import io.harness.perpetualtask.PerpetualTaskFailureResponse;
 import io.harness.perpetualtask.PerpetualTaskListResponse;
+import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
+import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rest.RestResponse;
@@ -130,12 +132,10 @@ public interface DelegateAgentManagerClient {
   Call<DelegateTaskEventsResponse> pollTaskEvents(
       @Path("delegateId") String delegateId, @Query("accountId") String accountId);
 
-  //@TODO:  Remove V1 versions once all delegates adopts V2 version
   @POST("instancesync/instance-sync/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body DelegateResponseData responseData);
 
-  //@TODO:  Remove V1 versions once all delegates adopts V2 version
   @POST("instancesync/instance-sync-v2/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishInstanceSyncV2Result(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
@@ -158,6 +158,13 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse<Boolean>> publishInstanceSyncV2ResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body CgInstanceSyncResponse responseData);
 
+  @POST("instancesync/instance-sync-ng-v2/{perpetualTaskId}")
+  Call<RestResponse<Boolean>> processInstanceSyncNGResultV2(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("accountId") String accountId, @Body InstanceSyncResponseV2 instanceSyncResponseV2);
+
+  @GET("instancesync/instance-sync-ng-v2/task/{perpetualTaskId}/details")
+  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(
+      @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
   // Query for a specific set of delegate properties for a given account.
   // Request: GetDelegatePropertiesRequest
   // Response: GetDelegatePropertiesResponse
@@ -172,35 +179,20 @@ public interface DelegateAgentManagerClient {
   Call<RestResponse> saveApiCallLogs(
       @Path("delegateId") String delegateId, @Query("accountId") String accountId, @Body RequestBody logObject);
 
-  //@TODO: Remove V1 versions once all delegates adopts V2 version
   @POST("agent/delegates/manifest-collection/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishManifestCollectionResult(@Path("perpetualTaskId") String perpetualTaskId,
-      @Query("accountId") String accountId, @Body RequestBody manifestCollectionExecutionResponse);
-
-  @POST("agent/delegates/manifest-collection/v2/{perpetualTaskId}")
-  Call<RestResponse<Boolean>> publishManifestCollectionResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body RequestBody manifestCollectionExecutionResponse);
 
   @POST("agent/delegates/connectors/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishConnectorHeartbeatResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body ConnectorHeartbeatDelegateResponse responseData);
 
-  //@TODO: Remove V1 versions once all delegates adopts V2 version
   @POST("agent/delegates/artifact-collection/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishArtifactCollectionResult(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
-  @POST("agent/delegates/artifact-collection/v2/{perpetualTaskId}")
-  Call<RestResponse<Boolean>> publishArtifactCollectionResultV2(@Path("perpetualTaskId") String perpetualTaskId,
-      @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
-
-  //@TODO: Remove V1 versions once all delegates adopts V2 version
   @POST("agent/delegates/polling/{perpetualTaskId}")
   Call<RestResponse<Boolean>> publishPollingResult(@Path("perpetualTaskId") String perpetualTaskId,
-      @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
-
-  @POST("agent/delegates/polling/v2/{perpetualTaskId}")
-  Call<RestResponse<Boolean>> publishPollingResultV2(@Path("perpetualTaskId") String perpetualTaskId,
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
   @KryoResponse

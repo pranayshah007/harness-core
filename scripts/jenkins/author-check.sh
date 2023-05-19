@@ -3,7 +3,6 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -x
 set -e
 
 git config --global log.mailmap true
@@ -118,6 +117,7 @@ git log -1000 --oneline --format='%aN <%aE>' | sort -u |\
     grep -iv "^Milan Balaban <milan.balaban@harness.io>$" |\
     grep -iv "^Milos Paunovic <milos.paunovic@harness.io>$" |\
     grep -iv "^Mohit Garg <mohit.garg@harness.io>$" |\
+    grep -iv "^Yagyansh Bhatia <yagyansh.bhatia@harness.io>$" |\
     grep -iv "^Mounik V V S S <mounik.velavalivenkata@harness.io>$" |\
     grep -iv "^Mohit Kurani <mohit.kurani@harness.io>$" |\
     grep -iv "^Mounik V V S S <mounik.velavalivenkata@harness.io>$" |\

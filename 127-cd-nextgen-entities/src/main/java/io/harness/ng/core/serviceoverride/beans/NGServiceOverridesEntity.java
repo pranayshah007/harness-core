@@ -50,13 +50,12 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("unique_accountId_organizationIdentifier_projectIdentifier_environmentRef_serviceRef")
+                 .name("unique_accountId_organizationIdentifier_projectIdentifier_identifier")
                  .unique(true)
                  .field(NGServiceOverridesEntityKeys.accountId)
                  .field(NGServiceOverridesEntityKeys.orgIdentifier)
                  .field(NGServiceOverridesEntityKeys.projectIdentifier)
-                 .field(NGServiceOverridesEntityKeys.environmentRef)
-                 .field(NGServiceOverridesEntityKeys.serviceRef)
+                 .field(NGServiceOverridesEntityKeys.identifier)
                  .build())
         .build();
   }
@@ -74,8 +73,11 @@ public class NGServiceOverridesEntity implements PersistentEntity, ScopeAware {
   // for Override 2.0
   @EntityIdentifier String identifier;
   @Trimmed String infraIdentifier;
+  @Trimmed String clusterIdentifier; // will infer scope of the cluster from environment
   ServiceOverridesSpec spec;
   ServiceOverridesType type;
+
+  @Builder.Default Boolean isV2 = Boolean.FALSE;
 
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;

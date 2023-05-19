@@ -11,6 +11,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.notification.PipelineEventType.STAGE_FAILED;
 import static io.harness.notification.PipelineEventType.STAGE_SUCCESS;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SHALINI;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
@@ -319,5 +320,30 @@ public class NotificationHelperTest extends CategoryTest {
     verify(notificationHelper, times(1)).createNotificationRules(any(), any());
     verify(notificationHelper, times(1))
         .sendNotificationInternal(any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testGetStageIdentifier() {
+    String planExecutionId = generateUuid();
+    PlanNode stagePlanNode = PlanNode.builder()
+                                 .uuid(generateUuid())
+                                 .stepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                                 .identifier("dummyIdentifier_0")
+                                 .build();
+    PlanNode strategyPlanNode = PlanNode.builder()
+                                    .uuid(generateUuid())
+                                    .stepType(StepType.newBuilder().setStepCategory(StepCategory.STRATEGY).build())
+                                    .identifier("dummyIdentifier")
+                                    .build();
+    Ambiance.Builder ambianceBuilder = Ambiance.newBuilder()
+                                           .setPlanExecutionId(planExecutionId)
+                                           .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagePlanNode));
+    NodeExecutionBuilder nodeExecutionBuilder = NodeExecution.builder().ambiance(ambianceBuilder.build());
+    assertEquals(notificationHelper.getStageIdentifier(nodeExecutionBuilder.build()), "dummyIdentifier_0");
+    ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode));
+    nodeExecutionBuilder.ambiance(ambianceBuilder.build());
+    assertEquals(notificationHelper.getStageIdentifier(nodeExecutionBuilder.build()), "dummyIdentifier");
   }
 }

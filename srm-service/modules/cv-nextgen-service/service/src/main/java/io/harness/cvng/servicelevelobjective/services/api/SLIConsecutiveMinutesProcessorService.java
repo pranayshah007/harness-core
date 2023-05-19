@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.api;
 
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 
 import java.util.List;

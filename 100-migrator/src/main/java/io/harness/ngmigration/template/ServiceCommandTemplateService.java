@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.template;
 
+import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_BOOLEAN_INPUT;
 import static io.harness.ngmigration.utils.MigratorUtility.RUNTIME_DELEGATE_INPUT;
 
 import static software.wings.beans.command.CommandUnitType.COPY_CONFIGS;
@@ -107,7 +108,7 @@ public class ServiceCommandTemplateService implements NgTemplateService {
 
     CommandStepInfo commandStepInfo = CommandStepInfo.infoBuilder()
                                           .commandUnits(commandUnitWrappers)
-                                          .onDelegate(ParameterField.createValueField(true))
+                                          .onDelegate(RUNTIME_BOOLEAN_INPUT)
                                           .delegateSelectors(RUNTIME_DELEGATE_INPUT)
                                           .environmentVariables(variables)
                                           .build();

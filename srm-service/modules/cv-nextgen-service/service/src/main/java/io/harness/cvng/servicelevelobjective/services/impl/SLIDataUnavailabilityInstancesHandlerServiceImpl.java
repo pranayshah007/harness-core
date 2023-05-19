@@ -9,11 +9,12 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.downtime.beans.EntityType;
+import io.harness.cvng.downtime.beans.EntityUnavailabilityStatus;
 import io.harness.cvng.downtime.beans.EntityUnavailabilityStatusesDTO;
 import io.harness.cvng.downtime.services.api.DowntimeService;
 import io.harness.cvng.downtime.services.api.EntityUnavailabilityStatusesService;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataUnavailabilityInstancesHandlerService;
 
 import com.google.inject.Inject;
@@ -48,7 +49,9 @@ public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIData
     failureInstances.addAll(
         entityUnavailabilityStatusesDTOS.stream()
             .filter(statusesDTO
-                -> statusesDTO.getEntityType().equals(EntityType.SLO) && statusesDTO.getEntityId().equals(sliId))
+                -> statusesDTO.getEntityType().equals(EntityType.SLO)
+                    && statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
+                    && statusesDTO.getEntityId().equals(sliId))
             .collect(Collectors.toList()));
 
     Set<Instant> failureInstants = new HashSet<>();
@@ -63,7 +66,7 @@ public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIData
     List<SLIRecordParam> updatedRecords = new ArrayList<>();
     for (SLIRecordParam sliRecord : sliRecordList) {
       if (failureInstants.contains(sliRecord.getTimeStamp())) {
-        sliRecord.setSliState(SLIRecord.SLIState.SKIP_DATA);
+        sliRecord.setSliState(SLIState.SKIP_DATA);
         sliRecord.setBadEventCount(0l);
         sliRecord.setGoodEventCount(0l);
       }

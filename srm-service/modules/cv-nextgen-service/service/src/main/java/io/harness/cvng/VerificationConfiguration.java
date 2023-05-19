@@ -29,10 +29,12 @@ import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
+import io.harness.redis.RedisConfig;
 import io.harness.reflection.HarnessReflections;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
+import io.harness.telemetry.segment.SegmentConfiguration;
 import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.app.PortalConfig;
@@ -89,6 +91,9 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("nextGen") private NGManagerServiceConfig ngManagerServiceConfig;
   @JsonProperty("notificationClient") private NotificationClientConfiguration notificationClientConfiguration;
   @JsonProperty("eventsFramework") private EventsFrameworkConfiguration eventsFrameworkConfiguration;
+
+  @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
+
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
@@ -100,7 +105,7 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("errorTrackingClientConfig") private ErrorTrackingClientConfig errorTrackingClientConfig;
   @JsonProperty("webhookConfig") private WebhookConfig webhookConfig;
   @JsonProperty("distributedLockImplementation")
-  private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
+  private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.REDIS;
   private ServiceHttpClientConfig templateServiceClientConfig;
   private String templateServiceSecret;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
@@ -113,6 +118,7 @@ public class VerificationConfiguration extends Configuration {
   public static final String RESOURCE_PACKAGE = "io.harness.cvng";
   @JsonProperty("enableDashboardTimescale") private Boolean enableDashboardTimescale;
   @JsonProperty("timescaledb") private TimeScaleDBConfig timeScaleDBConfig;
+  @JsonProperty("segmentConfiguration") private SegmentConfiguration segmentConfiguration;
 
   private String portalUrl;
 

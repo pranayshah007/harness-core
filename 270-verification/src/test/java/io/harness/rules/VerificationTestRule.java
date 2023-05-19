@@ -23,7 +23,6 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.redis.RedisConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.VerificationRegistrars;
-import io.harness.testlib.RealMongo;
 import io.harness.testlib.module.TestMongoModule;
 
 import software.wings.rules.SetupScheduler;
@@ -55,9 +54,7 @@ public class VerificationTestRule extends WingsRule {
     configuration.getSchedulerConfig().setThreadCount("15");
     if (annotations.stream().anyMatch(SetupScheduler.class ::isInstance)) {
       configuration.getSchedulerConfig().setAutoStart("true");
-      if (!annotations.stream().anyMatch(RealMongo.class ::isInstance)) {
-        configuration.getSchedulerConfig().setJobStoreClass(org.quartz.simpl.RAMJobStore.class.getCanonicalName());
-      }
+      configuration.getSchedulerConfig().setJobStoreClass(org.quartz.simpl.RAMJobStore.class.getCanonicalName());
     }
     return configuration;
   }

@@ -8,10 +8,17 @@
 package io.harness.ngtriggers.beans.response;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_ARTIFACT_EVENT_PROCESSED;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.NEW_MANIFEST_EVENT_PROCESSED;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
+import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TRIGGER_CONFIRMATION_SUCCESSFUL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,6 +31,7 @@ public class TriggerEventResponse {
     INVALID_PAYLOAD,
     NO_MATCHING_TRIGGER_FOR_REPO,
     NO_MATCHING_TRIGGER_FOR_EVENT_ACTION,
+    NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS,
     NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS,
     NO_MATCHING_TRIGGER_FOR_JEXL_CONDITIONS,
     NO_MATCHING_TRIGGER_FOR_HEADER_CONDITIONS,
@@ -68,4 +76,10 @@ public class TriggerEventResponse {
   private TargetExecutionSummary targetExecutionSummary;
   private boolean enabled;
   NGTriggerType ngTriggerType;
+
+  public static boolean isSuccessResponse(FinalStatus status) {
+    Set<FinalStatus> finalStatuses = new HashSet<>(Arrays.asList(NEW_ARTIFACT_EVENT_PROCESSED,
+        NEW_MANIFEST_EVENT_PROCESSED, TRIGGER_CONFIRMATION_SUCCESSFUL, TARGET_EXECUTION_REQUESTED));
+    return finalStatuses.contains(status);
+  }
 }

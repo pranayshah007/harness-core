@@ -10,14 +10,22 @@ package io.harness.repositories.custom;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
+import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.PollingSubscriptionStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.StatusResult;
+import io.harness.ngtriggers.beans.entity.metadata.status.TriggerStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.ValidationStatus;
+import io.harness.ngtriggers.beans.entity.metadata.status.WebhookAutoRegistrationStatus;
 import io.harness.ngtriggers.beans.source.TriggerUpdateCount;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
 import com.mongodb.client.result.DeleteResult;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -44,8 +52,58 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
   public Page<NGTriggerEntity> findAll(Criteria criteria, Pageable pageable) {
     Query query = new Query(criteria).with(pageable);
     List<NGTriggerEntity> triggers = mongoTemplate.find(query, NGTriggerEntity.class);
+
+    triggers = updateTriggerStatus(triggers);
+
     return PageableExecutionUtils.getPage(
         triggers, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGTriggerEntity.class));
+  }
+
+  private static List<NGTriggerEntity> updateTriggerStatus(List<NGTriggerEntity> triggers) {
+    for (NGTriggerEntity trigger : triggers) {
+      TriggerStatus triggerStatus = trigger.getTriggerStatus();
+
+      if (triggerStatus == null) {
+        TriggerStatus status = TriggerStatus.builder().status(StatusResult.FAILED).build();
+        trigger.setTriggerStatus(status);
+        continue;
+      }
+
+      PollingSubscriptionStatus pollingSubscriptionStatus = triggerStatus.getPollingSubscriptionStatus();
+      ValidationStatus validationStatus = triggerStatus.getValidationStatus();
+      WebhookAutoRegistrationStatus webhookAutoRegistrationStatus = triggerStatus.getWebhookAutoRegistrationStatus();
+
+      List<String> detailedMessages = new ArrayList<>();
+
+      if ((pollingSubscriptionStatus != null && pollingSubscriptionStatus.getStatusResult() == StatusResult.FAILED)
+          || (validationStatus != null && validationStatus.getStatusResult() == StatusResult.FAILED)
+          || (webhookAutoRegistrationStatus != null
+              && (webhookAutoRegistrationStatus.getRegistrationResult() == WebhookRegistrationStatus.FAILED
+                  || webhookAutoRegistrationStatus.getRegistrationResult() == WebhookRegistrationStatus.TIMEOUT
+                  || webhookAutoRegistrationStatus.getRegistrationResult() == WebhookRegistrationStatus.ERROR))) {
+        triggerStatus.setStatus(StatusResult.FAILED);
+
+        if (pollingSubscriptionStatus != null
+            && EmptyPredicate.isNotEmpty(pollingSubscriptionStatus.getDetailedMessage())) {
+          detailedMessages.add(pollingSubscriptionStatus.getDetailedMessage());
+        }
+        if (validationStatus != null && EmptyPredicate.isNotEmpty(validationStatus.getDetailedMessage())) {
+          detailedMessages.add(validationStatus.getDetailedMessage());
+        }
+        if (webhookAutoRegistrationStatus != null
+            && EmptyPredicate.isNotEmpty(webhookAutoRegistrationStatus.getDetailedMessage())) {
+          detailedMessages.add(webhookAutoRegistrationStatus.getDetailedMessage());
+        }
+      } else {
+        triggerStatus.setStatus(StatusResult.SUCCESS);
+      }
+
+      triggerStatus.setDetailMessages(detailedMessages);
+
+      trigger.setTriggerStatus(triggerStatus);
+    }
+
+    return triggers;
   }
 
   @Override

@@ -1,0 +1,70 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+import "google/protobuf/duration.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
+
+option java_multiple_files = true;
+option go_package = "920_delegate_service_beans";
+
+// Initialize An Execution InfrastructureParameters holds parameters to Initialize An Execution Infrastructure
+message InitializeExecutionInfrastructureRequest {
+  //  oneof execution_infra {
+  //    DroneRunnerExecutionInfrastructure drone_execution_infrastructure = 1;
+  //    K8sExecutionInfrastructure k8s_execution_infrastructure = 2;
+  //  }
+  RequestMetadata request_metadata = 3;
+}
+
+message RequestMetadata {
+  // Scheduling related
+  // The time the task should stay in the queue. To set the execution time out, fill out
+  // details.execution_timeout
+  google.protobuf.Duration execution_timeout = 1;
+  bool force_execute = 3;
+
+  // This map provides a list of key-vals used filter delegates during assignment process.
+  // @Deprecated: will remove this field after refactored the manager code
+  TaskSetupAbstractions setup_abstractions = 5;
+
+  // Route request to the delegates with required selectors
+  repeated TaskSelector selectors = 6;
+  // Runner's type
+  enum RunnerType {
+    UNKNOWN = 0;
+    K8S = 1;
+    DOCKER = 2;
+    VM = 3;
+    // If runner type if DEFAULT, it means there is no restriction on runner type when selecting delegates.
+    // Any delegate who receives the request, will use default runner to execute.
+    DEFAULT = 4;
+  }
+  RunnerType runnerType = 7;
+  repeated string eligibleToExecuteDelegateIds = 8;
+
+  bool selectionTrackingLogEnabled = 9;
+  string account_id = 10;
+
+  // Manager will emit event or not upon task state change. The below two only used by CI today
+  bool emitEvent = 11;
+  string stageId = 12;
+  // Used for hosted builds
+  bool execute_on_harness_hosted_delegates = 13;
+
+  // Represents the callback driver to send task response by DMS
+  callback.DelegateCallbackToken callback_token = 14;
+
+  EndpointIdentifier endpointOnDelegate = 15;
+}
+
+message EndpointIdentifier {
+  string uri = 1;
+  string method = 2;
+}

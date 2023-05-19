@@ -61,7 +61,6 @@ public class FileUtils {
         org.apache.commons.io.FileUtils.deleteDirectory(new File(dir));
       } catch (IOException e) {
         log.error("Error in cleaning up directories. Exception = {}", e.getMessage(), e);
-        throw new UnexpectedException("Error while cleaning up directories");
       }
     }
   }

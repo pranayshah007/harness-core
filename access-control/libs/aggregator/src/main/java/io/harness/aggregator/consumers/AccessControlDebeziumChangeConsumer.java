@@ -7,6 +7,8 @@
 
 package io.harness.aggregator.consumers;
 
+import static io.harness.aggregator.OpType.DELETE;
+
 import io.harness.accesscontrol.AccessControlEntity;
 import io.harness.aggregator.AccessControlAdminService;
 import io.harness.aggregator.OpType;
@@ -72,13 +74,24 @@ public class AccessControlDebeziumChangeConsumer implements DebeziumEngine.Chang
       ChangeConsumer<? extends AccessControlEntity> changeConsumer = collectionToConsumerMap.get(collectionName.get());
 
       AccessControlEntity accessControlEntity = deserialize(collectionName.get(), changeEvent);
-      if (accessControlEntity.getAccountId().isPresent()
-          && accessControlAdminService.isBlocked(accessControlEntity.getAccountId().get())) {
+
+      // For DELETE change event we will skip block/unblock check because
+      // * We do not have deleted entity in change event
+      // * We do not have account information in change event to decide if we should block it
+      // * We can not get entity from db because it was already deleted
+      // * It is ok to process delete change event irrespective of block/unblock now because after unblock it would be
+      // difficult to reconcile these deleted entities
+      if (!DELETE.equals(opType.get()) && isBlocked(accessControlEntity)) {
         return true;
       }
       changeConsumer.consumeEvent(opType.get(), id, deserialize(collectionName.get(), changeEvent));
     }
     return true;
+  }
+
+  private boolean isBlocked(AccessControlEntity accessControlEntity) {
+    Optional<String> accountId = accessControlEntity.getAccountId();
+    return accountId.filter(accessControlAdminService::isBlocked).isPresent();
   }
 
   @Override

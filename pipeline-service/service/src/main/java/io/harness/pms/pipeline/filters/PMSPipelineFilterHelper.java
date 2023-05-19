@@ -7,9 +7,12 @@
 
 package io.harness.pms.pipeline.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -92,5 +95,20 @@ public class PMSPipelineFilterHelper {
     List<String> fields = new LinkedList<>();
     fields.add(PipelineEntityKeys.yaml);
     return fields;
+  }
+
+  public Update getUpdateWithGitMetadata(PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Update update = new Update();
+
+    if (isNotEmpty(updateGitDetailsParams.getConnectorRef())) {
+      update.set(PipelineEntityKeys.connectorRef, updateGitDetailsParams.getConnectorRef());
+    }
+    if (isNotEmpty(updateGitDetailsParams.getRepoName())) {
+      update.set(PipelineEntityKeys.repo, updateGitDetailsParams.getRepoName());
+    }
+    if (isNotEmpty(updateGitDetailsParams.getFilePath())) {
+      update.set(PipelineEntityKeys.filePath, updateGitDetailsParams.getFilePath());
+    }
+    return update;
   }
 }

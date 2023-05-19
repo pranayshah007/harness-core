@@ -44,6 +44,7 @@ import org.apache.commons.lang3.ClassUtils;
 
 @UtilityClass
 public class VariableCreatorHelper {
+  private String LOGGER_NAME = "org.slf4j.Logger";
   public void addVariablesForVariables(
       YamlField variablesField, Map<String, YamlProperties> yamlPropertiesMap, String topRootFieldName) {
     List<YamlNode> variableNodes = variablesField.getNode().asArray();

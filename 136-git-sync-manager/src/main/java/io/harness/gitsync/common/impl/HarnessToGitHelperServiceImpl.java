@@ -289,8 +289,12 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     String orgIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getOrgId().getValue();
     String projectIdentifier = isGitSimplificationEnabledRequest.getEntityScopeInfo().getProjectId().getValue();
     try {
-      return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
-          isGitSimplificationEnabledRequest.getIsNotForFFModule());
+      if (isEnabled(accountIdentifier, FeatureName.USE_OLD_GIT_SYNC)) {
+        return gitSyncSettingsService.getGitSimplificationStatus(accountIdentifier, orgIdentifier, projectIdentifier);
+      } else {
+        return !isOldGitSyncEnabledForModule(isGitSimplificationEnabledRequest.getEntityScopeInfo(),
+            isGitSimplificationEnabledRequest.getIsNotForFFModule());
+      }
     } catch (Exception ex) {
       log.error(
           String.format(

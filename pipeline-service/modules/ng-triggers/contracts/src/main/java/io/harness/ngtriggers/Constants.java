@@ -23,6 +23,7 @@ public interface Constants {
   String BITBUCKET_REPO = "Bitbucket";
   String AWS_CODECOMMIT_REPO = "AwsCodeCommit";
   String CUSTOM_REPO = "Custom";
+  String HARNESS_REPO = "Harness";
 
   // Artifact Trigger
 
@@ -82,6 +83,7 @@ public interface Constants {
   String MANIFEST_EXPR = "manifest";
   String MANIFEST_VERSION_EXPR = "version";
   String ARTIFACT_BUILD_EXPR = "build";
+  String ARTIFACT_METADATA_EXPR = "metadata";
 
   String WEBHOOK_TYPE = "Webhook";
   String SCHEDULED_TYPE = "Scheduled";
@@ -109,6 +111,7 @@ public interface Constants {
   String BITBUCKET_LOWER_CASE = "bitbucket";
 
   String TRIGGER_KEY = "triggerIdentifier";
+  String WEBHOOK_TOKEN = "webhookToken";
 
   String DOT_GIT = ".git";
   String MANIFEST = "Manifest";

@@ -1,7 +1,9 @@
 {
-  "definitions": {},
+  "definitions": {
+
+  },
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://example.com/object1679771547.json",
+  "$id": "https://example.com/object1682412581.json",
   "title": "Root",
   "type": "object",
   "additionalProperties": false,
@@ -13,6 +15,7 @@
       "$id": "#root/proxy",
       "title": "Proxy",
       "type": "object",
+      "additionalProperties": false,
       "required": [
         "/snyk"
       ],
@@ -21,8 +24,10 @@
           "$id": "#root/proxy//snyk",
           "title": "/snyk",
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "target",
+            "pathRewrite",
             "headers"
           ],
           "properties": {
@@ -31,12 +36,31 @@
               "title": "Target",
               "type": "string",
               "default": "",
-              "pattern": "^.*$"
+              "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+            },
+            "pathRewrite": {
+              "$id": "#root/proxy//snyk/pathRewrite",
+              "title": "Pathrewrite",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "api/proxy/snyk/?"
+              ],
+              "properties": {
+                "api/proxy/snyk/?": {
+                  "$id": "#root/proxy//snyk/pathRewrite/api/proxy/snyk/?",
+                  "title": "Api/proxy/snyk/?",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
             },
             "headers": {
               "$id": "#root/proxy//snyk/headers",
               "title": "Headers",
               "type": "object",
+              "additionalProperties": false,
               "required": [
                 "User-Agent",
                 "Authorization"
@@ -58,12 +82,9 @@
                 }
               }
             }
-
           }
         }
-
       }
     }
-
   }
 }

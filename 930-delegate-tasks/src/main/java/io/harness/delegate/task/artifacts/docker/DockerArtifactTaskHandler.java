@@ -9,6 +9,7 @@ package io.harness.delegate.task.artifacts.docker;
 
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
+import io.harness.artifacts.docker.beans.DockerInternalConfig;
 import io.harness.artifacts.docker.service.DockerRegistryService;
 import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
@@ -36,30 +37,18 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(DockerArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
-    ArtifactMetaInfo artifactMetaInfo = null;
-    List<Map<String, String>> labels;
+    DockerInternalConfig dockerInternalConfig = DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest);
     if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = dockerRegistryService.getLastSuccessfulBuildFromRegex(
-          DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
-          attributesRequest.getTagRegex());
-      labels = dockerRegistryService.getLabels(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
-          attributesRequest.getImagePath(), Collections.singletonList(lastSuccessfulBuild.getNumber()));
+          dockerInternalConfig, attributesRequest.getImagePath(), attributesRequest.getTagRegex());
     } else {
-      lastSuccessfulBuild =
-          dockerRegistryService.verifyBuildNumber(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
-              attributesRequest.getImagePath(), attributesRequest.getTag());
-      labels = dockerRegistryService.getLabels(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
-          attributesRequest.getImagePath(), Collections.singletonList(attributesRequest.getTag()));
+      lastSuccessfulBuild = dockerRegistryService.verifyBuildNumber(
+          dockerInternalConfig, attributesRequest.getImagePath(), attributesRequest.getTag());
     }
-    artifactMetaInfo = getArtifactMedataInfo(attributesRequest);
-    DockerArtifactDelegateResponse dockerArtifactDelegateResponse;
-    if (EmptyPredicate.isNotEmpty(labels)) {
-      dockerArtifactDelegateResponse = DockerRequestResponseMapper.toDockerResponse(
-          lastSuccessfulBuild, attributesRequest, labels.get(0), artifactMetaInfo);
-    } else {
-      dockerArtifactDelegateResponse =
-          DockerRequestResponseMapper.toDockerResponse(lastSuccessfulBuild, attributesRequest);
-    }
+    ArtifactMetaInfo artifactMetaInfo = dockerRegistryService.getArtifactMetaInfo(
+        dockerInternalConfig, attributesRequest.getImagePath(), lastSuccessfulBuild.getNumber(), true);
+    DockerArtifactDelegateResponse dockerArtifactDelegateResponse =
+        DockerRequestResponseMapper.toDockerResponse(lastSuccessfulBuild, attributesRequest, artifactMetaInfo);
     return getSuccessTaskExecutionResponse(Collections.singletonList(dockerArtifactDelegateResponse));
   }
 
@@ -96,14 +85,6 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
     boolean isArtifactImageValid = dockerRegistryService.verifyImageName(
         DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath());
     return ArtifactTaskExecutionResponse.builder().isArtifactSourceValid(isArtifactImageValid).build();
-  }
-
-  public ArtifactMetaInfo getArtifactMedataInfo(DockerArtifactDelegateRequest attributesRequest) {
-    boolean shouldFetchDockerV2DigestSHA256 =
-        Boolean.TRUE.equals(attributesRequest.getShouldFetchDockerV2DigestSHA256());
-    return dockerRegistryService.getArtifactMetaInfo(
-        DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
-        attributesRequest.getTag(), shouldFetchDockerV2DigestSHA256);
   }
 
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(

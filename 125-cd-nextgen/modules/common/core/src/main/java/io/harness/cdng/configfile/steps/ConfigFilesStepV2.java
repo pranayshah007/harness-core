@@ -16,6 +16,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.ConfigFileWrapper;
@@ -86,6 +87,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
@@ -105,7 +107,8 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
                                                .build();
   private static final String CONFIG_FILES_STEP_V2 = "CONFIG_FILES_STEP_V2";
   static final String CONFIG_FILE_COMMAND_UNIT = "configFiles";
-  static final int CONFIG_FILE_GIT_TASK_TIMEOUT = 10;
+  private static final long CONFIG_FILE_GIT_TASK_TIMEOUT = TimeUnit.MINUTES.toMillis(10);
+  private static final String CONFIG_FILES_STEP = "Config Files Step";
 
   @Inject private ExecutionSweepingOutputService sweepingOutputService;
   @Inject private CDExpressionResolver cdExpressionResolver;
@@ -148,7 +151,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       ConfigFileWrapper file = configFiles.get(i);
       ConfigFileAttributes spec = file.getConfigFile().getSpec();
       String identifier = file.getConfigFile().getIdentifier();
-      IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+      validateConfigFileParametersAtRuntime(logCallback, spec, identifier);
       verifyConfigFileReference(identifier, spec, ambiance);
       configFilesOutcome.put(identifier, ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i + 1, spec));
     }
@@ -170,7 +173,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     if (EmptyPredicate.isEmpty(configFiles)) {
       logCallback.saveExecutionLog(
           "No config files configured in the service. configFiles expressions will not work", LogLevel.WARN);
-      return AsyncExecutableResponse.newBuilder().setStatus(Status.SKIPPED).build();
+      return AsyncExecutableResponse.newBuilder().build();
     }
     cdExpressionResolver.updateExpressions(ambiance, configFiles);
     JavaxValidator.validateBeanOrThrow(new ConfigFileValidatorDTO(configFiles));
@@ -182,7 +185,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
       ConfigFileWrapper file = configFiles.get(i);
       ConfigFileAttributes spec = file.getConfigFile().getSpec();
       String identifier = file.getConfigFile().getIdentifier();
-      IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+      validateConfigFileParametersAtRuntime(logCallback, spec, identifier);
       verifyConfigFileReference(identifier, spec, ambiance);
       ConfigFileOutcome configFileOutcome = ConfigFileOutcomeMapper.toConfigFileOutcome(identifier, i + 1, spec);
       if (ManifestStoreType.isInGitSubset(configFileOutcome.getStore().getKind())) {
@@ -196,11 +199,16 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
     }
 
     Set<String> taskIds = new HashSet<>();
+    List<StepDelegateInfo> stepDelegateInfos = new ArrayList<>();
     Map<String, ConfigFileOutcome> gitConfigFileOutcomesMapTaskIds = new HashMap<>();
     if (isNotEmpty(gitConfigFilesOutcome)) {
       for (ConfigFileOutcome gitConfigFileOutcome : gitConfigFilesOutcome) {
         String taskId = createGitDelegateTask(ambiance, gitConfigFileOutcome, logCallback);
         taskIds.add(taskId);
+        stepDelegateInfos.add(StepDelegateInfo.builder()
+                                  .taskName("Config File Task: " + gitConfigFileOutcome.getIdentifier())
+                                  .taskId(taskId)
+                                  .build());
         gitConfigFileOutcomesMapTaskIds.put(taskId, gitConfigFileOutcome);
       }
     }
@@ -218,7 +226,22 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
           ambiance, OutcomeExpressionConstants.CONFIG_FILES, configFilesOutcomes, StepCategory.STAGE.name());
     }
 
-    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).setStatus(Status.SUCCEEDED).build();
+    serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, CONFIG_FILES_STEP);
+
+    return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
+  }
+
+  private void validateConfigFileParametersAtRuntime(
+      NGLogCallback logCallback, ConfigFileAttributes spec, String identifier) {
+    Set<String> invalidParameters =
+        IndividualConfigFileStepValidator.validateConfigFileAttributes(identifier, spec, true);
+    if (isNotEmpty(invalidParameters)) {
+      logCallback.saveExecutionLog(
+          String.format(
+              "Values for following parameters for config file %s are either empty or not provided: {%s}. This may result in failure of deployment.",
+              identifier, invalidParameters.stream().collect(Collectors.joining(","))),
+          LogLevel.WARN);
+    }
   }
 
   private String createGitDelegateTask(
@@ -230,9 +253,6 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
         : StringUtils.EMPTY;
     logCallback.saveExecutionLog(LogHelper.color(
         format("Starting delegate task to fetch git config files: %s", filePaths), LogColor.Cyan, LogWeight.Bold));
-
-    final List<TaskSelector> delegateSelectors =
-        getDelegateSelectorsFromGitConnector(configFileOutcome.getStore(), ambiance);
 
     GitTaskNGRequest gitTaskNGRequest = GitTaskNGRequest.builder()
                                             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -251,10 +271,10 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep
 
     TaskRequest taskRequest = TaskRequestsUtils.prepareTaskRequestWithTaskSelector(ambiance, taskData,
         referenceFalseKryoSerializer, TaskCategory.DELEGATE_TASK_V2, Collections.emptyList(), false,
-        TaskType.GIT_TASK_NG.getDisplayName(), delegateSelectors);
+        TaskType.GIT_TASK_NG.getDisplayName(), new ArrayList<>());
 
-    final DelegateTaskRequest delegateTaskRequest = cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest,
-        taskData, delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toSet()), "", false);
+    final DelegateTaskRequest delegateTaskRequest =
+        cdStepHelper.mapTaskRequestToDelegateTaskRequest(taskRequest, taskData, new HashSet<>(), "", false);
 
     return delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
   }

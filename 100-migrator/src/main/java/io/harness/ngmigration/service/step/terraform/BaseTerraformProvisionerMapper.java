@@ -258,6 +258,12 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
   protected List<TerraformVarFileWrapper> getVarFiles(Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
     List<TerraformVarFileWrapper> varFileWrappers = new ArrayList<>();
+
+    TerraformVarFileWrapper remoteVarFile = getRemoteTFVar(entities, migratedEntities, state);
+    if (remoteVarFile != null) {
+      varFileWrappers.add(remoteVarFile);
+    }
+
     if (EmptyPredicate.isNotEmpty(state.getVariables())) {
       String inlineContent = convertNameValuePairToContent(migratedEntities, state.getVariables());
       TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
@@ -271,10 +277,11 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
       varFileWrappers.add(wrapper);
     }
 
-    if (EmptyPredicate.isEmpty(state.getTfVarFiles()) && state.getTfVarGitFileConfig() == null) {
-      return varFileWrappers;
-    }
+    return varFileWrappers;
+  }
 
+  private TerraformVarFileWrapper getRemoteTFVar(Map<CgEntityId, CgEntityNode> entities,
+      Map<CgEntityId, NGYamlFile> migratedEntities, TerraformProvisionState state) {
     TerraformVarFileWrapper wrapper = new TerraformVarFileWrapper();
     RemoteTerraformVarFileSpec remoteTerraformVarFileSpec = new RemoteTerraformVarFileSpec();
     GitStore gitStore = null;
@@ -306,9 +313,9 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
                              .type(TerraformVarFileTypes.Remote)
                              .spec(remoteTerraformVarFileSpec)
                              .build());
-      varFileWrappers.add(wrapper);
+      return wrapper;
     }
-    return varFileWrappers;
+    return null;
   }
 
   protected ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(TerraformProvisionState state) {
@@ -439,18 +446,18 @@ public abstract class BaseTerraformProvisionerMapper extends StepMapper {
 
   @Override
   public List<StepExpressionFunctor> getExpressionFunctor(
-      WorkflowMigrationContext context, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
     String sweepingOutputName = "terraform";
     return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
         .stream()
         .map(exp
             -> StepOutput.builder()
                    .stageIdentifier(
-                       MigratorUtility.generateIdentifier(phase.getName(), context.getIdentifierCaseFormat()))
-                   .stepIdentifier(
-                       MigratorUtility.generateIdentifier(graphNode.getName(), context.getIdentifierCaseFormat()))
-                   .stepGroupIdentifier(
-                       MigratorUtility.generateIdentifier(phaseStep.getName(), context.getIdentifierCaseFormat()))
+                       MigratorUtility.generateIdentifier(phase.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(
+                       graphNode.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(
+                       phaseStep.getName(), migrationContext.getIdentifierCaseFormat()))
                    .expression(exp)
                    .build())
         .map(TerraformStepFunctor::new)

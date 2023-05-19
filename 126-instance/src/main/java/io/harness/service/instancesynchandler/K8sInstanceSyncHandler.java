@@ -9,12 +9,11 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static java.util.stream.Collectors.toList;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAwsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -24,6 +23,7 @@ import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
@@ -31,10 +31,9 @@ import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
-import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 
 import com.google.inject.Singleton;
-import com.google.protobuf.Any;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -81,9 +80,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
 
   @Override
   public DeploymentReleaseDetails getDeploymentReleaseDetails(
-      List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
     List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
-
+    List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList =
+        instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList();
     for (DeploymentInfoDetailsDTO deploymentInfoDetailsDTO : deploymentInfoDetailsDTOList) {
       DeploymentInfoDTO deploymentInfoDTO = deploymentInfoDetailsDTO.getDeploymentInfoDTO();
 
@@ -91,15 +91,17 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         log.warn("Unexpected type of deploymentInfoDto, expected K8sDeploymentInfoDTO found {}",
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
+        // Todo: Add Cluster Name as well
         K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
-        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.newBuilder()
-                                                .setReleaseName(k8sDeploymentInfoDTO.getReleaseName())
-                                                .addAllNamespaces(k8sDeploymentInfoDTO.getNamespaces())
+        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.builder()
+                                                .releaseName(k8sDeploymentInfoDTO.getReleaseName())
+                                                .namespaces(k8sDeploymentInfoDTO.getNamespaces())
                                                 .build());
       }
     }
-    return DeploymentReleaseDetails.newBuilder()
-        .addAllDeploymentDetails(k8sDeploymentReleaseDetailsList.stream().map(Any::pack).collect(toList()))
+    return DeploymentReleaseDetails.builder()
+        .taskInfoId(instanceSyncPerpetualTaskInfoDTO.getId())
+        .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
         .build();
   }
 
@@ -129,9 +131,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     }
     if (!((infrastructureOutcome instanceof K8sDirectInfrastructureOutcome)
             || (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome)
-            || (infrastructureOutcome instanceof K8sAwsInfrastructureOutcome))) {
+            || (infrastructureOutcome instanceof K8sAwsInfrastructureOutcome)
+            || (infrastructureOutcome instanceof K8sAzureInfrastructureOutcome))) {
       throw new InvalidArgumentsException(Pair.of("infrastructureOutcome",
-          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome or K8sAwsInfrastructureOutcome"));
+          "Must be instance of K8sDirectInfrastructureOutcome, K8sGcpInfrastructureOutcome, K8sAwsInfrastructureOutcome or K8sAzureInfrastructureOutcome"));
     }
     if (!(serverInstanceInfoList.get(0) instanceof K8sServerInstanceInfo)) {
       throw new InvalidArgumentsException(Pair.of("serverInstanceInfo", "Must be instance of K8sServerInstanceInfo"));

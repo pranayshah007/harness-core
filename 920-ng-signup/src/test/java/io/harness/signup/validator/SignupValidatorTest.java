@@ -8,6 +8,7 @@
 package io.harness.signup.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.NATHAN;
 import static io.harness.rule.OwnerRule.ZHUO;
 
@@ -28,11 +29,13 @@ import io.harness.exception.WeakPasswordException;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.signup.SignupDomainDenylistConfiguration;
 import io.harness.signup.dto.SignupDTO;
 import io.harness.user.remote.UserClient;
 
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,6 +48,7 @@ import retrofit2.Response;
 public class SignupValidatorTest extends CategoryTest {
   @InjectMocks SignupValidator signupValidator;
   @Mock UserClient userClient;
+  @Mock SignupDomainDenylistConfiguration signupDomainDenylistConfiguration;
 
   @Before
   public void setUp() {
@@ -226,5 +230,17 @@ public class SignupValidatorTest extends CategoryTest {
     SignupDTO signupDTO = SignupDTO.builder().email(email).password("admin12345").intent("A").build();
 
     signupValidator.validateSignup(signupDTO);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetSignupDomainDenylist_withWrongGCSCredentials() {
+    when(signupDomainDenylistConfiguration.getProjectId()).thenReturn("projectId");
+    when(signupDomainDenylistConfiguration.getBucketName()).thenReturn("bucketId");
+    when(signupDomainDenylistConfiguration.getGcsCreds()).thenReturn("gcsCreds");
+
+    Set<String> signupDomainDenylist = signupValidator.getSignupDomainDenylist();
+    assertThat(signupDomainDenylist).isEmpty();
   }
 }

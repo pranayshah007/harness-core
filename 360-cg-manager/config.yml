@@ -216,6 +216,7 @@ smtp:
   port: 465
   fromAddress: noreply@harness.io
   useSSL: true
+  startTLS: false
   username: smtp_username_placeholder
   password: "smtp_password_placeholder"
 
@@ -326,7 +327,7 @@ mongo:
     mongoTagValue: none
   aliasDBName: harness
   maxOperationTimeInMillis: 300000
-  maxDocumentsToBeFetched: 2147483647
+  maxDocumentsToBeFetched: 100000000
 
 events-mongo:
   uri: mongodb://localhost:27017/events
@@ -366,7 +367,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 9182190a
+scmVersion: 9b34bea7
 
 ngAuthUIEnabled: false
 
@@ -779,3 +780,4 @@ disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
 redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
 
 lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}
+moveGitPollingToRunnable: ${MOVE_GIT_POLLING_TO_RUNNABLE:-true}

@@ -328,8 +328,15 @@ public class StripeHelperImpl implements StripeHelper {
       }
     }
 
-    return toSubscriptionDetailDTO(stripeHandler.updateSubscription(stripeSubscriptionRequest.getSubscriptionId(),
-        updateParamBuilder.build(), stripeSubscriptionRequest.getModuleType()));
+    Subscription updatedSubscription = stripeHandler.updateSubscription(stripeSubscriptionRequest.getSubscriptionId(),
+        updateParamBuilder.build(), stripeSubscriptionRequest.getModuleType());
+
+    SubscriptionDetailDTO subscriptionDetailDTO = toSubscriptionDetailDTO(updatedSubscription);
+
+    stripeHandler.putInvoiceMetadata(updatedSubscription.getLatestInvoice(), ACCOUNT_IDENTIFIER_KEY,
+        stripeSubscriptionRequest.getAccountIdentifier());
+
+    return subscriptionDetailDTO;
   }
 
   @Override
@@ -401,8 +408,8 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public void payInvoice(String invoiceId) {
-    stripeHandler.payInvoice(invoiceId);
+  public void payInvoice(String invoiceId, String accountIdentifier) {
+    stripeHandler.payInvoice(invoiceId, accountIdentifier);
   }
 
   @Override

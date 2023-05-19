@@ -271,7 +271,7 @@ public class GcbState extends State implements SweepingOutputStateMixin {
                   .async(true)
                   .taskType(GCB.name())
                   .parameters(parameters)
-                  .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
+                  .timeout(getTimeoutMillis())
                   .build())
         .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
         .setupAbstraction(Cd1SetupFields.ENV_TYPE_FIELD, context.getEnvType())

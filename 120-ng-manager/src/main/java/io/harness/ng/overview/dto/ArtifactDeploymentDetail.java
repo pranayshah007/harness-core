@@ -8,11 +8,17 @@
 package io.harness.ng.overview.dto;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.Setter;
 
-@Value
+@Getter
+@Setter
 @Builder
 public class ArtifactDeploymentDetail {
+  String envName;
+  String envId;
   String artifact;
+  String lastPipelineExecutionId;
   long lastDeployedAt;
+  String pipelineId;
 }

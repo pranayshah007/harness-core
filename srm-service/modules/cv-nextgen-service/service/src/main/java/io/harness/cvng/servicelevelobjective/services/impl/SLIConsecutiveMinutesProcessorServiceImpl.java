@@ -10,7 +10,8 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.SLIConsecutiveMinutesProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -58,7 +59,7 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
     Map<Instant, SLIRecordParam> instantSLIRecordMap = getInstantSLIRecordMap(prevSliRecords);
 
     for (SLIRecordParam sliRecordParam : sliRecordParams) {
-      SLIRecord.SLIState currentSLIState = sliRecordParam.getSliState();
+      SLIState currentSLIState = sliRecordParam.getSliState();
       if (isSLIStateBad(currentSLIState, serviceLevelIndicator)) {
         boolean considerMinuteAsBad = true;
         for (int i = 1; i < considerConsecutiveMinutes; i++) {
@@ -95,7 +96,7 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
         instantSLIRecordMap.get(currentTime.minus(considerConsecutiveMinutes - 1, ChronoUnit.MINUTES));
     if (firstSliRecordParam != null && firstSliRecordParam.getGoodEventCount() == 1
         && !isSLIStateGood(firstSliRecordParam.getSliState(), serviceLevelIndicator)) {
-      firstSliRecordParam.setSliState(SLIRecord.SLIState.GOOD);
+      firstSliRecordParam.setSliState(SLIState.GOOD);
       instantSLIRecordMap.replace(currentTime, firstSliRecordParam);
     }
     return instantSLIRecordMap;
@@ -108,7 +109,7 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
       for (int i = 1; i < considerConsecutiveMinutes; i++) {
         SLIRecordParam sliRecord =
             instantSLIRecordMap.get(currentSLIRecordParam.getTimeStamp().minus(i, ChronoUnit.MINUTES));
-        if (sliRecord.getSliState() == SLIRecord.SLIState.BAD) {
+        if (sliRecord.getSliState() == SLIState.BAD) {
           sliRecord.setBadEventCount(1L);
         } else {
           sliRecord.setBadEventCount(0L);
@@ -120,15 +121,15 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
     return instantSLIRecordMap;
   }
 
-  private boolean isSLIStateBad(SLIRecord.SLIState sliState, ServiceLevelIndicator serviceLevelIndicator) {
-    return sliState.equals(SLIRecord.SLIState.BAD)
-        || (sliState.equals(SLIRecord.SLIState.NO_DATA)
+  private boolean isSLIStateBad(SLIState sliState, ServiceLevelIndicator serviceLevelIndicator) {
+    return sliState.equals(SLIState.BAD)
+        || (sliState.equals(SLIState.NO_DATA)
             && serviceLevelIndicator.getSliMissingDataType().equals(SLIMissingDataType.BAD));
   }
 
-  private boolean isSLIStateGood(SLIRecord.SLIState sliState, ServiceLevelIndicator serviceLevelIndicator) {
-    return sliState.equals(SLIRecord.SLIState.GOOD) || sliState.equals(SLIRecord.SLIState.SKIP_DATA)
-        || (sliState.equals(SLIRecord.SLIState.NO_DATA)
+  private boolean isSLIStateGood(SLIState sliState, ServiceLevelIndicator serviceLevelIndicator) {
+    return sliState.equals(SLIState.GOOD) || sliState.equals(SLIState.SKIP_DATA)
+        || (sliState.equals(SLIState.NO_DATA)
             && serviceLevelIndicator.getSliMissingDataType().equals(SLIMissingDataType.GOOD));
   }
 

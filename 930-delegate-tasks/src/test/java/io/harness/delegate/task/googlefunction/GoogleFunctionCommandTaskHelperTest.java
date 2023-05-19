@@ -176,6 +176,10 @@ public class GoogleFunctionCommandTaskHelperTest extends CategoryTest {
         .thenThrow(new InvalidRequestException("test",
             new NotFoundException(new Throwable(), WatchdogTimeoutException.LOCAL_ABORTED_STATUS_CODE, false), USER))
         .thenReturn(function);
+    when(googleCloudRunClient.getRevision(any(), any()))
+        .thenThrow(new InvalidRequestException("test",
+            new NotFoundException(new Throwable(), WatchdogTimeoutException.LOCAL_ABORTED_STATUS_CODE, false), USER));
+    doReturn(getOperationFunctionFuture()).when(googleCloudRunClient).deleteRevision(any(), any());
 
     Function currentFunction = googleFunctionCommandTaskHelper.deployFunction(gcpGoogleFunctionInfraConfig,
         googleFunctionDeployManifestContent, "", googleFunctionArtifactConfig, false, logCallback);
@@ -224,6 +228,10 @@ public class GoogleFunctionCommandTaskHelperTest extends CategoryTest {
   @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
   public void updateTrafficTest() throws ExecutionException, InterruptedException {
+    when(googleCloudRunClient.getRevision(any(), any()))
+        .thenThrow(new InvalidRequestException("test",
+            new NotFoundException(new Throwable(), WatchdogTimeoutException.LOCAL_ABORTED_STATUS_CODE, false), USER));
+    doReturn(getOperationFunctionFuture()).when(googleCloudRunClient).deleteRevision(any(), any());
     googleFunctionCommandTaskHelper.updateTraffic(
         "abc", 100, "", "", gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(), PROJECT, REGION, logCallback);
     verify(googleCloudRunClient).updateService(any(), any());
@@ -235,6 +243,10 @@ public class GoogleFunctionCommandTaskHelperTest extends CategoryTest {
   @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
   public void updateTrafficToSingleRevisionTest() throws ExecutionException, InterruptedException {
+    when(googleCloudRunClient.getRevision(any(), any()))
+        .thenThrow(new InvalidRequestException("test",
+            new NotFoundException(new Throwable(), WatchdogTimeoutException.LOCAL_ABORTED_STATUS_CODE, false), USER));
+    doReturn(getOperationFunctionFuture()).when(googleCloudRunClient).deleteRevision(any(), any());
     googleFunctionCommandTaskHelper.updateFullTrafficToSingleRevision(
         "abc", "", gcpGoogleFunctionInfraConfig.getGcpConnectorDTO(), PROJECT, REGION, logCallback);
     verify(googleCloudRunClient).updateService(any(), any());

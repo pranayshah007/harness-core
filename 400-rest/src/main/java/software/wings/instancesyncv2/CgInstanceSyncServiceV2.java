@@ -36,7 +36,9 @@ import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.api.DeploymentEvent;
 import software.wings.api.DeploymentSummary;
+import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
+import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2DeploymentHelper;
@@ -50,7 +52,9 @@ import software.wings.service.impl.instance.InstanceHandlerFactoryService;
 import software.wings.service.impl.instance.InstanceSyncByPerpetualTaskHandler;
 import software.wings.service.impl.instance.InstanceSyncPerpetualTaskService;
 import software.wings.service.impl.instance.Status;
+import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
@@ -59,7 +63,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.google.protobuf.util.Durations;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -93,7 +96,6 @@ public class CgInstanceSyncServiceV2 {
   private final InfrastructureMappingService infrastructureMappingService;
   private final SettingsServiceImpl cloudProviderService;
   private final KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   private final InstanceHandlerFactoryService instanceHandlerFactory;
   private final PersistentLocker persistentLocker;
   private final FeatureFlagService featureFlagService;
@@ -101,6 +103,8 @@ public class CgInstanceSyncServiceV2 {
   private final InstanceService instanceService;
   private final PerpetualTaskService perpetualTaskService;
   private final DelegateTaskService delegateTaskService;
+  private final EnvironmentService environmentService;
+  private final ServiceResourceService serviceResourceService;
 
   private static final int INSTANCE_COUNT_LIMIT =
       Integer.parseInt(System.getenv().getOrDefault("INSTANCE_SYNC_RESPONSE_BATCH_INSTANCE_COUNT", "100"));
@@ -210,8 +214,7 @@ public class CgInstanceSyncServiceV2 {
     }
   }
 
-  public void processInstanceSyncResult(
-      String perpetualTaskId, CgInstanceSyncResponse result, boolean referenceFalseKryoSerializer) {
+  public void processInstanceSyncResult(String perpetualTaskId, CgInstanceSyncResponse result) {
     log.info("Got the result. Starting to process. Perpetual Task Id: [{}] and response [{}]", perpetualTaskId, result);
 
     if (!result.getExecutionStatus().isEmpty()
@@ -257,6 +260,11 @@ public class CgInstanceSyncServiceV2 {
 
     List<InstanceSyncTaskDetails> instanceSyncTaskDetailsList =
         taskDetailsService.fetchAllForPerpetualTask(result.getAccountId(), perpetualTaskId);
+    if (isEmpty(instanceSyncTaskDetailsList)) {
+      perpetualTaskService.deleteTask(result.getAccountId(), perpetualTaskId);
+      log.info("Deleted Instance Sync V2 Perpetual task: [{}] .", perpetualTaskId);
+      return;
+    }
     Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap = new HashMap<>();
     for (InstanceSyncTaskDetails instanceSyncTaskDetails : instanceSyncTaskDetailsList) {
       instanceSyncTaskDetailsMap.put(instanceSyncTaskDetails.getUuid(), instanceSyncTaskDetails);
@@ -271,7 +279,7 @@ public class CgInstanceSyncServiceV2 {
       instancesPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
     }
 
-    handlingInstanceSync(instancesPerTask, instanceSyncTaskDetailsMap, referenceFalseKryoSerializer);
+    handlingInstanceSync(instancesPerTask, instanceSyncTaskDetailsMap);
   }
 
   private void instanceSyncV2CleanupIfPresent(String perpetualTaskId, CgInstanceSyncResponse result) {
@@ -282,7 +290,7 @@ public class CgInstanceSyncServiceV2 {
   }
 
   private void handlingInstanceSync(Map<String, List<InstanceSyncData>> instancesPerTask,
-      Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap, boolean referenceFalseKryoSerializer) {
+      Map<String, InstanceSyncTaskDetails> instanceSyncTaskDetailsMap) {
     for (String taskDetailsId : instancesPerTask.keySet()) {
       InstanceSyncTaskDetails taskDetails = instanceSyncTaskDetailsMap.get(taskDetailsId);
       if (isNull(taskDetails)) {
@@ -291,6 +299,14 @@ public class CgInstanceSyncServiceV2 {
       }
       InfrastructureMapping infraMapping =
           infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+      Environment environment = environmentService.get(infraMapping.getAppId(), infraMapping.getEnvId(), false);
+      Service service = serviceResourceService.getWithDetails(infraMapping.getAppId(), infraMapping.getServiceId());
+      if (environment == null || service == null) {
+        taskDetailsService.deleteByInfraMappingId(infraMapping.getAccountId(), infraMapping.getUuid());
+        continue;
+      }
+
       Optional<InstanceHandler> instanceHandler = Optional.of(instanceHandlerFactory.getInstanceHandler(infraMapping));
       InstanceSyncByPerpetualTaskHandler instanceSyncHandler =
           (InstanceSyncByPerpetualTaskHandler) instanceHandler.get();
@@ -323,8 +339,8 @@ public class CgInstanceSyncServiceV2 {
         }
 
         for (InstanceSyncData instanceSyncData : instancesPerTask.get(taskDetailsId)) {
-          DelegateResponseData delegateResponse = (DelegateResponseData) getKryoSerializer(referenceFalseKryoSerializer)
-                                                      .asObject(instanceSyncData.getTaskResponse().toByteArray());
+          DelegateResponseData delegateResponse =
+              (DelegateResponseData) kryoSerializer.asObject(instanceSyncData.getTaskResponse().toByteArray());
           try {
             instanceSyncHandler.processInstanceSyncResponseFromPerpetualTask(infraMapping, delegateResponse);
           } catch (NoInstancesException ex) {
@@ -345,11 +361,6 @@ public class CgInstanceSyncServiceV2 {
       }
     }
   }
-
-  private KryoSerializer getKryoSerializer(boolean referenceFalse) {
-    return referenceFalse ? referenceFalseKryoSerializer : kryoSerializer;
-  }
-
   private void handleSyncFailure(InfrastructureMapping infrastructureMapping, Exception ex) {
     String errorMsg = getErrorMsg(ex);
 

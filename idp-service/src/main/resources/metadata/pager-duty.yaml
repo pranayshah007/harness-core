@@ -10,6 +10,8 @@ config: |-
   proxy:
     '/pagerduty':
       target: https://api.pagerduty.com
+      pathRewrite:
+        'api/proxy/pagerduty/?': '/'
       headers:
         Authorization: Token token=${PAGERDUTY_TOKEN}
 environmentVariables:

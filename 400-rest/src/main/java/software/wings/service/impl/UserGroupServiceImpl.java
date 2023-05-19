@@ -13,6 +13,7 @@ import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.mongo.MongoConfig.NO_LIMIT;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.validation.Validator.notNullCheck;
@@ -87,11 +88,13 @@ import software.wings.beans.security.AppPermission;
 import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.security.UserGroupSearchTermType;
+import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.RbacFeature;
 import software.wings.features.api.UsageLimitedFeature;
+import software.wings.scheduler.LdapGroupScheduledHandler;
 import software.wings.scheduler.LdapGroupSyncJobHelper;
 import software.wings.security.AppFilter;
 import software.wings.security.EnvFilter;
@@ -112,6 +115,7 @@ import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.pagerduty.PagerDutyService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -170,6 +174,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Inject @Named(RbacFeature.FEATURE_NAME) private UsageLimitedFeature rbacFeature;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private LdapGroupSyncJobHelper ldapGroupSyncJobHelper;
+  @Inject private LdapGroupScheduledHandler ldapGroupScheduledHandler;
   @Inject private AppService appService;
 
   @Override
@@ -1057,7 +1062,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     auditServiceHelper.reportForAuditingUsingAccountId(accountId, group, updatedGroup, Type.LINK_SSO);
 
     if (ssoType == SSOType.LDAP) {
-      ldapGroupSyncJobHelper.syncJob(ssoSettings);
+      LdapSettings ldapSettings = (LdapSettings) ssoSettings;
+      ldapGroupScheduledHandler.handle(ldapSettings);
     }
 
     return updatedGroup;
@@ -1092,9 +1098,15 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   private void removeUserGroupFromInvites(String accountId, String userGroupId) {
-    List<UserInvite> invites = userService.getInvitesFromAccountId(accountId);
-    invites.forEach(invite -> invite.getUserGroups().removeIf(x -> x.getUuid().equals(userGroupId)));
-    wingsPersistence.save(invites);
+    Query<UserInvite> query = userService.getInvitesQueryFromAccountId(accountId);
+    try (HIterator<UserInvite> userInvites = new HIterator<>(query.limit(NO_LIMIT).fetch())) {
+      for (UserInvite invite : userInvites) {
+        invite.getUserGroups().removeIf(x -> x.getUuid().equals(userGroupId));
+        log.info("Removing user group id {} from userInvites for unlink SSO group flow in account {}", userGroupId,
+            accountId);
+        wingsPersistence.save(invite);
+      }
+    }
   }
 
   @Override
@@ -1357,18 +1369,34 @@ public class UserGroupServiceImpl implements UserGroupService {
     deletedIds.add(appId);
 
     String accountId = appService.getAccountIdByAppId(appId);
-    log.info("[USERGROUP-DEBUG]: deleted appId {} for account {}", appId, accountId);
-    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(wingsPersistence.createQuery(UserGroup.class)
-                                                                      .filter(UserGroupKeys.accountId, accountId)
-                                                                      .project(UserGroup.ID_KEY2, true)
-                                                                      .project(UserGroupKeys.accountId, true)
-                                                                      .project(UserGroupKeys.appPermissions, true)
-                                                                      .project(UserGroupKeys.memberIds, true)
-                                                                      .fetch())) {
+    log.info("[USERGROUP-DEBUG]: deleted appId {} with app {} for account {}", deletedIds, appId, accountId);
+    Query<UserGroup> query = createQueryForUserGroup(accountId, deletedIds);
+    log.info("[USERGROUP-DEBUG]: appId {} query {}", appId, query);
+    try (HIterator<UserGroup> userGroupIterator = new HIterator<>(query.fetch())) {
       while (userGroupIterator.hasNext()) {
         final UserGroup userGroup = userGroupIterator.next();
         removeAppIdsFromAppPermissions(userGroup, deletedIds);
       }
+    }
+  }
+
+  @VisibleForTesting
+  protected Query<UserGroup> createQueryForUserGroup(String accountId, Set<String> deletedIds) {
+    if (isNotEmpty(accountId)) {
+      return wingsPersistence.createQuery(UserGroup.class)
+          .filter(UserGroupKeys.accountId, accountId)
+          .project(UserGroup.ID_KEY2, true)
+          .project(UserGroupKeys.accountId, true)
+          .project(UserGroupKeys.appPermissions, true)
+          .project(UserGroupKeys.memberIds, true);
+    } else {
+      return wingsPersistence.createQuery(UserGroup.class)
+          .field(UserGroupKeys.appIds)
+          .in(deletedIds)
+          .project(UserGroup.ID_KEY2, true)
+          .project(UserGroupKeys.accountId, true)
+          .project(UserGroupKeys.appPermissions, true)
+          .project(UserGroupKeys.memberIds, true);
     }
   }
 

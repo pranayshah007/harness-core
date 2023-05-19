@@ -41,6 +41,9 @@ public class ServiceGuardLogAnalysisStateExecutor extends LogAnalysisStateExecut
   @Override
   public AnalysisStatus getExecutionStatus(ServiceGuardLogAnalysisState serviceGuardLogAnalysisState) {
     if (serviceGuardLogAnalysisState.getStatus() != AnalysisStatus.SUCCESS) {
+      if (serviceGuardLogAnalysisState.getWorkerTaskId() == null) {
+        return AnalysisStatus.CREATED;
+      }
       Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
           logAnalysisService.getTaskStatus(Arrays.asList(serviceGuardLogAnalysisState.getWorkerTaskId()));
       LearningEngineTask.ExecutionStatus taskStatus = taskStatuses.get(serviceGuardLogAnalysisState.getWorkerTaskId());

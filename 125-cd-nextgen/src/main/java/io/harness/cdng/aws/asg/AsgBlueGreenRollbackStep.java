@@ -149,12 +149,17 @@ public class AsgBlueGreenRollbackStep extends CdTaskExecutable<AsgCommandRespons
             RefObjectUtils.getSweepingOutputRefObject(asgBlueGreenDeployStepParameters.getAsgBlueGreenDeployFnq() + "."
                 + OutcomeExpressionConstants.ASG_BLUE_GREEN_PREPARE_ROLLBACK_DATA_OUTCOME));
 
+    if (!asgBlueGreenPrepareRollbackDataOptional.isFound()) {
+      return skipTaskRequest(
+          "Skipping rollback step as rollback data is missing, the reason could be due to not enough time to execute BlueGreen deploy step");
+    }
+
     OptionalSweepingOutput asgBlueGreenDeployOptional = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(asgBlueGreenDeployStepParameters.getAsgBlueGreenDeployFnq() + "."
             + OutcomeExpressionConstants.ASG_BLUE_GREEN_DEPLOY_OUTCOME));
 
-    if (!asgBlueGreenPrepareRollbackDataOptional.isFound() || !asgBlueGreenDeployOptional.isFound()) {
-      return skipTaskRequest(ASG_BLUE_GREEN_DEPLOY_STEP_MISSING);
+    if (!asgBlueGreenDeployOptional.isFound()) {
+      return skipTaskRequest("Skipping rollback step as BlueGreen deploy step was not executed");
     }
 
     AsgBlueGreenPrepareRollbackDataOutcome asgBlueGreenPrepareRollbackDataOutcome =
