@@ -114,7 +114,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
@@ -486,8 +485,7 @@ public class KubernetesHelperService {
   }
 
   public static String toDisplayYaml(Object entity) {
-    Yaml yaml =
-        new Yaml(new SafeConstructor(new LoaderOptions()), new YamlRepresenter(true), YamlUtils.getDumperOptions());
+    Yaml yaml = new Yaml(new SafeConstructor(), new YamlRepresenter(true), YamlUtils.getDumperOptions());
     return YamlUtils.cleanupYaml(yaml.dump(entity));
   }
 
