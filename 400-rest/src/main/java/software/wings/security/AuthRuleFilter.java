@@ -411,26 +411,7 @@ public class AuthRuleFilter implements ContainerRequestFilter {
   }
 
   private void checkForWhitelisting(
-      String accountId, FeatureName featureName, ContainerRequestContext requestContext, User user) {
-    String forwardedFor = servletRequest.getHeader(X_FORWARDED_FOR);
-    String remoteHost = isNotBlank(forwardedFor) ? forwardedFor : servletRequest.getRemoteHost();
-    boolean isWhitelisted;
-    if (featureName == null) {
-      isWhitelisted = whitelistService.isValidIPAddress(accountId, remoteHost);
-    } else {
-      isWhitelisted = whitelistService.checkIfFeatureIsEnabledAndWhitelisting(accountId, remoteHost, featureName);
-    }
-
-    if (!isWhitelisted) {
-      String msg = "Current IP Address (" + remoteHost + ") is not whitelisted.";
-      log.warn(msg);
-      if (requestContext.getUriInfo().getPath().contains("whitelist/isEnabled") && user != null) {
-        auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, user, Event.Type.NON_WHITELISTED);
-      }
-
-      throw new WingsException(NOT_WHITELISTED_IP, USER).addParam("args", msg);
-    }
-  }
+      String accountId, FeatureName featureName, ContainerRequestContext requestContext, User user) {}
 
   private void validateAccountStatus(String accountId, boolean isHarnessUserExemptedRequest) {
     String accountStatus = accountService.getAccountStatus(accountId);
