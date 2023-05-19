@@ -55,9 +55,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.Email;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -71,7 +68,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @StoreIn(DbAliases.HARNESS)
 @Entity(value = "users", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-@FieldNameConstants(innerTypeName = "UserKeys")
 @TargetModule(HarnessModule._957_CG_BEANS)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class User extends Base implements Principal {
@@ -145,10 +141,7 @@ public class User extends Base implements Principal {
 
   @Reference(idOnly = true, ignoreMissing = true) private List<Account> accounts = new ArrayList<>();
 
-  @Getter
-  @Setter
-  @Reference(idOnly = true, ignoreMissing = true)
-  private List<Account> pendingAccounts = new ArrayList<>();
+  @Reference(idOnly = true, ignoreMissing = true) private List<Account> pendingAccounts = new ArrayList<>();
 
   @Transient private List<Account> supportAccounts = new ArrayList<>();
 
@@ -156,7 +149,7 @@ public class User extends Base implements Principal {
 
   @Transient private boolean firstLogin;
 
-  @Getter @Setter @Transient private char[] password;
+  @Transient private char[] password;
   @Transient private String token;
   @Transient private String twoFactorJwtToken;
 
@@ -180,7 +173,7 @@ public class User extends Base implements Principal {
 
   private UserLockoutInfo userLockoutInfo = new UserLockoutInfo();
 
-  @Getter private RateLimitProtection rateLimitProtection;
+  private RateLimitProtection rateLimitProtection;
 
   @JsonIgnore private long passwordChangedAt;
 
@@ -796,6 +789,26 @@ public class User extends Base implements Principal {
     this.userAccountLevelDataMap = userAccountLevelDataMap;
   }
 
+  public List<Account> getPendingAccounts() {
+    return this.pendingAccounts;
+  }
+
+  public char[] getPassword() {
+    return this.password;
+  }
+
+  public RateLimitProtection getRateLimitProtection() {
+    return this.rateLimitProtection;
+  }
+
+  public void setPendingAccounts(List<Account> pendingAccounts) {
+    this.pendingAccounts = pendingAccounts;
+  }
+
+  public void setPassword(char[] password) {
+    this.password = password;
+  }
+
   public static final class Builder {
     private String name;
     private String email;
@@ -1106,5 +1119,50 @@ public class User extends Base implements Principal {
 
       return user;
     }
+  }
+
+  public static final class UserKeys {
+    public static final String name = "name";
+    public static final String externalUserId = "externalUserId";
+    public static final String givenName = "givenName";
+    public static final String familyName = "familyName";
+    public static final String email = "email";
+    public static final String passwordHash = "passwordHash";
+    public static final String companyName = "companyName";
+    public static final String accountName = "accountName";
+    public static final String roles = "roles";
+    public static final String userGroups = "userGroups";
+    public static final String accounts = "accounts";
+    public static final String pendingAccounts = "pendingAccounts";
+    public static final String supportAccounts = "supportAccounts";
+    public static final String lastLogin = "lastLogin";
+    public static final String firstLogin = "firstLogin";
+    public static final String password = "password";
+    public static final String token = "token";
+    public static final String twoFactorJwtToken = "twoFactorJwtToken";
+    public static final String emailVerified = "emailVerified";
+    public static final String passwordExpired = "passwordExpired";
+    public static final String userLocked = "userLocked";
+    public static final String statsFetchedOn = "statsFetchedOn";
+    public static final String lastAccountId = "lastAccountId";
+    public static final String defaultAccountId = "defaultAccountId";
+    public static final String lastAppId = "lastAppId";
+    public static final String disabled = "disabled";
+    public static final String imported = "imported";
+    public static final String userLockoutInfo = "userLockoutInfo";
+    public static final String rateLimitProtection = "rateLimitProtection";
+    public static final String passwordChangedAt = "passwordChangedAt";
+    public static final String userRequestInfo = "userRequestInfo";
+    public static final String userRequestContext = "userRequestContext";
+    public static final String twoFactorAuthenticationEnabled = "twoFactorAuthenticationEnabled";
+    public static final String twoFactorAuthenticationMechanism = "twoFactorAuthenticationMechanism";
+    public static final String totpSecretKey = "totpSecretKey";
+    public static final String marketoLeadId = "marketoLeadId";
+    public static final String segmentIdentity = "segmentIdentity";
+    public static final String oauthProvider = "oauthProvider";
+    public static final String reportedMarketoCampaigns = "reportedMarketoCampaigns";
+    public static final String reportedSegmentTracks = "reportedSegmentTracks";
+    public static final String utmInfo = "utmInfo";
+    public static final String userAccountLevelDataMap = "userAccountLevelDataMap";
   }
 }
