@@ -20,7 +20,6 @@ import io.harness.beans.PageResponse;
 import io.harness.event.model.EventType;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.common.beans.Generation;
-import io.harness.ng.core.common.beans.UserSource;
 import io.harness.ng.core.dto.UserInviteDTO;
 import io.harness.ng.core.invites.dto.InviteOperationResponse;
 import io.harness.ng.core.switchaccount.RestrictedSwitchAccountInfo;
@@ -95,7 +94,7 @@ public interface UserService extends OwnedByAccount {
   /**
    * Used for NG signup to create a new user and login from an NG user object
    */
-  User createNewUserAndSignIn(User user, String accountId, Generation generation);
+  User createNewUserAndSignIn(User user, String accountId);
 
   /**
    * Used for NG signup to create a new oauth user and login from an NG user object
@@ -192,14 +191,6 @@ public interface UserService extends OwnedByAccount {
    * @param userId    the user id
    */
   void delete(@NotEmpty String accountId, @NotEmpty String userId);
-
-  /**
-   *
-   * @param accountId
-   * @param userId
-   * @param generation
-   */
-  boolean delete(@NotEmpty String accountId, @NotEmpty String userId, @NotNull Generation generation);
 
   /**
    * Deletes the user from both CG and NG.
@@ -410,8 +401,6 @@ public interface UserService extends OwnedByAccount {
   InviteOperationResponse completeInvite(UserInvite userInvite);
 
   boolean checkIfUserLimitHasReached(String accountId, String email);
-
-  void completeNGInviteWithAccountLevelData(UserInviteDTO userInvite, boolean shouldSendTwoFactorAuthResetEmail);
 
   /**
    * Complete NG invite and create user
@@ -645,8 +634,6 @@ public interface UserService extends OwnedByAccount {
   Account getAccountByIdIfExistsElseGetDefaultAccount(User user, Optional<String> accountId);
 
   boolean canEnableOrDisable(User user);
-
-  User createUserWithAccountLevelData(User user, String accountId, UserSource userSource, Generation generation);
 
   User createUser(User user, String accountId);
 

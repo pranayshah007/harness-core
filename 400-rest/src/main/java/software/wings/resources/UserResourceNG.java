@@ -10,7 +10,6 @@ package software.wings.resources;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
@@ -112,7 +111,7 @@ public class UserResourceNG {
     User user = convertUserRequesttoUser(userRequest);
     String accountId = user.getDefaultAccountId();
 
-    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
+    User createdUser = userService.createNewUserAndSignIn(user, accountId);
 
     return new RestResponse<>(convertUserToNgUser(createdUser));
   }
@@ -199,10 +198,6 @@ public class UserResourceNG {
   public RestResponse<Boolean> deleteUser(
       @QueryParam("accountId") String accountId, @QueryParam("userId") String userId) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_DELETION_V2, accountId)) {
-      if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-          && userService.delete(accountId, userId, NG)) {
-        return new RestResponse<>(true);
-      }
       if (userService.isUserPresent(userId) && userServiceHelper.isUserActiveInNG(userService.get(userId), accountId)) {
         userServiceHelper.deleteUserFromNG(userId, accountId, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
       }
@@ -322,14 +317,6 @@ public class UserResourceNG {
       @QueryParam("isScimInvite") boolean isScimInvite,
       @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
     userService.completeNGInvite(userInvite, isScimInvite, shouldSendTwoFactorAuthResetEmail);
-    return new RestResponse<>(true);
-  }
-
-  @PUT
-  @Path("invites/user")
-  public RestResponse<Boolean> createUserWithAccountLevelDataForInvite(@Body @NotNull UserInviteDTO userInvite,
-      @QueryParam("shouldSendTwoFactorAuthResetEmail") boolean shouldSendTwoFactorAuthResetEmail) {
-    userService.completeNGInviteWithAccountLevelData(userInvite, shouldSendTwoFactorAuthResetEmail);
     return new RestResponse<>(true);
   }
 
