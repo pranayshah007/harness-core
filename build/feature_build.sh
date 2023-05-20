@@ -23,7 +23,7 @@ export IMAGE_TAG=$VERSION-$BUILD_NAME
 
 export GIT_BRANCH=$BUILD_NAME
 export GIT_COMMIT=$(git rev-parse HEAD)
-$SERVICE_NAME
+
 echo "--------------------------------------"
 echo $JDK $BUILD $VERSION $PURPOSE $GIT_BRANCH $GIT_COMMIT $(date)
 echo "--------------------------------------"
