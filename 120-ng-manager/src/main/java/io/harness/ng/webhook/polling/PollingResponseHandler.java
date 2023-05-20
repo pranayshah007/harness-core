@@ -186,7 +186,7 @@ public class PollingResponseHandler {
     // delegate can loose context of latest keys.
     Set<String> savedArtifactKeys = savedResponse.getAllPolledKeys();
     List<String> newArtifactKeys = new ArrayList<>();
-    List<Metadata> newArtifactsMetadata = new ArrayList<>();
+    Map<String, Metadata> newArtifactsMetadataMap = new HashMap<>();
     for (ArtifactDelegateResponse artifactDelegateResponse : unpublishedArtifacts) {
       String key = ArtifactCollectionUtilsNg.getArtifactKey(artifactDelegateResponse);
       if (!savedArtifactKeys.contains(key)) {
@@ -197,9 +197,13 @@ public class PollingResponseHandler {
           metadata = artifactDelegateResponse.getBuildDetails().getMetadata();
           metadata.values().removeAll(Collections.singleton(null));
         }
-        newArtifactsMetadata.add(Metadata.newBuilder().putAllMetadata(metadata).build());
+        newArtifactsMetadataMap.put(key, Metadata.newBuilder().putAllMetadata(metadata).build());
       }
     }
+
+    newArtifactKeys = filterKeysBasedOnSignaturesLock(newArtifactKeys, pollingDocument);
+    // Populate newArtifactsMetadata with metadata only for filtered newArtifactKeys
+    List<Metadata> newArtifactsMetadata = newArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
 
     if (isNotEmpty(newArtifactKeys)) {
       log.info("Publishing artifact versions {} to topic.", newArtifactKeys);

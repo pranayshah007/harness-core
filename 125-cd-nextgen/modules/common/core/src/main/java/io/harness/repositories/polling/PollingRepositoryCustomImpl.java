@@ -7,6 +7,8 @@
 
 package io.harness.repositories.polling;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.polling.bean.PollingDocument;
@@ -36,13 +38,23 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
       PollingType pollingType, PollingInfo pollingInfo, List<String> signatures, Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, orgId, projectId, pollingType, pollingInfo);
     Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
+    if (isNotEmpty(signaturesLock)) {
+      for (Map.Entry<String, List<String>> signatureLock : signaturesLock.entrySet()) {
+        update.set(PollingDocumentKeys.signaturesLock + "." + signatureLock.getKey(), signatureLock.getValue());
+      }
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
   @Override
   public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuid, List<String> signatures, Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, uuid);
-    Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures).set(PollingDocumentKeys.signaturesLock+ "." + signatures.get(0), sinaturesLock);
+    Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
+    if (isNotEmpty(signaturesLock)) {
+      for (Map.Entry<String, List<String>> signatureLock : signaturesLock.entrySet()) {
+        update.set(PollingDocumentKeys.signaturesLock + "." + signatureLock.getKey(), signatureLock.getValue());
+      }
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
@@ -108,6 +120,9 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
     Object[] signatureList = signatures.toArray();
     Query query = getQuery(accountId, orgId, projectId, pollingType, pollingInfo);
     Update update = new Update().pullAll(PollingDocumentKeys.signatures, signatureList);
+    for (String signature : signatures) {
+      update.unset(PollingDocumentKeys.signaturesLock + "." + signature);
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
@@ -129,6 +144,9 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
       query = getQuery(accountId, uuId);
     }
     Update update = new Update().pullAll(PollingDocumentKeys.signatures, signatureList);
+    for (String signature : signatures) {
+      update.unset(PollingDocumentKeys.signaturesLock + "." + signature);
+    }
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }
 
