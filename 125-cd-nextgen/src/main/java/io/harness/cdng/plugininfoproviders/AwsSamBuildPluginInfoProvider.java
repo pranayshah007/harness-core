@@ -21,9 +21,15 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
+import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsernamePasswordAuthDTO;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusUsernamePasswordAuthDTO;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -138,6 +144,44 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
               dockerUserNamePasswordDTO.getPasswordRef().toSecretRefStringValue(),
               ambiance.getExpressionFunctorToken());
         }
+      } else if (connectorConfigDTO instanceof ArtifactoryConnectorDTO) {
+        ArtifactoryConnectorDTO artifactoryConnectorDTO = (ArtifactoryConnectorDTO) connectorConfigDTO;
+        registryUrl = artifactoryConnectorDTO.getArtifactoryServerUrl();
+        ArtifactoryAuthCredentialsDTO artifactoryAuthCredentialsDTO =
+            artifactoryConnectorDTO.getAuth().getCredentials();
+        if (artifactoryAuthCredentialsDTO instanceof ArtifactoryUsernamePasswordAuthDTO) {
+          ArtifactoryUsernamePasswordAuthDTO artifactoryUsernamePasswordAuthDTO =
+              (ArtifactoryUsernamePasswordAuthDTO) artifactoryAuthCredentialsDTO;
+          if (!StringUtils.isEmpty(artifactoryUsernamePasswordAuthDTO.getUsername())) {
+            userName = artifactoryUsernamePasswordAuthDTO.getUsername();
+          } else {
+            userName = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+                artifactoryUsernamePasswordAuthDTO.getUsernameRef().toSecretRefStringValue(),
+                ambiance.getExpressionFunctorToken());
+          }
+          password = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+              artifactoryUsernamePasswordAuthDTO.getPasswordRef().toSecretRefStringValue(),
+              ambiance.getExpressionFunctorToken());
+        }
+      } else if (connectorConfigDTO instanceof NexusConnectorDTO) {
+        NexusConnectorDTO nexusConnectorDTO = (NexusConnectorDTO) connectorConfigDTO;
+        registryUrl = nexusConnectorDTO.getNexusServerUrl();
+        NexusAuthCredentialsDTO nexusAuthCredentialsDTO = nexusConnectorDTO.getAuth().getCredentials();
+
+        if (nexusAuthCredentialsDTO instanceof NexusUsernamePasswordAuthDTO) {
+          NexusUsernamePasswordAuthDTO nexusUsernamePasswordAuthDTO =
+              (NexusUsernamePasswordAuthDTO) nexusAuthCredentialsDTO;
+          if (!StringUtils.isEmpty(nexusUsernamePasswordAuthDTO.getUsername())) {
+            userName = nexusUsernamePasswordAuthDTO.getUsername();
+          } else {
+            userName = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+                nexusUsernamePasswordAuthDTO.getUsernameRef().toSecretRefStringValue(),
+                ambiance.getExpressionFunctorToken());
+          }
+          password = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+              nexusUsernamePasswordAuthDTO.getPasswordRef().toSecretRefStringValue(),
+              ambiance.getExpressionFunctorToken());
+        }
       }
 
       if (!StringUtils.isEmpty(registryUrl) && !StringUtils.isEmpty(userName) && !StringUtils.isEmpty(password)) {
@@ -146,9 +190,6 @@ public class AwsSamBuildPluginInfoProvider implements CDPluginInfoProvider {
         samBuildEnvironmentVariablesMap.put("PLUGIN_PRIVATE_REGISTRY_PASSWORD", password);
       }
     }
-
-    // Resolve Expressions
-    // cdExpressionResolver.updateExpressions(ambiance, buildCommandOptions);
 
     samBuildEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "");
     samBuildEnvironmentVariablesMap.put(
