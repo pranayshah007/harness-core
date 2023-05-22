@@ -50,6 +50,7 @@ import software.wings.beans.configfile.ConfigFileDto;
 
 import java.util.List;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.QueryParam;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -163,8 +164,8 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body InstanceSyncResponseV2 instanceSyncResponseV2);
 
   @GET("instancesync/instance-sync-ng-v2/task/{perpetualTaskId}/details")
-  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(
-      @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
+  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("page") int page, @Query("pageSize") int pageSize, @Query("accountId") String accountId);
   // Query for a specific set of delegate properties for a given account.
   // Request: GetDelegatePropertiesRequest
   // Response: GetDelegatePropertiesResponse

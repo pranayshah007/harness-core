@@ -8,6 +8,7 @@
 package io.harness.ng.instancesync.resources;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -25,8 +26,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -52,6 +55,7 @@ import retrofit2.http.Body;
 public class InstanceSyncResource {
   private static final String LOG_ERROR_TEMPLATE =
       "Received instance sync perpetual task response for accountId : {} and perpetualTaskId : {} : {}";
+  private static final int MAX_LIMIT = 1000;
   private final InstanceSyncService instanceSyncService;
 
   @POST
@@ -89,10 +93,13 @@ public class InstanceSyncResource {
   @Path("/task/{perpetualTaskId}/details")
   @ApiOperation(value = "Get instance sync perpetual task details", nickname = "fetchTaskDetails")
   public ResponseDTO<InstanceSyncTaskDetails> fetchTaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
+      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
-    InstanceSyncTaskDetails details = instanceSyncService.fetchTaskDetails(perpetualTaskId, accountIdentifier);
+    InstanceSyncTaskDetails details =
+        instanceSyncService.fetchTaskDetails(page, size, perpetualTaskId, accountIdentifier);
     log.info("Found {} instance sync perpetual task details for accountId {} and perpetualTaskId {}",
-        details != null ? (long) details.getDetails().size() : 0, accountIdentifier, perpetualTaskId);
+        details != null ? (long) details.getDetails().getTotalItems() : 0, accountIdentifier, perpetualTaskId);
     return ResponseDTO.newResponse(details);
   }
 

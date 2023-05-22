@@ -810,12 +810,12 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                     K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build()))
                 .build());
     InstanceSyncTaskDetails instanceSyncTaskDetails =
-        instanceSyncService.fetchTaskDetails(PERPETUAL_TASK, ACCOUNT_IDENTIFIER);
+        instanceSyncService.fetchTaskDetails(0, 10, PERPETUAL_TASK, ACCOUNT_IDENTIFIER);
 
     assertThat(instanceSyncTaskDetails).isNotNull();
-    assertThat(instanceSyncTaskDetails.getDetails().size()).isEqualTo(1);
-    assertThat(instanceSyncTaskDetails.getDetails().get(0).getTaskInfoId()).isEqualTo("taskInfoId");
-    assertThat(instanceSyncTaskDetails.getDetails().get(0).getDeploymentDetails().size()).isEqualTo(1);
+    assertThat(instanceSyncTaskDetails.getDetails().getContent().size()).isEqualTo(1);
+    assertThat(instanceSyncTaskDetails.getDetails().getContent().get(0).getTaskInfoId()).isEqualTo("taskInfoId");
+    assertThat(instanceSyncTaskDetails.getDetails().getContent().get(0).getDeploymentDetails().size()).isEqualTo(1);
   }
 
   @Test

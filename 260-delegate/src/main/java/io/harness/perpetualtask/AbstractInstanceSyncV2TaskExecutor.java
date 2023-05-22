@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
+import io.harness.ng.beans.PageResponse;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncData;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
@@ -37,13 +38,13 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
+  private static final int PAGE_SIZE = 100;
   private static final String FAILURE_RESPONSE_MSG =
       "Failed to fetch InstanceSyncTaskDetails for perpetual task Id: [%s], accountId [%s]";
 
@@ -61,40 +62,45 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
         InstanceSyncResponseV2.newBuilder().setPerpetualTaskId(taskId.getId()).setAccountId(accountId);
     try {
       InstanceSyncTaskDetails instanceSyncTaskDetails =
-          execute(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), accountId));
+          execute(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), 0, PAGE_SIZE, accountId));
+      for (int page = 0; page < instanceSyncTaskDetails.getDetails().getTotalPages(); page++) {
+        if (page != 0) {
+          instanceSyncTaskDetails = execute(
+              delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), page, PAGE_SIZE, accountId));
+        }
 
-      if (Objects.isNull(instanceSyncTaskDetails) || CollectionUtils.isEmpty(instanceSyncTaskDetails.getDetails())) {
-        log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
-        publishInstanceSyncResult(taskId, accountId,
-            InstanceSyncResponseV2.newBuilder()
-                .setStatus(InstanceSyncStatus.newBuilder()
-                               .setIsSuccessful(false)
-                               .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
-                               .build())
-                .build());
-        return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
-      }
-      List<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetails();
+        if (Objects.isNull(instanceSyncTaskDetails) || instanceSyncTaskDetails.getDetails().isEmpty()) {
+          log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
+          publishInstanceSyncResult(taskId, accountId,
+              InstanceSyncResponseV2.newBuilder()
+                  .setStatus(InstanceSyncStatus.newBuilder()
+                                 .setIsSuccessful(false)
+                                 .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
+                                 .build())
+                  .build());
+          return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
+        }
+        PageResponse<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetails();
 
-      for (DeploymentReleaseDetails deploymentReleaseDetails : deploymentReleaseDetailsList) {
-        InstanceSyncData.Builder instanceSyncData = InstanceSyncData.newBuilder();
-        List<ServerInstanceInfo> serverInstanceInfos =
-            retrieveServiceInstances(taskId, params, deploymentReleaseDetails, accountId, instanceSyncData);
+        for (DeploymentReleaseDetails deploymentReleaseDetails : deploymentReleaseDetailsList.getContent()) {
+          InstanceSyncData.Builder instanceSyncData = InstanceSyncData.newBuilder();
+          List<ServerInstanceInfo> serverInstanceInfos =
+              retrieveServiceInstances(taskId, params, deploymentReleaseDetails, accountId, instanceSyncData);
 
-        createBatchAndPublish(batchInstanceCount, batchReleaseDetailsCount, responseBuilder, instanceSyncData.build(),
-            serverInstanceInfos, instanceSyncTaskDetails, taskId, accountId);
-      }
-      if (batchInstanceCount.get() != 0 || batchReleaseDetailsCount.get() != 0) {
-        publishInstanceSyncResult(taskId, accountId,
-            responseBuilder
-                .setStatus(InstanceSyncStatus.newBuilder()
-                               .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
-                               .setIsSuccessful(true)
-                               .build())
-                .build());
+          createBatchAndPublish(batchInstanceCount, batchReleaseDetailsCount, responseBuilder, instanceSyncData.build(),
+              serverInstanceInfos, instanceSyncTaskDetails, taskId, accountId);
+        }
+        if (batchInstanceCount.get() != 0 || batchReleaseDetailsCount.get() != 0) {
+          publishInstanceSyncResult(taskId, accountId,
+              responseBuilder
+                  .setStatus(InstanceSyncStatus.newBuilder()
+                                 .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                                 .setIsSuccessful(true)
+                                 .build())
+                  .build());
+        }
       }
       return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
-
     } catch (IOException ioException) {
       log.error(format(FAILURE_RESPONSE_MSG, taskId.getId(), accountId));
       return PerpetualTaskResponse.builder()

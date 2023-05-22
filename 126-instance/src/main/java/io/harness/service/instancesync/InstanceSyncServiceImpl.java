@@ -30,8 +30,8 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
-import io.harness.entities.InstanceSyncPerpetualTaskMapping;
 import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
+import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helper.InstanceSyncHelper;
@@ -42,10 +42,10 @@ import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.AutoLogContext.OverrideBehavior;
-import io.harness.mappers.InstanceSyncPerpetualTaskMappingMapper;
 import io.harness.models.DeploymentEvent;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.models.constants.InstanceSyncFlow;
+import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
@@ -78,6 +78,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @OwnedBy(HarnessTeam.DX)
 @Singleton
@@ -100,6 +103,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   private InstanceSyncMonitoringService instanceSyncMonitoringService;
   private AccountClient accountClient;
   private static final int NEW_DEPLOYMENT_EVENT_RETRY = 3;
+  private static final int PAGE_SIZE = 100;
   private static final long TWO_WEEKS_IN_MILLIS = (long) 14 * 24 * 60 * 60 * 1000;
 
   private static final int INSTANCE_COUNT_LIMIT =
@@ -457,9 +461,12 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     }
   }
 
-  public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountIdentifier) {
-    List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
-        instanceSyncPerpetualTaskInfoService.findAll(accountIdentifier, perpetualTaskId);
+  public InstanceSyncTaskDetails fetchTaskDetails(
+      int page, int size, String perpetualTaskId, String accountIdentifier) {
+    Pageable pageRequest = org.springframework.data.domain.PageRequest.of(page, size,
+        Sort.by(Sort.Direction.DESC, InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId));
+    Page<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
+        instanceSyncPerpetualTaskInfoService.findAllInPages(pageRequest, accountIdentifier, perpetualTaskId);
     List<DeploymentReleaseDetails> deploymentReleaseDetailsList = new ArrayList<>();
     for (InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO : instanceSyncPerpetualTaskInfoDTOList) {
       Optional<InfrastructureMappingDTO> infrastructureMappingDTOOptional =
@@ -485,9 +492,23 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     }
 
     return InstanceSyncTaskDetails.builder()
-        .details(deploymentReleaseDetailsList)
+        .details(getNGPageResponse(instanceSyncPerpetualTaskInfoDTOList, deploymentReleaseDetailsList))
         .responseBatchConfig(
             ResponseBatchConfig.builder().releaseCount(RELEASE_COUNT_LIMIT).instanceCount(INSTANCE_COUNT_LIMIT).build())
+        .build();
+  }
+
+  private static PageResponse<DeploymentReleaseDetails> getNGPageResponse(
+      Page<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList,
+      List<DeploymentReleaseDetails> deploymentReleaseDetailsList) {
+    return PageResponse.<DeploymentReleaseDetails>builder()
+        .totalPages(instanceSyncPerpetualTaskInfoDTOList.getTotalPages())
+        .totalItems(instanceSyncPerpetualTaskInfoDTOList.getTotalElements())
+        .pageItemCount(instanceSyncPerpetualTaskInfoDTOList.getContent().size())
+        .content(deploymentReleaseDetailsList)
+        .pageSize(instanceSyncPerpetualTaskInfoDTOList.getSize())
+        .pageIndex(instanceSyncPerpetualTaskInfoDTOList.getNumber())
+        .empty(instanceSyncPerpetualTaskInfoDTOList.isEmpty())
         .build();
   }
 
