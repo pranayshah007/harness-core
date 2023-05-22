@@ -38,7 +38,7 @@ public class PluginInfoProviderHelper {
   private final Integer DEFAULT_CPU_LIMIT = 100;
   private final Integer DEFAULT_MEMORY_LIMIT = 256;
 
-  protected Integer getCPU(ContainerResource containerResource) {
+  public Integer getCPU(ContainerResource containerResource) {
     if (containerResource != null && ParameterField.isNotNull(containerResource.getLimits().getCpu())) {
       return QuantityUtils.getCpuQuantityValueInUnit(
           containerResource.getLimits().getCpu().getValue(), DecimalQuantityUnit.m);
@@ -46,7 +46,7 @@ public class PluginInfoProviderHelper {
     return DEFAULT_CPU_LIMIT;
   }
 
-  protected Integer getMemory(ContainerResource containerResource) {
+  public Integer getMemory(ContainerResource containerResource) {
     if (containerResource != null && ParameterField.isNotNull(containerResource.getLimits().getMemory())) {
       return QuantityUtils.getStorageQuantityValueInUnit(
           containerResource.getLimits().getMemory().getValue(), StorageQuantityUnit.Mi);

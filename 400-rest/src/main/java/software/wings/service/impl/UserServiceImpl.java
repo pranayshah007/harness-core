@@ -2873,7 +2873,7 @@ public class UserServiceImpl implements UserService {
     }
 
     if (user.getName() != null) {
-      validateName(user.getName());
+      // validateName(user.getName());
       updateOperations.set(UserKeys.name, user.getName());
     } else {
       updateOperations.unset(UserKeys.name);

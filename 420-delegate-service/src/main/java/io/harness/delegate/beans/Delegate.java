@@ -8,6 +8,7 @@
 package io.harness.delegate.beans;
 
 import static java.time.Duration.ofDays;
+import static java.time.Duration.ofHours;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.SecondaryStoreIn;
@@ -54,7 +55,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @HarnessEntity(exportable = true)
 @OwnedBy(HarnessTeam.DEL)
 public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess, PersistentRegularIterable {
-  public static final Duration TTL = ofDays(7);
+  private static final Duration TTL = ofDays(7);
+  private static final Duration IMMUTABLE_TTL = ofHours(6);
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -206,5 +208,9 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   public boolean hasCapacityRegistered() {
     return this.getDelegateCapacity() != null;
+  }
+
+  public long ttlMillis() {
+    return isImmutable() ? IMMUTABLE_TTL.toMillis() : TTL.toMillis();
   }
 }

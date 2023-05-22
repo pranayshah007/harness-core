@@ -56,6 +56,8 @@ import io.harness.FreezeOutboxEventHandler;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
+import io.harness.PluginConfiguration;
+import io.harness.PluginModule;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -81,7 +83,6 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
-import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -524,12 +525,6 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
-  PluginExecutionConfig pluginExecutionConfig() {
-    return this.appConfig.getPluginExecutionConfig();
-  }
-
-  @Provides
-  @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
     return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
@@ -683,6 +678,8 @@ public class NextGenModule extends AbstractModule {
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
     install(NGModule.getInstance());
+    install(PluginModule.getInstance(
+        PluginConfiguration.builder().pluginExecutionConfig(appConfig.getPluginExecutionConfig()).build()));
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
         this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumersConfigs()));

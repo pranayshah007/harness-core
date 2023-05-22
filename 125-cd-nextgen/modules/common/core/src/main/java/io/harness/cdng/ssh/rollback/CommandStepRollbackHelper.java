@@ -20,13 +20,13 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoKeyOutput;
 import io.harness.cdng.execution.StageExecutionInfo;
 import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoKeys;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
-import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.cdng.ssh.SshWinRmArtifactHelper;
 import io.harness.cdng.ssh.SshWinRmConfigFileHelper;
@@ -105,8 +105,7 @@ public class CommandStepRollbackHelper extends CDStepHelper {
           "No stage execution info found with uuid: %s", sshWinRmPrepareRollbackDataOutcome.getStageExecutionInfoId()));
     }
 
-    SshWinRmStageExecutionDetails sshWinRmExecutionDetails =
-        (SshWinRmStageExecutionDetails) stageExecutionInfoOptional.get().getExecutionDetails();
+    ExecutionDetails sshWinRmExecutionDetails = stageExecutionInfoOptional.get().getExecutionDetails();
 
     // if pipeline rollback happens then need to update the executionDetails with one from prepared for rollback
     ExecutionMode executionMode = ambiance.getMetadata().getExecutionMode();

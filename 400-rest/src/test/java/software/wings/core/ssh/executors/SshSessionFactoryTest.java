@@ -9,18 +9,23 @@ package software.wings.core.ssh.executors;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.RUSHABH;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.shell.SshSessionFactory.getCopyOfKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.logging.LogCallback;
+import io.harness.logging.NoopExecutionCallback;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.shell.SshSessionConfig;
 import io.harness.shell.SshSessionFactory;
 
+import com.jcraft.jsch.JSchException;
 import java.io.File;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,5 +53,14 @@ public class SshSessionFactoryTest extends CategoryTest {
     char[] copySrc = getCopyOfKey(SshSessionConfig.Builder.aSshSessionConfig().withKey(src).build());
     assertThat(String.valueOf(copySrc)).isEqualTo("--BEGIN PRIVATE KEY abc --");
     assertThat(copySrc != src);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getSSHSessionThrowsException() {
+    final SshSessionConfig config = SshSessionConfig.Builder.aSshSessionConfig().build();
+    final LogCallback logCallback = new NoopExecutionCallback();
+    assertThatThrownBy(() -> SshSessionFactory.getSSHSession(config, logCallback)).isInstanceOf(JSchException.class);
   }
 }
