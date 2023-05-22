@@ -106,28 +106,29 @@ public class RunTimeInputHandlerTest extends CiBeansTestBase {
   @Category(UnitTests.class)
   public void testResolveMapV2RuntimeInput() {
     assertThatExceptionOfType(CIStageExecutionUserException.class)
-        .isThrownBy(() -> RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", null, true));
-    assertThat(RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", null, false)).isEmpty();
+        .isThrownBy(() -> RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", null, true, false));
+    assertThat(RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", null, false, false)).isEmpty();
 
     assertThatExceptionOfType(CIStageExecutionUserException.class)
         .isThrownBy(()
                         -> RunTimeInputHandler.resolveMapParameterV2(
-                            "name", "type", "identifier", ParameterField.ofNull(), true));
-    assertThat(RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", ParameterField.ofNull(), false))
+                            "name", "type", "identifier", ParameterField.ofNull(), true, false));
+    assertThat(
+        RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", ParameterField.ofNull(), false, false))
         .isEmpty();
     assertThatExceptionOfType(CIStageExecutionUserException.class)
         .isThrownBy(()
                         -> RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier",
-                            ParameterField.createExpressionField(true, "expression", null, true), true));
+                            ParameterField.createExpressionField(true, "expression", null, true), true, false));
     assertThat(RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier",
-                   ParameterField.createExpressionField(true, "expression", null, true), false))
+                   ParameterField.createExpressionField(true, "expression", null, true), false, false))
         .isEmpty();
 
     ParameterField<Map<String, ParameterField<String>>> actual = ParameterField.createValueField(
         Map.of("key1", ParameterField.createValueField("val1"), "key2", ParameterField.createValueField("val2")));
 
     Map<String, String> expected = Map.of("key1", "val1", "key2", "val2");
-    assertThat(RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", actual, false))
+    assertThat(RunTimeInputHandler.resolveMapParameterV2("name", "type", "identifier", actual, false, false))
         .isEqualTo(expected);
   }
 }

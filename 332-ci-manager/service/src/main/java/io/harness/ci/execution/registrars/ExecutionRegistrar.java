@@ -35,11 +35,11 @@ import io.harness.ci.states.UploadToS3Step;
 import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
-import io.harness.ci.states.ssca.SscaGenericStep;
+import io.harness.ci.states.ssca.SscaEnforcementStep;
+import io.harness.ci.states.ssca.SscaOrchestrationStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
-import io.harness.ssca.beans.SscaConstants;
 import io.harness.sto.STOStepType;
 
 import java.util.HashMap;
@@ -77,7 +77,8 @@ public class ExecutionRegistrar {
     engineSteps.put(ActionStep.STEP_TYPE, ActionStep.class);
     engineSteps.put(BitriseStep.STEP_TYPE, BitriseStep.class);
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
-    engineSteps.put(SscaConstants.SSCA_ORCHESTRATION_STEP_TYPE, SscaGenericStep.class);
+    engineSteps.put(SscaOrchestrationStep.STEP_TYPE, SscaOrchestrationStep.class);
+    engineSteps.put(SscaEnforcementStep.STEP_TYPE, SscaEnforcementStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }

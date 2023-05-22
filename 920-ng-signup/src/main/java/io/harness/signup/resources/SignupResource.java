@@ -42,6 +42,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Api("signup")
 @Path("signup")
@@ -55,6 +56,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
 @Hidden
 @OwnedBy(GTM)
+@Slf4j
 public class SignupResource {
   private SignupService signupService;
 
@@ -68,8 +70,13 @@ public class SignupResource {
   @POST
   @PublicApi
   public RestResponse<Void> signup(SignupDTO dto, @QueryParam("captchaToken") @Nullable String captchaToken) {
-    signupService.createSignupInvite(dto, captchaToken);
-    return new RestResponse<>();
+    try {
+      signupService.createSignupInvite(dto, captchaToken);
+      return new RestResponse<>();
+    } catch (Exception e) {
+      log.error("Signup failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
   }
 
   /**
@@ -83,7 +90,12 @@ public class SignupResource {
   @Path("/community")
   @PublicApi
   public RestResponse<UserInfo> communitySignup(SignupDTO dto) {
-    return new RestResponse<>(signupService.communitySignup(dto));
+    try {
+      return new RestResponse<>(signupService.communitySignup(dto));
+    } catch (Exception e) {
+      log.error("Signup completion failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
   }
 
   @PUT
@@ -92,7 +104,12 @@ public class SignupResource {
   public RestResponse<UserInfo> completeSignupInvite(@PathParam("token") String token,
       @QueryParam("referer") String referer, @QueryParam(NGLicensingEntityConstants.GA_CLIENT_ID) String gaClientId,
       @QueryParam(NGLicensingEntityConstants.VISITOR_TOKEN) String visitorToken) {
-    return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId, visitorToken));
+    try {
+      return new RestResponse<>(signupService.completeSignupInvite(token, referer, gaClientId, visitorToken));
+    } catch (Exception e) {
+      log.error("Signup completion failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
   }
 
   /**
@@ -105,14 +122,24 @@ public class SignupResource {
   @Path("/oauth")
   @PublicApi
   public RestResponse<UserInfo> signupOAuth(OAuthSignupDTO dto) {
-    return new RestResponse<>(signupService.oAuthSignup(dto));
+    try {
+      return new RestResponse<>(signupService.oAuthSignup(dto));
+    } catch (Exception e) {
+      log.error("OAuth signup failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
   }
 
   @POST
   @Path("/verify/{token}")
   @PublicApi
   public RestResponse<VerifyTokenResponseDTO> verifyToken(@PathParam("token") String token) {
-    return new RestResponse<>(signupService.verifyToken(token));
+    try {
+      return new RestResponse<>(signupService.verifyToken(token));
+    } catch (Exception e) {
+      log.error("Signup token verification failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
   }
 
   @POST
@@ -122,7 +149,12 @@ public class SignupResource {
   @ApiOperation(value = "Resend user verification email", nickname = "resendVerifyEmail")
   @PublicApi
   public ResponseDTO<Boolean> resendVerifyEmail(@NotNull @QueryParam("email") String email) {
-    signupService.resendVerificationEmail(email);
-    return ResponseDTO.newResponse(TRUE);
+    try {
+      signupService.resendVerificationEmail(email);
+      return ResponseDTO.newResponse(TRUE);
+    } catch (Exception e) {
+      log.error("Resending verification email failed. {} at {}", e.getMessage(), e.getStackTrace());
+      throw e;
+    }
   }
 }

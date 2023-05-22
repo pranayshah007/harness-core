@@ -216,7 +216,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     IACMStageConfigImplV1 stageConfig = stageNode.getStageConfig();
     Infrastructure infrastructure = getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
-    String workspaceId = specField.getNode().getField("workspace").getNode().getCurrJsonNode().asText();
+    String workspaceId = specField.getNode().getFieldOrThrow("workspace").getNode().getCurrJsonNode().asText();
 
     CodeBase codeBase = getIACMCodebase(ctx, workspaceId);
     Optional<Object> optionalOptions =
@@ -305,7 +305,7 @@ public class IACMStagePMSPlanCreatorV1 extends ChildrenPlanCreator<IACMStageNode
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     YamlField field = ctx.getCurrentField();
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
-    String workspaceId = specField.getNode().getField("workspace").getNode().getCurrJsonNode().asText();
+    String workspaceId = specField.getNode().getFieldOrThrow("workspace").getNode().getCurrJsonNode().asText();
     YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
 
     IACMStageConfigImplV1 stageConfigImpl = stageNode.getStageConfig();

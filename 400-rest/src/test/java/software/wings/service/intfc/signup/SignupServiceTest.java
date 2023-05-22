@@ -19,7 +19,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.SignupException;
 import io.harness.exception.WeakPasswordException;
 import io.harness.rule.Owner;
@@ -120,17 +119,6 @@ public class SignupServiceTest extends WingsBaseTest {
     final String blankPassword = "    ";
     assertThatThrownBy(() -> signupService.validatePassword(blankPassword.toCharArray()))
         .isInstanceOf(WeakPasswordException.class);
-  }
-
-  @Test
-  @Owner(developers = MEHUL)
-  @Category(UnitTests.class)
-  public void testValidateNameThrowsInvalidArgumentsException() {
-    final String blankName = "  ";
-    assertThatThrownBy(() -> signupService.validateName(blankName)).isInstanceOf(InvalidArgumentsException.class);
-    assertThatThrownBy(() -> signupService.validateName(null)).isInstanceOf(InvalidArgumentsException.class);
-    assertThatThrownBy(() -> signupService.validateName("<a href='http://authorization.site'>Click ME</a>"))
-        .isInstanceOf(InvalidArgumentsException.class);
   }
 
   private void fail() {

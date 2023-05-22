@@ -8,10 +8,14 @@
 package io.harness.ng.overview.service;
 
 import static io.harness.rule.OwnerRule.ABHISHEK;
+import static io.harness.rule.OwnerRule.SOURABH;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.entities.RollbackStatus;
 import io.harness.models.ActiveServiceInstanceInfoWithEnvType;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -21,6 +25,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +33,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.Page;
 
 public class DashboardServiceHelperTest {
   private static final String ENV_1 = "env1";
@@ -641,5 +647,86 @@ public class DashboardServiceHelperTest {
     criteria = "accountid = 'accountId'";
     criteriaResult = DashboardServiceHelper.getScopeEqualityCriteria(ACCOUNT_ID, null, null);
     assertThat(criteria).isEqualTo(criteriaResult);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByEnvironmentListHelperRevamp() {
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(page.getContent()).thenReturn(Arrays.asList(getEnvGrp("envGrp1"), getEnvGrp("envGrp2")));
+    InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList1 =
+        DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
+            "envGrp1", getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true, page);
+
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList().size()).isEqualTo(1);
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList()
+                   .get(0)
+                   .getInstanceGroupedByEnvironmentTypeList()
+                   .size())
+        .isEqualTo(2);
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList().get(0).getEnvGroups().size())
+        .isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByEnvironmentListHelperRevampForAllEnvGrp() {
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(page.getContent()).thenReturn(Arrays.asList(getEnvGrp("envGrp1"), getEnvGrp("envGrp2")));
+    InstanceGroupedByEnvironmentList instanceGroupedByEnvironmentList1 =
+        DashboardServiceHelper.getInstanceGroupedByEnvironmentListHelper(
+            null, getActiveServiceInstanceInfoWithEnvTypeListGitOps(), true, page);
+
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList().size()).isEqualTo(2);
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList()
+                   .get(0)
+                   .getInstanceGroupedByEnvironmentTypeList()
+                   .size())
+        .isEqualTo(1);
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList()
+                   .get(1)
+                   .getInstanceGroupedByEnvironmentTypeList()
+                   .size())
+        .isEqualTo(2);
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList().get(0).getEnvGroups().size())
+        .isEqualTo(0);
+    assertThat(instanceGroupedByEnvironmentList1.getInstanceGroupedByEnvironmentList().get(1).getEnvGroups().size())
+        .isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByArtifactListHelperRevamp() {
+    Page<EnvironmentGroupEntity> page = mock(Page.class);
+    when(page.getContent()).thenReturn(Arrays.asList(getEnvGrp("envGrp1"), getEnvGrp("envGrp2")));
+    InstanceGroupedOnArtifactList instanceGroupedOnArtifactList =
+        DashboardServiceHelper.getInstanceGroupedByArtifactListHelper(
+            getActiveServiceInstanceInfoWithEnvTypeListNonGitOps(), false, page, null);
+    assertThat(instanceGroupedOnArtifactList).isEqualTo(getInstanceGroupedOnArtifactList(false));
+    assertThat(instanceGroupedOnArtifactList.getInstanceGroupedOnArtifactList().size()).isEqualTo(2);
+    assertThat(instanceGroupedOnArtifactList.getInstanceGroupedOnArtifactList()
+                   .get(0)
+                   .getInstanceGroupedOnEnvironmentList()
+                   .size())
+        .isEqualTo(2);
+    assertThat(instanceGroupedOnArtifactList.getInstanceGroupedOnArtifactList()
+                   .get(1)
+                   .getInstanceGroupedOnEnvironmentList()
+                   .size())
+        .isEqualTo(1);
+  }
+
+  private EnvironmentGroupEntity getEnvGrp(String envGrp) {
+    return EnvironmentGroupEntity.builder()
+        .name(envGrp)
+        .accountId(ACCOUNT_ID)
+        .orgIdentifier(ORG_ID)
+        .projectIdentifier(PROJECT_ID)
+        .identifier(envGrp)
+        .envIdentifiers(Arrays.asList(ENV_1))
+        .build();
   }
 }

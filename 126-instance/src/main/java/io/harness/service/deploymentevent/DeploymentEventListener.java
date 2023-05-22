@@ -22,7 +22,6 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.DeploymentSummaryDTO;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
-import io.harness.dtos.deploymentinfo.SshWinrmDeploymentInfoDTO;
 import io.harness.encryption.Scope;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.RollbackStatus;
@@ -202,20 +201,14 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
   private void setArtifactDetails(
       Ambiance ambiance, DeploymentSummaryDTO deploymentSummaryDTO, DeploymentInfoDTO deploymentInfoDTO) {
     if (isRollbackDeploymentEvent(ambiance)) {
-      Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional;
-      if (deploymentInfoDTO instanceof SshWinrmDeploymentInfoDTO) {
-        deploymentSummaryDTOOptional = deploymentSummaryService.getLatestByInstanceKeyAndPipelineExecutionIdNot(
-            deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping(),
-            deploymentSummaryDTO.getPipelineExecutionId());
-      } else {
-        /**
-         * Fetch the 2nd deployment summary in DB for the given deployment info
-         * The 1st one will be the deployment summary for which changes have to be reverted, its prev one will
-         * be the last stable one
-         */
-        deploymentSummaryDTOOptional = deploymentSummaryService.getNthDeploymentSummaryFromNow(
-            2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
-      }
+      /**
+       * Fetch the 2nd deployment summary in DB for the given deployment info
+       * The 1st one will be the deployment summary for which changes have to be reverted, its prev one will
+       * be the last stable one
+       */
+      Optional<DeploymentSummaryDTO> deploymentSummaryDTOOptional =
+          deploymentSummaryService.getNthDeploymentSummaryFromNow(
+              2, deploymentSummaryDTO.getInstanceSyncKey(), deploymentSummaryDTO.getInfrastructureMapping());
 
       if (deploymentSummaryDTOOptional.isPresent()) {
         deploymentSummaryDTO.setArtifactDetails(deploymentSummaryDTOOptional.get().getArtifactDetails());

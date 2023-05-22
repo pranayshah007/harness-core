@@ -65,7 +65,6 @@ public class ServiceSequenceRepositoryCustomImpl implements ServiceSequenceRepos
     update.set(ServiceSequenceKeys.serviceIdentifier, serviceSequence.getServiceIdentifier());
     update.setOnInsert(ServiceSequenceKeys.createdAt, System.currentTimeMillis());
     update.set(ServiceSequenceKeys.lastModifiedAt, System.currentTimeMillis());
-    update.set(ServiceSequenceKeys.serviceIdentifier, serviceSequence.getServiceIdentifier());
     return update;
   }
 }

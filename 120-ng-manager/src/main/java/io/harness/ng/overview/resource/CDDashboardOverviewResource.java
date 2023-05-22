@@ -53,6 +53,7 @@ import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.SequenceToggleDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfoV2;
@@ -558,7 +559,7 @@ public class CDDashboardOverviewResource {
       @RequestBody(description = "This is the body for the filter properties for listing environments.")
       EnvironmentFilterPropertiesDTO filterProperties) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getEnvironmentInstanceDetails(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, filterProperties));
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, filterProperties, false));
   }
 
   @GET
@@ -612,8 +613,9 @@ public class CDDashboardOverviewResource {
 
   @GET
   @Path("/customSequence")
+  @Hidden
   @ApiOperation(value = "Get custom sequence for env and env groups", nickname = "getCustomSequence")
-  public ResponseDTO<ServiceSequence> getCustomSequence(
+  public ResponseDTO<CustomSequenceDTO> getCustomSequence(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
@@ -624,6 +626,7 @@ public class CDDashboardOverviewResource {
 
   @POST
   @Path("/customSequence")
+  @Hidden
   @ApiOperation(value = "Save custom sequence for env and env groups", nickname = "saveCustomSequence")
   public ResponseDTO<ServiceSequence> saveCustomSequence(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -634,5 +637,45 @@ public class CDDashboardOverviewResource {
           required = true, description = "custom sequence for env and env grps") CustomSequenceDTO customSequenceDTO) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.saveCustomSequence(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, customSequenceDTO));
+  }
+
+  @GET
+  @Path("/defaultSequence")
+  @Hidden
+  @ApiOperation(value = "Get default sequence for env and env groups", nickname = "DefaultSequence")
+  public ResponseDTO<CustomSequenceDTO> getDefaultSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.getDefaultSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
+  }
+
+  @POST
+  @Path("/useCustomSequence")
+  @Hidden
+  @ApiOperation(value = "Save the status of current sequence of env cards ", nickname = "setCustomSequenceStatus")
+  public ResponseDTO<ServiceSequence> useCustomSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @NotNull @QueryParam("useCustomSequence") boolean useCustomSequence) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.useCustomSequence(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, useCustomSequence));
+  }
+
+  @GET
+  @Path("/useCustomSequence")
+  @Hidden
+  @ApiOperation(value = "get the status of current sequence of env cards ", nickname = "getCustomSequenceStatus")
+  public ResponseDTO<SequenceToggleDTO> useCustomSequence(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
+    return ResponseDTO.newResponse(
+        cdOverviewDashboardService.useCustomSequence(accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
   }
 }

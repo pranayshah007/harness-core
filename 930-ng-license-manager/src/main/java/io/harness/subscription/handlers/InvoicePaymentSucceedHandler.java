@@ -23,7 +23,10 @@ import io.harness.subscription.entities.SubscriptionDetail;
 import io.harness.subscription.enums.SubscriptionStatus;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.StripeSubscriptionRequest;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.exception.StripeException;
@@ -31,8 +34,10 @@ import com.stripe.model.Event;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
 import com.stripe.model.PaymentIntent;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,28 +47,60 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   private final LicenseService licenseService;
   private final SubscriptionDetailRepository subscriptionDetailRepository;
   private final StripeHelper stripeHelper;
+  private final TelemetryReporter telemetryReporter;
 
+  private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   private static final String DEVELOPERS_TYPE = "DEVELOPERS";
   private static final String MAU_TYPE = "MAU";
   private static final String MAU_SUPPORT_TYPE = "MAU_SUPPORT";
   private static final String DEVELOPERS_SUPPORT_TYPE = "DEVELOPERS_SUPPORT";
   private static final String STRIPE_QUANTITY_KEY = "max";
   private static final String STRIPE_MODULE_TYPE_KEY = "module";
+  private static final String SUBSCRIPTION_TELEMETRY_CATEGORY = "subscription";
+  private static final String SUBSCRIPTION_TELEMETRY_EVENT_INITIATED = "Subscription Payment Initiated";
+  private static final String SUBSCRIPTION_TELEMETRY_EVENT_SUCCESS = "Subscription Payment Succeeded";
 
   @Inject
   public InvoicePaymentSucceedHandler(LicenseService licenseService,
-      SubscriptionDetailRepository subscriptionDetailRepository, StripeHelper stripeHelper) {
+      SubscriptionDetailRepository subscriptionDetailRepository, StripeHelper stripeHelper,
+      TelemetryReporter telemetryReporter) {
     this.licenseService = licenseService;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
     this.stripeHelper = stripeHelper;
+    this.telemetryReporter = telemetryReporter;
   }
 
   @Override
   public void handleEvent(Event event) {
     Invoice invoice = StripeEventUtils.convertEvent(event, Invoice.class);
+    String accountIdentifier = getAccountIdentifier(invoice);
+
+    HashMap<String, Object> properties = new HashMap<>();
+    telemetryReporter.sendIdentifyEvent(invoice.getCustomerEmail(), properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build());
+    telemetryReporter.sendTrackEvent(SUBSCRIPTION_TELEMETRY_EVENT_INITIATED, invoice.getCustomerEmail(),
+        accountIdentifier, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(),
+        SUBSCRIPTION_TELEMETRY_CATEGORY);
 
     syncLicense(invoice);
     updatePaymentIntentForFirstPayment(invoice);
+
+    telemetryReporter.sendTrackEvent(SUBSCRIPTION_TELEMETRY_EVENT_SUCCESS, invoice.getCustomerEmail(),
+        accountIdentifier, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(),
+        SUBSCRIPTION_TELEMETRY_CATEGORY);
+  }
+
+  private String getAccountIdentifier(Invoice invoice) {
+    Optional<InvoiceLineItem> lineItem =
+        invoice.getLines()
+            .getData()
+            .stream()
+            .filter(invoiceLineItem -> invoiceLineItem.getMetadata().get(ACCOUNT_IDENTIFIER_KEY) != null)
+            .findFirst();
+
+    return lineItem.isPresent() ? lineItem.get().getMetadata().get(ACCOUNT_IDENTIFIER_KEY) : null;
   }
 
   private void syncLicense(Invoice invoice) {

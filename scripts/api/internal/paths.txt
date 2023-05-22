@@ -1,7 +1,7 @@
 ng-manager: ../../../120-ng-manager/contracts/openapi/v1/openapi.yaml
 access-control: ../../../access-control/contracts/openapi/v1/openapi.yaml
 pipeline-service: ../../../pipeline-service/contracts/openapi/v1/openapi.yaml
-template-service: ../../../840-template-service/contracts/openapi/v1/openapi.yaml
+template-service: ../../../template-service/contracts/openapi/v1/openapi.yaml
 commons: ../../../970-ng-commons/contracts/openapi/v1/openapi.yaml
 connectors: ../../../440-connector-nextgen/contracts/openapi/v1/openapi.yaml
 resource-groups: ../../../platform-service/modules/resource-group-service/contracts/openapi/v1/openapi.yaml

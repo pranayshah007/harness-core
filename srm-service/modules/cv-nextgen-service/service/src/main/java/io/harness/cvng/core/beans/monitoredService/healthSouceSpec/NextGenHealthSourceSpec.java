@@ -232,7 +232,7 @@ public class NextGenHealthSourceSpec extends MetricHealthSourceSpec {
   @JsonIgnore
   @Deprecated
   public List<HealthSourceMetricDefinition> getMetricDefinitions() {
-    if (DataSourceType.getTimeSeriesTypes().contains(dataSourceType)) {
+    if (dataSourceType.getVerificationType() == VerificationType.TIME_SERIES) {
       return queryDefinitions.stream()
           .map(queryDefinition
               -> HealthSourceMetricDefinition.builder()

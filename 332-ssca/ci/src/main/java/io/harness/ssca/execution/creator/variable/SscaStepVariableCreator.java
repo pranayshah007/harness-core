@@ -19,6 +19,6 @@ import java.util.Set;
 public class SscaStepVariableCreator extends GenericStepVariableCreator {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(SscaConstants.SSCA_ORCHESTRATION_STEP);
+    return Sets.newHashSet(SscaConstants.SSCA_ORCHESTRATION_STEP, SscaConstants.SSCA_ENFORCEMENT);
   }
 }

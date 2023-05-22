@@ -62,6 +62,13 @@ rules:
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
 
 ---
 apiVersion: v1
@@ -307,7 +314,7 @@ spec:
     spec:
       containers:
       - name: autostopping-controller
-        image: harness/autostopping-controller:1.0.13
+        image: harness/autostopping-controller:1.0.16
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs

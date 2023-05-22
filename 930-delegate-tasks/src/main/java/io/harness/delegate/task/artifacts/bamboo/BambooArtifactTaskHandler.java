@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +71,11 @@ public class BambooArtifactTaskHandler extends DelegateArtifactTaskHandler<Bambo
                                                             .build();
     List<BuildDetails> buildDetails = bambooBuildService.getBuilds(null, artifactStreamAttributes,
         BambooRequestResponseMapper.toBambooConfig(attributesRequest), attributesRequest.getEncryptedDataDetails());
-    return ArtifactTaskExecutionResponse.builder().buildDetails(buildDetails).build();
+    List<BambooArtifactDelegateResponse> bambooArtifactDelegateResponses =
+        buildDetails.stream()
+            .map(build -> BambooRequestResponseMapper.toBambooArtifactDelegateResponse(build, attributesRequest))
+            .collect(Collectors.toList());
+    return getSuccessTaskExecutionResponse(bambooArtifactDelegateResponses, buildDetails);
   }
 
   @Override

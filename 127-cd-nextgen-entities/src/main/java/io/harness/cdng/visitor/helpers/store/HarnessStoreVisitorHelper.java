@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.ng.core.filestore.dto.FileDTO;
@@ -75,20 +76,22 @@ public class HarnessStoreVisitorHelper implements EntityReferenceExtractor {
         : Collections.emptyList();
     Set<EntityDetailProtoDTO> result = new HashSet<>(files.size());
     files.stream().filter(EmptyPredicate::isNotEmpty).forEach(scopedFilePath -> {
-      FileReference fileReference =
-          FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
-      Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),
-          fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath());
+      if (!EngineExpressionEvaluator.hasExpressions(scopedFilePath)) {
+        FileReference fileReference =
+            FileReference.of(scopedFilePath, accountIdentifier, orgIdentifier, projectIdentifier);
+        Optional<FileDTO> fileDTO = fileStoreService.getByPath(fileReference.getAccountIdentifier(),
+            fileReference.getOrgIdentifier(), fileReference.getProjectIdentifier(), fileReference.getPath());
 
-      if (fileDTO.isPresent()) {
-        String fullQualifiedDomainName =
-            VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + overridePathFieldName;
-        String fileScopedIdentifier =
-            FileReference.getScopedFileIdentifier(fileReference.getScope(), fileDTO.get().getIdentifier());
+        if (fileDTO.isPresent()) {
+          String fullQualifiedDomainName =
+              VisitorParentPathUtils.getFullQualifiedDomainName(contextMap) + PATH_CONNECTOR + overridePathFieldName;
+          String fileScopedIdentifier =
+              FileReference.getScopedFileIdentifier(fileReference.getScope(), fileDTO.get().getIdentifier());
 
-        result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
-            projectIdentifier, fullQualifiedDomainName, ParameterField.createValueField(fileScopedIdentifier),
-            EntityTypeProtoEnum.FILES));
+          result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier,
+              projectIdentifier, fullQualifiedDomainName, ParameterField.createValueField(fileScopedIdentifier),
+              EntityTypeProtoEnum.FILES));
+        }
       }
     });
 

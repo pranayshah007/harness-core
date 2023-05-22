@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.resources.docker.service;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.vivekveman;
@@ -79,6 +80,19 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   private static String IMAGE_PATH = "imagePath";
   private static String ORG_IDENTIFIER = "orgIdentifier";
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
+  private static final String TAG = "tag";
+  private static final String IDENTIFIER = "identifier";
+  private static final String INPUT = "<+input>";
+  private static final String IMAGE_PATH_MESSAGE = "value for imagePath is empty or not provided";
+  private static final String TAG_TAG_REGEX_MESSAGE = "value for tag, tagRegex is empty or not provided";
+
+  private static final IdentifierRef IDENTIFIER_REF = IdentifierRef.builder()
+                                                          .accountIdentifier(ACCOUNT_ID)
+                                                          .identifier(IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .build();
+  private static final DockerRequestDTO DOCKER_REQUEST_DTO = DockerRequestDTO.builder().build();
 
   @Mock ConnectorService connectorService;
   @Mock SecretManagerClientService secretManagerClientService;
@@ -110,14 +124,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testGetBuildDetails() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -131,11 +139,11 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                 .build());
 
     DockerResponseDTO dockerResponseDTO =
-        dockerResourceService.getBuildDetails(identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null);
+        dockerResourceService.getBuildDetails(IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null);
     assertThat(dockerResponseDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -146,15 +154,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testGetLabels() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     DockerRequestDTO dockerRequestDTO = DockerRequestDTO.builder().build();
     ConnectorResponseDTO connectorDTO = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -168,11 +170,11 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                 .build());
 
     DockerResponseDTO dockerResponseDTO = dockerResourceService.getLabels(
-        identifierRef, IMAGE_PATH, dockerRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        IDENTIFIER_REF, IMAGE_PATH, dockerRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(dockerResponseDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -183,15 +185,9 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testGetSuccessfulBuild() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
-    DockerRequestDTO dockerRequestDTO = DockerRequestDTO.builder().build();
+    DockerRequestDTO dockerRequestDTO = DockerRequestDTO.builder().tag(TAG).build();
     ConnectorResponseDTO connectorDTO = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -210,11 +206,11 @@ public class DockerResourceServiceImplTest extends CategoryTest {
     when(cdFeatureFlagHelper.isEnabled(any(), eq(FeatureName.CD_NG_DOCKER_ARTIFACT_DIGEST))).thenReturn(false);
 
     DockerBuildDetailsDTO dockerBuildDetailsDTO = dockerResourceService.getSuccessfulBuild(
-        identifierRef, IMAGE_PATH, dockerRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        IDENTIFIER_REF, IMAGE_PATH, dockerRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(dockerBuildDetailsDTO).isNotNull();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -225,14 +221,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testValidateArtifactServer() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorDTO = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -249,11 +239,11 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                                                    .build())
                 .build());
 
-    boolean response = dockerResourceService.validateArtifactServer(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+    boolean response = dockerResourceService.validateArtifactServer(IDENTIFIER_REF, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(response).isFalse();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -264,14 +254,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testValidateArtifactSource() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorDTO = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorDTO));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -289,11 +273,11 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                 .build());
 
     boolean response =
-        dockerResourceService.validateArtifactSource(IMAGE_PATH, identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+        dockerResourceService.validateArtifactSource(IMAGE_PATH, IDENTIFIER_REF, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
     assertThat(response).isFalse();
 
     ArgumentCaptor<DelegateTaskRequest> delegateTaskRequestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
-    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier");
+    verify(connectorService).get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER);
     verify(delegateGrpcClientWrapper).executeSyncTaskV2(delegateTaskRequestCaptor.capture());
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestCaptor.getValue();
     ArtifactTaskParameters artifactTaskParameters = (ArtifactTaskParameters) delegateTaskRequest.getTaskParameters();
@@ -304,14 +288,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testDelegateServiceDriverException() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -324,7 +302,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
-                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+                               IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("wings exception message");
   }
@@ -333,14 +311,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testErrorNotifyResponseDataException() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
 
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
@@ -352,7 +324,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
-                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+                               IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("Docker Get Builds task failure due to error - Testing");
   }
@@ -361,14 +333,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testRemoteMethodReturnValueData() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -381,7 +347,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
                         .build());
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
-                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+                               IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("Unexpected error during authentication to docker server " + obj);
   }
@@ -390,12 +356,6 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testFailureExecution() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder()
             .connectorType(ConnectorType.DOCKER)
@@ -411,7 +371,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     ConnectorResponseDTO connectorResponse = ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
 
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
 
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
@@ -431,7 +391,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
-                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+                               IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("Docker Get Builds task failure due to error - Test failed with error code: DEFAULT_ERROR_CODE");
   }
@@ -440,14 +400,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testExplanationException() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -461,7 +415,7 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
-                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+                               IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage("Please ensure DockerHub credentials are valid");
   }
@@ -501,14 +455,8 @@ public class DockerResourceServiceImplTest extends CategoryTest {
   @Owner(developers = SHIVAM)
   @Category(UnitTests.class)
   public void testExplanationExceptionForInvalidImagePath() {
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(ACCOUNT_ID)
-                                      .identifier("identifier")
-                                      .projectIdentifier(PROJECT_IDENTIFIER)
-                                      .orgIdentifier(ORG_IDENTIFIER)
-                                      .build();
     ConnectorResponseDTO connectorResponse = getConnector();
-    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
         .thenReturn(Optional.of(connectorResponse));
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
@@ -523,8 +471,107 @@ public class DockerResourceServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(()
                            -> dockerResourceService.getBuildDetails(
-                               identifierRef, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
+                               IDENTIFIER_REF, IMAGE_PATH, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null))
         .isInstanceOf(WingsException.class)
         .hasMessage(HintException.HINT_DOCKER_HUB_INVALID_IMAGE_PATH);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_NULL() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, null, DOCKER_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_Empty() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, "", DOCKER_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_INPUT() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, INPUT, DOCKER_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_NULL() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, IMAGE_PATH, DOCKER_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Empty() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               DockerRequestDTO.builder().tag("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_INPUT() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               DockerRequestDTO.builder().tag(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_NULL() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, IMAGE_PATH, DOCKER_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Empty() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               DockerRequestDTO.builder().tagRegex("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_INPUT() {
+    assertThatThrownBy(()
+                           -> dockerResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               DockerRequestDTO.builder().tagRegex(INPUT).build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 }

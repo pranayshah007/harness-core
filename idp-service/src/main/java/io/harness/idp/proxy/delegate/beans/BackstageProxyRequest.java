@@ -18,6 +18,6 @@ import lombok.Data;
 public class BackstageProxyRequest {
   private String url;
   private String method;
-  private Map<String, Object> headers;
+  private Map<String, String> headers;
   private String body;
 }

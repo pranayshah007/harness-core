@@ -183,14 +183,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           log.info("Instance sync completed");
           return;
         } catch (Exception exception) {
-          log.error("Attempt {} : Exception occurred during instance sync", retryCount + 1, exception);
+          log.warn("Attempt {} : Exception occurred during instance sync", retryCount + 1, exception);
           retryCount += 1;
         }
       }
       InstanceSyncLocalCacheManager.removeDeploymentSummary(deploymentSummaryDTO.getInstanceSyncKey());
       instanceSyncMonitoringService.recordMetrics(
           infrastructureMappingDTO.getAccountIdentifier(), true, true, System.currentTimeMillis() - startTime);
-      log.error("Instance sync failed after all retry attempts for deployment event : {}", deploymentEvent);
+      log.warn("Instance sync failed after all retry attempts for deployment event : {}", deploymentEvent);
     }
   }
 
@@ -347,7 +347,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
               instanceSyncPerpetualTaskResponse.getServerInstanceDetails(), instanceSyncHandler, false);
           log.info("Instance Sync completed");
         } catch (Exception exception) {
-          log.error("Exception occurred during instance sync", exception);
+          log.warn("Exception occurred during instance sync", exception);
         } finally {
           instanceSyncMonitoringService.recordMetrics(infrastructureMappingDTO.get().getAccountIdentifier(), true,
               false, System.currentTimeMillis() - startTime);
@@ -461,7 +461,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
     }
   }
 
-  public InstanceSyncTaskDetails fetchTaskDetails(String accountIdentifier, String perpetualTaskId) {
+  public InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountIdentifier) {
     List<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
         instanceSyncPerpetualTaskInfoService.findAll(accountIdentifier, perpetualTaskId);
     List<DeploymentReleaseDetails> deploymentReleaseDetailsList = new ArrayList<>();
@@ -484,16 +484,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList().get(0).getDeploymentInfoDTO().getType(),
           infrastructureMappingDTO.getInfrastructureKind());
 
-      deploymentReleaseDetailsList.add(instanceSyncHandler.getDeploymentReleaseDetails(
-          instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
+      deploymentReleaseDetailsList.add(
+          instanceSyncHandler.getDeploymentReleaseDetails(instanceSyncPerpetualTaskInfoDTO));
     }
 
-    return InstanceSyncTaskDetails.newBuilder()
-        .addAllDetails(deploymentReleaseDetailsList)
-        .setResponseBatchConfig(ResponseBatchConfig.newBuilder()
-                                    .setReleaseCount(RELEASE_COUNT_LIMIT)
-                                    .setInstanceCount(INSTANCE_COUNT_LIMIT)
-                                    .build())
+    return InstanceSyncTaskDetails.builder()
+        .details(deploymentReleaseDetailsList)
+        .responseBatchConfig(
+            ResponseBatchConfig.builder().releaseCount(RELEASE_COUNT_LIMIT).instanceCount(INSTANCE_COUNT_LIMIT).build())
         .build();
   }
 

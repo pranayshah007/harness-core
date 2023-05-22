@@ -26,7 +26,7 @@ public interface NGGitService {
   void validateOrThrow(GitConfigDTO gitConfig, String accountId, SshSessionConfig sshSessionConfig);
 
   CommitAndPushResult commitAndPush(GitConfigDTO gitConfig, CommitAndPushRequest commitAndPushRequest, String accountId,
-      SshSessionConfig sshSessionConfig);
+      SshSessionConfig sshSessionConfig, boolean overrideFromGitConfig);
 
   FetchFilesResult fetchFilesByPath(GitStoreDelegateConfig gitStoreDelegateConfig, String accountId,
       SshSessionConfig sshSessionConfig, GitConfigDTO gitConfigDTO) throws IOException;

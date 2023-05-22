@@ -40,16 +40,16 @@ public class FailureStrategiesUtils {
       List<FailureStrategyConfig> stageFailureStrategies) {
     // priority merge all declared failure strategies, least significant are added first to map
     EnumMap<NGFailureType, FailureStrategyActionConfig> failureStrategiesMap = new EnumMap<>(NGFailureType.class);
-    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stageFailureStrategies));
-    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepGroupFailureStrategies));
-    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepFailureStrategies));
+    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stageFailureStrategies, false));
+    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepGroupFailureStrategies, true));
+    failureStrategiesMap.putAll(expandFailureStrategiesToMap(stepFailureStrategies, false));
 
     // invert map so that action become key
     return convertNGFailureTypeToFailureTypesMultiMap(failureStrategiesMap);
   }
 
   private EnumMap<NGFailureType, FailureStrategyActionConfig> expandFailureStrategiesToMap(
-      List<FailureStrategyConfig> failureStrategyConfigList) {
+      List<FailureStrategyConfig> failureStrategyConfigList, boolean isStepGroup) {
     EnumMap<NGFailureType, FailureStrategyActionConfig> map = new EnumMap<>(NGFailureType.class);
 
     if (isNotEmpty(failureStrategyConfigList)) {
@@ -71,9 +71,9 @@ public class FailureStrategiesUtils {
               throw new InvalidRequestException(
                   "With AllErrors there cannot be other specified errors defined in same list.");
             }
-            if (allErrorsCount > 1) {
+            if (allErrorsCount > 1 && !isStepGroup) {
               throw new InvalidRequestException(
-                  "AllErrors are defined multiple times either in stage, stepGroup or step failure strategies.");
+                  "AllErrors are defined multiple times either in stage or step failure strategies.");
             }
           } else {
             map.put(ngFailureType, failureStrategyConfig.getOnFailure().getAction());

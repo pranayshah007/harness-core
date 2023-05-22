@@ -32,6 +32,11 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessJWTTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessTokenSpecDTO;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.git.GitClientHelper;
 import io.harness.product.ci.scm.proto.AuthType;
 import io.harness.product.ci.scm.proto.AzureProvider;
@@ -39,6 +44,9 @@ import io.harness.product.ci.scm.proto.BitbucketCloudProvider;
 import io.harness.product.ci.scm.proto.BitbucketServerProvider;
 import io.harness.product.ci.scm.proto.GithubProvider;
 import io.harness.product.ci.scm.proto.GitlabProvider;
+import io.harness.product.ci.scm.proto.HarnessAccessToken;
+import io.harness.product.ci.scm.proto.HarnessJWT;
+import io.harness.product.ci.scm.proto.HarnessProvider;
 import io.harness.product.ci.scm.proto.Provider;
 
 import com.google.inject.Inject;
@@ -68,6 +76,8 @@ public class ScmGitProviderMapper {
       return mapToBitbucketProvider((BitbucketConnectorDTO) scmConnector, debug);
     } else if (scmConnector instanceof AzureRepoConnectorDTO) {
       return mapToAzureRepoProvider((AzureRepoConnectorDTO) scmConnector, debug);
+    } else if (scmConnector instanceof HarnessConnectorDTO) {
+      return mapToHarnessProvider((HarnessConnectorDTO) scmConnector, debug);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -208,6 +218,17 @@ public class ScmGitProviderMapper {
         .build();
   }
 
+  private Provider mapToHarnessProvider(HarnessConnectorDTO harnessConnector, boolean debug) {
+    boolean skipVerify = checkScmSkipVerify();
+    return Provider.newBuilder()
+        .setHarness(createHarnessProvider(harnessConnector))
+        .setDebug(debug)
+        .setEndpoint(GitClientHelper.getHarnessApiURL(harnessConnector.getUrl()))
+        .setSkipVerify(skipVerify)
+        .setAdditionalCertsPath(getAdditionalCertsPath())
+        .build();
+  }
+
   private GithubProvider createGithubProvider(GithubConnectorDTO githubConnector) {
     switch (githubConnector.getApiAccess().getType()) {
       case GITHUB_APP:
@@ -226,6 +247,22 @@ public class ScmGitProviderMapper {
     }
   }
 
+  private HarnessProvider createHarnessProvider(HarnessConnectorDTO harnessConnector) {
+    switch (harnessConnector.getApiAccess().getType()) {
+      case TOKEN:
+        String accessToken = getAccessToken(harnessConnector);
+        HarnessAccessToken harnessAccessToken = HarnessAccessToken.newBuilder().setAccessToken(accessToken).build();
+        return HarnessProvider.newBuilder().setHarnessAccessToken(harnessAccessToken).build();
+      case JWT_TOKEN:
+        String jwtToken = getJWTToken(harnessConnector);
+        HarnessJWT harnessJWT = HarnessJWT.newBuilder().setToken(jwtToken).build();
+        return HarnessProvider.newBuilder().setHarnessJwt(harnessJWT).build();
+      default:
+        throw new NotImplementedException(String.format(
+            "The scm apis for the api access type %s is not supported", harnessConnector.getApiAccess().getType()));
+    }
+  }
+
   private String getAccessTokenFromGithubApp(GithubConnectorDTO githubConnector) {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubAppSpecDTO apiAccessDTO = (GithubAppSpecDTO) apiAccess.getSpec();
@@ -238,6 +275,26 @@ public class ScmGitProviderMapper {
     GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
     GithubTokenSpecDTO apiAccessDTO = (GithubTokenSpecDTO) apiAccess.getSpec();
     return scmGitProviderHelper.getToken(apiAccessDTO.getTokenRef());
+  }
+
+  private String getAccessToken(HarnessConnectorDTO harnessConnector) {
+    HarnessApiAccessDTO apiAccess = harnessConnector.getApiAccess();
+    HarnessTokenSpecDTO apiAccessDTO = (HarnessTokenSpecDTO) apiAccess.getSpec();
+    if (apiAccessDTO.getTokenRef() == null || apiAccessDTO.getTokenRef().getDecryptedValue() == null) {
+      throw new InvalidArgumentsException(
+          "The Personal Access Token is not set. Please set the Personal Access Token in the Git Connector which has permissions to use providers API's");
+    }
+    return String.valueOf(apiAccessDTO.getTokenRef().getDecryptedValue());
+  }
+
+  private String getJWTToken(HarnessConnectorDTO harnessConnector) {
+    HarnessApiAccessDTO apiAccess = harnessConnector.getApiAccess();
+    HarnessJWTTokenSpecDTO apiAccessDTO = (HarnessJWTTokenSpecDTO) apiAccess.getSpec();
+    if (apiAccessDTO.getTokenRef() == null || apiAccessDTO.getTokenRef().getDecryptedValue() == null) {
+      throw new InvalidArgumentsException(
+          "The Personal Access Token is not set. Please set the JWT token in the Git Connector which has permissions to use providers API's");
+    }
+    return String.valueOf(apiAccessDTO.getTokenRef().getDecryptedValue());
   }
 
   private String getOauthToken(GithubConnectorDTO githubConnector) {

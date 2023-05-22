@@ -31,13 +31,14 @@ public class SscaOrchestrationStepPluginUtils {
   public static final String PLUGIN_TYPE = "PLUGIN_TYPE";
   public static final String PLUGIN_SBOMDESTINATION = "PLUGIN_SBOMDESTINATION";
   public static final String SKIP_NORMALISATION = "SKIP_NORMALISATION";
-  public static final String ATTESTATION_PRIVATE_KEY = "COSIGN_PASSWORD";
+  public static final String COSIGN_PASSWORD = "COSIGN_PASSWORD";
   public static final String SSCA_CORE_URL = "SSCS_Core_Url";
   public static final String STEP_EXECUTION_ID = "STEP_EXECUTION_ID";
   public static final String STEP_ID = "STEP_ID";
   public static final String DOCKER_USERNAME = "DOCKER_USERNAME";
   public static final String DOCKER_PASSW = "DOCKER_PASSWORD";
   public static final String DOCKER_REGISTRY = "DOCKER_REGISTRY";
+  public static final String COSIGN_PRIVATE_KEY = "COSIGN_PRIVATE_KEY";
 
   public Map<String, String> getSScaOrchestrationStepEnvVariables(OrchestrationStepEnvVariables envVariables) {
     Map<String, String> envMap = new HashMap<>();
@@ -56,13 +57,27 @@ public class SscaOrchestrationStepPluginUtils {
   public Map<String, SecretNGVariable> getSscaOrchestrationSecretVars(
       OrchestrationStepSecretVariables secretVariables) {
     Map<String, SecretNGVariable> secretNGVariableMap = new HashMap<>();
-    SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretVariables.getAttestationPrivateKey());
-    secretNGVariableMap.put(ATTESTATION_PRIVATE_KEY,
-        SecretNGVariable.builder()
-            .type(NGVariableType.SECRET)
-            .value(ParameterField.createValueField(secretRefData))
-            .name(ATTESTATION_PRIVATE_KEY)
-            .build());
+    if (secretVariables == null) {
+      return secretNGVariableMap;
+    }
+    if (secretVariables.getAttestationPrivateKey() != null) {
+      SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretVariables.getAttestationPrivateKey());
+      secretNGVariableMap.put(COSIGN_PRIVATE_KEY,
+          SecretNGVariable.builder()
+              .type(NGVariableType.SECRET)
+              .value(ParameterField.createValueField(secretRefData))
+              .name(COSIGN_PRIVATE_KEY)
+              .build());
+    }
+    if (secretVariables.getCosignPassword() != null) {
+      SecretRefData secretRefData = SecretRefHelper.createSecretRef(secretVariables.getCosignPassword());
+      secretNGVariableMap.put(COSIGN_PASSWORD,
+          SecretNGVariable.builder()
+              .type(NGVariableType.SECRET)
+              .value(ParameterField.createValueField(secretRefData))
+              .name(COSIGN_PASSWORD)
+              .build());
+    }
     return secretNGVariableMap;
   }
 

@@ -48,6 +48,7 @@ global:
     enabled: false
   chaos:
     enabled: false
+  stackDriverLoggingEnabled: false
   ingress:
     # -- create ingress objects
     enabled: false
@@ -217,3 +218,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+additionalConfigs: {}

@@ -163,7 +163,6 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body InstanceSyncResponseV2 instanceSyncResponseV2);
 
   @GET("instancesync/instance-sync-ng-v2/task/{perpetualTaskId}/details")
-  @Consumes({"application/x-protobuf"})
   Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(
       @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
   // Query for a specific set of delegate properties for a given account.

@@ -56,6 +56,7 @@ import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.ExpressionResolverUtils;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
@@ -238,41 +239,6 @@ public class ContainerStepInitHelper {
     return stepCtrDefinitions;
   }
 
-  private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefs(ContainerStepSpec containerStepInfo) {
-    Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
-    if (containerStepInfo instanceof PluginStep) {
-      PluginStep pluginStep = (PluginStep) containerStepInfo;
-      String identifier = ContainerUnitStepUtils.getKubernetesStandardPodName(containerStepInfo.getIdentifier());
-      stepConnectorMap.put(identifier, new ArrayList<>());
-      String connectorRef = PluginUtils.getConnectorRef(pluginStep);
-      if (EmptyPredicate.isEmpty(connectorRef)) {
-        return stepConnectorMap;
-      }
-      Map<EnvVariableEnum, String> envToSecretMap = PluginUtils.getConnectorSecretEnvMap(pluginStep.getType());
-      stepConnectorMap.get(identifier)
-          .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
-    } else if (containerStepInfo instanceof InitContainerV2StepInfo) {
-      InitContainerV2StepInfo initContainerV2StepInfo = (InitContainerV2StepInfo) containerStepInfo;
-      initContainerV2StepInfo.getPluginsData().forEach((stepinfo, pluginCreationResponse) -> {
-        List<io.harness.pms.contracts.plan.ConnectorDetails> connectorsForStepList =
-            pluginCreationResponse.getPluginDetails().getConnectorsForStepList();
-        if (isNotEmpty(connectorsForStepList)) {
-          List<ConnectorConversionInfo> connectorConversionInfo =
-              connectorsForStepList.stream()
-                  .map(detail
-                      -> ConnectorConversionInfo.builder()
-                             .connectorRef(detail.getConnectorRef())
-                             .envToSecretsMap(new HashMap<>(convertDetailMap(detail.getConnectorSecretEnvMapMap())))
-                             .build())
-                  .collect(toList());
-          stepConnectorMap.put(ContainerUnitStepUtils.getKubernetesStandardPodName(stepinfo.getStepIdentifier()),
-              connectorConversionInfo);
-        }
-      });
-    }
-    return stepConnectorMap;
-  }
-
   private Map<String, List<ConnectorConversionInfo>> getStepConnectorRefsV2(
       ContainerStepSpec containerStepInfo, String stepGroupIdentifier) {
     Map<String, List<ConnectorConversionInfo>> stepConnectorMap = new HashMap<>();
@@ -298,23 +264,25 @@ public class ContainerStepInitHelper {
           .add(ConnectorConversionInfo.builder().connectorRef(connectorRef).envToSecretsMap(envToSecretMap).build());
     } else if (containerStepInfo instanceof InitContainerV2StepInfo) {
       InitContainerV2StepInfo initContainerV2StepInfo = (InitContainerV2StepInfo) containerStepInfo;
-      initContainerV2StepInfo.getPluginsData().forEach((stepinfo, pluginCreationResponse) -> {
-        List<io.harness.pms.contracts.plan.ConnectorDetails> connectorsForStepList =
-            pluginCreationResponse.getPluginDetails().getConnectorsForStepList();
-        if (isNotEmpty(connectorsForStepList)) {
-          List<ConnectorConversionInfo> connectorConversionInfo =
-              connectorsForStepList.stream()
-                  .map(detail
-                      -> ConnectorConversionInfo.builder()
-                             .connectorRef(detail.getConnectorRef())
-                             .envToSecretsMap(new HashMap<>(convertDetailMap(detail.getConnectorSecretEnvMapMap())))
-                             .build())
-                  .collect(toList());
-          String identifier = stepinfo.getStepIdentifier();
-          if (EmptyPredicate.isNotEmpty(stepGroupIdentifier)) {
-            identifier = stepGroupIdentifier + "_" + identifier;
+      initContainerV2StepInfo.getPluginsData().values().forEach(PluginCreationResponseWrapper -> {
+        for (PluginCreationResponseWrapper responseV2 : PluginCreationResponseWrapper.getResponseList()) {
+          List<io.harness.pms.contracts.plan.ConnectorDetails> connectorsForStepList =
+              responseV2.getResponse().getPluginDetails().getConnectorsForStepList();
+          if (isNotEmpty(connectorsForStepList)) {
+            List<ConnectorConversionInfo> connectorConversionInfo =
+                connectorsForStepList.stream()
+                    .map(detail
+                        -> ConnectorConversionInfo.builder()
+                               .connectorRef(detail.getConnectorRef())
+                               .envToSecretsMap(new HashMap<>(convertDetailMap(detail.getConnectorSecretEnvMapMap())))
+                               .build())
+                    .collect(toList());
+            String identifier = responseV2.getStepInfo().getIdentifier();
+            if (EmptyPredicate.isNotEmpty(stepGroupIdentifier)) {
+              identifier = stepGroupIdentifier + "_" + identifier;
+            }
+            stepConnectorMap.put(identifier, connectorConversionInfo);
           }
-          stepConnectorMap.put(identifier, connectorConversionInfo);
         }
       });
     }

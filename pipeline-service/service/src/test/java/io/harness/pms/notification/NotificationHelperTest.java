@@ -60,6 +60,7 @@ import io.harness.pms.helpers.PipelineExpressionHelper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.rule.Owner;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,6 +82,7 @@ public class NotificationHelperTest extends CategoryTest {
   PmsEngineExpressionService pmsEngineExpressionService;
   PMSPipelineService pmsPipelineService;
   PipelineExpressionHelper pipelineExpressionHelper;
+  HtmlInputSanitizer htmlInputSanitizer;
   String executionUrl =
       "http:127.0.0.1:8080/account/dummyAccount/cd/orgs/dummyOrg/projects/dummyProject/pipelines/dummyPipeline/executions/dummyPlanExecutionId/pipeline";
   Ambiance ambiance =
@@ -167,6 +169,7 @@ public class NotificationHelperTest extends CategoryTest {
     pmsEngineExpressionService = mock(PmsEngineExpressionService.class);
     pmsPipelineService = mock(PMSPipelineService.class);
     pipelineExpressionHelper = mock(PipelineExpressionHelper.class);
+    htmlInputSanitizer = mock(HtmlInputSanitizer.class);
     notificationHelper = spy(new NotificationHelper());
     notificationHelper.notificationClient = notificationClient;
     notificationHelper.planExecutionService = planExecutionService;
@@ -175,6 +178,7 @@ public class NotificationHelperTest extends CategoryTest {
     notificationHelper.pmsEngineExpressionService = pmsEngineExpressionService;
     notificationHelper.pmsPipelineService = pmsPipelineService;
     notificationHelper.pipelineExpressionHelper = pipelineExpressionHelper;
+    notificationHelper.userNameSanitizer = htmlInputSanitizer;
   }
 
   @Test
@@ -255,6 +259,7 @@ public class NotificationHelperTest extends CategoryTest {
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(emailNotificationYaml).build()));
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn("dummy");
     ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
         ArgumentCaptor.forClass(NotificationChannel.class);
     doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
@@ -289,6 +294,8 @@ public class NotificationHelperTest extends CategoryTest {
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
     doReturn(notificationRulesMap).when(pmsEngineExpressionService).resolve(eq(ambiance), any(), eq(true));
+    when(htmlInputSanitizer.sanitizeInput(anyString())).thenReturn("dummy");
+
     for (int idx = 0; idx < pipelineEventTypeList.size(); idx++) {
       notificationHelper.sendNotification(ambiance, pipelineEventTypeList.get(idx), nodeExecution, 1L);
       verify(notificationClient, times(idx + 1)).sendNotificationAsync(any());

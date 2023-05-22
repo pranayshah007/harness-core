@@ -25,8 +25,8 @@ appVersion: "1.16.0"
 
 dependencies:
   - name: database
-    version: 0.1.x
+    version: 0.3.x
     repository: "file://./database"
-  - name: secrets
-    version: 0.1.x
+  - name: harness-secrets
+    version: 0.3.x
     repository: "file://./secrets"

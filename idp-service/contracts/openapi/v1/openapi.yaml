@@ -1502,12 +1502,15 @@ components:
         id: e8du2q55p26u5
       type: object
       properties:
-        plugin:
-          $ref: '#/components/schemas/PluginDetails'
+        operation_type:
+          type: string
           x-stoplight:
-            id: jqr3z1zl2f5vs
+            id: nv99llfqqfl3n
+        exports:
+          $ref: '#/components/schemas/Exports'
       required:
-        - plugin
+        - operation_type
+        - exports
     GenerateYamlRequest:
       title: GenerateYamlRequest
       x-stoplight:

@@ -19,7 +19,7 @@ import software.wings.sm.State;
 public class EmptyStepMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
-    return SupportStatus.IGNORE;
+    return SupportStatus.NO_LONGER_NEEDED;
   }
 
   @Override

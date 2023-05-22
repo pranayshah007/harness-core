@@ -117,7 +117,7 @@ public class WinRmInitCommandHandler implements CommandHandler {
         winRmExecutorFactoryNG.getExecutor(config, winRmCommandTaskParameters.isDisableWinRMCommandEncodingFFSet(),
             winRmCommandTaskParameters.isWinrmScriptCommandSplit(), logStreamingTaskClient, commandUnitsProgress);
 
-    return executor.executeCommandString(getInitCommand(getWorkingDir(commandUnit.getDestinationPath())), false, false);
+    return executor.executeCommandString(getInitCommand(getWorkingDir(commandUnit.getDestinationPath())));
   }
 
   private String getInitCommand(String workingDirectory) {

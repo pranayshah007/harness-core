@@ -60,8 +60,8 @@ public class ServiceSequence implements PersistentEntity {
   @Trimmed private String projectIdentifier;
   @Trimmed private String serviceIdentifier;
 
-  private CustomSequenceDTO defaultSequence;
-  private CustomSequenceDTO customSequence;
+  boolean shouldUseCustomSequence;
+  CustomSequenceDTO customSequence;
 
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;

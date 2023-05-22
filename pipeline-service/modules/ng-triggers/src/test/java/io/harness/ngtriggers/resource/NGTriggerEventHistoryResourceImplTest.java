@@ -27,6 +27,7 @@ import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistor
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
 import io.harness.ngtriggers.beans.response.TriggerEventResponse;
+import io.harness.ngtriggers.beans.response.TriggerEventStatus;
 import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.target.TargetType;
@@ -200,6 +201,8 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
     assertThat(responseDto.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(responseDto.getTargetIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
     assertThat(responseDto.getFinalStatus()).isNull();
+    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
+    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("UNKNOWN_STATUS");
   }
 
   @Test
@@ -266,5 +269,7 @@ public class NGTriggerEventHistoryResourceImplTest extends CategoryTest {
 
     NGTriggerEventHistoryBaseDTO responseDto = content.toList().get(0);
     assertThat(responseDto.getFinalStatus()).isNull();
+    assertThat(responseDto.getTriggerEventStatus().getStatus()).isEqualTo(TriggerEventStatus.FinalResponse.FAILURE);
+    assertThat(responseDto.getTriggerEventStatus().getMessage()).isEqualTo("UNKNOWN_STATUS");
   }
 }

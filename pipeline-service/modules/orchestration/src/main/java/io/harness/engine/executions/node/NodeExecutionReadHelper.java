@@ -57,6 +57,11 @@ public class NodeExecutionReadHelper {
     return mongoTemplate.stream(query, NodeExecution.class);
   }
 
+  public CloseableIterator<NodeExecution> fetchNodeExecutionsWithAllFields(Query query) {
+    query.cursorBatchSize(MAX_BATCH_SIZE);
+    return mongoTemplate.stream(query, NodeExecution.class);
+  }
+
   public CloseableIterator<NodeExecution> fetchNodeExecutionsFromAnalytics(Query query) {
     query.cursorBatchSize(MAX_BATCH_SIZE);
     validateNodeExecutionStreamQuery(query);

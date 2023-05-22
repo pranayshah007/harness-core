@@ -44,21 +44,22 @@ public class CustomDeploymentServiceV2Mapper implements ServiceV2Mapper {
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
     Map<CgEntityId, Set<CgEntityId>> graph = migrationContext.getGraph();
     MigrationInputDTO inputDTO = migrationContext.getInputDTO();
+
+    NGYamlFile yamlFile =
+        migratedEntities.get(CgEntityId.builder().id(service.getDeploymentTypeTemplateId()).type(TEMPLATE).build());
+    if (yamlFile == null || yamlFile.getYaml() == null) {
+      return null;
+    }
+    NGTemplateConfig templateConfig = (NGTemplateConfig) yamlFile.getYaml();
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     CustomDeploymentServiceSpec customDeploymentServiceSpec =
         CustomDeploymentServiceSpec.builder()
             .artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build())
-            .customDeploymentRef(
-                StepTemplateRef.builder()
-                    .templateRef(MigratorUtility.getIdentifierWithScope(
-                        migratedEntities, service.getDeploymentTypeTemplateId(), TEMPLATE))
-                    .versionLabel((
-                        (NGTemplateConfig) migratedEntities
-                            .get(CgEntityId.builder().id(service.getDeploymentTypeTemplateId()).type(TEMPLATE).build())
-                            .getYaml())
-                                      .getTemplateInfoConfig()
-                                      .getVersionLabel())
-                    .build())
+            .customDeploymentRef(StepTemplateRef.builder()
+                                     .templateRef(MigratorUtility.getIdentifierWithScope(
+                                         migratedEntities, service.getDeploymentTypeTemplateId(), TEMPLATE))
+                                     .versionLabel(templateConfig.getTemplateInfoConfig().getVersionLabel())
+                                     .build())
             .variables(MigratorUtility.getServiceVariables(migrationContext, service.getServiceVariables()))
             .configFiles(configFiles)
             .build();

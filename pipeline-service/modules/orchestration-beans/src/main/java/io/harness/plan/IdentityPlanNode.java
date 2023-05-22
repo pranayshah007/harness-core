@@ -9,12 +9,14 @@ package io.harness.plan;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -22,6 +24,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.With;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.NonFinal;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -40,7 +43,11 @@ public class IdentityPlanNode implements Node {
   @Builder.Default SkipType skipGraphType = SkipType.NOOP;
   String stageFqn;
   StepType stepType;
-  String originalNodeExecutionId;
+  // todo: use list of execution IDs in retry failed pipeline as well
+  @NonFinal String originalNodeExecutionId;
+  // one plan node can map to multiple node executions because of introduction of strategy. Hence, it is better to take
+  // a list instead of a single node if multiple node executions for a plan node are found
+  @NonFinal List<String> allOriginalNodeExecutionIds;
   String serviceName;
   String executionInputTemplate;
   // Saving the advisorObtainmentsForExecutionMode so that when the postProdRollback is triggered 2nd time for other
@@ -132,5 +139,14 @@ public class IdentityPlanNode implements Node {
         .whenCondition(node.getWhenCondition())
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();
+  }
+
+  public void convertToListOfOGNodeExecIds(String nodeExecId) {
+    if (EmptyPredicate.isEmpty(allOriginalNodeExecutionIds)) {
+      allOriginalNodeExecutionIds = new ArrayList<>();
+      allOriginalNodeExecutionIds.add(originalNodeExecutionId);
+      originalNodeExecutionId = null;
+    }
+    allOriginalNodeExecutionIds.add(nodeExecId);
   }
 }

@@ -339,16 +339,4 @@ public class PerpetualTaskRecordDao {
             .set(PerpetualTaskRecordKeys.exception, exception);
     persistence.update(query, updateOperations);
   }
-
-  public void updateTaskProcessed(String taskId, int assignTryCount) {
-    Query<PerpetualTaskRecord> query =
-        persistence.createQuery(PerpetualTaskRecord.class).filter(PerpetualTaskRecordKeys.uuid, taskId);
-    UpdateOperations<PerpetualTaskRecord> updateOperations =
-        persistence.createUpdateOperations(PerpetualTaskRecord.class)
-            .set(PerpetualTaskRecordKeys.assignAfterMs,
-                System.currentTimeMillis()
-                    + TimeUnit.MINUTES.toMillis(FibonacciBackOff.getFibonacciElement(
-                        Math.min(MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT, assignTryCount + 1))));
-    persistence.update(query, updateOperations);
-  }
 }

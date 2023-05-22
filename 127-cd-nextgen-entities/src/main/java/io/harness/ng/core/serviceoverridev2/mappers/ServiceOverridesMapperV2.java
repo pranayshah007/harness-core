@@ -30,12 +30,13 @@ public class ServiceOverridesMapperV2 {
         .environmentRef(requestDTOV2.getEnvironmentRef())
         .serviceRef(requestDTOV2.getServiceRef())
         .infraIdentifier(requestDTOV2.getInfraIdentifier())
+        .clusterIdentifier(requestDTOV2.getClusterIdentifier())
         .spec(requestDTOV2.getSpec())
         .type(requestDTOV2.getType())
         .build();
   }
 
-  public ServiceOverridesResponseDTOV2 toResponseDTO(@NonNull NGServiceOverridesEntity entity) {
+  public ServiceOverridesResponseDTOV2 toResponseDTO(@NonNull NGServiceOverridesEntity entity, boolean isNewlyCreated) {
     return ServiceOverridesResponseDTOV2.builder()
         .identifier(entity.getIdentifier())
         .accountId(entity.getAccountId())
@@ -44,8 +45,10 @@ public class ServiceOverridesMapperV2 {
         .environmentRef(entity.getEnvironmentRef())
         .serviceRef(entity.getServiceRef())
         .infraIdentifier(entity.getInfraIdentifier())
+        .clusterIdentifier(entity.getClusterIdentifier())
         .spec(entity.getSpec())
         .type(entity.getType())
+        .isNewlyCreated(isNewlyCreated)
         .build();
   }
 }

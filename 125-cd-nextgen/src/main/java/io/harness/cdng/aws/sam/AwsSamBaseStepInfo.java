@@ -43,7 +43,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("awsSamBaseStepInfo")
 @FieldNameConstants(innerTypeName = "AwsSamBaseStepInfoKeys")
 public class AwsSamBaseStepInfo {
-  @YamlSchemaTypes({runtime})
+  @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
@@ -70,4 +70,6 @@ public class AwsSamBaseStepInfo {
   @YamlSchemaTypes({expression})
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
+
+  @YamlSchemaTypes({runtime}) @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> samVersion;
 }

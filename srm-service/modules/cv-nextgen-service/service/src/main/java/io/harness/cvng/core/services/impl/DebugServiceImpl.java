@@ -129,6 +129,14 @@ public class DebugServiceImpl implements DebugService {
   }
 
   @Override
+  public boolean forceDeleteSLO(ProjectParams projectParams, String sloIdentifier) {
+    if (!debugConfigService.isDebugEnabled()) {
+      throw new RuntimeException("Debug Mode is turned off");
+    }
+    return serviceLevelObjectiveV2Service.forceDelete(projectParams, sloIdentifier);
+  }
+
+  @Override
   public VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String callBackId) {
     CVNGStepTask cvngStepTask = cvngStepTaskService.getByCallBackId(callBackId);
     Activity activity = activityService.get(cvngStepTask.getActivityId());

@@ -11,6 +11,7 @@ import com.google.common.base.Preconditions;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 public class DateTimeUtils {
@@ -40,14 +41,11 @@ public class DateTimeUtils {
 
   public static Instant roundUpToMinBoundary(Instant instant, int minBoundary) {
     Preconditions.checkArgument(minBoundary > 0 && minBoundary < 60, "Minute boundary need to be between 1 to 59");
-    ZonedDateTime zonedDateTime = instant.atZone(ZoneOffset.UTC);
-    int minute = zonedDateTime.getMinute();
-    if (minute % minBoundary != 0) {
-      minute = minute + (minBoundary - minute % minBoundary);
+    Instant roundDownToMinBoundary = roundDownToMinBoundary(instant, minBoundary);
+    if (!roundDownToMinBoundary.equals(instant)) {
+      roundDownToMinBoundary = roundDownToMinBoundary.plus(5, ChronoUnit.MINUTES);
     }
-    zonedDateTime = ZonedDateTime.of(zonedDateTime.getYear(), zonedDateTime.getMonthValue(),
-        zonedDateTime.getDayOfMonth(), zonedDateTime.getHour(), minute, 0, 0, ZoneOffset.UTC);
-    return zonedDateTime.toInstant();
+    return roundDownToMinBoundary;
   }
 
   public static long instantToEpochMinute(Instant instant) {

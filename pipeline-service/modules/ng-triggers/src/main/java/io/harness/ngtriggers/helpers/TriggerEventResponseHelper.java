@@ -171,6 +171,7 @@ public class TriggerEventResponseHelper {
           .executionStatus(ngPipelineExecutionResponseDTO.getPlanExecution().getStatus().name())
           .triggerId(triggerDetails.getNgTriggerEntity().getIdentifier())
           .runtimeInput(runtimeInputYaml)
+          .runSequence(ngPipelineExecutionResponseDTO.getPlanExecution().getMetadata().getRunSequence())
           .startTs(ngPipelineExecutionResponseDTO.getPlanExecution().getStartTs())
           .build();
     }
@@ -190,6 +191,7 @@ public class TriggerEventResponseHelper {
           .planExecutionId(planExecution.getUuid())
           .executionStatus(planExecution.getStatus().name())
           .triggerId(triggerDetails.getNgTriggerEntity().getIdentifier())
+          .runSequence(planExecution.getMetadata().getRunSequence())
           .runtimeInput(runtimeInputYaml)
           .startTs(planExecution.getStartTs())
           .build();

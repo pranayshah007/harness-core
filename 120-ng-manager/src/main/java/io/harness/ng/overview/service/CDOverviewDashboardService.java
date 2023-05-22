@@ -36,6 +36,7 @@ import io.harness.ng.overview.dto.InstanceGroupedOnArtifactList;
 import io.harness.ng.overview.dto.InstancesByBuildIdList;
 import io.harness.ng.overview.dto.OpenTaskDetails;
 import io.harness.ng.overview.dto.PipelineExecutionCountInfo;
+import io.harness.ng.overview.dto.SequenceToggleDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTO;
 import io.harness.ng.overview.dto.ServiceDeploymentInfoDTOV2;
 import io.harness.ng.overview.dto.ServiceDeploymentListInfo;
@@ -127,8 +128,8 @@ public interface CDOverviewDashboardService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   EnvironmentGroupInstanceDetails getEnvironmentInstanceDetails(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier,
-      EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO);
+      String projectIdentifier, String serviceIdentifier, EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO,
+      boolean returnDefaultSequence);
 
   ArtifactInstanceDetails getArtifactInstanceDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier);
@@ -177,9 +178,17 @@ public interface CDOverviewDashboardService {
       String projectIdentifier, String serviceId, Long startInterval, Long endInterval, String artifactPath,
       String artifactVersion, String artifact, String status);
 
-  ServiceSequence getCustomSequence(
+  CustomSequenceDTO getCustomSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+
+  CustomSequenceDTO getDefaultSequence(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 
   ServiceSequence saveCustomSequence(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceId, CustomSequenceDTO customSequenceDTO);
+
+  ServiceSequence useCustomSequence(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, boolean useCustomSequence);
+  SequenceToggleDTO useCustomSequence(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
 }

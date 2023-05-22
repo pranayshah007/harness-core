@@ -52,11 +52,27 @@ PROJECTS=$(<$PROJFILE)
 #if [ $(git rev-list --count $ghprbActualCommit ^origin/develop)  -eq 1 ]; then
 #    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
 #fi
-KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+]:" | grep -o -iE "(${PROJECTS})-[0-9]+"`
+COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|\[hotfixpreqa]|feat|fix|techdebt|hotfixpreqa"
+KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+][: ]" | grep -o -iE "(${PROJECTS})-[0-9]+"`
+if [[ -z $KEY ]]; then
+  echo "Cannot extract Jira key from $ghprbPullTitle"
+  echo "Make sure that your PR Title is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>"
+  exit 1
+fi
+
+
 
 echo "JIRA Key is : $KEY "
 
 jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority --user $JIRA_USERNAME:$JIRA_PASSWORD`
+
+errorsFound=`echo "${jira_response}" | jq ".errorMessages" | tr -d '"'`
+if [[ ! $errorsFound == "null" ]]; then
+  echo "Error returned fetching Jira key given in PR title ($KEY)"
+  echo "$errorsFound"
+  exit 1
+fi
+
 issuetype=`echo "${jira_response}" | jq ".fields.issuetype.name" | tr -d '"'`
 prioritytype=`echo "${jira_response}" | jq ".fields.priority.name" | tr -d '"'`
 

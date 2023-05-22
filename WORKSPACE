@@ -1,4 +1,5 @@
 # Copyright 2021 Harness Inc. All rights reserved.
+# Copyright 2021 Harness Inc. All rights reserved.
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -1296,8 +1297,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:rubFzxpqZfxfN0Z9MwcUX44/OUur/hEA1OvI+S14CDU=",
-    version = "v1.29.2-0.20230428094229-194f53fb3716",
+    sum = "h1:p35onfFNfSQTKLC15sb76sESs+bj+Rb/pMqDtsgKsU4=",
+    version = "v1.29.2-0.20230515092809-5877f3846131",
 )
 
 go_repository(
@@ -4649,11 +4650,11 @@ http_archive(
     ],
 )
 
-RULES_JVM_EXTERNAL_TAG = "4.1"
+RULES_JVM_EXTERNAL_TAG = "4.5"
 
 http_archive(
     name = "rules_jvm_external",
-    sha256 = "f36441aa876c4f6427bfb2d1f2d723b48e9d930b62662bf723ddfb8fc80f0140",
+    sha256 = "b17d7388feb9bfa7f2fa09031b32707df529f26c91ab9e5d909eb1676badd9a6",
     strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     url = "https://harness-artifactory.harness.io/artifactory/rules-jvm-external-github/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
 )
@@ -4985,7 +4986,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.52-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.55-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",
@@ -5738,9 +5739,8 @@ register_toolchains("//:py_toolchain")
 
 http_archive(
     name = "io_bazel_rules_docker",
-    sha256 = "59d5b42ac315e7eadffa944e86e90c2990110a1c8075f1cd145f487e999d22b3",
-    strip_prefix = "rules_docker-0.17.0",
-    urls = ["https://harness-artifactory.harness.io/artifactory/rules-docker-github/download/v0.17.0/rules_docker-v0.17.0.tar.gz"],
+    sha256 = "b1e80761a8a8243d03ebca8845e9cc1ba6c82ce7c5179ce2b295cd36f7e394bf",
+    urls = ["https://harness-artifactory.harness.io/artifactory/rules-docker-github/download/v0.25.0/rules_docker-v0.25.0.tar.gz"],
 )
 
 load(
@@ -5797,9 +5797,9 @@ container_repositories()
 
 http_archive(
     name = "rules_pkg",
-    sha256 = "038f1caa773a7e35b3663865ffb003169c6a71dc995e39bf4815792f385d837d",
+    sha256 = "eea0f59c28a9241156a47d7a8e32db9122f3d50b505fae0f33de6ce4d9b61834",
     urls = [
-        "https://harness-artifactory.harness.io/artifactory/rules-pkg-github/download/0.4.0/rules_pkg-0.4.0.tar.gz",
+        "https://harness-artifactory.harness.io/artifactory/rules-pkg-github/download/0.8.0/rules_pkg-0.8.0.tar.gz",
         #"https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
         #"https://github.com/bazelbuild/rules_pkg/releases/download/0.4.0/rules_pkg-0.4.0.tar.gz",
     ],
@@ -5893,9 +5893,9 @@ go_repository(
 # Contrib rules jvm for build cleaner.
 http_archive(
     name = "contrib_rules_jvm",
-    sha256 = "a939cd04da2deee16131898d91d8e23559dcd1a30a5128beac30a2b01b33c94f",
-    strip_prefix = "rules_jvm-0.4.0",
-    url = "https://harness-artifactory.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.4.0.tar.gz",
+    sha256 = "548f0583192ff79c317789b03b882a7be9b1325eb5d3da5d7fdcc4b7ca69d543",
+    strip_prefix = "rules_jvm-0.9.0",
+    url = "https://harness-artifactory.harness.io/artifactory/bazel-contrib-rules-jvm/archive/v0.9.0.tar.gz",
 )
 
 # Fetches the contrib_rules_jvm dependencies.
@@ -5912,6 +5912,6 @@ load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
 
 contrib_rules_jvm_setup()
 
-load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contrib_rules_jvm_gazelle_setup")
 
-contib_rules_jvm_gazelle_setup()
+contrib_rules_jvm_gazelle_setup()

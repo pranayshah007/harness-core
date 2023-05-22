@@ -7,11 +7,15 @@
 
 package io.harness.service.deploymentevent;
 
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -342,5 +346,121 @@ public class DeploymentEventListenerTest extends InstancesTestBase {
     assertThat(actualMappingDTO.getProjectIdentifier()).isNull();
     assertThat(actualMappingDTO.getServiceIdentifier()).isEqualTo(ACCOUNT_LEVEL_SERVICE_IDENTIFIER);
     assertThat(actualMappingDTO.getEnvIdentifier()).isEqualTo(ORG_LEVEL_ENVIRONMENT_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void handleEventTestForRollback() {
+    LinkedHashSet<String> namespaces = new LinkedHashSet<>();
+    namespaces.add("namespace1");
+    StepType stepType = StepType.newBuilder().build();
+    Level level = Level.newBuilder().setStepType(stepType).setStartTs(START_TS).build();
+    Level stageLevel = Level.newBuilder()
+                           .setIdentifier(ROLLBACK_STEPS)
+                           .setRuntimeId("stageNodeExecutionId")
+                           .setStepType(StepType.newBuilder()
+                                            .setType(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
+                                            .setStepCategory(StepCategory.STAGE)
+                                            .build())
+                           .setStartTs(START_TS)
+                           .build();
+    TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(TRIGGERED_BY_IDENTIFER).setUuid(UUID).build();
+    ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_IDENTIFIER).setTriggerInfo(triggerInfo).build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setMetadata(executionMetadata)
+                            .addLevels(stageLevel)
+                            .addLevels(level)
+                            .setPlanExecutionId(PLAN_EXECUTION_ID)
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .build();
+    OrchestrationEvent orchestrationEvent =
+        OrchestrationEvent.builder().status(Status.SUCCEEDED).ambiance(ambiance).build();
+    ServerInstanceInfo serverInstanceInfo = K8sServerInstanceInfo.builder().build();
+    ServiceStepOutcome serviceStepOutcome = ServiceStepOutcome.builder().identifier(SERVICE_IDENTIFIER).build();
+    EnvironmentOutcome environmentOutcome = EnvironmentOutcome.builder().identifier(ENVIRONMENT_IDENTIFIER).build();
+    InfrastructureOutcome infrastructureOutcome = K8sDirectInfrastructureOutcome.builder()
+                                                      .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                      .environment(environmentOutcome)
+                                                      .connectorRef(CONNECTOR_REF)
+                                                      .build();
+    when(instanceInfoService.listServerInstances(ambiance, stepType)).thenReturn(Arrays.asList(serverInstanceInfo));
+    when(outcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)))
+        .thenReturn(serviceStepOutcome);
+    when(outcomeService.resolve(
+             ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)))
+        .thenReturn(infrastructureOutcome);
+
+    InfrastructureMappingDTO infrastructureMappingDTO = InfrastructureMappingDTO.builder()
+                                                            .id(INFRASTRUCTURE_ID)
+                                                            .orgIdentifier(ORG_IDENTIFIER)
+                                                            .accountIdentifier(ACCOUNT_ID)
+                                                            .projectIdentifier(PROJECT_IDENTIFIER)
+                                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                                            .envIdentifier(ENVIRONMENT_IDENTIFIER)
+                                                            .infrastructureKey(INFRASTRUCTURE_KEY)
+                                                            .infrastructureKind(infrastructureOutcome.getKind())
+                                                            .connectorRef(CONNECTOR_REF)
+                                                            .build();
+    final ArgumentCaptor<InfrastructureMappingDTO> captor = ArgumentCaptor.forClass(InfrastructureMappingDTO.class);
+    when(infrastructureMappingService.createNewOrReturnExistingInfrastructureMapping(any()))
+        .thenReturn(Optional.of(infrastructureMappingDTO));
+    when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
+             serviceStepOutcome.getType(), infrastructureOutcome.getKind()))
+        .thenReturn(abstractInstanceSyncHandler);
+    DeploymentInfoDTO deploymentInfoDTO =
+        K8sDeploymentInfoDTO.builder().releaseName(RELEASE_NAME).namespaces(namespaces).build();
+    when(abstractInstanceSyncHandler.getDeploymentInfo(infrastructureOutcome, Arrays.asList(serverInstanceInfo)))
+        .thenReturn(deploymentInfoDTO);
+
+    DeploymentSummaryDTO deploymentSummaryDTO = DeploymentSummaryDTO.builder()
+                                                    .accountIdentifier(ACCOUNT_ID)
+                                                    .orgIdentifier(ORG_IDENTIFIER)
+                                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                                    .pipelineExecutionId(PLAN_EXECUTION_ID)
+                                                    .pipelineExecutionName(PIPELINE_IDENTIFIER)
+                                                    .deployedByName(TRIGGERED_BY_IDENTIFER)
+                                                    .deployedById(UUID)
+                                                    .infrastructureMappingId(INFRASTRUCTURE_ID)
+                                                    .infrastructureMapping(infrastructureMappingDTO)
+                                                    .instanceSyncKey(deploymentInfoDTO.prepareInstanceSyncHandlerKey())
+                                                    .deploymentInfoDTO(deploymentInfoDTO)
+                                                    .deployedAt(START_TS)
+                                                    .artifactDetails(ArtifactDetails.builder().artifactId("V1").build())
+                                                    .build();
+
+    DeploymentSummaryDTO deploymentSummaryDTO1 = DeploymentSummaryDTO.builder()
+                                                     .accountIdentifier(ACCOUNT_ID)
+                                                     .orgIdentifier(ORG_IDENTIFIER)
+                                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                                     .pipelineExecutionId(PLAN_EXECUTION_ID)
+                                                     .pipelineExecutionName(PIPELINE_IDENTIFIER)
+                                                     .deployedByName(TRIGGERED_BY_IDENTIFER)
+                                                     .deployedById(UUID)
+                                                     .infrastructureMappingId(INFRASTRUCTURE_ID)
+                                                     .infrastructureMapping(infrastructureMappingDTO)
+                                                     .instanceSyncKey(deploymentInfoDTO.prepareInstanceSyncHandlerKey())
+                                                     .deploymentInfoDTO(deploymentInfoDTO)
+                                                     .deployedAt(START_TS)
+                                                     .build();
+
+    when(deploymentSummaryService.getNthDeploymentSummaryFromNow(eq(2), anyString(), any()))
+        .thenReturn(Optional.of(deploymentSummaryDTO));
+
+    when(deploymentSummaryService.save(any())).thenReturn(deploymentSummaryDTO1);
+    deploymentSummaryDTO1.setServerInstanceInfoList(Arrays.asList(serverInstanceInfo));
+    deploymentSummaryDTO1.setInfrastructureMapping(infrastructureMappingDTO);
+
+    deploymentEventListener.handleEvent(orchestrationEvent);
+
+    final ArgumentCaptor<DeploymentSummaryDTO> deploymentSummaryDTOArgumentCaptor =
+        ArgumentCaptor.forClass(DeploymentSummaryDTO.class);
+    verify(deploymentSummaryService, times(1)).save(deploymentSummaryDTOArgumentCaptor.capture());
+    DeploymentSummaryDTO actualDeploymentSummaryDTO = deploymentSummaryDTOArgumentCaptor.getValue();
+    assertThat(actualDeploymentSummaryDTO.getArtifactDetails().getArtifactId()).isEqualTo("V1");
   }
 }

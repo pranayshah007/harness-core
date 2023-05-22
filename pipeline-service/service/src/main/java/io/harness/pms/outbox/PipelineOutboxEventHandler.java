@@ -178,14 +178,14 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageStartEventToNodeExecutionEventData(stageStartEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.STAGE_START);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.START);
   }
   private boolean handleStageEndEvent(OutboxEvent outboxEvent) throws JsonProcessingException {
     StageEndEvent stageEndEvent = objectMapper.readValue(outboxEvent.getEventData(), StageEndEvent.class);
     NodeExecutionEventData nodeExecutionEventData =
         NodeExecutionEventUtils.mapStageEndEventToNodeExecutionEventData(stageEndEvent);
 
-    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.STAGE_END);
+    return publishAuditEntry(outboxEvent, nodeExecutionEventData, Action.END);
   }
 
   private boolean handlePipelineAbortEvent(OutboxEvent outboxEvent) throws JsonProcessingException {

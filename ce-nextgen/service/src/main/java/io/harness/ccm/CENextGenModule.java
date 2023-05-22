@@ -84,6 +84,7 @@ import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.CCMActiveSpendServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
 import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
+import io.harness.ccm.service.impl.CCMOverviewServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
 import io.harness.ccm.service.impl.GCPEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.LicenseUsageInterfaceImpl;
@@ -95,6 +96,7 @@ import io.harness.ccm.service.intf.AzureEntityChangeEventService;
 import io.harness.ccm.service.intf.CCMActiveSpendService;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.service.intf.CCMNotificationService;
+import io.harness.ccm.service.intf.CCMOverviewService;
 import io.harness.ccm.service.intf.CEYamlService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
 import io.harness.ccm.serviceAccount.CEGcpServiceAccountService;
@@ -413,6 +415,7 @@ public class CENextGenModule extends AbstractModule {
     bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
+    bind(CCMOverviewService.class).to(CCMOverviewServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);

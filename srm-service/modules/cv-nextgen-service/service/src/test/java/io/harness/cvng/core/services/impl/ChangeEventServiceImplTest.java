@@ -56,6 +56,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.assertj.core.api.Assertions;
@@ -93,8 +94,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_insert() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
@@ -173,8 +172,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testRegister_insertWithNoMonitoredService() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO =
         builderFactory.harnessCDChangeEventDTOBuilder().monitoredServiceIdentifier(null).build();
 
@@ -205,9 +202,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_update() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
-
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
     changeEventService.register(changeEventDTO);
     Long eventTime = 123L;
@@ -266,8 +260,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_noChangeSource() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
@@ -414,6 +406,10 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     ChangeSummaryDTO changeSummaryDTO =
         changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
             null, null, Instant.ofEpochSecond(300), Instant.ofEpochSecond(500));
+
+    // to verify that the keys remain in the same order
+    assertThat(changeSummaryDTO.getCategoryCountMap().keySet())
+        .isEqualTo(new LinkedHashSet<>(List.of(ChangeCategory.values())));
 
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCount()).isEqualTo(3);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
@@ -718,6 +714,10 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeTimeline changeTimeline = changeEventService.getTimeline(builderFactory.getContext().getProjectParams(), null,
         null, null, false, null, null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500), 2);
+
+    // to verify that the keys remain in the same order
+    assertThat(changeTimeline.getCategoryTimeline().keySet())
+        .isEqualTo(new LinkedHashSet<>(List.of(ChangeCategory.values())));
 
     List<TimeRangeDetail> deploymentChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.DEPLOYMENT);
     assertThat(deploymentChanges.size()).isEqualTo(2);

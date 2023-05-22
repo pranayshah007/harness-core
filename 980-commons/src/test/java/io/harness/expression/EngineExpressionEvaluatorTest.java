@@ -7,6 +7,7 @@
 
 package io.harness.expression;
 
+import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.GARVIT;
 
@@ -25,6 +26,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -241,6 +243,66 @@ public class EngineExpressionEvaluatorTest extends CategoryTest {
                                                                                .put("f", "abc")
                                                                                .put("g", "def")
                                                                                .build());
+    assertThat(evaluator.evaluateExpression("<+a> + <+b>")).isEqualTo(17);
+    assertThat(evaluator.evaluateExpression("<+a> + <+b> == 10")).isEqualTo(false);
+    assertThat(evaluator.evaluateExpression("<+a> + <+b> == 17")).isEqualTo(true);
+    assertThat(evaluator.evaluateExpression("<+c> - 2 * <+b> == 5")).isEqualTo(true);
+    assertThat(evaluator.evaluateExpression("<+c> - 2 * <+b> == <+a>")).isEqualTo(true);
+    assertThat(evaluator.evaluateExpression("<+<+c> - 2 * <+b>> == 5")).isEqualTo(true);
+    assertThat(evaluator.evaluateExpression("<+<+<+d>> * <+d>> == <+571 + <+<+a>>>")).isEqualTo(true);
+    assertThat(evaluator.evaluateExpression("<+e> - <+<+e>> + 1 == 1")).isEqualTo(true);
+    assertThat(evaluator.renderExpression("<+a> + <+b> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
+    assertThat(evaluator.renderExpression("<+<+a> > + <+ <+b>> = <+<+a> + <+b>>")).isEqualTo("5 + 12 = 17");
+    assertThat(evaluator.renderExpression("<+f> + <+g> = <+<+f> + \" + \" + <+g>>")).isEqualTo("abc + def = abc + def");
+
+    EngineExpressionEvaluator.PartialEvaluateResult result = evaluator.partialEvaluateExpression("<+a> + <+b>");
+    assertThat(result).isNotNull();
+    assertThat(result.isPartial()).isFalse();
+    assertThat(result.getValue()).isEqualTo(17);
+
+    result = evaluator.partialEvaluateExpression("<+a> + <+b> == 10");
+    assertThat(result).isNotNull();
+    assertThat(result.isPartial()).isFalse();
+    assertThat(result.getValue()).isEqualTo(false);
+
+    result = evaluator.partialEvaluateExpression("<+a> + <+b> == 17");
+    assertThat(result).isNotNull();
+    assertThat(result.isPartial()).isFalse();
+    assertThat(result.getValue()).isEqualTo(true);
+
+    result = evaluator.partialEvaluateExpression("<+<+<+d>> * <+d>> == <+571 + <+<+a>>>");
+    assertThat(result).isNotNull();
+    assertThat(result.isPartial()).isFalse();
+    assertThat(result.getValue()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = ARCHIT)
+  @Category(UnitTests.class)
+  public void testValidNestedExpressionsWithScriptFeatureFlag() {
+    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
+        new ImmutableMap.Builder<String, Object>()
+            .put("a", 5)
+            .put("b", 12)
+            .put("c", "<+a> + 2 * <+b>")
+            .put("d", "<+c> - <+a>")
+            .put("e", "<+a>")
+            .put("f", "abc")
+            .put("g", "def")
+            .put("productValues", Arrays.asList(1, 2, 3))
+            .put(EngineExpressionEvaluator.ENABLED_FEATURE_FLAGS_KEY, Arrays.asList("PIE_EXECUTION_JSON_SUPPORT"))
+            .build());
+    assertThat(evaluator.evaluateExpression("<+ var traverse = function(key) {\n"
+                   + "                              var result = 0;\n"
+                   + "                              for(productValue: key) \n"
+                   + "                              {\n"
+                   + "                                  result = result + productValue;\n"
+                   + "                               }\n"
+                   + "                              return result\n"
+                   + "                              };\n"
+                   + "                              \n"
+                   + "                          traverse(<+productValues>)  >"))
+        .isEqualTo(6);
     assertThat(evaluator.evaluateExpression("<+a> + <+b>")).isEqualTo(17);
     assertThat(evaluator.evaluateExpression("<+a> + <+b> == 10")).isEqualTo(false);
     assertThat(evaluator.evaluateExpression("<+a> + <+b> == 17")).isEqualTo(true);

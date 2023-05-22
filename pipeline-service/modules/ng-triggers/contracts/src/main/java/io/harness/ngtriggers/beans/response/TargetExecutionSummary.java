@@ -17,6 +17,7 @@ public class TargetExecutionSummary {
   String targetId;
   String runtimeInput;
   String planExecutionId;
+  int runSequence;
   String executionStatus;
   Long startTs;
 }

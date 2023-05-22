@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 51
+version: 52
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -150,6 +150,10 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - servicediscovery_networkmap_create
+        - servicediscovery_networkmap_edit
+        - servicediscovery_networkmap_delete
+        - servicediscovery_networkmap_view
       allowedScopeLevels:
         - project
       managed: true
@@ -203,6 +207,7 @@ roles:
         - chaos_chaosgameday_view
         - core_setting_view
         - code_repo_view
+        - servicediscovery_networkmap_view
       allowedScopeLevels:
         - project
       managed: true
@@ -360,6 +365,10 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - servicediscovery_networkmap_create
+        - servicediscovery_networkmap_edit
+        - servicediscovery_networkmap_delete
+        - servicediscovery_networkmap_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -415,6 +424,7 @@ roles:
         - chaos_chaosgameday_view
         - core_setting_view
         - code_repo_view
+        - servicediscovery_networkmap_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -618,6 +628,10 @@ roles:
         - code_repo_edit
         - code_repo_delete
         - code_repo_push
+        - servicediscovery_networkmap_create
+        - servicediscovery_networkmap_edit
+        - servicediscovery_networkmap_delete
+        - servicediscovery_networkmap_view
       allowedScopeLevels:
         - account
       managed: true
@@ -689,6 +703,7 @@ roles:
         - ccm_cloudAssetGovernanceRuleSet_view
         - ccm_cloudAssetGovernanceRule_view
         - code_repo_view
+        - servicediscovery_networkmap_view
       allowedScopeLevels:
         - account
       managed: true

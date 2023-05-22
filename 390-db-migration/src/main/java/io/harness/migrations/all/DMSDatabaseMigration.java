@@ -51,10 +51,9 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
       "perpetualTaskScheduleConfig", "delegateConnectionResults", "delegateProfiles", "delegateRing", "delegateScopes",
       "delegateSequenceConfig", "delegateTokens", "delegates", "perpetualTask", "delegateGroups", "delegateTasks");
 
-  private final String DELEGATE_TASK = "delegateTasks";
+  private final List<String> toggleOnlyCollection = Arrays.asList("delegateTasks", "delegateConnectionResults");
 
-  // Do not fail migration if migration of these collection fails.
-  private final List<String> failSafeCollection = Arrays.asList("delegateConnectionResults");
+  private final String DELEGATE_TASK = "delegateTasks";
 
   @Override
   public void migrate() {
@@ -88,9 +87,13 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         if (delegateMigrationFlag != null && delegateMigrationFlag.isEnabled()) {
           continue;
         }
-        if (collection.equals(DELEGATE_TASK)) {
+        if (toggleOnlyCollection.contains(collection)) {
           if (checkIndexCount(collection)) {
-            toggleFlag("delegateTask", true);
+            if (collection.equals(DELEGATE_TASK)) {
+              toggleFlag("delegateTask", true);
+            } else {
+              toggleFlag(getClassForCollectionName(collection).getCanonicalName(), true);
+            }
             if (!postToggleCorrectness(collectionClass)) {
               throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
             }
@@ -124,10 +127,7 @@ public class DMSDatabaseMigration implements Migration, SeedDataMigration {
         throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
       }
     } else {
-      // only throw exception if collection is not fail safe.
-      if (!failSafeCollection.contains(collection)) {
-        throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
-      }
+      throw new DelegateDBMigrationFailed(String.format(MIGRATION_FAIL_EXCEPTION_FORMAT, collection));
     }
   }
 

@@ -89,10 +89,12 @@ public class K8sClientHelper {
         .build();
   }
 
-  ApiClient createKubernetesApiClient(
-      K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory, LogCallback logCallback) {
-    KubernetesConfig kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
-        k8sInfraDelegateConfig, workingDirectory, logCallback);
+  ApiClient createKubernetesApiClient(K8sInfraDelegateConfig k8sInfraDelegateConfig, String workingDirectory,
+      LogCallback logCallback, KubernetesConfig kubernetesConfig) {
+    if (kubernetesConfig == null) {
+      kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
+          k8sInfraDelegateConfig, workingDirectory, logCallback);
+    }
     return kubernetesHelperService.getApiClient(kubernetesConfig);
   }
 

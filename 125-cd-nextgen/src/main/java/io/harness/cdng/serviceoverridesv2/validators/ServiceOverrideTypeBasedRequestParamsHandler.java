@@ -18,7 +18,7 @@ import lombok.NonNull;
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
 public interface ServiceOverrideTypeBasedRequestParamsHandler {
-  void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2);
+  void validateRequest(@NonNull ServiceOverrideRequestDTOV2 requestDTOV2, @NonNull String accountId);
 
   String generateServiceOverrideIdentifier(@NonNull NGServiceOverridesEntity serviceOverridesEntity);
 }

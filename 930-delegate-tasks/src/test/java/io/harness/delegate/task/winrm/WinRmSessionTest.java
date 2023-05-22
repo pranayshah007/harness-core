@@ -44,6 +44,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.ssh.SshHelperUtils;
+import io.harness.ssh.WinRmCommandResult;
 
 import com.google.common.collect.ImmutableMap;
 import com.jcraft.jsch.JSchException;
@@ -123,7 +124,7 @@ public class WinRmSessionTest extends CategoryTest {
                              .authenticationScheme(AuthenticationScheme.KERBEROS)
                              .build();
     sshHelperStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
     int status = winRmSession.executeCommandString("ls", writer, error, false);
@@ -148,7 +149,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
     sshHelperStatic.verify(()
                                -> SshHelperUtils.executeLocalCommand(anyString(), any(LogCallback.class),
@@ -171,7 +172,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
-        .thenReturn(false);
+        .thenReturn(WinRmCommandResult.builder().success(false).build());
     try {
       winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
     } catch (InvalidRequestException invalidRequestException) {
@@ -195,7 +196,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
     String userPrincipal = winRmSession.getUserPrincipal("test", "domain");
@@ -219,7 +220,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), anyMap()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
 
     String userPrincipal = winRmSession.getUserPrincipal("test@oldDomain", "domain");
@@ -235,7 +236,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                              .domain("KRB.LOCAL")
                              .skipCertChecks(true)
@@ -257,7 +258,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), any(Writer.class), anyBoolean(), anyMap()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                              .skipCertChecks(true)
                              .username("TestUser")
@@ -279,7 +280,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       any(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), any()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
     winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
                              .domain("KRB.LOCAL")
                              .skipCertChecks(true)
@@ -416,7 +417,7 @@ public class WinRmSessionTest extends CategoryTest {
         .when(()
                   -> SshHelperUtils.executeLocalCommand(
                       anyString(), any(LogCallback.class), nullable(Writer.class), anyBoolean(), any()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
 
     WinRmSessionConfig sessionConfig = WinRmSessionConfig.builder()
                                            .executionId("harnessExecutionId")
@@ -457,7 +458,7 @@ public class WinRmSessionTest extends CategoryTest {
   private void setupMocks(List<String> commands, ShellCommand shell, WinRmTool winRmTool, PyWinrmArgs pyWinrmArgs,
       AuthenticationScheme authenticationScheme) throws JSchException {
     sshHelperStatic.when(() -> SshHelperUtils.executeLocalCommand(any(), any(), any(), anyBoolean(), any()))
-        .thenReturn(true);
+        .thenReturn(WinRmCommandResult.builder().success(true).build());
 
     sshHelperStatic.when(() -> SshHelperUtils.generateTGT(any(), any(), any(), any(), any()))
         .thenAnswer((Answer<Void>) invocation -> null);

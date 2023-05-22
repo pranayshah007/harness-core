@@ -44,7 +44,7 @@ public interface StripeHelper {
   SubscriptionDetailDTO retrieveSubscription(StripeSubscriptionRequest stripeSubscriptionRequest);
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(StripeSubscriptionRequest stripeSubscriptionRequest);
-  void payInvoice(String invoiceId);
+  void payInvoice(String invoiceId, String accountIdentifier);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);
   InvoiceDetailDTO finalizeInvoice(String invoiceId);

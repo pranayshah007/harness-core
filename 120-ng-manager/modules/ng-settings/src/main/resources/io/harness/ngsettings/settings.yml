@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 19
+version : 20
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -341,3 +341,13 @@ settings :
     allowOverrides: true
     allowedScopes:
       - ACCOUNT
+  - identifier: service_override_v2
+    name: Service Override V2 Enabled
+    category: CD
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT

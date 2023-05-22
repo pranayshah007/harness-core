@@ -74,6 +74,7 @@ message MatrixMetadata {
   map<string, string> matrixValues = 1;
   repeated int32 matrixCombination = 2;
   string subType = 3;
+  repeated string matrixKeysToSkipInName = 4;
 }
 
 message ChildChainExecutableResponse {
