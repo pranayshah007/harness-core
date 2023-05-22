@@ -22,7 +22,6 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
-import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -40,5 +39,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GcpSecretManagerConnector extends Connector {
   @Builder.Default private Boolean isDefault = false;
-  @NotEmpty String credentialsRef;
+  String credentialsRef;
+  Boolean assumeCredentialsOnDelegate;
 }

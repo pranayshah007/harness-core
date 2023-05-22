@@ -83,7 +83,7 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     secretManagerServiceClient = mock(SecretManagerServiceClient.class);
     listSecretsPagedResponse = mock(SecretManagerServiceClient.ListSecretsPagedResponse.class);
     when(gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig)).thenReturn(googleCredentials);
-    when(gcpSecretsManagerEncryptor.getGcpSecretsManagerClient(any(GoogleCredentials.class)))
+    when(gcpSecretsManagerEncryptor.getGcpSecretsManagerClient(any(GcpSecretsManagerConfig.class)))
         .thenReturn(secretManagerServiceClient);
 
     when(gcpSecretsManagerEncryptor.getProjectId(any(GoogleCredentials.class))).thenReturn(mockedProjectId);

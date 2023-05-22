@@ -675,7 +675,9 @@ public enum FeatureName {
       "Enable Harness variable rendering in Hanress config files (SSH/WinRM)", HarnessTeam.CDP),
   CDS_RENAME_HARNESS_RELEASE_HISTORY_RESOURCE_NATIVE_HELM_NG(
       "Use a prefix for internal harness release history for native helm deployment. Feature Flag will be removed as part of the epic: https://harness.atlassian.net/browse/CDS-46915",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  PL_USE_CREDENTIALS_FROM_DELEGATE_FOR_GCP_SM(
+      "Enables the use of credentials from Delegate in GCP Secret Manager", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {
