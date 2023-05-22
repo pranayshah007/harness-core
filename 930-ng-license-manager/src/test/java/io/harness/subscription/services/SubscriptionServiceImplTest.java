@@ -61,8 +61,9 @@ public class SubscriptionServiceImplTest extends CategoryTest {
   public void setUp() {
     initMocks(this);
 
-    subscriptionService = new SubscriptionServiceImpl(stripeHelper, creditCardRepository, moduleLicenseRepository, stripeCustomerRepository,
-        subscriptionDetailRepository, ngFeatureFlagHelperService, telemetryReporter, accountService, eventHandlerMap);
+    subscriptionService = new SubscriptionServiceImpl(stripeHelper, creditCardRepository, moduleLicenseRepository,
+        stripeCustomerRepository, subscriptionDetailRepository, ngFeatureFlagHelperService, telemetryReporter,
+        accountService, eventHandlerMap);
   }
 
   @Test
