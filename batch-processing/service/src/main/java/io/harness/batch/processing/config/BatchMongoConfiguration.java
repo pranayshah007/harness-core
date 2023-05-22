@@ -49,7 +49,7 @@ public class BatchMongoConfiguration {
   public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
     MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory);
     log.info("Here. Setting preference as secondary");
-    mongoTemplate.setReadPreference(ReadPreference.secondary());
+    mongoTemplate.setReadPreference(ReadPreference.secondaryPreferred());
     return mongoTemplate;
   }
 
