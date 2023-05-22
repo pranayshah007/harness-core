@@ -42,7 +42,7 @@ public class DelegateGrpcClientWrapper {
   @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   public DelegateResponseData executeSyncTask(DelegateTaskRequest delegateTaskRequest) {
-    final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseData(
+    final ResponseData responseData = delegateServiceGrpcClient.executeSyncTaskReturningResponseDataV2(
         delegateTaskRequest, delegateCallbackTokenSupplier.get());
     DelegateResponseData delegateResponseData;
     if (disableDeserialization) {
@@ -96,7 +96,7 @@ public class DelegateGrpcClientWrapper {
   }
 
   public String submitAsyncTask(DelegateTaskRequest delegateTaskRequest, Duration holdFor) {
-    return delegateServiceGrpcClient.submitAsyncTask(
+    return delegateServiceGrpcClient.submitAsyncTaskV2(
         delegateTaskRequest, delegateCallbackTokenSupplier.get(), holdFor, false);
   }
 
