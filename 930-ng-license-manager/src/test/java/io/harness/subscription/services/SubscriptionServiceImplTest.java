@@ -24,7 +24,6 @@ import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.account.services.AccountService;
 import io.harness.category.element.UnitTests;
-import io.harness.repositories.CreditCardRepository;
 import io.harness.repositories.ModuleLicenseRepository;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.repositories.SubscriptionDetailRepository;
@@ -46,7 +45,6 @@ import org.mockito.Mock;
 
 public class SubscriptionServiceImplTest extends CategoryTest {
   @Mock private StripeHelper stripeHelper;
-  @Mock private CreditCardRepository creditCardRepository;
   @Mock private ModuleLicenseRepository moduleLicenseRepository;
   @Mock private StripeCustomerRepository stripeCustomerRepository;
   @Mock private SubscriptionDetailRepository subscriptionDetailRepository;
@@ -61,9 +59,8 @@ public class SubscriptionServiceImplTest extends CategoryTest {
   public void setUp() {
     initMocks(this);
 
-    subscriptionService = new SubscriptionServiceImpl(stripeHelper, creditCardRepository, moduleLicenseRepository,
-        stripeCustomerRepository, subscriptionDetailRepository, ngFeatureFlagHelperService, telemetryReporter,
-        accountService, eventHandlerMap);
+    subscriptionService = new SubscriptionServiceImpl(stripeHelper, moduleLicenseRepository, stripeCustomerRepository,
+        subscriptionDetailRepository, ngFeatureFlagHelperService, telemetryReporter, accountService, eventHandlerMap);
   }
 
   @Test
