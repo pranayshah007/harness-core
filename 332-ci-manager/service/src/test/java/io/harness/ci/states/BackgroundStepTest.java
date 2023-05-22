@@ -234,7 +234,7 @@ public class BackgroundStepTest extends CIExecutionTestBase {
 
     when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmBackgroundStep.builder().build());
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), )).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
         backgroundStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
