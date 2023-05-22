@@ -5,7 +5,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 set -ex
-SERVICE_NAME="$1"
+export SERVICE_NAME="$1"
 # GCP_KEY, HARNESS_WILD_CERT, KEYSTORE_PASS, JDK, VERSION, PURPOSE, BUILD are externally provided
 # to this script through environment variables.
 
@@ -28,7 +28,7 @@ echo "--------------------------------------"
 echo $JDK $BUILD $VERSION $PURPOSE $GIT_BRANCH $GIT_COMMIT $(date)
 echo "--------------------------------------"
 
-scripts/bazel/generate_credentials.sh
+#scripts/bazel/generate_credentials.sh
 
 echo \ >> bazelrc.remote
 echo build --google_credentials=/tmp/storage_secret.json >> bazelrc.remote
@@ -40,7 +40,7 @@ chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
 chmod +x build/build_jar.sh
 chmod +x build/build_dist.sh
 
-build/build_jar.sh $SERVICE_NAME
+build/build_jar.sh
 #build/build_dist.sh || true
 
 echo "INFO: list the jars built"
