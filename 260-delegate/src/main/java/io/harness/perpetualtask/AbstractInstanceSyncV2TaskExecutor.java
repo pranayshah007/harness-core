@@ -63,7 +63,21 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
     try {
       InstanceSyncTaskDetails instanceSyncTaskDetails =
           execute(delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), 0, PAGE_SIZE, accountId));
-      for (int page = 0; page < instanceSyncTaskDetails.getDetails().getTotalPages(); page++) {
+
+      if (Objects.isNull(instanceSyncTaskDetails) || Objects.isNull(instanceSyncTaskDetails.getDetails())
+          || instanceSyncTaskDetails.getDetails().isEmpty()) {
+        log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
+        publishInstanceSyncResult(taskId, accountId,
+            InstanceSyncResponseV2.newBuilder()
+                .setStatus(InstanceSyncStatus.newBuilder()
+                               .setIsSuccessful(false)
+                               .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
+                               .build())
+                .build());
+        return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
+      }
+      long totalPages = instanceSyncTaskDetails.getDetails().getTotalPages();
+      for (int page = 0; page < totalPages; page++) {
         if (page != 0) {
           instanceSyncTaskDetails = execute(
               delegateAgentManagerClient.fetchInstanceSyncV2TaskDetails(taskId.getId(), page, PAGE_SIZE, accountId));
@@ -78,7 +92,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                                  .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
                                  .build())
                   .build());
-          return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
+          continue;
         }
         PageResponse<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetails();
 

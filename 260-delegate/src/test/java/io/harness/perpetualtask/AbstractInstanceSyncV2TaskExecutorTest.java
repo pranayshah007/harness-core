@@ -126,12 +126,14 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
                                               .build()))
             .build();
 
-    InstanceSyncTaskDetails instanceSyncTaskDetails = InstanceSyncTaskDetails.builder()
-                                                          .responseBatchConfig(ResponseBatchConfig.builder()
-                                                                                   .releaseCount(RELEASE_COUNT_LIMIT)
-                                                                                   .instanceCount(INSTANCE_COUNT_LIMIT)
-                                                                                   .build())
-                                                          .build();
+    InstanceSyncTaskDetails instanceSyncTaskDetails =
+        InstanceSyncTaskDetails.builder()
+            .details(PageResponse.<DeploymentReleaseDetails>builder().totalPages(1).empty(true).build())
+            .responseBatchConfig(ResponseBatchConfig.builder()
+                                     .releaseCount(RELEASE_COUNT_LIMIT)
+                                     .instanceCount(INSTANCE_COUNT_LIMIT)
+                                     .build())
+            .build();
     aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(instanceSyncTaskDetails);
     when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
         .thenReturn(

@@ -380,7 +380,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     when(instanceSyncPerpetualTaskMappingService.findByConnectorRef(infrastructureMappingDTO.getAccountIdentifier(),
              connectorInfoDTO.getOrgIdentifier(), connectorInfoDTO.getProjectIdentifier(),
              infrastructureMappingDTO.getConnectorRef()))
-        .thenReturn(Optional.empty());
+        .thenReturn(null);
     when(connectorService.getByRef(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder().connector(connectorInfoDTO).build()));
     when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(anyString()))
