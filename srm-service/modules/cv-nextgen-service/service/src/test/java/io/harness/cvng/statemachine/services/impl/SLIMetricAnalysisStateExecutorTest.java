@@ -276,6 +276,45 @@ public class SLIMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testExecuteWithDataAfterDataRecollectionPassed() throws IllegalAccessException {
+    entityUnavailabilityStatusesService.create(builderFactory.getProjectParams(),
+        Collections.singletonList(EntityUnavailabilityStatusesDTO.builder()
+                                      .entityId(serviceLevelIndicator.getUuid())
+                                      .entityType(EntityType.SLO)
+                                      .startTime(startTime.getEpochSecond())
+                                      .endTime(endTime.getEpochSecond())
+                                      .status(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED)
+                                      .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                      .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                      .build()));
+    FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "downtimeService", downtimeService, true);
+    FieldUtils.writeField(sliDataUnavailabilityInstancesHandlerService, "entityUnavailabilityStatusesService",
+        entityUnavailabilityStatusesService, true);
+    FieldUtils.writeField(sliMetricAnalysisStateExecutor, "sliDataUnavailabilityInstancesHandlerService",
+        sliDataUnavailabilityInstancesHandlerService, true);
+    when(timeSeriesRecordService.getTimeSeriesRecordDTOs(any(), any(), any())).thenReturn(generateTimeSeriesRecord());
+    doCallRealMethod()
+        .when(sliDataUnavailabilityInstancesHandlerService)
+        .filterSLIRecordsToSkip(any(), any(), any(), any(), any(), any());
+    sliMetricAnalysisState = (SLIMetricAnalysisState) sliMetricAnalysisStateExecutor.execute(sliMetricAnalysisState);
+    List<SLIRecord> sliRecordList = hPersistence.createQuery(SLIRecord.class)
+                                        .filter(SLIRecordKeys.sliId, serviceLevelIndicator.getUuid())
+                                        .field(SLIRecordKeys.timestamp)
+                                        .greaterThanOrEq(startTime)
+                                        .field(SLIRecordKeys.timestamp)
+                                        .lessThan(endTime)
+                                        .asList();
+    assertThat(sliMetricAnalysisState.getStatus().name()).isEqualTo(AnalysisStatus.SUCCESS.name());
+    assertThat(sliRecordList.size()).isEqualTo(5);
+    assertThat(sliRecordList.get(0).getSliState()).isEqualTo(SLIRecord.SLIState.BAD);
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(
+        builderFactory.getProjectParams(), serviceLevelObjective.getIdentifier());
+    assertThat(sloHealthIndicator.getErrorBudgetRemainingPercentage()).isEqualTo(99.94212962962963);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testExecuteWithSkipDataBecauseOfDowntime() throws IllegalAccessException {
     clock = Clock.fixed(clock.instant().minus(30, ChronoUnit.MINUTES), clock.getZone());
     FieldUtils.writeField(downtimeService, "clock", clock, true);

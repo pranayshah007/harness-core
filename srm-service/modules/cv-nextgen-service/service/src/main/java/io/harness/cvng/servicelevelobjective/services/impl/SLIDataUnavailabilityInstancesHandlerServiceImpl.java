@@ -50,8 +50,7 @@ public class SLIDataUnavailabilityInstancesHandlerServiceImpl implements SLIData
         entityUnavailabilityStatusesDTOS.stream()
             .filter(statusesDTO
                 -> statusesDTO.getEntityType().equals(EntityType.SLO)
-                    && (statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
-                        || statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_RECOLLECTION_PASSED))
+                    && statusesDTO.getStatus().equals(EntityUnavailabilityStatus.DATA_COLLECTION_FAILED)
                     && statusesDTO.getEntityId().equals(sliId))
             .collect(Collectors.toList()));
 
