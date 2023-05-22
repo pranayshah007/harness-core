@@ -48,6 +48,7 @@ import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_
 import static io.harness.ng.core.k8s.ServiceSpecType.AZURE_WEBAPP;
 import static io.harness.ng.core.k8s.ServiceSpecType.CUSTOM_DEPLOYMENT;
 import static io.harness.ng.core.k8s.ServiceSpecType.ECS;
+import static io.harness.ng.core.k8s.ServiceSpecType.GOOGLE_CLOUD_FUNCTIONS;
 import static io.harness.ng.core.k8s.ServiceSpecType.KUBERNETES;
 import static io.harness.ng.core.k8s.ServiceSpecType.SERVERLESS_AWS_LAMBDA;
 
@@ -305,22 +306,22 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String AWS_LAMBDA = "AwsLambda";
 
   private static final List<String> CUSTOM_DEPLOYMENT_CATEGORY = Arrays.asList(COMMANDS, CUSTOM_DEPLOYMENT);
-  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(
-      KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
-  private static final List<String> TERRAFORM_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
-  private static final List<String> TERRAGRUNT_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
-  private static final List<String> TERRAFORM_CLOUD_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG);
+  private static final List<String> CLOUDFORMATION_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER,
+      CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA);
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
+      SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA);
+  private static final List<String> TERRAGRUNT_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS,
+      SERVERLESS_AWS_LAMBDA, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
+  private static final List<String> TERRAFORM_CLOUD_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS,
+      COMMANDS, SERVERLESS_AWS_LAMBDA, ASG, GOOGLE_CLOUD_FUNCTIONS, ServiceSpecType.AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
   private static final List<String> AZURE_RESOURCE_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, AZURE, HELM, AZURE_WEBAPP, COMMANDS);
   private static final String AZURE_RESOURCE_STEP_METADATA = "Azure Provisioner";
 
-  private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY =
-      Arrays.asList(KUBERNETES, PROVISIONER, HELM, AZURE_WEBAPP, ECS, COMMANDS, ASG);
+  private static final List<String> SHELL_SCRIPT_PROVISIONER_CATEGORY = Arrays.asList(KUBERNETES, PROVISIONER, HELM,
+      AZURE_WEBAPP, ECS, COMMANDS, ASG, ServiceSpecType.AWS_LAMBDA, GOOGLE_CLOUD_FUNCTIONS);
 
   private static final List<String> ASG_CATEGORY = Arrays.asList(ASG);
 
@@ -1096,7 +1097,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setType(StepSpecTypeConstants.CHAOS_STEP)
             .setStepMetaData(
                 StepMetaData.newBuilder().addAllCategory(Arrays.asList("Chaos")).addFolderPaths("Chaos").build())
-            .setFeatureFlag(FeatureName.CHAOS_ENABLED.name())
             .build();
 
     StepInfo elastigroupDeployStep =
@@ -1183,7 +1183,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Canary Deploy")
             .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgCanaryDelete =
@@ -1191,7 +1190,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasCanaryAppSetup =
@@ -1254,7 +1252,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Rolling Deploy")
             .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgRollingRollback =
@@ -1262,7 +1259,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Rolling Rollback")
             .setType(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgBlueGreenDeploy =
@@ -1270,7 +1266,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Blue Green Deploy")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgBlueGreenRollback =
@@ -1278,7 +1273,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Blue Green Rollback")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasRollingDeploy =
@@ -1314,7 +1308,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Blue Green Swap Service")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasRouteMapping =
@@ -1381,7 +1374,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo k8sBGStageScaleDown =
         StepInfo.newBuilder()
-            .setName("K8s Blue Green Stage Scale Down")
+            .setName("Blue Green Stage Scale Down")
             .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
             .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())

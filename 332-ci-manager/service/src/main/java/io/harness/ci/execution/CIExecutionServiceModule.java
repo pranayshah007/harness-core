@@ -35,6 +35,7 @@ import io.harness.beans.steps.nodes.SecurityNode;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.ExecutionLimits;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
@@ -44,6 +45,8 @@ import io.harness.ci.serializer.RunStepProtobufSerializer;
 import io.harness.ci.serializer.RunTestsStepProtobufSerializer;
 import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
+import io.harness.plugin.service.BasePluginCompatibleSerializer;
+import io.harness.plugin.service.PluginService;
 import io.harness.threading.ThreadPool;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
@@ -137,5 +140,8 @@ public class CIExecutionServiceModule extends AbstractModule {
             .build();
       }
     });
+
+    bind(PluginService.class).to(PluginSettingUtils.class);
+    bind(BasePluginCompatibleSerializer.class).to(PluginCompatibleStepSerializer.class);
   }
 }

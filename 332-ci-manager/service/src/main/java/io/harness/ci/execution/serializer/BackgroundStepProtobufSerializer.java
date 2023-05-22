@@ -14,6 +14,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.yaml.extended.CIShellType;
@@ -21,7 +22,10 @@ import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.callback.DelegateCallbackToken;
+import io.harness.ci.ff.CIFeatureFlagService;
+import io.harness.ci.utils.CIStepInfoUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.product.ci.engine.proto.Report;
 import io.harness.product.ci.engine.proto.RunStep;
 import io.harness.product.ci.engine.proto.ShellType;
@@ -39,9 +43,10 @@ import java.util.function.Supplier;
 @OwnedBy(CI)
 public class BackgroundStepProtobufSerializer implements ProtobufStepSerializer<BackgroundStepInfo> {
   @Inject private Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+  @Inject private CIFeatureFlagService featureFlagService;
 
   public UnitStep serializeStepWithStepParameters(BackgroundStepInfo backgroundStepInfo, Integer port,
-      String callbackId, String logKey, String identifier, String accountId, String stepName) {
+      String callbackId, String logKey, String identifier, String accountId, String stepName, Ambiance ambiance) {
     if (callbackId == null) {
       throw new CIStageExecutionException("CallbackId can not be null");
     }
@@ -57,8 +62,10 @@ public class BackgroundStepProtobufSerializer implements ProtobufStepSerializer<
                                   .orElse(""));
 
     runStepBuilder.setContainerPort(port);
-    Map<String, String> envVars =
-        resolveMapParameterV2("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+    boolean fVal = featureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+    Map<String, String> envVars = resolveMapParameterV2(
+        "envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false, fVal);
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(ambiance, accountId, featureFlagService, envVars);
     if (!isEmpty(envVars)) {
       runStepBuilder.putAllEnvironment(envVars);
     }

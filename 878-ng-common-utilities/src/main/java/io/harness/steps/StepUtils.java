@@ -458,13 +458,20 @@ public class StepUtils {
 
   private static void setOriginAndDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       WithDelegateSelector withDelegateSelector, String origin) {
-    delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
+    if (!delegateSelectors.isExpression()) {
+      delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
+    }
     withDelegateSelector.setDelegateSelectors(delegateSelectors);
   }
 
   private static boolean hasDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    if (delegateSelectors == null || ParameterField.isNull(delegateSelectors)
-        || isEmpty(delegateSelectors.getValue())) {
+    if (ParameterField.isNull(delegateSelectors)) {
+      return false;
+    }
+    if (delegateSelectors.isExpression()) {
+      return true;
+    }
+    if (isEmpty(delegateSelectors.getValue())) {
       return false;
     }
     List<TaskSelectorYaml> selectorYamls = delegateSelectors.getValue()

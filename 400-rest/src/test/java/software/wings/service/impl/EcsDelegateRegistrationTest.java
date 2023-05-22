@@ -9,6 +9,7 @@ package software.wings.service.impl;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.MARKO;
 
 import static software.wings.beans.DelegateSequenceConfig.Builder.aDelegateSequenceBuilder;
@@ -35,6 +36,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.utils.DelegateJreVersionHelper;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
@@ -562,5 +564,37 @@ public class EcsDelegateRegistrationTest {
                                             .withLastUpdatedAt(System.currentTimeMillis())
                                             .build());
     return existingDelegateSequenceConfigs;
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testExistingDelegateForEcs() {
+    final DelegateSequenceConfig config = aDelegateSequenceBuilder().withDelegateToken("token").build();
+    doReturn(config).when(underTest).getDelegateSequenceConfig(any(), any(), any());
+    final Delegate delegate = Delegate.builder()
+                                  .uuid("12345")
+                                  .delegateType("ECS")
+                                  .delegateRandomToken("token")
+                                  .sequenceNum("1")
+                                  .hostName("HOST_NAME_1")
+                                  .build();
+    final Query<Delegate> delegateQuery = mock(Query.class, RETURNS_SELF);
+    lenient().when(persistence.createQuery(Delegate.class, excludeAuthority)).thenReturn(delegateQuery);
+    when(persistence.createQuery(Delegate.class)).thenReturn(delegateQuery);
+
+    doReturn(delegate).when(delegateQuery).get();
+    lenient().when(delegateQuery.asList()).thenReturn(Collections.emptyList());
+    doAnswer(returnsSecondArg()).when(underTest).upsertDelegateOperation(any(), any());
+    final Delegate actual = underTest.handleEcsDelegateRegistration(delegate);
+    assertThat(actual).isNotNull();
+    assertThat(actual.getUuid()).isEqualTo("12345");
+    doReturn(delegate).when(delegateQuery).get();
+    // HB update or register call from already existing delegate comes with hostName and sequence num
+    String hostName = underTest.getHostNameToBeUsedForECSDelegate(HOST_NAME, "1");
+    Delegate existingDelegate = underTest.getExistingDelegate(ACCOUNT_ID, hostName, false, DelegateType.ECS, "");
+    assertThat(existingDelegate).isNotNull();
+    assertThat(existingDelegate.getUuid()).isEqualTo("12345");
+    assertThat(existingDelegate.getHostName()).isEqualTo("HOST_NAME_1");
   }
 }

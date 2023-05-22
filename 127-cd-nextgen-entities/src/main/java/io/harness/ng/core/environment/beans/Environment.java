@@ -71,8 +71,7 @@ public class Environment implements PersistentEntity, ScopeAware {
                  .field(EnvironmentKeys.branch)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationIdentifier_projectIdentifier_deleted_collation_en")
-                 .unique(true)
+                 .name("accountId_organizationIdentifier_projectIdentifier_deleted_collation_primary_en")
                  .field(EnvironmentKeys.accountId)
                  .field(EnvironmentKeys.orgIdentifier)
                  .field(EnvironmentKeys.projectIdentifier)
@@ -109,6 +108,9 @@ public class Environment implements PersistentEntity, ScopeAware {
   @Setter @NonFinal String yamlGitConfigRef;
   @Setter @NonFinal String filePath;
   @Setter @NonFinal String rootFolder;
+
+  // Service Override V2 migration
+  @Builder.Default @Setter @NonFinal Boolean isMigratedToOverride = Boolean.FALSE;
 
   public String fetchNonEmptyYaml() {
     if (EmptyPredicate.isEmpty(yaml)) {

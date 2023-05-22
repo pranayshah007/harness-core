@@ -100,6 +100,8 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
@@ -1107,6 +1109,40 @@ public class TerraformStepHelperTest extends CategoryTest {
     assertThat(config.getConfigFiles().toGitStoreConfig().getConnectorRef().getValue()).isEqualTo("terraform");
     assertThat(config.getConfigFiles().toGitStoreConfig().getBranch().getValue()).isEqualTo("master");
     assertThat(config.getFileStoreConfig()).isEqualTo(artifactoryStoreConfig);
+    assertThat(config.getPipelineExecutionId()).isEqualTo("exec_id");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testSaveTerraformConfigForPipelineRollbackMode() {
+    Ambiance ambiance = getAmbiance()
+                            .toBuilder()
+                            .setMetadata(ExecutionMetadata.newBuilder()
+                                             .setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK)
+                                             .setOriginalPlanExecutionIdForRollbackMode("original_exec_id")
+                                             .build())
+                            .build();
+
+    ArgumentCaptor<TerraformConfig> captor = ArgumentCaptor.forClass(TerraformConfig.class);
+    GitStoreConfigDTO configFiles = GithubStoreDTO.builder().branch("master").connectorRef("terraform").build();
+    ArtifactoryStorageConfigDTO artifactoryStoreConfig = ArtifactoryStorageConfigDTO.builder().build();
+    TerraformConfig terraformConfig = TerraformConfig.builder()
+                                          .backendConfig("back-content")
+                                          .workspace("w1")
+                                          .fileStoreConfig(artifactoryStoreConfig)
+                                          .configFiles(configFiles)
+                                          .build();
+    helper.saveTerraformConfig(terraformConfig, ambiance);
+    then(terraformConfigDAL).should(times(1)).saveTerraformConfig(captor.capture());
+    System.out.println("");
+    TerraformConfig config = captor.getValue();
+    assertThat(config.getVarFileConfigs()).isNull();
+    assertThat(config.getAccountId()).isEqualTo("test-account");
+    assertThat(config.getConfigFiles().toGitStoreConfig().getConnectorRef().getValue()).isEqualTo("terraform");
+    assertThat(config.getConfigFiles().toGitStoreConfig().getBranch().getValue()).isEqualTo("master");
+    assertThat(config.getFileStoreConfig()).isEqualTo(artifactoryStoreConfig);
+    assertThat(config.getPipelineExecutionId()).isEqualTo("original_exec_id");
   }
 
   @Test

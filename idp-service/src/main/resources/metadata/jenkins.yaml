@@ -7,15 +7,14 @@ source: https://github.com/backstage/backstage/tree/master/plugins/jenkins
 iconUrl: https://img.icons8.com/color/1600/jenkins.png
 imageUrl: ''
 config: |-
-  proxy:
-    '/jenkins/api':
-      target: http://localhost:8080
-      pathRewrite:
-        'api/proxy/jenkins/?': '/'
-      headers:
-        Authorization: ${JENKINS_BASIC_AUTH_HEADER}
+  jenkins:
+    instances:
+      - name: default
+        baseUrl: '<your-jenkins-url>'
+        username: '<your-jenkins-username>'
+        apiKey: ${JENKINS_TOKEN}
 environmentVariables:
-  - JENKINS_BASIC_AUTH_HEADER
+  - JENKINS_TOKEN
 exports:
   defaultEntityTypes:
     - service

@@ -71,7 +71,7 @@ public class AwsLambdaInstanceSyncPerpetualTaskClientTest extends WingsBaseTest 
     AwsConfig awsConfig = AwsConfig.builder().accountId(ACCOUNT_ID).tag("tag").build();
     prepareTaskData(awsConfig);
     final AwsLambdaInstanceSyncPerpetualTaskParams taskParams =
-        (AwsLambdaInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext(), true);
+        (AwsLambdaInstanceSyncPerpetualTaskParams) client.getTaskParams(getClientContext());
 
     assertThat(taskParams.getAwsConfig()).isNotNull();
     assertThat(taskParams.getEncryptedData()).isNotNull();

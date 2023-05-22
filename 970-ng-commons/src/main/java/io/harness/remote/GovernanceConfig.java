@@ -29,4 +29,5 @@ public class GovernanceConfig {
   private int regionLimit;
   private int accountLimit;
   private int policyPerAccountLimit;
+  private int sleepTime;
 }

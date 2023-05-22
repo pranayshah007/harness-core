@@ -222,6 +222,8 @@ public interface UserService extends OwnedByAccount {
 
   User updateUser(String userId, UpdateOperations<User> updateOperations);
 
+  void validateName(String name);
+
   /**
    * Gets the.
    *
@@ -699,4 +701,6 @@ public interface UserService extends OwnedByAccount {
   void removeAllUserGroupsFromUser(User user, String accountId);
 
   void updateUserAccountLevelDataForThisGen(String accountId, User user, Generation generation, UserSource userSource);
+
+  boolean updateExternallyManaged(String userId, Generation generation, boolean externallyManaged);
 }

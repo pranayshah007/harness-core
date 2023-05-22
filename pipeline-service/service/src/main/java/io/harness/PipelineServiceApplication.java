@@ -112,6 +112,7 @@ import io.harness.pms.event.PMSEventConsumerService;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumer;
 import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumerSnapshot;
 import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
+import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamConsumer;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.inputset.gitsync.InputSetEntityGitSyncHelper;
@@ -789,6 +790,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getInitiateNode().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(PollingEventStreamConsumer.class),
         pipelineServiceConsumersConfig.getPollingEvent().getThreads());
+    pipelineEventConsumerController.register(injector.getInstance(TriggerExecutionEventStreamConsumer.class),
+        pipelineServiceConsumersConfig.getTriggerExecutionEvent().getThreads());
   }
 
   /**-----------------------------Git sync --------------------------------------*/

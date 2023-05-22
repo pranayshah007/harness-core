@@ -66,7 +66,6 @@ Randomly Creates Secret for access-control unless overwritten.
 */}}
 {{- define "access-control.generateSecrets" }}
     IDENTITY_SERVICE_SECRET: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "access-control" "key" "IDENTITY_SERVICE_SECRET" "providedValues" (list "secrets.IDENTITY_SERVICE_SECRET") "length" 10 "context" $) }}
-    MONGODB_USER: {{ include "harnesscommon.secrets.passwords.manage" (dict "secret" "access-control" "key" "MONGODB_USER" "providedValues" (list "secrets.MONGODB_USER") "length" 10 "context" $) }}
 {{- end }}
 {{/*
 Helper function for pullSecrets at chart level or global level.
@@ -79,7 +78,7 @@ Helper function for pullSecrets at chart level or global level.
 */}}
 {{- define "access-control.mongohosts" }}
 {{- $type := "mongo" }}
-{{- $hosts := (pluck $type .Values.global.database | first ).hosts }}
+{{- $hosts := .Values.mongoHosts }}
 {{- $installed := (pluck $type .Values.global.database | first ).installed }}
 {{- if $installed }}
   {{- $namespace := .Release.Namespace }}
@@ -89,6 +88,7 @@ Helper function for pullSecrets at chart level or global level.
     {{- printf " 'mongodb-replicaset-chart-0.mongodb-replicaset-chart.%s.svc'" $namespace -}}
   {{- end }}
 {{- else }}
-    {{- printf " %s" (join "," $hosts ) -}}
+    {{- printf "%s" (join "," $hosts ) -}}
 {{- end }}
 {{- end }}
+

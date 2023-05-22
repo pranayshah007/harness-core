@@ -90,7 +90,7 @@ public class OnpremSignupHandler implements SignupHandler {
       validateCountOfUsers();
     }
     signupService.validateEmail(userInvite.getEmail());
-    signupService.validateName(userInvite.getName());
+    userService.validateName(userInvite.getName());
     signupService.validatePassword(userInvite.getPassword());
   }
 

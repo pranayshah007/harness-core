@@ -48,7 +48,7 @@ public class PlanExecutionExpansionRepositoryCustomImpl implements PlanExecution
     Duration lockTimeOut = Duration.ofMinutes(lockTimeoutInMinutes);
     Duration releaseTimeOut = Duration.ofMinutes(lockTimeoutInMinutes + 1);
 
-    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(lockName, lockTimeOut, releaseTimeOut)) {
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(lockName, lockTimeOut, releaseTimeOut)) {
       if (lock == null) {
         log.error("Unable to acquire lock while adding json");
       }

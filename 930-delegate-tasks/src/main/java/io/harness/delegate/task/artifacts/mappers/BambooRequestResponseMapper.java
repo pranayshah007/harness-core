@@ -48,10 +48,15 @@ public class BambooRequestResponseMapper {
 
   public BambooArtifactDelegateResponse toBambooArtifactDelegateResponse(
       BuildDetails buildDetails, BambooArtifactDelegateRequest attributeRequest) {
+    String artifactPath = "";
+    if (EmptyPredicate.isNotEmpty(attributeRequest.getArtifactPaths())
+        && EmptyPredicate.isNotEmpty(attributeRequest.getArtifactPaths().get(0))) {
+      artifactPath = attributeRequest.getArtifactPaths().get(0);
+    }
     return BambooArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .sourceType(ArtifactSourceType.BAMBOO)
-        .artifactPath(attributeRequest.getArtifactPaths().get(0))
+        .artifactPath(artifactPath)
         .build(buildDetails.getNumber())
         .planKey(attributeRequest.getPlanKey())
         .build();

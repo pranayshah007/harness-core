@@ -18,13 +18,11 @@ import static io.harness.k8s.model.ServiceHookContext.KUBE_CONFIG;
 import static io.harness.k8s.model.ServiceHookContext.MANAGED_WORKLOADS;
 import static io.harness.k8s.model.ServiceHookContext.WORKLOADS_LIST;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.utils.ServiceHookDTO;
@@ -34,34 +32,33 @@ import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.model.ServiceHookAction;
 import io.harness.k8s.model.ServiceHookType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.shell.ExecuteCommandResponse;
+import io.harness.shell.ScriptProcessExecutor;
+import io.harness.shell.ScriptType;
+import io.harness.shell.ShellExecutorConfig;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.ServiceHookDelegateConfig;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.UncheckedTimeoutException;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.ListUtils;
-import org.zeroturnaround.exec.ProcessExecutor;
-import org.zeroturnaround.exec.ProcessResult;
-import org.zeroturnaround.exec.stream.LogOutputStream;
 
 @Slf4j
 @OwnedBy(CDP)
@@ -101,18 +98,18 @@ public class ServiceHookHandler {
               .toString();
       logCallback.saveExecutionLog(format("\033[3mExecuting hook:  %s\033[0m", serviceHook.getIdentifier()));
       StringBuilder errorLog = new StringBuilder();
-      ProcessResult processResult;
-      processResult = executeCommand(context, serviceHook.getContent(), directory,
+      ExecuteCommandResponse executeCommandResponse = executeCommand(context, serviceHook.getContent(), directory,
           format(failureMessage, type.getName(), serviceHook.getIdentifier(), action.getActionName(), directory),
-          errorLog, logCallback);
+          logCallback);
       if (errorLog.length() > 0) {
         log.error("Error output stream:\n{}", errorLog);
       }
 
-      if (processResult.getExitValue() != 0) {
+      if (CommandExecutionStatus.SUCCESS != executeCommandResponse.getStatus()) {
         throw NestedExceptionUtils.hintWithExplanationException(
             format("Check hook %s script", serviceHook.getIdentifier()),
-            format("Hook %s failed with error: %s\n", serviceHook.getIdentifier(), processResult.getOutput().getUTF8()),
+            format("Hook %s failed with error: %s\n", serviceHook.getIdentifier(),
+                executeCommandResponse.getCommandExecutionData()),
             new KubernetesTaskException(format(
                 failureMessage, type.getName(), serviceHook.getIdentifier(), action.getActionName(), directory)));
       }
@@ -129,50 +126,38 @@ public class ServiceHookHandler {
             LogColor.White, LogWeight.Bold));
   }
 
-  private ProcessResult executeCommand(Map<String, String> envVars, String command, String directoryPath,
-      String errorMessage, StringBuilder errorLog, LogCallback logCallback) throws InterruptedException {
-    ProcessExecutor processExecutor = createProcessExecutor(command, directoryPath, envVars, errorLog, logCallback);
+  private ExecuteCommandResponse executeCommand(
+      Map<String, String> envVars, String command, String directoryPath, String errorMessage, LogCallback logCallback) {
+    ScriptProcessExecutor scriptProcessExecutor = createProcessExecutor(directoryPath, envVars, logCallback);
 
-    return executeCommand(processExecutor, errorMessage);
+    return executeCommand(scriptProcessExecutor, errorMessage, directoryPath, command);
   }
 
-  private ProcessResult executeCommand(ProcessExecutor processExecutor, String errorMessage)
-      throws InterruptedException {
+  private ExecuteCommandResponse executeCommand(
+      ScriptProcessExecutor processExecutor, String errorMessage, String directoryPath, String script) {
     try {
-      createDirectoryIfDoesNotExist(Paths.get(String.valueOf(processExecutor.getDirectory())));
-      return processExecutor.execute();
+      createDirectoryIfDoesNotExist(Paths.get(String.valueOf(directoryPath)));
+      final ExecuteCommandResponse executeCommandResponse =
+          processExecutor.executeCommandString(script, emptyList(), Collections.emptyList(), null, false);
+      return executeCommandResponse;
     } catch (IOException e) {
       // Not setting the cause here because it carries forward the commands which can contain passwords
       throw new KubernetesTaskException(format("[IO exception] %s", errorMessage));
-    } catch (InterruptedException e) {
-      throw e;
-    } catch (TimeoutException | UncheckedTimeoutException e) {
-      throw new KubernetesTaskException(format("[Timed out] %s", errorMessage));
     }
   }
 
-  private ProcessExecutor createProcessExecutor(String command, String directoryPath, Map<String, String> envVars,
-      StringBuilder errorLog, LogCallback logCallback) {
-    return new ProcessExecutor()
-        .directory(isNotBlank(directoryPath) ? new File(directoryPath) : null)
-        .timeout(commandTimeout, TimeUnit.MILLISECONDS)
-        .commandSplit(command)
-        .environment(envVars)
-        .readOutput(true)
-        .redirectOutput(new LogOutputStream() {
-          @Override
-          protected void processLine(String line) {
-            saveExecutionLog(line, INFO, logCallback);
-          }
-        })
-        .redirectError(new LogOutputStream() {
-          @Override
-          protected void processLine(String line) {
-            errorLog.append(line);
-            errorLog.append('\n');
-            saveExecutionLog(line, ERROR, logCallback);
-          }
-        });
+  private ScriptProcessExecutor createProcessExecutor(
+      String directoryPath, Map<String, String> envVars, LogCallback logCallback) {
+    final ShellExecutorConfig shellExecutorConfig = ShellExecutorConfig.builder()
+                                                        .environment(envVars)
+                                                        .workingDirectory(directoryPath)
+                                                        .scriptType(ScriptType.BASH)
+                                                        .closeLogStream(false)
+                                                        .build();
+
+    final ScriptProcessExecutor executor = createExecutor(shellExecutorConfig, logCallback);
+
+    return executor;
   }
 
   @VisibleForTesting
@@ -243,6 +228,11 @@ public class ServiceHookHandler {
                                  .map(KubernetesResourceId::getName)
                                  .collect(Collectors.joining(","));
     context.put(key, workloadContext);
+  }
+
+  ScriptProcessExecutor createExecutor(ShellExecutorConfig config, LogCallback logCallback) {
+    boolean saveExecutionLog = logCallback != null;
+    return new ScriptProcessExecutor(logCallback, saveExecutionLog, config);
   }
 
   public void addToContext(String key, String value) {

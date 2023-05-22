@@ -137,7 +137,8 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .pruningEnabled(pruningEnabled)
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
-            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome));
+            .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(k8sManifestOutcome))
+            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(accountId));
 
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       bgRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));

@@ -128,6 +128,7 @@ java_library(
         "//990-commons-test:module",
         "//999-annotations:module",
         "//access-control/contracts:module",
+        "//access-control/libs/aggregator:module",
         "//access-control/libs/core:module",
         "//clients/access-control/sdk:module",
         "//clients/audit:module",

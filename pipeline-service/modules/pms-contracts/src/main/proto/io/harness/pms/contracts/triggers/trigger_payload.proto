@@ -55,4 +55,5 @@ enum SourceType {
   BITBUCKET_REPO = 3;
   AWS_CODECOMMIT_REPO = 4;
   AZURE_REPO = 5;
+  HARNESS_REPO = 6;
 }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -54,6 +55,12 @@ public final class BatchJobScheduledData
                  .field(BatchJobScheduledDataKeys.batchJobType)
                  .field(BatchJobScheduledDataKeys.validRun)
                  .descSortField(BatchJobScheduledDataKeys.endAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_batchJobType_startAt")
+                 .field(BatchJobScheduledDataKeys.accountId)
+                 .field(BatchJobScheduledDataKeys.batchJobType)
+                 .field(BatchJobScheduledDataKeys.startAt)
                  .build())
         .build();
   }

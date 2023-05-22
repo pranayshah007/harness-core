@@ -463,10 +463,6 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     assertThat(savedStateMachine).isNotNull();
     assertThat(savedStateMachine.getVerificationTaskId()).isEqualTo(verificationTaskId);
     assertThat(savedStateMachine.getStatus()).isEqualByComparingTo(AnalysisStatus.RUNNING);
-
-    LearningEngineTask learningEngineTask = hPersistence.createQuery(LearningEngineTask.class).get();
-    assertThat(learningEngineTask).isNotNull();
-    assertThat(learningEngineTask.getAnalysisType()).isEqualByComparingTo(SERVICE_GUARD_TIME_SERIES);
   }
 
   @Test
@@ -561,6 +557,10 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     stateMachineService.initiateStateMachine(cvConfigId, stateMachine);
     stateMachineService.executeStateMachine(cvConfigId);
 
+    LearningEngineTask learningEngineTask = hPersistence.createQuery(LearningEngineTask.class).get();
+    assertThat(learningEngineTask).isNotNull();
+    assertThat(learningEngineTask.getAnalysisType()).isEqualByComparingTo(SERVICE_GUARD_TIME_SERIES);
+
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
     assertThat(savedStateMachine.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
   }
@@ -610,6 +610,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     AnalysisStateMachine stateMachine =
         dataGenerator.buildStateMachine(AnalysisStatus.CREATED, verificationTaskId, timeSeriesAnalysisState);
     stateMachineService.initiateStateMachine(verificationTaskId, stateMachine);
+    stateMachineService.executeStateMachine(verificationTaskId);
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(FAILED);
     hPersistence.save(task);
@@ -626,13 +627,14 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     AnalysisStateMachine stateMachine =
         dataGenerator.buildStateMachine(AnalysisStatus.CREATED, verificationTaskId, timeSeriesAnalysisState);
     stateMachineService.initiateStateMachine(verificationTaskId, stateMachine);
+    stateMachineService.executeStateMachine(verificationTaskId);
+    stateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
+    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
     stateMachine.getCurrentState().setRetryCount(3);
     hPersistence.save(stateMachine);
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(FAILED);
     hPersistence.save(task);
-    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
-    hPersistence.save(stateMachine);
 
     stateMachineService.executeStateMachine(verificationTaskId);
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
@@ -648,13 +650,14 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     AnalysisStateMachine stateMachine = dataGenerator.buildStateMachine(
         AnalysisStatus.CREATED, deploymentVerificationTaskId, deploymentTimeSeriesAnalysisState);
     stateMachineService.initiateStateMachine(deploymentVerificationTaskId, stateMachine);
+    stateMachineService.executeStateMachine(deploymentVerificationTaskId);
+    stateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
     stateMachine.getCurrentState().setRetryCount(3);
+    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
     hPersistence.save(stateMachine);
     LearningEngineTask task = hPersistence.createQuery(LearningEngineTask.class).get();
     task.setTaskStatus(TIMEOUT);
     hPersistence.save(task);
-    stateMachine.getCurrentState().setStatus(AnalysisStatus.RETRY);
-    hPersistence.save(stateMachine);
 
     stateMachineService.executeStateMachine(deploymentVerificationTaskId);
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();

@@ -65,7 +65,7 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
       if (executingStateMachine.getStatus() != AnalysisStatus.SUCCESS
           && executingStateMachine.getStatus() != AnalysisStatus.IGNORED) {
         throw new AnalysisStateMachineException(
-            "There can be only one statemachine execution at a time for verificationTaskId: " + verificationTaskId);
+            "There can be only one state machine execution at a time for verificationTaskId: " + verificationTaskId);
       }
     }
     Optional<AnalysisStateMachine> ignoredStatemachine = ignoreOldStateMachine(stateMachine);
@@ -74,8 +74,6 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     } else {
       stateMachine.setVerificationTaskId(verificationTaskId);
       stateMachine.setStatus(AnalysisStatus.RUNNING);
-      stateTypeAnalysisStateExecutorMap.get(stateMachine.getCurrentState().getType())
-          .execute(stateMachine.getCurrentState());
     }
     hPersistence.save(stateMachine);
     executionLogService.getLogger(stateMachine)

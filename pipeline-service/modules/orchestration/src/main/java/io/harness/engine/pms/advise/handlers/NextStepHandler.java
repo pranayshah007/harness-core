@@ -72,8 +72,9 @@ public class NextStepHandler implements AdviserResponseHandler {
 
   @VisibleForTesting
   Node createIdentityNodeIfRequired(Node nextNode, NodeExecution prevNodeExecution, ExecutionMode executionMode) {
-    // If nextNode already instance of IdentityPlanNode, or if in rollback mode, the plan node received is to be
-    // preserved, then return the node as is.
+    // if in rollback mode, the plan node received is to be preserved, then return the node as is.
+    // For failed nodes, we need to create different identity nodes corresponding to each node executions,
+    // in case parent is an identity plan node.
     if (checkIfSameNodeIsRequired(nextNode, executionMode)) {
       return nextNode;
     }
@@ -97,7 +98,12 @@ public class NextStepHandler implements AdviserResponseHandler {
   }
 
   boolean checkIfSameNodeIsRequired(Node nextNode, ExecutionMode executionMode) {
-    return nextNode.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE)
-        || (ExecutionModeUtils.isRollbackMode(executionMode) && ((PlanNode) nextNode).isPreserveInRollbackMode());
+    //  For nodes (before retry stage) without strategy, we would still return IdentityPlanNode because of last
+    //  return statement in createIdentityNodeIfRequired.
+    boolean isRollbackMode = ExecutionModeUtils.isRollbackMode(executionMode);
+    if (nextNode.getNodeType() == NodeType.IDENTITY_PLAN_NODE) {
+      return isRollbackMode;
+    }
+    return isRollbackMode && ((PlanNode) nextNode).isPreserveInRollbackMode();
   }
 }

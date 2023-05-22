@@ -94,7 +94,7 @@ public class AwsSamInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBas
     PerpetualTaskExecutionBundle executionBundle = awsSamInstanceSyncPerpetualTaskHandler.getExecutionBundle(
         infrastructureMappingDTO, deploymentInfoDTOList, infrastructureOutcome);
 
-    assertThat(executionBundle.getCapabilitiesList().size()).isEqualTo(1);
+    assertThat(executionBundle.getCapabilitiesList().size()).isEqualTo(0);
     assertThat(executionBundle.getTaskParams().getValue()).isNotNull();
   }
 }

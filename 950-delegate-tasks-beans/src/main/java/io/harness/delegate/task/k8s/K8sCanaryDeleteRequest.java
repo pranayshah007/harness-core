@@ -33,6 +33,7 @@ public class K8sCanaryDeleteRequest implements K8sDeployRequest {
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
   boolean useDeclarativeRollback;
+  boolean enabledSupportHPAAndPDB;
 
   @Override
   public ManifestDelegateConfig getManifestDelegateConfig() {

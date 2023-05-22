@@ -278,6 +278,7 @@ io.harness.beans.steps.stepinfo.security.ZapStepInfo
 io.harness.beans.sweepingoutputs.K8PodDetails
 io.harness.beans.steps.stepinfo.InitializeStepInfo
 io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo
+io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo
 io.harness.beans.steps.nodes.V1.BitriseStepNodeV1
 io.harness.ci.pipeline.executions.beans.TIBuildDetails
 io.harness.beans.stages.IntegrationStageStepParametersPMS
@@ -325,6 +326,7 @@ io.harness.ci.config.VmContainerlessStepConfig
 io.harness.ci.pipeline.executions.beans.CIInfraDetails
 io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo
 io.harness.ssca.beans.stepnode.SscaOrchestrationStepNode
+io.harness.ssca.beans.stepnode.SscaEnforcementStepNode
 io.harness.beans.steps.nodes.SaveCacheGCSNode
 io.harness.beans.yaml.extended.TISplitStrategy
 io.harness.beans.steps.nodes.security.ProwlerScanNode

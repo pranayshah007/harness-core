@@ -353,7 +353,8 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.info(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
 
       if (e instanceof InvalidRemoteException || e.getCause() instanceof NoRemoteRepositoryException) {
         return "Invalid git repo " + repoUrl;
@@ -394,7 +395,8 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(
           gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Remote branches found, validation success.");
     } catch (Exception e) {
-      log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
+      log.info(
+          gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e.getMessage());
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
@@ -428,8 +430,20 @@ public class GitClientV2Impl implements GitClientV2 {
         .handle(Exception.class)
         .withMaxAttempts(GIT_COMMAND_RETRY)
         .withBackoff(5, 10, ChronoUnit.SECONDS)
-        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
-        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+        .onFailedAttempt(event -> {
+          if (event.getLastFailure() instanceof TransportException) {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure().getMessage());
+          } else {
+            log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure());
+          }
+        })
+        .onFailure(event -> {
+          if (event.getFailure() instanceof TransportException) {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure().getMessage());
+          } else {
+            log.info(failureMessage, event.getAttemptCount(), event.getFailure());
+          }
+        });
   }
   @Override
   public DiffResult diff(DiffRequest request) {

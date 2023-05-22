@@ -12,6 +12,7 @@ import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBu
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetInstanceDetails;
+import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventDetailsResponse;
 import io.harness.cvng.servicelevelobjective.beans.secondaryevents.SecondaryEventsType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
@@ -54,7 +55,9 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
     Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
         sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
     Preconditions.checkArgument(serviceLevelObjective.getSliEvaluationType() == SLIEvaluationType.WINDOW,
-        "ServiceLevelObjective Should be of type Window.");
+        "ServiceLevelObjective Should be of type Window");
+    Preconditions.checkArgument(
+        serviceLevelObjective.getTarget().getType() == SLOTargetType.CALENDER, "SLO Target should be of type Calender");
     SLOErrorBudgetReset sloErrorBudgetReset = entityFromDTO(projectParams, sloErrorBudgetResetDTO,
         serviceLevelObjective
             .getCurrentTimeRange(LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset()))

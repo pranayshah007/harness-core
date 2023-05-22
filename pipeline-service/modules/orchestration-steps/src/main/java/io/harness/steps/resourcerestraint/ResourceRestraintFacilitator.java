@@ -89,7 +89,7 @@ public class ResourceRestraintFacilitator implements Facilitator {
     HoldingScope holdingScope = specParameters.getHoldingScope();
     String releaseEntityId = ResourceRestraintUtils.getReleaseEntityId(ambiance, holdingScope);
 
-    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
+    try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLockOptional(
              LOCK_PREFIX + resourceRestraint.getUuid(), Duration.ofSeconds(10), Duration.ofMinutes(1))) {
       if (lock == null) {
         throw new PersistentLockException("Cannot Acquire Lock for Resource Constraint",

@@ -110,7 +110,7 @@ public class FreezeConfigEntity implements PersistentEntity, AccountAccess, Uuid
   Long nextIteration;
 
   @Deprecated List<Long> nextIterations;
-  boolean shouldSendNotification;
+  @Builder.Default Boolean shouldSendNotification = Boolean.FALSE;
 
   @Override
   public List<Long> recalculateNextIterations(String fieldName, boolean skipMissed, long throttled) {

@@ -23,5 +23,5 @@ public interface InstanceSyncService {
   void processInstanceSyncByPerpetualTaskV2(
       String accountIdentifier, String perpetualTaskId, InstanceSyncResponseV2 instanceSyncResponseV2);
 
-  InstanceSyncTaskDetails fetchTaskDetails(String accountIdentifier, String perpetualTaskId);
+  InstanceSyncTaskDetails fetchTaskDetails(String perpetualTaskId, String accountIdentifier);
 }

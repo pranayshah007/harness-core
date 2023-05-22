@@ -28,7 +28,7 @@ import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAss
 import io.harness.accesscontrol.scopes.core.Scope;
 import io.harness.accesscontrol.scopes.core.ScopeService;
 import io.harness.accesscontrol.scopes.harness.HarnessScopeLevel;
-import io.harness.account.AccountClient;
+import io.harness.account.utils.AccountUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
@@ -46,7 +46,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +58,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class UserRoleAssignmentRemovalJob implements Runnable {
   private final RoleAssignmentRepository roleAssignmentRepository;
   private final FeatureFlagService featureFlagService;
-  private final AccountClient accountClient;
+  private final AccountUtils accountUtils;
   private final ScopeService scopeService;
   private final PersistentLocker persistentLocker;
   private final String DEBUG_MESSAGE = "UserRoleAssignmentRemovalJob: ";
@@ -67,11 +66,11 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
 
   @Inject
   public UserRoleAssignmentRemovalJob(RoleAssignmentRepository roleAssignmentRepository,
-      FeatureFlagService featureFlagService, AccountClient accountClient, ScopeService scopeService,
+      FeatureFlagService featureFlagService, AccountUtils accountUtils, ScopeService scopeService,
       PersistentLocker persistentLocker) {
     this.roleAssignmentRepository = roleAssignmentRepository;
     this.featureFlagService = featureFlagService;
-    this.accountClient = accountClient;
+    this.accountUtils = accountUtils;
     this.scopeService = scopeService;
     this.persistentLocker = persistentLocker;
   }
@@ -103,7 +102,7 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
 
   @VisibleForTesting
   void execute() {
-    Set<String> targetAccounts = featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS);
+    List<String> targetAccounts = getAccountsForFFEnabled();
 
     if (isEmpty(targetAccounts)) {
       return;
@@ -125,7 +124,24 @@ public class UserRoleAssignmentRemovalJob implements Runnable {
     }
   }
 
-  private List<String> filterAccountsForAccountBasicRoleOnlyFF(Set<String> accountIds) {
+  private List<String> getAccountsForFFEnabled() {
+    List<String> accountIds = accountUtils.getAllAccountIds();
+    List<String> targetAccounts = new ArrayList<>();
+    try {
+      for (String accountId : accountIds) {
+        boolean isRemoveUserViewerRoleAssignment =
+            featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountId);
+        if (isRemoveUserViewerRoleAssignment) {
+          targetAccounts.add(accountId);
+        }
+      }
+    } catch (Exception ex) {
+      log.error(DEBUG_MESSAGE + "Failed to filter accounts for FF PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS");
+    }
+    return targetAccounts;
+  }
+
+  private List<String> filterAccountsForAccountBasicRoleOnlyFF(List<String> accountIds) {
     List<String> filteredAccounts = new ArrayList<>();
     try {
       for (String accountId : accountIds) {

@@ -56,4 +56,20 @@ public class K8sValuesFilesCommentsHandlerTest extends CategoryTest {
     assertThat(renderedValuesFiles).isNotEmpty();
     assertThat(renderedValuesFiles).containsExactlyInAnyOrder(op1, op2, op3, op4);
   }
+
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void shouldNotRemoveComments() {
+    String badIntentYaml = "key: value\n"
+        + "metadata:\n"
+        + "   name: global-route\n"
+        + "  namespace: default\n";
+
+    List<String> valuesFiles = asList(badIntentYaml);
+    List<String> renderedValuesFiles =
+        K8sValuesFilesCommentsHandler.removeComments(valuesFiles, ManifestType.K8Manifest);
+    assertThat(renderedValuesFiles).isNotEmpty();
+    assertThat(renderedValuesFiles).containsExactlyInAnyOrder(badIntentYaml);
+  }
 }

@@ -18,6 +18,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.execution.ExecutionErrorInfo;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.execution.ExecutionStatus;
@@ -87,4 +88,6 @@ public class PipelineExecutionSummaryDTO {
   Map<String, String> stagesExecutedNames;
   boolean allowStageExecutions;
   AbortedBy abortedBy;
+
+  ExecutionMode executionMode;
 }

@@ -162,7 +162,7 @@ public class NGSecretResourceV2 {
   }
 
   @POST
-  @Consumes({"application/json"})
+  @Consumes({"application/json", "application/yaml"})
   @ApiOperation(value = "Create a secret", nickname = "postSecret")
   @Operation(operationId = "postSecret", summary = "Creates a Secret at given Scope",
       responses =
@@ -240,7 +240,8 @@ public class NGSecretResourceV2 {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns the created Secret details")
-      })
+      },
+      deprecated = true)
   public ResponseDTO<SecretResponseWrapper>
   createViaYaml(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                     NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,

@@ -41,6 +41,7 @@ import lombok.experimental.FieldDefaults;
 public class DelegateFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "Filter on delegate connectivity") private DelegateInstanceConnectivityStatus status;
   @Schema(description = "Filter on delegate description") private String description;
+  @Schema(description = "Filter on delegate hostName") private String hostName;
   @Schema(description = "Filter on delegate name") private String delegateName;
   @Schema(description = "Filter on delegate type") private String delegateType;
   @Schema(description = "Filter on delegate group id") private String delegateGroupIdentifier;

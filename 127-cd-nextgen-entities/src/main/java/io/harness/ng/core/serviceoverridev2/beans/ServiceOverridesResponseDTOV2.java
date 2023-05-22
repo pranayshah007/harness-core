@@ -33,6 +33,8 @@ public class ServiceOverridesResponseDTOV2 {
   String environmentRef;
   String serviceRef;
   String infraIdentifier;
+  String clusterIdentifier;
   ServiceOverridesType type;
   ServiceOverridesSpec spec;
+  boolean isNewlyCreated;
 }

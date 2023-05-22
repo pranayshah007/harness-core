@@ -47,6 +47,9 @@ public abstract class TimeSeriesAnalysisStateExecutor<T extends TimeSeriesAnalys
   @Override
   public AnalysisStatus getExecutionStatus(T analysisState) {
     if (!analysisState.getStatus().equals(AnalysisStatus.SUCCESS)) {
+      if (analysisState.getWorkerTaskId() == null) {
+        return AnalysisStatus.CREATED;
+      }
       Map<String, LearningEngineTask.ExecutionStatus> taskStatuses =
           timeSeriesAnalysisService.getTaskStatus(analysisState.getInputs().getVerificationTaskId(),
               new HashSet<>(Arrays.asList(analysisState.getWorkerTaskId())));

@@ -53,7 +53,8 @@ public class MaxConcurrentChildCallbackTest extends OrchestrationTestBase {
   MaxConcurrentChildCallback maxConcurrentChildCallback;
   @Before
   public void setUp() throws IllegalAccessException {
-    when(persistentLocker.waitToAcquireLock(anyString(), any(), any())).thenReturn(RedisAcquiredLock.builder().build());
+    when(persistentLocker.waitToAcquireLockOptional(anyString(), any(), any()))
+        .thenReturn(RedisAcquiredLock.builder().build());
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(PLAN_EXECUTION_ID).build();
     maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
                                      .ambiance(ambiance)

@@ -161,6 +161,7 @@ import io.harness.k8s.model.IstioDestinationWeight;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
@@ -966,7 +967,6 @@ public class K8sTaskHelperBase {
     ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, scaleCommand);
     ProcessResult result = response.getProcessResult();
     if (result.getExitValue() == 0) {
-      executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
       return true;
     } else {
       logExecutableFailed(result, executionLogCallback);
@@ -1059,6 +1059,26 @@ public class K8sTaskHelperBase {
     DeleteCommand deleteCommand =
         client.delete().resources(resourceId.kindNameRef()).namespace(resourceId.getNamespace());
     return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, deleteCommand).getProcessResult();
+  }
+
+  public boolean checkIfResourceExists(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
+      KubernetesResourceId kubernetesResourceId, LogCallback executionLogCallback) {
+    try {
+      ProcessResult result =
+          executeGetWorkloadCommand(client, k8sDelegateTaskParams, executionLogCallback, kubernetesResourceId);
+      if (result.getExitValue() == 0) {
+        return true;
+      }
+    } catch (Exception ex) {
+      log.warn("Resource {} not found in cluster. Error {}", kubernetesResourceId.kindNameRef(), ex);
+    }
+    return false;
+  }
+
+  private ProcessResult executeGetWorkloadCommand(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams,
+      LogCallback executionLogCallback, KubernetesResourceId resourceId) throws Exception {
+    GetCommand getCommand = client.get().resources(resourceId.kindNameRef()).namespace(resourceId.getNamespace());
+    return runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, getCommand).getProcessResult();
   }
 
   public void describe(Kubectl client, K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback)
@@ -1687,10 +1707,13 @@ public class K8sTaskHelperBase {
   }
 
   public String getResourcesInTableFormat(List<KubernetesResource> resources) {
+    return getResourcesIdsInTableFormat(resources.stream().map(KubernetesResource::getResourceId).collect(toList()));
+  }
+
+  public String getResourcesIdsInTableFormat(List<KubernetesResourceId> resourceIds) {
     int maxKindLength = 16;
     int maxNameLength = 36;
-    for (KubernetesResource resource : resources) {
-      KubernetesResourceId id = resource.getResourceId();
+    for (KubernetesResourceId id : resourceIds) {
       if (id.getKind().length() > maxKindLength) {
         maxKindLength = id.getKind().length();
       }
@@ -1709,8 +1732,7 @@ public class K8sTaskHelperBase {
         .append(color(format(tableFormat, "Kind", "Name", "Versioned"), White, Bold))
         .append(System.lineSeparator());
 
-    for (KubernetesResource resource : resources) {
-      KubernetesResourceId id = resource.getResourceId();
+    for (KubernetesResourceId id : resourceIds) {
       sb.append(color(format(tableFormat, id.getKind(), id.getName(), id.isVersioned()), Gray))
           .append(System.lineSeparator());
     }
@@ -3142,9 +3164,9 @@ public class K8sTaskHelperBase {
     return arrangeResourceIdsInDeletionOrder(resourceIdsToBeDeleted);
   }
 
-  public void addRevisionNumber(List<KubernetesResource> resources, int revision) {
+  public void addRevisionNumber(K8sRequestHandlerContext context, int revision) {
     try {
-      VersionUtils.addRevisionNumber(resources, revision);
+      VersionUtils.addRevisionNumber(context, revision);
     } catch (KubernetesYamlException exception) {
       throw NestedExceptionUtils.hintWithExplanationException(
           INVALID_RESOURCE_SPEC_HINT, INVALID_RESOURCE_SPEC_EXPLANATION, exception);
@@ -3152,9 +3174,9 @@ public class K8sTaskHelperBase {
   }
 
   public void addSuffixToConfigmapsAndSecrets(
-      List<KubernetesResource> resources, String suffix, LogCallback executionLogCallback) {
+      K8sRequestHandlerContext context, String suffix, LogCallback executionLogCallback) {
     try {
-      VersionUtils.addSuffixToConfigmapsAndSecrets(resources, suffix, executionLogCallback);
+      VersionUtils.addSuffixToConfigmapsAndSecrets(context, suffix, executionLogCallback);
     } catch (KubernetesYamlException exception) {
       throw NestedExceptionUtils.hintWithExplanationException(
           INVALID_RESOURCE_SPEC_HINT, INVALID_RESOURCE_SPEC_EXPLANATION, exception);
@@ -3276,16 +3298,17 @@ public class K8sTaskHelperBase {
 
   public K8sSteadyStateDTO createSteadyStateCheckRequest(K8sDeployRequest k8sDeployRequest,
       List<KubernetesResourceId> managedWorkloadKubernetesResourceIds, LogCallback waitForeSteadyStateLogCallback,
-      K8sDelegateTaskParams k8sDelegateTaskParams, String namespace, boolean denoteOverallSuccess,
+      K8sDelegateTaskParams k8sDelegateTaskParams, KubernetesConfig kubernetesConfig, boolean denoteOverallSuccess,
       boolean isErrorFrameworkEnabled) {
     return K8sSteadyStateDTO.builder()
         .request(k8sDeployRequest)
         .resourceIds(managedWorkloadKubernetesResourceIds)
         .executionLogCallback(waitForeSteadyStateLogCallback)
         .k8sDelegateTaskParams(k8sDelegateTaskParams)
-        .namespace(namespace)
+        .namespace(kubernetesConfig.getNamespace())
         .denoteOverallSuccess(denoteOverallSuccess)
         .isErrorFrameworkEnabled(isErrorFrameworkEnabled)
+        .kubernetesConfig(kubernetesConfig)
         .build();
   }
 

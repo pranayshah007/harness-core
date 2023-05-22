@@ -243,6 +243,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(209, "K8S_BLUE_GREEN_STAGE_SCALE_DOWN");
     entityTypeOrdinalMapping.put(210, "AWS_SAM_BUILD");
     entityTypeOrdinalMapping.put(211, "SEMGREP");
+    entityTypeOrdinalMapping.put(212, "SSCA_ENFORCEMENT");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

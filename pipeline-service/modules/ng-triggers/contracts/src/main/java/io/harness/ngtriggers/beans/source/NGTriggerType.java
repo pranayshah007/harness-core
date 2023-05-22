@@ -20,5 +20,6 @@ public enum NGTriggerType {
   @JsonProperty("Webhook") WEBHOOK,
   @JsonProperty("Artifact") ARTIFACT,
   @JsonProperty("Manifest") MANIFEST,
-  @JsonProperty("Scheduled") SCHEDULED
+  @JsonProperty("Scheduled") SCHEDULED,
+  @JsonProperty("MultiArtifact") MULTI_ARTIFACT
 }

@@ -1,0 +1,182 @@
+# Default values for batch-processing
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: "https://test"
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - my-host.example.org
+    tls:
+      enabled: true
+      secretName: ''
+  smtpCreateSecret:
+    enabled: false
+  ccm:
+    gcpProjectId: "placeHolder"
+  # image pull secrets to use for every image
+  imagePullSecrets: []
+  stackDriverLoggingEnabled: false
+
+replicaCount: 1
+
+isolatedReplica: 0
+
+
+
+java:
+  memory: "7168"
+
+image:
+  registry: docker.io
+  repository: harness/batch-processing-signed
+  pullPolicy: Always
+# Overrides the image tag whose default is the chart appVersion.
+  tag: "78605-000"
+  digest: ""
+# image pull secrets to use for batch-processing image
+  imagePullSecrets: []
+
+imageClickhouseEnabled:
+  registry: docker.io
+  repository: harness/batch-processing-signed
+  pullPolicy: Always
+# Overrides the image tag whose default is the chart appVersion.
+  tag: "78605-000"
+  digest: ""
+# image pull secrets to use for batch-processing image
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+smtp:
+  host: ""
+  password: ""
+  user: ""
+
+ceBatchGCPCredentials: ""
+
+ceGCPHomeProjectCreds: ""
+
+storageObjectAdmin: ""
+
+awsSecret:
+  S3_SYNC_CONFIG_ACCESSKEY: ""
+  S3_SYNC_CONFIG_SECRETKEY: ""
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  annotations: {}
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 6340
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+# targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+cloudProviderConfig:
+  DATA_PIPELINE_CONFIG_GCS_BASE_PATH: "gs://awscustomerbillingdata-onprem"
+  CLUSTER_DATA_GCS_BUCKET: "clusterdata-onprem"
+  CLUSTER_DATA_GCS_BACKUP_BUCKET: "clusterdata-onprem-backup"
+  S3_SYNC_CONFIG_BUCKET_NAME: "ccm-service-data-bucket"
+  S3_SYNC_CONFIG_REGION: "us-east-1"
+
+awsAccountTagsCollectionJobConfig:
+  enabled: true
+
+clickhouse:
+  enabled: false
+  username: "default"
+  password:
+    name: clickhouse
+    key: admin-password
+
+workloadIdentity:
+  enabled: false
+
+resources:
+  limits:
+    cpu: "1024m"
+    memory: "10Gi"
+  requests:
+    cpu: "1024m"
+    memory: "10Gi"
+
+additionalConfigs: {}

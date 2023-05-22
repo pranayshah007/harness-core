@@ -14,10 +14,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.PersistentLockException;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StateMachineMessageProcessorImpl implements StateMachineMessageProcessor {
   @Inject private OrchestrationService orchestrationService;
-  @Inject private StateMachineEventPublisherService stateMachineEventPublisherService;
 
   @Override
   public void processAnalysisStateMachine(StateMachineTrigger trigger) {
@@ -26,15 +27,10 @@ public class StateMachineMessageProcessorImpl implements StateMachineMessageProc
       AnalysisOrchestrator orchestrator = orchestrationService.getAnalysisOrchestrator(verificationTaskId);
       orchestrationService.orchestrate(orchestrator);
     } catch (PersistentLockException ex) {
-      processFailureMessage(trigger);
+      log.error("Failed to acquire lock", ex);
     } catch (Exception ex) {
       throw new InvalidRequestException(
           "Invalid state while processing message for srm_statemachine_event  " + trigger);
     }
-  }
-
-  private void processFailureMessage(StateMachineTrigger trigger) {
-    // Add the same message again for retry
-    stateMachineEventPublisherService.registerTaskComplete(trigger.getAccountId(), trigger.getVerificationTaskId());
   }
 }

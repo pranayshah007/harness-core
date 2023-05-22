@@ -87,7 +87,7 @@ public abstract class CVConfig
   private long createdAt;
   private long lastUpdatedAt;
   @NotNull private VerificationType verificationType;
-
+  private DataSourceType dataSourceName;
   @NotNull private String accountId;
   @NotNull @FdIndex private String connectorIdentifier;
 

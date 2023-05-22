@@ -9,8 +9,7 @@ package io.harness.steps.container.utils;
 
 import io.harness.calculation.InitMemoryCalculatorService;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.pms.contracts.plan.PluginContainerResources;
-import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
 import io.harness.pms.sdk.core.plugin.ContainerPluginParseException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
@@ -38,9 +37,9 @@ public class ContainerInitCpuMemHelper extends InitMemoryCalculatorService {
 
   @Override
   public Integer getStepCpuLimit(
-      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     YamlNode yamlNode = new YamlNode(stepElement.getStep());
-    Optional<Map.Entry<StepInfo, PluginCreationResponse>> creationResponseEntry =
+    Optional<Map.Entry<StepInfo, PluginCreationResponseList>> creationResponseEntry =
         pluginsData.entrySet()
             .stream()
             .filter(pluginsDataMap -> pluginsDataMap.getKey().getStepUuid().equals(yamlNode.getUuid()))
@@ -48,21 +47,27 @@ public class ContainerInitCpuMemHelper extends InitMemoryCalculatorService {
     if (!creationResponseEntry.isPresent()) {
       throw new ContainerStepExecutionException("Couldn't find container cpu");
     }
-    return creationResponseEntry.get().getValue().getPluginDetails().getResource().getCpu();
+    return creationResponseEntry.get()
+        .getValue()
+        .getResponseList()
+        .stream()
+        .mapToInt(pluginData -> pluginData.getResponse().getPluginDetails().getResource().getCpu())
+        .max()
+        .getAsInt();
   }
 
   @Override
   public Integer getStepMemoryLimit(
-      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      ExecutionWrapperConfig stepElement, String accountId, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     ContainerResource containerResource = getStepResources(stepElement, pluginsData);
     return getContainerMemoryLimit(containerResource, null, null, accountId, pluginsData);
   }
 
   private ContainerResource getStepResources(
-      ExecutionWrapperConfig stepInfo, Map<StepInfo, PluginCreationResponse> pluginsData) {
+      ExecutionWrapperConfig stepInfo, Map<StepInfo, PluginCreationResponseList> pluginsData) {
     YamlNode yamlNode = new YamlNode(stepInfo.getStep());
     String uuid = yamlNode.getUuid();
-    Optional<Map.Entry<StepInfo, PluginCreationResponse>> pluginCreationResponseEntry =
+    Optional<Map.Entry<StepInfo, PluginCreationResponseList>> pluginCreationResponseEntry =
         pluginsData.entrySet()
             .stream()
             .filter(pluginsDataMap -> pluginsDataMap.getKey().getStepUuid().equals(yamlNode.getUuid()))
@@ -71,17 +76,30 @@ public class ContainerInitCpuMemHelper extends InitMemoryCalculatorService {
     if (!pluginCreationResponseEntry.isPresent()) {
       throw new ContainerPluginParseException("Cannot get container memory data");
     }
-    PluginContainerResources resource = pluginCreationResponseEntry.get().getValue().getPluginDetails().getResource();
+    int maxCpu = pluginCreationResponseEntry.get()
+                     .getValue()
+                     .getResponseList()
+                     .stream()
+                     .mapToInt(pluginData -> pluginData.getResponse().getPluginDetails().getResource().getCpu())
+                     .max()
+                     .getAsInt();
+    int maxMemory = pluginCreationResponseEntry.get()
+                        .getValue()
+                        .getResponseList()
+                        .stream()
+                        .mapToInt(pluginData -> pluginData.getResponse().getPluginDetails().getResource().getMemory())
+                        .max()
+                        .getAsInt();
     return ContainerResource.builder()
         .limits(ContainerResource.Limits.builder()
-                    .cpu(ParameterField.<String>builder().value(String.valueOf(resource.getCpu())).build())
-                    .memory(ParameterField.<String>builder().value(String.valueOf(resource.getMemory())).build())
+                    .cpu(ParameterField.<String>builder().value(String.valueOf(maxCpu)).build())
+                    .memory(ParameterField.<String>builder().value(String.valueOf(maxMemory)).build())
                     .build())
         .build();
   }
 
   private Integer getContainerMemoryLimit(ContainerResource resource, String stepType, String stepId, String accountID,
-      Map<StepInfo, PluginCreationResponse> pluginsData) {
+      Map<StepInfo, PluginCreationResponseList> pluginsData) {
     Integer memoryLimit = containerExecutionConfig.getDefaultMemoryLimit();
 
     if (resource != null && resource.getLimits() != null && resource.getLimits().getMemory() != null) {

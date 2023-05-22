@@ -76,7 +76,7 @@ public class GitCommandTaskHandler {
       delegateResponseData = (GitCommandExecutionResponse) handleValidateTask(
           gitConnector, scmConnector, accountIdentifier, sshSessionConfig);
     } catch (Exception e) {
-      throw exceptionManager.processException(e, MANAGER, log);
+      throw exceptionManager.processException(e, MANAGER, null);
     }
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)

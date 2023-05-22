@@ -131,7 +131,7 @@ public class ManifestHelper {
 
   private static KubernetesResource getKubernetesResource(String spec, Map map) {
     String kind = getKind(map);
-    Map metadata = getMetadata(map);
+    Map metadata = getMetadata(map, kind);
     String name = getName(metadata);
 
     String namespace = null;
@@ -158,13 +158,15 @@ public class ManifestHelper {
     return metadata.get("name").toString();
   }
 
-  private static Map getMetadata(Map map) {
+  private static Map getMetadata(Map map, String kind) {
     if (!map.containsKey("metadata")) {
-      throw new KubernetesYamlException("Error processing yaml manifest. metadata not found in spec.");
+      throw new KubernetesYamlException(
+          format("Error processing yaml manifest of the kind: %s. metadata not found in spec.", kind));
     }
 
     if (map.get("metadata") == null) {
-      throw new KubernetesYamlException("Error processing yaml manifest. metadata is set to null in spec.");
+      throw new KubernetesYamlException(
+          format("Error processing yaml manifest of the kind: %s. metadata is set to null in spec.", kind));
     }
 
     return (Map) map.get("metadata");

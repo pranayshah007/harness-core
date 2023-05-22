@@ -38,9 +38,9 @@ public class ChangeSourceDTODeserializerTest extends CvNextGenTestBase {
     changeSourceDTODeserializer = new ChangeSourceDTODeserializer();
     excludedFields = new Field[] {};
     jsonString = "{"
-        + "                \"name\": \"Harness CD Next Gen\","
-        + "                \"identifier\": \"harness_cd_next_gen\","
-        + "                \"type\": \"HarnessCDNextGen\","
+        + "                \"name\": \"Custom Deploy\","
+        + "                \"identifier\": \"custom_deploy\","
+        + "                \"type\": \"CustomDeploy\","
         + "                \"enabled\": true,"
         + "                \"spec\": {},\n"
         + "                \"category\": \"Deployment\""

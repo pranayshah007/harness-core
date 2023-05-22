@@ -10,6 +10,7 @@ package io.harness.ci.states.V1;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.FeatureName.CIE_ENABLED_RBAC;
 import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
+import static io.harness.beans.FeatureName.CODE_ENABLED;
 import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS_CONCURRENCY;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
@@ -34,6 +35,7 @@ import static java.util.Collections.singletonList;
 import io.harness.EntityType;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -43,6 +45,7 @@ import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
+import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
 import io.harness.beans.sweepingoutputs.TaskSelectorSweepingOutput;
@@ -400,11 +403,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
 
+    populateStrategyExpansion(initializeStepInfo, ambiance);
     if (EmptyPredicate.isEmpty(principal)) {
+      log.info("principal info is null");
       return;
     }
-
-    populateStrategyExpansion(initializeStepInfo, ambiance);
 
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
@@ -581,9 +584,16 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 
+    boolean classExpansion = ciFeatureFlagService.isEnabled(FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, accountId);
+
     for (ExecutionWrapperConfig config : executionElement.getSteps()) {
-      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-          strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo;
+      if (classExpansion) {
+        expandedExecutionWrapperInfo =
+            strategyHelper.expandExecutionWrapperConfigFromClass(config, maxExpansionLimit, CIAbstractStepNode.class);
+      } else {
+        expandedExecutionWrapperInfo = strategyHelper.expandExecutionWrapperConfig(config, maxExpansionLimit);
+      }
       expandedExecutionElement.addAll(expandedExecutionWrapperInfo.getExpandedExecutionConfigs());
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }
@@ -740,12 +750,14 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
       if (initializeStepInfo.getCiCodebase() == null) {
         throw new CIStageExecutionException("Codebase is mandatory with enabled cloneCodebase flag");
       }
-      if (isEmpty(initializeStepInfo.getCiCodebase().getConnectorRef().getValue())) {
-        throw new CIStageExecutionException("Git connector is mandatory with enabled cloneCodebase flag");
-      }
 
-      entityDetails.add(createEntityDetails(initializeStepInfo.getCiCodebase().getConnectorRef().getValue(),
-          accountIdentifier, projectIdentifier, orgIdentifier));
+      if (!isHarnessSCM(initializeStepInfo, accountIdentifier)) {
+        if (isEmpty(initializeStepInfo.getCiCodebase().getConnectorRef().getValue())) {
+          throw new CIStageExecutionException("Git connector is mandatory with enabled cloneCodebase flag");
+        }
+        entityDetails.add(createEntityDetails(initializeStepInfo.getCiCodebase().getConnectorRef().getValue(),
+            accountIdentifier, projectIdentifier, orgIdentifier));
+      }
     }
 
     List<String> connectorRefs =
@@ -784,6 +796,11 @@ public class InitializeTaskStepV2 extends CiAsyncExecutable {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(connectorIdentifier, accountIdentifier, orgIdentifier, projectIdentifier);
     return EntityDetail.builder().entityRef(connectorRef).type(EntityType.CONNECTORS).build();
+  }
+
+  private boolean isHarnessSCM(InitializeStepInfo initializeStepInfo, String accountIdentifier) {
+    return isEmpty(initializeStepInfo.getCiCodebase().getConnectorRef().getValue())
+        && ciFeatureFlagService.isEnabled(CODE_ENABLED, accountIdentifier);
   }
 
   private void addExternalDelegateSelector(

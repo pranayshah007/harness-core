@@ -37,6 +37,8 @@ import io.harness.impl.scm.ScmGitProviderMapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -85,6 +87,9 @@ public class GitStatusCheckHelper {
         statusSent = sendBuildStatusToGitLab(gitStatusCheckParams);
       } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.AZURE_REPO) {
         statusSent = sendBuildStatusToAzureRepo(gitStatusCheckParams);
+      } else if (gitStatusCheckParams.getGitSCMType() == GitSCMType.HARNESS) {
+        log.info("Status API not yet implemented for Harness inbuilt SCM");
+        return false;
       } else {
         throw new UnsupportedOperationException("Not supported");
       }
@@ -254,8 +259,9 @@ public class GitStatusCheckHelper {
         orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(completeUrl);
       }
 
-      String project = GitClientHelper.getAzureRepoProject(orgAndProject);
-      String repo = StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR);
+      String project = URLDecoder.decode(GitClientHelper.getAzureRepoProject(orgAndProject), StandardCharsets.UTF_8);
+      String repo =
+          URLDecoder.decode(StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR), StandardCharsets.UTF_8);
 
       RetryPolicy<Object> retryPolicy =
           getRetryPolicy(format("[Retrying failed call to send status for azure repo check: [%s], attempt: {}",
