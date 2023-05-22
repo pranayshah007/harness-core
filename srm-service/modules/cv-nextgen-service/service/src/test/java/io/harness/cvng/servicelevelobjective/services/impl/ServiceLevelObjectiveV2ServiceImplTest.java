@@ -125,6 +125,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -2419,6 +2420,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    Optional<ServiceLevelIndicator> serviceLevelIndicator =
+        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
+            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+    assertThat(serviceLevelIndicator.isEmpty());
   }
 
   @Test
@@ -2472,6 +2477,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    Optional<ServiceLevelIndicator> serviceLevelIndicator =
+        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
+            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+    assertThat(serviceLevelIndicator.isEmpty());
   }
 
   @Test
@@ -2526,6 +2535,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    Optional<ServiceLevelIndicator> serviceLevelIndicator =
+        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
+            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+    assertThat(serviceLevelIndicator.isEmpty());
   }
 
   @Test
