@@ -668,8 +668,8 @@ public abstract class AbstractStepExecutable extends CiAsyncExecutable {
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(
-        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds,
+        executeOnHarnessHostedDelegates, ambiance.getStageExecutionId());
   }
 
   private String queueParkedDelegateTask(
