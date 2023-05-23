@@ -12,6 +12,7 @@ data:
   MANAGER_AUTHORITY: harness-manager:9879
   NG_MANAGER_TARGET: ng-manager:13002
   NG_MANAGER_AUTHORITY: ng-manager:13002
+  ALLOWED_ORIGINS: '{{  .Values.global.loadbalancerURL }}'
   EVENTS_FRAMEWORK_REDIS_URL: 'redis://localhost:6379'
   EVENTS_FRAMEWORK_USE_SENTINEL: "true"
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'

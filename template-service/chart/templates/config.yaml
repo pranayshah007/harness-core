@@ -9,6 +9,7 @@ data:
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   CACHE_CONFIG_USE_SENTINEL: "true"
   DEPLOY_MODE: KUBERNETES_ONPREM
+  ALLOWED_ORIGINS: '{{  .Values.global.loadbalancerURL }}'
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   MEMORY: {{ .Values.java.memory | quote }}

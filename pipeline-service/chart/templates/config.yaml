@@ -9,6 +9,7 @@ data:
   CACHE_CONFIG_SENTINEL_MASTER_NAME: "harness-redis"
   CACHE_CONFIG_USE_SENTINEL: "true"
   DEPLOY_MODE: KUBERNETES_ONPREM
+  ALLOWED_ORIGINS: '{{  .Values.global.loadbalancerURL }}'
   LOGGING_LEVEL: {{ .Values.appLogLevel }}
   LOCK_CONFIG_REDIS_SENTINELS: redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace }}:26379
   LOCK_CONFIG_SENTINEL_MASTER_NAME: harness-redis

@@ -1,6 +1,7 @@
 apiVersion: v1
 data:
   DEPLOY_MODE: KUBERNETES_ONPREM
+  ALLOWED_ORIGINS: '{{  .Values.global.loadbalancerURL }}'
   GRPC_MANAGER_TARGET: harness-manager:9879
   GRPC_MANAGER_AUTHORITY: harness-manager:9879
   ENABLE_AUDIT_SERVICE: 'true'
