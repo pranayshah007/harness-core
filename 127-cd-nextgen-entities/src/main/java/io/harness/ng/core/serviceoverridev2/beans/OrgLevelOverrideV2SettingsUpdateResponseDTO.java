@@ -9,7 +9,6 @@ package io.harness.ng.core.serviceoverridev2.beans;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,7 +19,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
-import retrofit2.Call;
 
 @Data
 @Builder
@@ -33,6 +31,6 @@ public class OrgLevelOverrideV2SettingsUpdateResponseDTO {
   String accountId;
   String orgIdentifier;
   boolean isSettingsUpdateSuccessFul;
-  Call<ResponseDTO<List<SettingResponseDTO>>> settingResponseDTO;
+  List<SettingResponseDTO> settingResponseDTO;
   OverridesGroupSettingsUpdateResult overrideResult;
 }

@@ -9,7 +9,6 @@ package io.harness.cdng.serviceoverridesv2.services;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.ng.core.entities.Project;
@@ -24,9 +23,11 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideSettingsUpdateR
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideSettingsUpdateResponseDTO.ServiceOverrideSettingsUpdateResponseDTOBuilder;
 import io.harness.ng.core.serviceoverridev2.beans.SingleServiceOverrideYamlUpdateResponse;
 import io.harness.ngsettings.SettingUpdateType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingRequestDTO.SettingRequestDTOBuilder;
 import io.harness.ngsettings.dto.SettingResponseDTO;
+import io.harness.remote.client.NGRestUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -40,11 +41,11 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.CloseableIterator;
-import retrofit2.Call;
 
 @Slf4j
 public class ServiceOverrideV2SettingsUpdateServiceImpl implements ServiceOverrideV2SettingsUpdateService {
   @Inject MongoTemplate mongoTemplate;
+  @Inject NGSettingsClient ngSettingsClient;
   private static final String DEBUG_LINE = "[ServiceOverrideV2SettingsUpdateServiceImpl]: ";
 
   @Override
@@ -247,13 +248,13 @@ public class ServiceOverrideV2SettingsUpdateServiceImpl implements ServiceOverri
         ProjectLevelOverrideV2SettingsUpdateResponseDTO::isSettingsUpdateSuccessFul));
   }
 
-  private Call<ResponseDTO<List<SettingResponseDTO>>> getResponseDTOCall(
+  private List<SettingResponseDTO> getResponseDTOCall(
       String accountId, String orgId, String projectId, boolean isRevert) {
     List<SettingRequestDTO> settingRequestDTOList = new ArrayList<>();
     SettingRequestDTOBuilder settingRequestDTOBuilder = SettingRequestDTO.builder()
                                                             .identifier("service_override_v2")
                                                             .updateType(SettingUpdateType.UPDATE)
-                                                            .allowOverrides(Boolean.FALSE);
+                                                            .allowOverrides(Boolean.TRUE);
 
     if (isRevert) {
       settingRequestDTOBuilder.value("false");
@@ -262,7 +263,7 @@ public class ServiceOverrideV2SettingsUpdateServiceImpl implements ServiceOverri
     }
 
     settingRequestDTOList.add(settingRequestDTOBuilder.build());
-    // TODO: Settings Update call to be added
+    NGRestUtils.getResponse(ngSettingsClient.updateSettings(accountId, orgId, projectId, settingRequestDTOList));
     return null;
   }
 
@@ -270,7 +271,7 @@ public class ServiceOverrideV2SettingsUpdateServiceImpl implements ServiceOverri
   private ProjectLevelOverrideV2SettingsUpdateResponseDTO doProjectLevelSettingsUpdate(
       String accountId, String orgId, String projectId, boolean isRevert) {
     boolean isSettingsUpdateSuccessful = true;
-    Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall = null;
+    List<SettingResponseDTO> responseDTOCall = null;
     OverridesGroupSettingsUpdateResult overrideResult = null;
     try {
       responseDTOCall = getResponseDTOCall(accountId, orgId, projectId, isRevert);
@@ -299,7 +300,7 @@ public class ServiceOverrideV2SettingsUpdateServiceImpl implements ServiceOverri
   private OrgLevelOverrideV2SettingsUpdateResponseDTO doOrgLevelSettingsUpdate(
       String accountId, String orgId, boolean isRevert) {
     boolean isSettingsUpdateSuccessful = true;
-    Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall = null;
+    List<SettingResponseDTO> responseDTOCall = null;
     OverridesGroupSettingsUpdateResult overrideResult = null;
     try {
       responseDTOCall = getResponseDTOCall(accountId, orgId, null, isRevert);
@@ -324,7 +325,7 @@ public class ServiceOverrideV2SettingsUpdateServiceImpl implements ServiceOverri
   private AccountLevelOverrideV2SettingsUpdateResponseDTO doAccountLevelSettingsUpdate(
       String accountId, boolean isRevert) {
     boolean isSettingsUpdateSuccessful = true;
-    Call<ResponseDTO<List<SettingResponseDTO>>> responseDTOCall = null;
+    List<SettingResponseDTO> responseDTOCall = null;
     OverridesGroupSettingsUpdateResult overrideResult = null;
     try {
       responseDTOCall = getResponseDTOCall(accountId, null, null, isRevert);
