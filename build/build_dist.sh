@@ -14,6 +14,9 @@ function prepare_to_copy_jars(){
   mkdir -p dist ;
   cd dist
 
+  pwd
+  ls
+  ls ../../scripts/jenkins/
   cp -R ../scripts/jenkins/ .
   cd ..
 
