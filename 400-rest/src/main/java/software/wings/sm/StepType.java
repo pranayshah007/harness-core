@@ -318,7 +318,7 @@ public enum StepType {
 
   // Artifact
   ARTIFACT_COLLECTION(ArtifactCollectionState.class, ARTIFACT_COLLECTION_STEP, asList(ARTIFACT),
-      asList(COLLECT_ARTIFACT), asList(DeploymentType.values()), asList(PhaseType.NON_ROLLBACK)),
+      asList(COLLECT_ARTIFACT), asList(DeploymentType.values()), asList(PhaseType.NON_ROLLBACK), true),
   ARTIFACT_CHECK(ArtifactCheckState.class, ARTIFACT_CHECK_STEP, asList(ARTIFACT), asList(PRE_DEPLOYMENT),
       asList(DeploymentType.SSH), asList(PhaseType.NON_ROLLBACK)),
 

@@ -169,7 +169,7 @@ public class BuildSourceTask extends AbstractDelegateRunnableTask {
           .errorMessage(ExceptionUtils.getMessage(ex))
           .build();
     } catch (Exception ex) {
-      log.error("Exception in processing BuildSource task [{}]", ex);
+      log.error("Exception in processing BuildSource task [%s]", ex);
       return BuildSourceExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(ExceptionUtils.getMessage(ex))

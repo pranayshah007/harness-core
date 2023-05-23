@@ -696,17 +696,16 @@ public class ArtifactCollectionState extends State {
                 .build();
           }
         }
+        String errorMessage = buildSourceExecutionResponse.getErrorMessage();
         if (buildSourceExecutionResponse.isTimeoutError()) {
           return ExecutionResponse.builder()
               .executionStatus(FAILED)
               .failureTypes(FailureType.TIMEOUT)
-              .errorMessage(isEmpty(buildSourceExecutionResponse.getErrorMessage())
-                      ? String.format("Collection artifact stream %s, buildNo %s was failed by timeout",
-                          artifactStream.getName(), evaluatedBuildNo)
-                      : buildSourceExecutionResponse.getErrorMessage())
+              .errorMessage(isEmpty(errorMessage) ? String.format("Collect artifact stream %s, buildNo %s timed out",
+                                artifactStream.getName(), evaluatedBuildNo)
+                                                  : errorMessage)
               .build();
         }
-        String errorMessage = buildSourceExecutionResponse.getErrorMessage();
         return ExecutionResponse.builder()
             .executionStatus(FAILED)
             .errorMessage(isEmpty(errorMessage)
@@ -809,6 +808,16 @@ public class ArtifactCollectionState extends State {
             .build();
       } else {
         String errorMessage = helmCollectChartResponse.getErrorMessage();
+        if (helmCollectChartResponse.isTimeoutError()) {
+          return ExecutionResponse.builder()
+              .executionStatus(FAILED)
+              .failureTypes(FailureType.TIMEOUT)
+              .errorMessage(errorMessage.isEmpty()
+                      ? String.format("Collect build version %s for manifest source %s timed out", evaluatedBuildNo,
+                          applicationManifest.getName())
+                      : errorMessage)
+              .build();
+        }
         return ExecutionResponse.builder()
             .executionStatus(FAILED)
             .errorMessage(isEmpty(errorMessage)
