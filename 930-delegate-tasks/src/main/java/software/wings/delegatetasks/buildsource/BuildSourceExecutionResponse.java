@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.exception.FailureType;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.AllArgsConstructor;
@@ -21,6 +22,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.EnumSet;
 
 /**
  * Created by anubhaw on 7/20/18.
@@ -38,4 +41,5 @@ public class BuildSourceExecutionResponse implements DelegateTaskNotifyResponseD
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
   private String artifactStreamId;
+  private boolean isTimeoutError;
 }
