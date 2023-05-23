@@ -240,7 +240,10 @@ function copy_pipeline_service_jars(){
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../dockerization/pipeline-service/scripts/ .
+  pwd
+  ls
   cp ../../pipeline-service-protocol.info .
+  ls /harness/harness-core/dist/pipeline-service/
   copy_common_files
   cp ../../pipeline-service/config/jfr/default.jfc .
   cp ../../pipeline-service/config/jfr/profile.jfc .
