@@ -697,12 +697,12 @@ public class ArtifactCollectionState extends State {
           }
         }
         if (buildSourceExecutionResponse.isTimeoutError()) {
-          // TODO: improve message with artifact data
           return ExecutionResponse.builder()
               .executionStatus(FAILED)
               .failureTypes(FailureType.TIMEOUT)
               .errorMessage(isEmpty(buildSourceExecutionResponse.getErrorMessage())
-                      ? String.format("Timeout error", evaluatedBuildNo, artifactStream.getName())
+                      ? String.format("Collection artifact stream %s, buildNo %s was failed by timeout",
+                          artifactStream.getName(), evaluatedBuildNo)
                       : buildSourceExecutionResponse.getErrorMessage())
               .build();
         }
