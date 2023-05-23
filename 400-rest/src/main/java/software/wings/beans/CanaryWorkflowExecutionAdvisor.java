@@ -434,13 +434,14 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
                 state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW, isTimeoutSupportOnWFLevelEnabled);
           }
 
-          return computeExecutionEventAdvice(orchestrationWorkflow, failureStrategy, executionEvent, null,
-              stateExecutionInstance, null);
+          return computeExecutionEventAdvice(
+              orchestrationWorkflow, failureStrategy, executionEvent, null, stateExecutionInstance, null);
         }
       }
 
-      FailureStrategy failureStrategy = selectTopMatchingStrategy(workflowFailureStrategies,
-          executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW, isTimeoutSupportOnWFLevelEnabled);
+      FailureStrategy failureStrategy =
+          selectTopMatchingStrategy(workflowFailureStrategies, executionEvent.getFailureTypes(), state.getName(),
+              phaseElement, FailureStrategyLevel.WORKFLOW, isTimeoutSupportOnWFLevelEnabled);
 
       String pipelineId = null;
       if (workflowExecution.getPipelineSummary() != null) {
