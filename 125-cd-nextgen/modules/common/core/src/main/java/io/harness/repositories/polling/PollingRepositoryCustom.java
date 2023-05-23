@@ -34,6 +34,8 @@ public interface PollingRepositoryCustom {
       String accountId, String pollingDocId, List<String> signatures);
   UpdateResult updateSelectiveEntity(String accountId, String pollDocId, String key, Object value);
   PollingDocument findByUuidAndAccountIdAndSignature(String pollingDocId, String accountId, List<String> signature);
+  List<PollingDocument> findManyByUuidsAndAccountId(List<String> pollingDocIds, String accountId);
+  List<PollingDocument> findUuidsBySignaturesAndAccountId(List<String> signatures, String accountId);
 
   DeleteResult deleteAll(Criteria criteria);
 }

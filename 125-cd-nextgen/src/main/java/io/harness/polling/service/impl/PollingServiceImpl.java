@@ -26,6 +26,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +66,16 @@ public class PollingServiceImpl implements PollingService {
   @Override
   public PollingDocument get(String accountId, String pollingDocId) {
     return pollingRepository.findByUuidAndAccountId(pollingDocId, accountId);
+  }
+
+  @Override
+  public List<PollingDocument> getMany(String accountId, List<String> pollingDocIds) {
+    return pollingRepository.findManyByUuidsAndAccountId(pollingDocIds, accountId);
+  }
+
+  @Override
+  public List<String> getUuidsBySignatures(String accountId, List<String> signatures) {
+    return pollingRepository.findUuidsBySignaturesAndAccountId(signatures, accountId).stream().map(PollingDocument::getUuid).collect(Collectors.toList());
   }
 
   @Override

@@ -25,6 +25,7 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Collation;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -177,5 +178,26 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   public DeleteResult deleteAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.remove(query, PollingDocument.class);
+  }
+
+  @Override
+  public List<PollingDocument> findManyByUuidsAndAccountId(List<String> pollingDocIds, String accountId) {
+    Query query = new Query().addCriteria(new Criteria()
+            .and(PollingDocumentKeys.accountId)
+            .is(accountId)
+            .and(PollingDocumentKeys.uuid)
+            .in(pollingDocIds));
+    return mongoTemplate.find(query, PollingDocument.class);
+  }
+
+  @Override
+  public List<PollingDocument> findUuidsBySignaturesAndAccountId(List<String> signatures, String accountId) {
+    Query query = new Query().addCriteria(new Criteria()
+            .and(PollingDocumentKeys.accountId)
+            .is(accountId)
+            .and(PollingDocumentKeys.signatures)
+            .in(signatures));
+    query.fields().include(PollingDocumentKeys.uuid);
+    return mongoTemplate.find(query, PollingDocument.class);
   }
 }
