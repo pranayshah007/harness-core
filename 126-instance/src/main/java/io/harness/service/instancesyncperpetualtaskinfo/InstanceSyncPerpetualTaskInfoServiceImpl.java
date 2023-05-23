@@ -95,7 +95,7 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   public List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(accountId)
-                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId)
+                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2)
                             .is(perpetualTaskId);
 
     return instanceSyncPerpetualTaskInfoRepository.findAll(criteria)

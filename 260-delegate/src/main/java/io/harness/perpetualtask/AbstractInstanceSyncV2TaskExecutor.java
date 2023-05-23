@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
   private static final String SUCCESS_RESPONSE_MSG = "success";
-  private static final int PAGE_SIZE = 100;
+  private static final int PAGE_SIZE = 2;
   private static final String FAILURE_RESPONSE_MSG =
       "Failed to fetch InstanceSyncTaskDetails for perpetual task Id: [%s], accountId [%s]";
 
@@ -85,13 +85,6 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
 
         if (Objects.isNull(instanceSyncTaskDetails) || instanceSyncTaskDetails.getDetails().isEmpty()) {
           log.error("No deployments to track for perpetualTaskId: [{}]. Nothing to do here.", taskId.getId());
-          publishInstanceSyncResult(taskId, accountId,
-              InstanceSyncResponseV2.newBuilder()
-                  .setStatus(InstanceSyncStatus.newBuilder()
-                                 .setIsSuccessful(false)
-                                 .setExecutionStatus(CommandExecutionStatus.SKIPPED.name())
-                                 .build())
-                  .build());
           continue;
         }
         PageResponse<DeploymentReleaseDetails> deploymentReleaseDetailsList = instanceSyncTaskDetails.getDetails();
@@ -104,15 +97,15 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
           createBatchAndPublish(batchInstanceCount, batchReleaseDetailsCount, responseBuilder, instanceSyncData.build(),
               serverInstanceInfos, instanceSyncTaskDetails, taskId, accountId);
         }
-        if (batchInstanceCount.get() != 0 || batchReleaseDetailsCount.get() != 0) {
-          publishInstanceSyncResult(taskId, accountId,
-              responseBuilder
-                  .setStatus(InstanceSyncStatus.newBuilder()
-                                 .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
-                                 .setIsSuccessful(true)
-                                 .build())
-                  .build());
-        }
+      }
+      if (batchInstanceCount.get() != 0 || batchReleaseDetailsCount.get() != 0) {
+        publishInstanceSyncResult(taskId, accountId,
+            responseBuilder
+                .setStatus(InstanceSyncStatus.newBuilder()
+                               .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                               .setIsSuccessful(true)
+                               .build())
+                .build());
       }
       return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
     } catch (IOException ioException) {
