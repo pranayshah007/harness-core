@@ -444,17 +444,3 @@ elif [ "${SERVICE_NAME}" == "srm-service" ]; then
 elif [ "${SERVICE_NAME}" == "template-service" ]; then
     copy_template_service_jars
 fi
-
-
-#function copy_access_control_jars(){
-#
-#}
-#
-#function copy_access_control_jars(){
-#
-#}
-#
-#function copy_access_control_jars(){
-#
-
-}#}
