@@ -646,6 +646,7 @@ public class LicenseServiceImpl implements LicenseService {
     boolean premiumSupport = hasPremierSupport(dimension);
     Edition plan = getDimensionPlan(dimension);
     LicenseType licenseType = getModuleLicenseType(plan);
+    // TODO: https://harness.atlassian.net/browse/PLG-2386
     // HARNESS_TEST_2_PRODUCT_CODE is an internal way for us to test dimensions that belong not to the same listing
     // because when published, prices are high
     String HARNESS_TEST_2_PRODUCT_CODE = "9g3jcw6iic4tpylipcti8vwcx";
