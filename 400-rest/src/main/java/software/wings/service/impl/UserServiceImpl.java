@@ -338,6 +338,7 @@ public class UserServiceImpl implements UserService {
   private static final String LOGIN_URL_FORMAT = "/login?company=%s&account=%s&email=%s";
   private static final String HARNESS_ISSUER = "Harness Inc";
   private static final int MINIMAL_ORDER_QUANTITY = 1;
+  private static final long YEAR_IN_MILLIS = 31536000000L;
   private static final String SYSTEM = "system";
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
@@ -4289,10 +4290,12 @@ public class UserServiceImpl implements UserService {
 
   public String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
     String accountId;
+    long expiryTime = DateTime.now().getMillis() + YEAR_IN_MILLIS;
+
     LicenseInfo licenseInfo = LicenseInfo.builder()
                                   .accountType(AccountType.PAID)
                                   .licenseUnits(marketPlace.getOrderQuantity())
-                                  .expiryTime(marketPlace.getExpirationDate().getTime())
+                                  .expiryTime(expiryTime)
                                   .accountStatus(AccountStatus.ACTIVE)
                                   .build();
 
@@ -4324,7 +4327,7 @@ public class UserServiceImpl implements UserService {
               .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
-              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .expiryTime(expiryTime)
               .build()));
       log.info("CDModuleLicense {} created. CDModuleLicense {} response.", response.getId(), response);
     } else if (marketPlace.getProductCode().equals(
@@ -4345,7 +4348,7 @@ public class UserServiceImpl implements UserService {
               .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
-              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .expiryTime(expiryTime)
               .build()));
       log.info("CEModuleLicense {} created. CEModuleLicense {} response.", response.getId(), response);
 
@@ -4370,7 +4373,7 @@ public class UserServiceImpl implements UserService {
               .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
-              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .expiryTime(expiryTime)
               .build()));
 
       log.info("CFModuleLicense {} created. CFModuleLicense {} response.", response.getId(), response);
@@ -4391,7 +4394,7 @@ public class UserServiceImpl implements UserService {
               .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
-              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .expiryTime(expiryTime)
               .build()));
 
       log.info("CIModuleLicense {} created. CIModuleLicense {} response.", response.getId(), response);
@@ -4412,7 +4415,7 @@ public class UserServiceImpl implements UserService {
               .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
-              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .expiryTime(expiryTime)
               .build()));
 
       log.info("SRMModuleLicense {} created. SRMModuleLicense {} response.", response.getId(), response);
@@ -4434,7 +4437,7 @@ public class UserServiceImpl implements UserService {
               .premiumSupport(premiumSupport)
               .status(LicenseStatus.ACTIVE)
               .startTime(DateTime.now().getMillis())
-              .expiryTime(marketPlace.getExpirationDate().getTime())
+              .expiryTime(expiryTime)
               .build()));
 
       log.info("CEModuleLicense {} created. CEModuleLicense {} response.", response.getId(), response);

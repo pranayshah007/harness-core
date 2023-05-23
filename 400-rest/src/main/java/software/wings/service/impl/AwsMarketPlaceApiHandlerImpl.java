@@ -71,7 +71,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
   @Inject private AuthenticationUtils authenticationUtils;
   @Inject private MarketPlaceService marketPlaceService;
   private final String MANUALLY_PROVISIONED_MESSAGE =
-      "Instructions to get started should be emailed shortly. If not, please contact Harness at support@harness.io";
+      "Instructions to get started will be emailed to you. If you do not receive your license by your product start date, please contact Harness at support@harness.io";
   private static final String INFO = "INFO";
   private static final String REDIRECT_ACTION_LOGIN = "LOGIN";
   private final String MESSAGESTATUS = "SUCCESS";
@@ -218,11 +218,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
       log.info(
           "This is an existing customer:[{}], purchasing another module. Existing product code [{}], adding product code [{}]. Desired dimension: [{}]",
           customerIdentifierCode, marketPlace.getProductCode(), productCode, dimension);
-      final String message = String.format(
-          "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. License details: Quantity: %d, License expiration: %s",
-          "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. License details: Quantity: %d, License expiration: %s",
-          orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
-      return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
+      return generateMessageResponse(MANUALLY_PROVISIONED_MESSAGE, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
 
     } else if (existingCustomer
         && (!marketPlace.getOrderQuantity().equals(orderQuantity)
@@ -232,7 +228,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
           customerIdentifierCode, marketPlace.getOrderQuantity(), orderQuantity, marketPlace.getExpirationDate(),
           expirationDate);
       final String message = String.format(
-          "Looks like you already have a license. Please reach out to harness@support.io to update the existing license. License details: Quantity: %d, License expiration: %s.",
+          "Looks like you already have a license. Instructions to get started will be emailed to you. If you do not receive your license by your product start date, please reach out to harness@support.io. License details: Quantity: %d, License expiration: %s.",
           orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
       return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
 
