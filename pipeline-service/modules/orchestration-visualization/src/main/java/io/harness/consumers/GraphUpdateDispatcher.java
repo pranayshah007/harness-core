@@ -49,6 +49,7 @@ public class GraphUpdateDispatcher implements Runnable {
         log.debug("Successfully acked the messageIds: {}", messageIds);
         return;
       }
+      log.info(String.format("Removing messageId %s from queue",messageIds.get(messageIds.size()-1)));
       messageIds.remove(messageIds.size() - 1);
       log.info("Graph update failed not acking the following message id {} from : {}", messageIds.get(0), messageIds);
       messageIds.forEach(consumer::acknowledge);

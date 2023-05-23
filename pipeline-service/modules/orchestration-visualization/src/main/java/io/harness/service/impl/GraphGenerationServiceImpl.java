@@ -91,9 +91,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     String lockName = GRAPH_LOCK + planExecutionId;
     try (AcquiredLock<?> lock = persistentLocker.tryToAcquireLock(lockName, Duration.ofSeconds(10))) {
       if (lock == null) {
-        log.debug(String.format(
-            "[PMS_GRAPH_LOCK_TEST] Not able to take lock on graph generation for lockName - %s, returning early.",
-            lockName));
+        log.info(String.format(
+            "[PMS_GRAPH_LOCK_TEST] Not able to take lock on graph generation for lockName - %s, returning early. planExecutionId %s",
+            lockName, planExecutionId));
         return false;
       }
 
@@ -112,9 +112,9 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     try (AcquiredLock<?> lock =
              persistentLocker.waitToAcquireLockOptional(lockName, Duration.ofSeconds(10), Duration.ofSeconds(30))) {
       if (lock == null) {
-        log.debug(String.format(
-            "[PMS_GRAPH_LOCK_TEST] Not able to take lock on graph generation for lockName - %s, returning early.",
-            lockName));
+        log.info(String.format(
+            "[PMS_GRAPH_LOCK_TEST] Not able to take lock on graph generation for lockName - %s, returning early. PlanExecutionId %s",
+            lockName, planExecutionId));
         return false;
       }
 
@@ -132,7 +132,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   boolean updateGraphUnderLock(String planExecutionId) {
     OrchestrationGraph orchestrationGraph = getCachedOrchestrationGraph(planExecutionId);
     if (orchestrationGraph == null) {
-      log.warn("[PMS_GRAPH] Graph not yet generated. Passing on to next iteration");
+      log.info("[PMS_GRAPH] Graph not yet generated. Passing on to next iteration");
       return true;
     }
     return updateGraphUnderLock(orchestrationGraph);
@@ -164,6 +164,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
     Update executionSummaryUpdate = new Update();
     Set<String> nodeExecutionIds = new HashSet<>();
     for (OrchestrationEventLog orchestrationEventLog : unprocessedEventLogs) {
+      log.info(String.format("Processing orchestrationEventLog with ID %s nodeExecutionId %s and Type %s ",orchestrationEventLog.getId(),orchestrationEventLog.getNodeExecutionId(), orchestrationEventLog.getOrchestrationEventType()));
       String nodeExecutionId = orchestrationEventLog.getNodeExecutionId();
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
       switch (orchestrationEventType) {
@@ -197,14 +198,21 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
               graphStatusUpdateHelper.handleEventV2(planExecutionId, nodeExecution, orchestrationGraph);
       }
       lastUpdatedAt = orchestrationEventLog.getCreatedAt();
+      log.info(String.format("Processing finished for orchestrationEventLog with ID %s nodeExecutionId %s and Type %s ",orchestrationEventLog.getId(),orchestrationEventLog.getNodeExecutionId(), orchestrationEventLog.getOrchestrationEventType()));
     }
 
     cachePartialOrchestrationGraph(orchestrationGraph.withLastUpdatedAt(lastUpdatedAt), lastUpdatedAt);
     if (updateRequired) {
+      log.info(String.format("Applying the graph updates for planExecutionId %s for orchestrationLogEvents %s",planExecutionId, unprocessedEventLogs.stream().map(OrchestrationEventLog::getId).collect(Collectors.joining(" "))));
       pmsExecutionSummaryService.update(planExecutionId, executionSummaryUpdate);
+    } else {
+      log.error(String.format("Not applying the graph updates for planExecutionId %s for orchestrationLogEvents %s",planExecutionId, unprocessedEventLogs.stream().map(OrchestrationEventLog::getId).collect(Collectors.joining(" "))));
+      log.error(String.format("Not applying updates for executionSummaryUpdate update %s ", executionSummaryUpdate));
     }
     log.info("[PMS_GRAPH] Processing of [{}] orchestration event logs completed in [{}ms]", unprocessedEventLogs.size(),
         System.currentTimeMillis() - startTs);
+    log.info(String.format("Processing finished for the batch and the value of shouldAck is %s ",shouldAck));
+
     return shouldAck;
   }
 
