@@ -48,7 +48,7 @@ public class BatchMongoConfiguration {
   @Bean
   public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
     MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory);
-    log.info("Here. Setting preference as secondary");
+    log.info("Setting read preference in mongo template as secondary preferred");
     mongoTemplate.setReadPreference(ReadPreference.secondaryPreferred());
     return mongoTemplate;
   }
