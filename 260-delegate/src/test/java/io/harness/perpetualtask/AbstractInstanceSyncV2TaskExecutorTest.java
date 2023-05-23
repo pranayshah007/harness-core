@@ -95,6 +95,7 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
             .details(PageResponse.<DeploymentReleaseDetails>builder()
                          .content(List.of(DeploymentReleaseDetails.builder()
                                               .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
+                                              .taskInfoId("taskInfoId")
                                               .build()))
                          .totalPages(1)
                          .build())

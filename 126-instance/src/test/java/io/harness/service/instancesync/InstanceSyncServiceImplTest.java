@@ -103,6 +103,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -176,13 +178,13 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
         .thenReturn(acquiredLock);
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         InstanceSyncPerpetualTaskInfoDTO.builder().build();
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId()))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId(), false))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO, abstractInstanceSyncHandler,
              Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
              deploymentEvent.getInfrastructureOutcome()))
         .thenReturn(PERPETUAL_TASK);
-    when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
@@ -245,13 +247,13 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         InstanceSyncPerpetualTaskInfoDTO.builder().deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOS).build();
 
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId()))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId(), false))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO, abstractInstanceSyncHandler,
              Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
              deploymentEvent.getInfrastructureOutcome()))
         .thenReturn(PERPETUAL_TASK);
-    when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
@@ -366,7 +368,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         InstanceSyncPerpetualTaskInfoDTO.builder().deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOS).build();
 
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId()))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId(), true))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                             .name(CONNECTOR_REF)
@@ -383,12 +385,12 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
         .thenReturn(null);
     when(connectorService.getByRef(anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Optional.of(ConnectorResponseDTO.builder().connector(connectorInfoDTO).build()));
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(anyString()))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(anyString(), anyBoolean()))
         .thenReturn(Optional.of(InstanceSyncPerpetualTaskInfoDTO.builder()
                                     .perpetualTaskId(PERPETUAL_TASK)
                                     .connectorIdentifier(CONNECTOR_REF)
                                     .build()));
-    when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
@@ -501,13 +503,13 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         InstanceSyncPerpetualTaskInfoDTO.builder().deploymentInfoDetailsDTOList(deploymentInfoDetailsDTOS).build();
 
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId()))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(infrastructureMappingDTO.getId(), false))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(instanceSyncPerpetualTaskService.createPerpetualTask(infrastructureMappingDTO, abstractInstanceSyncHandler,
              Collections.singletonList(deploymentSummaryDTO.getDeploymentInfoDTO()),
              deploymentEvent.getInfrastructureOutcome()))
         .thenReturn(PERPETUAL_TASK);
-    when(instanceSyncPerpetualTaskInfoService.save(any())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean())).thenReturn(instanceSyncPerpetualTaskInfoDTO);
     when(instanceSyncHandlerFactoryService.getInstanceSyncHandler(
              deploymentSummaryDTO.getDeploymentInfoDTO().getType(), infrastructureOutcome.getKind()))
         .thenReturn(abstractInstanceSyncHandler);
@@ -788,8 +790,8 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                         K8sDeploymentInfoDTO.builder().releaseName("releaseName").namespaces(namespaces).build())
                     .build()))
             .build();
-    when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
-        .thenReturn(Arrays.asList(instanceSyncPerpetualTaskInfoDTO));
+    when(instanceSyncPerpetualTaskInfoService.findAllInPages(any(), any(), any()))
+        .thenReturn(new PageImpl<>(List.of(instanceSyncPerpetualTaskInfoDTO)));
 
     when(infrastructureMappingService.getByInfrastructureMappingId(
              instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId()))
@@ -810,7 +812,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                     K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build()))
                 .build());
     InstanceSyncTaskDetails instanceSyncTaskDetails =
-        instanceSyncService.fetchTaskDetails(0, 10, PERPETUAL_TASK, ACCOUNT_IDENTIFIER);
+        instanceSyncService.fetchTaskDetails(PERPETUAL_TASK, ACCOUNT_IDENTIFIER, 0, 10);
 
     assertThat(instanceSyncTaskDetails).isNotNull();
     assertThat(instanceSyncTaskDetails.getDetails().getContent().size()).isEqualTo(1);

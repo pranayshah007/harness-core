@@ -71,7 +71,7 @@ public class InstanceSyncPerpetualTaskInfoServiceImplTest extends InstancesTestB
             .createdAt(CREATED_AT)
             .lastUpdatedAt(LAST_UPDATED_AT)
             .build();
-    assertThat(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(INFRASTRUCTURE_MAPPING_ID))
+    assertThat(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(INFRASTRUCTURE_MAPPING_ID, false))
         .isEqualTo(Optional.of(instanceSyncPerpetualTaskInfoDTO));
   }
 
@@ -128,7 +128,7 @@ public class InstanceSyncPerpetualTaskInfoServiceImplTest extends InstancesTestB
             .build();
     when(instanceSyncPerpetualTaskInfoInfoRepository.save(instanceSyncPerpetualTaskInfo))
         .thenReturn(instanceSyncPerpetualTaskInfo);
-    assertThat(instanceSyncPerpetualTaskInfoService.save(instanceSyncPerpetualTaskInfoDTO))
+    assertThat(instanceSyncPerpetualTaskInfoService.save(instanceSyncPerpetualTaskInfoDTO, false))
         .isEqualTo(instanceSyncPerpetualTaskInfoDTO);
   }
 

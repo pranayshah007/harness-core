@@ -197,7 +197,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     when(deploymentSummaryService.getLatestByInstanceKey(
              TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
         .thenReturn(Optional.of(deploymentSummaryDTO));
-    when(instanceSyncPerpetualTaskInfoService.save(any()))
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean()))
         .thenReturn(getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1));
     when(instanceSyncServiceUtils.getSyncKeyToInstancesFromServerMap(any(), any()))
         .thenReturn(mockSyncKeyToInstancesFromServerMap(deploymentSummaryDTO.getServerInstanceInfoList().get(0)));
@@ -237,7 +237,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     when(deploymentSummaryService.getLatestByInstanceKey(
              TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
         .thenReturn(Optional.of(deploymentSummaryDTO));
-    when(instanceSyncPerpetualTaskInfoService.save(any()))
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean()))
         .thenReturn(getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1));
     when(instanceSyncServiceUtils.getSyncKeyToInstancesFromServerMap(any(), any()))
         .thenReturn(mockSyncKeyToInstancesFromServerMap(deploymentSummaryDTO.getServerInstanceInfoList().get(0)));
@@ -271,7 +271,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     // Mock methods
     when(instanceSyncPerpetualTaskService.createPerpetualTask(any(), any(), any(), any()))
         .thenReturn(PERPETUAL_TASK_ID);
-    when(instanceSyncPerpetualTaskInfoService.save(any()))
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean()))
         .thenReturn(getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1));
     when(deploymentSummaryService.getLatestByInstanceKey(
              TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
@@ -305,7 +305,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     // Mock methods
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1);
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(TEST_INFRA_MAPPING_ID))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(TEST_INFRA_MAPPING_ID, false))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(deploymentSummaryService.getLatestByInstanceKey(
              TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
@@ -347,7 +347,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     // Mock methods
     InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO =
         getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1);
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(TEST_INFRA_MAPPING_ID))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(TEST_INFRA_MAPPING_ID, false))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(deploymentSummaryService.getLatestByInstanceKey(
              TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
@@ -410,7 +410,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
         getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME2);
     instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList().get(0).setLastUsedAt(
         System.currentTimeMillis() - ONE_WEEKS_IN_MILLIS);
-    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(TEST_INFRA_MAPPING_ID))
+    when(instanceSyncPerpetualTaskInfoService.findByInfrastructureMappingId(TEST_INFRA_MAPPING_ID, false))
         .thenReturn(Optional.of(instanceSyncPerpetualTaskInfoDTO));
     when(instanceSyncPerpetualTaskInfoService.updateDeploymentInfoDetailsList(instanceSyncPerpetualTaskInfoDTO))
         .thenReturn(instanceSyncPerpetualTaskInfoDTO);
@@ -449,7 +449,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     when(deploymentSummaryService.getLatestByInstanceKey(
              TEST_RELEASE_NAME1, deploymentSummaryDTO.getInfrastructureMapping()))
         .thenReturn(Optional.of(deploymentSummaryDTO));
-    when(instanceSyncPerpetualTaskInfoService.save(any()))
+    when(instanceSyncPerpetualTaskInfoService.save(any(), anyBoolean()))
         .thenReturn(getMockInstanceSyncPerpetualTaskInfo(TEST_RELEASE_NAME1));
     when(instanceSyncServiceUtils.getSyncKeyToInstancesFromServerMap(any(), any()))
         .thenReturn(mockSyncKeyToInstancesFromServerMap(deploymentSummaryDTO.getServerInstanceInfoList().get(0)));
