@@ -241,6 +241,8 @@ function copy_pipeline_service_jars(){
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../dockerization/pipeline-service/scripts/ .
   copy_common_files
+  cp ../../pipeline-service/config/jfr/default.jfc .
+  cp ../../pipeline-service/config/jfr/profile.jfc .
   java -jar pipeline-service-capsule.jar scan-classpath-metadata
   cd ../..
 
@@ -408,7 +410,7 @@ function copy_ce_nextgen_jars(){
 
 
 
-prepare_to_copy_jars
+#prepare_to_copy_jars
 
 if [ "${SERVICE_NAME}" == "access-control" ]; then
     copy_access_control_jars
