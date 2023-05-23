@@ -1,0 +1,23 @@
+{
+  "blocks" : [
+    {
+      "type" : "section",
+      "text" : {
+        "type" : "mrkdwn",
+        "text" : "*Pipeline <${pipelineExecutionLink}|${pipelineName}>  ${status}*\n\n${action}"
+      },
+      "fields" : [
+        {"type" : "mrkdwn", "text" : "*Organization:*\n${orgName}"},
+        {"type" : "mrkdwn", "text" : "*Project:*\n${projectName}"},
+        {"type" : "mrkdwn", "text" : "*Triggered by:*\n${triggeredBy}"}
+      ]
+    },
+    {
+      "type" : "section",
+      "text" : {
+        "type" : "mrkdwn",
+        "text" : "_Pipeline started on ${startedAt}_"
+      }
+    }
+  ]
+}

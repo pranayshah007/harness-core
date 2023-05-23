@@ -18,6 +18,7 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
@@ -42,7 +43,6 @@ import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.organization.remote.OrganizationClient;
-import io.harness.pms.approval.notification.ApprovalSummary.ApprovalSummaryBuilder;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.execution.ExecutionStatus;
@@ -55,6 +55,9 @@ import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.approval.ApprovalNotificationHandler;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.usergroups.UserGroupClient;
 import io.harness.utils.IdentifierRefHelper;
@@ -111,7 +114,23 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   public void sendNotification(HarnessApprovalInstance approvalInstance, Ambiance ambiance) {
     try (AutoLogContext ignore = approvalInstance.autoLogContext()) {
       NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
-      sendNotificationInternal(approvalInstance, ambiance, logCallback);
+
+      if (ApprovalStatus.APPROVED.equals(approvalInstance.getStatus())
+          || ApprovalStatus.REJECTED.equals(approvalInstance.getStatus())) {
+        try {
+          ApprovalSummary approvalSummary =
+              getApprovalSummary(ambiance, approvalInstance, getPipelineExecutionSummary(ambiance));
+          sendNotificationInternal(
+              approvalInstance, approvalInstance.getValidatedUserGroups(), approvalSummary.toParams(), logCallback);
+        } catch (Exception e) {
+          logCallback.saveExecutionLog(
+              String.format("Error sending notification to user groups for harness approval Action: %s",
+                  ExceptionUtils.getMessage(e)));
+          log.error("Error while sending notification for harness approval Action", e);
+        }
+      } else {
+        sendNotificationInternal(approvalInstance, ambiance, logCallback);
+      }
     }
   }
 
@@ -131,36 +150,43 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
             String.format("Some invalid user groups were given as inputs: %s", invalidUserGroupIds), LogLevel.WARN);
         log.warn(String.format("Some invalid user groups were given as inputs: %s", invalidUserGroupIds));
       }
-      ApprovalSummaryBuilder approvalSummaryBuilder = ApprovalSummary.builder();
 
-      ApprovalSummary approvalSummary =
-          approvalSummaryBuilder
-              .pipelineName(StringUtils.isEmpty(pipelineExecutionSummaryEntity.getName())
-                      ? pipelineExecutionSummaryEntity.getPipelineIdentifier()
-                      : pipelineExecutionSummaryEntity.getName())
-              .orgName(getOrganizationNameElseIdentifier(
-                  pipelineExecutionSummaryEntity.getOrgIdentifier(), pipelineExecutionSummaryEntity.getAccountId()))
-              .projectName(getProjectNameElseIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier(),
-                  pipelineExecutionSummaryEntity.getOrgIdentifier(), pipelineExecutionSummaryEntity.getAccountId()))
-              .approvalMessage(approvalInstance.getApprovalMessage())
-              .startedAt(formatTime(approvalInstance.getCreatedAt()))
-              .expiresAt(formatTime(approvalInstance.getDeadline()))
-              .triggeredBy(getUser(ambiance))
-              .runningStages(new LinkedHashSet<>())
-              .upcomingStages(new LinkedHashSet<>())
-              .finishedStages(new LinkedHashSet<>())
-              .pipelineExecutionLink(notificationHelper.generateUrl(ambiance))
-              .timeRemainingForApproval(formatDuration(approvalInstance.getDeadline() - System.currentTimeMillis()))
-              .build();
-      if (approvalInstance.isIncludePipelineExecutionHistory()) {
-        generateModuleSpecificSummary(approvalSummary, pipelineExecutionSummaryEntity);
-      }
+      ApprovalSummary approvalSummary = getApprovalSummary(ambiance, approvalInstance, pipelineExecutionSummaryEntity);
       sendNotificationInternal(approvalInstance, userGroups, approvalSummary.toParams(), logCallback);
     } catch (Exception e) {
       logCallback.saveExecutionLog(String.format(
           "Error sending notification to user groups for harness approval: %s", ExceptionUtils.getMessage(e)));
       log.error("Error while sending notification for harness approval", e);
     }
+  }
+
+  public ApprovalSummary getApprovalSummary(Ambiance ambiance, HarnessApprovalInstance approvalInstance,
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity) {
+    ApprovalSummary approvalSummary =
+        ApprovalSummary.builder()
+            .pipelineName(StringUtils.isEmpty(pipelineExecutionSummaryEntity.getName())
+                    ? pipelineExecutionSummaryEntity.getPipelineIdentifier()
+                    : pipelineExecutionSummaryEntity.getName())
+            .orgName(getOrganizationNameElseIdentifier(
+                pipelineExecutionSummaryEntity.getOrgIdentifier(), pipelineExecutionSummaryEntity.getAccountId()))
+            .projectName(getProjectNameElseIdentifier(pipelineExecutionSummaryEntity.getProjectIdentifier(),
+                pipelineExecutionSummaryEntity.getOrgIdentifier(), pipelineExecutionSummaryEntity.getAccountId()))
+            .approvalMessage(approvalInstance.getApprovalMessage())
+            .startedAt(formatTime(approvalInstance.getCreatedAt()))
+            .expiresAt(formatTime(approvalInstance.getDeadline()))
+            .triggeredBy(getUser(ambiance))
+            .runningStages(new LinkedHashSet<>())
+            .upcomingStages(new LinkedHashSet<>())
+            .finishedStages(new LinkedHashSet<>())
+            .action(getAction(approvalInstance))
+            .status(approvalInstance.getStatus())
+            .pipelineExecutionLink(notificationHelper.generateUrl(ambiance))
+            .timeRemainingForApproval(formatDuration(approvalInstance.getDeadline() - System.currentTimeMillis()))
+            .build();
+    if (approvalInstance.isIncludePipelineExecutionHistory()) {
+      generateModuleSpecificSummary(approvalSummary, pipelineExecutionSummaryEntity);
+    }
+    return approvalSummary;
   }
 
   private List<String> findInvalidInputUserGroups(
@@ -251,6 +277,17 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
       notifyUserGroupBuilder.setProjectIdentifier(userGroup.getProjectIdentifier());
     }
 
+    if (ApprovalStatus.APPROVED.equals(instance.getStatus()) || ApprovalStatus.REJECTED.equals(instance.getStatus())) {
+      return notificationTemplateForApprovalAction(
+          instance, notificationSettingConfig, userGroup, templateData, notifyUserGroupBuilder);
+    } else {
+      return notificationTemplateForApprovalRequired(
+          instance, notificationSettingConfig, userGroup, templateData, notifyUserGroupBuilder);
+    }
+  }
+  private NotificationChannel notificationTemplateForApprovalRequired(HarnessApprovalInstance instance,
+      NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup, Map<String, String> templateData,
+      NotificationRequest.UserGroup.Builder notifyUserGroupBuilder) {
     switch (notificationSettingConfig.getType()) {
       case SLACK:
         String slackTemplateId = instance.isIncludePipelineExecutionHistory()
@@ -268,7 +305,6 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
         String emailTemplateId = instance.isIncludePipelineExecutionHistory()
             ? PredefinedTemplate.HARNESS_APPROVAL_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
             : PredefinedTemplate.HARNESS_APPROVAL_NOTIFICATION_EMAIL.getIdentifier();
-
         return EmailChannel.builder()
             .accountId(userGroup.getAccountIdentifier())
             .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
@@ -294,6 +330,90 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
 
       default:
         return null;
+    }
+  }
+
+  private NotificationChannel notificationTemplateForApprovalAction(HarnessApprovalInstance instance,
+      NotificationSettingConfigDTO notificationSettingConfig, UserGroupDTO userGroup, Map<String, String> templateData,
+      NotificationRequest.UserGroup.Builder notifyUserGroupBuilder) {
+    switch (notificationSettingConfig.getType()) {
+      case SLACK:
+        String slackTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_SLACK.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_SLACK.getIdentifier();
+        SlackConfigDTO slackConfig = (SlackConfigDTO) notificationSettingConfig;
+        return SlackChannel.builder()
+            .accountId(userGroup.getAccountIdentifier())
+            .team(Team.PIPELINE)
+            .templateId(slackTemplateId)
+            .templateData(templateData)
+            .webhookUrls(Collections.singletonList(slackConfig.getSlackWebhookUrl()))
+            .build();
+
+      case EMAIL:
+        String emailTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_EMAIL.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_EMAIL.getIdentifier();
+        templateData.put("action", templateData.get("action").replace("\\n", "<br>"));
+        return EmailChannel.builder()
+            .accountId(userGroup.getAccountIdentifier())
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
+            .team(Team.PIPELINE)
+            .templateId(emailTemplateId)
+            .templateData(templateData)
+            .recipients(Collections.emptyList())
+            .build();
+
+      case MSTEAMS:
+        String msTeamsTemplateId = instance.isIncludePipelineExecutionHistory()
+            ? PredefinedTemplate.HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS.getIdentifier()
+            : PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier();
+        return MSTeamChannel.builder()
+            .msTeamKeys(Collections.emptyList())
+            .accountId(userGroup.getAccountIdentifier())
+            .team(Team.PIPELINE)
+            .templateData(templateData)
+            .templateId(msTeamsTemplateId)
+            .userGroups(new ArrayList<>(Collections.singleton(notifyUserGroupBuilder.build())))
+            .build();
+
+      default:
+        return null;
+    }
+  }
+
+  private String getAction(HarnessApprovalInstance approvalInstance) {
+    Optional<HarnessApprovalActivity> optionalHarnessApprovalActivity = approvalInstance.fetchLastApprovalActivity();
+    String action = "";
+    if (optionalHarnessApprovalActivity.isPresent()) {
+      HarnessApprovalActivity lastApprovalActivity = optionalHarnessApprovalActivity.get();
+      if (HarnessApprovalAction.APPROVE.equals(lastApprovalActivity.getAction())) {
+        List<HarnessApprovalActivity> harnessApprovalActivities = approvalInstance.getApprovalActivities();
+        for (HarnessApprovalActivity harnessApprovalActivity : harnessApprovalActivities) {
+          String userIdentification = getUserIdentification(harnessApprovalActivity.getUser());
+          action = action
+              + (userIdentification + " approved on " + formatTime(harnessApprovalActivity.getApprovedAt()) + "   \\n");
+        }
+        if (!isEmpty(action)) {
+          // removing last redundant new line character
+          action = action.substring(0, action.length() - 2);
+        }
+      } else if (HarnessApprovalAction.REJECT.equals(lastApprovalActivity.getAction())) {
+        String userIdentification = getUserIdentification(lastApprovalActivity.getUser());
+        action = userIdentification + " rejected on " + formatTime(lastApprovalActivity.getApprovedAt());
+      }
+      return action;
+    }
+    return action;
+  }
+
+  private String getUserIdentification(EmbeddedUser user) {
+    if (isEmpty(user.getEmail()) && isEmpty(user.getName())) {
+      return "Unknown";
+    } else if (isEmpty(user.getEmail())) {
+      return user.getName();
+    } else {
+      return user.getEmail();
     }
   }
 
