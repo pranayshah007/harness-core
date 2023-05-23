@@ -23,7 +23,7 @@ elif [ "${SERVICE_NAME}" == "migrator" ]; then
 elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
     SERVICE_MODULE="110-change-data-capture:module_deploy.jar"
 elif [ "${SERVICE_NAME}" == "iacm-manager" ]; then
-    SERVICE_MODULE="//310-iacm-manager/app:module //310-iacm-manager/app:module_deploy.jar"
+    SERVICE_MODULE="310-iacm-manager/app:module //310-iacm-manager/app:module_deploy.jar"
 elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
     SERVICE_MODULE="315-sto-manager/app:module //315-sto-manager/app:module_deploy.jar"
 elif [ "${SERVICE_NAME}" == "ci-manager" ]; then
