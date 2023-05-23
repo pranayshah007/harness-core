@@ -153,7 +153,7 @@ import io.harness.delegate.googlefunction.GoogleFunctionGenOneRollbackCommandTas
 import io.harness.delegate.googlefunction.GoogleFunctionPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionRollbackCommandTaskHandler;
 import io.harness.delegate.googlefunction.GoogleFunctionTrafficShiftCommandTaskHandler;
-import io.harness.delegate.http.HttpTaskNG;
+import io.harness.delegate.task.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
 import io.harness.delegate.k8s.K8sBlueGreenStageScaleDownRequestHandler;

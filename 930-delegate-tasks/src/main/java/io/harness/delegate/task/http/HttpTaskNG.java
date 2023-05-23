@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.http;
+package io.harness.delegate.task.http;
 
 import io.harness.beans.HttpCertificate;
 import io.harness.beans.HttpCertificate.HttpCertificateBuilder;

@@ -23,7 +23,7 @@ import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.http.HttpTaskNG;
+import io.harness.delegate.task.http.HttpTaskNG;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
