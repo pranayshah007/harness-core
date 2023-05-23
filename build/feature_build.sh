@@ -28,7 +28,7 @@ echo "--------------------------------------"
 echo $JDK $BUILD $VERSION $PURPOSE $GIT_BRANCH $GIT_COMMIT $(date)
 echo "--------------------------------------"
 
-#scripts/bazel/generate_credentials.sh
+scripts/bazel/generate_credentials.sh
 
 echo \ >> bazelrc.remote
 echo build --google_credentials=/tmp/storage_secret.json >> bazelrc.remote
