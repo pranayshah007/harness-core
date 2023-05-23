@@ -28,6 +28,7 @@ public enum FeatureName {
       HarnessTeam.SPG),
   SPG_CG_LIST_RESUMED_PIPELINES(
       "Allows resumed workflow/pipelines to be listed on the deployment history page", HarnessTeam.SPG),
+  SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW("Enable timeout failure strategy at workflow level", HarnessTeam.SPG),
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_ENABLE_GIT_SYNC_YAML_VALIDATE("Enable yaml validate in git sync", HarnessTeam.SPG),

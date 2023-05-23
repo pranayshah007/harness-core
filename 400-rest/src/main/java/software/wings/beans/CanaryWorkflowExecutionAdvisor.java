@@ -21,6 +21,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.CONSIDER_ORIGINAL_STATE_VERSION;
 import static io.harness.beans.FeatureName.ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES;
 import static io.harness.beans.FeatureName.LOG_APP_DEFAULTS;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.SPG_DISABLE_EXPIRING_TO_MANUAL_INTERVENTION_CANDIDATE;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
@@ -146,6 +147,8 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
     WorkflowExecution workflowExecution =
         workflowExecutionService.getWorkflowExecution(context.getAppId(), context.getWorkflowExecutionId());
     StateExecutionInstance stateExecutionInstance = context.getStateExecutionInstance();
+    boolean isTimeoutSupportOnWFLevelEnabled =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
     try (AutoLogContext ignore = context.autoLogContext()) {
       log.info("Calculating execution advice for workflow");
       List<ExecutionInterrupt> executionInterrupts =
@@ -422,12 +425,13 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         PhaseStep phaseStep = findPhaseStep(orchestrationWorkflow, phaseElement, state);
 
         if (phaseStep != null && isNotEmpty(phaseStep.getFailureStrategies())) {
-          FailureStrategy failureStrategy = selectTopMatchingStrategy(phaseStep.getFailureStrategies(),
-              executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.STEP);
+          FailureStrategy failureStrategy =
+              selectTopMatchingStrategy(phaseStep.getFailureStrategies(), executionEvent.getFailureTypes(),
+                  state.getName(), phaseElement, FailureStrategyLevel.STEP, isTimeoutSupportOnWFLevelEnabled);
 
           if (failureStrategy == null) {
             failureStrategy = selectTopMatchingStrategy(workflowFailureStrategies, executionEvent.getFailureTypes(),
-                state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW);
+                state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW, isTimeoutSupportOnWFLevelEnabled);
           }
 
           return computeExecutionEventAdvice(
@@ -435,8 +439,9 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         }
       }
 
-      FailureStrategy failureStrategy = selectTopMatchingStrategy(workflowFailureStrategies,
-          executionEvent.getFailureTypes(), state.getName(), phaseElement, FailureStrategyLevel.WORKFLOW);
+      FailureStrategy failureStrategy =
+          selectTopMatchingStrategy(workflowFailureStrategies, executionEvent.getFailureTypes(), state.getName(),
+              phaseElement, FailureStrategyLevel.WORKFLOW, isTimeoutSupportOnWFLevelEnabled);
 
       String pipelineId = null;
       if (workflowExecution.getPipelineSummary() != null) {
@@ -1031,9 +1036,10 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
   }
 
   public static FailureStrategy selectTopMatchingStrategy(List<FailureStrategy> failureStrategies,
-      EnumSet<FailureType> failureTypes, String stateName, PhaseElement phaseElement, FailureStrategyLevel level) {
-    final FailureStrategy failureStrategy =
-        selectTopMatchingStrategyInternal(failureStrategies, failureTypes, stateName, phaseElement, level);
+      EnumSet<FailureType> failureTypes, String stateName, PhaseElement phaseElement, FailureStrategyLevel level,
+      boolean isTimeoutSupportOnWFLevelEnabled) {
+    final FailureStrategy failureStrategy = selectTopMatchingStrategyInternal(
+        failureStrategies, failureTypes, stateName, phaseElement, level, isTimeoutSupportOnWFLevelEnabled);
 
     if (failureStrategy != null && isNotEmpty(failureStrategy.getFailureTypes()) && isEmpty(failureTypes)) {
       log.warn("Defaulting to accepting the action. "
@@ -1045,7 +1051,8 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
   }
 
   private static FailureStrategy selectTopMatchingStrategyInternal(List<FailureStrategy> failureStrategies,
-      EnumSet<FailureType> failureTypes, String stateName, PhaseElement phaseElement, FailureStrategyLevel level) {
+      EnumSet<FailureType> failureTypes, String stateName, PhaseElement phaseElement, FailureStrategyLevel level,
+      boolean isTimeoutSupportOnWFLevelEnabled) {
     if (isEmpty(failureStrategies)) {
       return null;
     }
@@ -1075,7 +1082,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
       return null;
     }
 
-    if (isTimeoutFailure(level, failureTypes)) {
+    if (isTimeoutFailure(level, failureTypes, isTimeoutSupportOnWFLevelEnabled)) {
       Optional<FailureStrategy> timeoutStrategy =
           filteredFailureStrategies.stream()
               .filter(failureStrategy -> isNotEmpty(failureStrategy.getFailureTypes()))
@@ -1121,8 +1128,9 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         .collect(toList());
   }
 
-  private static boolean isTimeoutFailure(FailureStrategyLevel level, EnumSet<FailureType> failureTypes) {
-    return level == FailureStrategyLevel.STEP && isNotEmpty(failureTypes)
+  private static boolean isTimeoutFailure(
+      FailureStrategyLevel level, EnumSet<FailureType> failureTypes, boolean ffTimeoutWFWLevel) {
+    return (ffTimeoutWFWLevel || level == FailureStrategyLevel.STEP) && isNotEmpty(failureTypes)
         && failureTypes.contains(FailureType.TIMEOUT_ERROR);
   }
 
