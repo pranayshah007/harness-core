@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
@@ -298,12 +299,14 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       instanceSyncPerpetualTaskMappingDTO = instanceSyncPerpetualTaskMappingService.findByConnectorRef(
           identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier(),
           infrastructureMappingDTO.getConnectorRef());
-      instanceSyncPerpetualTaskService.deletePerpetualTask(
-          infrastructureMappingDTO.getAccountIdentifier(), instanceSyncPerpetualTaskMappingDTO.getPerpetualTaskId());
+      if (instanceSyncPerpetualTaskMappingDTO != null) {
+        instanceSyncPerpetualTaskService.deletePerpetualTask(
+            infrastructureMappingDTO.getAccountIdentifier(), instanceSyncPerpetualTaskMappingDTO.getPerpetualTaskId());
+      }
     }
 
     throw new InvalidRequestException(
-        String.format("No connector found for  connectorRef : [%s]", infrastructureMappingDTO.getConnectorRef(), USER));
+        String.format("No connector found for  connectorRef : [%s]", infrastructureMappingDTO.getConnectorRef()), USER);
   }
 
   @Override
@@ -481,8 +484,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   }
 
   public InstanceSyncTaskDetails fetchTaskDetails(
-      int page, int size, String perpetualTaskId, String accountIdentifier) {
-    Pageable pageRequest = org.springframework.data.domain.PageRequest.of(page, size,
+      String perpetualTaskId, String accountIdentifier, int page, int size) {
+    Pageable pageRequest = PageRequest.of(page, size,
         Sort.by(Sort.Direction.DESC, InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId));
     Page<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
         instanceSyncPerpetualTaskInfoService.findAllInPages(pageRequest, accountIdentifier, perpetualTaskId);

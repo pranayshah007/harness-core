@@ -76,7 +76,9 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                 .build());
         return PerpetualTaskResponse.builder().responseCode(SC_OK).responseMessage(SUCCESS_RESPONSE_MSG).build();
       }
+
       long totalPages = instanceSyncTaskDetails.getDetails().getTotalPages();
+
       for (int page = 0; page < totalPages; page++) {
         if (page != 0) {
           instanceSyncTaskDetails = execute(

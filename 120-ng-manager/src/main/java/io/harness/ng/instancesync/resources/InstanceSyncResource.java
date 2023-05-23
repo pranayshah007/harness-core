@@ -97,9 +97,9 @@ public class InstanceSyncResource {
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     InstanceSyncTaskDetails details =
-        instanceSyncService.fetchTaskDetails(page, size, perpetualTaskId, accountIdentifier);
+        instanceSyncService.fetchTaskDetails(perpetualTaskId, accountIdentifier, page, size);
     log.info("Found {} instance sync perpetual task details for accountId {} and perpetualTaskId {}",
-        details != null ? (long) details.getDetails().getTotalItems() : 0, accountIdentifier, perpetualTaskId);
+        details != null ? (long) details.getDetails().getContent().size() : 0, accountIdentifier, perpetualTaskId);
     return ResponseDTO.newResponse(details);
   }
 
