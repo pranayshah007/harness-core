@@ -7,14 +7,11 @@
 
 package io.harness.service.stats.usagemetrics.eventpublisher;
 
-import static io.harness.beans.FeatureName.CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.account.AccountClient;
@@ -27,7 +24,6 @@ import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
 import io.harness.models.constants.TimescaleConstants;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
-import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
@@ -40,7 +36,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import retrofit2.Call;
 
 public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
   private final String ACCOUNT_ID = "acc";
@@ -62,66 +57,7 @@ public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void publishInstanceStatsTimeSeriesTest() throws IOException {
-    mockFeatureFlag(false);
-    UsageMetricsEventPublisherImpl usageMetricsEventPublisher =
-        new UsageMetricsEventPublisherImpl(eventProducer, accountClient);
-    InstanceDTO instanceDTO1 = InstanceDTO.builder()
-                                   .accountIdentifier(ACCOUNT_ID_1)
-                                   .orgIdentifier(ORG_IDENTIFIER)
-                                   .projectIdentifier(PROJECT_IDENTIFIER)
-                                   .serviceIdentifier(SERVICE_IDENTIFIER)
-                                   .envIdentifier(ENVIRONMENT_IDENTIFIER1)
-                                   .infrastructureMappingId(INFRASTRUCTURE_ID_1)
-                                   .connectorRef(CONNECTOR_REF)
-                                   .instanceType(InstanceType.K8S_INSTANCE)
-                                   .build();
-    InstanceDTO instanceDTO2 = InstanceDTO.builder()
-                                   .accountIdentifier(ACCOUNT_ID_1)
-                                   .orgIdentifier(ORG_IDENTIFIER)
-                                   .projectIdentifier(PROJECT_IDENTIFIER)
-                                   .serviceIdentifier(SERVICE_IDENTIFIER)
-                                   .envIdentifier(ENVIRONMENT_IDENTIFIER2)
-                                   .infrastructureMappingId(INFRASTRUCTURE_ID_1)
-                                   .connectorRef(CONNECTOR_REF)
-                                   .instanceType(InstanceType.K8S_INSTANCE)
-                                   .build();
-    InstanceDTO gitOpsInstanceDTO = InstanceDTO.builder()
-                                        .accountIdentifier(ACCOUNT_ID_2)
-                                        .orgIdentifier(ORG_IDENTIFIER)
-                                        .projectIdentifier(PROJECT_IDENTIFIER)
-                                        .serviceIdentifier(SERVICE_IDENTIFIER)
-                                        .envIdentifier(ENVIRONMENT_IDENTIFIER2)
-                                        .infrastructureKind(InfrastructureKind.GITOPS)
-                                        .connectorRef(CONNECTOR_REF)
-                                        .instanceType(InstanceType.K8S_INSTANCE)
-                                        .build();
-    usageMetricsEventPublisher.publishInstanceStatsTimeSeries(
-        ACCOUNT_ID, TIMESTAMP, Arrays.asList(instanceDTO1, instanceDTO2));
-    usageMetricsEventPublisher.publishInstanceStatsTimeSeries(
-        ACCOUNT_ID, TIMESTAMP, Collections.singletonList(gitOpsInstanceDTO));
-
-    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
-    verify(eventProducer, times(2)).send(messageArgumentCaptor.capture());
-    List<Message> messages = messageArgumentCaptor.getAllValues();
-    assertEquals(2, messages.size());
-
-    TimeseriesBatchEventInfo eventInfo = TimeseriesBatchEventInfo.parseFrom(messages.get(0).getData());
-    List<DataPoint> dataPoints = eventInfo.getDataPointListList();
-    assertEquals(1, dataPoints.size());
-    verifyDataPoint(instanceDTO1, 2, dataPoints.get(0));
-
-    eventInfo = TimeseriesBatchEventInfo.parseFrom(messages.get(1).getData());
-    dataPoints = eventInfo.getDataPointListList();
-    assertEquals(1, dataPoints.size());
-    verifyDataPoint(gitOpsInstanceDTO, 1, dataPoints.get(0));
-  }
-
-  @Test
-  @Owner(developers = VIKYATH_HAREKAL)
-  @Category(UnitTests.class)
   public void publishInstanceStatsTimeSeriesTestWithFFEnabled() throws IOException {
-    mockFeatureFlag(true);
     UsageMetricsEventPublisherImpl usageMetricsEventPublisher =
         new UsageMetricsEventPublisherImpl(eventProducer, accountClient);
     InstanceDTO instanceDTO1 = InstanceDTO.builder()
@@ -174,13 +110,6 @@ public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
     dataPoints = eventInfo.getDataPointListList();
     assertEquals(1, dataPoints.size());
     verifyDataPoint(gitOpsInstanceDTO, 1, dataPoints.get(0));
-  }
-
-  private void mockFeatureFlag(boolean enabled) throws IOException {
-    Call<RestResponse<Boolean>> ffCall = mock(Call.class);
-    when(accountClient.isFeatureFlagEnabled(CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG.name(), ACCOUNT_ID))
-        .thenReturn(ffCall);
-    when(ffCall.execute()).thenReturn(retrofit2.Response.success(new RestResponse<>(enabled)));
   }
 
   private void verifyDataPoint(InstanceDTO instance, int count, DataPoint dataPoint) {

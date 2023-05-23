@@ -14,6 +14,8 @@ import io.harness.cvng.exception.NotImplementedForHealthSourceException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,18 +23,27 @@ import lombok.extern.slf4j.Slf4j;
 public class DataCollectionDSLFactory {
   private static final String SUMOLOGIC_LOG_DATACOLLECTION_FILE = "sumologic-log.datacollection";
   private static final String ELK_LOG_DATACOLLECTION_FILE = "elk-log-fetch-data.datacollection";
+  private static final String GRAFANA_LOKI_LOG_DATACOLLECTION_FILE = "grafana-loki-log-fetch-data.datacollection";
+  private static final Map<DataSourceType, String> dataSourceTypeToDslScriptMap = new HashMap<>();
+  private static final Map<DataSourceType, String> dataSourceTypeToDslScriptPathMap = new HashMap<>();
 
-  public static String readLogDSL(DataSourceType dataSourceType) {
-    // TODO dont read repeatedly and also move it from here
-    if (dataSourceType == DataSourceType.SUMOLOGIC_LOG) {
-      return readFile(SUMOLOGIC_LOG_DATACOLLECTION_FILE);
-    } else if (dataSourceType == DataSourceType.ELASTICSEARCH) {
-      return readFile(ELK_LOG_DATACOLLECTION_FILE);
-    } else {
-      throw new NotImplementedForHealthSourceException("Not Implemented.");
-    }
+  static {
+    dataSourceTypeToDslScriptPathMap.put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG_DATACOLLECTION_FILE);
+    dataSourceTypeToDslScriptPathMap.put(DataSourceType.ELASTICSEARCH, ELK_LOG_DATACOLLECTION_FILE);
+    dataSourceTypeToDslScriptPathMap.put(DataSourceType.GRAFANA_LOKI_LOGS, GRAFANA_LOKI_LOG_DATACOLLECTION_FILE);
   }
 
+  public static String readLogDSL(DataSourceType dataSourceType) {
+    if (dataSourceTypeToDslScriptMap.containsKey(dataSourceType)) {
+      return dataSourceTypeToDslScriptMap.get(dataSourceType);
+    } else if (dataSourceTypeToDslScriptPathMap.containsKey(dataSourceType)) {
+      String dslScript = readFile(dataSourceTypeToDslScriptPathMap.get(dataSourceType));
+      dataSourceTypeToDslScriptMap.put(dataSourceType, dslScript);
+      return dslScript;
+    } else {
+      throw new NotImplementedForHealthSourceException("Not Implemented for DataSourceType " + dataSourceType.name());
+    }
+  }
   private static String readFile(String fileName) {
     try {
       return Resources.toString(
@@ -42,4 +53,5 @@ public class DataCollectionDSLFactory {
       throw new RuntimeException(e);
     }
   }
+  private DataCollectionDSLFactory() {}
 }

@@ -668,7 +668,7 @@ paths:
       operationId: layout-ingest
       responses:
         '200':
-          description: OK
+          $ref: '#/components/responses/LayoutResponse'
       tags:
         - LayoutProxy
       description: Ingest plugin layout

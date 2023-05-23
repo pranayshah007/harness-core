@@ -88,7 +88,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
         .thenReturn(TASK_ID);
 
     String taskId =
-        ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false);
+        ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false, any());
 
     assertThat(taskId).isEqualTo(TASK_ID);
   }
@@ -113,7 +113,7 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
     when(delegateServiceGrpcClient.submitAsyncTaskV2(any(), any(), any(), any())).thenReturn(TASK_ID);
 
     String taskId =
-        ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false);
+        ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false, "");
 
     assertThat(taskId).isEqualTo(TASK_ID);
   }
@@ -140,7 +140,8 @@ public class CIDelegateTaskExecutorTest extends CIExecutionTestBase {
         .thenReturn(TASK_ID);
 
     assertThatThrownBy(
-        () -> ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false))
+
+        () -> ciDelegateTaskExecutor.queueTask(new HashMap<>(), task, new ArrayList<>(), new ArrayList<>(), false, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Task Execution not supported for type");
   }

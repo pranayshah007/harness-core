@@ -64,6 +64,9 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
   private final String SERVICE_NAME = "serviceName";
   private final String AWS_ACCOUNT_ID = "awsAccountId";
   private final String INSTANCE_ID = "instanceId";
+  private final String SUBSCRIPTION_ID = "subscriptionId";
+  private final String RESOURCE_GROUP_ID = "resourceGroupId";
+  private final String VM_NAME = "vmName";
 
   @InjectMocks private RecommendationsIgnoreListService recommendationsIgnoreListServiceUnderTest;
 
@@ -250,6 +253,21 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
     verify(mockK8sRecommendationDAO).updateRecommendationState(RECOMMENDATION_ID, RecommendationState.IGNORED);
   }
 
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testUpdateAzureRecommendationState() {
+    when(mockK8sRecommendationDAO.getRecommendationState(RECOMMENDATION_ID)).thenReturn(RecommendationState.OPEN);
+    final Optional<RecommendationsIgnoreList> recommendationsIgnoreList =
+        Optional.of(recommendationsExpectedIgnoreList);
+    when(mockIgnoreListDAO.get(ACCOUNT_ID)).thenReturn(recommendationsIgnoreList);
+
+    recommendationsIgnoreListServiceUnderTest.updateAzureRecommendationState(
+        RECOMMENDATION_ID, ACCOUNT_ID, SUBSCRIPTION_ID, RESOURCE_GROUP_ID, VM_NAME);
+
+    verify(mockK8sRecommendationDAO).updateRecommendationState(RECOMMENDATION_ID, RecommendationState.IGNORED);
+  }
+
   private RecommendationsIgnoreList getRecommendationsIgnoreList(int length, String instance) {
     if (length == 0) {
       return RecommendationsIgnoreList.builder()
@@ -317,6 +335,6 @@ public class RecommendationsIgnoreListServiceTest extends CategoryTest {
   }
 
   private RecommendationAzureVmId getRecommendationAzureVmId(String instance) {
-    return new RecommendationAzureVmId("subscriptionId" + instance, "resourceGroupId" + instance, "vmName" + instance);
+    return new RecommendationAzureVmId(SUBSCRIPTION_ID + instance, RESOURCE_GROUP_ID + instance, VM_NAME + instance);
   }
 }

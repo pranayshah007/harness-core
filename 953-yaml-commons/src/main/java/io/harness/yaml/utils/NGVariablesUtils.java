@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ObjectUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
@@ -165,7 +166,7 @@ public class NGVariablesUtils {
 
   private ParameterField<?> getNonSecretValue(NGVariable variable) {
     ParameterField<?> value = variable.getCurrentValue();
-    if (ParameterField.isNull(value) || (!value.isExpression() && value.getValue() == null)) {
+    if (ParameterField.isNull(value) || (!value.isExpression() && ObjectUtils.isEmpty(value.getValue()))) {
       if (variable.isRequired()) {
         throw new InvalidRequestException(
             String.format("Value not provided for required variable: %s", variable.getName()));

@@ -8,6 +8,7 @@
 package io.harness.cvng.cdng.resources;
 
 import io.harness.beans.FeatureName;
+import io.harness.cvng.CVConstants;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo;
 import io.harness.cvng.analysis.beans.CanaryBlueGreenAdditionalInfo.HostSummaryInfo;
@@ -15,6 +16,7 @@ import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
+import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AbstractAnalysedNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
@@ -22,6 +24,9 @@ import io.harness.cvng.cdng.beans.v2.AnalysedLoadTestNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedNodeOverview;
 import io.harness.cvng.cdng.beans.v2.AnalysedNodeType;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
+import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.BaselineOverview;
+import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.cdng.beans.v2.HealthSource;
 import io.harness.cvng.cdng.beans.v2.MetricsAnalysis;
 import io.harness.cvng.cdng.beans.v2.ProviderType;
@@ -32,6 +37,7 @@ import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.filterParams.DeploymentTimeSeriesAnalysisFilter;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.resources.VerifyStepResource;
@@ -54,7 +60,9 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -122,8 +130,11 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
       sendTelemetryEvent(deploymentVerificationJobInstanceSummary.getStatus().toString(),
           verifyStepPathParams.getProjectIdentifier(), verifyStepPathParams.getOrgIdentifier());
     }
+    VerificationSpec verificationSpec =
+        getVerificationSpec(verificationJobInstance, deploymentVerificationJobInstanceSummary);
+
     return VerificationOverview.builder()
-        .spec(getVerificationSpec(verificationJobInstance, deploymentVerificationJobInstanceSummary))
+        .spec(verificationSpec)
         .appliedDeploymentAnalysisType(appliedDeploymentAnalysisType)
         .verificationStartTimestamp(deploymentVerificationJobInstanceSummary.getActivityStartTime())
         .verificationProgressPercentage(deploymentVerificationJobInstanceSummary.getProgressPercentage())
@@ -136,7 +147,51 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId()))
         .errorClusters(deploymentLogAnalysisService.getErrorsAnalysisOverview(
             verifyStepPathParams.getAccountIdentifier(), verifyStepPathParams.getVerifyStepExecutionId()))
+        .baselineOverview(getBaselineOverview(verificationSpec, verifyStepPathParams, appliedDeploymentAnalysisType,
+            verificationJobInstance, deploymentVerificationJobInstanceSummary))
         .build();
+  }
+
+  public BaselineOverview getBaselineOverview(VerificationSpec verificationSpec,
+      VerifyStepPathParams verifyStepPathParams, AppliedDeploymentAnalysisType appliedDeploymentAnalysisType,
+      VerificationJobInstance verificationJobInstance,
+      DeploymentVerificationJobInstanceSummary deploymentVerificationJobInstanceSummary) {
+    Optional<VerificationJobInstance> baselineVerificationJobInstance =
+        verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
+            ServiceEnvironmentParams.builder()
+                .environmentIdentifier(verificationSpec.getAnalysedEnvIdentifier())
+                .serviceIdentifier(verificationSpec.getAnalysedServiceIdentifier())
+                .accountIdentifier(verifyStepPathParams.getAccountIdentifier())
+                .projectIdentifier(verifyStepPathParams.getProjectIdentifier())
+                .orgIdentifier(verifyStepPathParams.getOrgIdentifier())
+                .build());
+    boolean isExpired = false;
+    BaselineOverview baselineOverview = null;
+    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+      String baselineVerificationJobInstanceId = null;
+      long baselineExpiry = 1L;
+      String planExecutionId = "";
+      if (baselineVerificationJobInstance.isPresent()) {
+        baselineVerificationJobInstanceId = baselineVerificationJobInstance.get().getUuid();
+        baselineExpiry = baselineVerificationJobInstance.get().getValidUntil().getTime();
+        planExecutionId = baselineVerificationJobInstance.get().getPlanExecutionId();
+      }
+      baselineOverview = BaselineOverview.builder()
+                             .baselineVerificationJobInstanceId(baselineVerificationJobInstanceId)
+                             .isApplicableForBaseline(deploymentVerificationJobInstanceSummary.getStatus()
+                                 == ActivityVerificationStatus.VERIFICATION_PASSED)
+                             .isBaselineExpired(isExpired)
+                             .baselineExpiryTimestamp(baselineExpiry)
+                             .planExecutionId(planExecutionId)
+                             .isBaseline(verificationJobInstance.getUuid().equals(baselineVerificationJobInstanceId))
+                             .build();
+    }
+    return baselineOverview;
+  }
+
+  @Override
+  public Baseline updateBaseline(VerifyStepPathParams verifyStepPathParams, Baseline isBaseline) {
+    return verificationJobInstanceService.pinOrUnpinBaseline(verifyStepPathParams, isBaseline.isBaseline());
   }
 
   private static AppliedDeploymentAnalysisType getAppliedDeploymentAnalysisType(
@@ -166,6 +221,8 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
         .durationInMinutes(Duration.ofMillis(deploymentVerificationJobInstanceSummary.getDurationMs()).toMinutes())
         .sensitivity(verificationJobInstance.getResolvedJob().getSensitivity())
         .isFailOnNoAnalysis(verificationJobInstance.getResolvedJob().isFailOnNoAnalysis())
+        .baselineType(verificationJobInstance.getBaselineType() == null ? BaselineType.LAST
+                                                                        : verificationJobInstance.getBaselineType())
         .build();
   }
 
@@ -207,6 +264,13 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
     return hostSummaryInfos.stream()
         .map(hostSummaryInfo -> AnalysedDeploymentNode.builder().nodeIdentifier(hostSummaryInfo.getHostName()).build())
         .collect(Collectors.toList());
+  }
+
+  private boolean isExpired(VerificationJobInstance baselineVerificationJobInstance) {
+    long createdAt = baselineVerificationJobInstance.getCreatedAt();
+    // If difference between createdAt and currentTime is greater than 180 days, then baseline is expired.
+    return TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - createdAt)
+        > CVConstants.MAX_DATA_RETENTION_DURATION.toDays();
   }
 
   private AnalysedNodeOverview getTestNodesOverview(AdditionalInfo additionalInfo) {

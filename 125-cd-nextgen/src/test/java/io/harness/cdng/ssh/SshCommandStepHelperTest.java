@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,6 +72,7 @@ import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.SkipRollbackException;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -107,6 +109,7 @@ import io.harness.steps.shellscript.ShellType;
 import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -114,6 +117,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -544,6 +548,23 @@ public class SshCommandStepHelperTest extends CategoryTest {
     verify(executionSweepingOutputService)
         .consume(
             eq(ambiance), eq(OutcomeExpressionConstants.SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME), any(), anyString());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetSshWinRmRollbackData_shouldDeletePhantomStageExecutionInfo() {
+    Map<String, String> mergedEnvVariables = new HashMap<>();
+    CommandStepParameters commandStepParameters = CommandStepParameters.infoBuilder().build();
+
+    when(commandStepRollbackHelper.getRollbackData(any(), any(), any())).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> helper.getSshWinRmRollbackData(ambiance, mergedEnvVariables, commandStepParameters))
+        .isInstanceOf(SkipRollbackException.class)
+        .hasMessage("Not found previous successful rollback data, hence skipping rollback");
+
+    ArgumentCaptor<Ambiance> argumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
+    verify(commandStepRollbackHelper, times(1)).deleteIfExistsCurrentStageExecutionInfo(argumentCaptor.capture());
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

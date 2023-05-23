@@ -10,6 +10,8 @@ package io.harness.cvng.verificationjob.services.api;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
+import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.entities.CVConfig;
@@ -19,6 +21,7 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Progress
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.web.server.ResponseStatusException;
 
 public interface VerificationJobInstanceService {
   String create(VerificationJobInstance verificationJobInstance);
@@ -30,6 +33,11 @@ public interface VerificationJobInstanceService {
   void logProgress(ProgressLog progressLog);
   Optional<TimeRange> getPreDeploymentTimeRange(String verificationJobInstanceId);
   Optional<String> getLastSuccessfulTestVerificationJobExecutionId(ServiceEnvironmentParams serviceEnvironmentParams);
+  Optional<VerificationJobInstance> getPinnedBaselineVerificationJobInstance(
+      ServiceEnvironmentParams serviceEnvironmentParams);
+  Baseline pinOrUnpinBaseline(VerifyStepPathParams verifyStepPathParams, boolean isBaseline)
+      throws ResponseStatusException;
+
   ActivityVerificationSummary getActivityVerificationSummary(List<VerificationJobInstance> verificationJobInstances);
   DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary getDeploymentVerificationJobInstanceSummary(
       List<String> verificationJobInstanceIds);

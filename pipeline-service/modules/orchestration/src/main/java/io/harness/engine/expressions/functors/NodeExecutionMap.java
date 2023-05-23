@@ -13,13 +13,13 @@ import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 import static java.util.Arrays.asList;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.engine.pms.data.OutcomeException;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
 import io.harness.engine.pms.data.SweepingOutputException;
+import io.harness.engine.utils.FunctorUtils;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.expression.ExpressionEvaluatorUtils;
@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -91,25 +90,11 @@ public class NodeExecutionMap extends LateBindingMap {
       return null;
     }
 
-    return fetchFirst(
+    return FunctorUtils.fetchFirst(
         asList(this::fetchCurrentStatus, this::fetchExecutionUrl, this::fetchCurrentStatusIncludingChildOfStrategy,
             this::fetchChild, this::fetchNodeExecutionField, this::fetchStepParameters, this::fetchOutcomeOrOutput,
             this::fetchStrategyData),
         (String) key);
-  }
-
-  private Object fetchFirst(List<Function<String, Optional<Object>>> fns, String key) {
-    if (EmptyPredicate.isEmpty(fns)) {
-      return null;
-    }
-
-    for (Function<String, Optional<Object>> fn : fns) {
-      Optional<Object> optional = fn.apply(key);
-      if (optional.isPresent()) {
-        return optional.get();
-      }
-    }
-    return null;
   }
 
   private Optional<Object> fetchChild(String key) {

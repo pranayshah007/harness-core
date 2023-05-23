@@ -550,12 +550,6 @@ public class AzureWebAppStepHelper {
         connectorInfoDTO = cdStepHelper.getConnector(jenkinsArtifactOutcome.getConnectorRef(), ambiance);
         break;
       case AZURE_ARTIFACTS_NAME:
-        if (!cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEBAPP_NG_AZURE_DEVOPS_ARTIFACTS)) {
-          throw new AccessDeniedException("The Azure DevOps artifact source in NG is not enabled for this account."
-                  + " Please contact harness customer care.",
-              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-        }
         AzureArtifactsOutcome azureArtifactsOutcome = (AzureArtifactsOutcome) artifactOutcome;
         artifactConfigBuilder.sourceType(AZURE_ARTIFACTS);
         artifactConfigBuilder.artifactDetails(AzureDevOpsArtifactRequestDetails.builder()

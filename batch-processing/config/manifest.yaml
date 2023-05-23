@@ -1,0 +1,8 @@
+BUILD_SCRIPT_PATH: batch-processing/build/feature_build.sh
+DOCKER_FILE_PATH: /harness/harness-core/dist/batch-processing/Dockerfile-batch-processing-cie-jdk
+CONTEXT_PATH: /harness/harness-core/dist/batch-processing
+ARTIFACT_REPO: harness/feature-batch-processing-openjdk-8u242
+HELM_CHART_SOURCE_DIRECTORY: harness-core/batch-processing/chart
+HELM_REPO_NAME: us-west1-docker.pkg.dev/platform-205701/harness-helm-artifacts
+BUILD_STEP_RESOURCE_CPU: 1000m
+BUILD_STEP_RESOURCE_MEMORY: 4Gi

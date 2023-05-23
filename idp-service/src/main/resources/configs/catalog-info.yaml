@@ -9,7 +9,7 @@ metadata:
       url: http://my-internal-website.com
   annotations:
     github.com/project-slug: myorg/myrepo
-    backstage.io/techdocs-ref: dir:.
+    backstage.io/techdocs-ref: dir:../../
     lighthouse.com/website-url: https://harness.io
 #  labels:
 #    key1: value1

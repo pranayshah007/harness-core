@@ -28,7 +28,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HelmClientException;
+import io.harness.exception.HelmClientRetryableException;
 import io.harness.exception.HelmClientRuntimeException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
@@ -42,6 +44,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.vavr.CheckedFunction0;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -63,6 +68,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.LogOutputStream;
@@ -77,10 +83,15 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 public class HelmClientImpl implements HelmClient {
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
 
+  private static final int CLI_RETRY_ATTEMPTS = 3;
+  private static final String CLI_RETRY_NAME = "helm-cli";
   private static final String OVERRIDE_FILE_PATH = "./repository/helm/overrides/${CONTENT_HASH}.yaml";
   public static final String DEBUG_COMMAND_FLAG = "--debug";
   public static final LoadingCache<String, Object> lockObjects =
       CacheBuilder.newBuilder().expireAfterAccess(30, TimeUnit.MINUTES).build(CacheLoader.from(Object::new));
+
+  public final Retry retry = Retry.of(CLI_RETRY_NAME,
+      RetryConfig.custom().retryExceptions(HelmClientRetryableException.class).maxAttempts(CLI_RETRY_ATTEMPTS).build());
 
   @Override
   public HelmCliResponse install(HelmCommandData helmCommandData, boolean isErrorFrameworkEnabled) throws Exception {
@@ -354,6 +365,32 @@ public class HelmClientImpl implements HelmClient {
         DEFAULT_HELM_COMMAND_TIMEOUT);
   }
 
+  @Override
+  public HelmCliResponse getManifest(HelmCommandData helmCommandData, String namespace) throws Exception {
+    if (isEmpty(helmCommandData.getKubeConfigLocation())) {
+      throw new InvalidArgumentsException(Pair.of("kubeconfig", "Kubeconfig path is required"));
+    }
+
+    HelmCliCommandType commandType = HelmCliCommandType.GET_MANIFEST;
+    String command = getHelmCommandTemplateWithHelmPath(commandType, helmCommandData.getHelmVersion())
+                         .replace("${RELEASE_NAME}", helmCommandData.getReleaseName());
+    if (isNotEmpty(namespace)) {
+      command = command.replace("${NAMESPACE}", namespace);
+    }
+
+    command = applyCommandFlags(command, commandType, helmCommandData.getCommandFlags(),
+        helmCommandData.isHelmCmdFlagsNull(), helmCommandData.getValueMap(), helmCommandData.getHelmVersion());
+    logHelmCommandInExecutionLogs(command, helmCommandData.getLogCallback());
+
+    try {
+      return executeHelmCLICommandWithRetry(helmCommandData, command, commandType, "Failed to retrieve helm manifest");
+    } catch (Exception e) {
+      throw e;
+    } catch (Throwable e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   /**
    * The type Helm cli response.
    */
@@ -386,7 +423,6 @@ public class HelmClientImpl implements HelmClient {
     return executeHelmCLICommand(searchChartCommand);
   }
 
-  @VisibleForTesting
   public HelmCliResponse executeHelmCLICommand(HelmCommandData helmCommandData, boolean isErrorFrameworkEnabled,
       String command, HelmCliCommandType commandType, String errorMessagePrefix, long timeoutInMillis)
       throws IOException, InterruptedException, TimeoutException {
@@ -400,6 +436,34 @@ public class HelmClientImpl implements HelmClient {
       return isErrorFrameworkEnabled ? fetchCliResponseWithExceptionHandling(
                  command, commandType, errorMessagePrefix, errorStream, timeoutInMillis, env)
                                      : executeHelmCLICommand(command, errorStream, env);
+    }
+  }
+
+  public HelmCliResponse executeHelmCLICommandWithRetry(HelmCommandData helmCommandData, String command,
+      HelmCliCommandType commandType, String errorMessagePrefix) throws Throwable {
+    try (LogOutputStream errorStream = helmCommandData.getLogCallback() != null
+            ? new ErrorActivityOutputStream(helmCommandData.getLogCallback())
+            : new LogErrorStream()) {
+      Map<String, String> env = new HashMap<>();
+      if (!isEmpty(helmCommandData.getGcpKeyPath())) {
+        env.put("GOOGLE_APPLICATION_CREDENTIALS", helmCommandData.getGcpKeyPath());
+      }
+
+      CheckedFunction0<HelmCliResponse> responseSupplier = Retry.decorateCheckedSupplier(retry, () -> {
+        try {
+          return executeWithExceptionHandling(command, commandType, errorMessagePrefix, errorStream, env);
+        } catch (InterruptedException e) {
+          throw e;
+        } catch (Exception e) {
+          throw new HelmClientRetryableException(e);
+        }
+      });
+
+      try {
+        return responseSupplier.apply();
+      } catch (HelmClientRetryableException e) {
+        throw e.getCause();
+      }
     }
   }
 
@@ -544,26 +608,32 @@ public class HelmClientImpl implements HelmClient {
   public HelmCliResponse fetchCliResponseWithExceptionHandling(String command, HelmCliCommandType commandType,
       String errorMessagePrefix, OutputStream errorStream, long timeoutInMillis, Map<String, String> env) {
     try {
-      HelmCliResponse helmCliResponse = executeHelmCLICommandNoDefaultTimeout(command, errorStream, env);
-
-      if (helmCliResponse.getCommandExecutionStatus() != SUCCESS) {
-        // if helm hist fails due to 'release not found' -- then we don't fail/ throw exception
-        // (because for first time deployment, release history cmd fails with release not found)
-        String outputMessage = helmCliResponse.getOutputWithErrorStream();
-        if (commandType == HelmCliCommandType.RELEASE_HISTORY
-            && (outputMessage.contains("not found") && outputMessage.contains("release"))) {
-          return helmCliResponse;
-        }
-        throw new HelmClientRuntimeException(ExceptionMessageSanitizer.sanitizeException(
-            new HelmClientException(errorMessagePrefix + command + ". " + outputMessage, USER, commandType)));
-      }
-      return helmCliResponse;
+      return executeWithExceptionHandling(command, commandType, errorMessagePrefix, errorStream, env);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new HelmClientRuntimeException(new HelmClientException(ExceptionUtils.getMessage(e), USER, commandType));
     } catch (Exception e) {
       throw new HelmClientRuntimeException(new HelmClientException(ExceptionUtils.getMessage(e), USER, commandType));
     }
+  }
+
+  public HelmCliResponse executeWithExceptionHandling(String command, HelmCliCommandType commandType,
+      String errorMessagePrefix, OutputStream errorStream, Map<String, String> env)
+      throws InterruptedException, IOException, TimeoutException {
+    HelmCliResponse helmCliResponse = executeHelmCLICommandNoDefaultTimeout(command, errorStream, env);
+
+    if (helmCliResponse.getCommandExecutionStatus() != SUCCESS) {
+      // if helm hist fails due to 'release not found' -- then we don't fail/ throw exception
+      // (because for first time deployment, release history cmd fails with release not found)
+      String outputMessage = helmCliResponse.getOutputWithErrorStream();
+      if (commandType == HelmCliCommandType.RELEASE_HISTORY
+          && (outputMessage.contains("not found") && outputMessage.contains("release"))) {
+        return helmCliResponse;
+      }
+      throw new HelmClientRuntimeException(ExceptionMessageSanitizer.sanitizeException(
+          new HelmClientException(errorMessagePrefix + command + ". " + outputMessage, USER, commandType)));
+    }
+    return helmCliResponse;
   }
 
   @RequiredArgsConstructor

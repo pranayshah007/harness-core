@@ -9,14 +9,17 @@ package io.harness.yaml.utils;
 
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.yaml.core.variables.NGVariable;
@@ -25,6 +28,7 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,5 +88,49 @@ public class NGVariableUtilsTest extends CategoryTest {
     secretVars = NGVariablesUtils.getSetOfSecretVars(variableList);
     assertThat(secretVars).isNotNull();
     assertThat(secretVars).contains("var2");
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testGetMapOfVariables() {
+    StringNGVariable var1 = StringNGVariable.builder()
+                                .name("var1")
+                                .uuid("uuid1")
+                                .value(ParameterField.createValueField(""))
+                                .required(true)
+                                .build();
+    StringNGVariable var2 = StringNGVariable.builder()
+                                .name("var2")
+                                .uuid("uuid2")
+                                .value(ParameterField.createValueField(""))
+                                .required(false)
+                                .build();
+    StringNGVariable var3 = StringNGVariable.builder()
+                                .name("var3")
+                                .uuid("uuid3")
+                                .value(ParameterField.createValueField("value"))
+                                .required(true)
+                                .build();
+    assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariables(List.of(var2, var3, var1)))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Value not provided for required variable: var1");
+    Map<String, Object> variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var3));
+    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+
+    assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariables(List.of(var2, var3, var1), 0L))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Value not provided for required variable: var1");
+    variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var3), 0L);
+    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+
+    assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(List.of(var2, var3, var1)))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Value not provided for required variable: var1");
+    variableMap = NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(List.of(var2, var3));
+    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
   }
 }

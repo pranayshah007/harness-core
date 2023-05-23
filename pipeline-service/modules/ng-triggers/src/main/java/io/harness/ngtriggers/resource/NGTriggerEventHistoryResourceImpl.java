@@ -42,7 +42,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class NGTriggerEventHistoryResourceImpl implements NGTriggerEventHistoryResource {
   private final NGTriggerService ngTriggerService;
-
   private final NGTriggerEventsService ngTriggerEventsService;
 
   @Override

@@ -366,6 +366,7 @@ ciExecutionServiceConfig:
       cacheGCS: plugins/cache:1.5.7
       cacheS3: plugins/cache:1.5.7
       sscaOrchestration: harness/ssca-plugin:latest
+      sscaEnforcement: harness/ssca-plugin:latest
     vmContainerlessStepConfig:
       s3UploadConfig:
         name: github.com/drone-plugins/drone-s3@refs/tags/v1.2.2

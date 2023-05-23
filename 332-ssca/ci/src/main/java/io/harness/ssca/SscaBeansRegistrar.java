@@ -64,5 +64,12 @@ public class SscaBeansRegistrar {
                        StepMetaData.newBuilder().addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME).build())
                    .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
                    .build())
+          .add(StepInfo.newBuilder()
+                   .setName(SscaConstants.SSCA_ENFORCEMENT)
+                   .setType(SscaConstants.SSCA_ENFORCEMENT)
+                   .setStepMetaData(
+                       StepMetaData.newBuilder().addFolderPaths(SscaConstants.SSCA_STEPS_FOLDER_NAME).build())
+                   .setFeatureFlag(FeatureName.SSCA_ENABLED.name())
+                   .build())
           .build();
 }
