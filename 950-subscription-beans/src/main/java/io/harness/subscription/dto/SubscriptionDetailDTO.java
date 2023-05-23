@@ -7,9 +7,12 @@
 
 package io.harness.subscription.dto;
 
+import io.harness.ModuleType;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import org.jvnet.hk2.annotations.Optional;
@@ -30,4 +33,5 @@ public class SubscriptionDetailDTO {
   private String latestInvoice;
   private InvoiceDetailDTO latestInvoiceDetail;
   @Optional private List<ItemDTO> items;
+  @Optional private Set<ModuleType> modules;
 }

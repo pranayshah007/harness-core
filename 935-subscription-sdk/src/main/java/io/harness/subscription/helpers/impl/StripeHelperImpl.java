@@ -61,10 +61,12 @@ import com.stripe.param.SubscriptionUpdateParams;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -74,6 +76,7 @@ public class StripeHelperImpl implements StripeHelper {
   private List<String> subscriptionExpandList = Arrays.asList("latest_invoice.payment_intent");
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   private static final String CUSTOMER_EMAIL_KEY = "customer_email";
+  private static final String STRIPE_MODULE_TYPE_KEY = "module";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED_MAX =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s' AND metadata['max']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED =
@@ -423,6 +426,21 @@ public class StripeHelperImpl implements StripeHelper {
     return toInvoiceDetailDTO(stripeHandler.finalizeInvoice(invoiceId));
   }
 
+  private String getModuleType(SubscriptionItem subscriptionItem) {
+    return subscriptionItem.getPrice().getMetadata().get(STRIPE_MODULE_TYPE_KEY);
+  }
+
+  private Set<ModuleType> getModuleTypes(Subscription subscription) {
+    Set<ModuleType> moduleTypes = new HashSet<>();
+    subscription.getItems().getData().stream().forEach((SubscriptionItem subscriptionItem) -> {
+      String moduleType = getModuleType(subscriptionItem);
+      if (moduleType != null && !moduleTypes.contains(moduleType)) {
+        moduleTypes.add(ModuleType.fromString(moduleType));
+      }
+    });
+    return moduleTypes;
+  }
+
   private InvoiceDetailDTO toInvoiceDetailDTO(Invoice invoice) {
     if (invoice == null) {
       return null;
@@ -596,6 +614,7 @@ public class StripeHelperImpl implements StripeHelper {
                                     .canceledAt(subscription.getCanceledAt())
                                     .pendingUpdate(toPendingUpdateDetailDTO(subscription.getPendingUpdate()))
                                     .latestInvoiceDetail(toInvoiceDetailDTO(subscription.getLatestInvoiceObject()))
+                                    .modules(getModuleTypes(subscription))
                                     .build();
 
     if (subscription.getLatestInvoiceObject() != null
