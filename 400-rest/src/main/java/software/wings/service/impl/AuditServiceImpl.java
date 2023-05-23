@@ -15,6 +15,8 @@ import static io.harness.persistence.HPersistence.ANALYTIC_STORE;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.audit.AuditHeader.IDX_ACCOUNT_APP_CREATED_BY_CREATED_AT;
+
 import static com.google.common.collect.Sets.newHashSet;
 import static dev.morphia.mapping.Mapper.ID_KEY;
 import static dev.morphia.query.Sort.descending;
@@ -39,6 +41,7 @@ import io.harness.exception.WingsException.ExecutionContext;
 import io.harness.ff.FeatureFlagService;
 import io.harness.globalcontex.AuditGlobalContextData;
 import io.harness.manage.GlobalContextManager;
+import io.harness.mongo.index.BasicDBUtils;
 import io.harness.persistence.NameAccess;
 import io.harness.persistence.UuidAccess;
 import io.harness.stream.BoundedInputStream;
@@ -652,6 +655,8 @@ public class AuditServiceImpl implements AuditService {
 
     PageRequest<AuditHeader> pageRequest =
         auditPreferenceHelper.generatePageRequestFromAuditPreference(auditPreference, offset, limit);
+    pageRequest.setIndexHint(
+        BasicDBUtils.getIndexObject(AuditHeader.mongoIndexes(), IDX_ACCOUNT_APP_CREATED_BY_CREATED_AT));
     return wingsPersistence.querySecondary(AuditHeader.class, pageRequest);
   }
 

@@ -52,6 +52,7 @@ import lombok.experimental.UtilityClass;
 @HarnessEntity(exportable = true)
 @TargetModule(HarnessModule._940_CG_AUDIT_SERVICE)
 public class AuditHeader extends Base implements AccountAccess {
+  public static final String IDX_ACCOUNT_APP_CREATED_BY_CREATED_AT = "accountId_earAppId_createdByUUID_createdAt";
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
@@ -97,7 +98,7 @@ public class AuditHeader extends Base implements AccountAccess {
                  .descSortField(AuditHeaderKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_earAppId_createdByUUID_createdAt")
+                 .name(IDX_ACCOUNT_APP_CREATED_BY_CREATED_AT)
                  .field(AuditHeaderKeys.accountId)
                  .field(AuditHeaderKeys.appIdEntityRecord)
                  .field(AuditHeaderKeys.createdById)
