@@ -21,8 +21,9 @@ import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Qualifier;
 
 import com.google.inject.Inject;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Optional;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PollingDocumentMapper {
