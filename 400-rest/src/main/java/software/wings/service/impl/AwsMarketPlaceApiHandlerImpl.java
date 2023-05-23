@@ -85,10 +85,10 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
     /**
      * If request gets routed to the free cluster, reject the request rightaway
      */
-    if (configuration.isTrialRegistrationAllowed()) {
-      final String message = "Invalid cluster, please contact Harness at support@harness.io, customertoken=" + token;
-      return generateMessageResponse(message, "ERROR", null, null);
-    }
+    // if (configuration.isTrialRegistrationAllowed()) {
+    //   final String message = "Invalid cluster, please contact Harness at support@harness.io, customertoken=" + token;
+    //   return generateMessageResponse(message, "ERROR", null, null);
+    // }
 
     if (DeployMode.isOnPrem(configuration.getDeployMode().name())) {
       final String message =
@@ -219,6 +219,7 @@ public class AwsMarketPlaceApiHandlerImpl implements AwsMarketPlaceApiHandler {
           "This is an existing customer:[{}], purchasing another module. Existing product code [{}], adding product code [{}]. Desired dimension: [{}]",
           customerIdentifierCode, marketPlace.getProductCode(), productCode, dimension);
       final String message = String.format(
+          "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. License details: Quantity: %d, License expiration: %s",
           "Looks like you already have a license. Please reach out to harness@support.io to add the additional module. License details: Quantity: %d, License expiration: %s",
           orderQuantity, DateFormat.getDateInstance(DateFormat.SHORT).format(expirationDate));
       return generateMessageResponse(message, INFO, REDIRECT_ACTION_LOGIN, MESSAGESTATUS);
