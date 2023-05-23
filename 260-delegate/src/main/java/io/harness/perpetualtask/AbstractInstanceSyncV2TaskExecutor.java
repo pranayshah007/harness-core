@@ -140,7 +140,7 @@ abstract class AbstractInstanceSyncV2TaskExecutor implements PerpetualTaskExecut
                       deploymentReleaseDetails))
                   .setExecutionStatus(CommandExecutionStatus.FAILURE.name())
                   .build())
-          .setTaskInfoId(taskId.getId())
+          .setTaskInfoId(deploymentReleaseDetails.getTaskInfoId())
           .build();
       return Collections.emptyList();
     }

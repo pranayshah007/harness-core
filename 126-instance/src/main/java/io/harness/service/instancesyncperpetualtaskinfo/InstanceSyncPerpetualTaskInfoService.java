@@ -20,11 +20,13 @@ import org.springframework.data.domain.Pageable;
 
 @OwnedBy(DX)
 public interface InstanceSyncPerpetualTaskInfoService {
-  Optional<InstanceSyncPerpetualTaskInfoDTO> findByInfrastructureMappingId(String infrastructureMappingId);
+  Optional<InstanceSyncPerpetualTaskInfoDTO> findByInfrastructureMappingId(
+      String infrastructureMappingId, boolean isInstanceSyncV2);
 
   Optional<InstanceSyncPerpetualTaskInfoDTO> findByPerpetualTaskId(String accountIdentifier, String perpetualTaskId);
 
-  InstanceSyncPerpetualTaskInfoDTO save(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
+  InstanceSyncPerpetualTaskInfoDTO save(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, boolean isInstanceSyncV2);
 
   void deleteById(String accountIdentifier, String instanceSyncPerpetualTaskInfoId);
 

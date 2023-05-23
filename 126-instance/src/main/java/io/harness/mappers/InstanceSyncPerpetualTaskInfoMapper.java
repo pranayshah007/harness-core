@@ -17,28 +17,32 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.DX)
 @UtilityClass
 public class InstanceSyncPerpetualTaskInfoMapper {
-  public InstanceSyncPerpetualTaskInfoDTO toDTO(InstanceSyncPerpetualTaskInfo instanceSyncPerpetualTaskInfo) {
+  public InstanceSyncPerpetualTaskInfoDTO toDTO(
+      InstanceSyncPerpetualTaskInfo instanceSyncPerpetualTaskInfo, boolean isInstanceSyncV2) {
     return InstanceSyncPerpetualTaskInfoDTO.builder()
         .id(instanceSyncPerpetualTaskInfo.getId())
         .accountIdentifier(instanceSyncPerpetualTaskInfo.getAccountIdentifier())
         .infrastructureMappingId(instanceSyncPerpetualTaskInfo.getInfrastructureMappingId())
         .deploymentInfoDetailsDTOList(DeploymentInfoDetailsMapper.toDeploymentInfoDetailsDTOList(
             instanceSyncPerpetualTaskInfo.getDeploymentInfoDetailsList()))
-        .perpetualTaskId(instanceSyncPerpetualTaskInfo.getPerpetualTaskId())
+        .perpetualTaskId(!isInstanceSyncV2 ? instanceSyncPerpetualTaskInfo.getPerpetualTaskId() : null)
+        .perpetualTaskIdV2(isInstanceSyncV2 ? instanceSyncPerpetualTaskInfo.getPerpetualTaskIdV2() : null)
         .createdAt(instanceSyncPerpetualTaskInfo.getCreatedAt())
         .lastUpdatedAt(instanceSyncPerpetualTaskInfo.getLastUpdatedAt())
         .connectorIdentifier(instanceSyncPerpetualTaskInfo.getConnectorIdentifier())
         .build();
   }
 
-  public InstanceSyncPerpetualTaskInfo toEntity(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+  public InstanceSyncPerpetualTaskInfo toEntity(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, boolean isInstanceSyncV2) {
     return InstanceSyncPerpetualTaskInfo.builder()
         .id(instanceSyncPerpetualTaskInfoDTO.getId())
         .accountIdentifier(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
         .infrastructureMappingId(instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId())
         .deploymentInfoDetailsList(DeploymentInfoDetailsMapper.toDeploymentInfoDetailsEntityList(
             instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()))
-        .perpetualTaskId(instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId())
+        .perpetualTaskId(!isInstanceSyncV2 ? instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId() : null)
+        .perpetualTaskIdV2(isInstanceSyncV2 ? instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2() : null)
         .connectorIdentifier(instanceSyncPerpetualTaskInfoDTO.getConnectorIdentifier())
         .build();
   }

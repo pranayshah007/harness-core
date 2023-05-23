@@ -10,6 +10,7 @@ package io.harness.entities.instancesyncperpetualtaskinfo;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
@@ -40,7 +41,7 @@ public class InstanceSyncPerpetualTaskInfo {
   String accountIdentifier;
   @FdUniqueIndex String infrastructureMappingId;
   List<DeploymentInfoDetails> deploymentInfoDetailsList;
-  @FdUniqueIndex String perpetualTaskId;
+  @FdIndex String perpetualTaskId;
   String perpetualTaskIdV2;
   String connectorIdentifier;
   @CreatedDate long createdAt;

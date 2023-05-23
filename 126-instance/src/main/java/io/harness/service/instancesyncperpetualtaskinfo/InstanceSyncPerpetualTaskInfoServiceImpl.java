@@ -34,10 +34,12 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   @Inject InstanceSyncPerpetualTaskInfoInfoRepository instanceSyncPerpetualTaskInfoRepository;
 
   @Override
-  public Optional<InstanceSyncPerpetualTaskInfoDTO> findByInfrastructureMappingId(String infrastructureMappingId) {
+  public Optional<InstanceSyncPerpetualTaskInfoDTO> findByInfrastructureMappingId(
+      String infrastructureMappingId, boolean isInstanceSyncV2) {
     Optional<InstanceSyncPerpetualTaskInfo> instanceSyncPerpetualTaskInfoOptional =
         instanceSyncPerpetualTaskInfoRepository.findByInfrastructureMappingId(infrastructureMappingId);
-    return instanceSyncPerpetualTaskInfoOptional.map(InstanceSyncPerpetualTaskInfoMapper::toDTO);
+    return instanceSyncPerpetualTaskInfoOptional.map(
+        perpetualTaskInfo -> InstanceSyncPerpetualTaskInfoMapper.toDTO(perpetualTaskInfo, isInstanceSyncV2));
   }
 
   @Override
@@ -46,15 +48,17 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
     Optional<InstanceSyncPerpetualTaskInfo> instanceSyncPerpetualTaskInfoOptional =
         instanceSyncPerpetualTaskInfoRepository.findByAccountIdentifierAndPerpetualTaskId(
             accountIdentifier, perpetualTaskId);
-    return instanceSyncPerpetualTaskInfoOptional.map(InstanceSyncPerpetualTaskInfoMapper::toDTO);
+    return instanceSyncPerpetualTaskInfoOptional.map(
+        perpetualTaskInfo -> InstanceSyncPerpetualTaskInfoMapper.toDTO(perpetualTaskInfo, false));
   }
 
   @Override
-  public InstanceSyncPerpetualTaskInfoDTO save(InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+  public InstanceSyncPerpetualTaskInfoDTO save(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, boolean isInstanceSyncV2) {
     InstanceSyncPerpetualTaskInfo instanceSyncPerpetualTaskInfo =
-        InstanceSyncPerpetualTaskInfoMapper.toEntity(instanceSyncPerpetualTaskInfoDTO);
+        InstanceSyncPerpetualTaskInfoMapper.toEntity(instanceSyncPerpetualTaskInfoDTO, isInstanceSyncV2);
     instanceSyncPerpetualTaskInfo = instanceSyncPerpetualTaskInfoRepository.save(instanceSyncPerpetualTaskInfo);
-    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfo);
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfo, isInstanceSyncV2);
   }
 
   @Override
@@ -73,7 +77,8 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
     Update update = new Update().set(InstanceSyncPerpetualTaskInfoKeys.deploymentInfoDetailsList,
         DeploymentInfoDetailsMapper.toDeploymentInfoDetailsEntityList(
             instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
-    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(
+        instanceSyncPerpetualTaskInfoRepository.update(criteria, update), false);
   }
 
   @Override
@@ -88,7 +93,8 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
         DeploymentInfoDetailsMapper.toDeploymentInfoDetailsEntityList(
             instanceSyncPerpetualTaskInfoDTO.getDeploymentInfoDetailsDTOList()));
     update.set(InstanceSyncPerpetualTaskInfoKeys.connectorIdentifier, connectorIdentifier);
-    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(
+        instanceSyncPerpetualTaskInfoRepository.update(criteria, update), true);
   }
 
   @Override
@@ -100,7 +106,7 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
 
     return instanceSyncPerpetualTaskInfoRepository.findAll(criteria)
         .stream()
-        .map(InstanceSyncPerpetualTaskInfoMapper::toDTO)
+        .map(perpetualTaskInfo -> InstanceSyncPerpetualTaskInfoMapper.toDTO(perpetualTaskInfo, true))
         .collect(Collectors.toCollection(ArrayList::new));
   }
 
@@ -109,10 +115,10 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
       Pageable pageRequest, String accountId, String perpetualTaskId) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(accountId)
-                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId)
+                            .and(InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2)
                             .is(perpetualTaskId);
 
     return instanceSyncPerpetualTaskInfoRepository.findAllInPages(criteria, pageRequest)
-        .map(InstanceSyncPerpetualTaskInfoMapper::toDTO);
+        .map(perpetualTaskInfo -> InstanceSyncPerpetualTaskInfoMapper.toDTO(perpetualTaskInfo, true));
   }
 }

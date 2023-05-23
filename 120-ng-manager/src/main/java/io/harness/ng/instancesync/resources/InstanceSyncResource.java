@@ -93,7 +93,7 @@ public class InstanceSyncResource {
   @Path("/task/{perpetualTaskId}/details")
   @ApiOperation(value = "Get instance sync perpetual task details", nickname = "fetchTaskDetails")
   public ResponseDTO<InstanceSyncTaskDetails> fetchTaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
-      @QueryParam(NGResourceFilterConstants.PAGE_KEY) @DefaultValue("0") int page,
+      @QueryParam(NGResourceFilterConstants.PAGE) @DefaultValue("0") int page,
       @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     InstanceSyncTaskDetails details =
