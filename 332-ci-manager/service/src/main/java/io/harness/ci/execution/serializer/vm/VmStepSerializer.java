@@ -80,6 +80,7 @@ public class VmStepSerializer {
       case RESTORE_CACHE_S3:
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
       case IACM_TERRAFORM:

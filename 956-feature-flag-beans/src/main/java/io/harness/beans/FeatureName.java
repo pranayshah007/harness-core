@@ -127,6 +127,7 @@ public enum FeatureName {
   FFM_7127_FF_MFE_ONBOARDING_DETAIL("Enable Feature Flag MFE Onboarding Detail page", HarnessTeam.CF),
   FFM_6683_ALL_ENVIRONMENTS_FLAGS,
   FFM_4737_JIRA_INTEGRATION("Enable the Jira Integration feature", HarnessTeam.CF),
+  FFM_7921_ARCHIVING_FEATURE_FLAGS("Enable archiving feature flags instead of permanent deletion", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -147,6 +148,7 @@ public enum FeatureName {
   OPA_FF_GOVERNANCE,
   OPA_GIT_GOVERNANCE,
   OPA_PIPELINE_GOVERNANCE,
+  OPA_TEMPLATE_GOVERNANCE,
   PCF_OLD_APP_RESIZE,
   LOCAL_DELEGATE_CONFIG_OVERRIDE,
   LOGS_V2_247,
@@ -307,7 +309,6 @@ public enum FeatureName {
   DISABLE_LOCAL_LOGIN,
   WINRM_KERBEROS_CACHE_UNIQUE_FILE,
   HIDE_ABORT,
-  CUSTOM_ARTIFACT_NG,
   APPLICATION_DROPDOWN_MULTISELECT,
   NG_GIT_EXPERIENCE,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
@@ -349,7 +350,6 @@ public enum FeatureName {
   DISABLE_TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
   BAMBOO_ARTIFACT_NG("Bamboo Artifact Connector NG", HarnessTeam.CDC),
-  CD_AMI_ARTIFACTS_NG("AMI Artifact Source NG", HarnessTeam.CDC),
   DO_NOT_RENEW_APPROLE_TOKEN(
       "CAUTION: USE THIS ONLY WHEN THE CUSTOMER DELEGATE IS IN VERSION HIGHER OR EQUAL TO 764xx. Used for disabling appRole token renewal and fetching token on the fly before CRUD",
       HarnessTeam.PL),
@@ -395,8 +395,9 @@ public enum FeatureName {
 
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   STO_BASELINE_REGEX("Enable selection of baselines by RegEx from Test Targets page", HarnessTeam.STO),
+  STO_AI_ENHANCED_REMEDIATIONS(
+      "Enable STO to enhance security issues with remediation information using generative AI", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
-  SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
   CREATE_DEFAULT_PROJECT("Enables auto create default project after user signup", HarnessTeam.GTM),
   ANALYSE_TF_PLAN_SUMMARY(
@@ -448,8 +449,6 @@ public enum FeatureName {
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
   AZURE_WEBAPP_NG_JENKINS_ARTIFACTS(
       "FF to enable Jenkins as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
-  AZURE_WEBAPP_NG_AZURE_DEVOPS_ARTIFACTS(
-      "FF to enable Azure DevOps Artifacts as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
@@ -507,7 +506,6 @@ public enum FeatureName {
   CF_ROLLBACK_CUSTOM_STACK_NAME(
       "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
   IACM_ENABLED("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
-  AZURE_WEB_APP_NG_NEXUS_PACKAGE("Enable support for Nexus package artifact in Azure Web App NG", HarnessTeam.CDP),
   CODE_ENABLED("Enable Harness Code", HarnessTeam.CODE),
   BOOKING_RECOMMENDATIONS("Feature flag for booking.com recommendations", HarnessTeam.CE),
   USE_GET_FILE_V2_GIT_CALL(
@@ -572,11 +570,8 @@ public enum FeatureName {
   CDS_ARTIFACTORY_REPOSITORY_URL_MANDATORY(
       "FF to make the Artifactory Repository Url as mandatory in case of docker repositoryFormat", HarnessTeam.CDC),
   VALIDATE_SERVICE_NAME_IN_FILE_PATH("Validate the service name in yaml file path", HarnessTeam.SPG),
-  NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to K8s commands. PM Rohan", HarnessTeam.CDP),
   CD_NG_DOCKER_ARTIFACT_DIGEST(
       "Use SHA256 digest as optional parameter for docker image artifact config", HarnessTeam.SPG),
-  CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG(
-      "Publish instance stats at environment granularity in NG. PM Rohan", HarnessTeam.CDP),
   DEPLOYMENT_RECONCILIATION_LOGIC_QUERY_OPTIMIZATIONS(
       "Used to modify logic for reconciliation queries", HarnessTeam.CDC),
   NOTIFY_GIT_SYNC_ERRORS_PER_APP(
@@ -585,7 +580,6 @@ public enum FeatureName {
   SPG_MODULE_VERSION_INFO("Enable version information on module level", HarnessTeam.SPG),
   CIE_HOSTED_VMS_WINDOWS("FF for enabling hosted builds for windows amd64", HarnessTeam.CI),
   CD_TRIGGER_CATALOG_API_ENABLED("Enable support for pipeline/api/triggers/catalog API in UI", HarnessTeam.CDC),
-  K8S_DRY_RUN_NG("Enable K8s Dry Run Step in NG", HarnessTeam.CDP),
   CDP_SKIP_DEFAULT_VALUES_YAML_NG(
       "Skip adding the default values file as an override if it doesn't contain any expressions in case of helm chart manifest for NG",
       HarnessTeam.CDP),
@@ -687,9 +681,6 @@ public enum FeatureName {
   CDS_TERRAFORM_CONFIG_INSPECT_V1_2(
       "Enables usage of terraform-config-inspect v1.2 built from commit 7c9946b1df498f1b0634c7b33257790f01c819f3 of https://github.com/hashicorp/terraform-config-inspect and GO 1.19.6",
       HarnessTeam.CDP),
-  CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR(
-      "Make NG Trigger authentication use the same delegate selectors as the secret's manager", HarnessTeam.CDC),
-
   CDS_TRIGGER_ACTIVITY_PAGE("NG Triggers Activity page", HarnessTeam.CDC),
   CDS_PROJECT_SCOPED_RESOURCE_CONSTRAINT_QUEUE(
       "With enabling this FF with serviceV2 setup, pipeline in different projects but having the same infra key can be executed parallely",
@@ -764,8 +755,10 @@ public enum FeatureName {
   PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE(
       "This is to regenerate acls for default account viewer roles", HarnessTeam.PL),
   SRM_ENABLE_GRAFANA_LOKI_LOGS("This is used to enable Grafana Loki logs health source.", HarnessTeam.CV),
+  CDS_TEMPLATE_ERROR_HANDLING("Enabling new Schema validation UI for template studio", PIPELINE),
   CDS_SUPPORT_HPA_AND_PDB_NG(
-      "Enabling support for HPA and PDB kind resources in k8s deployments in NG", HarnessTeam.CDP);
+      "Enabling support for HPA and PDB kind resources in k8s deployments in NG", HarnessTeam.CDP),
+  SRM_ENABLE_BASELINE_BASED_VERIFICATION("This is used to enable baseline based verification.", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {

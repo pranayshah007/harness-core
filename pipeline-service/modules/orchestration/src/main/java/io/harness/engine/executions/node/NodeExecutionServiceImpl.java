@@ -124,6 +124,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public CloseableIterator<NodeExecution> get(List<String> nodeExecutionIds) {
+    Query query = query(where(NodeExecutionKeys.uuid).in(nodeExecutionIds));
+    return nodeExecutionReadHelper.fetchNodeExecutionsWithAllFields(query);
+  }
+
+  @Override
   public NodeExecution getWithFieldsIncluded(String nodeExecutionId, Set<String> fieldsToInclude) {
     // Uses - id index
     Query query = query(where(NodeExecutionKeys.uuid).is(nodeExecutionId));

@@ -144,12 +144,7 @@ public class TriggerEventExecutionHelper {
       WebhookEventProcessingResultBuilder resultBuilder = WebhookEventProcessingResult.builder();
       List<TriggerEventResponse> eventResponses = new ArrayList<>();
       if (!webhookEventMappingResponse.isFailedToFindTrigger()) {
-        if (pmsFeatureFlagService.isEnabled(
-                triggerWebhookEvent.getAccountId(), FeatureName.CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR)) {
-          authenticateTriggersWithDelegateSelectors(triggerWebhookEvent, webhookEventMappingResponse);
-        } else {
-          authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
-        }
+        authenticateTriggers(triggerWebhookEvent, webhookEventMappingResponse);
         log.info("Preparing for pipeline execution request");
         resultBuilder.mappedToTriggers(true);
         if (isNotEmpty(webhookEventMappingResponse.getTriggers())) {
@@ -393,75 +388,7 @@ public class TriggerEventExecutionHelper {
     }
   }
 
-  private void authenticateTriggers(
-      TriggerWebhookEvent triggerWebhookEvent, WebhookEventMappingResponse webhookEventMappingResponse) {
-    List<TriggerDetails> triggersToAuthenticate =
-        getTriggersToAuthenticate(triggerWebhookEvent, webhookEventMappingResponse);
-    if (isEmpty(triggersToAuthenticate)) {
-      return;
-    }
-    String hashedPayload = getHashedPayload(triggerWebhookEvent);
-    if (hashedPayload == null) {
-      for (TriggerDetails triggerDetails : triggersToAuthenticate) {
-        triggerDetails.setAuthenticated(false);
-      }
-      return;
-    }
-    List<WebhookSecretData> webhookSecretData = new ArrayList<>();
-    for (TriggerDetails triggerDetails : triggersToAuthenticate) {
-      NGTriggerConfigV2 ngTriggerConfigV2 = triggerDetails.getNgTriggerConfigV2();
-      NGAccess basicNGAccessObject = BaseNGAccess.builder()
-                                         .accountIdentifier(triggerWebhookEvent.getAccountId())
-                                         .orgIdentifier(ngTriggerConfigV2.getOrgIdentifier())
-                                         .projectIdentifier(ngTriggerConfigV2.getProjectIdentifier())
-                                         .build();
-      SecretRefData secretRefData =
-          SecretRefHelper.createSecretRef(ngTriggerConfigV2.getEncryptedWebhookSecretIdentifier());
-      WebhookEncryptedSecretDTO webhookEncryptedSecretDTO =
-          WebhookEncryptedSecretDTO.builder().secretRef(secretRefData).build();
-      List<EncryptedDataDetail> encryptedDataDetail =
-          ngSecretService.getEncryptionDetails(basicNGAccessObject, webhookEncryptedSecretDTO);
-      webhookSecretData.add(WebhookSecretData.builder()
-                                .webhookEncryptedSecretDTO(webhookEncryptedSecretDTO)
-                                .encryptedDataDetails(encryptedDataDetail)
-                                .build());
-    }
-    ResponseData responseData = taskExecutionUtils.executeSyncTask(
-        DelegateTaskRequest.builder()
-            .accountId(triggerWebhookEvent.getAccountId())
-            .executionTimeout(Duration.ofSeconds(60)) // todo: Gather suggestions regarding this timeout value.
-            .taskType(TaskType.TRIGGER_AUTHENTICATION_TASK.toString())
-            .taskParameters(TriggerAuthenticationTaskParams.builder()
-                                .eventPayload(triggerWebhookEvent.getPayload())
-                                .gitRepoType(GitRepoType.GITHUB)
-                                .hashedPayload(hashedPayload)
-                                .webhookSecretData(webhookSecretData)
-                                .build())
-            .build());
-
-    if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
-      BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = binaryResponseData.isUsingKryoWithoutReference()
-          ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
-          : kryoSerializer.asInflatedObject(binaryResponseData.getData());
-      if (object instanceof TriggerAuthenticationTaskResponse) {
-        int index = 0;
-        for (Boolean isWebhookAuthenticated :
-            ((TriggerAuthenticationTaskResponse) object).getTriggersAuthenticationStatus()) {
-          triggersToAuthenticate.get(index).setAuthenticated(isWebhookAuthenticated);
-          index++;
-        }
-      } else if (object instanceof ErrorResponseData) {
-        ErrorResponseData errorResponseData = (ErrorResponseData) object;
-        log.error("Failed to authenticate triggers. Reason: {}", errorResponseData.getErrorMessage());
-        for (TriggerDetails triggerDetails : triggersToAuthenticate) {
-          triggerDetails.setAuthenticated(false);
-        }
-      }
-    }
-  }
-
-  public void authenticateTriggersWithDelegateSelectors(
+  public void authenticateTriggers(
       TriggerWebhookEvent triggerWebhookEvent, WebhookEventMappingResponse webhookEventMappingResponse) {
     List<TriggerDetails> triggersToAuthenticate =
         getTriggersToAuthenticate(triggerWebhookEvent, webhookEventMappingResponse);

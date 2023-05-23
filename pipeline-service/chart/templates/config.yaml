@@ -61,6 +61,7 @@ data:
   ENABLE_AUDIT : 'true'
   AUDIT_SERVICE_BASE_URL: http://platform-service:9005/api/
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  LOG_STREAMING_CONTAINER_STEP_BASE_URL: '{{ .Values.global.loadbalancerURL }}/log-service/'
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

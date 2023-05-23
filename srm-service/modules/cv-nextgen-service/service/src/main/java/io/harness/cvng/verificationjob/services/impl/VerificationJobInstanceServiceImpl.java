@@ -21,6 +21,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.persistence.HQuery.excludeValidate;
 
+import io.harness.cvng.CVConstants;
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
 import io.harness.cvng.analysis.beans.Risk;
@@ -33,6 +34,8 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.v2.AppliedDeploymentAnalysisType;
+import io.harness.cvng.cdng.beans.v2.Baseline;
+import io.harness.cvng.cdng.beans.v2.VerifyStepPathParams;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -75,9 +78,12 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +95,8 @@ import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 public class VerificationJobInstanceServiceImpl implements VerificationJobInstanceService {
@@ -392,6 +400,97 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
             .order(Sort.descending(VerificationJobInstanceKeys.createdAt))
             .get();
     return Optional.ofNullable(verificationJobInstance).map(v -> v.getUuid());
+  }
+
+  @Override
+  public Optional<VerificationJobInstance> getPinnedBaselineVerificationJobInstance(
+      ServiceEnvironmentParams serviceEnvironmentParams) {
+    VerificationJobInstance verificationJobInstance =
+        hPersistence.createQuery(VerificationJobInstance.class, excludeValidate)
+            .filter(VerificationJobInstanceKeys.accountId, serviceEnvironmentParams.getAccountIdentifier())
+            .filter(PROJECT_IDENTIFIER_KEY, serviceEnvironmentParams.getProjectIdentifier())
+            .filter(ORG_IDENTIFIER_KEY, serviceEnvironmentParams.getOrgIdentifier())
+            .filter(SERVICE_IDENTIFIER_KEY, serviceEnvironmentParams.getServiceIdentifier())
+            .filter(ENV_IDENTIFIER_KEY, serviceEnvironmentParams.getEnvironmentIdentifier())
+            .filter(VerificationJobInstance.VERIFICATION_JOB_TYPE_KEY, VerificationJobType.TEST)
+            .filter(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.VERIFICATION_PASSED)
+            .filter(VerificationJobInstanceKeys.isBaseline, true)
+            .get();
+    return Optional.ofNullable(verificationJobInstance);
+  }
+
+  @Override
+  public Baseline pinOrUnpinBaseline(VerifyStepPathParams verifyStepPathParams, boolean isBaseline)
+      throws ResponseStatusException {
+    VerificationJobInstance verificationJobInstance =
+        getVerificationJobInstance(verifyStepPathParams.getVerifyStepExecutionId());
+
+    if (verificationJobInstance.getVerificationStatus() != ActivityVerificationStatus.VERIFICATION_PASSED
+        && isBaseline) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "Verification job instance is not in VERIFICATION_PASSED state.");
+    }
+
+    if (!verificationJobInstance.getResolvedJob().getType().equals(VerificationJobType.TEST) && isBaseline) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification job instance is not of type TEST.");
+    }
+
+    // update the retention duration for the new baseline
+    // Unpin old baseline and update the ttl for old baseline
+    // The updated ttl would be: MAX_DATA_RETENTION_DURATION - (now - baselineCreatedAt)
+    Optional<VerificationJobInstance> maybeBaselineVerificationJobInstance = getPinnedBaselineVerificationJobInstance(
+        ServiceEnvironmentParams.builder()
+            .serviceIdentifier(verificationJobInstance.getResolvedJob().getServiceIdentifier())
+            .environmentIdentifier(verificationJobInstance.getResolvedJob().getEnvIdentifier())
+            .orgIdentifier(verifyStepPathParams.getOrgIdentifier())
+            .projectIdentifier(verifyStepPathParams.getProjectIdentifier())
+            .accountIdentifier(verifyStepPathParams.getAccountIdentifier())
+            .build());
+
+    VerificationJobInstance baselineVerificationJobInstance = maybeBaselineVerificationJobInstance.orElse(null);
+    // If isBaseline is false and verifyStepPathParams is equals to the pinned baseline, then unpin the baseline
+    // If isBaseline is true then unpin the baseline and pin the new baseline
+    if (baselineVerificationJobInstance != null
+        && ((Objects.equals(baselineVerificationJobInstance.getUuid(), verifyStepPathParams.getVerifyStepExecutionId())
+                && !isBaseline)
+            || (!Objects.equals(
+                    baselineVerificationJobInstance.getUuid(), verifyStepPathParams.getVerifyStepExecutionId())
+                && isBaseline))) {
+      // Duration can't be negative
+      Duration updatedTtl = CVConstants.MAX_DATA_RETENTION_DURATION.plus(
+          Duration.ofMillis(baselineVerificationJobInstance.getCreatedAt()));
+      UpdateOperations<VerificationJobInstance> updateOperations =
+          hPersistence.createUpdateOperations(VerificationJobInstance.class)
+              .set(VerificationJobInstanceKeys.isBaseline, false)
+              .set(
+                  VerificationJobInstanceKeys.validUntil, Date.from(OffsetDateTime.now().plus(updatedTtl).toInstant()));
+      Query<VerificationJobInstance> query =
+          hPersistence.createQuery(VerificationJobInstance.class)
+              .filter(VerificationJobInstanceKeys.accountId, verifyStepPathParams.getAccountIdentifier())
+              .filter(PROJECT_IDENTIFIER_KEY, verifyStepPathParams.getProjectIdentifier())
+              .filter(ORG_IDENTIFIER_KEY, verifyStepPathParams.getOrgIdentifier())
+              .filter(SERVICE_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getServiceIdentifier())
+              .filter(ENV_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getEnvIdentifier())
+              .filter(VerificationJobInstanceKeys.isBaseline, true)
+              .filter(VerificationJobInstanceKeys.uuid, verifyStepPathParams.getVerifyStepExecutionId());
+      hPersistence.update(query, updateOperations);
+    }
+
+    if (isBaseline) {
+      UpdateOperations<VerificationJobInstance> updateOperations =
+          hPersistence.createUpdateOperations(VerificationJobInstance.class)
+              .set(VerificationJobInstanceKeys.isBaseline, isBaseline)
+              .set(VerificationJobInstanceKeys.validUntil,
+                  Date.from(OffsetDateTime.now().plus(CVConstants.BASELINE_RETENTION_DURATION).toInstant()));
+      Query<VerificationJobInstance> query =
+          hPersistence.createQuery(VerificationJobInstance.class)
+              .filter(VerificationJobInstanceKeys.accountId, verifyStepPathParams.getAccountIdentifier())
+              .filter(PROJECT_IDENTIFIER_KEY, verifyStepPathParams.getProjectIdentifier())
+              .filter(ORG_IDENTIFIER_KEY, verifyStepPathParams.getOrgIdentifier())
+              .filter(VerificationJobInstanceKeys.uuid, verifyStepPathParams.getVerifyStepExecutionId());
+      hPersistence.update(query, updateOperations);
+    }
+    return Baseline.builder().isBaseline(isBaseline).build();
   }
 
   //  TODO find the right place for this switch case

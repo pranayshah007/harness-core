@@ -2993,6 +2993,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Rancher"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RancherConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServiceNow"
               }
             }
@@ -6062,6 +6078,119 @@
             },
             "username": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RancherConnectorBearerTokenAuthenticationDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/RancherConnectorConfigAuthenticationSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RancherConnectorConfigAuthCredentialsDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "BearerToken"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "BearerToken"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RancherConnectorBearerTokenAuthenticationDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "RancherConnectorConfigAuthDTO": {
+      "type": "object",
+      "required": [
+        "auth",
+        "rancherUrl"
+      ],
+      "properties": {
+        "auth": {
+          "$ref": "#/definitions/RancherConnectorConfigAuthCredentialsDTO"
+        },
+        "rancherUrl": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RancherConnectorConfigAuthenticationSpecDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RancherConnectorConfigDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/RancherConnectorConfigAuthDTO"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "ManualConfig"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RancherConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "credential": {
+              "$ref": "#/definitions/RancherConnectorConfigDTO"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
             }
           }
         }

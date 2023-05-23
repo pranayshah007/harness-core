@@ -257,6 +257,7 @@ import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -983,7 +984,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
     setUnset(updateOperations, DelegateKeys.lastHeartBeat, delegate.getLastHeartBeat());
     setUnset(updateOperations, DelegateKeys.validUntil,
-        Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
+        Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant()));
     setUnset(updateOperations, DelegateKeys.version, delegate.getVersion());
     // expiration time is only valid for immutable delegates.
     if (delegate.isImmutable()) {
@@ -1136,7 +1137,8 @@ public class DelegateServiceImpl implements DelegateService {
                            .filter(DelegateKeys.uuid, delegate.getUuid()),
         persistence.createUpdateOperations(Delegate.class)
             .set(DelegateKeys.lastHeartBeat, currentTimeMillis())
-            .set(DelegateKeys.validUntil, Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant())));
+            .set(DelegateKeys.validUntil,
+                Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant())));
     delegateTaskService.touchExecutingTasks(
         delegate.getAccountId(), delegate.getUuid(), delegate.getCurrentlyExecutingDelegateTasks());
 
@@ -2771,7 +2773,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     delegate.setLastHeartBeat(now);
-    delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
+    delegate.setValidUntil(Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant()));
 
     if (delegate.getDelegateGroupId() != null) {
       if (!delegate.isNg()) {

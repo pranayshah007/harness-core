@@ -117,16 +117,13 @@ public class LicenseServiceImplTest extends CategoryTest {
   @Owner(developers = MTRAN)
   @Category(UnitTests.class)
   public void shouldGetExpectedLicenseTypeFromDimensionAndPlan() {
-    String dimension1 = "FF_TEAM_50";
-    String dimension2 = "FF_ENTERPRISE_50";
-    String dimension3 = "";
     Edition plan1 = Edition.TEAM;
     Edition plan2 = Edition.ENTERPRISE;
     Edition plan3 = null;
 
-    assertThat(licenseService.getModuleLicenseType(dimension1, plan1)).isEqualTo(LicenseType.PAID);
-    assertThat(licenseService.getModuleLicenseType(dimension2, plan2)).isEqualTo(LicenseType.PAID);
-    assertThat(licenseService.getModuleLicenseType(dimension3, plan3)).isEqualTo(null);
+    assertThat(licenseService.getModuleLicenseType(plan1)).isEqualTo(LicenseType.PAID);
+    assertThat(licenseService.getModuleLicenseType(plan2)).isEqualTo(LicenseType.PAID);
+    assertThat(licenseService.getModuleLicenseType(plan3)).isEqualTo(null);
   }
 
   @Test

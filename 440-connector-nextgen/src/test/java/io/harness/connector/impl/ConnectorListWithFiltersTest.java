@@ -17,6 +17,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
 import static io.harness.delegate.beans.connector.ConnectorType.KUBERNETES_CLUSTER;
+import static io.harness.delegate.beans.connector.ConnectorType.NEXUS;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.INHERIT_FROM_DELEGATE;
 import static io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.encryption.Scope.ACCOUNT;
@@ -63,6 +64,9 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthType;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthType;
+import io.harness.delegate.beans.connector.nexusconnector.NexusAuthenticationDTO;
+import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
@@ -118,6 +122,7 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
   String projectIdentifier = "projectIdentifier";
   String name = "name";
   String identifier = "identifier";
+  String identifier2 = "identifier2";
   String description = "description";
   Pageable pageable;
   ConnectorType connectorType = ConnectorType.DOCKER;
@@ -331,6 +336,45 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
     assertThat(connectorTypes.containsAll(Arrays.asList(KUBERNETES_CLUSTER, DOCKER))).isTrue();
   }
 
+  @Test
+  @Owner(developers = OwnerRule.RICHA)
+  @Category(UnitTests.class)
+  public void testListWithTypesAndVersionNexus2x3x() {
+    createConnectorsWithNames(Arrays.asList("docker connector test", "docker dev connector"));
+    createNexusConnector("2.x");
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder().types(Arrays.asList(NEXUS, DOCKER)).build();
+    Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(accountIdentifier, connectorFilterPropertiesDTO,
+        orgIdentifier, projectIdentifier, "", "", false, false, pageable, "2.x");
+    assertThat(connectorDTOS).isNotNull();
+    assertThat(connectorDTOS.getTotalElements()).isEqualTo(3);
+    List<ConnectorType> connectorTypes =
+        connectorDTOS.stream()
+            .map(connectorResponseDTO -> connectorResponseDTO.getConnector().getConnectorType())
+            .collect(Collectors.toList());
+    assertThat(connectorTypes.containsAll(Arrays.asList(DOCKER, NEXUS))).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.RICHA)
+  @Category(UnitTests.class)
+  public void testListWithTypesAndVersionWithNexus1x() {
+    createConnectorsWithNames(Arrays.asList("docker connector test", "docker dev connector"));
+    createK8sConnector();
+    createNexusConnector("1.x");
+    ConnectorFilterPropertiesDTO connectorFilterPropertiesDTO =
+        ConnectorFilterPropertiesDTO.builder().types(Arrays.asList(NEXUS, DOCKER, KUBERNETES_CLUSTER)).build();
+    Page<ConnectorResponseDTO> connectorDTOS = connectorService.list(accountIdentifier, connectorFilterPropertiesDTO,
+        orgIdentifier, projectIdentifier, "", "", false, false, pageable, "2.x");
+    assertThat(connectorDTOS).isNotNull();
+    assertThat(connectorDTOS.getTotalElements()).isEqualTo(3);
+    List<ConnectorType> connectorTypes =
+        connectorDTOS.stream()
+            .map(connectorResponseDTO -> connectorResponseDTO.getConnector().getConnectorType())
+            .collect(Collectors.toList());
+    assertThat(connectorTypes.containsAll(Arrays.asList(KUBERNETES_CLUSTER, DOCKER))).isTrue();
+  }
+
   private void createK8sConnector() {
     ConnectorDTO connectorDTO =
         ConnectorDTO.builder()
@@ -349,6 +393,25 @@ public class ConnectorListWithFiltersTest extends ConnectorsTestBase {
                                                     .build())
                                .build())
             .build();
+    connectorService.create(connectorDTO, accountIdentifier);
+  }
+
+  private void createNexusConnector(String nexusVersion) {
+    NexusConnectorDTO nexusConnectorDTO =
+        NexusConnectorDTO.builder()
+            .delegateSelectors(Collections.emptySet())
+            .auth(NexusAuthenticationDTO.builder().authType(NexusAuthType.ANONYMOUS).build())
+            .version(nexusVersion)
+            .build();
+    ConnectorInfoDTO connectorInfo = ConnectorInfoDTO.builder()
+                                         .name(name)
+                                         .identifier(identifier2)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .connectorType(NEXUS)
+                                         .connectorConfig(nexusConnectorDTO)
+                                         .build();
+    ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfo).build();
     connectorService.create(connectorDTO, accountIdentifier);
   }
 

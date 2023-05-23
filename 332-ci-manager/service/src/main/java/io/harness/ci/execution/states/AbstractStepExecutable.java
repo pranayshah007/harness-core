@@ -360,6 +360,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case RESTORE_CACHE_S3:
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance);
@@ -413,8 +414,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(
-        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds,
+        executeOnHarnessHostedDelegates, ambiance.getStageExecutionId());
   }
 
   private StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {

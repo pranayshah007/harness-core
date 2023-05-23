@@ -284,13 +284,23 @@ public class RollbackModeExecutionHelper {
 
     while (nodeExecutions.hasNext()) {
       NodeExecution nodeExecution = nodeExecutions.next();
-      Node planNode = nodeExecution.getNode();
-      if (planNode.getStepType().getStepCategory() == StepCategory.STAGE) {
+      Node planNodeFromNodeExec = nodeExecution.getNode();
+      String planNodeIdFromNodeExec = planNodeFromNodeExec.getUuid();
+      if (planNodeFromNodeExec.getStepType().getStepCategory() == StepCategory.STAGE) {
         continue;
       }
-      IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
-          nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
-      planNodeIDToUpdatedNodes.put(planNode.getUuid(), identityPlanNode);
+      if (planNodeIDToUpdatedNodes.containsKey(planNodeIdFromNodeExec)) {
+        // this means that the current plan node ID was already added, hence this plan node has multiple node executions
+        // mapped to it. Hence, the identity node created for the plan node needs to be updated to contain the IDs of
+        // all the node executions mapped to it
+        IdentityPlanNode previouslyAddedNode = (IdentityPlanNode) planNodeIDToUpdatedNodes.get(planNodeIdFromNodeExec);
+        previouslyAddedNode.convertToListOfOGNodeExecIds(nodeExecution.getUuid());
+        planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, previouslyAddedNode);
+      } else {
+        IdentityPlanNode identityPlanNode = IdentityPlanNode.mapPlanNodeToIdentityNode(
+            nodeExecution.getNode(), nodeExecution.getStepType(), nodeExecution.getUuid(), true);
+        planNodeIDToUpdatedNodes.put(planNodeIdFromNodeExec, identityPlanNode);
+      }
     }
     return planNodeIDToUpdatedNodes;
   }

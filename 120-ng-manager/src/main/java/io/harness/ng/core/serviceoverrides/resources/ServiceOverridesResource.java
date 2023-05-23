@@ -22,11 +22,10 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
-import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
-import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
-import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
-import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -40,6 +39,7 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverrideRequestDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesResponseDTOV2;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.mappers.ServiceOverridesMapperV2;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -71,6 +71,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -160,7 +161,8 @@ public class ServiceOverridesResource {
             "Unauthorized to view environment %s referred in serviceOverrideEntity", envIdentifierRef.getIdentifier()));
 
     return ResponseDTO.newResponse(
-        serviceOverridesEntityOptional.map(ServiceOverridesMapperV2::toResponseDTO).orElse(null));
+        serviceOverridesEntityOptional.map(entity -> ServiceOverridesMapperV2.toResponseDTO(entity, false))
+            .orElse(null));
   }
 
   @POST
@@ -180,7 +182,7 @@ public class ServiceOverridesResource {
 
     NGServiceOverridesEntity serviceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
     NGServiceOverridesEntity createdServiceOverride = serviceOverridesServiceV2.create(serviceOverride);
-    return ResponseDTO.newResponse(ServiceOverridesMapperV2.toResponseDTO(createdServiceOverride));
+    return ResponseDTO.newResponse(ServiceOverridesMapperV2.toResponseDTO(createdServiceOverride, true));
   }
 
   @PUT
@@ -200,7 +202,29 @@ public class ServiceOverridesResource {
 
     NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
     NGServiceOverridesEntity updatedServiceOverride = serviceOverridesServiceV2.update(requestedServiceOverride);
-    return ResponseDTO.newResponse(ServiceOverridesMapperV2.toResponseDTO(updatedServiceOverride));
+    return ResponseDTO.newResponse(ServiceOverridesMapperV2.toResponseDTO(updatedServiceOverride, false));
+  }
+
+  @POST
+  @Path("/upsert")
+  @ApiOperation(value = "Upsert an ServiceOverride Entity", nickname = "upsertServiceOverrideV2")
+  @Operation(operationId = "upsertServiceOverrideV2", summary = "Upsert an ServiceOverride Entity",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the created/updated ServiceOverride")
+      })
+  public ResponseDTO<ServiceOverridesResponseDTOV2>
+  upsert(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Parameter(description = "Details of the ServiceOverride to be updated")
+      @Valid ServiceOverrideRequestDTOV2 requestDTOV2) {
+    overrideValidatorService.validateRequestOrThrow(requestDTOV2, accountId);
+
+    NGServiceOverridesEntity requestedServiceOverride = ServiceOverridesMapperV2.toEntity(accountId, requestDTOV2);
+    Pair<NGServiceOverridesEntity, Boolean> upsertResult = serviceOverridesServiceV2.upsert(requestedServiceOverride);
+    return ResponseDTO.newResponse(
+        ServiceOverridesMapperV2.toResponseDTO(upsertResult.getLeft(), upsertResult.getRight()));
   }
 
   @DELETE
@@ -265,8 +289,8 @@ public class ServiceOverridesResource {
         PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, NGServiceOverridesEntityKeys.lastModifiedAt));
     Page<NGServiceOverridesEntity> serviceOverridesEntities = serviceOverridesServiceV2.list(criteria, pageRequest);
 
-    return ResponseDTO.newResponse(
-        getNGPageResponse(serviceOverridesEntities.map(ServiceOverridesMapperV2::toResponseDTO)));
+    return ResponseDTO.newResponse(getNGPageResponse(
+        serviceOverridesEntities.map(entity -> ServiceOverridesMapperV2.toResponseDTO(entity, false))));
   }
 
   @POST

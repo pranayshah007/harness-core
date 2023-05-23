@@ -18,7 +18,8 @@ import static io.harness.idp.onboarding.utils.Constants.ORGANIZATION;
 import static io.harness.idp.onboarding.utils.Constants.PAGE_LIMIT_FOR_ENTITY_FETCH;
 import static io.harness.idp.onboarding.utils.Constants.PROJECT;
 import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_CLASSPATH_LOCATION;
-import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_NAME;
+import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_FILE_NAME;
+import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_FOLDER_NAME;
 import static io.harness.idp.onboarding.utils.Constants.SERVICE;
 import static io.harness.idp.onboarding.utils.Constants.SLASH_DELIMITER;
 import static io.harness.idp.onboarding.utils.Constants.SOURCE_FORMAT;
@@ -359,9 +360,6 @@ public class OnboardingServiceImpl implements OnboardingService {
           false);
 
       registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
-      onboardingModuleConfig.getSampleEntities().forEach(sampleEntity
-          -> registerLocationInBackstage(
-              accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(sampleEntity)));
 
       createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo,
           asyncCatalogImportEntity.getCatalogInfraConnectorType(),
@@ -500,13 +498,13 @@ public class OnboardingServiceImpl implements OnboardingService {
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
     String entitiesFolderPath = getEntitiesFolderPath(catalogConnectorInfo);
     String catalogInfoLocationParentPath = tmpPathForCatalogInfoYamlStore + entitiesFolderPath + SLASH_DELIMITER;
-    String sampleYamlPath = catalogInfoLocationParentPath + SAMPLE_ENTITY_NAME + SLASH_DELIMITER;
+    String sampleYamlPath = catalogInfoLocationParentPath + SAMPLE_ENTITY_FOLDER_NAME + SLASH_DELIMITER;
 
     createDirectories(sampleYamlPath);
     log.info("Initialized directories to write yaml files for IDP onboarding import");
 
     List<String> sampleEntityFileToPush = new ArrayList<>();
-    String sampleEntityYamlFilePath = sampleYamlPath + SAMPLE_ENTITY_NAME.toLowerCase() + YAML_FILE_EXTENSION;
+    String sampleEntityYamlFilePath = sampleYamlPath + SAMPLE_ENTITY_FILE_NAME + YAML_FILE_EXTENSION;
     writeStringInFile(readFileFromClassPath(SAMPLE_ENTITY_CLASSPATH_LOCATION), sampleEntityYamlFilePath);
     sampleEntityFileToPush.add(sampleEntityYamlFilePath);
 
@@ -515,8 +513,8 @@ public class OnboardingServiceImpl implements OnboardingService {
 
     List<String> locationTargets = new ArrayList<>();
     locationTargets.add(catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
-        + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER + SAMPLE_ENTITY_NAME + SLASH_DELIMITER
-        + SAMPLE_ENTITY_NAME.toLowerCase() + YAML_FILE_EXTENSION);
+        + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER + SAMPLE_ENTITY_FOLDER_NAME
+        + SLASH_DELIMITER + SAMPLE_ENTITY_FILE_NAME + YAML_FILE_EXTENSION);
     registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
 
     createCatalogInfraConnectorInBackstageK8S(

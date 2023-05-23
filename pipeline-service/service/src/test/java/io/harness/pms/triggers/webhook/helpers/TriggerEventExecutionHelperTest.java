@@ -7,7 +7,6 @@
 
 package io.harness.pms.triggers.webhook.helpers;
 
-import static io.harness.beans.FeatureName.CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR;
 import static io.harness.beans.FeatureName.SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -146,8 +145,6 @@ public class TriggerEventExecutionHelperTest extends CategoryTest {
             .build();
     when(webhookEventMapperHelper.mapWebhookEventToTriggers(triggerMappingRequestData))
         .thenReturn(webhookEventMappingResponse);
-    when(pmsFeatureFlagService.isEnabled("accountId", CDS_NG_TRIGGER_AUTHENTICATION_WITH_DELEGATE_SELECTOR))
-        .thenReturn(false);
     when(pmsFeatureFlagService.isEnabled("accountId", SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC)).thenReturn(true);
     triggerEventExecutionHelper.handleTriggerWebhookEvent(triggerMappingRequestData);
     verify(triggerWebhookEventPublisher, times(1)).publishTriggerWebhookEvent(any());

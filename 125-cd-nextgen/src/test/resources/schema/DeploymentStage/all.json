@@ -5817,6 +5817,17 @@
                   "type": "string"
                 }
               ]
+            },
+            "downsizeOldServiceDelayInSecs": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
             }
           }
         }
