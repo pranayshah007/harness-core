@@ -50,7 +50,6 @@ import software.wings.beans.configfile.ConfigFileDto;
 
 import java.util.List;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.QueryParam;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
