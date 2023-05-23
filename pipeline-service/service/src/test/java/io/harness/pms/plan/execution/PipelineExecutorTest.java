@@ -362,7 +362,7 @@ public class PipelineExecutorTest extends CategoryTest {
         .when(executionHelper)
         .startExecution(
             accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, originalExecutionId, null);
-    doReturn(Collections.emptyList()).when(nodeExecutionService).fetchStageExecutions(any());
+    doReturn(Collections.emptyList()).when(nodeExecutionService).fetchStageExecutions(any(), anyBoolean());
     assertThat(pipelineExecutor.startPipelineRollback(accountId, orgId, projectId, originalExecutionId, null))
         .isEqualTo(planExecution);
     mockSettings.close();

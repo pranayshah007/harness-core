@@ -176,7 +176,7 @@ public class PipelineExecutor {
   public PlanExecution startPipelineRollback(String accountId, String orgIdentifier, String projectIdentifier,
       String originalExecutionId, PipelineStageInfo parentStageInfo) {
     List<String> stageExecutionIds =
-        nodeExecutionService.fetchStageExecutions(originalExecutionId)
+        nodeExecutionService.fetchStageExecutions(originalExecutionId, true)
             .stream()
             .filter(n -> !n.getGroup().equals("STRATEGY"))
             .filter(n -> !n.getStepType().getType().equals(OrchestrationStepTypes.PIPELINE_ROLLBACK_STAGE))

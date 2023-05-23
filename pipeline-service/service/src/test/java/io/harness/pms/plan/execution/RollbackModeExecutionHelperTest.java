@@ -221,7 +221,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         + "      identifier: \"s2\"\n";
     doReturn(Collections.singletonList(RetryStageInfo.builder().identifier("s1").name("s1").build()))
         .when(nodeExecutionService)
-        .getStageDetailFromPlanExecutionId("ogId");
+        .getStageDetailFromPlanExecutionId("ogId", true);
     String transformedYaml = rollbackModeExecutionHelper.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"
@@ -252,7 +252,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
                  RetryStageInfo.builder().identifier("s2").name("s2").build(),
                  RetryStageInfo.builder().identifier("s3").name("s3").build()))
         .when(nodeExecutionService)
-        .getStageDetailFromPlanExecutionId("ogId");
+        .getStageDetailFromPlanExecutionId("ogId", true);
     String transformedYaml = rollbackModeExecutionHelper.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
     String expected = "pipeline:\n"
         + "  stages:\n"

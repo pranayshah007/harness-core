@@ -772,14 +772,25 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
   @Override
   public List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId) {
-    return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId));
+    return getStageDetailFromPlanExecutionId(planExecutionId, false);
   }
 
   @Override
-  public List<NodeExecution> fetchStageExecutions(String planExecutionId) {
-    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
-                      .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
-                      .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
+  public List<RetryStageInfo> getStageDetailFromPlanExecutionId(String planExecutionId, boolean includeSkipped) {
+    return fetchStageDetailFromNodeExecution(fetchStageExecutions(planExecutionId, includeSkipped));
+  }
+
+  @Override
+  public List<NodeExecution> fetchStageExecutions(String planExecutionId, boolean includeSkipped) {
+    Query query;
+    if (includeSkipped) {
+      query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                  .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
+    } else {
+      query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                  .addCriteria(where(NodeExecutionKeys.status).ne(Status.SKIPPED))
+                  .addCriteria(where(NodeExecutionKeys.stepCategory).in(StepCategory.STAGE, StepCategory.STRATEGY));
+    }
     query.with(by(NodeExecutionKeys.createdAt));
     return mongoTemplate.find(query, NodeExecution.class);
   }
