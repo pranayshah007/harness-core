@@ -254,21 +254,24 @@ public class BuildTriggerHelper {
       Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
       triggerArtifactSpecMap.put("type", source.get("type"));
       triggerArtifactSpecMap.put("spec", source);
-
-      List<BuildMetadata> multiBuildMetadata = triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
+      List<BuildMetadata> multiBuildMetadata =
+          triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
       String thisSourceSignature = multiBuildMetadata.get(buildMetadataIndex).getPollingConfig().getSignature();
-      List<String> signaturesToLock = multiBuildMetadata.stream().filter(metadata -> !metadata.getPollingConfig().getSignature().equals(thisSourceSignature)).map(metadata -> metadata.getPollingConfig().getSignature()).collect(toList());
+      List<String> signaturesToLock =
+          multiBuildMetadata.stream()
+              .filter(metadata -> !metadata.getPollingConfig().getSignature().equals(thisSourceSignature))
+              .map(metadata -> metadata.getPollingConfig().getSignature())
+              .collect(toList());
       /* Here we need to explicitly add `buildMetadata` to BuildTriggerOpsData. This is because MultiRegionArtifact
       triggers have a list of BuildMetadata, so PollingItemGenerator:getBaseInitializedPollingItem needs a way to
       explicitly get the BuildMetadata for each PollingItem it will generate. */
-      buildTriggerOpsData.add(
-          BuildTriggerOpsData.builder()
-              .pipelineBuildSpecMap(Collections.emptyMap())
-              .triggerSpecMap(triggerArtifactSpecMap)
-              .triggerDetails(triggerDetails)
-              .buildMetadata(multiBuildMetadata.get(buildMetadataIndex))
-                  .signaturesToLock(signaturesToLock)
-              .build());
+      buildTriggerOpsData.add(BuildTriggerOpsData.builder()
+                                  .pipelineBuildSpecMap(Collections.emptyMap())
+                                  .triggerSpecMap(triggerArtifactSpecMap)
+                                  .triggerDetails(triggerDetails)
+                                  .buildMetadata(multiBuildMetadata.get(buildMetadataIndex))
+                                  .signaturesToLock(signaturesToLock)
+                                  .build());
       buildMetadataIndex++;
     }
     return buildTriggerOpsData;

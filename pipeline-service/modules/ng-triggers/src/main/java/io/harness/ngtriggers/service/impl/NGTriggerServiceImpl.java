@@ -1079,7 +1079,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         }
       }
       if (triggerConfig.getSources().size() > 10) {
-        msg.append("The maximum number of sources for Multi-Artifact trigger is ").append(MAX_MULTI_ARTIFACT_TRIGGER_SOURCES).append(".\n");
+        msg.append("The maximum number of sources for Multi-Artifact trigger is ")
+            .append(MAX_MULTI_ARTIFACT_TRIGGER_SOURCES)
+            .append(".\n");
         validationFailed = true;
       }
     }

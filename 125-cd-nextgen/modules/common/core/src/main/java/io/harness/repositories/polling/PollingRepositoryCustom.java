@@ -17,14 +17,15 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
-
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface PollingRepositoryCustom {
   PollingDocument addSubscribersToExistingPollingDoc(String accountId, String orgId, String projectId,
-      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures, Map<String, List<String>> signaturesLock);
-  PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuId, List<String> signatures, Map<String, List<String>> signaturesLock);
+      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures,
+      Map<String, List<String>> signaturesLock);
+  PollingDocument addSubscribersToExistingPollingDoc(
+      String accountId, String uuId, List<String> signatures, Map<String, List<String>> signaturesLock);
   PollingDocument deleteDocumentIfOnlySubscriber(String accountId, String orgId, String projectId,
       PollingType pollingType, PollingInfo pollingInfo, List<String> signatures);
   PollingDocument removeDocumentIfOnlySubscriber(String accountId, String pollingDocId, List<String> signatures);

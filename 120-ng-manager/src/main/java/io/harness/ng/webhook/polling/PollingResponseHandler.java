@@ -87,7 +87,6 @@ import io.harness.polling.service.intfc.PollingService;
 import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -99,6 +98,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.jetbrains.annotations.Nullable;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -207,16 +207,20 @@ public class PollingResponseHandler {
     }
 
     // Populate newArtifactsMetadata with metadata only for filtered newArtifactKeys
-    List<Metadata> newArtifactsMetadata = newArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
+    List<Metadata> newArtifactsMetadata =
+        newArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
 
     PolledResponseResult polledResponseResult =
-            getPolledResponseResultForArtifact((ArtifactInfo) pollingDocument.getPollingInfo());
-    if (isNotEmpty(newArtifactKeys)) {
-      List<String> signaturesToPublishWithoutLock = getSignaturesWithNoLock(pollingDocument);
-      log.info("Publishing artifact versions {} for unlocked signatures {} to topic.", newArtifactKeys, signaturesToPublishWithoutLock);
-      publishPolledItemToTopic(pollingDocument, newArtifactKeys, polledResponseResult, newArtifactsMetadata, signaturesToPublishWithoutLock);
+        getPolledResponseResultForArtifact((ArtifactInfo) pollingDocument.getPollingInfo());
+    List<String> signaturesToPublishWithoutLock = getSignaturesWithNoLock(pollingDocument);
+    if (isNotEmpty(newArtifactKeys) && isNotEmpty(signaturesToPublishWithoutLock)) {
+      log.info("Publishing artifact versions {} for unlocked signatures {} to topic.", newArtifactKeys,
+          signaturesToPublishWithoutLock);
+      publishPolledItemToTopic(
+          pollingDocument, newArtifactKeys, polledResponseResult, newArtifactsMetadata, signaturesToPublishWithoutLock);
     }
-    handlePolledItemForLockedSignatures(response, savedArtifactKeys, unpublishedArtifactKeys, pollingDocument, newArtifactKeys, polledResponseResult, newArtifactsMetadataMap);
+    handleLockedSignaturesAndUpdatePollingDoc(response, savedArtifactKeys, unpublishedArtifactKeys, pollingDocument,
+        newArtifactKeys, polledResponseResult, newArtifactsMetadataMap);
   }
 
   private void publishPolledItemToTopic(PollingDocument pollingDocument, List<String> newVersions,
@@ -361,7 +365,8 @@ public class PollingResponseHandler {
       log.info("Publishing manifest versions {} to topic.", newVersions);
       PolledResponseResult polledResponseResult =
           getPolledResponseResultForManifest((ManifestInfo) pollingDocument.getPollingInfo());
-      publishPolledItemToTopic(pollingDocument, newVersions, polledResponseResult, new ArrayList<>(), pollingDocument.getSignatures());
+      publishPolledItemToTopic(
+          pollingDocument, newVersions, polledResponseResult, new ArrayList<>(), pollingDocument.getSignatures());
     }
 
     // after publishing event, update database as well.
@@ -486,66 +491,103 @@ public class PollingResponseHandler {
     return signatures.stream().filter(signature -> !signaturesLock.containsKey(signature)).collect(Collectors.toList());
   }
 
-  private void handlePolledItemForLockedSignatures(ArtifactPollingDelegateResponse response, Set<String> savedArtifactKeys, List<String> unpublishedArtifactKeys, PollingDocument pollingDocument, List<String> newArtifactKeys,
-                                                    PolledResponseResult polledResponseResult, Map<String, Metadata> newArtifactsMetadataMap) {
-    String accountId = pollingDocument.getAccountId();
-    String pollDocId = pollingDocument.getUuid();
-    List<String> signatures = pollingDocument.getSignatures();
-    Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
+  private List<String> getSignaturesWithLock(List<String> signatures, Map<String, List<String>> signaturesLock) {
     List<String> signaturesWithLock;
-    List<AcquiredLock<?>> acquiredLocks = new ArrayList<>();
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       signaturesWithLock = null;
     } else {
       signaturesWithLock = signatures.stream().filter(signaturesLock::containsKey).collect(Collectors.toList());
     }
-    boolean shouldCheckLockedSignatures = isNotEmpty(signaturesWithLock) && ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS);
+    return signaturesWithLock;
+  }
+
+  private List<String> getAllOtherPollingDocIdsToLock(
+      String accountId, Map<String, List<String>> signaturesLock, List<String> signaturesWithLock) {
+    List<String> allSignaturesForLock = new ArrayList<>();
+    for (String signature : signaturesWithLock) {
+      List<String> signaturesForLock = signaturesLock.get(signature);
+      if (isNotEmpty(signaturesForLock)) {
+        allSignaturesForLock.addAll(signaturesForLock);
+      }
+    }
+    return pollingService.getUuidsBySignatures(accountId, allSignaturesForLock);
+  }
+
+  private void filterAndPublishArtifactsForLockedSignatures(PollingDocument pollingDocument,
+      List<String> newArtifactKeys, PolledResponseResult polledResponseResult,
+      Map<String, Metadata> newArtifactsMetadataMap, Map<String, List<String>> signaturesLock,
+      List<String> signaturesWithLock, List<String> allOtherPollingDocIdsToLock) {
+    String accountId = pollingDocument.getAccountId();
+    List<PollingDocument> allLockedPollingDocuments = pollingService.getMany(accountId, allOtherPollingDocIdsToLock);
+    for (String signature : signaturesWithLock) {
+      List<PollingDocument> pollingDocumentsToCheck =
+          allLockedPollingDocuments.stream()
+              .filter(pollingDoc
+                  -> signaturesLock.get(signature).stream().anyMatch(sig -> pollingDoc.getSignatures().contains(sig)))
+              .collect(Collectors.toList());
+      List<String> filteredNewArtifactKeys =
+          newArtifactKeys.stream()
+              .filter(key -> pollingDocumentsToCheck.stream().allMatch(pollingDoc -> {
+                if (pollingDoc.getPolledResponse() == null) {
+                  return false;
+                }
+                ArtifactPolledResponse polledResponse = (ArtifactPolledResponse) pollingDoc.getPolledResponse();
+                if (polledResponse.getAllPolledKeys() == null) {
+                  return false;
+                }
+                return polledResponse.getAllPolledKeys().contains(key);
+              }))
+              .collect(Collectors.toList());
+      List<Metadata> filteredNewArtifactsMetadata =
+          filteredNewArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
+      if (isNotEmpty(filteredNewArtifactKeys)) {
+        log.info(
+            "Publishing artifact versions {} for locked signature {} to topic", filteredNewArtifactKeys, signature);
+        publishPolledItemToTopic(pollingDocument, filteredNewArtifactKeys, polledResponseResult,
+            filteredNewArtifactsMetadata, Collections.singletonList(signature));
+      }
+    }
+  }
+
+  private void handleLockedSignaturesAndUpdatePollingDoc(ArtifactPollingDelegateResponse response,
+      Set<String> savedArtifactKeys, List<String> unpublishedArtifactKeys, PollingDocument pollingDocument,
+      List<String> newArtifactKeys, PolledResponseResult polledResponseResult,
+      Map<String, Metadata> newArtifactsMetadataMap) {
+    String accountId = pollingDocument.getAccountId();
+    String pollDocId = pollingDocument.getUuid();
+    List<String> signatures = pollingDocument.getSignatures();
+    Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
+    List<String> signaturesWithLock = getSignaturesWithLock(signatures, signaturesLock);
+    List<AcquiredLock<?>> acquiredLocks = new ArrayList<>();
+    boolean shouldCheckLockedSignatures = isNotEmpty(newArtifactKeys) && isNotEmpty(signaturesWithLock)
+        && ngFeatureFlagHelperService.isEnabled(accountId, FeatureName.CDS_NG_TRIGGER_MULTI_ARTIFACTS);
     if (shouldCheckLockedSignatures) {
       // Check pollingDocuments mapping to signatures in signaturesLock if the collected tags are present
       // and publish these tags accordingly.
-      List<String> allSignaturesForLock = new ArrayList<>();
-      for (String signature : signaturesWithLock) {
-        List<String> signaturesForLock = signaturesLock.get(signature);
-        if (isNotEmpty(signaturesForLock)) {
-          allSignaturesForLock.addAll(signaturesForLock);
-        }
-      }
-      List<String> allOtherPollingDocIdsToLock = pollingService.getUuidsBySignatures(accountId, allSignaturesForLock);
+      List<String> allOtherPollingDocIdsToLock =
+          getAllOtherPollingDocIdsToLock(accountId, signaturesLock, signaturesWithLock);
       // The current PollingDocId should be locked as well.
       List<String> allPollingDocIdsToLock = new ArrayList<>(allOtherPollingDocIdsToLock);
       allPollingDocIdsToLock.add(pollDocId);
-      log.info("Acquiring multi-region artifact locks for accountId {} and pollingDocIds {}", accountId, allPollingDocIdsToLock);
+      log.info("Acquiring multi-region artifact locks for accountId {} and pollingDocIds {}", accountId,
+          allPollingDocIdsToLock);
       boolean locksAcquiredSuccess = false;
       try {
         for (String pollingDocIdToLock : allPollingDocIdsToLock) {
-          acquiredLocks.add(persistentLocker.waitToAcquireLock(pollingDocIdToLock, Duration.ofMinutes(5), Duration.ofMinutes(1)));
+          acquiredLocks.add(
+              persistentLocker.waitToAcquireLock(pollingDocIdToLock, Duration.ofMinutes(2), Duration.ofSeconds(10)));
         }
         locksAcquiredSuccess = true;
       } catch (Exception e) {
-        log.error("Failed to acquire locks for multi-region artifacts in accountId {} and pollingDocId {}. The pollingDoc versions will be updated but events will not be published", accountId, pollDocId);
+        log.error(
+            "Failed to acquire locks for multi-region artifacts in accountId {} and pollingDocId {}. The pollingDoc versions will be updated but events will not be published",
+            accountId, pollDocId);
       }
       if (locksAcquiredSuccess) {
-        List<PollingDocument> allLockedPollingDocuments = pollingService.getMany(accountId, allOtherPollingDocIdsToLock);
-        for (String signature : signaturesWithLock) {
-          List<PollingDocument> pollingDocumentsToCheck = allLockedPollingDocuments.stream().filter(pollingDoc -> signaturesLock.get(signature).stream().anyMatch(sig -> pollingDoc.getSignatures().contains(sig))).collect(Collectors.toList());
-          List<String> filteredNewArtifactKeys = newArtifactKeys.stream().filter(key -> pollingDocumentsToCheck.stream().allMatch(pollingDoc -> {
-            if (pollingDoc.getPolledResponse() == null) {
-              return false;
-            }
-            ArtifactPolledResponse polledResponse = (ArtifactPolledResponse) pollingDoc.getPolledResponse();
-            if (polledResponse.getAllPolledKeys() == null) {
-              return false;
-            }
-            return polledResponse.getAllPolledKeys().contains(key);
-          })).collect(Collectors.toList());
-          List<Metadata> filteredNewArtifactsMetadata = filteredNewArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
-          if (isNotEmpty(filteredNewArtifactKeys)) {
-            log.info("Publishing artifact versions {} for locked signature {} to topic.", filteredNewArtifactKeys, signature);
-            publishPolledItemToTopic(pollingDocument, filteredNewArtifactKeys, polledResponseResult, filteredNewArtifactsMetadata, Collections.singletonList(signature));
-          }
-        }
-        }
+        filterAndPublishArtifactsForLockedSignatures(pollingDocument, newArtifactKeys, polledResponseResult,
+            newArtifactsMetadataMap, signaturesLock, signaturesWithLock, allOtherPollingDocIdsToLock);
       }
+    }
     // after publishing event, update database as well.
     // if delegate rebalancing happened, unpublishedArtifactKeys are now the new versions. We might have to delete few
     // key from db.
@@ -553,13 +595,13 @@ public class PollingResponseHandler {
     Set<String> unpublishedArtifactKeySet = new HashSet<>(unpublishedArtifactKeys);
     if (response.isFirstCollectionOnDelegate() && isEmpty(toBeDeletedKeys)) {
       toBeDeletedKeys = savedArtifactKeys.stream()
-              .filter(savedArtifactKey -> !unpublishedArtifactKeySet.contains(savedArtifactKey))
-              .collect(Collectors.toSet());
+                            .filter(savedArtifactKey -> !unpublishedArtifactKeySet.contains(savedArtifactKey))
+                            .collect(Collectors.toSet());
     }
     savedArtifactKeys.removeAll(toBeDeletedKeys);
     savedArtifactKeys.addAll(unpublishedArtifactKeySet);
     ArtifactPolledResponse artifactPolledResponse =
-            ArtifactPolledResponse.builder().allPolledKeys(savedArtifactKeys).build();
+        ArtifactPolledResponse.builder().allPolledKeys(savedArtifactKeys).build();
     pollingService.updatePolledResponse(accountId, pollDocId, artifactPolledResponse);
 
     if (shouldCheckLockedSignatures) {

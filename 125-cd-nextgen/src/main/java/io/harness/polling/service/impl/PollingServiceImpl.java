@@ -45,7 +45,8 @@ public class PollingServiceImpl implements PollingService {
     validatePollingDocument(pollingDocument);
     PollingDocument savedPollingDoc = pollingRepository.addSubscribersToExistingPollingDoc(
         pollingDocument.getAccountId(), pollingDocument.getOrgIdentifier(), pollingDocument.getProjectIdentifier(),
-        pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures(), pollingDocument.getSignaturesLock());
+        pollingDocument.getPollingType(), pollingDocument.getPollingInfo(), pollingDocument.getSignatures(),
+        pollingDocument.getSignaturesLock());
     // savedPollingDoc will be null if we couldn't find polling doc with the same entries as pollingDocument.
     if (savedPollingDoc == null) {
       savedPollingDoc = pollingRepository.save(pollingDocument);
@@ -75,7 +76,10 @@ public class PollingServiceImpl implements PollingService {
 
   @Override
   public List<String> getUuidsBySignatures(String accountId, List<String> signatures) {
-    return pollingRepository.findUuidsBySignaturesAndAccountId(signatures, accountId).stream().map(PollingDocument::getUuid).collect(Collectors.toList());
+    return pollingRepository.findUuidsBySignaturesAndAccountId(signatures, accountId)
+        .stream()
+        .map(PollingDocument::getUuid)
+        .collect(Collectors.toList());
   }
 
   @Override

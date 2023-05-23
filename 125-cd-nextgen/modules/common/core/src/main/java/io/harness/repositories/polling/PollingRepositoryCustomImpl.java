@@ -21,11 +21,10 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Map;
-
 import lombok.AllArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Collation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -36,7 +35,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
 
   @Override
   public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String orgId, String projectId,
-      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures, Map<String, List<String>> signaturesLock) {
+      PollingType pollingType, PollingInfo pollingInfo, List<String> signatures,
+      Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, orgId, projectId, pollingType, pollingInfo);
     Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
     if (isNotEmpty(signaturesLock)) {
@@ -48,7 +48,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   }
 
   @Override
-  public PollingDocument addSubscribersToExistingPollingDoc(String accountId, String uuid, List<String> signatures, Map<String, List<String>> signaturesLock) {
+  public PollingDocument addSubscribersToExistingPollingDoc(
+      String accountId, String uuid, List<String> signatures, Map<String, List<String>> signaturesLock) {
     Query query = getQuery(accountId, uuid);
     Update update = new Update().addToSet(PollingDocumentKeys.signatures).each(signatures);
     if (isNotEmpty(signaturesLock)) {
@@ -183,21 +184,20 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   @Override
   public List<PollingDocument> findManyByUuidsAndAccountId(List<String> pollingDocIds, String accountId) {
     Query query = new Query().addCriteria(new Criteria()
-            .and(PollingDocumentKeys.accountId)
-            .is(accountId)
-            .and(PollingDocumentKeys.uuid)
-            .in(pollingDocIds));
+                                              .and(PollingDocumentKeys.accountId)
+                                              .is(accountId)
+                                              .and(PollingDocumentKeys.uuid)
+                                              .in(pollingDocIds));
     return mongoTemplate.find(query, PollingDocument.class);
   }
 
   @Override
   public List<PollingDocument> findUuidsBySignaturesAndAccountId(List<String> signatures, String accountId) {
     Query query = new Query().addCriteria(new Criteria()
-            .and(PollingDocumentKeys.accountId)
-            .is(accountId)
-            .and(PollingDocumentKeys.signatures)
-            .in(signatures));
-    query.fields().include(PollingDocumentKeys.uuid);
+                                              .and(PollingDocumentKeys.accountId)
+                                              .is(accountId)
+                                              .and(PollingDocumentKeys.signatures)
+                                              .in(signatures));
     return mongoTemplate.find(query, PollingDocument.class);
   }
 }
