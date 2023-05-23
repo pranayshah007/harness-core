@@ -42,7 +42,7 @@ public class InstanceSyncPerpetualTaskInfo {
   @FdUniqueIndex String infrastructureMappingId;
   List<DeploymentInfoDetails> deploymentInfoDetailsList;
   @FdIndex String perpetualTaskId;
-  String perpetualTaskIdV2;
+  @FdIndex String perpetualTaskIdV2;
   String connectorIdentifier;
   @CreatedDate long createdAt;
   @LastModifiedDate long lastUpdatedAt;

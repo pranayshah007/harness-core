@@ -44,6 +44,6 @@ public interface InstanceSyncResourceClient {
   Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
       @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
       @NotEmpty @Query(NGCommonEntityConstants.PAGE) int page,
-      @NotEmpty @Query(NGCommonEntityConstants.SIZE_KEY) int size,
+      @NotEmpty @Query(NGCommonEntityConstants.PAGE_SIZE) int size,
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId);
 }

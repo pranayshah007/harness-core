@@ -39,6 +39,8 @@ import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.http.Body;
+import retrofit2.http.Query;
+
 @OwnedBy(HarnessTeam.DX)
 @Api("instancesync")
 @Path("instancesync")
@@ -93,8 +95,8 @@ public class InstanceSyncResource {
   @Path("/task/{perpetualTaskId}/details")
   @ApiOperation(value = "Get instance sync perpetual task details", nickname = "fetchTaskDetails")
   public ResponseDTO<InstanceSyncTaskDetails> fetchTaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
-      @QueryParam(NGResourceFilterConstants.PAGE) @DefaultValue("0") int page,
-      @QueryParam(NGResourceFilterConstants.SIZE_KEY) @DefaultValue("100") @Max(MAX_LIMIT) int size,
+      @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @QueryParam(NGCommonEntityConstants.PAGE_SIZE) @DefaultValue("100") @Max(MAX_LIMIT) int size,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     InstanceSyncTaskDetails details =
         instanceSyncService.fetchTaskDetails(perpetualTaskId, accountIdentifier, page, size);

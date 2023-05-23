@@ -76,7 +76,6 @@ public class NGCommonEntityConstants {
   public static final String USER_ID = "userId";
   public static final String PAGE = "page";
   public static final String PAGE_SIZE = "page_size";
-  public static final String SIZE_KEY = "pageSize";
   public static final String SELF_REL = "self";
   public static final String PREVIOUS_REL = "previous";
   public static final String NEXT_REL = "next";

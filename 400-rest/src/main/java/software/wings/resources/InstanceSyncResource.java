@@ -64,7 +64,7 @@ public class InstanceSyncResource {
   @GET
   @Path("instance-sync-ng-v2/task/{perpetualTaskId}/details")
   public Response fetchInstanceSyncV2TaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
-      @QueryParam("page") int page, @QueryParam("pageSize") int size, @QueryParam("accountId") String accountId) {
+      @QueryParam("page") int page, @QueryParam("page_size") int size, @QueryParam("accountId") String accountId) {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
