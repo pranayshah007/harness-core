@@ -16,12 +16,14 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.AVMOHAN;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PUNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +50,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -156,28 +159,182 @@ public class KubernetesResourceTest extends CategoryTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void nameUpdateTests() throws Exception {
-    nameUpdateTestsUtil("deploy.yaml", true);
-    nameUpdateTestsUtil("service.yaml", true);
-    nameUpdateTestsUtil("configmap.yaml", true);
-    nameUpdateTestsUtil("secret.yaml", true);
-    nameUpdateTestsUtil("daemonset.yaml", false);
-    nameUpdateTestsUtil("deployment-config.yaml", true);
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    nameUpdateTestsUtil("deploy.yaml", true, k8sRequestHandlerContext);
+    nameUpdateTestsUtil("service.yaml", true, k8sRequestHandlerContext);
+    nameUpdateTestsUtil("configmap.yaml", true, k8sRequestHandlerContext);
+    nameUpdateTestsUtil("secret.yaml", true, k8sRequestHandlerContext);
+    nameUpdateTestsUtil("daemonset.yaml", false, k8sRequestHandlerContext);
+    nameUpdateTestsUtil("deployment-config.yaml", true, k8sRequestHandlerContext);
   }
 
-  private void nameUpdateTestsUtil(String resourceFile, boolean shouldNameChange) throws Exception {
+  private void nameUpdateTestsUtil(String resourceFile, boolean shouldNameChange,
+      K8sRequestHandlerContext k8sRequestHandlerContext) throws Exception {
     URL url = this.getClass().getResource("/" + resourceFile);
     String fileContents = Resources.toString(url, Charsets.UTF_8);
-    KubernetesResource resource = processYaml(fileContents).get(0);
+    List<KubernetesResource> resources = processYaml(fileContents);
+    k8sRequestHandlerContext.setResources(resources);
+    KubernetesResource resource = resources.get(0);
     UnaryOperator<Object> appendRevision = t -> t + "-1";
 
     String oldName = (String) resource.getField("metadata.name");
 
-    resource.transformName(appendRevision);
+    resource.transformName(appendRevision, k8sRequestHandlerContext);
 
     if (shouldNameChange) {
       assertThat(resource.getField("metadata.name")).isEqualTo(oldName + "-1");
     } else {
       assertThat(resource.getField("metadata.name")).isEqualTo(oldName);
+    }
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void nameUpdateWithHPATest() throws Exception {
+    nameUpdateWithHPATest("deployment-with-multiple-hpa-resources.yaml", Kind.Deployment, true);
+    nameUpdateWithHPATest("deployment-with-multiple-hpa-resources.yaml", Kind.Deployment, false);
+    nameUpdateWithHPATest("statefulset-with-multiple-hpa-resources.yaml", Kind.StatefulSet, true);
+    nameUpdateWithHPATest("statefulset-with-multiple-hpa-resources.yaml", Kind.StatefulSet, false);
+    nameUpdateWithHPATest("deploymentconfig-with-multiple-hpa-resources.yaml", Kind.DeploymentConfig, true);
+    nameUpdateWithHPATest("deploymentconfig-with-multiple-hpa-resources.yaml", Kind.DeploymentConfig, false);
+  }
+
+  private void nameUpdateWithHPATest(String resourceFile, Kind workloadKind, boolean enabledHPAAndPDBSupport)
+      throws Exception {
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    URL url = this.getClass().getResource("/" + resourceFile);
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    List<KubernetesResource> resources = processYaml(fileContents);
+    k8sRequestHandlerContext.setResources(resources);
+    k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(enabledHPAAndPDBSupport);
+
+    UnaryOperator<Object> appendRevision = t -> t + "-addedSuffix";
+    KubernetesResource managedWorkload =
+        resources.stream()
+            .filter(resource -> resource.getResourceId().getKind().equals(workloadKind.name()))
+            .collect(Collectors.toList())
+            .get(0);
+    String oldWorkloadName = (String) managedWorkload.getField("metadata.name");
+    String newWorkloadName = oldWorkloadName + "-addedSuffix";
+
+    List<KubernetesResource> hpaResourcesToBeUpdated =
+        resources.stream()
+            .filter(resource -> resource.getResourceId().getKind().equals(Kind.HorizontalPodAutoscaler.name()))
+            .filter(resource
+                -> String.valueOf(resource.getField("spec.scaleTargetRef.name")).equalsIgnoreCase(oldWorkloadName))
+            .collect(Collectors.toList());
+    assertThat(hpaResourcesToBeUpdated.size()).isEqualTo(3);
+
+    List<KubernetesResource> hpaResourcesNotToBeUpdated =
+        resources.stream()
+            .filter(resource -> resource.getResourceId().getKind().equals(Kind.HorizontalPodAutoscaler.name()))
+            .filter(resource
+                -> !String.valueOf(resource.getField("spec.scaleTargetRef.name")).equalsIgnoreCase(oldWorkloadName))
+            .collect(Collectors.toList());
+    List<String> targetRefNames = hpaResourcesNotToBeUpdated.stream()
+                                      .map(resource -> String.valueOf(resource.getField("spec.scaleTargetRef.name")))
+                                      .collect(Collectors.toList());
+    assertThat(hpaResourcesNotToBeUpdated.size()).isEqualTo(1);
+
+    managedWorkload.transformName(appendRevision, k8sRequestHandlerContext);
+
+    assertThat(managedWorkload.getField("metadata.name")).isEqualTo(newWorkloadName);
+    if (enabledHPAAndPDBSupport) {
+      hpaResourcesToBeUpdated.forEach(
+          resource -> assertThat(resource.getField("spec.scaleTargetRef.name")).isEqualTo(newWorkloadName));
+      hpaResourcesNotToBeUpdated.forEach(resource -> {
+        assertThat(resource.getField("spec.scaleTargetRef.name")).isNotEqualTo(newWorkloadName);
+        assertThat(String.valueOf(resource.getField("spec.scaleTargetRef.name"))).isIn(targetRefNames);
+      });
+    } else {
+      hpaResourcesToBeUpdated.forEach(
+          resource -> assertThat(resource.getField("spec.scaleTargetRef.name")).isEqualTo(oldWorkloadName));
+      hpaResourcesNotToBeUpdated.forEach(resource -> {
+        assertThat(resource.getField("spec.scaleTargetRef.name")).isNotEqualTo(oldWorkloadName);
+        assertThat(String.valueOf(resource.getField("spec.scaleTargetRef.name"))).isIn(targetRefNames);
+      });
+    }
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void addLabelsInResourceSelectorTest() throws Exception {
+    addLabelsInResourceSelectorTest("deployment-with-multiple-pdb-resources.yaml", Kind.Deployment, true);
+    addLabelsInResourceSelectorTest("deployment-with-multiple-pdb-resources.yaml", Kind.Deployment, false);
+    addLabelsInResourceSelectorTest("statefulset-with-multiple-pdb-resources.yaml", Kind.StatefulSet, true);
+    addLabelsInResourceSelectorTest("statefulset-with-multiple-pdb-resources.yaml", Kind.StatefulSet, false);
+    addLabelsInResourceSelectorTest("deploymentconfig-with-multiple-pdb-resources.yaml", Kind.DeploymentConfig, true);
+    addLabelsInResourceSelectorTest("deploymentconfig-with-multiple-pdb-resources.yaml", Kind.DeploymentConfig, false);
+  }
+
+  private void addLabelsInResourceSelectorTest(String resourceFile, Kind workloadKind, boolean enabledHPAAndPDBSupport)
+      throws Exception {
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    URL url = this.getClass().getResource("/" + resourceFile);
+    String fileContents = Resources.toString(url, Charsets.UTF_8);
+    List<KubernetesResource> resources = processYaml(fileContents);
+    k8sRequestHandlerContext.setResources(resources);
+    k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(enabledHPAAndPDBSupport);
+
+    KubernetesResource managedWorkload =
+        resources.stream()
+            .filter(resource -> resource.getResourceId().getKind().equals(workloadKind.name()))
+            .collect(Collectors.toList())
+            .get(0);
+
+    String existingSelectorName = "spec.selector.matchLabels.app";
+    String newSelectorName = "spec.selector.matchLabels.key";
+    String existingWorkloadSelectorName = existingSelectorName;
+    String newWorkloadSelectorName = newSelectorName;
+    if (workloadKind.name().equalsIgnoreCase(Kind.DeploymentConfig.name())) {
+      existingWorkloadSelectorName = "spec.selector.app";
+      newWorkloadSelectorName = "spec.selector.key";
+    }
+    String existingSelectorValue = String.valueOf(managedWorkload.getField(existingWorkloadSelectorName));
+    String newSelectorValue = "val";
+    Map<String, String> selectorsToBeAdded = ImmutableMap.of("key", newSelectorValue);
+
+    List<KubernetesResource> pdbResourcesToBeUpdated =
+        resources.stream()
+            .filter(resource -> resource.getResourceId().getKind().equals(Kind.PodDisruptionBudget.name()))
+            .filter(resource
+                -> String.valueOf(resource.getField(existingSelectorName)).equalsIgnoreCase(existingSelectorValue))
+            .collect(Collectors.toList());
+    assertThat(pdbResourcesToBeUpdated.size()).isEqualTo(3);
+
+    List<KubernetesResource> pdbResourcesNotToBeUpdated =
+        resources.stream()
+            .filter(resource -> resource.getResourceId().getKind().equals(Kind.PodDisruptionBudget.name()))
+            .filter(resource
+                -> !String.valueOf(resource.getField(existingSelectorName)).equalsIgnoreCase(existingSelectorValue))
+            .collect(Collectors.toList());
+    assertThat(pdbResourcesNotToBeUpdated.size()).isEqualTo(1);
+
+    managedWorkload = managedWorkload.addLabelsInResourceSelector(selectorsToBeAdded, k8sRequestHandlerContext);
+
+    assertThat(managedWorkload.getField(existingWorkloadSelectorName)).isEqualTo(existingSelectorValue);
+    assertThat(managedWorkload.getField(newWorkloadSelectorName)).isEqualTo(newSelectorValue);
+
+    if (enabledHPAAndPDBSupport) {
+      pdbResourcesToBeUpdated.forEach(resource -> {
+        assertThat(resource.getField(existingSelectorName)).isEqualTo(existingSelectorValue);
+        assertThat(resource.getField(newSelectorName)).isEqualTo(newSelectorValue);
+      });
+      pdbResourcesNotToBeUpdated.forEach(resource -> {
+        assertThat(resource.getField(existingSelectorName)).isNotEqualTo(existingSelectorValue);
+        assertThat(resource.getField(newSelectorName)).isNull();
+      });
+    } else {
+      pdbResourcesToBeUpdated.forEach(resource -> {
+        assertThat(resource.getField(existingSelectorName)).isEqualTo(existingSelectorValue);
+        assertThat(resource.getField(newSelectorName)).isNull();
+      });
+      pdbResourcesNotToBeUpdated.forEach(resource -> {
+        assertThat(resource.getField(existingSelectorName)).isNotEqualTo(existingSelectorValue);
+        assertThat(resource.getField(newSelectorName)).isNull();
+      });
     }
   }
 
@@ -314,7 +471,7 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/loadbalancer_service.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
-    resource = resource.addColorSelectorInService("blue");
+    resource = resource.addColorSelector("blue", null);
     Map<String, String> selectors = (Map<String, String>) resource.getField("spec.selector");
     assertThat(selectors).containsKey("harness.io/color");
     assertThat(selectors.get("harness.io/color")).isEqualTo("blue");
@@ -394,7 +551,9 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/deploy.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
-    resource = resource.addLabelsInDeploymentSelector(ImmutableMap.of("key", "val"));
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    k8sRequestHandlerContext.setResources(asList(resource));
+    resource = resource.addLabelsInResourceSelector(ImmutableMap.of("key", "val"), k8sRequestHandlerContext);
     assertThat(resource.getField("spec.selector.matchLabels.key")).isEqualTo("val");
   }
 
@@ -491,7 +650,9 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/deployment-null-match-labels.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
-    resource = resource.addLabelsInDeploymentSelector(ImmutableMap.of("key", "val"));
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    k8sRequestHandlerContext.setResources(asList(resource));
+    resource = resource.addLabelsInResourceSelector(ImmutableMap.of("key", "val"), k8sRequestHandlerContext);
     assertThat(resource.getField("spec.selector.matchLabels.key")).isEqualTo("val");
   }
 
@@ -520,8 +681,10 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/deployment-null-selector.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    k8sRequestHandlerContext.setResources(asList(resource));
     try {
-      resource.addLabelsInDeploymentSelector(ImmutableMap.of("key", "val"));
+      resource.addLabelsInResourceSelector(ImmutableMap.of("key", "val"), k8sRequestHandlerContext);
     } catch (KubernetesYamlException e) {
       assertThat(ExceptionLogger.getResponseMessageList(e, LOG_SYSTEM))
           .extracting(ResponseMessage::getMessage)
@@ -558,8 +721,10 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/deployment-config-null-selector.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    k8sRequestHandlerContext.setResources(asList(resource));
     try {
-      resource.addLabelsInDeploymentSelector(ImmutableMap.of("key", "val"));
+      resource.addLabelsInResourceSelector(ImmutableMap.of("key", "val"), k8sRequestHandlerContext);
     } catch (KubernetesYamlException e) {
       assertThat(ExceptionLogger.getResponseMessageList(e, LOG_SYSTEM))
           .extracting(ResponseMessage::getMessage)
@@ -592,7 +757,9 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/deployment-config.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
-    resource = resource.addLabelsInDeploymentSelector(ImmutableMap.of("key", "val"));
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    k8sRequestHandlerContext.setResources(asList(resource));
+    resource = resource.addLabelsInResourceSelector(ImmutableMap.of("key", "val"), k8sRequestHandlerContext);
     assertThat(resource.getField("spec.selector.key")).isEqualTo("val");
   }
 
@@ -603,9 +770,11 @@ public class KubernetesResourceTest extends CategoryTest {
     URL url = this.getClass().getResource("/job.yaml");
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
+    K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
+    k8sRequestHandlerContext.setResources(asList(resource));
 
     try {
-      resource.addLabelsInDeploymentSelector(ImmutableMap.of("key", "val"));
+      resource.addLabelsInResourceSelector(ImmutableMap.of("key", "val"), k8sRequestHandlerContext);
       fail("Should not reach here");
     } catch (InvalidRequestException e) {
       assertThat(ExceptionLogger.getResponseMessageList(e, LOG_SYSTEM))
@@ -637,7 +806,7 @@ public class KubernetesResourceTest extends CategoryTest {
     String fileContents = Resources.toString(url, Charsets.UTF_8);
     KubernetesResource resource = processYaml(fileContents).get(0);
     String oldName = (String) resource.getField("metadata.name");
-    resource.transformName(appendRevision);
+    resource.transformName(appendRevision, null);
     assertThat(resource.getField("metadata.name")).isEqualTo(oldName + "-1");
     assertThat(resource.getField("spec.triggers")).isNull();
 
@@ -645,7 +814,7 @@ public class KubernetesResourceTest extends CategoryTest {
     fileContents = Resources.toString(url, Charsets.UTF_8);
     resource = processYaml(fileContents).get(0);
     oldName = (String) resource.getField("metadata.name");
-    resource.transformName(appendRevision);
+    resource.transformName(appendRevision, null);
     assertThat(resource.getField("metadata.name")).isEqualTo(oldName + "-1");
     assertThat(resource.getField("spec.triggers[0].type")).isEqualTo("ConfigChange");
 
@@ -653,7 +822,7 @@ public class KubernetesResourceTest extends CategoryTest {
     fileContents = Resources.toString(url, Charsets.UTF_8);
     resource = processYaml(fileContents).get(0);
     oldName = (String) resource.getField("metadata.name");
-    resource.transformName(appendRevision);
+    resource.transformName(appendRevision, null);
     assertThat(resource.getField("metadata.name")).isEqualTo(oldName + "-1");
     assertThat((List) resource.getField("spec.triggers")).isEmpty();
   }

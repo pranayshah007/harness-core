@@ -30,6 +30,7 @@ import io.harness.cvng.beans.DeviationType;
 import io.harness.cvng.beans.DynatraceDataCollectionInfo;
 import io.harness.cvng.beans.ELKDataCollectionInfo;
 import io.harness.cvng.beans.ErrorTrackingDataCollectionInfo;
+import io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo;
 import io.harness.cvng.beans.K8ActivityDataCollectionInfo;
 import io.harness.cvng.beans.MetricPackDTO;
 import io.harness.cvng.beans.MetricPackDTO.MetricDefinitionDTO;
@@ -84,6 +85,7 @@ import io.harness.cvng.beans.dynatrace.DynatraceServiceListRequest;
 import io.harness.cvng.beans.elk.ELKDataCollectionRequest;
 import io.harness.cvng.beans.elk.ELKIndexCollectionRequest;
 import io.harness.cvng.beans.elk.ELKSampleDataCollectionRequest;
+import io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest;
 import io.harness.cvng.beans.newrelic.NewRelicApplicationFetchRequest;
 import io.harness.cvng.beans.newrelic.NewRelicFetchSampleDataRequest;
 import io.harness.cvng.beans.newrelic.NewRelicMetricPackValidationRequest;
@@ -230,5 +232,7 @@ public class CvNextGenBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(SignalFXMetricSampleDataRequest.class, 9146);
     kryo.register(SignalFXMetricDataCollectionInfo.class, 9147);
     kryo.register(SignalFXMetricDataCollectionInfo.MetricCollectionInfo.class, 9148);
+    kryo.register(GrafanaLokiLogSampleDataRequest.class, 9149);
+    kryo.register(GrafanaLokiLogDataCollectionInfo.class, 9150);
   }
 }

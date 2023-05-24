@@ -42,7 +42,10 @@ public enum Kind {
   Ingress,
   APIService,
   VirtualService,
-  DestinationRule;
+  DestinationRule,
+  HorizontalPodAutoscaler,
+  PodDisruptionBudget,
+  NOOP;
 
   public static Kind fromString(String kindName) {
     if (isEmpty(kindName)) {

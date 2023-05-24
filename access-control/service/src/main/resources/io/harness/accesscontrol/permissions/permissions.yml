@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 51
+version: 52
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -1464,6 +1464,38 @@ permissions:
       - project
   - identifier: code_repo_push
     name: Push to a Code Repository
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_create
+    name: Create a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_edit
+    name: Edit a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_delete
+    name: Delete a Network Map
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: servicediscovery_networkmap_view
+    name: View a Network Map
     status: ACTIVE
     includedInAllRoles: false
     allowedScopeLevels:

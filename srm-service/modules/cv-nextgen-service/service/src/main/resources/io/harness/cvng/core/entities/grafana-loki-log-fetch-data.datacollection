@@ -1,0 +1,43 @@
+Var one = 1
+Var nullObj = null
+Var dataCollectionURL = concat("",Env:requestUrl)
+Var logList = []
+Var groupedLogList = []
+
+Var startTimeStr = concat("", Env:startTimeSeconds)
+Var:dataCollectionURL.replaceAll(Env:startTimePlaceholder, Var:startTimeStr)
+Var endTimeStr = concat("", Env:endTimeSeconds)
+Var:dataCollectionURL.replaceAll(Env:endTimePlaceholder, Var:endTimeStr)
+
+Request request = new Request(url=Var:dataCollectionURL, header=Env:commonHeaders, options=Env:commonOptions)
+print Var:request
+Var response = sync-call(Var:request)
+print Var:response
+
+if Var:response == Var:nullObj {
+   return Var:logList
+}
+
+groupedLogList = extract(Var:response,"$.data.result")
+
+Var totalQueryResults = Var:groupedLogList.length()
+Var outerIndex = 0
+
+while Var:outerIndex != Var:totalQueryResults {
+    Var currentQueryResult = Var:groupedLogList[Var:outerIndex]
+    Var serviceInstanceIdentifier = extract(Var:currentQueryResult,Env:serviceInstanceIdentifierPath)
+    Var logsList = extract(Var:currentQueryResult,Env:logsListPath)
+    Var totalLogMessages = Var:logsList.length()
+    Var innerIndex = 0
+    while Var:innerIndex != Var:totalLogMessages {
+        Var currentLogResponse = Var:logsList[Var:innerIndex]
+        Var logMessage = extract(Var:currentLogResponse,Env:logMessagePath)
+        Var logTimestamp = extract(Var:currentLogResponse,Env:timestampPath)
+        Var logRecord = new LogDataRecord(log=Var:logMessage, timestamp=Var:logTimestamp, host=Var:serviceInstanceIdentifier)
+        Var:logList.append(Var:logRecord)
+        innerIndex = Var:innerIndex + Var:one
+    }
+    outerIndex = Var:outerIndex + Var:one
+}
+
+return Var:logList

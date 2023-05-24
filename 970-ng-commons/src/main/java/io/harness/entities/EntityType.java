@@ -590,7 +590,9 @@ public enum EntityType {
   AWS_SAM_BUILD(
       ModuleType.CD, EntityTypeConstants.AWS_SAM_BUILD, IdentifierRef.class, EntityYamlRootNames.AWS_SAM_BUILD),
   @JsonProperty(EntityTypeConstants.SEMGREP)
-  SEMGREP(ModuleType.STO, EntityTypeConstants.SEMGREP, IdentifierRef.class, EntityYamlRootNames.SEMGREP);
+  SEMGREP(ModuleType.STO, EntityTypeConstants.SEMGREP, IdentifierRef.class, EntityYamlRootNames.SEMGREP),
+  @JsonProperty(EntityTypeConstants.SSCA_ENFORCEMENT)
+  SSCA_ENFORCEMENT(ModuleType.CI, EntityTypeConstants.SSCA_ENFORCEMENT, IdentifierRef.class);
 
   private final ModuleType moduleType;
   String yamlName;

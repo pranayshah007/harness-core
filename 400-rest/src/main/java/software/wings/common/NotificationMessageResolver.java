@@ -21,6 +21,7 @@ import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
+import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.serializer.YamlUtils;
 
 import software.wings.app.MainConfiguration;
@@ -64,6 +65,7 @@ public class NotificationMessageResolver {
 
   @Inject private MainConfiguration configuration;
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
+  @Inject private HtmlInputSanitizer userNameSanitizer;
   private static final String FAILED_STATUS = "failed";
   private final DateFormat dateFormat = new SimpleDateFormat("MMM d");
   private final DateFormat timeFormat = new SimpleDateFormat("HH:mm z");
@@ -455,7 +457,7 @@ public class NotificationMessageResolver {
     placeHolderValues.put("WORKFLOW_URL", workflowUrl);
     placeHolderValues.put("TIMEOUT", timeout);
     placeHolderValues.put("APP_NAME", app.getName());
-    placeHolderValues.put("USER_NAME", userName);
+    placeHolderValues.put("USER_NAME", userNameSanitizer.sanitizeInput(userName));
     placeHolderValues.put("STATUS", statusMsg);
     placeHolderValues.put("ENV", envName);
     placeHolderValues.put("ARTIFACT", artifactsMessage);

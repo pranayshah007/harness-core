@@ -16,6 +16,8 @@ config:
     - "scripts/terraform/**/*"
     - "on-prem/**/*"
     - "charts/**/*"
+    - "chart/**/*"
+    - "manifest.yaml"
     - "docs/**/*"
     - "licenses/**/*"
     - "img/**/*"

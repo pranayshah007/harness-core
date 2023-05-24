@@ -9,19 +9,26 @@ package io.harness.k8s.kubectl;
 
 import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 
+import io.harness.beans.version.Version;
+
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
 public class Kubectl {
   private final String kubectlPath;
   private final String configPath;
+  @Getter private final ClientType clientType;
+  @Getter @Setter private Version version;
 
-  private Kubectl(String kubectlPath, String configPath) {
+  protected Kubectl(String kubectlPath, String configPath, ClientType clientType) {
+    this.clientType = clientType;
     this.kubectlPath = kubectlPath;
     this.configPath = configPath;
   }
 
   public static Kubectl client(String kubectlPath, String configPath) {
-    return new Kubectl(kubectlPath, configPath);
+    return new Kubectl(kubectlPath, configPath, ClientType.KUBECTL);
   }
 
   public VersionCommand version() {
@@ -98,4 +105,10 @@ public class Kubectl {
   public static String flag(Flag type, boolean value) {
     return "--" + type.toString() + "=" + value + " ";
   }
+
+  public static String flag(Flag type, String value) {
+    return "--" + type.toString() + "=" + value + " ";
+  }
+
+  public enum ClientType { KUBECTL, OC }
 }

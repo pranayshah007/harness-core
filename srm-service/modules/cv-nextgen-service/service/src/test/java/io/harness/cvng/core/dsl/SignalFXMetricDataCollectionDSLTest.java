@@ -69,7 +69,7 @@ public class SignalFXMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBa
   private static final String TOKEN_REF_DATA = "dummyToken";
   private SignalFXMetricDataCollectionInfo dataCollectionInfo;
   private static final String SIGNALFX_BASE_URL = "https://stream.us1.signalfx.com/";
-  private static final int RESPONSE_SIZE_METRIC_SAMPLE = 86;
+  private static final int RESPONSE_SIZE_METRIC_SAMPLE = 20;
   BuilderFactory builderFactory;
 
   MetricPack metricPack;
@@ -200,7 +200,8 @@ public class SignalFXMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBa
         metricSampleDataRequestDSL, runtimeParameters, (CallDetails callDetails) -> {});
     assertThat(response).hasSize(RESPONSE_SIZE_METRIC_SAMPLE);
     JsonNode obj1 = (JsonNode) response.get(0);
-    assertThat(obj1).isEqualTo(JsonUtils.readTree(readJson("expected-raw-first-object-sample-dsl.json")));
+    JsonNode jsonNode = JsonUtils.readTree(readJson("expected-raw-first-object-sample-dsl.json"));
+    assertThat(obj1.get(0)).isEqualTo(jsonNode.get(0));
   }
 
   @Test

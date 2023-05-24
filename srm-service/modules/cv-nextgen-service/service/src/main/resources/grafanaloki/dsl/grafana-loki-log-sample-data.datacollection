@@ -1,0 +1,14 @@
+Var nullObj = null
+Var logList = []
+
+Request request = new Request(url=Env:requestUrl, header=Env:commonHeaders, options=Env:commonOptions)
+print Var:request
+Var response = sync-call(Var:request)
+print Var:response
+
+if Var:response == Var:nullObj {
+   return Var:logList
+}
+
+logList = extract(Var:response,"$.data.result")
+return Var:logList

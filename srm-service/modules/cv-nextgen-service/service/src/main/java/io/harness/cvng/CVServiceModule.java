@@ -212,6 +212,8 @@ import io.harness.cvng.core.services.impl.EntityDisabledTimeServiceImpl;
 import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
+import io.harness.cvng.core.services.impl.GrafanaLokiLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.GrafanaLokiLogNextGenHealthSourceHelper;
 import io.harness.cvng.core.services.impl.HealthSourceOnboardingServiceImpl;
 import io.harness.cvng.core.services.impl.HostRecordServiceImpl;
 import io.harness.cvng.core.services.impl.InternalChangeConsumerServiceImpl;
@@ -755,6 +757,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
+        .to(GrafanaLokiLogDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
             binder(), MonitoredServiceSpecType.class, VerifyStepMonitoredServiceResolutionService.class);
@@ -874,7 +879,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.SPLUNK_SIGNALFX_METRICS)
         .to(SignalFXMetricNextGenHealthSourceHelper.class)
         .in(Scopes.SINGLETON);
-
+    dataSourceTypeNextGenHelperMapBinder.addBinding(DataSourceType.GRAFANA_LOKI_LOGS)
+        .to(GrafanaLokiLogNextGenHealthSourceHelper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, CVConfigUpdatableEntity> dataSourceTypeCVConfigMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, CVConfigUpdatableEntity.class);
 

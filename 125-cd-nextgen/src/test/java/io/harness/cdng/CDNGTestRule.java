@@ -18,6 +18,8 @@ import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static org.mockito.Mockito.mock;
 
 import io.harness.ModuleType;
+import io.harness.PluginConfiguration;
+import io.harness.PluginModule;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.clients.NoOpAccessControlClientImpl;
 import io.harness.account.AccountClient;
@@ -28,12 +30,14 @@ import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.orchestration.NgStepRegistrar;
+import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationService;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverrideV2MigrationServiceImpl;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorServiceImpl;
+import io.harness.connector.ConnectorResourceClientModule;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -72,6 +76,7 @@ import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
 import io.harness.remote.client.ClientMode;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -295,6 +300,14 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
     });
     modules.add(TimeModule.getInstance());
     modules.add(NGModule.getInstance());
+    modules.add(
+        PluginModule.getInstance(PluginConfiguration.builder()
+                                     .pluginExecutionConfig(PluginExecutionConfig.builder().apiUrl("apiUrl").build())
+                                     .build()));
+
+    modules.add(new ConnectorResourceClientModule(
+        ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build(), "test_secret", "CI"));
+
     modules.add(TestMongoModule.getInstance());
     modules.add(mongoTypeModule(annotations));
     modules.add(new EntitySetupUsageModule());

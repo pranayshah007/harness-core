@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.MDC;
 
 @OwnedBy(HarnessTeam.DX)
@@ -24,8 +23,8 @@ public class MdcContextSetter implements AutoCloseable {
     if (isEmpty(contexts)) {
       return;
     }
-    this.contexts = new ConcurrentHashMap<>(contexts);
-    for (Map.Entry<String, String> context : this.contexts.entrySet()) {
+    this.contexts = contexts;
+    for (Map.Entry<String, String> context : contexts.entrySet()) {
       MDC.put(context.getKey(), context.getValue());
     }
   }

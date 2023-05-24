@@ -21,7 +21,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.Level;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.SignupException;
 import io.harness.exception.WeakPasswordException;
 import io.harness.exception.WingsException;
@@ -79,7 +78,6 @@ public class SignupServiceImpl implements SignupService {
   private final RegexValidator domainRegex = new RegexValidator(
       "^(?:\\p{Alnum}(?>[\\p{Alnum}-]{0,61}\\p{Alnum})?\\.)+(\\p{Alpha}(?>[\\p{Alnum}-]{0,61}\\p{Alnum})?)\\.?$");
   private static final Pattern EMAIL_PATTERN = Pattern.compile("^\\s*?(.+)@(.+?)\\s*$");
-  private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9 -._]*$");
   private static final String TRIAL_SIGNUP_COMPLETED_TEMPLATE_NAME = "trial_signup_completed";
 
   private static final List<String> whitelistedTopLevelDomains = ImmutableList.of("inc");
@@ -402,18 +400,6 @@ public class SignupServiceImpl implements SignupService {
             "The password you entered has been flagged as vulnerable. To ensure security of your account, please enter a different password.",
             null, PASSWORD_STRENGTH_CHECK_FAILED, Level.ERROR, USER, null);
       }
-    }
-  }
-
-  @Override
-  public void validateName(String name) {
-    if (isBlank(name)) {
-      throw new InvalidArgumentsException("Name cannot be empty", USER);
-    }
-
-    Matcher matcher = NAME_PATTERN.matcher(name);
-    if (!matcher.matches()) {
-      throw new InvalidArgumentsException("Name is not valid.", USER);
     }
   }
 

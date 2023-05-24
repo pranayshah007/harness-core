@@ -1,0 +1,163 @@
+# Default values for nextgen-ce
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+global:
+  loadbalancerURL: "https://test"
+  database:
+    postgres:
+      ## - installed = true if installed within cluster
+      installed: true
+      ## - protocol to use for connection
+      protocol: postgres
+      ## - host array for external
+      hosts:
+        - postgres:5432
+      ## - secret name containing external values
+      secretName: ""
+      ## - key within secret containing username
+      userKey: ""
+      ## - key within secret containing password
+      passwordKey: ""
+      ## - extra arguments set to connection string
+      extraArgs: ""
+    mongo:
+      installed: true
+      protocol: mongodb
+      # --  provide default values if mongo.installed is set to false
+      hosts: []
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+    timescaledb:
+      installed: true
+      protocol: "jdbc:postgresql"
+      # --  provide default values if mongo.installed is set to false
+      hosts:
+        - timescaledb-single-chart:5432
+      secretName: ""
+      userKey: ""
+      passwordKey: ""
+      extraArgs: ""
+  ingress:
+    enabled: false
+    className: harness
+    hosts:
+      - events-grpc-app.harness.io
+    tls:
+      enabled: true
+      secretName: ''
+  istio:
+    enabled: false
+    gateway:
+      create: false
+    virtualService:
+      gateways:
+      hosts:
+  # image pull secrets to use for every image
+  imagePullSecrets: []
+  stackDriverLoggingEnabled: false
+
+replicaCount: 1
+
+
+maxSurge: 100%
+
+maxUnavailable: 0
+
+java:
+  memory: 1024
+
+image:
+  registry: docker.io
+  repository: harness/event-service-signed
+  pullPolicy: Always
+# Overrides the image tag whose default is the chart appVersion.
+  tag: "77317"
+  digest: ""
+# image pull secrets to use for event-service image
+  imagePullSecrets: []
+
+waitForInitContainer:
+  image:
+    registry: docker.io
+    repository: harness/helm-init-container
+    pullPolicy: IfNotPresent
+    tag: "latest"
+    digest: ""
+# image pull secrets to use for helm-init-container image
+    imagePullSecrets: []
+
+mongoSecrets:
+  userName:
+    name: harness-secrets
+    key: mongodbUsername
+  password:
+    name: mongodb-replicaset-chart
+    key: mongodb-root-password
+
+timescaleSecret:
+  password:
+    name: harness-secrets
+    key: timescaledbPostgresPassword
+
+nameOverride: ""
+fullnameOverride: ""
+
+ngServiceAccount: "test"
+redislabsCATruststore: "test"
+
+defaultInternalImageConnector: "test"
+
+serviceAccount:
+# Specifies whether a service account should be created
+  create: false
+# Annotations to add to the service account
+  annotations: {}
+# The name of the service account to use.
+# If not set and create is true, a name is generated using the fullname template
+  name: "harness-default"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+# fsGroup: 2000
+
+securityContext: {}
+# capabilities:
+#   drop:
+#   - ALL
+# readOnlyRootFilesystem: true
+# runAsNonRoot: true
+# runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 7280
+  port2: 9889
+
+ingress:
+  className: nginx
+
+resources:
+  limits:
+    cpu: "512m"
+    memory: "1840Mi"
+  requests:
+    cpu: "512m"
+    memory: "1840Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 80
+# targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+additionalConfigs: {}

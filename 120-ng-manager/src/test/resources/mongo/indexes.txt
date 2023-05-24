@@ -45,7 +45,7 @@ entitySetupUsage {"name": "account_referredBy_referred_type_index", "background"
 entitySetupUsage {"name": "referredByEntityFQN_1", "background": true} {"referredByEntityFQN": 1}
 entitySetupUsage {"name": "referredEntityFQN_1", "background": true} {"referredEntityFQN": 1}
 environmentGroupNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_envGroupIdentifier", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-environmentsNG {"name": "accountId_organizationIdentifier_projectIdentifier_deleted_collation_en", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "deleted": 1}
+environmentsNG {"name": "accountId_organizationIdentifier_projectIdentifier_deleted_collation_primary_en", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "deleted": 1}
 environmentsNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_envIdentifier_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
 filters {"name": "unique_accountId_orgId_projectId_name_type_Index", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": 1, "filterType": 1}
 filters {"name": "unique_accountId_organizationId_projectId_type", "unique": true} {"fullyQualifiedIdentifier": 1, "filterType": 1}

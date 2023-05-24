@@ -33,6 +33,7 @@ import io.harness.delegate.exceptionhandler.handler.InterruptedIOExceptionHandle
 import io.harness.delegate.exceptionhandler.handler.SCMExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SecretExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.SocketExceptionHandler;
+import io.harness.delegate.exceptionhandler.handler.SshClientExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.TerraformRuntimeExceptionHandler;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sRequestHandler;
@@ -193,5 +194,7 @@ public class KubernetesNgTasksModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureClientExceptionHandler.class));
     AzureARMRuntimeExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureARMRuntimeExceptionHandler.class));
+    SshClientExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(SshClientExceptionHandler.class));
   }
 }

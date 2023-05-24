@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.GoogleCloudStorageArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -48,6 +49,9 @@ public class GoogleCloudStorageArtifactOutcome implements ArtifactOutcome {
 
   /** Whether this config corresponds to primary artifact.*/
   boolean primaryArtifact;
+
+  Map<String, String> metadata;
+
   @Override
   public ArtifactSummary getArtifactSummary() {
     return GoogleCloudStorageArtifactSummary.builder().bucket(bucket).artifactPath(artifactPath).build();

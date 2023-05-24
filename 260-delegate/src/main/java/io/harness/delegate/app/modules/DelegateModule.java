@@ -155,6 +155,7 @@ import io.harness.delegate.googlefunction.GoogleFunctionTrafficShiftCommandTaskH
 import io.harness.delegate.http.HttpTaskNG;
 import io.harness.delegate.k8s.K8sApplyRequestHandler;
 import io.harness.delegate.k8s.K8sBGRequestHandler;
+import io.harness.delegate.k8s.K8sBlueGreenStageScaleDownRequestHandler;
 import io.harness.delegate.k8s.K8sCanaryDeleteRequestHandler;
 import io.harness.delegate.k8s.K8sCanaryRequestHandler;
 import io.harness.delegate.k8s.K8sDeleteRequestHandler;
@@ -676,7 +677,6 @@ import software.wings.delegatetasks.jira.ShellScriptApprovalTask;
 import software.wings.delegatetasks.k8s.K8sTask;
 import software.wings.delegatetasks.k8s.taskhandler.K8sApplyTaskHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sBlueGreenDeployTaskHandler;
-import software.wings.delegatetasks.k8s.taskhandler.K8sBlueGreenStageScaleDownRequestHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sCanaryDeployTaskHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sDeleteTaskHandler;
 import software.wings.delegatetasks.k8s.taskhandler.K8sInstanceSyncTaskHandler;

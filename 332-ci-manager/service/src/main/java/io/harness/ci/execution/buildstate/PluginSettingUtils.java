@@ -74,7 +74,9 @@ import io.harness.plugin.service.PluginServiceImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
+import io.harness.ssca.execution.SscaEnforcementPluginHelper;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -179,16 +181,22 @@ public class PluginSettingUtils extends PluginServiceImpl {
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
             (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance);
+      case SSCA_ENFORCEMENT:
+        return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
+            (SscaEnforcementStepInfo) stepInfo, identifier, ambiance);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }
   }
 
   @Override
-  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step) {
+  public Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step, String identifier) {
     switch (step.getNonYamlInfo().getStepInfoType()) {
       case SSCA_ORCHESTRATION:
         return SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars((SscaOrchestrationStepInfo) step);
+      case SSCA_ENFORCEMENT:
+        return SscaEnforcementPluginHelper.getSscaEnforcementSecretVariables(
+            (SscaEnforcementStepInfo) step, identifier);
       default:
         return new HashMap<>();
     }
@@ -241,6 +249,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         map.put(EnvVariableEnum.DOCKER_REGISTRY, PLUGIN_REGISTRY);
         return map;
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return SscaOrchestrationStepPluginUtils.getConnectorSecretEnvMap();
       case UPLOAD_ARTIFACTORY:
         map.put(EnvVariableEnum.ARTIFACTORY_ENDPOINT, PLUGIN_URL);

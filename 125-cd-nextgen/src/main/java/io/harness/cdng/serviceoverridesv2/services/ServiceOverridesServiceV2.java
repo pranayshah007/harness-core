@@ -12,6 +12,7 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.NonNull;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -28,4 +29,6 @@ public interface ServiceOverridesServiceV2 {
       NGServiceOverridesEntity existingEntity);
 
   Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageRequest);
+
+  Pair<NGServiceOverridesEntity, Boolean> upsert(NGServiceOverridesEntity requestedServiceOverride);
 }

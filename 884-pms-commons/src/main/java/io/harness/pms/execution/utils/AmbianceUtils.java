@@ -51,6 +51,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class AmbianceUtils {
+  public static final String STAGE = "STAGE";
+
   public static Ambiance cloneForFinish(@NonNull Ambiance ambiance) {
     return clone(ambiance, ambiance.getLevelsList().size() - 1);
   }
@@ -248,8 +250,10 @@ public class AmbianceUtils {
 
   public Optional<Level> getStageLevelFromAmbiance(Ambiance ambiance) {
     Optional<Level> stageLevel = Optional.empty();
+
+    // @Todo(SahilHindwani): Correct StepCategory for IdentityNodes. Currently they always have STEP as StepCategory.
     for (Level level : ambiance.getLevelsList()) {
-      if (level.getStepType().getStepCategory() == StepCategory.STAGE) {
+      if (level.getStepType().getStepCategory() == StepCategory.STAGE || Objects.equals(level.getGroup(), STAGE)) {
         stageLevel = Optional.of(level);
       }
     }

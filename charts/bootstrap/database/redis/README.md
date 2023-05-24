@@ -1,6 +1,6 @@
 # redis
 
-![Version: 0.2.4](https://img.shields.io/badge/Version-0.2.4-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
+![Version: 0.2.7](https://img.shields.io/badge/Version-0.2.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.0.1](https://img.shields.io/badge/AppVersion-0.0.1-informational?style=flat-square)
 
 A Helm chart for Kubernetes
 
@@ -17,14 +17,14 @@ A Helm chart for Kubernetes
 | affinity | object | `{}` |  |
 | fullnameOverride | string | `""` |  |
 | global.imagePullSecrets | list | `[]` |  |
-| global.storageClassName | string | `""` |  |
+| global.storageClass | string | `""` |  |
 | imagePullSecrets | object | `{}` |  |
 | initContainers.config_init.image.digest | string | `""` |  |
 | initContainers.config_init.image.pullPolicy | string | `"IfNotPresent"` |  |
 | initContainers.config_init.image.pullSecrets | list | `[]` |  |
 | initContainers.config_init.image.registry | string | `"docker.io"` |  |
 | initContainers.config_init.image.repository | string | `"harness/redis"` |  |
-| initContainers.config_init.image.tag | string | `"6.2.7-alpine"` |  |
+| initContainers.config_init.image.tag | string | `"6.2.5-alpine"` |  |
 | metrics.enabled | bool | `false` |  |
 | metrics.image.digest | string | `""` |  |
 | metrics.image.pullPolicy | string | `"IfNotPresent"` |  |
@@ -44,7 +44,7 @@ A Helm chart for Kubernetes
 | redis.image.pullSecrets | list | `[]` |  |
 | redis.image.registry | string | `"docker.io"` |  |
 | redis.image.repository | string | `"harness/redis"` |  |
-| redis.image.tag | string | `"6.2.7-alpine"` |  |
+| redis.image.tag | string | `"6.2.5-alpine"` |  |
 | redis.resources.limits.cpu | float | `0.1` |  |
 | redis.resources.limits.memory | string | `"200Mi"` |  |
 | redis.resources.requests.cpu | float | `0.1` |  |
@@ -57,7 +57,7 @@ A Helm chart for Kubernetes
 | sentinel.image.pullSecrets | list | `[]` |  |
 | sentinel.image.registry | string | `"docker.io"` |  |
 | sentinel.image.repository | string | `"harness/redis"` |  |
-| sentinel.image.tag | string | `"6.2.7-alpine"` |  |
+| sentinel.image.tag | string | `"6.2.5-alpine"` |  |
 | sentinel.resources.limits.cpu | string | `"100m"` |  |
 | sentinel.resources.limits.memory | string | `"200Mi"` |  |
 | sentinel.resources.requests.cpu | string | `"100m"` |  |

@@ -43,6 +43,7 @@ import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -65,6 +66,7 @@ public class NotificationHelper {
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
   @Inject PMSPipelineService pmsPipelineService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
+  @Inject HtmlInputSanitizer userNameSanitizer;
 
   public Optional<PipelineEventType> getEventTypeForStage(NodeExecution nodeExecution) {
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
@@ -291,7 +293,7 @@ public class NotificationHelper {
       startDate = new Date(startTs * 1000).toString();
       endDate = new Date(endTs * 1000).toString();
     }
-    templateData.put("USER_NAME", userName);
+    templateData.put("USER_NAME", userNameSanitizer.sanitizeInput(userName));
     templateData.put("ORG_IDENTIFIER", orgIdentifier);
     templateData.put("PROJECT_IDENTIFIER", projectIdentifier);
     templateData.put("EVENT_TYPE", pipelineEventType.getDisplayName());

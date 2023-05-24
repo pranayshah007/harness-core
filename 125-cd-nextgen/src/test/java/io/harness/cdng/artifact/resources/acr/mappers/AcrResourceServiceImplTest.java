@@ -285,6 +285,16 @@ public class AcrResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Subscription_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, "", REGISTRY, REPOSITORY,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(SUBSCRIPTION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild_Subscription_Input() {
     assertThatThrownBy(()
                            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, INPUT, REGISTRY, REPOSITORY,
@@ -298,6 +308,16 @@ public class AcrResourceServiceImplTest extends CategoryTest {
   public void testGetLastSuccessfulBuild_Registry_Null() {
     assertThatThrownBy(()
                            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, null, REPOSITORY,
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(REGISTRY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Registry_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, "", REPOSITORY,
                                ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
         .hasMessage(REGISTRY_MESSAGE);
   }
@@ -325,6 +345,16 @@ public class AcrResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Repository_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, "",
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild_Repository_Input() {
     assertThatThrownBy(()
                            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, INPUT,
@@ -339,6 +369,16 @@ public class AcrResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY,
                                REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_Tag_Empty() {
+    assertThatThrownBy(()
+                           -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY,
+                               REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER, AcrRequestDTO.builder().tag("").build()))
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 
@@ -360,6 +400,17 @@ public class AcrResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY,
                                REPOSITORY, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_REQUEST_DTO))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_TagRegex_Empty() {
+    assertThatThrownBy(
+        ()
+            -> acrResourceService.getLastSuccessfulBuild(IDENTIFIER_REF, SUBSCRIPTION, REGISTRY, REPOSITORY,
+                ORG_IDENTIFIER, PROJECT_IDENTIFIER, AcrRequestDTO.builder().tagRegex("").build()))
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 

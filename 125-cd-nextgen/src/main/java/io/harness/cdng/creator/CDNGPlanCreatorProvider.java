@@ -1374,7 +1374,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo k8sBGStageScaleDown =
         StepInfo.newBuilder()
-            .setName("K8s Blue Green Stage Scale Down")
+            .setName("Blue Green Stage Scale Down")
             .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
             .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())

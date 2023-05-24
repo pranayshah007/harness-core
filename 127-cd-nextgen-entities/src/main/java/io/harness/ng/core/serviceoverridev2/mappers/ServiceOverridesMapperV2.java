@@ -36,7 +36,7 @@ public class ServiceOverridesMapperV2 {
         .build();
   }
 
-  public ServiceOverridesResponseDTOV2 toResponseDTO(@NonNull NGServiceOverridesEntity entity) {
+  public ServiceOverridesResponseDTOV2 toResponseDTO(@NonNull NGServiceOverridesEntity entity, boolean isNewlyCreated) {
     return ServiceOverridesResponseDTOV2.builder()
         .identifier(entity.getIdentifier())
         .accountId(entity.getAccountId())
@@ -48,6 +48,7 @@ public class ServiceOverridesMapperV2 {
         .clusterIdentifier(entity.getClusterIdentifier())
         .spec(entity.getSpec())
         .type(entity.getType())
+        .isNewlyCreated(isNewlyCreated)
         .build();
   }
 }

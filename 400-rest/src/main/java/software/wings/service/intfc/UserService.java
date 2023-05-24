@@ -35,6 +35,7 @@ import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.ZendeskSsoLoginResponse;
@@ -221,6 +222,8 @@ public interface UserService extends OwnedByAccount {
   boolean isTwoFactorEnabled(String accountId, String usedId);
 
   User updateUser(String userId, UpdateOperations<User> updateOperations);
+
+  void validateName(String name);
 
   /**
    * Gets the.
@@ -698,6 +701,8 @@ public interface UserService extends OwnedByAccount {
       String userId, int pageIndex, int pageSize, String searchTerm);
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
+
+  String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace);
 
   void removeAllUserGroupsFromUser(User user, String accountId);
 

@@ -667,6 +667,7 @@ public class ArtifactResponseToOutcomeMapper {
         .bucket(googleCloudStorageArtifactConfig.getBucket().getValue())
         .artifactPath(useDelegateResponse ? googleCloudStorageArtifactDelegateResponse.getArtifactPath() : "")
         .primaryArtifact(googleCloudStorageArtifactConfig.isPrimaryArtifact())
+        .metadata(getMetadata(googleCloudStorageArtifactDelegateResponse))
         .build();
   }
 

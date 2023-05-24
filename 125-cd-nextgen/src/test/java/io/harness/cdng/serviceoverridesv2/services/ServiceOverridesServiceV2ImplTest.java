@@ -29,6 +29,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.repositories.serviceoverridesv2.spring.ServiceOverridesRepositoryV2;
 import io.harness.rule.Owner;
+import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.google.inject.Inject;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.tuple.Pair;
 import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -325,6 +327,80 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     serviceOverridesServiceV2.create(entity1);
     serviceOverridesServiceV2.create(entity2);
     serviceOverridesServiceV2.create(entity3);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testUpsertForCreate() {
+    Pair<NGServiceOverridesEntity, Boolean> upsertResult = serviceOverridesServiceV2.upsert(basicOverrideEntity);
+    assertThat(upsertResult).isNotNull();
+    assertThat(upsertResult.getRight()).isTrue();
+    assertBasicOverrideEntityProperties(upsertResult.getLeft());
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testUpsertForUpdate() {
+    NGServiceOverridesEntity overridesEntity = serviceOverridesServiceV2.create(basicOverrideEntity);
+
+    overridesEntity.setSpec(
+        ServiceOverridesSpec.builder()
+            .manifests(List.of(
+                ManifestConfigWrapper.builder()
+                    .manifest(
+                        ManifestConfig.builder().identifier("manifest1").type(ManifestConfigType.KUSTOMIZE).build())
+                    .build()))
+            .variables(
+                List.of(StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
+                    StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+            .build());
+
+    overridesEntity = serviceOverridesServiceV2.update(overridesEntity);
+    overridesEntity.setSpec(
+        ServiceOverridesSpec.builder()
+            .variables(List.of(
+                StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valAUpsert")).build(),
+                StringNGVariable.builder().name("varC").value(ParameterField.createValueField("valC")).build()))
+            .manifests(List.of(
+                ManifestConfigWrapper.builder()
+                    .manifest(ManifestConfig.builder().identifier("manifest1").type(ManifestConfigType.VALUES).build())
+                    .build(),
+                ManifestConfigWrapper.builder()
+                    .manifest(
+                        ManifestConfig.builder().identifier("manifest2").type(ManifestConfigType.K8_MANIFEST).build())
+                    .build()))
+            .build());
+
+    Pair<NGServiceOverridesEntity, Boolean> upsertResult = serviceOverridesServiceV2.upsert(overridesEntity);
+    assertThat(upsertResult).isNotNull();
+    assertThat(upsertResult.getRight()).isFalse();
+    NGServiceOverridesEntity upsertedOverride = upsertResult.getLeft();
+    assertThat(upsertedOverride.getSpec().getVariables().stream().map(NGVariable::getName).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("varA", "varB", "varC");
+    assertThat(upsertedOverride.getSpec()
+                   .getVariables()
+                   .stream()
+                   .map(NGVariable::fetchValue)
+                   .map(ngVar -> (String) ngVar.getValue())
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("valAUpsert", "valB", "valC");
+
+    assertThat(upsertedOverride.getSpec()
+                   .getManifests()
+                   .stream()
+                   .map(ManifestConfigWrapper::getManifest)
+                   .map(ManifestConfig::getIdentifier)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("manifest1", "manifest2");
+    assertThat(upsertedOverride.getSpec()
+                   .getManifests()
+                   .stream()
+                   .map(ManifestConfigWrapper::getManifest)
+                   .map(ManifestConfig::getType)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(ManifestConfigType.K8_MANIFEST, ManifestConfigType.VALUES);
   }
 
   private static void assertBasicOverrideEntityProperties(NGServiceOverridesEntity ngServiceOverridesEntity) {

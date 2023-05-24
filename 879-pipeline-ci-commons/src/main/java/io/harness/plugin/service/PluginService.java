@@ -18,5 +18,5 @@ public interface PluginService {
   Map<String, String> getPluginCompatibleEnvVariables(PluginCompatibleStep stepInfo, String identifier, long timeout,
       Ambiance ambiance, StageInfraDetails.Type infraType, boolean isMandatory, boolean isContainerizedPlugin);
 
-  Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step);
+  Map<String, SecretNGVariable> getPluginCompatibleSecretVars(PluginCompatibleStep step, String identifier);
 }
