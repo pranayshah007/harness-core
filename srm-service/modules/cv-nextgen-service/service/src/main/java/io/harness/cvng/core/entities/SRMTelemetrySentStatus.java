@@ -9,8 +9,6 @@ package io.harness.cvng.core.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.CV;
 
-import io.harness.annotation.HarnessEntity;
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -38,8 +36,6 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "SRMTelemetrySentStatusKeys")
 @StoreIn(DbAliases.CVNG)
 @Entity(value = "srmTelemetrySentStatus", noClassnameStored = true)
-@RecasterAlias("io.harness.cvng.core.entities.SRMTelemetrySentStatus")
-@HarnessEntity(exportable = false)
 public class SRMTelemetrySentStatus implements UuidAware, PersistentEntity {
   @Id String uuid;
   public static List<MongoIndex> mongoIndexes() {

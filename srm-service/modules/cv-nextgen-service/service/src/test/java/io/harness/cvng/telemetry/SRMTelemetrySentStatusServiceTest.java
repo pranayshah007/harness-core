@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.services.api.SRMTelemetrySentStatusService;
+import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -28,6 +29,8 @@ import org.junit.experimental.categories.Category;
 @OwnedBy(CV)
 public class SRMTelemetrySentStatusServiceTest extends CvNextGenTestBase {
   @Inject private SRMTelemetrySentStatusService srmTelemetrySentStatusService;
+
+  @Inject HPersistence hPersistence;
 
   private BuilderFactory builderFactory;
 
@@ -41,6 +44,8 @@ public class SRMTelemetrySentStatusServiceTest extends CvNextGenTestBase {
         srmTelemetrySentStatusService.updateTimestampIfOlderThan(builderFactory.getContext().getAccountId(),
             instant.minus(Duration.ofMinutes(1430l)).toEpochMilli(), instant.toEpochMilli());
     assertThat(result).isEqualTo(true);
+    hPersistence.save(builderFactory.ratioServiceLevelIndicatorBuilder().identifier("abc").build());
+    hPersistence.save(builderFactory.ratioServiceLevelIndicatorBuilder().identifier("abc").uuid("test2").build());
     result = srmTelemetrySentStatusService.updateTimestampIfOlderThan(builderFactory.getContext().getAccountId(),
         instant.minus(Duration.ofMinutes(1400l)).toEpochMilli(), instant.plus(Duration.ofMinutes(30l)).toEpochMilli());
     assertThat(result).isEqualTo(false);

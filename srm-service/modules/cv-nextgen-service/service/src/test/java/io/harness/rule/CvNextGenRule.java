@@ -48,6 +48,7 @@ import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
+import io.harness.mongo.IndexManager;
 import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
@@ -179,7 +180,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       @Provides
       @Singleton
       MongoConfig mongoConfig() {
-        return MongoConfig.builder().build();
+        return MongoConfig.builder().indexManagerMode(IndexManager.Mode.AUTO).build();
       }
     });
 
