@@ -10,7 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
-import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -166,7 +166,8 @@ public class K8sApplyState extends AbstractK8sState {
     ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
     storePreviousHelmDeploymentInfo(context, appManifestMap.get(K8sValuesLocation.Service));
 
-    boolean isTimeoutFailureSupported = featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId());
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
 
     renderStateVariables(context);
 
