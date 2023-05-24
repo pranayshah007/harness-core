@@ -24,7 +24,12 @@ public class K8SEnvVar extends V1EnvVar {
   public static List<V1EnvVar> fromMap(final Map<String, String> envMap) {
     return envMap.entrySet()
         .stream()
-        .map(entry -> new V1EnvVarBuilder().withName(entry.getKey()).withValue(entry.getValue()).build())
+        .map(entry -> new V1EnvVarBuilder().withName(normalize(entry.getKey())).withValue(entry.getValue()).build())
         .collect(Collectors.toList());
+  }
+
+  // env var name can't start with a digit, the validation regex is [-._a-zA-Z][-._a-zA-Z0-9]*
+  private static String normalize(final String name) {
+    return name.replaceAll("^\\d+", "");
   }
 }

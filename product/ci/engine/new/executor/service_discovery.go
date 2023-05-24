@@ -10,10 +10,13 @@ import (
 	pb "github.com/harness/harness-core/product/ci/engine/proto"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func GetContainerPort(step *pb.UnitStep) uint {
-	portEnvVar := fmt.Sprintf("%s_SERVICE_PORT", step.GetTaskId())
+	// env var name can't start with a digit, the validation regex is [-._a-zA-Z][-._a-zA-Z0-9]*
+	normalizedTaskId :=strings.TrimLeft(step.GetTaskId(), "0123456789")
+	portEnvVar := fmt.Sprintf("%s_SERVICE_PORT", normalizedTaskId)
 	env, ok := os.LookupEnv(portEnvVar)
 	if !ok {
 		return uint(step.GetContainerPort())
