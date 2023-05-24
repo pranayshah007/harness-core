@@ -358,7 +358,7 @@ function copy_srm_service_jars(){
   copy_common_files
   java -jar cv-nextgen-capsule.jar scan-classpath-metadata
   cd ../..
-  
+
 }
 
 function copy_batch_processing_jars(){
@@ -452,6 +452,27 @@ function copy_sto_manager_jars(){
 
 }
 
+function copy_iacm_manager_jars(){
+
+  cp ${HOME}/.bazel-dirs/bin/310-iacm-manager/app/module_deploy.jar iacm-manager-capsule.jar
+  cp ../../310-iacm-manager/config/iacm-manager-config.yml .
+  cp ../../keystore.jks .
+  cp ../../310-iacm-manager/config/key.pem .
+  cp ../../310-iacm-manager/config/cert.pem .
+  cp ../../310-iacm-manager/app/src/main/resources/redisson-jcache.yaml .
+  cp ../../310-iacm-manager/app/src/main/resources/enterprise-redisson-jcache.yaml .
+
+  cp ../../310-iacm-manager/build/container/Dockerfile-iacmmanager-service-jenkins-k8-openjdk ./Dockerfile
+  cp ../../310-iacm-manager/build/container/Dockerfile-iacmmanager-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+  cp ../../310-iacm-manager/build/container/Dockerfile-iacmmanager-ubi ./Dockerfile-gcr-ubi
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp -r ../../310-iacm-manager/build/container/scripts/ .
+  java -jar iacm-manager-capsule scan-classpath-metadata
+
+  cd ../..
+}
+
 
 
 #prepare_to_copy_jars
@@ -484,4 +505,6 @@ elif [ "${SERVICE_NAME}" == "template-service" ]; then
     copy_template_service_jars
 elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
     copy_sto_manager_jars
+elif [ "${SERVICE_NAME}" == "iacm-manager" ]; then
+    copy_iacm_manager_jars
 fi
