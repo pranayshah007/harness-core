@@ -286,6 +286,7 @@ function copy_ci_manager_jars(){
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../dockerization/ci-manager/scripts/ .
+  cp ../../ci-manager-protocol.info .
   copy_common_files
   java -jar ci-manager-capsule.jar scan-classpath-metadata
   cd ../..
