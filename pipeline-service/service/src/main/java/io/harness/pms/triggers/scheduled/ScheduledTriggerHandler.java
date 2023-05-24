@@ -160,7 +160,6 @@ public class ScheduledTriggerHandler implements Handler<NGTriggerEntity> {
                                                             .triggerId(entity.getIdentifier())
                                                             .executionStatus(planExecution.getStatus().name())
                                                             .targetId(entity.getTargetIdentifier())
-                                                            .runSequence(planExecution.getMetadata().getRunSequence())
                                                             .build());
     }
 
