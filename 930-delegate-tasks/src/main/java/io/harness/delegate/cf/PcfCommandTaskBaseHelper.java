@@ -539,7 +539,7 @@ public class PcfCommandTaskBaseHelper {
         activeVersions.add(applicationSummary);
         logPrinted = true;
         executionLogCallback.saveExecutionLog(
-            String.format("Found current Active App: [%s], as it has same name as release name specified by customer",
+            String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
                 PcfUtils.encodeColor(applicationSummary.getName())));
       }
     }
@@ -553,7 +553,7 @@ public class PcfCommandTaskBaseHelper {
           activeVersions.add(applicationSummary);
           logPrinted = true;
           executionLogCallback.saveExecutionLog(
-              String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+              String.format("Found current Active App: [%s], as it has same name as release name specified by user",
                   PcfUtils.encodeColor(activeApplication.getName())));
         }
       }
