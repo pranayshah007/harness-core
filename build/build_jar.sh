@@ -47,7 +47,7 @@ elif [ "${SERVICE_NAME}" == "srm-service" ]; then
 elif [ "${SERVICE_NAME}" == "template-service" ]; then
     SERVICE_MODULE="template-service/service:module_deploy.jar"
 elif [ "${SERVICE_NAME}" == "cg-manager" ]; then
-#    SERVICE_MODULE="template-service:module_deploy.jar"
+    SERVICE_MODULE="template-service:module_deploy.jar"
 fi
 
 
