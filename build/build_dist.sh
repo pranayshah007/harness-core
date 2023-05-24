@@ -443,7 +443,7 @@ function copy_sto_manager_jars(){
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../315-sto-manager/build/container/scripts/ .
-
+  copy_common_files
   # Use CI manager replace config logic as is
   cp ../../332-ci-manager/build/container/scripts/replace_configs.sh ./scripts/replace_configs.sh
   java -jar sto-manager-capsule scan-classpath-metadata
@@ -468,9 +468,35 @@ function copy_iacm_manager_jars(){
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -r ../../310-iacm-manager/build/container/scripts/ .
+  copy_common_files
   java -jar iacm-manager-capsule scan-classpath-metadata
 
   cd ../..
+}
+
+function copy_cg_manager_jars(){
+
+  cp ${BAZEL_BIN}/360-cg-manager/module_deploy.jar rest-capsule.jar
+  cp ../../keystore.jks .
+  cp ../../360-cg-manager/key.pem .
+  cp ../../360-cg-manager/cert.pem .
+  cp ../../360-cg-manager/newrelic.yml .
+  cp ../../360-cg-manager/config.yml .
+  cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
+  cp ../../400-rest/src/main/resources/jfr/default.jfc .
+  cp ../../400-rest/src/main/resources/jfr/profile.jfc .
+
+  cp ../../dockerization/manager/Dockerfile-manager-cie-jdk ./Dockerfile-cie-jdk
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp -r ../../dockerization/manager/scripts/ .
+  mv scripts/start_process_bazel.sh scripts/start_process.sh
+
+  copy_common_files
+  java -jar rest-capsule.jar scan-classpath-metadata
+
+  cd ../..
+  
 }
 
 
@@ -507,4 +533,6 @@ elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
     copy_sto_manager_jars
 elif [ "${SERVICE_NAME}" == "iacm-manager" ]; then
     copy_iacm_manager_jars
+elif [ "${SERVICE_NAME}" == "manager" ]; then
+    copy_cg_manager_jars
 fi
