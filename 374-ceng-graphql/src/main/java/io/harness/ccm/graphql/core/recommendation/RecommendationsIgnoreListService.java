@@ -182,6 +182,25 @@ public class RecommendationsIgnoreListService {
     }
   }
 
+  public void updateAzureRecommendationState(
+      String recommendationId, String accountId, String subscriptionId, String resourceGroupId, String vmName) {
+    RecommendationState recommendationState = k8sRecommendationDAO.getRecommendationState(recommendationId);
+    if (recommendationState != null && recommendationState.equals(RecommendationState.OPEN)) {
+      Optional<RecommendationsIgnoreList> recommendationsIgnoreList = ignoreListDAO.get(accountId);
+      if (recommendationsIgnoreList.isPresent()) {
+        RecommendationsIgnoreList ignoreList = recommendationsIgnoreList.get();
+        if (ignoreList.getAzureVmIgnoreList() != null
+            && ignoreList.getAzureVmIgnoreList().contains(RecommendationAzureVmId.builder()
+                                                              .subscriptionId(subscriptionId)
+                                                              .resourceGroupId(resourceGroupId)
+                                                              .vmName(vmName)
+                                                              .build())) {
+          k8sRecommendationDAO.updateRecommendationState(recommendationId, RecommendationState.IGNORED);
+        }
+      }
+    }
+  }
+
   private Set<RecommendationWorkloadId> ignoreWorkloads(
       String accountId, Set<RecommendationWorkloadId> workloadIgnoreList, Set<RecommendationWorkloadId> addWorkloads) {
     if (addWorkloads != null) {

@@ -13,6 +13,7 @@ import io.harness.batch.processing.cloudevents.azure.vm.service.helper.AzureConf
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation;
+import io.harness.ccm.graphql.core.recommendation.RecommendationsIgnoreListService;
 
 import software.wings.beans.AzureAccountAttributes;
 
@@ -34,6 +35,7 @@ public class AzureRecommendationTasklet implements Tasklet {
   @Autowired private AzureConfigHelper azureConfigHelper;
   @Autowired private AzureRecommendationService azureRecommendationService;
   @Autowired private AzureRecommendationDAO azureRecommendationDAO;
+  @Autowired private RecommendationsIgnoreListService ignoreListService;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -51,8 +53,10 @@ public class AzureRecommendationTasklet implements Tasklet {
           for (AzureRecommendation azureRecommendation : azureRecommendationList) {
             try {
               azureRecommendation = azureRecommendationDAO.saveRecommendation(azureRecommendation);
-              azureRecommendationDAO.upsertCeRecommendation(
-                  azureRecommendation, startTime, getResourceGroupId(azureRecommendation.getRecommendationId()));
+              String resourceGroupId = getResourceGroupId(azureRecommendation.getRecommendationId());
+              azureRecommendationDAO.upsertCeRecommendation(azureRecommendation, startTime, resourceGroupId);
+              ignoreListService.updateAzureRecommendationState(azureRecommendation.getUuid(), accountId,
+                  azureRecommendation.getSubscriptionId(), resourceGroupId, azureRecommendation.getImpactedValue());
             } catch (Exception e) {
               log.error("Couldn't save Azure recommendation: {}", azureRecommendation, e);
             }
