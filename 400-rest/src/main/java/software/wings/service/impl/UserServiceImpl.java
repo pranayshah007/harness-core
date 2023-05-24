@@ -4290,6 +4290,7 @@ public class UserServiceImpl implements UserService {
 
   public String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace) {
     String accountId;
+    // Set expiry to 365 after user sets up account
     long expiryTime = DateTime.now().getMillis() + YEAR_IN_MILLIS;
 
     LicenseInfo licenseInfo = LicenseInfo.builder()

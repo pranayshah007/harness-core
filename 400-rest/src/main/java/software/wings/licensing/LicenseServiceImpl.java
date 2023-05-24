@@ -111,6 +111,7 @@ public class LicenseServiceImpl implements LicenseService {
   private static final String TRIAL_EXPIRATION_DAY_60_TEMPLATE = "trial_expiration_day60";
   private static final String TRIAL_EXPIRATION_DAY_89_TEMPLATE = "trial_expiration_day89";
   private static final String TRIAL_EXPIRATION_BEFORE_DELETION_TEMPLATE = "trial_expiration_before_deletion";
+  private static final long YEAR_IN_MILLIS = 31536000000L;
 
   private final AccountService accountService;
   private final WingsPersistence wingsPersistence;
@@ -640,8 +641,12 @@ public class LicenseServiceImpl implements LicenseService {
   public boolean updateLicenseForProduct(
       String productCode, String accountId, Integer orderQuantity, long expirationTime, String dimension) {
     final MarketPlaceConfig marketPlaceConfig = mainConfiguration.getMarketPlaceConfig();
-    log.info("productCode:{}, accountId:{}, orderQuantity:{}, expirationTime:{}, dimension:{}", productCode, accountId,
-        orderQuantity, expirationTime, dimension);
+    // Set expiry to 365 after user sets up account
+    long expiryTime = DateTime.now().getMillis() + YEAR_IN_MILLIS;
+
+    log.info(
+        "productCode:{}, accountId:{}, orderQuantity:{}, expirationTime:{}, yearAfterUserSetsUpExpiryTime:{}, dimension:{}",
+        productCode, accountId, orderQuantity, expirationTime, expiryTime, dimension);
 
     boolean premiumSupport = hasPremierSupport(dimension);
     Edition plan = getDimensionPlan(dimension);
@@ -664,8 +669,21 @@ public class LicenseServiceImpl implements LicenseService {
               .accountType(AccountType.PAID)
               .licenseUnits(orderQuantity)
               .accountStatus(AccountStatus.ACTIVE)
-              .expiryTime(expirationTime)
+              .expiryTime(expiryTime)
               .build());
+
+      // ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
+      //       CEModuleLicenseDTO.builder()
+      //           .spendLimit(spendLimit)
+      //           .accountIdentifier(accountId)
+      //           .moduleType(ModuleType.CE)
+      //           .edition(plan)
+      //           .licenseType(licenseType)
+      //           .premiumSupport(premiumSupport)
+      //           .status(LicenseStatus.ACTIVE)
+      //           .startTime(DateTime.now().getMillis())
+      //           .expiryTime(expiryTime)
+      //           .build()));
 
     } else {
       log.error("Invalid AWS productcode received:[{}],", productCode);
