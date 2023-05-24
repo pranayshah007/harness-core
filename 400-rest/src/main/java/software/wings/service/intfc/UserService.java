@@ -589,6 +589,9 @@ public interface UserService extends OwnedByAccount {
 
   boolean isUserAccountAdmin(@NotNull UserPermissionInfo userPermissionInfo, @NotNull String accountId);
 
+  // todo: shashank : is this new method required?
+  boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation);
+
   boolean isUserAssignedToAccount(User user, String accountId);
 
   boolean isUserInvitedToAccount(User user, String accountId);

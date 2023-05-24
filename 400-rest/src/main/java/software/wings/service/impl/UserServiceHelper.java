@@ -194,4 +194,20 @@ public class UserServiceHelper {
     }
     return false;
   }
+
+  public void processForSCIMUsers(String accountId, List<User> userList, Generation generation) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      for (User user : userList) {
+        if (validationForUserAccountLevelDataFlow(user, accountId)) {
+          UserSource userSource =
+              user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(generation);
+          if (SCIM.equals(userSource)) {
+            user.setImported(true);
+          } else {
+            user.setImported(false);
+          }
+        }
+      }
+    }
+  }
 }

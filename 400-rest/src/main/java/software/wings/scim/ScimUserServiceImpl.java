@@ -118,6 +118,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     }
   }
 
+  // todo: add condition for accuntlevel data where this user is presetn in account but NOT SCIM.
   private boolean shouldUpdateUser(ScimUser userQuery, User user) {
     return user.isDisabled() || !StringUtils.equals(user.getName(), userQuery.getDisplayName())
         || !StringUtils.equals(user.getEmail(), userQuery.getUserName())

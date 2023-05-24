@@ -1506,7 +1506,7 @@ public class UserServiceImpl implements UserService {
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
-    if (isUserAssignedToAccount(user, accountId)) {
+    if (isUserAssignedToAccountInGeneration(user, accountId, CG)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
     } else if (isUserInvitedToAccount(user, accountId)) {
@@ -1518,6 +1518,9 @@ public class UserServiceImpl implements UserService {
       user.getAccounts().add(account);
     } else {
       userInvite.setUuid(wingsPersistence.save(userInvite));
+      if (isUserAssignedToAccount(user, accountId)) {
+        isInviteAcceptanceRequired = false;
+      }
       if (isInviteAcceptanceRequired && !isPLNoEmailForSamlAccountInvitesEnabled) {
         user.getPendingAccounts().add(account);
       } else {
@@ -2977,7 +2980,7 @@ public class UserServiceImpl implements UserService {
     if (loadUserGroups) {
       loadUserGroupsForUsers(pageResponse.getResponse(), accountId);
     }
-    processForSCIMUsers(accountId, pageResponse.getResponse());
+    userServiceHelper.processForSCIMUsers(accountId, pageResponse.getResponse(), CG);
     return pageResponse;
   }
   private List<UserGroup> getUserGroupsOfAccount(String accountId) {
@@ -3711,18 +3714,22 @@ public class UserServiceImpl implements UserService {
     return permissions.contains(PermissionType.ACCOUNT_MANAGEMENT);
   }
 
+  // todo: shashank : is this new method required?
   @Override
-  public boolean isUserAssignedToAccount(User user, String accountId) {
+  public boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
         && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
       if (null != user.getUserAccountLevelDataMap().get(accountId)
-          && user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(CG)) {
+          && user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(generation)) {
         return true;
       } else {
         return false;
       }
     }
-
+    return isUserAssignedToAccount(user, accountId);
+  }
+  @Override
+  public boolean isUserAssignedToAccount(User user, String accountId) {
     return user != null && isNotEmpty(user.getAccounts())
         && user.getAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
   }
@@ -4069,7 +4076,7 @@ public class UserServiceImpl implements UserService {
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
-    processForSCIMUsers(accountId, userList);
+    userServiceHelper.processForSCIMUsers(accountId, userList, CG);
     if (loadUserGroups) {
       loadUserGroupsForUsers(userList, accountId);
     }
@@ -4497,19 +4504,6 @@ public class UserServiceImpl implements UserService {
                     .criteria(UserKeys.userAccountLevelDataMap + "." + accountId + "."
                         + UserAccountLevelDataKeys.userProvisionedTo)
                     .equal(CG.name()));
-    }
-  }
-
-  private void processForSCIMUsers(String accountId, List<User> userList) {
-    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
-      for (User user : userList) {
-        UserSource userSource = user.getUserAccountLevelDataMap().get(accountId).getSourceOfProvisioning().get(CG);
-        if (SCIM.equals(userSource)) {
-          user.setImported(true);
-        } else {
-          user.setImported(false);
-        }
-      }
     }
   }
 }
