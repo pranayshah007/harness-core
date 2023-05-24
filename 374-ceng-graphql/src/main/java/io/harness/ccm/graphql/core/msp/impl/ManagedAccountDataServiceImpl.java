@@ -19,8 +19,6 @@ import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.graphql.utils.RESTToGraphQLHelper;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.*;
-import io.harness.ccm.views.dto.DataPoint;
-import io.harness.ccm.views.dto.Reference;
 import io.harness.ccm.views.dto.TimeSeriesDataPoints;
 import io.harness.ccm.views.graphql.QLCEViewFieldInput;
 import io.harness.ccm.views.graphql.QLCEViewFilter;
@@ -126,18 +124,22 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
     }
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(mspAccountId);
 
-    PerspectiveTrendStats trendStats =
+    PerspectiveTrendStats totalSpendStats =
         perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
             Collections.emptyList(), RESTToGraphQLHelper.getCostAggregation(), false, env);
 
+    PerspectiveTrendStats markupAmountStats =
+        perspectivesQuery.perspectiveTrendStats(RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+            Collections.emptyList(), RESTToGraphQLHelper.getMarkupAggregation(), false, env);
+
     return ManagedAccountStats.builder()
         .totalSpendStats(AmountTrendStats.builder()
-                             .currentPeriod(trendStats.getCost().getValue().doubleValue())
-                             .trend(trendStats.getCost().getStatsTrend().doubleValue())
+                             .currentPeriod(totalSpendStats.getCost().getValue().doubleValue())
+                             .trend(totalSpendStats.getCost().getStatsTrend().doubleValue())
                              .build())
         .totalMarkupStats(AmountTrendStats.builder()
-                              .currentPeriod(trendStats.getCost().getValue().doubleValue() * 0.2)
-                              .trend(trendStats.getCost().getStatsTrend().doubleValue() * 0.2)
+                              .currentPeriod(markupAmountStats.getCost().getValue().doubleValue())
+                              .trend(markupAmountStats.getCost().getStatsTrend().doubleValue())
                               .build())
         .build();
   }
@@ -155,31 +157,18 @@ public class ManagedAccountDataServiceImpl implements ManagedAccountDataService 
                 Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
                 (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
             .getStats();
-    List<TimeSeriesDataPoints> totalMarkupStats = getMockMarkupData(totalSpendStats);
+
+    List<TimeSeriesDataPoints> totalMarkupStats =
+        perspectivesQuery
+            .perspectiveTimeSeriesStats(RESTToGraphQLHelper.getMarkupAggregation(),
+                RESTToGraphQLHelper.getTimeFilters(startTime, endTime),
+                Collections.singletonList(RESTToGraphQLHelper.getGroupByDay()), Collections.emptyList(),
+                (int) DEFAULT_LIMIT, (int) DEFAULT_OFFSET, qlCEViewPreferences, false, env)
+            .getStats();
     return ManagedAccountTimeSeriesData.builder()
         .totalSpendStats(totalSpendStats)
         .totalMarkupStats(totalMarkupStats)
         .build();
-  }
-
-  List<TimeSeriesDataPoints> getMockMarkupData(List<TimeSeriesDataPoints> totalSpendStats) {
-    List<TimeSeriesDataPoints> totalMarkupStats = new ArrayList<>();
-    totalSpendStats.forEach(dataPoint
-        -> totalMarkupStats.add(TimeSeriesDataPoints.builder()
-                                    .time(dataPoint.getTime())
-                                    .values(getUpdatedDataPoint(dataPoint.getValues()))
-                                    .build()));
-    return totalMarkupStats;
-  }
-
-  List<DataPoint> getUpdatedDataPoint(List<DataPoint> dataPoints) {
-    List<DataPoint> updatedDataPoints = new ArrayList<>();
-    dataPoints.forEach(dataPoint
-        -> updatedDataPoints.add(DataPoint.builder()
-                                     .key(Reference.builder().id("Total markup").name("Total Markup").type("").build())
-                                     .value(dataPoint.getValue().doubleValue() * 0.2)
-                                     .build()));
-    return updatedDataPoints;
   }
 
   private AmountDetails getTotalMarkupAmountDetails(List<MarginDetails> marginDetailsList) {

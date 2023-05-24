@@ -11,7 +11,7 @@ import static io.harness.ccm.views.graphql.QLCEViewTimeGroupType.DAY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ACTUAL_IDLE_COST;
 import static io.harness.ccm.views.utils.ClusterTableKeys.BILLING_AMOUNT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.COST;
-import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT_AGGREGATION;
 import static io.harness.ccm.views.utils.ClusterTableKeys.UNALLOCATED_COST;
 
 import io.harness.ccm.commons.entities.CCMAggregation;
@@ -148,7 +148,7 @@ public class RESTToGraphQLHelper {
 
   public static List<QLCEViewAggregation> getMarkupAggregation() {
     return Collections.singletonList(
-        QLCEViewAggregation.builder().operationType(QLCEViewAggregateOperation.SUM).columnName(MARKUP_AMOUNT).build());
+        QLCEViewAggregation.builder().operationType(QLCEViewAggregateOperation.SUM).columnName(MARKUP_AMOUNT_AGGREGATION).build());
   }
 
   public static List<QLCEViewAggregation> getAggregations(List<CCMAggregation> aggregations) {
