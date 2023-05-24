@@ -68,7 +68,7 @@ public interface VerifyStepResource {
   @Path("/baseline")
   @Timed
   @ExceptionMetered
-  @ApiOperation(value = "use the verification as a baseline")
+  @ApiOperation(value = "use the verification as a baseline", nickname = "updateBaseline")
   Baseline updateBaseline(@BeanParam @Valid VerifyStepPathParams verifyStepPathParams, Baseline baseline);
 
   @GET

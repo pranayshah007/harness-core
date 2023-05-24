@@ -79,7 +79,8 @@ public class DelegateProxyRequestForwarder {
       }
       if (responseData instanceof HttpStepResponse) {
         httpResponse = (HttpStepResponse) responseData;
-        log.info("httpResponse: {}", httpResponse);
+        log.debug("httpResponse: {}", httpResponse);
+        log.info("Delegate response status code: {}", httpResponse.getHttpResponseCode());
       }
     } catch (Exception ex) {
       log.error("Delegate error: ", ex);
