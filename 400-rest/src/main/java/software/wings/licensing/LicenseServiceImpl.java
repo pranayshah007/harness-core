@@ -24,11 +24,13 @@ import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
 import io.harness.licensing.LicenseType;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.observer.Subject;
 import io.harness.persistence.HIterator;
+import io.harness.rest.RestResponse;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
@@ -674,10 +676,12 @@ public class LicenseServiceImpl implements LicenseService {
       //         .expiryTime(expiryTime)
       //         .build());
       // Can utilize AccountResource.getNgAccountLicense
-      RestResponse<AccountLicenseDTO> AccountLicense1 = AccountResource.accountResource(accountId);
-
-      AccountLicenseDTO AccountLicense2 =
+      //      AccountLicenseDTO AccountLicense1 = new
+      //      RestResponse<>(getResponse(AccountResource.accountResource(accountId)));
+      RestResponse<AccountLicenseDTO> AccountLicense1 =
           new RestResponse<>(getResponse(adminLicenseHttpClient.getAccountLicense(accountId)));
+
+      AccountLicenseDTO AccountLicense2 =(getResponse(adminLicenseHttpClient.getAccountLicense(accountId));
       log.info("accountLicense1Response:{}, accountLicense2Response:{}", AccountLicense1, AccountLicense2);
 
       // Then update the accountlicense with the right expiry/quantity
