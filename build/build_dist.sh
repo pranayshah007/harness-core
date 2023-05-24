@@ -414,6 +414,32 @@ function copy_ce_nextgen_jars(){
 
 }
 
+function copy_sto_manager_jars(){
+
+  cp ${HOME}/.bazel-dirs/bin/315-sto-manager/app/module_deploy.jar sto-manager-capsule.jar
+  # Copy CI manager config file and use it as is
+  cp ../../332-ci-manager/config/ci-manager-config.yml .
+  cp ../../keystore.jks .
+  cp ../../315-sto-manager/config/key.pem .
+  cp ../../315-sto-manager/config/cert.pem .
+  cp ../../315-sto-manager/app/src/main/resources/redisson-jcache.yaml .
+  cp ../../315-sto-manager/app/src/main/resources/enterprise-redisson-jcache.yaml .
+
+  cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-openjdk ./Dockerfile
+  cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+  cp ../../315-sto-manager/build/container/Dockerfile-stomanager-ubi ./Dockerfile-gcr-ubi
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp -r ../../315-sto-manager/build/container/scripts/ .
+
+  # Use CI manager replace config logic as is
+  cp ../../332-ci-manager/build/container/scripts/replace_configs.sh ./scripts/replace_configs.sh
+  java -jar sto-manager-capsule scan-classpath-metadata
+
+  cd ../..
+
+}
+
 
 
 #prepare_to_copy_jars
@@ -444,4 +470,6 @@ elif [ "${SERVICE_NAME}" == "srm-service" ]; then
     copy_srm_service_jars
 elif [ "${SERVICE_NAME}" == "template-service" ]; then
     copy_template_service_jars
+elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
+    copy_sto_manager_jars
 fi
