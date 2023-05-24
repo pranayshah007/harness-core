@@ -340,20 +340,25 @@ function copy_verification_service_jars(){
 }
 
 function copy_srm_service_jars(){
+
   cp ${HOME}/.bazel-dirs/bin/srm-service/modules/cv-nextgen-service/service/module_deploy.jar cv-nextgen-capsule.jar
   cp ../../srm-service/config/keystore.jks .
   cp ../../srm-service/config/cv-nextgen-config.yml .
   cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/redisson-jcache.yaml .
   cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
-
   cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+  cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
   cp -R ../../srm-service/build/container/scripts/ .
+  cp ../../protocol.info .
+  cp ../../srm-service/config/jfr/default.jfc .
+  cp ../../srm-service/config/jfr/profile.jfc .
+
   copy_common_files
   java -jar cv-nextgen-capsule.jar scan-classpath-metadata
   cd ../..
-
+  
 }
 
 function copy_batch_processing_jars(){
