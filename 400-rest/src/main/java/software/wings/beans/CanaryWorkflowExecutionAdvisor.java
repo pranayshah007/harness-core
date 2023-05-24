@@ -1080,9 +1080,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
 
     if (filteredFailureStrategies.isEmpty()) {
       return null;
-    }
-
-    if (isTimeoutFailure(level, failureTypes, isTimeoutSupportOnWFLevelEnabled)) {
+    } else if (isTimeoutSupportOnWFLevelEnabled) {
       Optional<FailureStrategy> timeoutStrategy =
           filteredFailureStrategies.stream()
               .filter(failureStrategy -> isNotEmpty(failureStrategy.getFailureTypes()))
@@ -1092,7 +1090,18 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         return timeoutStrategy.get();
       }
     } else {
-      filteredFailureStrategies = filterOutExplicitTimeoutStrategies(filteredFailureStrategies);
+      if (isTimeoutFailure(level, failureTypes)) {
+        Optional<FailureStrategy> timeoutStrategy =
+            filteredFailureStrategies.stream()
+                .filter(failureStrategy -> isNotEmpty(failureStrategy.getFailureTypes()))
+                .filter(failureStrategy -> failureStrategy.getFailureTypes().contains(FailureType.TIMEOUT_ERROR))
+                .findFirst();
+        if (timeoutStrategy.isPresent()) {
+          return timeoutStrategy.get();
+        }
+      } else {
+        filteredFailureStrategies = filterOutExplicitTimeoutStrategies(filteredFailureStrategies);
+      }
     }
 
     Optional<FailureStrategy> rollbackStrategy =
@@ -1128,9 +1137,8 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         .collect(toList());
   }
 
-  private static boolean isTimeoutFailure(
-      FailureStrategyLevel level, EnumSet<FailureType> failureTypes, boolean ffTimeoutWFWLevel) {
-    return (ffTimeoutWFWLevel || level == FailureStrategyLevel.STEP) && isNotEmpty(failureTypes)
+  private static boolean isTimeoutFailure(FailureStrategyLevel level, EnumSet<FailureType> failureTypes) {
+    return (level == FailureStrategyLevel.STEP) && isNotEmpty(failureTypes)
         && failureTypes.contains(FailureType.TIMEOUT_ERROR);
   }
 
