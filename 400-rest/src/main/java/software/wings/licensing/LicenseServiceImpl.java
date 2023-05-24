@@ -44,6 +44,7 @@ import software.wings.beans.security.UserGroup;
 import software.wings.dl.GenericDbCache;
 import software.wings.dl.WingsPersistence;
 import software.wings.persistence.mail.EmailData;
+import software.wings.resources.AccountResource;
 import software.wings.security.authentication.MarketPlaceConfig;
 import software.wings.service.impl.AccountDao;
 import software.wings.service.impl.LicenseUtils;
@@ -81,6 +82,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.joda.time.DateTime;
 
 /**
  *
@@ -128,7 +130,7 @@ public class LicenseServiceImpl implements LicenseService {
   private final NgLicenseHttpClient ngLicenseHttpClient;
   private List<String> trialDefaultContacts;
   private List<String> paidDefaultContacts;
-
+  @Inject private AccountResource accountResource;
   @Inject private MainConfiguration mainConfiguration;
   private final Cache<String, CheckExpiryResultDTO> licenseExpiryCache;
   @Getter private final Subject<AccountLicenseObserver> accountLicenseObserverSubject;
@@ -664,13 +666,22 @@ public class LicenseServiceImpl implements LicenseService {
         || marketPlaceConfig.getAwsMarketPlaceSrmProductCode().equals(productCode)
         || marketPlaceConfig.getAwsMarketPlaceStoProductCode().equals(productCode)
         || HARNESS_TEST_2_PRODUCT_CODE.equals(productCode)) {
-      updateAccountLicense(accountId,
-          LicenseInfo.builder()
-              .accountType(AccountType.PAID)
-              .licenseUnits(orderQuantity)
-              .accountStatus(AccountStatus.ACTIVE)
-              .expiryTime(expiryTime)
-              .build());
+      // updateAccountLicense(accountId,
+      //     LicenseInfo.builder()
+      //         .accountType(AccountType.PAID)
+      //         .licenseUnits(orderQuantity)
+      //         .accountStatus(AccountStatus.ACTIVE)
+      //         .expiryTime(expiryTime)
+      //         .build());
+      // Can utilize AccountResource.getNgAccountLicense
+      RestResponse<AccountLicenseDTO> AccountLicense1 = AccountResource.accountResource(accountId);
+
+      AccountLicenseDTO AccountLicense2 =
+          new RestResponse<>(getResponse(adminLicenseHttpClient.getAccountLicense(accountId)));
+      log.info("accountLicense1Response:{}, accountLicense2Response:{}", AccountLicense1, AccountLicense2);
+
+      // Then update the accountlicense with the right expiry/quantity
+      // If we are not using above, then we need to re-create all Modules
 
       // ModuleLicenseDTO response = NGRestUtils.getResponse(adminLicenseHttpClient.createAccountLicense(accountId,
       //       CEModuleLicenseDTO.builder()
