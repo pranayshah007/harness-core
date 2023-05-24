@@ -3003,7 +3003,9 @@ public class UserServiceImpl implements UserService {
     if (loadUserGroups) {
       loadUserGroupsForUsers(pageResponse.getResponse(), accountId);
     }
-    userServiceHelper.processForSCIMUsers(accountId, pageResponse.getResponse(), CG);
+    if (isNotEmpty(pageResponse)) {
+      userServiceHelper.processForSCIMUsers(accountId, pageResponse.getResponse(), CG);
+    }
     return pageResponse;
   }
   private List<UserGroup> getUserGroupsOfAccount(String accountId) {

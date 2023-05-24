@@ -88,7 +88,7 @@ public class UserResourceTest extends CategoryTest {
   public void testRemoveExternallyManagedUser() {
     String userId = randomAlphabetic(10);
     Optional<UserInfo> userInfo = Optional.ofNullable(UserInfo.builder().externallyManaged(true).uuid(userId).build());
-    doReturn(userInfo).when(ngUserService).getUserById(userId);
+    doReturn(userInfo).when(ngUserService).getUserByIdAndAccount(userId, ACCOUNT);
     userResource.removeUser(userId, ACCOUNT, null, null);
   }
 
