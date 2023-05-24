@@ -496,7 +496,7 @@ function copy_cg_manager_jars(){
   java -jar rest-capsule.jar scan-classpath-metadata
 
   cd ../..
-  
+
 }
 
 
