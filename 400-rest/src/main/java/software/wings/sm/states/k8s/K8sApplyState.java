@@ -10,6 +10,7 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
+import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 
@@ -24,6 +25,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.data.validator.Trimmed;
 import io.harness.delegate.task.k8s.K8sTaskType;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.k8s.K8sCommandUnitConstants;
@@ -164,6 +166,8 @@ public class K8sApplyState extends AbstractK8sState {
     ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
     storePreviousHelmDeploymentInfo(context, appManifestMap.get(K8sValuesLocation.Service));
 
+    boolean isTimeoutFailureSupported = featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, context.getAccountId());
+
     renderStateVariables(context);
 
     K8sApplyTaskParametersBuilder builder = K8sApplyTaskParameters.builder();
@@ -185,6 +189,7 @@ public class K8sApplyState extends AbstractK8sState {
             .commandName(K8S_APPLY_STATE)
             .k8sTaskType(K8sTaskType.APPLY)
             .timeoutIntervalInMin(Integer.parseInt(stateTimeoutInMinutes))
+            .timeoutSupported(isTimeoutFailureSupported)
             .filePaths(filePaths)
             .k8sDelegateManifestConfig(
                 createDelegateManifestConfig(context, appManifestMap.get(K8sValuesLocation.Service)))
@@ -220,6 +225,15 @@ public class K8sApplyState extends AbstractK8sState {
     if (k8sApplyResponse != null && k8sApplyResponse.getResources() != null) {
       k8sStateHelper.saveResourcesToSweepingOutput(context, k8sApplyResponse.getResources(), getStateType());
       stateExecutionData.setExportManifests(true);
+    }
+
+    if (executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage("error message")
+          .stateExecutionData(stateExecutionData)
+          .build();
     }
 
     return ExecutionResponse.builder().executionStatus(executionStatus).stateExecutionData(stateExecutionData).build();

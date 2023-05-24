@@ -55,6 +55,7 @@ import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -78,6 +79,7 @@ public class K8sApplyTaskHandler extends K8sTaskHandler {
   @Override
   public K8sTaskExecutionResponse executeTaskInternal(
       K8sTaskParameters k8sTaskParameters, K8sDelegateTaskParams k8sDelegateTaskParams) throws Exception {
+    Thread.sleep(Duration.ofSeconds(2).toMillis());
     if (!(k8sTaskParameters instanceof K8sApplyTaskParameters)) {
       throw new InvalidArgumentsException(Pair.of("k8sTaskParameters", "Must be instance of K8sApplyTaskParameters"));
     }

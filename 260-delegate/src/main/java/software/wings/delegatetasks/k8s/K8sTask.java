@@ -20,6 +20,7 @@ import static java.util.Objects.isNull;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -28,6 +29,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.TimeoutException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.config.K8sGlobalConfigService;
@@ -47,8 +49,10 @@ import software.wings.helpers.ext.k8s.request.K8sRollingDeployTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 
+import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -63,6 +67,7 @@ public class K8sTask extends AbstractDelegateRunnableTask {
   @Inject private Map<String, K8sTaskHandler> k8sCommandTaskTypeToTaskHandlerMap;
   @Inject private ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
+  @Inject private TimeLimiter timeLimiter;
   private static final String WORKING_DIR_BASE = "./repository/k8s/";
 
   public K8sTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
@@ -83,8 +88,16 @@ public class K8sTask extends AbstractDelegateRunnableTask {
 
     if (k8sTaskParameters.getCommandType() == K8sTaskType.INSTANCE_SYNC) {
       try {
-        return k8sCommandTaskTypeToTaskHandlerMap.get(k8sTaskParameters.getCommandType().name())
-            .executeTask(k8sTaskParameters, null);
+        if (k8sTaskParameters.isTimeoutSupported()) {
+          return HTimeLimiter.callInterruptible(timeLimiter,
+              Duration.ofMillis(k8sTaskParameters.getTimeoutIntervalInMin()),
+              ()
+                  -> k8sCommandTaskTypeToTaskHandlerMap.get(k8sTaskParameters.getCommandType().name())
+                         .executeTask(k8sTaskParameters, null));
+        } else {
+          return k8sCommandTaskTypeToTaskHandlerMap.get(k8sTaskParameters.getCommandType().name())
+              .executeTask(k8sTaskParameters, null);
+        }
       } catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
         log.warn("Exception in processing K8s instance sync task [{}]",
@@ -116,9 +129,30 @@ public class K8sTask extends AbstractDelegateRunnableTask {
 
         logK8sVersion(k8sTaskParameters, k8SDelegateTaskParams);
 
-        return k8sCommandTaskTypeToTaskHandlerMap.get(k8sTaskParameters.getCommandType().name())
-            .executeTask(k8sTaskParameters, k8SDelegateTaskParams);
-      } catch (Exception ex) {
+        if (k8sTaskParameters.isTimeoutSupported()) {
+          return HTimeLimiter.callInterruptible(timeLimiter,
+              Duration.ofMillis(k8sTaskParameters.getTimeoutIntervalInMin()),
+              ()
+                  -> k8sCommandTaskTypeToTaskHandlerMap.get(k8sTaskParameters.getCommandType().name())
+                         .executeTask(k8sTaskParameters, k8SDelegateTaskParams));
+
+        } else {
+          return k8sCommandTaskTypeToTaskHandlerMap.get(k8sTaskParameters.getCommandType().name())
+              .executeTask(k8sTaskParameters, k8SDelegateTaskParams);
+        }
+
+      }
+      catch (TimeoutException te){
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(te);
+        log.error("Exception in processing K8s task [{}]",
+          k8sTaskParameters.getCommandName() + ":" + k8sTaskParameters.getCommandType(), sanitizedException);
+        return K8sTaskExecutionResponse.builder()
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .isTimeoutError(true)
+          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+          .build();
+      }
+      catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
         log.error("Exception in processing K8s task [{}]",
             k8sTaskParameters.getCommandName() + ":" + k8sTaskParameters.getCommandType(), sanitizedException);
