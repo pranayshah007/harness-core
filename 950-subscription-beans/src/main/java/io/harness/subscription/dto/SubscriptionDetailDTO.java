@@ -33,5 +33,5 @@ public class SubscriptionDetailDTO {
   private String latestInvoice;
   private InvoiceDetailDTO latestInvoiceDetail;
   @Optional private List<ItemDTO> items;
-  @Optional private Set<ModuleType> modules;
+  @Optional private Set<ModuleType> moduleTypes;
 }

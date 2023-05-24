@@ -433,9 +433,10 @@ public class StripeHelperImpl implements StripeHelper {
   private Set<ModuleType> getModuleTypes(Subscription subscription) {
     Set<ModuleType> moduleTypes = new HashSet<>();
     subscription.getItems().getData().stream().forEach((SubscriptionItem subscriptionItem) -> {
-      String moduleType = getModuleType(subscriptionItem);
-      if (moduleType != null && !moduleTypes.contains(moduleType)) {
-        moduleTypes.add(ModuleType.fromString(moduleType));
+      String moduleTypeString = getModuleType(subscriptionItem);
+      if (moduleTypeString != null
+          && !moduleTypes.stream().anyMatch((ModuleType moduleType) -> moduleType.toString().equals(moduleTypeString))) {
+        moduleTypes.add(ModuleType.fromString(moduleTypeString));
       }
     });
     return moduleTypes;
@@ -614,7 +615,7 @@ public class StripeHelperImpl implements StripeHelper {
                                     .canceledAt(subscription.getCanceledAt())
                                     .pendingUpdate(toPendingUpdateDetailDTO(subscription.getPendingUpdate()))
                                     .latestInvoiceDetail(toInvoiceDetailDTO(subscription.getLatestInvoiceObject()))
-                                    .modules(getModuleTypes(subscription))
+                                    .moduleTypes(getModuleTypes(subscription))
                                     .build();
 
     if (subscription.getLatestInvoiceObject() != null
