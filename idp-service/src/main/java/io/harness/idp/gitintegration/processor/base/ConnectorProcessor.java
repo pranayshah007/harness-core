@@ -60,7 +60,6 @@ import io.harness.git.model.GitBaseRequest;
 import io.harness.git.model.GitFileChange;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.gitsync.CreateFileRequest;
-import io.harness.gitsync.CreateFileResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.common.beans.GitOperation;
 import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
@@ -69,6 +68,7 @@ import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
 import io.harness.gitsync.common.helper.UserPrincipalMapper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.Principal;
@@ -220,17 +220,19 @@ public abstract class ConnectorProcessor {
                 String.format("Unexpected error occurred while doing scm operation for %s for accountId [%s]",
                     "create File", scope.getAccountIdentifier());
             log.error(errorMsg, e);
-            throw new UnexpectedException(errorMsg);
+            throw new UnexpectedException(e.getMessage());
           }
         } else {
-          final CreateFileResponse createFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+          io.harness.gitsync.CreateFileResponse createFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
               harnessToGitPushInfoService::createFile, createFileRequest);
           verifyCreateFileResponse(createFileResponse);
         }
       }
     } catch (Exception ex) {
       log.error("Exception while pushing files to source in IDP catalog onboarding flow, ex = {}", ex.getMessage(), ex);
-      throw new UnexpectedException("Error response while pushing files to source in IDP catalog onboarding flow");
+      throw new UnexpectedException(
+          "Error response while pushing files to source in IDP catalog onboarding flow. Exception = "
+          + ex.getMessage());
     }
   }
 
@@ -482,10 +484,18 @@ public abstract class ConnectorProcessor {
   }
 
   private void verifyCreateFileResponse(CreateFileResponse createFileResponse) {
+    if (createFileResponse.getStatus() >= 300) {
+      log.error("Error response from git sync grpc while pushing files to source in IDP catalog onboarding flow = {}",
+          createFileResponse);
+      throw new UnexpectedException(createFileResponse.getError());
+    }
+  }
+
+  private void verifyCreateFileResponse(io.harness.gitsync.CreateFileResponse createFileResponse) {
     if (createFileResponse.getStatusCode() >= 300) {
       log.error("Error response from git sync grpc while pushing files to source in IDP catalog onboarding flow = {}",
           createFileResponse);
-      throw new UnexpectedException("Error response while pushing files to source in IDP catalog onboarding flow");
+      throw new UnexpectedException(createFileResponse.getError().getHintMessage());
     }
   }
 }

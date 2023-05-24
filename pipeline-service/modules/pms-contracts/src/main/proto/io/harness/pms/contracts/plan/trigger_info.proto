@@ -20,6 +20,7 @@ message TriggeredBy {
   string uuid = 1;
   string identifier = 2;
   map<string, string> extraInfo = 3;
+  string triggerIdentifier = 4;
 }
 
 enum TriggerType {

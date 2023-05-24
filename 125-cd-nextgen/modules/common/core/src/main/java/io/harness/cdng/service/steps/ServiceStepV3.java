@@ -41,7 +41,9 @@ import io.harness.cdng.helpers.NgExpressionHelper;
 import io.harness.cdng.hooks.steps.ServiceHooksOutcome;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceOverrideUtilityFacade;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -153,6 +155,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceCustomSweepingOutputHelper serviceCustomSweepingOutputHelper;
   @Inject private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
   @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
+
+  @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
+
   private static final Pattern serviceVariablePattern = Pattern.compile(SERVICE_VARIABLES_PATTERN_REGEX);
   private static final Pattern envVariablePattern = Pattern.compile(ENV_VARIABLES_PATTERN_REGEX);
 

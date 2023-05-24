@@ -50,10 +50,10 @@ public class InstanceDTO {
   @NonFinal @Setter long lastDeployedAt;
   @NonFinal @Setter String lastPipelineExecutionId;
   @NonFinal @Setter String lastPipelineExecutionName;
-  String stageNodeExecutionId;
-  Status stageStatus;
-  String stageSetupId;
-  @Builder.Default RollbackStatus rollbackStatus;
+  @NonFinal @Setter String stageNodeExecutionId;
+  @NonFinal @Setter Status stageStatus;
+  @NonFinal @Setter String stageSetupId;
+  @NonFinal @Setter @Builder.Default RollbackStatus rollbackStatus;
   @NonFinal @Setter InstanceInfoDTO instanceInfoDTO;
   boolean isDeleted;
   long deletedAt;

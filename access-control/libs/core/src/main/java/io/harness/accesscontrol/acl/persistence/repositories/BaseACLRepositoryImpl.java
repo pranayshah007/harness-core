@@ -10,11 +10,16 @@ package io.harness.accesscontrol.acl.persistence.repositories;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.project;
 import static org.springframework.data.mongodb.util.MongoDbErrorCodes.isDuplicateKeyCode;
 
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.ACL.ACLKeys;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector.ResourceSelectorKeys;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.MongoIndex;
 
@@ -39,6 +44,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.mongodb.BulkOperationException;
 import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationOptions;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.ProjectionOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 
@@ -93,15 +104,22 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
                             .ne(true);
     Query query = new Query();
     query.addCriteria(criteria);
-    List<ACL> acls = mongoTemplate.find(query, ACL.class, getCollectionName());
-    return acls.stream()
-        .map(acl
-            -> ResourceSelector.builder()
-                   .selector(acl.getResourceSelector())
-                   .conditional(acl.isConditional())
-                   .condition(acl.getCondition())
-                   .build())
-        .collect(Collectors.toSet());
+    MatchOperation matchStage = match(criteria);
+    GroupOperation groupOperation = group(ACLKeys.resourceSelector, ACLKeys.conditional, ACLKeys.condition);
+    ProjectionOperation projectionOperation = project()
+                                                  .andExpression("_id.resourceSelector")
+                                                  .as(ResourceSelectorKeys.selector)
+                                                  .andExpression("_id.conditional")
+                                                  .as(ResourceSelectorKeys.conditional)
+                                                  .andExpression("_id.condition")
+                                                  .as(ResourceSelectorKeys.condition);
+
+    AggregationOptions options = AggregationOptions.builder().allowDiskUse(true).build();
+    Aggregation aggregation = newAggregation(matchStage, groupOperation, projectionOperation).withOptions(options);
+
+    AggregationResults<ResourceSelector> aggregationResults =
+        mongoTemplate.aggregate(aggregation, getCollectionName(), ResourceSelector.class);
+    return aggregationResults.getMappedResults().stream().collect(Collectors.toSet());
   }
 
   @Override

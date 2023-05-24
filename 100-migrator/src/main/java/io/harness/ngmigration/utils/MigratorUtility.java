@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.CaseFormat.CAMEL_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
+import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
@@ -124,6 +125,9 @@ public class MigratorUtility {
     if (LOWER_CASE == caseFormat) {
       return identifier.toLowerCase();
     }
+    if (SNAKE_CASE == caseFormat) {
+      return generateSnakeCaseIdentifier(name);
+    }
     return identifier;
   }
 
@@ -133,6 +137,24 @@ public class MigratorUtility {
     }
     name = StringUtils.stripAccents(name);
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
+  }
+
+  private static String generateSnakeCaseIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
+    name = StringUtils.stripAccents(name).toLowerCase();
+    StringBuilder snakeCase = new StringBuilder();
+
+    for (char c : name.toCharArray()) {
+      if (Character.isLetterOrDigit(c)) {
+        snakeCase.append(c);
+      } else {
+        snakeCase.append('_');
+      }
+    }
+    String generated = snakeCase.toString();
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 

@@ -10,6 +10,7 @@ package io.harness.pms.approval;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
@@ -49,6 +50,7 @@ import io.harness.security.dto.UserPrincipal;
 import io.harness.steps.approval.step.ApprovalInstanceResponseMapper;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.ApproversDTO;
@@ -262,5 +264,25 @@ public class ApprovalResourceImplServiceImplTest extends CategoryTest {
     assertThat(logLineArgumentCaptor.getValue().getMessage())
         .isEqualTo(
             "Successfully rejected 1 previous executions waiting for approval on this step that the user was authorized to reject");
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetApprovalInstancesByExecutionId() {
+    HarnessApprovalInstance instance = HarnessApprovalInstance.builder()
+                                           .approvalKey("approvalKey")
+                                           .approvalMessage("message")
+                                           .includePipelineExecutionHistory(false)
+                                           .approvalActivities(Collections.emptyList())
+                                           .isAutoRejectEnabled(false)
+                                           .build();
+    instance.setId("uuid1");
+    List<ApprovalInstance> approvalInstances = Collections.singletonList(instance);
+    when(approvalInstanceService.getApprovalInstancesByExecutionId(any(), any(), any(), any()))
+        .thenReturn(approvalInstances);
+    assertThat(approvalResourceService.getApprovalInstancesByExecutionId(
+                   "planExecutionId", ApprovalStatus.APPROVED, ApprovalType.HARNESS_APPROVAL, "nodeExecutionId"))
+        .isEqualTo(Collections.singletonList(approvalInstanceResponseMapper.toApprovalInstanceResponseDTO(instance)));
   }
 }

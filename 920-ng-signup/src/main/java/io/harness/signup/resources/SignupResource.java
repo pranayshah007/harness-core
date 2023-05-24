@@ -80,6 +80,21 @@ public class SignupResource {
   }
 
   /**
+   * Follows the "complete marketplace sign up" path
+   * Used to complete invite and sign up from AWS Marketplace, GCP, etc.
+   *
+   * @param dto
+   * @return
+   */
+  @POST
+  @Path("/marketplace")
+  @PublicApi
+  public RestResponse<UserInfo> marketplaceSignup(
+      SignupDTO dto, @QueryParam("inviteId") String inviteId, @QueryParam("marketPlaceToken") String marketPlaceToken) {
+    return new RestResponse<>(signupService.marketplaceSignup(dto, inviteId, marketPlaceToken));
+  }
+
+  /**
    * Follows the "free trial sign up" path
    * Module type can be optional but by default we will always redirect to NG
    *

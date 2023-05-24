@@ -15,6 +15,8 @@ import static io.harness.security.dto.PrincipalType.USER;
 
 import static software.wings.security.PermissionAttribute.PermissionType.USER_PERMISSION_MANAGEMENT;
 
+import static org.springframework.security.crypto.bcrypt.BCrypt.hashpw;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,8 +25,11 @@ import io.harness.beans.FeatureFlag;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
+import io.harness.exception.UserRegistrationException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.mappers.AccountMapper;
@@ -45,11 +50,18 @@ import io.harness.scim.service.ScimUserService;
 import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.signup.dto.SignupDTO;
 import io.harness.signup.dto.SignupInviteDTO;
 import io.harness.user.remote.UserFilterNG;
 
+import software.wings.beans.Account;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.beans.marketplace.MarketPlaceConstants;
+import software.wings.dl.WingsPersistence;
+import software.wings.security.JWT_CATEGORY;
+import software.wings.security.SecretManager;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationMechanism;
@@ -59,6 +71,7 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
 
+import com.auth0.jwt.interfaces.Claim;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -67,6 +80,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -85,6 +99,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 import retrofit2.http.Body;
 
 @Api(value = "/ng/user", hidden = true)
@@ -105,8 +120,13 @@ public class UserResourceNG {
   private final ScimUserService scimUserService;
   private static final String COMMUNITY_ACCOUNT_EXISTS = "A community account already exists";
   private static final String ACCOUNT_ADMINISTRATOR_USER_GROUP = "Account Administrator";
+  private static final String EXC_USER_ALREADY_REGISTERED = "User is already registered";
+  private static final String MISSING_EMAIL_OR_PASSWORD = "Missing email or password";
+  private static final String EXISTING_INVITE_ALREADY_COMPLETED = "Existing invite is already completed";
 
   @Inject private FeatureFlagService featureFlagService;
+  @Inject private SecretManager secretManager;
+  @Inject private WingsPersistence wingsPersistence;
 
   @POST
   public RestResponse<UserInfo> createNewUserAndSignIn(UserRequestDTO userRequest) {
@@ -187,6 +207,51 @@ public class UserResourceNG {
     }
 
     return new RestResponse<>(userInfo);
+  }
+
+  @POST
+  @Path("/signup-invite/marketplace")
+  public RestResponse<UserInfo> createMarketplaceUserAndCompleteSignup(@QueryParam("inviteId") String inviteId,
+      @QueryParam("marketPlaceToken") String marketPlaceToken, @QueryParam("email") String email,
+      @QueryParam("password") String password, @Body SignupDTO dto) {
+    MarketPlace marketPlace;
+    User user = validatedUserFromMarketplaceRequest(email, password, inviteId, dto);
+
+    Map<String, Claim> claims = secretManager.verifyJWTToken(marketPlaceToken, JWT_CATEGORY.MARKETPLACE_SIGNUP);
+    String userInviteID = claims.get(MarketPlaceConstants.USERINVITE_ID_CLAIM_KEY).asString();
+    if (!userInviteID.equals(inviteId)) {
+      throw new GeneralException(String.format(
+          "User Invite Id in claim: [{%s}] does not match the User Invite Id : [{%s}]", userInviteID, inviteId));
+    }
+
+    String marketPlaceID = claims.get(MarketPlaceConstants.MARKETPLACE_ID_CLAIM_KEY).asString();
+    marketPlace = wingsPersistence.get(MarketPlace.class, marketPlaceID);
+    if (marketPlace == null) {
+      throw new GeneralException(String.format("No MarketPlace found with marketPlaceID=[{%s}]", marketPlaceID));
+    }
+
+    UserInvite userInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (userInvite == null) {
+      throw new GeneralException(String.format("No UserInvite found with inviteId=[{%s}]", inviteId));
+    }
+    // account passed in args does not yet have an identifier
+    String accountId = userService.setupAccountBasedOnProduct(user, userInvite, marketPlace);
+    Account newAccount = wingsPersistence.get(Account.class, accountId);
+    List<Account> newAccountsList = new ArrayList<>();
+    newAccountsList.add(newAccount);
+    user.setAccounts(newAccountsList);
+    user.setDefaultAccountId(accountId);
+
+    User createdUser = userService.createNewUserAndSignIn(user, accountId, NG);
+
+    log.info("Successfully setup account accountId: {}", accountId);
+    log.info("Successfully created user createdUser: {}", createdUser);
+
+    marketPlace.setAccountId(accountId);
+    wingsPersistence.save(marketPlace);
+    log.info("Successfully saved marketplace: {}", createdUser);
+
+    return new RestResponse<>(convertUserToNgUser(createdUser));
   }
 
   @GET
@@ -580,6 +645,50 @@ public class UserResourceNG {
         .emailVerified(userRequest.isEmailVerified())
         .defaultAccountId(userRequest.getDefaultAccountId())
         .build();
+  }
+
+  private User validatedUserFromMarketplaceRequest(String email, String password, String inviteId, SignupDTO dto) {
+    UserInvite existingInvite = wingsPersistence.get(UserInvite.class, inviteId);
+    if (existingInvite.isCompleted()) {
+      log.error("Unexpected state: Existing invite is already completed. ID = {}", inviteId);
+      throw new UserRegistrationException(
+          EXISTING_INVITE_ALREADY_COMPLETED, ErrorCode.USER_INVITE_OPERATION_FAILED, WingsException.USER);
+    }
+    // TODO: Can remove after QA/PR Testing
+    log.info("DTO: {}", dto);
+
+    userService.verifyRegisteredOrAllowed(email);
+
+    User user = convertMarketplaceRequestToUser(email, password, dto);
+    if (user == null) {
+      log.error("Unexpected state: User is null because missing email, {} or password.", email);
+      throw new UserRegistrationException(MISSING_EMAIL_OR_PASSWORD, ErrorCode.INVALID_ARGUMENT, WingsException.USER);
+    }
+    return user;
+  }
+
+  private User convertMarketplaceRequestToUser(String email, String password, SignupDTO dto) {
+    if (email == null || password == null) {
+      return null;
+    }
+
+    try {
+      String passwordHash = hashpw(password, BCrypt.gensalt());
+      List<Account> accountList = new ArrayList<>();
+
+      return User.Builder.anUser()
+          .email(email)
+          .name(dto.getName())
+          .passwordHash(passwordHash)
+          .accountName(dto.getCompanyName())
+          .companyName(dto.getCompanyName())
+          .accounts(accountList)
+          .emailVerified(true)
+          .build();
+    } catch (Exception e) {
+      log.error("Unable to convert Marketplace Request to User. Exception: {}", e);
+      throw new InvalidRequestException("Unable to convert Marketplace Request to User", e);
+    }
   }
 
   private User convertNgUserToUserWithNameUpdated(UserInfo userInfo) {

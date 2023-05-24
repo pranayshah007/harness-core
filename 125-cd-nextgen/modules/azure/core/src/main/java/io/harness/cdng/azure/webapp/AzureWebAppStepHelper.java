@@ -513,15 +513,6 @@ public class AzureWebAppStepHelper {
         break;
       case NEXUS3_REGISTRY_NAME:
         NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
-        if (!cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEB_APP_NG_NEXUS_PACKAGE)) {
-          throw new AccessDeniedException(
-              format(
-                  "Nexus artifact source with repository format '%s' not enabled for account '%s'. Please contact harness customer care to enable FF '%s'.",
-                  nexusArtifactOutcome.getRepositoryFormat(), AmbianceUtils.getAccountId(ambiance),
-                  FeatureName.AZURE_WEB_APP_NG_NEXUS_PACKAGE.name()),
-              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-        }
         artifactConfigBuilder.sourceType(NEXUS3_REGISTRY);
         artifactConfigBuilder.artifactDetails(NexusAzureArtifactRequestDetails.builder()
                                                   .identifier(nexusArtifactOutcome.getIdentifier())
@@ -550,12 +541,6 @@ public class AzureWebAppStepHelper {
         connectorInfoDTO = cdStepHelper.getConnector(jenkinsArtifactOutcome.getConnectorRef(), ambiance);
         break;
       case AZURE_ARTIFACTS_NAME:
-        if (!cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEBAPP_NG_AZURE_DEVOPS_ARTIFACTS)) {
-          throw new AccessDeniedException("The Azure DevOps artifact source in NG is not enabled for this account."
-                  + " Please contact harness customer care.",
-              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-        }
         AzureArtifactsOutcome azureArtifactsOutcome = (AzureArtifactsOutcome) artifactOutcome;
         artifactConfigBuilder.sourceType(AZURE_ARTIFACTS);
         artifactConfigBuilder.artifactDetails(AzureDevOpsArtifactRequestDetails.builder()

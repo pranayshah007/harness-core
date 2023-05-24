@@ -22,17 +22,23 @@ import io.harness.pms.yaml.ParameterField;
 public class CDExpressionResolveFunctor implements ExpressionResolveFunctor {
   private final EngineExpressionService engineExpressionService;
   private final Ambiance ambiance;
+  private final ExpressionMode expressionMode;
 
   public CDExpressionResolveFunctor(EngineExpressionService engineExpressionService, Ambiance ambiance) {
+    this(engineExpressionService, ambiance, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+  }
+
+  public CDExpressionResolveFunctor(
+      EngineExpressionService engineExpressionService, Ambiance ambiance, ExpressionMode expressionMode) {
     this.engineExpressionService = engineExpressionService;
     this.ambiance = ambiance;
+    this.expressionMode = expressionMode;
   }
 
   @Override
   public String processString(String expression) {
     if (EngineExpressionEvaluator.hasExpressions(expression)) {
-      return engineExpressionService.renderExpression(
-          ambiance, expression, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      return engineExpressionService.renderExpression(ambiance, expression, expressionMode);
     }
 
     return expression;

@@ -210,6 +210,7 @@ templateServiceClientConfig:
   connectTimeOutSeconds: 120
   readTimeOutSeconds: 120
 
+containerStepConfigureWithCi: ${SHOULD_CONFIGURE_WITH_CI:-false}
 ciServiceClientConfig:
   baseUrl: http://localhost:4457/api/
   connectTimeOutSeconds: 120

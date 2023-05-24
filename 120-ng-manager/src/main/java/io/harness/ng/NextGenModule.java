@@ -784,6 +784,7 @@ public class NextGenModule extends AbstractModule {
     install(new NGLdapModule(appConfig));
     install(new NgVariableModule(appConfig));
     install(new NGIpAllowlistModule(appConfig));
+    install(new NGFavoriteModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(

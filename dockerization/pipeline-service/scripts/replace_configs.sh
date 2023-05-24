@@ -123,19 +123,27 @@ if [[ "" != "$TEMPLATE_SERVICE_SECRET" ]]; then
 fi
 
 if [[ "" != "$CI_MANAGER_BASE_URL" ]]; then
-  export CI_MANAGER_BASE_URL; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
+  export CI_MANAGER_BASE_URL;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.baseUrl=env(CI_MANAGER_BASE_URL)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
-  export CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.connectTimeOutSeconds=env(CI_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
-  export CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.serviceHttpClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
+  yq -i '.ciServiceClientConfig.readTimeOutSeconds=env(CI_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS)' $CONFIG_FILE
 fi
 
 if [[ "" != "$CI_MANAGER_SERVICE_SECRET" ]]; then
-  export CI_MANAGER_SERVICE_SECRET; yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+  export CI_MANAGER_SERVICE_SECRET;
+  yq -i '.yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
+  yq -i '.ciServiceSecret=env(CI_MANAGER_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$STO_MANAGER_BASE_URL" ]]; then

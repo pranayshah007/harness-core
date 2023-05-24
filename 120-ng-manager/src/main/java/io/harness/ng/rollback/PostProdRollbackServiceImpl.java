@@ -64,7 +64,10 @@ public class PostProdRollbackServiceImpl implements PostProdRollbackService {
       rollbackCheckDTO.message(
           String.format("The given instanceType %s is not supported for rollback.", instance.getInstanceType().name()));
     }
-    if (!ALLOWED_ROLLBACK_START_STATUSES.contains(instance.getRollbackStatus())) {
+    if (instance.getRollbackStatus() == null) {
+      rollbackCheckDTO.isRollbackAllowed(false);
+      rollbackCheckDTO.message("Unable to determine rollback status for given Instance");
+    } else if (!ALLOWED_ROLLBACK_START_STATUSES.contains(instance.getRollbackStatus())) {
       rollbackCheckDTO.isRollbackAllowed(false);
       rollbackCheckDTO.message(String.format(
           "Can not start the Rollback. Rollback has already been triggered and the previous rollback status is: %s",

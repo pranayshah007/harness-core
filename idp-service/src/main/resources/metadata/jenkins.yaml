@@ -27,7 +27,12 @@ exports:
         name: EntityJenkinsContent
         title: CI/CD
         contents:
-          - component: EntityJenkinsContent
+          - component: EntitySwitch
+            specs:
+              cases:
+                if: isJenkinsAvailable
+                content:
+                  component: EntityJenkinsContent
     - type: CARD
       name: EntityLatestJenkinsRunCard
       addByDefault: true

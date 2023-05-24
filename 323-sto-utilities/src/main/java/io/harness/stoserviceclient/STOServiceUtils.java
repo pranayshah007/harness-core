@@ -15,6 +15,7 @@ import io.harness.sto.beans.entities.STOServiceConfig;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -35,7 +36,6 @@ import retrofit2.Response;
 @Singleton
 @OwnedBy(HarnessTeam.CI)
 public class STOServiceUtils {
-  private static final String DEFAULT_PAGE = "0";
   private static final String DEFAULT_PAGE_SIZE = "100";
   private final STOServiceClient stoServiceClient;
   private final STOServiceConfig stoServiceConfig;
@@ -71,30 +71,52 @@ public class STOServiceUtils {
     String accessToken = "ApiKey " + token;
 
     if ("".equals(token)) {
-      result.put("ERROR_MESSAGE", "Failed to fetch scan data");
+      result.put("ERROR_MESSAGE", "Failed to authenticate with STO");
       return result;
     }
 
-    JsonObject scansResponseBody =
-        makeAPICall(stoServiceClient.getScans(accessToken, accountId, executionId, DEFAULT_PAGE, DEFAULT_PAGE_SIZE));
-
-    JsonArray scanResultsArray = scansResponseBody.getAsJsonArray("results");
+    int totalPages = 0;
     JsonObject matchingScan = null;
-    for (JsonElement jsonElement : scanResultsArray) {
-      JsonObject jsonObject = jsonElement.getAsJsonObject();
-      if (jsonObject.has("stepId") && jsonObject.has("stageId")) {
-        String scanStepId = jsonObject.get("stepId").getAsString();
-        String scanStageId = jsonObject.get("stageId").getAsString();
-        String scanExecutionId = jsonObject.get("executionId").getAsString();
-        if (scanStageId.equals(stageId) && scanStepId.equals(stepId) && scanExecutionId.equals(executionId)) {
-          matchingScan = jsonObject;
-          break;
+
+    for (int page = 0; page <= totalPages && matchingScan == null; page++) {
+      JsonObject scansResponseBody = makeAPICall(
+          stoServiceClient.getScans(accessToken, accountId, executionId, String.valueOf(page), DEFAULT_PAGE_SIZE));
+
+      if (scansResponseBody == null) {
+        break;
+      }
+
+      // Update totalPages after first API call
+      if (page == 0) {
+        if (scansResponseBody.has("pagination")) {
+          JsonObject paginationObject = scansResponseBody.getAsJsonObject("pagination");
+          if (paginationObject != null && paginationObject.has("totalPages")) {
+            JsonElement totalPagesElement = paginationObject.get("totalPages");
+            if (totalPagesElement.isJsonPrimitive() && ((JsonPrimitive) totalPagesElement).isNumber()) {
+              totalPages = totalPagesElement.getAsInt() - 1;
+            }
+          }
+        }
+      }
+
+      JsonArray scanResultsArray = scansResponseBody.getAsJsonArray("results");
+
+      for (JsonElement jsonElement : scanResultsArray) {
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+        if (jsonObject.has("stepId") && jsonObject.has("stageId")) {
+          String scanStepId = jsonObject.get("stepId").getAsString();
+          String scanStageId = jsonObject.get("stageId").getAsString();
+          String scanExecutionId = jsonObject.get("executionId").getAsString();
+          if (scanStageId.equals(stageId) && scanStepId.equals(stepId) && scanExecutionId.equals(executionId)) {
+            matchingScan = jsonObject;
+            break;
+          }
         }
       }
     }
 
     if (matchingScan == null) {
-      result.put("ERROR_MESSAGE", "Failed to fetch scan data");
+      result.put("ERROR_MESSAGE", "Scan results were not found");
       return result;
     }
 

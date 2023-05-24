@@ -58,7 +58,7 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
                             .and(BackstageEnvSecretVariableKeys.harnessSecretIdentifier)
                             .is(harnessSecretIdentifier);
     Query query = new Query(criteria);
-    return Optional.of(mongoTemplate.findOne(query, BackstageEnvVariableEntity.class));
+    return Optional.ofNullable(mongoTemplate.findOne(query, BackstageEnvVariableEntity.class));
   }
 
   @Override

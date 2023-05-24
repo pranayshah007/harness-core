@@ -1468,4 +1468,8 @@ public class EcsCommandTaskNGHelper {
 
     return objectMapper.writeValueAsString(obj);
   }
+
+  public void sleepInSeconds(Integer delay) {
+    sleep(ofSeconds(delay));
+  }
 }

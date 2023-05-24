@@ -694,6 +694,7 @@ public class CIExecutionConfigService {
       case UPLOAD_ARTIFACTORY:
       case IACM:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         break;
       default:
         throw new BadRequestException(format(UNEXPECTED_ERR_FORMAT, stepInfoType));

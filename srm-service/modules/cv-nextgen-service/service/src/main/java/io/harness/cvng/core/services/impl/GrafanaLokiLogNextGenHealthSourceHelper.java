@@ -14,7 +14,6 @@ import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.services.api.NextGenHealthSourceHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -27,23 +26,18 @@ public class GrafanaLokiLogNextGenHealthSourceHelper implements NextGenHealthSou
       HealthSourceRecordsRequest healthSourceRecordsRequest) {
     Long startTime = convertEpochMillisToSeconds(healthSourceRecordsRequest.getStartTime());
     Long endTime = convertEpochMillisToSeconds(healthSourceRecordsRequest.getEndTime());
-    try {
-      return GrafanaLokiLogSampleDataRequest.builder()
-          .startTimeInSeconds(startTime)
-          .endTimeInSeconds(endTime)
-          .dsl(MetricPackServiceImpl.GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL)
-          .query(encodeValue(healthSourceRecordsRequest.getQuery().trim()))
-          .type(DataCollectionRequestType.GRAFANA_LOKI_LOG_SAMPLE_DATA)
-          .build();
-    } catch (UnsupportedEncodingException e) {
-      log.error("Unable to encide the query {}", healthSourceRecordsRequest.getQuery(), e);
-      throw new IllegalArgumentException();
-    }
+    return GrafanaLokiLogSampleDataRequest.builder()
+        .startTimeInSeconds(startTime)
+        .endTimeInSeconds(endTime)
+        .dsl(MetricPackServiceImpl.GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL)
+        .query(encodeValue(healthSourceRecordsRequest.getQuery().trim()))
+        .type(DataCollectionRequestType.GRAFANA_LOKI_LOG_SAMPLE_DATA)
+        .build();
   }
   private static long convertEpochMillisToSeconds(long millis) {
     return Instant.ofEpochMilli(millis).getEpochSecond();
   }
-  private static String encodeValue(String value) throws UnsupportedEncodingException {
+  public static String encodeValue(String value) {
     return URLEncoder.encode(value, StandardCharsets.UTF_8);
   }
 }

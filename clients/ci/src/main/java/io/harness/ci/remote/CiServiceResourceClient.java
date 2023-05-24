@@ -11,9 +11,8 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.ng.beans.PageResponse;
+import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
@@ -23,10 +22,10 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface CiServiceResourceClient {
-  String CI_ENDPOINT = "ci";
+  String EXECUTION_CONFIG_API_BASE_PATH = "/execution-config";
 
-  @GET(CI_ENDPOINT + "/get-customer-config")
-  Call<ResponseDTO<PageResponse<EnvironmentResponse>>> getCustomersExecutionConfig(
+  @GET(EXECUTION_CONFIG_API_BASE_PATH + "/get-customer-config")
+  Call<ResponseDTO<CIExecutionImages>> getCustomersExecutionConfig(
       @NotNull @Query(NGCommonEntityConstants.INFRA) StageInfraDetails.Type infra,
       @NotNull @Query(NGCommonEntityConstants.OVERRIDES_ONLY) @DefaultValue("true") boolean overridesOnly,
       @NotNull @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);

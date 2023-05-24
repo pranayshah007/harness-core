@@ -660,6 +660,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         instanceDTO.setPrimaryArtifact(deploymentSummaryFromDB.getArtifactDetails());
         instanceDTO.setLastDeployedByName(deploymentSummaryFromDB.getDeployedByName());
         instanceDTO.setLastPipelineExecutionName(deploymentSummaryFromDB.getPipelineExecutionName());
+        instanceDTO.setRollbackStatus(deploymentSummaryFromDB.getRollbackStatus());
+        instanceDTO.setStageNodeExecutionId(deploymentSummaryFromDB.getStageNodeExecutionId());
+        instanceDTO.setStageSetupId(deploymentSummaryFromDB.getStageSetupId());
+        instanceDTO.setStageStatus(deploymentSummaryFromDB.getStageStatus());
 
         // instance will be owned by the org/project which last deployed with the infra mapping, instance sync key
         updateOrgProjectIdentifiers(instanceDTO, deploymentSummaryFromDB);
@@ -759,6 +763,10 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
         .infrastructureIdentifier(instanceDTO.getInfraIdentifier())
         .infrastructureName(instanceDTO.getInfraName())
         .envGroupRef(instanceDTO.getEnvGroupRef())
+        .stageNodeExecutionId(instanceDTO.getStageNodeExecutionId())
+        .stageSetupId(instanceDTO.getStageSetupId())
+        .stageStatus(instanceDTO.getStageStatus())
+        .rollbackStatus(instanceDTO.getRollbackStatus())
         .build();
   }
 

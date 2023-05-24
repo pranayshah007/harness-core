@@ -77,31 +77,80 @@ then
     exit 1
 fi
 
-# Bumping version in build.properties in develop branch.
-echo "STEP2: INFO: Bumping version in build.properties in develop branch."
+#Get Previous Tag and Tagging Master Branch according to type of release.
+echo "INFO: Get Previous Tag and Tagging Develop Branch according to type of release."
+if [[ "$EXECUTE_NEW_CODE" == "true" ]]; then
+    export SHA=`git rev-parse HEAD`
+    export VERSION_FILE=template-service/build.properties
 
-export SHA=`git rev-parse HEAD`
-export VERSION_FILE=template-service/build.properties
+    # break down the version number into it's components
+    major=`cat ${VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`
+    minor=`cat ${VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
+    patchVersion=`cat ${VERSION_FILE} | grep 'build.patchVersion=' | sed -e 's: *build.patchVersion=::g'`
 
-export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
-export VERSION=${VERSION%??}
-export NEW_VERSION=$(( ${VERSION}+1 ))
+    echo "INFO: Current Tag: $TAG: major.minor.patchVersion: ${major}.${minor}.${patchVersion}"
 
-sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
+    # check ENV paramater RELEASE_TYPE to see which number to increment
+    echo "INFO: Release Type: $RELEASE_TYPE"
+    case $RELEASE_TYPE in
+      major)
+        echo "INFO: Incrementing major version."
+        newMajor=$(($major+1))
+        newMinor=0
+        newPatchVersion=0
+        ;;
+      minor)
+        echo "INFO: Incrementing minor version."
+        newMajor=$major
+        newMinor=$(($minor + 1))
+        newPatchVersion=0
+        ;;
+      patchVersion)
+        echo "INFO: Incrementing patchVersion version."
+        newMajor=$major
+        newMinor=$minor
+        newPatchVersion=$(($patchVersion + 1))
+        ;;
+      *)
+        echo "ERROR: Invalid Release Type. Release type can be [major,minor,patchVersion]. Exiting..."
+        exit 1
+        ;;
+    esac
 
-git add ${VERSION_FILE}
-git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
-git push origin develop
-print_err "$?" "Pushing build.properties to develop branch failed"
+    # echo the new version number
+    export VERSION=${major}.${minor}.${patchVersion}
+    export NEW_VERSION=${newMajor}.${newMinor}.${newPatchVersion}
+    echo "New version: major.minor.patchVersion: VERSION"
+
+    sed -i "s:build.majorVersion=${major}:build.majorVersion=${newMajor}:g" ${VERSION_FILE}
+    sed -i "s:build.minorVersion=${minor}:build.minorVersion=${newMinor}:g" ${VERSION_FILE}
+    sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${newPatchVersion}:g" ${VERSION_FILE}
+
+    git add ${VERSION_FILE}
+    newBranch="${major}_${minor}"
+    echo ${newBranch}
+    git commit -m "Branching to release/${PURPOSE}/${newBranch}. New version ${NEW_VERSION}"
+    git push origin develop
+
+    echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
+
+    git checkout ${SHA}
+    git checkout -b release/${PURPOSE}/${newBranch}
+
+    sed -i "s:build.majorVersion=${major}:build.majorVersion=${major}:g" ${VERSION_FILE}
+    sed -i "s:build.minorVersion=${minor}:build.minorVersion=${minor}:g" ${VERSION_FILE}
+    sed -i "s:build.patchVersion=${patchVersion}:build.patchVersion=${patchVersion}:g" ${VERSION_FILE}
+
+    git add ${VERSION_FILE}
+    git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${newBranch}"
+    git push origin release/${PURPOSE}/${newBranch}
+fi
+
+#creating the fix version
+chmod +x template-service/release/release-branch-create-template-versions.sh
+template-service/release/release-branch-create-template-versions.sh
+
+chmod +x template-service/release/release-branch-update-jiras.sh
+template-service/release/release-branch-update-jiras.sh
 
 
-echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
-
-git checkout ${SHA}
-git checkout -b release/${PURPOSE}/${VERSION}xx
-
-sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}
-
-git add ${VERSION_FILE}
-git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
-git push origin release/${PURPOSE}/${VERSION}xx

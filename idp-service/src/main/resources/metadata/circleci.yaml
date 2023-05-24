@@ -28,4 +28,9 @@ exports:
         name: EntityCircleCIContent
         title: CI/CD
         contents:
-          - component: EntityCircleCIContent
+          - component: EntitySwitch
+            specs:
+              cases:
+                if: isCircleCIAvailable
+                content:
+                  component: EntityCircleCIContent

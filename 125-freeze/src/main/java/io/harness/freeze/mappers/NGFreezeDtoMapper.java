@@ -79,6 +79,7 @@ public class NGFreezeDtoMapper {
     oldFreezeConfigEntity.setStatus(newFreezeConfigEntity.getStatus());
     oldFreezeConfigEntity.setTags(newFreezeConfigEntity.getTags());
     oldFreezeConfigEntity.setYaml(newFreezeConfigEntity.getYaml());
+    oldFreezeConfigEntity.setShouldSendNotification(true);
     return oldFreezeConfigEntity;
   }
 
