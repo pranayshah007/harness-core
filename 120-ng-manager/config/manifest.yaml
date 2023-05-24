@@ -1,4 +1,4 @@
-BUILD_SCRIPT_PATH: access-control/build/feature_build.sh
+BUILD_SCRIPT_PATH: 120-ng-manager/build/feature_build.sh
 DOCKER_FILE_PATH: /harness/harness-core/dist/ng-manager/Dockerfile-cie-jdk
 CONTEXT_PATH: /harness/harness-core/dist/ng-manager
 ARTIFACT_REPO: harness/feature-ng-manager-openjdk-8u242
