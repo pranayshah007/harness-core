@@ -120,6 +120,7 @@ public interface UserClient {
       @Query("requireAdminStatus") boolean requireAdminStatus);
 
   @GET(USERS_API + "/{userId}") Call<RestResponse<Optional<UserInfo>>> getUserById(@Path("userId") String userId);
+
   @GET(USERS_API + "/{userId}/{accountId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByIdAndAccount(
       @Path("userId") String userId, @Path(value = "accountId") String accountId);
