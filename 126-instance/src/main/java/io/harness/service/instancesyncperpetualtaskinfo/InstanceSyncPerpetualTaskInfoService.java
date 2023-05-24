@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
-import io.harness.ng.beans.PageRequest;
 
 import java.util.List;
 import java.util.Optional;

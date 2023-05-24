@@ -32,7 +32,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceSyncPerpetualTaskMappingService;
-import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
+import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys;
 import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helper.InstanceSyncHelper;
@@ -485,8 +485,8 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
 
   public InstanceSyncTaskDetails fetchTaskDetails(
       String perpetualTaskId, String accountIdentifier, int page, int size) {
-    Pageable pageRequest = PageRequest.of(page, size,
-        Sort.by(Sort.Direction.DESC, InstanceSyncPerpetualTaskInfo.InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId));
+    Pageable pageRequest =
+        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2));
     Page<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
         instanceSyncPerpetualTaskInfoService.findAllInPages(pageRequest, accountIdentifier, perpetualTaskId);
     List<DeploymentReleaseDetails> deploymentReleaseDetailsList = new ArrayList<>();

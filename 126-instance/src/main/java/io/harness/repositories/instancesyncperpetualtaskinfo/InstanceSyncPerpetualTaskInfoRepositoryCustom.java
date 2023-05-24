@@ -10,7 +10,6 @@ package io.harness.repositories.instancesyncperpetualtaskinfo;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
-import io.harness.ng.beans.PageRequest;
 
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;

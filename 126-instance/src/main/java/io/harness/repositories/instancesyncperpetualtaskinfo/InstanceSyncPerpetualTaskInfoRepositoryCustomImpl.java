@@ -9,9 +9,7 @@ package io.harness.repositories.instancesyncperpetualtaskinfo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfo;
-import io.harness.ng.beans.PageRequest;
 import io.harness.springdata.PersistenceUtils;
 
 import com.google.inject.Inject;
