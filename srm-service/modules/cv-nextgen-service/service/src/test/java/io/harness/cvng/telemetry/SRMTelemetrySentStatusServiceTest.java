@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.CategoryTest;
+import io.harness.CvNextGenTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(CV)
-public class SRMTelemetrySentStatusServiceTest extends CategoryTest {
+public class SRMTelemetrySentStatusServiceTest extends CvNextGenTestBase {
   @Inject private SRMTelemetrySentStatusService srmTelemetrySentStatusService;
 
   private BuilderFactory builderFactory;
@@ -37,11 +37,12 @@ public class SRMTelemetrySentStatusServiceTest extends CategoryTest {
   public void testUpdateTimestampIfOlderThan_exceptionHandle() {
     builderFactory = BuilderFactory.getDefault();
     Instant instant = Instant.now();
-    boolean result = srmTelemetrySentStatusService.updateTimestampIfOlderThan(
-        builderFactory.getContext().getAccountId(), instant.toEpochMilli(), instant.toEpochMilli());
+    boolean result =
+        srmTelemetrySentStatusService.updateTimestampIfOlderThan(builderFactory.getContext().getAccountId(),
+            instant.minus(Duration.ofMinutes(1430l)).toEpochMilli(), instant.toEpochMilli());
     assertThat(result).isEqualTo(true);
     result = srmTelemetrySentStatusService.updateTimestampIfOlderThan(builderFactory.getContext().getAccountId(),
-        instant.toEpochMilli(), instant.plus(Duration.ofMinutes(30l)).toEpochMilli());
+        instant.minus(Duration.ofMinutes(1400l)).toEpochMilli(), instant.plus(Duration.ofMinutes(30l)).toEpochMilli());
     assertThat(result).isEqualTo(false);
   }
 
