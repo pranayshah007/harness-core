@@ -63,3 +63,14 @@ if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   bazel ${bazelrc} run ${BAZEL_ARGUMENTS}  //001-microservice-intfc-tool:module -- kryo-file=/tmp/KryoDeps.text proto-file=/tmp/ProtoDeps.text ignore-json | grep "Codebase Hash:" > ${moduleName}-protocol.info
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi
+
+if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
+  module=332-ci-manager
+  moduleName=ci-manager
+
+  bazel query "deps(//${module}/app:module)" | grep -i "KryoRegistrar" | rev | cut -f 1 -d "/" | rev | cut -f 1 -d "." > /tmp/KryoDeps.text
+  cp scripts/interface-hash/module-deps.sh .
+  sh module-deps.sh //${module}/service:module > /tmp/ProtoDeps.text
+  bazel ${bazelrc} run ${BAZEL_ARGUMENTS}  //001-microservice-intfc-tool:module -- kryo-file=/tmp/KryoDeps.text proto-file=/tmp/ProtoDeps.text ignore-json | grep "Codebase Hash:" > ${moduleName}-protocol.info
+  rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
+fi
