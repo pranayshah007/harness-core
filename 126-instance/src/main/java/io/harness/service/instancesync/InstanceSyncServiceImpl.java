@@ -486,7 +486,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
   public InstanceSyncTaskDetails fetchTaskDetails(
       String perpetualTaskId, String accountIdentifier, int page, int size) {
     Pageable pageRequest =
-        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2));
+        PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, InstanceSyncPerpetualTaskInfoKeys.createdAt));
     Page<InstanceSyncPerpetualTaskInfoDTO> instanceSyncPerpetualTaskInfoDTOList =
         instanceSyncPerpetualTaskInfoService.findAllInPages(pageRequest, accountIdentifier, perpetualTaskId);
     List<DeploymentReleaseDetails> deploymentReleaseDetailsList = new ArrayList<>();
