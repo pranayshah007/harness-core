@@ -46,7 +46,7 @@ elif [ "${SERVICE_NAME}" == "srm-service" ]; then
     SERVICE_MODULE="srm-service/modules/cv-nextgen-service/service:module //srm-service/modules/cv-nextgen-service/service:module_deploy.jar"
 elif [ "${SERVICE_NAME}" == "template-service" ]; then
     SERVICE_MODULE="template-service/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "cg-manager" ]; then
+elif [ "${SERVICE_NAME}" == "manager" ]; then
     SERVICE_MODULE="template-service:module_deploy.jar"
 fi
 

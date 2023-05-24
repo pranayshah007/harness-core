@@ -281,11 +281,16 @@ function copy_ci_manager_jars(){
   cp ../../332-ci-manager/config/cert.pem .
   cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
   cp ../../332-ci-manager/service/src/main/resources/enterprise-redisson-jcache.yaml .
+  cp ../../332-ci-manager/service/src/main/resources/jfr/default.jfc .
+  cp ../../332-ci-manager/service/src/main/resources/jfr/profile.jfc .
 
-  cp ../../dockerization/ci-manager/Dockerfile-ci-manager-cie-jdk ./Dockerfile-cie-jdk
+  cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
+  cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+  cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
+  cp ../../332-ci-manager/build/container/Dockerfile-ci-manager-cie-jdk ./Dockerfile-cie-jdk
   cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-  cp -r ../../dockerization/ci-manager/scripts/ .
+  cp -r ../../332-ci-manager/build/container/scripts/ .
   cp ../../ci-manager-protocol.info .
   copy_common_files
   java -jar ci-manager-capsule.jar scan-classpath-metadata
