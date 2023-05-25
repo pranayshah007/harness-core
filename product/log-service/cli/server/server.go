@@ -8,7 +8,11 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
 
@@ -95,8 +99,44 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	// create the stream server.
 	var stream stream.Stream
 	if config.Redis.Endpoint != "" {
-		stream = redis.New(config.Redis.Endpoint, config.Redis.Password, config.Redis.SSLEnabled, config.Redis.DisableExpiryWatcher, config.Redis.CertPath)
-		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
+		// Changes for log-service to connect to sentinel without SSL and expiry watcher
+		/*
+			stream = redis.NewFailoverClient(&redis.FailoverOptions{
+				MasterName:    config.Redis.MasterName,
+				SentinelAddrs: config.Redis.SentinelAddrs,
+				Password:      config.Redis.Password,
+				DB:            0,  // use default DB
+			})
+		*/
+		var tlsConfig *tls.Config
+		if config.Redis.SSLEnabled {
+			caCert, err := ioutil.ReadFile(config.Redis.CertPath)
+			if err != nil {
+				log.Fatalf("Could not read CA certificate: %v", err)
+			}
+			caCertPool := x509.NewCertPool()
+			caCertPool.AppendCertsFromPEM(caCert)
+
+			tlsConfig = &tls.Config{
+				RootCAs: caCertPool,
+			}
+		}
+
+		client := redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:    config.Redis.MasterName,
+			SentinelAddrs: config.Redis.SentinelAddrs,
+			Password:      config.Redis.Password,
+			DB:            0, // use default DB
+			TLSConfig:     tlsConfig,
+		})
+
+		if !config.Redis.DisableExpiryWatcher {
+			// Enable expiry watcher. <TBD>
+			// Method call to enable expiry watcher
+		}
+
+		stream = client
+		logrus.Infof("configuring log stream to use Redis Sentinel: %s", config.Redis.Endpoint)
 	} else {
 		// create the in-memory stream
 		stream = memory.New()
