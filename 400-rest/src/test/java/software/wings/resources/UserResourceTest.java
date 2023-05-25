@@ -171,7 +171,7 @@ public class UserResourceTest extends WingsBaseTest {
              any(), any(), any(), anyInt(), anyInt(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean()))
         .thenReturn(aPageResponse().withResponse(asList(anUser().build())).build());
     userResource.list(pageRequest, UUIDGenerator.generateUuid(), null, false, false);
-    verify(USER_SERVICE).getTotalUserCount(any(), anyBoolean(), true, true);
+    verify(USER_SERVICE).getTotalUserCount(any(), anyBoolean(),  anyBoolean(),  anyBoolean());
   }
 
   @Test(expected = BadRequestException.class)
