@@ -169,17 +169,21 @@ public class ClickHouseQueryResponseHelper {
       Double cost = null;
       String name = DEFAULT_GRID_ENTRY_NAME;
       String id = DEFAULT_STRING_VALUE;
-
       while (columnIndex <= totalColumns) {
         String columnName = resultSet.getMetaData().getColumnName(columnIndex);
         String columnType = resultSet.getMetaData().getColumnTypeName(columnIndex);
+        log.info("SMP issues log: convertToEntityStatsData columnName {}", columnName);
+        log.info("SMP issues log: convertToEntityStatsData columnName {}", columnType);
         if (columnType.toUpperCase(Locale.ROOT).contains(STRING)) {
           name = fetchStringValue(resultSet, columnName, fieldName);
           id = perspectiveTimeSeriesResponseHelper.getUpdatedId(id, name);
+          log.info("SMP issues log: convertToEntityStatsData name {}", name);
+          log.info("SMP issues log: convertToEntityStatsData id {}", id);
           entityNames.add(name);
         } else if (columnType.toUpperCase(Locale.ROOT).contains(FLOAT64)) {
           if (columnName.equalsIgnoreCase(COST)) {
             cost = fetchNumericValue(resultSet, columnName, skipRoundOff);
+            log.info("SMP issues log: convertToEntityStatsData cost {}", cost);
             dataPointBuilder.cost(cost);
           } else if (sharedCostBucketNames.contains(columnName)) {
             sharedCosts.put(
@@ -211,6 +215,8 @@ public class ClickHouseQueryResponseHelper {
     if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
       log.warn("Grid result set size: {}", entityStatsDataPoints.size());
     }
+
+    log.info("SMP issues log: convertToEntityStatsData entityStatsDataPoints {}", entityStatsDataPoints);
     return QLCEViewGridData.builder()
         .data(entityStatsDataPoints)
         .fields(getStringFieldNames(fieldToDataTypeMapping, cloudProviderTableName))
@@ -223,6 +229,7 @@ public class ClickHouseQueryResponseHelper {
       throws SQLException {
     Map<String, String> fieldToDataTypeMapping = getFieldToDataTypeMapping(resultSet);
     List<String> fields = new ArrayList<>(fieldToDataTypeMapping.keySet());
+    log.info("SMP issues log: convertToEntityStatsDataForCluster fieldToDataTypeMapping {}", fieldToDataTypeMapping);
     String fieldName = viewParametersHelper.getEntityGroupByFieldName(groupBy);
     String fieldId = viewParametersHelper.getEntityGroupByFieldId(groupBy);
     boolean isInstanceDetailsData = fields.contains(INSTANCE_ID);
@@ -276,6 +283,7 @@ public class ClickHouseQueryResponseHelper {
           if (field.equalsIgnoreCase(fieldId)) {
             nameForGroupByField = name;
           }
+          log.info("SMP issues log: convertToEntityStatsDataForCluster name {}", name);
         }
       }
       clusterDataBuilder.id(entityId);
@@ -312,6 +320,7 @@ public class ClickHouseQueryResponseHelper {
     if (entityStatsDataPoints.size() > MAX_LIMIT_VALUE) {
       log.warn("Grid result set size (for cluster): {}", entityStatsDataPoints.size());
     }
+    log.info("SMP issues log: convertToEntityStatsDataForCluster entityStatsDataPoints {}", entityStatsDataPoints);
     return QLCEViewGridData.builder()
         .data(entityStatsDataPoints)
         .fields(getStringFieldNames(fieldToDataTypeMapping, cloudProviderTableName))
