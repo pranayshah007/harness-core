@@ -24,20 +24,24 @@ import io.harness.cvng.activity.entities.ActivityBucket.ActivityBucketKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClusterActivityKeys;
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService.ServiceEnvironmentKeys;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.core.beans.change.ChangeIncidentReport;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO.CategoryCountDetails;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.ChangeTimelineBuilder;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
+import io.harness.cvng.core.beans.monitoredService.RiskData;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ResourceParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.services.CVNextGenConstants;
@@ -48,6 +52,11 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -64,6 +73,7 @@ import dev.morphia.annotations.Id;
 import dev.morphia.query.Criteria;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -86,11 +96,15 @@ import org.apache.commons.lang3.StringUtils;
 
 // TODO: merge ChangeEventService and ActivityService
 public class ChangeEventServiceImpl implements ChangeEventService {
+  private final int PAST_HEALTH_SCORE_INDEX = 12;
+  @Inject private Clock clock;
   @Inject ChangeSourceService changeSourceService;
   @Inject ChangeEventEntityAndDTOTransformer transformer;
   @Inject ActivityService activityService;
   @Inject HPersistence hPersistence;
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
+  @Inject SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject FeatureFlagService featureFlagService;
 
   @Override
@@ -315,6 +329,81 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     }
     return getChangeSummary(projectParams, monitoredServiceIdentifiers, changeCategories, changeSourceTypes, startTime,
         endTime, isMonitoredServiceIdentifierScoped);
+  }
+
+  @Override
+  public ChangeIncidentReport getChangeIncidentReport(ProjectParams projectParams, String monitoredServiceIdentifier) {
+    Instant currentTime = clock.instant();
+
+    ChangeSummaryDTO changeSummary =
+        getChangeSummary(projectParams, monitoredServiceIdentifier, null, false, Arrays.asList(ChangeCategory.values()),
+            Arrays.asList(ChangeSourceType.values()), currentTime.minus(Duration.ofHours(1)), currentTime);
+
+    List<AbstractServiceLevelObjective> serviceLevelObjectives =
+        serviceLevelObjectiveService.getByMonitoredServiceIdentifier(projectParams, monitoredServiceIdentifier);
+    List<ChangeIncidentReport.AssociatedSLOsDetails> associatedSLOsDetails =
+        serviceLevelObjectives.stream()
+            .map(serviceLevelObjective -> {
+              SLODashboardWidget.SLOGraphData sloGraphData =
+                  sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective,
+                      TimeRangeParams.builder()
+                          .startTime(clock.instant().minus(Duration.ofDays(1)))
+                          .endTime(clock.instant())
+                          .build());
+              double errorBudgetBurnRate = 0;
+              double sloPerformance = 0;
+              if (sloGraphData.getErrorBudgetBurndown().size() > 1) {
+                errorBudgetBurnRate = sloGraphData.getErrorBudgetBurndown().get(0).getValue()
+                    - sloGraphData.getErrorBudgetBurndown()
+                          .get(sloGraphData.getErrorBudgetBurndown().size() - 1)
+                          .getValue();
+              }
+              if (sloGraphData.getSloPerformanceTrend().size() > 0) {
+                sloPerformance = sloGraphData.getSloPerformanceTrend()
+                                     .get(sloGraphData.getSloPerformanceTrend().size() - 1)
+                                     .getValue();
+              }
+              return ChangeIncidentReport.AssociatedSLOsDetails.builder()
+                  .identifier(serviceLevelObjective.getIdentifier())
+                  .name(serviceLevelObjective.getName())
+                  .scopedMonitoredServiceIdentifier(
+                      ScopedInformation.getScopedInformation(serviceLevelObjective.getAccountId(),
+                          serviceLevelObjective.getOrgIdentifier(), serviceLevelObjective.getProjectIdentifier(),
+                          ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier()))
+                  .sloPerformance(sloPerformance)
+                  .errorBudgetBurnRate(errorBudgetBurnRate)
+                  .build();
+            })
+            .collect(Collectors.toList());
+
+    long currentHealthScore = 0;
+    long pastHealthScore = 0;
+    List<RiskData> overAllHealthScore =
+        monitoredServiceService
+            .getOverAllHealthScore(projectParams, monitoredServiceIdentifier, DurationDTO.FOUR_HOURS, currentTime)
+            .getHealthScores();
+    if (overAllHealthScore.size() > 0) {
+      Collections.reverse(overAllHealthScore);
+      pastHealthScore = overAllHealthScore.get(PAST_HEALTH_SCORE_INDEX).getRiskStatus() != Risk.NO_DATA
+          ? overAllHealthScore.get(PAST_HEALTH_SCORE_INDEX).getHealthScore()
+          : 0;
+      for (int i = 0; i < PAST_HEALTH_SCORE_INDEX; i++) {
+        if (overAllHealthScore.get(i).getRiskStatus() != Risk.NO_DATA) {
+          currentHealthScore = overAllHealthScore.get(i).getHealthScore();
+          break;
+        }
+      }
+    }
+
+    return ChangeIncidentReport.builder()
+        .changeSummary(changeSummary)
+        .associatedSLOsDetails(associatedSLOsDetails)
+        .serviceHealthDetails(ChangeIncidentReport.ServiceHealthDetails.builder()
+                                  .currentHealthScore(currentHealthScore)
+                                  .pastHealthScore(pastHealthScore)
+                                  .percentageChange(getPercentageChange(currentHealthScore, pastHealthScore))
+                                  .build())
+        .build();
   }
 
   private ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,

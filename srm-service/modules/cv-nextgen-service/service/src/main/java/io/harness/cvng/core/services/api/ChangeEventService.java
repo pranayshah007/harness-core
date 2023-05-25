@@ -10,6 +10,7 @@ package io.harness.cvng.core.services.api;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.core.beans.change.ChangeIncidentReport;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
@@ -51,4 +52,6 @@ public interface ChangeEventService {
       List<String> monitoredServiceIdentifiers, boolean isMonitoredServiceIdentifierScoped,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime);
+
+  ChangeIncidentReport getChangeIncidentReport(ProjectParams projectParams, String monitoredServiceIdentifier);
 }
