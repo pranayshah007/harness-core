@@ -33,6 +33,7 @@ data:
   PMS_GRPC_AUTHORITY: pipeline-service:12011
   PMS_GRPC_TARGET: pipeline-service:12011
   MANAGER_CLIENT_BASEURL: 'http://harness-manager:9090/api/'
+  ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

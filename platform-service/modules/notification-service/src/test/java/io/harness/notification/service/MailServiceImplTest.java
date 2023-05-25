@@ -165,11 +165,14 @@ public class MailServiceImplTest extends CategoryTest {
     assertTrue(notificationProcessingResponse.equals(NotificationProcessingResponse.trivialResponseWithNoRetries));
     notificationExpectedResponse =
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+    when(delegateGrpcClientWrapper.submitAsyncTaskV2(any(), any())).thenReturn("");
     notificationProcessingResponse = mailService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }
@@ -209,9 +212,9 @@ public class MailServiceImplTest extends CategoryTest {
         NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(mailTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
-    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
     notificationProcessingResponse = mailService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
   }

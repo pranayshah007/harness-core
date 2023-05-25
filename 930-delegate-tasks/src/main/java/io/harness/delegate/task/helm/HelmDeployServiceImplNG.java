@@ -66,6 +66,7 @@ import io.harness.delegate.clienttools.InstallUtils;
 import io.harness.delegate.exception.HelmNGException;
 import io.harness.delegate.service.ExecutionConfigOverrideFromFileOnDelegate;
 import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
+import io.harness.delegate.task.helm.steadystate.HelmSteadyStateService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -162,6 +163,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   private ILogStreamingTaskClient logStreamingTaskClient;
   @Inject private TimeLimiter timeLimiter;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
+  @Inject private HelmSteadyStateService helmSteadyStateService;
   public static final String TIMED_OUT_IN_STEADY_STATE = "Timed out waiting for controller to reach in steady state";
   public static final String InstallUpgrade = "Install / Upgrade";
   public static final String Rollback = "Rollback";
@@ -224,11 +226,15 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
           serviceHookDTO.getWorkingDirectory(), logCallback);
       resources = printHelmChartKubernetesResources(commandRequest);
 
-      List<KubernetesResourceId> workloads = readResources(resources);
+      List<KubernetesResourceId> workloads = null;
+      if (!commandRequest.isUseRefactorSteadyStateCheck()) {
+        workloads = readResources(resources);
+      }
 
-      boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
+      boolean useSteadyStateCheck = useSteadyStateCheck(
+          commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.isUseRefactorSteadyStateCheck(), logCallback);
 
-      if (useSteadyStateCheck) {
+      if (useSteadyStateCheck && !commandRequest.isUseRefactorSteadyStateCheck()) {
         releaseHistory = createNewRelease(commandRequest, workloads, prevVersion);
       }
 
@@ -275,19 +281,27 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandRequest.setPrevReleaseVersion(prevVersion);
       commandRequest.setNewReleaseVersion(prevVersion + 1);
 
-      if (useSteadyStateCheck) {
+      if (useSteadyStateCheck && releaseHistory != null) {
         saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.SUCCESS);
       }
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WaitForSteadyState);
+      if (useSteadyStateCheck && commandRequest.isUseRefactorSteadyStateCheck()) {
+        resources = helmSteadyStateService.readManifestFromHelmRelease(
+            HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
+        workloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+      }
+
       serviceHookHandler.addWorkloadContextForHooks(resources, Collections.emptyList());
       serviceHookHandler.execute(ServiceHookType.PRE_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
           serviceHookDTO.getWorkingDirectory(), logCallback);
+
       List<ContainerInfo> containerInfos = getContainerInfos(
           commandRequest, workloads, useSteadyStateCheck, logCallback, commandRequest.getTimeoutInMillis());
-      if (!useSteadyStateCheck) {
+      if (!useSteadyStateCheck) { // TODO: revisit
         setReleaseNameForContainers(containerInfos, commandRequest.getReleaseName(), commandRequest.getNamespace());
       }
+
       commandResponse.setContainerInfoList(containerInfos);
       commandResponse.setHelmVersion(commandRequest.getHelmVersion());
       serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.STEADY_STATE_CHECK,
@@ -301,14 +315,18 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       throw new HelmNGException(prevVersion, ExceptionMessageSanitizer.sanitizeException(ex), isInstallUpgrade);
     } catch (UncheckedTimeoutException e) {
       logCallback.saveExecutionLog(TIMED_OUT_IN_STEADY_STATE, LogLevel.ERROR);
-      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
+      if (isInstallUpgrade
+          && useSteadyStateCheck(
+              commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.isUseRefactorSteadyStateCheck(), logCallback)
           && releaseHistory != null) {
         saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
       }
       throw new HelmNGException(prevVersion, ExceptionMessageSanitizer.sanitizeException(e), isInstallUpgrade);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      if (isInstallUpgrade && useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback)
+      if (isInstallUpgrade
+          && useSteadyStateCheck(
+              commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.isUseRefactorSteadyStateCheck(), logCallback)
           && releaseHistory != null) {
         saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
       }
@@ -518,10 +536,12 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         .collect(Collectors.toList());
   }
 
-  private boolean useSteadyStateCheck(boolean isK8sSteadyStateCheckEnabled, LogCallback logCallback) {
-    if (!isK8sSteadyStateCheckEnabled) {
+  private boolean useSteadyStateCheck(
+      boolean isK8sSteadyStateCheckEnabled, boolean useRefactorSteadyStateCheck, LogCallback logCallback) {
+    if (!isK8sSteadyStateCheckEnabled && !useRefactorSteadyStateCheck) {
       return false;
     }
+
     String versionAsString = kubernetesContainerService.getVersionAsString(kubernetesConfig);
     logCallback.saveExecutionLog(format("Kubernetes version [%s]", versionAsString));
     int versionMajorMin = Integer.parseInt(escapeNonDigitsAndTruncate(versionAsString));
@@ -554,13 +574,20 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
 
       List<KubernetesResourceId> rollbackWorkloads = new ArrayList<>();
-      boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
-      if (useSteadyStateCheck) {
+      boolean useSteadyStateCheck = useSteadyStateCheck(
+          commandRequest.isK8SteadyStateCheckEnabled(), commandRequest.isUseRefactorSteadyStateCheck(), logCallback);
+      if (useSteadyStateCheck && !commandRequest.isUseRefactorSteadyStateCheck()) {
         rollbackWorkloads = readResourcesForRollback(commandRequest, commandRequest.getPrevReleaseVersion());
         ReleaseHistory releaseHistory = createNewRelease(commandRequest, rollbackWorkloads, null);
         saveReleaseHistory(commandRequest, releaseHistory, CommandExecutionStatus.FAILURE);
       }
       logCallback = markDoneAndStartNew(commandRequest, logCallback, WaitForSteadyState);
+
+      if (useSteadyStateCheck && commandRequest.isUseRefactorSteadyStateCheck()) {
+        List<KubernetesResource> resources = helmSteadyStateService.readManifestFromHelmRelease(
+            HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest));
+        rollbackWorkloads = helmSteadyStateService.findEligibleWorkloadIds(resources);
+      }
 
       List<ContainerInfo> containerInfos = getContainerInfos(
           commandRequest, rollbackWorkloads, useSteadyStateCheck, logCallback, commandRequest.getTimeoutInMillis());

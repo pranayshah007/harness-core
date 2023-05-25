@@ -590,7 +590,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     List<SLODashboardWidget.Point> sloPerformanceTrend = sloGraphData.getSloPerformanceTrend();
     List<SLODashboardWidget.Point> errorBudgetBurndown = sloGraphData.getErrorBudgetBurndown();
 
-    for (int i = 1; i < expectedSLITrend.size(); i++) {
+    for (int i = 0; i < expectedSLITrend.size(); i++) {
       assertThat(sloPerformanceTrend.get(i).getTimestamp())
           .isEqualTo(customStartTime.plus(Duration.ofMinutes(i)).toEpochMilli());
       assertThat(sloPerformanceTrend.get(i).getValue()).isCloseTo(expectedSLITrend.get(i), offset(0.01));

@@ -107,6 +107,13 @@ public class IACMStageVariableCreator extends AbstractStageVariableCreator<IACMS
         Set.of(IACMStepSpecTypeConstants.IACM_STAGE, IACMStepSpecTypeConstants.IACM_STAGE_V1));
   }
 
+  //
+  //  @Override
+  //  public Map<String, Set<String>> getSupportedTypes() {
+  //    return Collections.singletonMap(YAMLFieldNameConstants.STAGE,
+  //            Set.of(IACMStepSpecTypeConstants.IACM_STAGE, IACMStepSpecTypeConstants.IACM_STAGE_V1));
+  //  }
+
   @Override
   public LinkedHashMap<String, VariableCreationResponse> createVariablesForChildrenNodesV2(
       VariableCreationContext ctx, IACMStageNode config) {

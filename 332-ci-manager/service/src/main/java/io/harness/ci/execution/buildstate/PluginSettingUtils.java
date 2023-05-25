@@ -258,7 +258,7 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return map;
       case GIT_CLONE:
         return map;
-      case IACM_TERRAFORM:
+      case IACM_TERRAFORM_PLUGIN:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
         map.put(EnvVariableEnum.AWS_CROSS_ACCOUNT_ROLE_ARN, PLUGIN_ASSUME_ROLE);

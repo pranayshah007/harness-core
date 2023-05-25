@@ -684,7 +684,7 @@ public interface PipelineResource {
   @Path("/{pipelineIdentifier}/update-git-metadata")
   @ApiOperation(value = "Update git-metadata in remote pipeline Entity", nickname = "updatePipelineGitDetails")
   @Operation(operationId = "updatePipelineGitDetails",
-      description = "Update git-metadata in remote pipeline and returns the identifier of updated pipeline]",
+      description = "Update git-metadata in remote pipeline and returns the identifier of updated pipeline",
       summary = "Update git-metadata in remote pipeline Entity",
       responses =
       {

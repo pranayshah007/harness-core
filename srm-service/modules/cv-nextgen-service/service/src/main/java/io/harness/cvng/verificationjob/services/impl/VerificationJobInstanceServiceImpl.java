@@ -78,7 +78,7 @@ import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import dev.morphia.query.UpdateOperations;
 import java.time.Clock;
-import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -457,13 +457,13 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
                     baselineVerificationJobInstance.getUuid(), verifyStepPathParams.getVerifyStepExecutionId())
                 && isBaseline))) {
       // Duration can't be negative
-      Duration updatedTtl = CVConstants.MAX_DATA_RETENTION_DURATION.plus(
-          Duration.ofMillis(baselineVerificationJobInstance.getCreatedAt()));
+      Instant baselineVerificationCreatedAt = Instant.ofEpochMilli(baselineVerificationJobInstance.getCreatedAt());
+      Instant baselineVerificationValidUntil =
+          baselineVerificationCreatedAt.plus(CVConstants.MAX_DATA_RETENTION_DURATION);
       UpdateOperations<VerificationJobInstance> updateOperations =
           hPersistence.createUpdateOperations(VerificationJobInstance.class)
               .set(VerificationJobInstanceKeys.isBaseline, false)
-              .set(
-                  VerificationJobInstanceKeys.validUntil, Date.from(OffsetDateTime.now().plus(updatedTtl).toInstant()));
+              .set(VerificationJobInstanceKeys.validUntil, Date.from(baselineVerificationValidUntil));
       Query<VerificationJobInstance> query =
           hPersistence.createQuery(VerificationJobInstance.class)
               .filter(VerificationJobInstanceKeys.accountId, verifyStepPathParams.getAccountIdentifier())
@@ -472,7 +472,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
               .filter(SERVICE_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getServiceIdentifier())
               .filter(ENV_IDENTIFIER_KEY, verificationJobInstance.getResolvedJob().getEnvIdentifier())
               .filter(VerificationJobInstanceKeys.isBaseline, true)
-              .filter(VerificationJobInstanceKeys.uuid, verifyStepPathParams.getVerifyStepExecutionId());
+              .filter(VerificationJobInstanceKeys.uuid, baselineVerificationJobInstance.getUuid());
       hPersistence.update(query, updateOperations);
     }
 

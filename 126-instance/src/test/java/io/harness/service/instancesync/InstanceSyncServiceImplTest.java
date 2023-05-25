@@ -103,6 +103,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.data.domain.PageImpl;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -788,8 +789,8 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                         K8sDeploymentInfoDTO.builder().releaseName("releaseName").namespaces(namespaces).build())
                     .build()))
             .build();
-    when(instanceSyncPerpetualTaskInfoService.findAll(ACCOUNT_IDENTIFIER, PERPETUAL_TASK))
-        .thenReturn(Arrays.asList(instanceSyncPerpetualTaskInfoDTO));
+    when(instanceSyncPerpetualTaskInfoService.findAllInPages(any(), any(), any()))
+        .thenReturn(new PageImpl<>(List.of(instanceSyncPerpetualTaskInfoDTO)));
 
     when(infrastructureMappingService.getByInfrastructureMappingId(
              instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId()))
@@ -810,12 +811,12 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
                     K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build()))
                 .build());
     InstanceSyncTaskDetails instanceSyncTaskDetails =
-        instanceSyncService.fetchTaskDetails(PERPETUAL_TASK, ACCOUNT_IDENTIFIER);
+        instanceSyncService.fetchTaskDetails(PERPETUAL_TASK, ACCOUNT_IDENTIFIER, 0, 10);
 
     assertThat(instanceSyncTaskDetails).isNotNull();
-    assertThat(instanceSyncTaskDetails.getDetails().size()).isEqualTo(1);
-    assertThat(instanceSyncTaskDetails.getDetails().get(0).getTaskInfoId()).isEqualTo("taskInfoId");
-    assertThat(instanceSyncTaskDetails.getDetails().get(0).getDeploymentDetails().size()).isEqualTo(1);
+    assertThat(instanceSyncTaskDetails.getDetails().getContent().size()).isEqualTo(1);
+    assertThat(instanceSyncTaskDetails.getDetails().getContent().get(0).getTaskInfoId()).isEqualTo("taskInfoId");
+    assertThat(instanceSyncTaskDetails.getDetails().getContent().get(0).getDeploymentDetails().size()).isEqualTo(1);
   }
 
   @Test

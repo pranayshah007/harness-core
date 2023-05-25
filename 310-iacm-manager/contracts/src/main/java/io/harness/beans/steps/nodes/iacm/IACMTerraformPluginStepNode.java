@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -16,7 +16,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.stepinfo.IACMStepInfoType;
-import io.harness.beans.steps.stepinfo.IACMTemplateInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
@@ -37,29 +37,29 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("IACMTemplate")
-@TypeAlias("IACMTemplateStepNode")
+@JsonTypeName("IACMTerraformPlugin")
+@TypeAlias("IACMTerraformPluginStepNode")
 @OwnedBy(IACM)
-@RecasterAlias("io.harness.beans.steps.nodes.iacm.IACMTemplateStepNode")
-public class IACMTemplateStepNode extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull IACMTemplateStepNode.StepType type = IACMTemplateStepNode.StepType.IACMTemplate;
+@RecasterAlias("io.harness.beans.steps.nodes.iacm.IACMTerraformPluginStepNode")
+public class IACMTerraformPluginStepNode extends CIAbstractStepNode {
+  @JsonProperty("type") @NotNull IACMTerraformPluginStepNode.StepType type = StepType.IACMTerraformPlugin;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  IACMTemplateInfo iacmTemplateInfo;
+  IACMTerraformPluginInfo iacmTerraformPluginInfo;
 
   @Override
   public String getType() {
-    return IACMStepInfoType.IACM_TEMPLATE.getDisplayName();
+    return IACMStepInfoType.IACM_TERRAFORM_PLUGIN.getDisplayName();
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return iacmTemplateInfo;
+    return iacmTerraformPluginInfo;
   }
 
   public enum StepType {
-    IACMTemplate(IACMStepInfoType.IACM_TEMPLATE.getDisplayName());
+    IACMTerraformPlugin(IACMStepInfoType.IACM_TERRAFORM_PLUGIN.getDisplayName());
     @Getter String name;
     StepType(String name) {
       this.name = name;
@@ -67,11 +67,11 @@ public class IACMTemplateStepNode extends CIAbstractStepNode {
   }
 
   @Builder
-  public IACMTemplateStepNode(String uuid, String identifier, String name,
-      ParameterField<List<FailureStrategyConfig>> failureStrategies, IACMTemplateInfo iacmTemplateInfo,
-      IACMTemplateStepNode.StepType type, ParameterField<Timeout> timeout) {
+  public IACMTerraformPluginStepNode(String uuid, String identifier, String name,
+      ParameterField<List<FailureStrategyConfig>> failureStrategies, IACMTerraformPluginInfo iacmTerraformPluginInfo,
+      IACMTerraformPluginStepNode.StepType type, ParameterField<Timeout> timeout) {
     this.setFailureStrategies(failureStrategies);
-    this.iacmTemplateInfo = iacmTemplateInfo;
+    this.iacmTerraformPluginInfo = iacmTerraformPluginInfo;
     this.type = type;
     this.setFailureStrategies(failureStrategies);
     this.setTimeout(timeout);

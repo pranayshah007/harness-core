@@ -23,6 +23,7 @@ import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,12 +65,8 @@ public abstract class InterruptPropagatorHandler {
       }
     }
 
-    // Filter all the nodes that are in queued state
-    List<NodeExecution> finalList =
-        allExecutions.stream()
-            .filter(nodeExecution -> StatusUtils.abortingStatuses().contains(nodeExecution.getStatus()))
-            .collect(Collectors.toList());
-    // Extract all the running leaf nodes with the parent id as nodeExecutionId passed in as param
+    List<NodeExecution> finalList = new ArrayList<>();
+    // Extract all the running leaf nodes and queued nodeswith the parent id as nodeExecutionId passed in as param
     nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, true);
 
     List<String> targetIds = finalList.stream()

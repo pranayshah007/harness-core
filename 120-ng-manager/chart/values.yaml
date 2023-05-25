@@ -80,6 +80,8 @@ maxUnavailable: 0
 
 appLogLevel: "INFO"
 
+allowedOrigins: ""
+
 image:
   registry: docker.io
   repository: harness/ng-manager-signed

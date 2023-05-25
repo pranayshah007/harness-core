@@ -8,6 +8,7 @@
 package io.harness.beans.steps.stepinfo;
 
 import static io.harness.annotations.dev.HarnessTeam.IACM;
+import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -25,6 +26,7 @@ import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
 import java.util.Map;
 import java.util.Optional;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,37 +34,37 @@ import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
-@JsonTypeName("IACMTerraformPlan")
+@JsonTypeName("IACMTerraformPlugin")
 @JsonIgnoreProperties(ignoreUnknown = true)
-@TypeAlias("iacmTerraformPlanInfo")
+@TypeAlias("iacmTerraformPluginInfo")
 @OwnedBy(IACM)
-@RecasterAlias("io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo")
+@RecasterAlias("io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo")
 @EqualsAndHashCode(callSuper = true)
-public class IACMTerraformPlanInfo extends IACMStepInfo {
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String stackID;
+public class IACMTerraformPluginInfo extends IACMStepInfo {
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) private String workspace;
 
   @VariableExpression(skipVariableExpression = true)
   @YamlSchemaTypes(value = {string})
   private ParameterField<Map<String, String>> env;
 
-  @VariableExpression(skipVariableExpression = true)
-  @YamlSchemaTypes(value = {string})
-  private ParameterField<Map<String, String>> tfVars;
+  @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> command;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> image;
 
   @Override
   public TypeInfo getNonYamlInfo() {
-    return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM_TERRAFORM).build();
+    return TypeInfo.builder().stepInfoType(CIStepInfoType.IACM_TERRAFORM_PLUGIN).build();
   }
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "settings", "resources", "outputVariables", "runAsUser",
-      "privileged", "imagePullPolicy", "env", "tfVars"})
-  public IACMTerraformPlanInfo(String identifier, String name, Integer retry, ParameterField<Map<String, String>> env,
-      ParameterField<Map<String, String>> tfVars) {
+      "privileged", "imagePullPolicy", "env", "operation", "image"})
+  public IACMTerraformPluginInfo(String identifier, String name, Integer retry, ParameterField<Map<String, String>> env,
+      ParameterField<String> operation, ParameterField<String> image) {
     super.identifier = identifier;
     super.name = name;
     super.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
     this.env = env;
-    this.tfVars = tfVars;
+    this.command = operation;
+    this.image = image;
   }
 }
