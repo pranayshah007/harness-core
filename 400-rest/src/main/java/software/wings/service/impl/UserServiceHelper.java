@@ -87,7 +87,7 @@ public class UserServiceHelper {
         && validationForUserAccountLevelDataFlow(user, accountId)) {
       return isNotEmpty(user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo());
     }
-    return true;
+    return false;
   }
 
   public boolean isUserPartOfDeletedAccount(User user, String deletedAccountId) {
