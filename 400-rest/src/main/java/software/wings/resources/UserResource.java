@@ -235,14 +235,14 @@ public class UserResource {
     }
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, true, true, showDisabledUsers);
+    List<User> userList = userService.listUsers(
+        pageRequest, accountId, searchTerm, offset, pageSize, true, true, showDisabledUsers, true);
 
     PageResponse<PublicUser> pageResponse = aPageResponse()
                                                 .withOffset(offset.toString())
                                                 .withLimit(pageSize.toString())
                                                 .withResponse(getPublicUsers(userList, accountId))
-                                                .withTotal(userService.getTotalUserCount(accountId, true))
+                                                .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                                 .build();
 
     return new RestResponse<>(pageResponse);
@@ -424,8 +424,10 @@ public class UserResource {
     // If user doesn't exists, userService.get throws exception, so we don't have to handle it.
     InvalidRequestException exception = new InvalidRequestException("Can not delete user added via SCIM", USER);
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
-        && userServiceHelper.isSCIMManagedUser(accountId, user, CG)) {
-      throw exception;
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (userServiceHelper.isSCIMManagedUser(accountId, user, CG)) {
+        throw exception;
+      }
     } else if (user.isImported()) {
       throw exception;
     }

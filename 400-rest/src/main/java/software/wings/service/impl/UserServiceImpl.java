@@ -3763,13 +3763,11 @@ public class UserServiceImpl implements UserService {
     return permissions.contains(PermissionType.ACCOUNT_MANAGEMENT);
   }
 
-  // todo: shashank : is this new method required?
   @Override
   public boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
         && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
-      if (null != user.getUserAccountLevelDataMap().get(accountId)
-          && user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(generation)) {
+      if (user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(generation)) {
         return true;
       } else {
         return false;
@@ -4111,7 +4109,8 @@ public class UserServiceImpl implements UserService {
   }
 
   public List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset,
-      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
+      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled,
+      boolean filterForGeneration) {
     Query<User> query;
     if (isNotEmpty(searchTerm)) {
       query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance);
@@ -4121,11 +4120,13 @@ public class UserServiceImpl implements UserService {
     if (!includeDisabled) {
       query.criteria(UserKeys.disabled).notEqual(true);
     }
-    filterOnlyCGUsers(accountId, query);
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
-    userServiceHelper.processForSCIMUsers(accountId, userList, CG);
+    if (filterForGeneration) {
+      filterListForGeneration(accountId, userList, CG);
+      userServiceHelper.processForSCIMUsers(accountId, userList, CG);
+    }
     if (loadUserGroups) {
       loadUserGroupsForUsers(userList, accountId);
     }
@@ -4148,10 +4149,15 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance) {
+  public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
+      boolean filterForGeneration) {
     Query<User> query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
-    query.criteria(UserKeys.disabled).notEqual(true);
-    filterOnlyCGUsers(accountId, query);
+    if (excludeDisabled) {
+      query.criteria(UserKeys.disabled).notEqual(true);
+    }
+    if (filterForGeneration) {
+      queryFilterOnlyCGUsers(accountId, query);
+    }
     return query.count();
   }
 
@@ -4533,12 +4539,20 @@ public class UserServiceImpl implements UserService {
     return updated;
   }
 
-  private void filterOnlyCGUsers(String accountId, Query<User> query) {
+  private void queryFilterOnlyCGUsers(String accountId, Query<User> query) {
     if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
       query.and(query
                     .criteria(UserKeys.userAccountLevelDataMap + "." + accountId + "."
                         + UserAccountLevelDataKeys.userProvisionedTo)
                     .equal(CG.name()));
+    }
+  }
+  private void filterListForGeneration(String accountId, List<User> userList, Generation generation) {
+    for (User user : userList) {
+      if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
+          && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
+        userList.remove(user);
+      }
     }
   }
 }

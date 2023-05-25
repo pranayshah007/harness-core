@@ -343,14 +343,14 @@ public class UserResourceNG {
     Integer offset = Integer.valueOf(pageRequest.getOffset());
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false);
+    List<User> userList = userService.listUsers(
+        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, true);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
                                               .withLimit(pageSize.toString())
                                               .withResponse(convertUserToNgUser(userList, requireAdminStatus))
-                                              .withTotal(userService.getTotalUserCount(accountId, true))
+                                              .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                               .build();
 
     return new RestResponse<>(pageResponse);
