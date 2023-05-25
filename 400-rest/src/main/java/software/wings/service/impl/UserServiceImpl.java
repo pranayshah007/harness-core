@@ -279,6 +279,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -4548,10 +4549,12 @@ public class UserServiceImpl implements UserService {
     }
   }
   private void filterListForGeneration(String accountId, List<User> userList, Generation generation) {
-    for (User user : userList) {
+    Iterator<User> i = userList.iterator();
+    while (i.hasNext()) {
+      User user = i.next();
       if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
           && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
-        userList.remove(user);
+        i.remove();
       }
     }
   }
