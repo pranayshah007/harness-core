@@ -13,10 +13,10 @@ import io.harness.cvng.core.services.api.SRMTelemetrySentStatusService;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import com.mongodb.MongoCommandException;
 import dev.morphia.FindAndModifyOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.UpdateOperations;
-import org.springframework.dao.DuplicateKeyException;
 
 public class SRMTelemetrySentStatusServiceImpl implements SRMTelemetrySentStatusService {
   @Inject HPersistence hPersistence;
@@ -38,8 +38,8 @@ public class SRMTelemetrySentStatusServiceImpl implements SRMTelemetrySentStatus
       // Atomic lock acquiring attempt
       // Everything after this line is critical section
       result = hPersistence.findAndModify(query, updateOperations, findAndModifyOptions);
-    } catch (DuplicateKeyException e) {
-      // Account ID is unique here so setting upsert to true will throw duplicate key exception if trying to create
+    } catch (MongoCommandException e) {
+      // Account ID is unique here so setting upsert to true will throw Mongo command exception if trying to create
       // So we should return failed to acquire the lock here
       return false;
     }
