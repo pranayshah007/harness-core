@@ -77,6 +77,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Operation;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -342,14 +343,14 @@ public class UserResourceNG {
     Integer offset = Integer.valueOf(pageRequest.getOffset());
     Integer pageSize = pageRequest.getPageSize();
 
-    List<User> userList =
-        userService.listUsers(pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false);
+    List<User> userList = userService.listUsers(
+        pageRequest, accountId, searchTerm, offset, pageSize, requireAdminStatus, false, false, true);
 
     PageResponse<UserInfo> pageResponse = aPageResponse()
                                               .withOffset(offset.toString())
                                               .withLimit(pageSize.toString())
                                               .withResponse(convertUserToNgUser(userList, requireAdminStatus))
-                                              .withTotal(userService.getTotalUserCount(accountId, true))
+                                              .withTotal(userService.getTotalUserCount(accountId, true, true, true))
                                               .build();
 
     return new RestResponse<>(pageResponse);
@@ -366,7 +367,19 @@ public class UserResourceNG {
       return new RestResponse<>(Optional.empty());
     }
   }
-
+  @GET
+  @Path("/{userId}/{accountId}")
+  public RestResponse<Optional<UserInfo>> getUserByIdAndAccountId(
+      @PathParam("userId") String userId, @PathParam("accountId") String accountId) {
+    try {
+      User user = userService.get(userId);
+      userServiceHelper.processForSCIMUsers(accountId, Arrays.asList(user), NG);
+      return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
+    } catch (UnauthorizedException ex) {
+      log.warn("User is not found in database {}", userId);
+      return new RestResponse<>(Optional.empty());
+    }
+  }
   @GET
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserByEmailId(@PathParam("emailId") String emailId) {
@@ -431,7 +444,9 @@ public class UserResourceNG {
     if (!isEmpty(userFilterNG.getEmailIds())) {
       userSet.addAll(userService.getUsersByEmail(userFilterNG.getEmailIds(), accountId));
     }
-    return new RestResponse<>(convertUserToNgUser(new ArrayList<>(userSet), false));
+    ArrayList<User> userList = new ArrayList<>(userSet);
+    userServiceHelper.processForSCIMUsers(accountId, userList, NG);
+    return new RestResponse<>(convertUserToNgUser(userList, false));
   }
 
   @POST

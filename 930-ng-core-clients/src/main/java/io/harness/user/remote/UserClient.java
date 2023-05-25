@@ -121,6 +121,10 @@ public interface UserClient {
 
   @GET(USERS_API + "/{userId}") Call<RestResponse<Optional<UserInfo>>> getUserById(@Path("userId") String userId);
 
+  @GET(USERS_API + "/{userId}/{accountId}")
+  Call<RestResponse<Optional<UserInfo>>> getUserByIdAndAccount(
+      @Path("userId") String userId, @Path(value = "accountId") String accountId);
+
   @GET(USERS_API + "/email/{emailId}")
   Call<RestResponse<Optional<UserInfo>>> getUserByEmailId(@Path("emailId") String emailId);
 

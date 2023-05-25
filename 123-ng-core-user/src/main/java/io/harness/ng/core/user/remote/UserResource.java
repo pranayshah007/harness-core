@@ -491,7 +491,7 @@ public class UserResource {
   public ResponseDTO<UserInfo>
   updateUserInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true)
                  @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserInfo userInfo) {
-    if (isUserExternallyManaged(userInfo.getUuid())) {
+    if (isUserExternallyManaged(userInfo.getUuid(), accountIdentifier)) {
       log.warn("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
@@ -513,7 +513,7 @@ public class UserResource {
   updateUserInfoV2(@Parameter(description = "User Identifier") @PathParam("userId") String userId,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
       String accountIdentifier, @Body UserInfoUpdateDTO userInfo) {
-    if (isUserExternallyManaged(userId)) {
+    if (isUserExternallyManaged(userId, accountIdentifier)) {
       log.warn("User is externally managed, cannot update user - userId: {}", userId);
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
@@ -612,7 +612,7 @@ public class UserResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    if (isUserExternallyManaged(userId)
+    if (isUserExternallyManaged(userId, accountIdentifier)
         && (ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier))
             || !ngFeatureFlagHelperService.isEnabled(
                 accountIdentifier, FeatureName.PL_REMOVE_EXTERNAL_USER_ORG_PROJECT))) {
@@ -698,8 +698,8 @@ public class UserResource {
     return ResponseDTO.newResponse(userInfoService.unlockUser(userId, accountIdentifier));
   }
 
-  private boolean isUserExternallyManaged(String userId) {
-    Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(userId);
+  private boolean isUserExternallyManaged(String userId, String accountIdentifier) {
+    Optional<UserInfo> optionalUserInfo = ngUserService.getUserByIdAndAccount(userId, accountIdentifier);
     return optionalUserInfo.map(UserInfo::isExternallyManaged).orElse(false);
   }
 
