@@ -81,6 +81,7 @@ public class FavoritesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreateOrgScopedFavorite() {
     Favorite favoriteEntity = getFavoriteEntity();
+    favoriteDTO.setOrg(orgId);
     favoriteEntity.setOrgIdentifier(orgId);
     when(favoriteService.createFavorite(any(), anyString())).thenReturn(favoriteEntity);
     Response orgFavoriteResponse = orgFavoriteApi.createOrgFavorite(orgId, favoriteDTO, accountId);
@@ -96,6 +97,8 @@ public class FavoritesApiImplTest extends CategoryTest {
     Favorite favoriteEntity = getFavoriteEntity();
     favoriteEntity.setOrgIdentifier(orgId);
     favoriteEntity.setProjectIdentifier(projectId);
+    favoriteDTO.setOrg(orgId);
+    favoriteDTO.setProject(projectId);
     when(favoriteService.createFavorite(any(), anyString())).thenReturn(favoriteEntity);
     Response projectFavoriteResponse =
         projectFavoriteApi.createProjectFavorite(orgId, projectId, favoriteDTO, accountId);
