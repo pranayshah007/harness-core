@@ -82,11 +82,12 @@ public class SLIRecordServiceImpl implements SLIRecordService {
           sliRecordParamList, sliId, verificationTaskId, sliVersion, runningGoodCount, runningBadCount, sliRecordList);
     }
 
-    try {
-      sliRecordBucketService.create(sliRecordParamList, sliId, sliVersion);
-    } catch (Exception exception) {
-      log.error("[SLI Record Bucketing Error]", exception);
-    }
+    //    try {
+    //      sliRecordBucketService.create(sliRecordParamList, sliId, sliVersion);
+    //    } catch (Exception exception) {
+    //      log.error("[SLI Record Bucketing Error]", exception);
+    //    }
+    // TODO Enable it after fixing the migration
   }
 
   private void createSLIRecords(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId,
