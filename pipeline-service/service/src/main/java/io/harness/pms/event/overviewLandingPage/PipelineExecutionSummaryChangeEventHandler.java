@@ -67,7 +67,8 @@ public class PipelineExecutionSummaryChangeEventHandler extends DebeziumAbstract
       executionRecord.set(
           Tables.PIPELINE_EXECUTION_SUMMARY.STARTTS, node.get(PipelineExecutionSummaryKeys.startTs).asLong());
     }
-    if (node.get(PipelineExecutionSummaryKeys.endTs) != null) {
+    if (node.get(PipelineExecutionSummaryKeys.endTs) != null
+        && !node.get(PipelineExecutionSummaryKeys.endTs).isNull()) {
       executionRecord.set(
           Tables.PIPELINE_EXECUTION_SUMMARY.ENDTS, node.get(PipelineExecutionSummaryKeys.endTs).asLong());
     }

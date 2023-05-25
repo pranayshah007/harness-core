@@ -101,7 +101,7 @@ public class VmRunStepSerializer {
         && featureFlagService.isEnabled(FeatureName.CI_REMOTE_DEBUG, ngAccess.getAccountIdentifier())) {
       command = earlyExitCommand + System.lineSeparator()
           + SerializerUtils.getVmDebugCommand(
-              ngAccess.getAccountIdentifier(), ciExecutionServiceConfig.getRemoteDebugTimeout())
+              ngAccess.getAccountIdentifier(), ciExecutionServiceConfig.getRemoteDebugTimeout(), runStepInfo.getShell())
           + System.lineSeparator() + command;
     } else {
       command = earlyExitCommand + command;

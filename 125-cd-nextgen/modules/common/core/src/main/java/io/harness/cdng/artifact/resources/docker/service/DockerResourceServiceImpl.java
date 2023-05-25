@@ -17,10 +17,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerResponseDTO;
 import io.harness.cdng.artifact.resources.docker.mappers.DockerResourceMapper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
@@ -68,6 +70,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Singleton
 @Slf4j
@@ -133,6 +136,9 @@ public class DockerResourceServiceImpl implements DockerResourceService {
   @Override
   public DockerBuildDetailsDTO getSuccessfulBuild(IdentifierRef dockerConnectorRef, String imagePath,
       DockerRequestDTO dockerRequestDTO, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath));
+    ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.TAG, dockerRequestDTO.getTag()),
+        MutablePair.of(NGArtifactConstants.TAG_REGEX, dockerRequestDTO.getTagRegex()));
     DockerConnectorDTO connector = getConnector(dockerConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(dockerConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

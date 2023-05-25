@@ -223,7 +223,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     if (authToken == null) {
-      log.info("Token with prefix {} not found in cache hence fetching it from db", authTokenId.substring(0, 5));
+      String authTokenIdValue = authTokenId.length() >= 5 ? authTokenId.substring(0, 5) : authTokenId;
+      log.info("Token with prefix {} not found in cache hence fetching it from db", authTokenIdValue);
       authToken = getAuthTokenFromDB(authTokenId);
       addAuthTokenToCache(authToken);
     }

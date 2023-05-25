@@ -19,6 +19,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -43,6 +44,7 @@ import org.springframework.stereotype.Service;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
+@Hidden
 @Slf4j
 @Service
 @OwnedBy(CE)
@@ -93,9 +95,9 @@ public class ManagedAccountResource {
   }
 
   @DELETE
-  @ApiOperation(value = "Update managed account", nickname = "updateManagedAccount")
-  @Operation(operationId = "updateManagedAccount", summary = "Update managed account record",
-      responses = { @ApiResponse(description = "Returns managed account record") })
+  @ApiOperation(value = "Delete managed account", nickname = "deleteManagedAccount")
+  @Operation(operationId = "deleteManagedAccount", summary = "Delete managed account record",
+      responses = { @ApiResponse(description = "Returns boolean indicating deletion status") })
   public ResponseDTO<Boolean>
   delete(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
          @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId) {

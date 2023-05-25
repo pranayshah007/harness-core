@@ -64,6 +64,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -370,6 +371,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPrepareForCanaryCount() throws Exception {
     K8sCanaryHandlerConfig canaryHandlerConfig = k8sCanaryRequestHandler.getK8sCanaryHandlerConfig();
+    K8sRequestHandlerContext context = k8sCanaryRequestHandler.getK8sRequestHandlerContext();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
     K8sCanaryDeployRequest deployRequest = K8sCanaryDeployRequest.builder()
                                                .instanceUnitType(NGInstanceUnitType.COUNT)
@@ -379,11 +381,11 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                                                .build();
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, true, logCallback, true);
+        .prepareForCanary(canaryHandlerConfig, context, delegateTaskParams, true, logCallback, true);
     doReturn(1).when(k8sCanaryBaseHandler).getCurrentInstances(canaryHandlerConfig, delegateTaskParams, logCallback);
 
     k8sCanaryRequestHandler.prepareForCanary(deployRequest, delegateTaskParams, logCallback);
-    verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(canaryHandlerConfig, 4, logCallback);
+    verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(canaryHandlerConfig, context, 4, logCallback);
   }
 
   @Test
@@ -392,6 +394,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
   public void testPrepareForCanaryPercentage() throws Exception {
     Integer currentInstances = 4;
     K8sCanaryHandlerConfig k8sCanaryHandlerConfig = k8sCanaryRequestHandler.getK8sCanaryHandlerConfig();
+    K8sRequestHandlerContext context = k8sCanaryRequestHandler.getK8sRequestHandlerContext();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
     K8sCanaryDeployRequest deployRequest = K8sCanaryDeployRequest.builder()
                                                .instanceUnitType(NGInstanceUnitType.PERCENTAGE)
@@ -405,9 +408,9 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
 
     k8sCanaryRequestHandler.prepareForCanary(deployRequest, delegateTaskParams, logCallback);
     verify(k8sTaskHelperBase, times(1)).getTargetInstancesForCanary(70, currentInstances, logCallback);
-    verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(k8sCanaryHandlerConfig, 3, logCallback);
+    verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(k8sCanaryHandlerConfig, context, 3, logCallback);
     verify(k8sCanaryBaseHandler, times(1))
-        .prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true);
+        .prepareForCanary(k8sCanaryHandlerConfig, context, delegateTaskParams, false, logCallback, true);
   }
 
   @Test

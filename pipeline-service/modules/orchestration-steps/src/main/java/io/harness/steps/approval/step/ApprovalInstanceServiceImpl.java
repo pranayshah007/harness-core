@@ -118,6 +118,38 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   }
 
   @Override
+  public List<ApprovalInstance> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
+      @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId) {
+    if (isEmpty(planExecutionId)) {
+      throw new InvalidRequestException("PlanExecutionId can be empty");
+    }
+
+    Criteria criteria = Criteria.where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId);
+
+    if (!isNull(approvalStatus)) {
+      criteria.and(ApprovalInstanceKeys.status).is(approvalStatus);
+    } else {
+      criteria.and(ApprovalInstanceKeys.status).in(Arrays.asList(ApprovalStatus.values()));
+    }
+
+    if (!isNull(approvalType)) {
+      criteria.and(ApprovalInstanceKeys.type).is(approvalType);
+    } else {
+      criteria.and(ApprovalInstanceKeys.type).in(Arrays.asList(ApprovalType.values()));
+    }
+
+    if (EmptyPredicate.isNotEmpty(nodeExecutionId)) {
+      criteria.and(ApprovalInstanceKeys.nodeExecutionId).is(nodeExecutionId);
+    }
+    // uses planExecutionId_status_type_nodeExecutionId if nodeExecutionId is absent
+    // uses nodeExecutionId if nodeExecutionId is present
+    List<ApprovalInstance> approvalInstances = approvalInstanceRepository.findAll(criteria);
+
+    log.info("No. of approval instances fetched in getApprovalInstancesByExecutionId: {}", approvalInstances.size());
+    return approvalInstances;
+  }
+
+  @Override
   public HarnessApprovalInstance getHarnessApprovalInstance(@NotNull String approvalInstanceId) {
     ApprovalInstance instance = get(approvalInstanceId);
     if (instance == null || instance.getType() != ApprovalType.HARNESS_APPROVAL) {
@@ -252,24 +284,22 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   @Override
   public List<String> findAllPreviousWaitingApprovals(String accountId, String orgId, String projectId,
       @NotEmpty String pipelineId, String approvalKey, Ambiance ambiance) {
-    Criteria criteria = Criteria.where("pipelineIdentifier").is(pipelineId);
-    criteria.and("isAutoRejectEnabled").is(true);
-
-    criteria.and(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING);
-
-    criteria.and("accountId").is(accountId);
-
+    Criteria criteria = Criteria.where("accountId").is(accountId);
     if (!isNull(orgId)) {
       criteria.and("orgIdentifier").is(orgId);
     }
     if (!isNull(projectId)) {
       criteria.and("projectIdentifier").is(projectId);
     }
+    criteria.and("pipelineIdentifier").is(pipelineId);
     if (EmptyPredicate.isNotEmpty(approvalKey)) {
       criteria.and("approvalKey").is(approvalKey);
     } else {
       return new ArrayList<>();
     }
+    criteria.and(ApprovalInstanceKeys.status).is(ApprovalStatus.WAITING);
+    criteria.and("isAutoRejectEnabled").is(true);
+
     List<ApprovalInstance> approvalInstances = approvalInstanceRepository.findAll(criteria);
     approvalInstances = filterOnService(approvalInstances, ambiance);
     log.info("No. of approval instances fetched waiting for approval that will be auto rejected : {}",

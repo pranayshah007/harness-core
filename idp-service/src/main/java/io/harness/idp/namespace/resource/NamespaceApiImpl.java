@@ -45,6 +45,7 @@ public class NamespaceApiImpl implements NamespaceApi {
           .entity(ResponseMessage.builder().message(logMessage).build())
           .build();
     } catch (Exception e) {
+      log.error("Error in creating namespace for account - {}", accountIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -58,6 +59,7 @@ public class NamespaceApiImpl implements NamespaceApi {
       NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
       return Response.status(Response.Status.OK).entity(namespaceInfo).build();
     } catch (Exception e) {
+      log.error("Error in fetching namespace for accountId - {}", accountIdentifier, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

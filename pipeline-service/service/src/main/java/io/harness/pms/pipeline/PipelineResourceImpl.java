@@ -65,6 +65,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBo
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.YamlSchemaResource;
@@ -478,6 +479,11 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }
+
+    // This is required so the remote template references are fetched from correct repo and branch and not from
+    // `default` branch.
+    PipelineGitXHelper.setupGitParentEntityDetails(
+        accountId, orgId, projectId, pipelineEntity.get().getConnectorRef(), pipelineEntity.get().getRepo());
 
     String pipelineYaml = pipelineEntity.get().getYaml();
 

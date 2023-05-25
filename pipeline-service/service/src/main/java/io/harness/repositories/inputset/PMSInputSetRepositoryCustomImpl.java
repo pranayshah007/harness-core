@@ -228,6 +228,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
             .connectorRef(savedEntity.getConnectorRef())
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
+            .getOnlyFileContent(PipelineGitXHelper.isExecutionFlow())
             .entityType(EntityType.INPUT_SETS)
             .loadFromCache(loadFromCache)
             .build(),

@@ -23,11 +23,6 @@ public class ManagedAccountServiceImpl implements ManagedAccountService {
   }
 
   @Override
-  public ManagedAccount get(String uuid) {
-    return managedAccountDao.get(uuid);
-  }
-
-  @Override
   public ManagedAccount get(String mspAccountId, String managedAccountId) {
     return managedAccountDao.getDetailsForAccount(mspAccountId, managedAccountId);
   }

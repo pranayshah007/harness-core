@@ -43,6 +43,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileData;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
@@ -74,6 +75,7 @@ import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -133,6 +135,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
   private boolean useDeclarativeRollback;
   private int currentReleaseNumber;
   private K8sReleaseHandler releaseHandler;
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
 
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
@@ -144,6 +147,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     K8sBGDeployRequest k8sBGDeployRequest = (K8sBGDeployRequest) k8sDeployRequest;
 
+    k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sBGDeployRequest.isEnabledSupportHPAAndPDB());
     releaseName = k8sBGDeployRequest.getReleaseName();
     useDeclarativeRollback = k8sBGDeployRequest.isUseDeclarativeRollback();
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(useDeclarativeRollback);
@@ -314,6 +318,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         kubernetesConfig.getNamespace(), executionLogCallback, request.getTimeoutIntervalInMin());
 
     resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback, isErrorFrameworkSupported());
+    k8sRequestHandlerContext.setResources(resources);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
 
     executionLogCallback.saveExecutionLog(color("\nManifests [Post template rendering] :\n", White, Bold));
@@ -398,7 +403,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     if (stageService == null) {
       // create a clone
       stageService = getKubernetesResourceFromSpec(primaryService.getSpec());
-      stageService.appendSuffixInName("-stage");
+      stageService.appendSuffixInName("-stage", k8sRequestHandlerContext);
       resources.add(stageService);
       executionLogCallback.saveExecutionLog(format("Created Stage service [%s] using Spec from Primary Service [%s]",
           stageService.getResourceId().getName(), primaryService.getResourceId().getName()));
@@ -436,23 +441,33 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
 
     if (!skipResourceVersioning && !useDeclarativeRollback) {
       executionLogCallback.saveExecutionLog("\nVersioning resources.");
-      k8sTaskHelperBase.addRevisionNumber(resources, currentReleaseNumber);
+      k8sTaskHelperBase.addRevisionNumber(k8sRequestHandlerContext, currentReleaseNumber);
     }
 
     if (useDeclarativeRollback) {
       executionLogCallback.saveExecutionLog(
           format("Adding stage color [%s] as a suffix to Configmap and Secret names.", stageColor));
-      k8sTaskHelperBase.addSuffixToConfigmapsAndSecrets(resources, stageColor, executionLogCallback);
+      k8sTaskHelperBase.addSuffixToConfigmapsAndSecrets(k8sRequestHandlerContext, stageColor, executionLogCallback);
     }
 
     managedWorkload = getManagedWorkload(resources);
-    managedWorkload.appendSuffixInName('-' + stageColor);
+
+    managedWorkload.appendSuffixInName('-' + stageColor, k8sRequestHandlerContext);
     managedWorkload.addLabelsInPodSpec(
         ImmutableMap.of(HarnessLabels.releaseName, releaseName, HarnessLabels.color, stageColor));
-    managedWorkload.addLabelsInDeploymentSelector(ImmutableMap.of(HarnessLabels.color, stageColor));
+    managedWorkload.addLabelsInResourceSelector(
+        ImmutableMap.of(HarnessLabels.color, stageColor), k8sRequestHandlerContext);
 
-    primaryService.addColorSelectorInService(primaryColor);
-    stageService.addColorSelectorInService(stageColor);
+    // do the name update for all the resources (HPA and PDB)
+    if (k8sRequestHandlerContext.isEnabledSupportHPAAndPDB()
+        && EmptyPredicate.isNotEmpty(k8sRequestHandlerContext.getResourcesForNameUpdate())) {
+      String suffix = '-' + stageColor;
+      k8sRequestHandlerContext.getResourcesForNameUpdate().forEach(
+          resource -> { resource.appendSuffixInName(suffix, k8sRequestHandlerContext); });
+    }
+
+    primaryService.addColorSelector(primaryColor, k8sRequestHandlerContext);
+    stageService.addColorSelector(stageColor, k8sRequestHandlerContext);
 
     executionLogCallback.saveExecutionLog("\nWorkload to deploy is: "
         + color(managedWorkload.getResourceId().kindNameRef(), k8sBGBaseHandler.getLogColor(stageColor), Bold));

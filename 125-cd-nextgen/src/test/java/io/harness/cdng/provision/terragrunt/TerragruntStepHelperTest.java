@@ -8,6 +8,7 @@
 package io.harness.cdng.provision.terragrunt;
 
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.lang.String.format;
@@ -57,6 +58,8 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -516,6 +519,48 @@ public class TerragruntStepHelperTest extends CategoryTest {
     assertThat(terraformConfigCaptured.getWorkspace()).isEqualTo(terragruntConfig.getWorkspace());
     assertThat(terraformConfigCaptured.getEnvironmentVariables()).isEqualTo(terragruntConfig.getEnvironmentVariables());
     assertThat(terraformConfigCaptured.getRunConfiguration()).isEqualTo(terragruntConfig.getRunConfiguration());
+    assertThat(terraformConfigCaptured.getPipelineExecutionId()).isEqualTo("exec_id");
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testSaveTerragruntConfigForRollbackExecutionMode() {
+    TerragruntConfig terragruntConfig = TerragruntConfig.builder()
+                                            .pipelineExecutionId("executionId")
+                                            .configFiles(GitStoreDTO.builder().build())
+                                            .workspace("test-workspace")
+                                            .targets(new ArrayList<>() {
+                                              { add("test-target"); }
+                                            })
+                                            .runConfiguration(TerragruntRunConfiguration.builder()
+                                                                  .runType(TerragruntTaskRunType.RUN_MODULE)
+                                                                  .path("test-path")
+                                                                  .build())
+                                            .environmentVariables(new HashMap<>() {
+                                              { put("envKey", "envVal"); }
+                                            })
+                                            .build();
+
+    doNothing().when(terragruntConfigDAL).saveTerragruntConfig(terragruntConfig);
+    ArgumentCaptor<TerragruntConfig> terragruntConfigArgumentCaptor = ArgumentCaptor.forClass(TerragruntConfig.class);
+
+    helper.saveTerragruntConfig(terragruntConfig,
+        getAmbiance()
+            .toBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder()
+                             .setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK)
+                             .setOriginalPlanExecutionIdForRollbackMode("original_exec_id")
+                             .build())
+            .build());
+    verify(terragruntConfigDAL, times(1)).saveTerragruntConfig(terragruntConfigArgumentCaptor.capture());
+    TerragruntConfig terraformConfigCaptured = terragruntConfigArgumentCaptor.getValue();
+    assertThat(terraformConfigCaptured).isNotNull();
+    assertThat(terraformConfigCaptured.getConfigFiles()).isEqualTo(terragruntConfig.getConfigFiles());
+    assertThat(terraformConfigCaptured.getWorkspace()).isEqualTo(terragruntConfig.getWorkspace());
+    assertThat(terraformConfigCaptured.getEnvironmentVariables()).isEqualTo(terragruntConfig.getEnvironmentVariables());
+    assertThat(terraformConfigCaptured.getRunConfiguration()).isEqualTo(terragruntConfig.getRunConfiguration());
+    assertThat(terraformConfigCaptured.getPipelineExecutionId()).isEqualTo("original_exec_id");
   }
 
   @Test

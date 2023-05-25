@@ -8,10 +8,10 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -39,8 +39,8 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
@@ -326,8 +326,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetGraphData_withSkipData() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 15;
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(
+    List<SLIState> sliStates = Arrays.asList(
         SKIP_DATA, GOOD, BAD, SKIP_DATA, SKIP_DATA, SKIP_DATA, BAD, SKIP_DATA, SKIP_DATA, GOOD, BAD, SKIP_DATA);
     List<Double> expectedSLITrend =
         Lists.newArrayList(100.0, 100.0, 66.66, 75.0, 80.0, 83.33, 71.42, 75.0, 77.77, 80.0, 72.72, 75.0);
@@ -340,8 +339,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_customTimePerMinute() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 15;
-    List<SLIRecord.SLIState> sliStates =
+    List<SLIState> sliStates =
         Arrays.asList(GOOD, NO_DATA, BAD, GOOD, GOOD, NO_DATA, BAD, GOOD, GOOD, NO_DATA, BAD, GOOD);
     List<Double> expectedSLITrend =
         Lists.newArrayList(100.0, 100.0, 66.66, 75.0, 80.0, 83.33, 71.42, 75.0, 77.77, 80.0, 72.72, 75.0);
@@ -354,8 +352,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_withDisabledTimes() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 15;
-    List<SLIRecord.SLIState> sliStates =
+    List<SLIState> sliStates =
         Arrays.asList(GOOD, NO_DATA, BAD, GOOD, GOOD, NO_DATA, NO_DATA, NO_DATA, NO_DATA, NO_DATA, NO_DATA, GOOD);
     List<Double> expectedSLITrend =
         Lists.newArrayList(100.0, 100.0, 66.66, 75.0, 80.0, 83.33, 83.33, 83.33, 83.33, 83.33, 83.33, 85.71);
@@ -375,8 +372,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_AllGood() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
-    List<SLIRecord.SLIState> sliStates = new ArrayList<>();
+    List<SLIState> sliStates = new ArrayList<>();
     List<Double> expectedSLITrend = new ArrayList<>();
     List<Double> expectedBurndown = new ArrayList<>();
     for (int i = 0; i < 65; i++) {
@@ -393,8 +389,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_customStartTimeAllGood() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
-    List<SLIRecord.SLIState> sliStates = new ArrayList<>();
+    List<SLIState> sliStates = new ArrayList<>();
     List<Double> expectedSLITrend = new ArrayList<>();
     List<Double> expectedBurndown = new ArrayList<>();
     for (int i = 0; i < 65; i++) {
@@ -411,8 +406,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_customBothTimeAllGood() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
-    List<SLIRecord.SLIState> sliStates = new ArrayList<>();
+    List<SLIState> sliStates = new ArrayList<>();
     List<Double> expectedSLITrend = new ArrayList<>();
     List<Double> expectedBurndown = new ArrayList<>();
     for (int i = 0; i < 65; i++) {
@@ -429,8 +423,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_customStartAllBad() {
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 100;
-    List<SLIRecord.SLIState> sliStates = new ArrayList<>();
+    List<SLIState> sliStates = new ArrayList<>();
     List<Double> expectedSLITrend = new ArrayList<>();
     List<Double> expectedBurndown = new ArrayList<>();
     for (int i = 0; i < 65; i++) {
@@ -447,7 +440,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetGraphData_noDataConsideredBad() {
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, BAD, GOOD);
+    List<SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, BAD, GOOD);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 50.0, 33.33, 50.0);
     List<Double> expectedBurndown = Lists.newArrayList(100.0, 99.0, 98.0, 98.0);
     testGraphCalculation(sliStates, SLIMissingDataType.BAD, expectedSLITrend, expectedBurndown, 98);
@@ -457,7 +450,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_request() {
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
     List<Long> goodCounts = Arrays.asList(100l, 95l, 80l, 100l);
     List<Long> badCounts = Arrays.asList(0l, 5l, 20l, 100l);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 97.5, 91.66, 75.0);
@@ -470,7 +463,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_request_noDataSkipData() {
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, SKIP_DATA, GOOD);
+    List<SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, SKIP_DATA, GOOD);
     List<Long> goodCounts = Arrays.asList(100l, 0l, 0l, 100l);
     List<Long> badCounts = Arrays.asList(0l, 0l, 0l, 100l);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 66.66);
@@ -483,7 +476,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testGetGraphData_request_noCalls() {
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
+    List<SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD);
     List<Long> goodCounts = Arrays.asList(0l, 0l, 0l, 0l);
     List<Long> badCounts = Arrays.asList(0l, 0l, 0l, 0l);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 100.0, 100.0);
@@ -496,7 +489,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetGraphData_perMinute() {
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, BAD, GOOD);
+    List<SLIState> sliStates = Arrays.asList(GOOD, NO_DATA, BAD, GOOD);
     List<Double> expectedSLITrend = Lists.newArrayList(100.0, 100.0, 66.66, 75.0);
     List<Double> expectedBurndown = Lists.newArrayList(100.0, 100.0, 99.0, 99.0);
     testGraphCalculation(sliStates, expectedSLITrend, expectedBurndown, 99);
@@ -506,7 +499,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testGetGraphData_allBad() {
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(BAD, BAD, BAD, BAD);
+    List<SLIState> sliStates = Arrays.asList(BAD, BAD, BAD, BAD);
     List<Double> expectedSLITrend = Lists.newArrayList(0.0, 0.0, 0.0, 0.0);
     List<Double> expectedBurndown = Lists.newArrayList(99.0, 98.0, 97.0, 96.0);
     testGraphCalculation(sliStates, expectedSLITrend, expectedBurndown, 96);
@@ -533,7 +526,7 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     assertThat(minutes.get(0)).isEqualTo(startTime.plus(5, ChronoUnit.MINUTES));
   }
 
-  private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,
+  private void testGraphCalculation(List<SLIState> sliStates, SLIMissingDataType sliMissingDataType,
       List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining,
       long customMinutesStart, long customMinutesEnd) {
     Instant startTime =
@@ -572,10 +565,9 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     assertThat(sloGraphData.isRecalculatingSLI()).isFalse();
   }
 
-  private void testGraphCalculation_Request(List<SLIRecord.SLIState> sliStates, List<Long> goodCounts,
-      List<Long> badCounts, SLIMissingDataType sliMissingDataType, List<Double> expectedSLITrend,
-      List<Double> expectedBurndown, int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd,
-      long expectedErrorBudget) {
+  private void testGraphCalculation_Request(List<SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts,
+      SLIMissingDataType sliMissingDataType, List<Double> expectedSLITrend, List<Double> expectedBurndown,
+      int expectedErrorBudgetRemaining, long customMinutesStart, long customMinutesEnd, long expectedErrorBudget) {
     Instant startTime =
         DateTimeUtils.roundDownTo1MinBoundary(clock.instant().minus(Duration.ofMinutes(sliStates.size())));
     createData(startTime.minus(Duration.ofMinutes(4)), Arrays.asList(SKIP_DATA, NO_DATA, GOOD, GOOD),
@@ -614,33 +606,32 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
     assertThat(sloGraphData.getTotalErrorBudgetFromGraph()).isEqualTo(expectedErrorBudget);
   }
 
-  private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, SLIMissingDataType sliMissingDataType,
+  private void testGraphCalculation(List<SLIState> sliStates, SLIMissingDataType sliMissingDataType,
       List<Double> expectedSLITrend, List<Double> expectedBurndown, int expectedErrorBudgetRemaining) {
     testGraphCalculation(
         sliStates, sliMissingDataType, expectedSLITrend, expectedBurndown, expectedErrorBudgetRemaining, 0, 0);
   }
 
-  private void testGraphCalculation(List<SLIRecord.SLIState> sliStates, List<Double> expectedSLITrend,
+  private void testGraphCalculation(List<SLIState> sliStates, List<Double> expectedSLITrend,
       List<Double> expectedBurndown, int expectedErrorBudgetRemaining) {
     testGraphCalculation(
         sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, expectedErrorBudgetRemaining);
   }
 
-  private void createData(Instant startTime, List<SLIRecord.SLIState> sliStates) {
+  private void createData(Instant startTime, List<SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, serviceLevelIndicator.getUuid(), verificationTaskId, 0);
   }
 
-  private void createData(
-      Instant startTime, List<SLIRecord.SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
+  private void createData(Instant startTime, List<SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates, goodCounts, badCounts);
     sliRecordService.create(sliRecordParams, requestServiceLevelIndicator.getUuid(), verificationTaskId, 0);
   }
 
-  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIRecord.SLIState> sliStates) {
+  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
-      SLIRecord.SLIState sliState = sliStates.get(i);
+      SLIState sliState = sliStates.get(i);
       long goodCount = 0;
       long badCount = 0;
       if (sliState == GOOD) {
@@ -659,10 +650,10 @@ public class GraphDataServiceImplTest extends CvNextGenTestBase {
   }
 
   private List<SLIRecordParam> getSLIRecordParam(
-      Instant startTime, List<SLIRecord.SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
+      Instant startTime, List<SLIState> sliStates, List<Long> goodCounts, List<Long> badCounts) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
-      SLIRecord.SLIState sliState = sliStates.get(i);
+      SLIState sliState = sliStates.get(i);
       long goodCount = goodCounts.get(i);
       long badCount = badCounts.get(i);
       sliRecordParams.add(SLIRecordParam.builder()

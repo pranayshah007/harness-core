@@ -103,7 +103,23 @@ public enum PredefinedTemplate {
   HARNESS_APPROVAL_NOTIFICATION_MSTEAMS(
       "notification_templates/approval/msteams/plain_text.txt", "harness_approval_msteams"),
   HARNESS_APPROVAL_EXECUTION_NOTIFICATION_MSTEAMS(
-      "notification_templates/approval/msteams/plain_text_execution.txt", "harness_approval_execution_msteams");
+      "notification_templates/approval/msteams/plain_text_execution.txt", "harness_approval_execution_msteams"),
+  HARNESS_APPROVAL_ACTION_NOTIFICATION_SLACK(
+      "notification_templates/approval/slack/plain_text_action.txt", "harness_approval_action_slack"),
+  HARNESS_APPROVAL_ACTION_NOTIFICATION_EMAIL(
+      "notification_templates/approval/email/plain_text_action.txt", "harness_approval_action_email"),
+  HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text_action.txt", "harness_approval_action_msteams"),
+  HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_SLACK(
+      "notification_templates/approval/slack/plain_text_action_execution.txt",
+      "harness_approval_action_execution_slack"),
+  HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_EMAIL(
+      "notification_templates/approval/email/plain_text_action_execution.txt",
+      "harness_approval_action_execution_email"),
+  HARNESS_APPROVAL_ACTION_EXECUTION_NOTIFICATION_MSTEAMS(
+      "notification_templates/approval/msteams/plain_text_action_execution.txt",
+      "harness_approval_action_execution_msteams");
+
   private String path;
   private String identifier;
 

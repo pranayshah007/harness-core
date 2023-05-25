@@ -16,7 +16,7 @@ A Helm chart for Kubernetes
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | global.database.minio.installed | bool | `true` |  |
-| global.database.mongodb.installed | bool | `true` |  |
+| global.database.mongo.installed | bool | `true` |  |
 | global.database.postgresql.installed | bool | `true` |  |
 | global.database.redis.installed | bool | `true` |  |
 | global.database.timescaledb.installed | bool | `true` |  |

@@ -686,7 +686,10 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     final String bucket = "bucket";
     final String project = "project";
     final String artifactPath = "artifactPath";
-
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url",
+        "https://www.googleapis.com/storage/v1/b/cloud-functions-bucket/o/nodejs-docs-samples%2Fhelloworld.tar.gz");
+    metadata.put("artifactFileSize", "10000");
     GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
         GoogleCloudStorageArtifactConfig.builder()
             .identifier(identifier)
@@ -700,6 +703,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         GoogleCloudStorageArtifactDelegateResponse.builder()
             .bucket(bucket)
             .project(project)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metadata).build())
             .artifactPath(artifactPath)
             .build();
     GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
@@ -713,6 +717,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(googleCloudStorageArtifactOutcome.getArtifactPath()).isEqualTo(artifactPath);
     assertThat(googleCloudStorageArtifactOutcome.getProject()).isEqualTo(project);
     assertThat(googleCloudStorageArtifactOutcome.getBucket()).isEqualTo(bucket);
+    assertThat(googleCloudStorageArtifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test

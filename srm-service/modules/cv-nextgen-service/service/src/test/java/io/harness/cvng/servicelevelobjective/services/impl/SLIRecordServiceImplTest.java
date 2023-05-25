@@ -7,10 +7,10 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.SKIP_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.SKIP_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -29,8 +29,8 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.persistence.HPersistence;
@@ -70,7 +70,6 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
     MockitoAnnotations.initMocks(this);
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 5;
     verificationTaskId = generateUuid();
     /*sliId = generateUuid();*/
     monitoredService = createMonitoredService();

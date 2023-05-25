@@ -4264,11 +4264,8 @@
         {
           "type": "object",
           "properties": {
-            "files": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+            "file": {
+              "type": "string"
             }
           }
         }
@@ -4404,25 +4401,20 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "IACMTemplateInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object"
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "IACMTerraformPlanInfo": {
+    "IACMTerraformPluginInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
         },
         {
           "type": "object",
+          "required": [
+            "command"
+          ],
           "properties": {
+            "command": {
+              "type": "string"
+            },
             "env": {
               "oneOf": [
                 {
@@ -4433,15 +4425,8 @@
                 }
               ]
             },
-            "tfVars": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+            "image": {
+              "type": "string"
             }
           }
         }
@@ -10879,30 +10864,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "IACMTemplate"
+                "const": "IACMTerraformPlugin"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/IACMTemplateInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "IACMTerraformPlan"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/IACMTerraformPlanInfo"
+                "$ref": "#/definitions/IACMTerraformPluginInfo"
               }
             }
           }

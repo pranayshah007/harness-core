@@ -12,6 +12,7 @@ import static io.harness.beans.ExecutionStatus.SKIPPED;
 import static io.harness.beans.ExecutionStatus.isActiveStatus;
 import static io.harness.beans.ExecutionStatus.isNegativeStatus;
 import static io.harness.beans.ExecutionStatus.resumableStatuses;
+import static io.harness.beans.FeatureName.SPG_CG_LIST_RESUMED_PIPELINES;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.beans.SearchFilter.Operator.NOT_EXISTS;
 import static io.harness.beans.SearchFilter.Operator.OR;
@@ -298,17 +299,20 @@ public class PipelineResumeUtils {
     currWorkflowExecution.setLatestPipelineResume(true);
     currWorkflowExecution.setCdPageCandidate(true);
 
+    boolean resumedPipelines =
+        featureFlagService.isEnabled(SPG_CG_LIST_RESUMED_PIPELINES, prevWorkflowExecution.getAccountId());
+
     UpdateOperations<WorkflowExecution> prevOps = wingsPersistence.createUpdateOperations(WorkflowExecution.class);
     prevOps.set(WorkflowExecutionKeys.pipelineResumeId, pipelineResumeId);
     prevOps.set(WorkflowExecutionKeys.latestPipelineResume, Boolean.FALSE);
-    prevOps.set(WorkflowExecutionKeys.cdPageCandidate, Boolean.FALSE);
+    prevOps.set(WorkflowExecutionKeys.cdPageCandidate, resumedPipelines);
     wingsPersistence.update(wingsPersistence.createQuery(WorkflowExecution.class)
                                 .filter(WorkflowExecutionKeys.appId, prevWorkflowExecution.getAppId())
                                 .filter(WorkflowExecutionKeys.uuid, prevWorkflowExecution.getUuid()),
         prevOps);
     prevWorkflowExecution.setPipelineResumeId(pipelineResumeId);
     prevWorkflowExecution.setLatestPipelineResume(false);
-    prevWorkflowExecution.setCdPageCandidate(false);
+    prevWorkflowExecution.setCdPageCandidate(resumedPipelines);
   }
 
   public List<PipelineStageGroupedInfo> getResumeStages(String appId, WorkflowExecution prevWorkflowExecution) {

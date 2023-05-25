@@ -48,6 +48,9 @@ public class AwsAccountFieldHelper {
   }
 
   public static String removeAwsAccountNameFromValue(final String value) {
+    if (Objects.isNull(value)) {
+      return null;
+    }
     String accountId = value;
     final Matcher matcher = ACCOUNT_ID_EXTRACT_PATTERN.matcher(value);
     while (matcher.find()) {
@@ -98,9 +101,13 @@ public class AwsAccountFieldHelper {
     }
     final Map<String, String> entityIdToName =
         entityMetadataService.getEntityIdToNameMapping(values, accountId, AWS_ACCOUNT_FIELD);
-    return values.stream()
-        .map(value -> mergeAwsAccountIdAndName(value, entityIdToName.get(value)))
-        .collect(Collectors.toList());
+    List<String> result = values;
+    if (Objects.nonNull(entityIdToName)) {
+      result = values.stream()
+                   .map(value -> mergeAwsAccountIdAndName(value, entityIdToName.get(value)))
+                   .collect(Collectors.toList());
+    }
+    return result;
   }
 
   public static List<QLCEViewFilter> removeAccountNameFromAWSAccountIdFilter(final List<QLCEViewFilter> idFilters) {
@@ -188,7 +195,7 @@ public class AwsAccountFieldHelper {
         accountIdsWithoutNames.add(value);
       }
     }
-    Collections.sort(accountIdsWithNames, String.CASE_INSENSITIVE_ORDER);
+    accountIdsWithNames.sort(String.CASE_INSENSITIVE_ORDER);
     Collections.sort(accountIdsWithoutNames);
     accountIdsWithNames.addAll(accountIdsWithoutNames);
     return accountIdsWithNames;

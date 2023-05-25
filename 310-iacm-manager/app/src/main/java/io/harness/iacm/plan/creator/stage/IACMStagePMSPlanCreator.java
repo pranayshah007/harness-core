@@ -25,8 +25,6 @@ import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
-import io.harness.beans.steps.nodes.iacm.IACMTerraformPlanStepNode;
-import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.integrationstage.CIIntegrationStageModifier;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -67,7 +65,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
-import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -85,7 +82,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
@@ -94,14 +90,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.IACM)
-@Deprecated
 public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageNode> {
-  private static final String TERRAFORM_PLAN_ID = "IACMTerraformPlan";
-  private static final String TERRAFORM_APPLY_ID = "IACMTerraformApply";
-  private static final String TERRAFORM_DESTROY_ID = "IACMTerraformDestroy";
-  private static final String TERRAFORM_PLAN_NAME = "Terraform Plan";
-  private static final String TERRAFORM_APPLY_NAME = "Terraform Apply";
-  private static final String TERRAFORM_DESTROY_NAME = "Terraform Destroy";
   @Inject private CIIntegrationStageModifier ciIntegrationStageModifier;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
@@ -130,13 +119,12 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     YamlField executionField = specField.getNode().getField(EXECUTION);
     YamlNode parentNode = executionField.getNode().getParentNode();
     String childNodeId = executionField.getNode().getUuid();
-    String stackId = parentNode.getField("stackID").getNode().getCurrJsonNode().asText();
-    String workflow = parentNode.getField("workflow").getNode().getCurrJsonNode().asText();
+    String workspace = parentNode.getField("workspace").getNode().getCurrJsonNode().asText();
 
     // Force the stage execution to clone the codebase
     stageNode.getIacmStageConfig().setCloneCodebase(ParameterField.<Boolean>builder().value(true).build());
 
-    CodeBase codeBase = getIACMCodebase(ctx, stackId);
+    CodeBase codeBase = getIACMCodebase(ctx, workspace);
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
 
     // Because we are using a CI stage, the Stage is of type IntegrationStageConfig. From here we are only interested
@@ -146,20 +134,17 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageNode, codeBase);
 
-    ExecutionElementConfig cleanedExecutionPlan = CleanTemplateStep(modifiedExecutionPlan);
-
-    ExecutionElementConfig modifiedIACMExecutionPlan = modifyIACMYamlSteps(cleanedExecutionPlan, workflow);
-
-    ExecutionElementConfig modifiedExecutionPlanWithStackID = addStackIdToIACMSteps(modifiedIACMExecutionPlan, stackId);
+    ExecutionElementConfig modifiedExecutionPlanWithworkspace =
+        addworkspaceToIACMSteps(modifiedExecutionPlan, workspace);
     // Retrieve the Modified Plan execution where the InitialTask and Git Clone step have been injected. Then retrieve
     // the steps from the plan to the level of steps->spec->stageElementConfig->execution->steps. Here, we can inject
     // any step and that step will be available in the InitialTask step in the path:
     // stageElementConfig -> Execution -> Steps -> InjectedSteps
     putNewExecutionYAMLInResponseMap(
-        executionField, planCreationResponseMap, modifiedExecutionPlanWithStackID, parentNode);
+        executionField, planCreationResponseMap, modifiedExecutionPlanWithworkspace, parentNode);
 
     BuildStatusUpdateParameter buildStatusUpdateParameter =
-        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, stackId);
+        obtainBuildStatusUpdateParameter(ctx, stageNode, executionSource, workspace);
     PlanNode specPlanNode = getSpecPlanNode(specField,
         IntegrationStageStepParametersPMS.getStepParameters(
             getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx));
@@ -170,113 +155,19 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     return planCreationResponseMap;
   }
 
-  private ExecutionElementConfig modifyIACMYamlSteps(ExecutionElementConfig modifiedExecutionPlan, String workflow) {
-    List<String> operations = new ArrayList<>();
-    if (Objects.equals(workflow, "provision")) {
-      operations.add("TerraformPlan");
-      operations.add("TerraformApply");
-    } else if (Objects.equals(workflow, "teardown")) {
-      operations.add("TerraformDestroy");
-    } else {
-      throw new IACMStageExecutionException("Unexpected workflow in the IACM stage");
-    }
-
-    for (String operation : operations) {
-      modifiedExecutionPlan.getSteps().add(
-          createStep(operation, Timeout.fromString("10m"))); // TODO: Hardcoded value for now
-    }
-    return modifiedExecutionPlan;
-  }
-
-  private ExecutionElementConfig CleanTemplateStep(ExecutionElementConfig modifiedExecutionPlan) {
-    modifiedExecutionPlan.getSteps().removeIf(
-        e -> e.getStep().get("type").asText().equals(IACMStepSpecTypeConstants.IACM_TEMPLATE));
-    return modifiedExecutionPlan;
-  }
-
-  private ExecutionWrapperConfig createStep(String stepType, Timeout timeout) {
-    switch (stepType) {
-      case "TerraformPlan": {
-        HashMap<String, String> env = new HashMap<>();
-        env.put("command", "plan");
-        IACMTerraformPlanInfo iacmTerraformPlanInfo =
-            IACMTerraformPlanInfo.builder().env(ParameterField.createValueField(env)).name(TERRAFORM_PLAN_NAME).build();
-        String uuid = generateUuid();
-        try {
-          String jsonString = JsonPipelineUtils.writeJsonString(IACMTerraformPlanStepNode.builder()
-                                                                    .identifier(TERRAFORM_PLAN_ID)
-                                                                    .name(TERRAFORM_PLAN_NAME)
-                                                                    .uuid(uuid)
-                                                                    .timeout(ParameterField.createValueField(timeout))
-                                                                    .iacmTerraformPlanInfo(iacmTerraformPlanInfo)
-                                                                    .build());
-          JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
-          return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
-
-        } catch (IOException ex) {
-          throw new IACMStageExecutionException("Faied to create IACM Terraform plan step", ex);
-        }
-      }
-      case "TerraformApply": {
-        HashMap<String, String> env = new HashMap<>();
-        env.put("command", "apply");
-        IACMTerraformPlanInfo iacmTerraformPlanInfo = IACMTerraformPlanInfo.builder()
-                                                          .env(ParameterField.createValueField(env))
-                                                          .name(TERRAFORM_APPLY_NAME)
-                                                          .build();
-        String uuid = generateUuid();
-        try {
-          String jsonString = JsonPipelineUtils.writeJsonString(IACMTerraformPlanStepNode.builder()
-                                                                    .identifier(TERRAFORM_APPLY_ID)
-                                                                    .name(TERRAFORM_APPLY_NAME)
-                                                                    .uuid(uuid)
-                                                                    .timeout(ParameterField.createValueField(timeout))
-                                                                    .iacmTerraformPlanInfo(iacmTerraformPlanInfo)
-                                                                    .build());
-          JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
-          return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
-
-        } catch (IOException ex) {
-          throw new IACMStageExecutionException("Faied to create IACM Terraform apply step", ex);
-        }
-      }
-      case "TerraformDestroy": {
-        HashMap<String, String> env = new HashMap<>();
-        env.put("command", "destroy");
-        IACMTerraformPlanInfo iacmTerraformPlanInfo = IACMTerraformPlanInfo.builder()
-                                                          .env(ParameterField.createValueField(env))
-                                                          .name(TERRAFORM_DESTROY_NAME)
-                                                          .build();
-        String uuid = generateUuid();
-        try {
-          String jsonString = JsonPipelineUtils.writeJsonString(IACMTerraformPlanStepNode.builder()
-                                                                    .identifier(TERRAFORM_DESTROY_ID)
-                                                                    .name(TERRAFORM_DESTROY_NAME)
-                                                                    .uuid(uuid)
-                                                                    .timeout(ParameterField.createValueField(timeout))
-                                                                    .iacmTerraformPlanInfo(iacmTerraformPlanInfo)
-                                                                    .build());
-          JsonNode jsonNode = JsonPipelineUtils.getMapper().readTree(jsonString);
-          return ExecutionWrapperConfig.builder().uuid(uuid).step(jsonNode).build();
-
-        } catch (IOException ex) {
-          throw new IACMStageExecutionException("Faied to create IACM Terraform destroy step", ex);
-        }
-      }
-      default:
-        throw new IACMStageExecutionException("IACM step not recognized");
-    }
-  }
-
-  private ExecutionElementConfig addStackIdToIACMSteps(ExecutionElementConfig modifiedExecutionPlan, String stackID) {
+  private ExecutionElementConfig addworkspaceToIACMSteps(
+      ExecutionElementConfig modifiedExecutionPlan, String workspace) {
     List<ExecutionWrapperConfig> modifiedSteps = new ArrayList<>();
     for (ExecutionWrapperConfig wrapperConfig : modifiedExecutionPlan.getSteps()) {
-      switch (wrapperConfig.getStep().get("type").asText()) {
-        case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLAN:
-          ((ObjectNode) wrapperConfig.getStep().get("spec")).put("stackID", stackID);
-          break;
-        default:
-          break;
+      if (wrapperConfig.getStep().get("spec").get("envVariables") != null) {
+        ((ObjectNode) wrapperConfig.getStep().get("spec").get("envVariables")).put("HARNESS_WORKSPACE", workspace);
+        switch (wrapperConfig.getStep().get("type").asText()) {
+          case IACMStepSpecTypeConstants.IACM_TERRAFORM_PLUGIN:
+            ((ObjectNode) wrapperConfig.getStep().get("spec")).put("workspace", workspace);
+            break;
+          default:
+            break;
+        }
       }
       modifiedSteps.add(wrapperConfig);
     }
@@ -305,7 +196,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   public SpecParameters getSpecParameters(String childNodeId, PlanCreationContext ctx, IACMStageNode stageNode) {
     ExecutionSource executionSource = buildExecutionSource(ctx, stageNode);
     BuildStatusUpdateParameter buildStatusUpdateParameter = obtainBuildStatusUpdateParameter(
-        ctx, stageNode, executionSource, stageNode.getIacmStageConfig().getStackID().getValue());
+        ctx, stageNode, executionSource, stageNode.getIacmStageConfig().getWorkspace().getValue());
     return IntegrationStageStepParametersPMS.getStepParameters(
         getIntegrationStageNode(stageNode), childNodeId, buildStatusUpdateParameter, ctx);
   }
@@ -373,9 +264,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   }
 
   /**
-  I don't know if we need this function or not. It seems to modify the yaml file to add implicits steps but I don't know
-  if we want or need this.
-  TODO: Marked for investigation of its utility
+   * Modifies the yaml to add the init and clone steps
    */
   private ExecutionElementConfig modifyYAMLWithImplicitSteps(PlanCreationContext ctx, ExecutionSource executionSource,
       YamlField executionYAMLField, IACMStageNode stageNode, CodeBase codeBase) {
@@ -418,7 +307,7 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   private ExecutionSource buildExecutionSource(PlanCreationContext ctx, IACMStageNode stageNode) {
     PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
 
-    CodeBase codeBase = getIACMCodebase(ctx, stageNode.getIacmStageConfig().getStackID().getValue());
+    CodeBase codeBase = getIACMCodebase(ctx, stageNode.getIacmStageConfig().getWorkspace().getValue());
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
@@ -436,8 +325,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   TODO: Needs investigation
    */
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
-      PlanCreationContext ctx, IACMStageNode stageNode, ExecutionSource executionSource, String stackId) {
-    CodeBase codeBase = getIACMCodebase(ctx, stackId);
+      PlanCreationContext ctx, IACMStageNode stageNode, ExecutionSource executionSource, String workspace) {
+    CodeBase codeBase = getIACMCodebase(ctx, workspace);
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
@@ -488,20 +377,20 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
         codebase:
    NOTE: If we want to add information at this level, the way to do it will be similar to this method
    */
-  private CodeBase getIACMCodebase(PlanCreationContext ctx, String stackId) {
+  private CodeBase getIACMCodebase(PlanCreationContext ctx, String workspaceId) {
     try {
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
-      Workspace stack = serviceUtils.getIACMWorkspaceInfo(
-          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), stackId);
+      Workspace workspace = serviceUtils.getIACMWorkspaceInfo(
+          ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspaceId);
       // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
       // defined
-      if (!Objects.equals(stack.getRepository(), "") && stack.getRepository() != null) {
-        iacmCodeBase.repoName(ParameterField.<String>builder().value(stack.getRepository()).build());
+      if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
+        iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
       } else {
         iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
       }
 
-      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(stack.getRepository_connector()).build());
+      iacmCodeBase.connectorRef(ParameterField.<String>builder().value(workspace.getRepository_connector()).build());
       iacmCodeBase.depth(ParameterField.<Integer>builder().value(50).build());
       iacmCodeBase.prCloneStrategy(ParameterField.<PRCloneStrategy>builder().value(null).build());
       iacmCodeBase.sslVerify(ParameterField.<Boolean>builder().value(null).build());
@@ -511,20 +400,20 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
       // We support 2,
 
       BuildBuilder buildObject = builder();
-      if (!Objects.equals(stack.getRepository_branch(), "") && stack.getRepository_branch() != null) {
+      if (!Objects.equals(workspace.getRepository_branch(), "") && workspace.getRepository_branch() != null) {
         buildObject.type(BuildType.BRANCH);
         buildObject.spec(BranchBuildSpec.builder()
-                             .branch(ParameterField.<String>builder().value(stack.getRepository_branch()).build())
+                             .branch(ParameterField.<String>builder().value(workspace.getRepository_branch()).build())
                              .build());
-      } else if (!Objects.equals(stack.getRepository_commit(), "") && stack.getRepository_commit() != null) {
+      } else if (!Objects.equals(workspace.getRepository_commit(), "") && workspace.getRepository_commit() != null) {
         buildObject.type(BuildType.TAG);
         buildObject.spec(TagBuildSpec.builder()
-                             .tag(ParameterField.<String>builder().value(stack.getRepository_commit()).build())
+                             .tag(ParameterField.<String>builder().value(workspace.getRepository_commit()).build())
                              .build());
       } else {
         throw new IACMStageExecutionException(
-            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the stack "
-            + stackId);
+            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
+            + workspace);
       }
 
       return iacmCodeBase.build(ParameterField.<Build>builder().value(buildObject.build()).build()).build();
@@ -532,8 +421,8 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
     } catch (Exception ex) {
       // Ignore exception because code base is not mandatory in case git clone is false
       log.warn("Failed to retrieve iacmCodeBase from pipeline");
-      throw new IACMStageExecutionException(
-          "Unexpected error building the connector information from the stack: " + stackId + " ." + ex.getMessage());
+      throw new IACMStageExecutionException("Unexpected error building the connector information from the workspace: "
+          + workspaceId + " ." + ex.getMessage());
     }
   }
   /**

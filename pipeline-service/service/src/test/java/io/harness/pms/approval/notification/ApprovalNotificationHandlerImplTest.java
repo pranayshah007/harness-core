@@ -9,6 +9,7 @@ package io.harness.pms.approval.notification;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.SOURABH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -60,9 +62,12 @@ import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.project.remote.ProjectClient;
 import io.harness.rule.Owner;
+import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.ApproversDTO;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalAction;
+import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.usergroups.UserGroupClient;
 
@@ -72,6 +77,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Before;
@@ -554,6 +560,230 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
 
       verify(ngLogCallback.constructed().get(0), times(2)).saveExecutionLog(anyString());
       verify(ngLogCallback.constructed().get(0), times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
+    }
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testSendNotificationForApprovalAction() throws Exception {
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+      TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(userId).setUuid(userUuid).build();
+      ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
+      ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setTriggerInfo(triggerInfo).build();
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .setMetadata(executionMetadata)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(
+                  ApproversDTO.builder()
+                      .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
+                          "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
+                      .build())
+              .approvalActivities(Collections.singletonList(HarnessApprovalActivity.builder()
+                                                                .user(EmbeddedUser.builder().email("email").build())
+                                                                .approvedAt(20000000)
+                                                                .action(HarnessApprovalAction.APPROVE)
+                                                                .build())
+
+                      )
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setStatus(ApprovalStatus.APPROVED);
+
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .name(pipelineName)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(MicrosoftTeamsConfigDTO.builder().build());
+
+      List<UserGroupDTO> userGroupDTOS =
+          new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
+                                            .identifier("proj_right")
+                                            .accountIdentifier(accountId)
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
+                                            .notificationConfigs(notificationSettingConfigDTOS)
+                                            .build(),
+              UserGroupDTO.builder()
+                  .identifier("org_right")
+                  .accountIdentifier(accountId)
+                  .orgIdentifier(orgIdentifier)
+                  .notificationConfigs(notificationSettingConfigDTOS)
+                  .build(),
+              UserGroupDTO.builder()
+                  .identifier("acc_right")
+                  .accountIdentifier(accountId)
+                  .notificationConfigs(notificationSettingConfigDTOS)
+                  .build()));
+
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
+
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
+
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance))
+          .thenReturn(Mockito.mock(ILogStreamingStepClient.class));
+
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+          ArgumentCaptor.forClass(NotificationChannel.class);
+      verify(notificationClient, times(9)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+      List<NotificationChannel> notificationChannels = notificationChannelArgumentCaptor.getAllValues();
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineName))
+          .isEqualTo(pipelineName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.projectName))
+          .isEqualTo(projectName);
+
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.status))
+          .isEqualTo(ApprovalStatus.APPROVED.toString().toLowerCase(Locale.ROOT));
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.action)).contains("email");
+
+      // get userId in triggeredBy because email is not present
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
+          .isEqualTo(url);
+      assertThat(notificationChannels.get(8).getTemplateId())
+          .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier());
+      assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
+      verify(pmsExecutionService, times(1))
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    }
+  }
+
+  @Test
+  @Owner(developers = SOURABH)
+  @Category(UnitTests.class)
+  public void testSendNotificationForRejectionAction() throws Exception {
+    try (MockedConstruction<NGLogCallback> ngLogCallback = mockConstruction(NGLogCallback.class)) {
+      String url =
+          "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
+      TriggeredBy triggeredBy = TriggeredBy.newBuilder().setIdentifier(userId).setUuid(userUuid).build();
+      ExecutionTriggerInfo triggerInfo = ExecutionTriggerInfo.newBuilder().setTriggeredBy(triggeredBy).build();
+      ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder().setTriggerInfo(triggerInfo).build();
+      Ambiance ambiance = Ambiance.newBuilder()
+                              .putSetupAbstractions("accountId", accountId)
+                              .putSetupAbstractions("orgIdentifier", orgIdentifier)
+                              .putSetupAbstractions("projectIdentifier", projectIdentifier)
+                              .putSetupAbstractions("pipelineIdentifier", pipelineIdentifier)
+                              .setMetadata(executionMetadata)
+                              .build();
+      HarnessApprovalInstance approvalInstance =
+          HarnessApprovalInstance.builder()
+              .approvers(
+                  ApproversDTO.builder()
+                      .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
+                          "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
+                      .build())
+              .approvalActivities(Collections.singletonList(HarnessApprovalActivity.builder()
+                                                                .user(EmbeddedUser.builder().email("email").build())
+                                                                .approvedAt(20000000)
+                                                                .action(HarnessApprovalAction.REJECT)
+                                                                .build())
+
+                      )
+              .build();
+      approvalInstance.setAmbiance(ambiance);
+      approvalInstance.setCreatedAt(System.currentTimeMillis());
+      approvalInstance.setDeadline(2L * System.currentTimeMillis());
+      approvalInstance.setType(ApprovalType.HARNESS_APPROVAL);
+      approvalInstance.setStatus(ApprovalStatus.REJECTED);
+
+      PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                          .accountId(accountId)
+                                                                          .orgIdentifier(orgIdentifier)
+                                                                          .projectIdentifier(projectIdentifier)
+                                                                          .pipelineIdentifier(pipelineIdentifier)
+                                                                          .name(pipelineName)
+                                                                          .build();
+      doReturn(pipelineExecutionSummaryEntity)
+          .when(pmsExecutionService)
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+      List<NotificationSettingConfigDTO> notificationSettingConfigDTOS = new ArrayList<>();
+      notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
+      notificationSettingConfigDTOS.add(MicrosoftTeamsConfigDTO.builder().build());
+
+      List<UserGroupDTO> userGroupDTOS =
+          new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
+                                            .identifier("proj_right")
+                                            .accountIdentifier(accountId)
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
+                                            .notificationConfigs(notificationSettingConfigDTOS)
+                                            .build(),
+              UserGroupDTO.builder()
+                  .identifier("org_right")
+                  .accountIdentifier(accountId)
+                  .orgIdentifier(orgIdentifier)
+                  .notificationConfigs(notificationSettingConfigDTOS)
+                  .build(),
+              UserGroupDTO.builder()
+                  .identifier("acc_right")
+                  .accountIdentifier(accountId)
+                  .notificationConfigs(notificationSettingConfigDTOS)
+                  .build()));
+
+      Call<ResponseDTO<List<UserGroupDTO>>> responseDTOCall = mock(Call.class);
+      when(userGroupClient.getFilteredUserGroups(any())).thenReturn(responseDTOCall);
+      ResponseDTO<List<UserGroupDTO>> restResponse = ResponseDTO.newResponse(userGroupDTOS);
+      Response<ResponseDTO<List<UserGroupDTO>>> response = Response.success(restResponse);
+      when(responseDTOCall.execute()).thenReturn(response);
+
+      approvalInstance.setValidatedUserGroups(userGroupDTOS);
+
+      doReturn(url).when(notificationHelper).generateUrl(ambiance);
+      when(logStreamingStepClientFactory.getLogStreamingStepClient(ambiance))
+          .thenReturn(Mockito.mock(ILogStreamingStepClient.class));
+
+      approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
+      ArgumentCaptor<NotificationChannel> notificationChannelArgumentCaptor =
+          ArgumentCaptor.forClass(NotificationChannel.class);
+      verify(notificationClient, times(9)).sendNotificationAsync(notificationChannelArgumentCaptor.capture());
+      List<NotificationChannel> notificationChannels = notificationChannelArgumentCaptor.getAllValues();
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineName))
+          .isEqualTo(pipelineName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.orgName)).isEqualTo(orgName);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.projectName))
+          .isEqualTo(projectName);
+
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.status))
+          .isEqualTo(ApprovalStatus.REJECTED.toString().toLowerCase(Locale.ROOT));
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.action)).contains("email");
+
+      // get userId in triggeredBy because email is not present
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.triggeredBy)).isEqualTo(userId);
+      assertThat(notificationChannels.get(0).getTemplateData().get(ApprovalSummaryKeys.pipelineExecutionLink))
+          .isEqualTo(url);
+      assertThat(notificationChannels.get(8).getTemplateId())
+          .isEqualTo(PredefinedTemplate.HARNESS_APPROVAL_ACTION_NOTIFICATION_MSTEAMS.getIdentifier());
+      assertThat(notificationChannels.get(8).getTeam()).isEqualTo(Team.PIPELINE);
+      verify(pmsExecutionService, times(1))
+          .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
     }
   }
 }

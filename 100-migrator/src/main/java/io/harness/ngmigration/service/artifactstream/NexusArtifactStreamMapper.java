@@ -39,6 +39,7 @@ import software.wings.ngmigration.CgEntityNode;
 
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
   private static final String VERSION_2 = "2.x";
@@ -106,8 +107,12 @@ public class NexusArtifactStreamMapper implements ArtifactStreamMapper {
         return NexusRegistryMavenConfig.builder()
             .artifactId(ParameterField.createValueField(nexusArtifactStream.getArtifactPaths().get(0)))
             .groupId(ParameterField.createValueField(nexusArtifactStream.getGroupId()))
-            .extension(ParameterField.createValueField(nexusArtifactStream.getExtension()))
-            .classifier(ParameterField.createValueField(nexusArtifactStream.getClassifier()))
+            .extension(StringUtils.isBlank(nexusArtifactStream.getExtension())
+                    ? null
+                    : ParameterField.createValueField(nexusArtifactStream.getExtension()))
+            .classifier(StringUtils.isBlank(nexusArtifactStream.getClassifier())
+                    ? null
+                    : ParameterField.createValueField(nexusArtifactStream.getClassifier()))
             .build();
       case NPM:
         return NexusRegistryNpmConfig.builder()

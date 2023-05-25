@@ -55,6 +55,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -218,7 +219,8 @@ public class MailServiceImpl implements ChannelService {
       List<String> emailIds, String subject, String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse) && Objects.nonNull(smtpConfigResponse.getSmtpConfig())) {
+      Set<String> taskSelectors = getDelegateSelectors(smtpConfigResponse.getSmtpConfig());
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -232,6 +234,7 @@ public class MailServiceImpl implements ChannelService {
                                   .smtpConfig(smtpConfigResponse.getSmtpConfig())
                                   .encryptionDetails(smtpConfigResponse.getEncryptionDetails())
                                   .build())
+              .taskSelectors(taskSelectors)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
       String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
@@ -253,9 +256,10 @@ public class MailServiceImpl implements ChannelService {
     NotificationTaskResponse notificationTaskResponse;
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse) && Objects.nonNull(smtpConfigResponse.getSmtpConfig())) {
       final Map<String, String> ngTaskSetupAbstractionsWithOwner =
           getNGTaskSetupAbstractionsWithOwner(accountId, null, null);
+      Set<String> taskSelectors = getDelegateSelectors(smtpConfigResponse.getSmtpConfig());
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -270,6 +274,7 @@ public class MailServiceImpl implements ChannelService {
                                   .smtpConfig(smtpConfigResponse.getSmtpConfig())
                                   .encryptionDetails(smtpConfigResponse.getEncryptionDetails())
                                   .build())
+              .taskSelectors(taskSelectors)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
       DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
@@ -349,6 +354,10 @@ public class MailServiceImpl implements ChannelService {
       recipients.addAll(resolvedRecipients);
     }
     return recipients.stream().distinct().collect(Collectors.toList());
+  }
+
+  private Set<String> getDelegateSelectors(SmtpConfig smtpConfig) {
+    return isEmpty(smtpConfig.getDelegateSelectors()) ? new HashSet<>() : smtpConfig.getDelegateSelectors();
   }
 
   @Getter

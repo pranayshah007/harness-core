@@ -70,7 +70,7 @@ public abstract class InterruptPropagatorHandler {
             .filter(nodeExecution -> StatusUtils.abortingStatuses().contains(nodeExecution.getStatus()))
             .collect(Collectors.toList());
     // Extract all the running leaf nodes with the parent id as nodeExecutionId passed in as param
-    nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, false);
+    nodeExecutionService.extractChildExecutions(nodeExecutionId, true, finalList, allExecutions, true);
 
     List<String> targetIds = finalList.stream()
                                  .filter(ne

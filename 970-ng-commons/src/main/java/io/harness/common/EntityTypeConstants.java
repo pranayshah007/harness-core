@@ -197,7 +197,7 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String CONTAINER_STEP = "Container";
-  String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+  String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   String IACM_TEMPLATE = "IACMTemplate";
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
@@ -237,4 +237,5 @@ public interface EntityTypeConstants {
   String CD_SSCA_ORCHESTRATION = "CdSscaOrchestration";
   String TAS_ROUTE_MAPPING = "RouteMapping";
   String BACKSTAGE_ENVIRONMENT_VARIABLE = "BackstageEnvironmentVariable";
+  String SSCA_ENFORCEMENT = "SscaEnforcement";
 }

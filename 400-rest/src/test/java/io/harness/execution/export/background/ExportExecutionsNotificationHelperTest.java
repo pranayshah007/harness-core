@@ -26,6 +26,7 @@ import io.harness.execution.export.request.ExportExecutionsRequestHelper;
 import io.harness.execution.export.request.ExportExecutionsRequestSummary;
 import io.harness.execution.export.request.RequestTestUtils;
 import io.harness.rule.Owner;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import software.wings.beans.Notification;
 import software.wings.beans.NotificationRule;
@@ -45,6 +46,7 @@ import org.mockito.junit.MockitoRule;
 public class ExportExecutionsNotificationHelperTest extends CategoryTest {
   @Mock private ExportExecutionsRequestHelper exportExecutionsRequestHelper;
   @Mock private NotificationService notificationService;
+  @Mock private HtmlInputSanitizer htmlInputSanitizer;
   @Inject @InjectMocks private ExportExecutionsNotificationHelper exportExecutionsNotificationHelper;
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -64,6 +66,7 @@ public class ExportExecutionsNotificationHelperTest extends CategoryTest {
 
     EmbeddedUser embeddedUser = EmbeddedUser.builder().name("n").email("e").build();
     request.setCreatedBy(embeddedUser);
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn(embeddedUser.getName());
     exportExecutionsNotificationHelper.dispatch(request);
     ArgumentCaptor<Notification> argument = ArgumentCaptor.forClass(Notification.class);
     verify(notificationService, times(1)).sendNotificationToTriggeredByUserOnly(argument.capture(), eq(embeddedUser));
@@ -72,6 +75,7 @@ public class ExportExecutionsNotificationHelperTest extends CategoryTest {
     request = RequestTestUtils.prepareExportExecutionsRequest(ExportExecutionsRequest.Status.FAILED);
     request.setNotifyOnlyTriggeringUser(true);
     request.setCreatedBy(embeddedUser);
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn(embeddedUser.getName());
     exportExecutionsNotificationHelper.dispatch(request);
     argument = ArgumentCaptor.forClass(Notification.class);
     verify(notificationService, times(2)).sendNotificationToTriggeredByUserOnly(argument.capture(), eq(embeddedUser));
@@ -80,6 +84,7 @@ public class ExportExecutionsNotificationHelperTest extends CategoryTest {
     request = RequestTestUtils.prepareExportExecutionsRequest();
     request.setNotifyOnlyTriggeringUser(true);
     request.setCreatedBy(embeddedUser);
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn(embeddedUser.getName());
     exportExecutionsNotificationHelper.dispatch(request);
     argument = ArgumentCaptor.forClass(Notification.class);
     verify(notificationService, times(3)).sendNotificationToTriggeredByUserOnly(argument.capture(), eq(embeddedUser));
@@ -88,6 +93,7 @@ public class ExportExecutionsNotificationHelperTest extends CategoryTest {
     request = RequestTestUtils.prepareExportExecutionsRequest(ExportExecutionsRequest.Status.EXPIRED);
     request.setNotifyOnlyTriggeringUser(true);
     request.setCreatedBy(embeddedUser);
+    when(htmlInputSanitizer.sanitizeInput(any())).thenReturn(embeddedUser.getName());
     exportExecutionsNotificationHelper.dispatch(request);
     argument = ArgumentCaptor.forClass(Notification.class);
     verify(notificationService, times(4)).sendNotificationToTriggeredByUserOnly(argument.capture(), eq(embeddedUser));

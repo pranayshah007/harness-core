@@ -291,15 +291,30 @@ public class PipelineMigrationService extends NgMigrationService {
     List<NGVariable> pipelineVariables = getPipelineVariables(migrationContext, pipeline);
     List<StepExpressionFunctor> allFunctors = new ArrayList<>();
     Map<String, String> serviceToStageMap = new HashMap<>();
+    Map<String, String> envToStageMap = new HashMap<>();
+    Map<String, String> infraToStageMap = new HashMap<>();
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
-      if (!isPartOfParallelStage(pipeline.getPipelineStages(), i)) {
-        if (EmptyPredicate.isNotEmpty(parallelStages)) {
-          ngStages.add(StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
-        }
-        parallelStages = null;
-      } else if (parallelStages == null) {
-        parallelStages = new ArrayList<>();
+      switch (getStageType(pipeline.getPipelineStages(), i)) {
+        case "EXISTING_PARALLEL":
+          // If we have existing parallel stages, we do nothing
+          break;
+        case "NEW_PARALLEL":
+          // We add existing parallel stages and reset it to empty list
+          if (EmptyPredicate.isNotEmpty(parallelStages)) {
+            ngStages.add(
+                StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
+          }
+          parallelStages = new ArrayList<>();
+          break;
+        default:
+          // We add existing parallel stages and reset it to null
+          if (EmptyPredicate.isNotEmpty(parallelStages)) {
+            ngStages.add(
+                StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
+          }
+          parallelStages = null;
+          break;
       }
       for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
         StageElementWrapperConfig stage = null;
@@ -315,7 +330,8 @@ public class PipelineMigrationService extends NgMigrationService {
             if (skipDetail != null) {
               return YamlGenerationDetails.builder().skipDetails(Collections.singletonList(skipDetail)).build();
             }
-            stage = buildWorkflowStage(migrationContext, stageElement, serviceToStageMap, allFunctors);
+            stage = buildWorkflowStage(
+                migrationContext, stageElement, serviceToStageMap, envToStageMap, infraToStageMap, allFunctors);
           }
         } else {
           stage = buildApprovalStage(migrationContext, stageElement);
@@ -379,6 +395,21 @@ public class PipelineMigrationService extends NgMigrationService {
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
     return YamlGenerationDetails.builder().yamlFileList(files).build();
+  }
+
+  // NEW_PARALLEL, SERIAL, EXISTING_PARALLEL
+  private String getStageType(List<PipelineStage> stages, int index) {
+    PipelineStage pipelineStage = stages.get(index);
+    if (pipelineStage.isParallel()) {
+      return "EXISTING_PARALLEL";
+    }
+    if (index + 1 < stages.size()) {
+      PipelineStage nextStage = stages.get(index + 1);
+      if (nextStage.isParallel()) {
+        return "NEW_PARALLEL";
+      }
+    }
+    return "SERIAL";
   }
 
   private boolean isPartOfParallelStage(List<PipelineStage> stages, int index) {
@@ -543,8 +574,8 @@ public class PipelineMigrationService extends NgMigrationService {
   }
 
   private StageElementWrapperConfig buildWorkflowStage(MigrationContext migrationContext,
-      PipelineStageElement stageElement, Map<String, String> serviceToStageMap,
-      List<StepExpressionFunctor> allExpFunctors) {
+      PipelineStageElement stageElement, Map<String, String> serviceToStageMap, Map<String, String> envToStageMap,
+      Map<String, String> infraToStageMap, List<StepExpressionFunctor> allExpFunctors) {
     CaseFormat caseFormat = migrationContext.getInputDTO().getIdentifierCaseFormat();
     String stageIdentifier = MigratorUtility.generateIdentifier(stageElement.getName(), caseFormat);
     Map<CgEntityId, CgEntityNode> entities = migrationContext.getEntities();
@@ -591,7 +622,7 @@ public class PipelineMigrationService extends NgMigrationService {
 
     String stageEnvRef = RUNTIME_INPUT;
     String envId = getEnvId(workflow, stageElement);
-    if (StringUtils.isNotBlank(envId)) {
+    if (StringUtils.isNotBlank(envId) && !isExpression(envId)) {
       CgEntityId envEntityId = CgEntityId.builder().id(envId).type(ENVIRONMENT).build();
       if (migratedEntities.containsKey(envEntityId)) {
         stageEnvRef = MigratorUtility.getIdentifierWithScope(migratedEntities.get(envEntityId).getNgEntityDetail());
@@ -601,7 +632,7 @@ public class PipelineMigrationService extends NgMigrationService {
     String stageInfraRef = RUNTIME_INPUT;
     String infraId = getInfra(workflow, stageElement);
     JsonNode infraInputs = null;
-    if (StringUtils.isNotBlank(infraId) && !RUNTIME_INPUT.equals(stageEnvRef)) {
+    if (StringUtils.isNotBlank(infraId) && !RUNTIME_INPUT.equals(stageEnvRef) && !isExpression(infraId)) {
       CgEntityId infraEntityId = CgEntityId.builder().id(infraId).type(INFRA).build();
       if (migratedEntities.containsKey(infraEntityId)) {
         NgEntityDetail infraDetails = migratedEntities.get(infraEntityId).getNgEntityDetail();
@@ -663,13 +694,24 @@ public class PipelineMigrationService extends NgMigrationService {
       String envRef = templateInputs.at("/spec/environment/environmentRef").asText();
       if (RUNTIME_INPUT.equals(envRef)) {
         ObjectNode environment = (ObjectNode) templateInputs.get("spec").get("environment");
-        environment.put("environmentRef", stageEnvRef);
+        if (RUNTIME_INPUT.equals(stageEnvRef) && envToStageMap.containsKey(envId)) {
+          environment.put(
+              "environmentRef", String.format("<+pipeline.stages.%s.spec.env.identifier>", envToStageMap.get(envId)));
+        } else {
+          environment.put("environmentRef", stageEnvRef);
+        }
         environment.remove("environmentInputs");
         if (infraInputs != null) {
           environment.set(INFRASTRUCTURE_DEFINITIONS, infraInputs);
         } else if (StringUtils.isNotBlank(stageInfraRef) && !RUNTIME_INPUT.equals(stageInfraRef)) {
           environment.set(
               INFRASTRUCTURE_DEFINITIONS, JsonPipelineUtils.readTree("[{\"identifier\": \"" + stageInfraRef + "\"}]"));
+        } else if (infraToStageMap.containsKey(infraId)) {
+          environment.set(INFRASTRUCTURE_DEFINITIONS,
+              JsonPipelineUtils.readTree("[{\"identifier\": \""
+                  + String.format(
+                      "<+pipeline.stages.%s.spec.infrastructure.output.infraIdentifier>", infraToStageMap.get(infraId))
+                  + "\"}]"));
         }
       }
     }
@@ -683,12 +725,19 @@ public class PipelineMigrationService extends NgMigrationService {
     templateStageNode.setDescription("");
     templateStageNode.setTemplate(templateLinkConfig);
 
-    // This is needed to propagate services from one stage to another
-    if (isNotEmpty(serviceId) && !serviceToStageMap.containsKey(serviceId)) {
-      serviceToStageMap.put(serviceId, stageIdentifier);
-    }
+    // This is needed to propagate services & envs from one stage to another
+    populateEntityIdToStageMap(serviceToStageMap, stageIdentifier, serviceId);
+    populateEntityIdToStageMap(envToStageMap, stageIdentifier, envId);
+    populateEntityIdToStageMap(infraToStageMap, stageIdentifier, infraId);
 
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(templateStageNode)).build();
+  }
+
+  private void populateEntityIdToStageMap(
+      Map<String, String> entityIdToStageMap, String stageIdentifier, String entityId) {
+    if (isNotEmpty(entityId) && !entityIdToStageMap.containsKey(entityId)) {
+      entityIdToStageMap.put(entityId, stageIdentifier);
+    }
   }
 
   private void fixServiceInTemplateInputs(Map<String, String> serviceToStageMap, String stageServiceRef,
@@ -814,7 +863,7 @@ public class PipelineMigrationService extends NgMigrationService {
     String envExpression = workflow.fetchEnvTemplatizedName();
     Map<String, String> workflowVariables = MapUtils.emptyIfNull(stageElement.getWorkflowVariables());
     String envId = workflowVariables.get(envExpression);
-    if (StringUtils.isNotBlank(envId) && !isExpression(envId)) {
+    if (StringUtils.isNotBlank(envId)) {
       return envId;
     }
     return null;
@@ -836,7 +885,7 @@ public class PipelineMigrationService extends NgMigrationService {
       return workflowPhase.getInfraDefinitionId();
     }
     String infraId = workflowVariables.get(infraExpression);
-    if (StringUtils.isNotBlank(infraId) && !isExpression(infraId)) {
+    if (StringUtils.isNotBlank(infraId)) {
       return infraId;
     }
     return null;

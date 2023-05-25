@@ -25,7 +25,6 @@ public class ChangeSourceDTODeserializer extends JsonDeserializer<ChangeSourceDT
   static Map<ChangeSourceType, Class<?>> deserializationMapper = new HashMap<>();
   static {
     deserializationMapper.put(ChangeSourceType.HARNESS_CD_CURRENT_GEN, HarnessCDCurrentGenChangeSourceSpec.class);
-    deserializationMapper.put(ChangeSourceType.HARNESS_CD, HarnessCDChangeSourceSpec.class);
     deserializationMapper.put(ChangeSourceType.PAGER_DUTY, PagerDutyChangeSourceSpec.class);
     deserializationMapper.put(ChangeSourceType.KUBERNETES, KubernetesChangeSourceSpec.class);
     deserializationMapper.put(ChangeSourceType.CUSTOM_DEPLOY, CustomChangeSourceSpec.class);

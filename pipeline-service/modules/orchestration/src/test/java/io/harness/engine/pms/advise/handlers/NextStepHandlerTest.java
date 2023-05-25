@@ -147,9 +147,7 @@ public class NextStepHandlerTest extends CategoryTest {
                             .name("nodeName")
                             .stepType(StepType.newBuilder().build())
                             .build();
-    // node already of identityType. Same will be returned.
-    assertThat(nextStepHandler.createIdentityNodeIfRequired(identityPlanNode, NodeExecution.builder().build(), NORMAL))
-        .isEqualTo(identityPlanNode);
+
     // NodeExecution.parentId is empty. Same node will be returned.
     assertThat(nextStepHandler.createIdentityNodeIfRequired(planNode,
                    NodeExecution.builder()

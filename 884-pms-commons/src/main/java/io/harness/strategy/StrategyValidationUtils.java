@@ -65,7 +65,8 @@ public class StrategyValidationUtils {
     Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig().getValue()).getAxes();
     Map<String, ExpressionAxisConfig> expressionAxisConfig =
         ((MatrixConfig) config.getMatrixConfig().getValue()).getExpressionAxes();
-    int sizeOfAxis = axisConfig.size() + expressionAxisConfig.size();
+    int sizeOfAxis =
+        (axisConfig != null ? axisConfig.size() : 0) + (expressionAxisConfig != null ? expressionAxisConfig.size() : 0);
     if (sizeOfAxis == 0) {
       throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
     }

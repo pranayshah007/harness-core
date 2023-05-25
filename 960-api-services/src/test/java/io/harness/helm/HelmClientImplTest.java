@@ -18,13 +18,18 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -32,6 +37,8 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HelmClientException;
+import io.harness.exception.HelmClientRuntimeException;
 import io.harness.helm.HelmClientImpl.HelmCliResponse;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.model.HelmVersion;
@@ -45,6 +52,8 @@ import java.io.OutputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import lombok.SneakyThrows;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -453,6 +462,126 @@ public class HelmClientImplTest extends CategoryTest {
     assertThat(helmCliResponse2.getOutput().equals(expectedYamlMessage));
     assertThat(helmCliResponse2.getErrorStreamOutput().equals(errorMsg));
     assertThat(helmCliResponse2.getOutputWithErrorStream().equals(combinedOutput));
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetManifestV3() {
+    final String helmPath = "helm3/helm";
+    final String expectedCommand = "helm3/helm get manifest release-1 --namespace=default";
+    testGetManifest(expectedCommand, helmPath, HelmVersion.V3);
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetManifestV2() {
+    // The helm v2 will be always default to helm
+    final String helmPath = "helm";
+    final String expectedCommand = "helm get manifest release-1";
+    testGetManifest(expectedCommand, helmPath, HelmVersion.V2);
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetManifestWithRetriesFailed() {
+    final HelmCommandData commandData = HelmCommandData.builder()
+                                            .releaseName("release-retry")
+                                            .kubeConfigLocation(".kube2/config")
+                                            .helmVersion(HelmVersion.V3)
+                                            .build();
+
+    final HelmClientException helmClientException =
+        new HelmClientException("Something went wrong", HelmCliCommandType.GET_MANIFEST);
+
+    doThrow(new HelmClientRuntimeException(helmClientException))
+        .when(helmClient)
+        .executeWithExceptionHandling(eq("helm get manifest release-retry --namespace=default"),
+            eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
+            anyMap());
+    doReturn("helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V3);
+
+    assertThatThrownBy(() -> helmClient.getManifest(commandData, "default"))
+        .isInstanceOf(HelmClientRuntimeException.class);
+    verify(helmClient, times(3))
+        .executeWithExceptionHandling(eq("helm get manifest release-retry --namespace=default"),
+            eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
+            anyMap());
+  }
+
+  @Test
+  @SneakyThrows
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testGetManifestWithRetriesSuccessful() {
+    final HelmCommandData commandData = HelmCommandData.builder()
+                                            .releaseName("release-retry-successful")
+                                            .kubeConfigLocation(".kube2/config")
+                                            .helmVersion(HelmVersion.V3)
+                                            .build();
+
+    final HelmClientException helmClientException =
+        new HelmClientException("Something went wrong", HelmCliCommandType.GET_MANIFEST);
+    final AtomicInteger calledCount = new AtomicInteger();
+
+    final HelmCliResponse successfulResponse = HelmCliResponse.builder()
+                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                   .output("manifest.yaml content")
+                                                   .build();
+
+    doAnswer(invocation -> {
+      if (calledCount.incrementAndGet() < 2) {
+        throw new HelmClientRuntimeException(helmClientException);
+      }
+
+      return successfulResponse;
+    })
+        .when(helmClient)
+        .executeWithExceptionHandling(eq("helm get manifest release-retry-successful --namespace=default"),
+            eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
+            anyMap());
+    doReturn("helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V3);
+
+    HelmCliResponse resultResponse = helmClient.getManifest(commandData, "default");
+
+    assertThat(resultResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(resultResponse.getOutput()).isEqualTo("manifest.yaml content");
+    verify(helmClient, times(2))
+        .executeWithExceptionHandling(eq("helm get manifest release-retry-successful --namespace=default"),
+            eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
+            anyMap());
+  }
+
+  @SneakyThrows
+  private void testGetManifest(String expectedCommand, String helmPath, HelmVersion helmVersion) {
+    final HelmCommandData commandData = HelmCommandData.builder()
+                                            .releaseName("release-1")
+                                            .kubeConfigLocation(".kube/config")
+                                            .helmVersion(helmVersion)
+                                            .build();
+    final HelmCliResponse getManifestResponse = HelmCliResponse.builder()
+                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                    .output("manifest.yaml content")
+                                                    .build();
+
+    final ArgumentCaptor<String> executedCommand = ArgumentCaptor.forClass(String.class);
+
+    doReturn(getManifestResponse)
+        .when(helmClient)
+        .executeWithExceptionHandling(executedCommand.capture(), eq(HelmCliCommandType.GET_MANIFEST),
+            eq("Failed to retrieve helm manifest"), any(OutputStream.class), anyMap());
+    doReturn(helmPath).when(k8sGlobalConfigService).getHelmPath(helmVersion);
+
+    HelmCliResponse resultResponse = helmClient.getManifest(commandData, "default");
+
+    assertThat(executedCommand.getValue()).isEqualTo(expectedCommand);
+    assertThat(resultResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(resultResponse.getOutput()).isEqualTo("manifest.yaml content");
   }
 
   private LogCallback getLogCallback() {

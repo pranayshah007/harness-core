@@ -7,7 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 
 import java.time.Instant;
 import lombok.Builder;

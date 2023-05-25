@@ -40,6 +40,7 @@ chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
 chmod +x template-service/build/build_jar.sh
 chmod +x template-service/build/build_dist.sh
 
+scripts/bazel/UpdateVersionInfoyaml.sh $BUILD template-service/build.properties
 template-service/build/build_jar.sh
 template-service/build/build_dist.sh || true
 

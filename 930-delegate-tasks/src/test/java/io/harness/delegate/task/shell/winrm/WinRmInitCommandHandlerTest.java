@@ -81,7 +81,7 @@ public class WinRmInitCommandHandlerTest {
                                                   .build();
     WinRmExecutor executor = mock(WinRmExecutor.class);
     when(winRmExecutorFactoryNG.getExecutor(any(), anyBoolean(), anyBoolean(), any(), any())).thenReturn(executor);
-    when(executor.executeCommandString(any(), anyBoolean(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(executor.executeCommandString(any())).thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus result = winRmInitCommandHandler
                                         .handle(winrmTaskParameters, initCommandUnit, iLogStreamingTaskClient,
                                             CommandUnitsProgress.builder().build(), taskContext)

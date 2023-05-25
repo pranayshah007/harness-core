@@ -32,7 +32,6 @@ import io.harness.k8s.model.harnesscrds.RollingDeploymentStrategyParams;
 import io.harness.k8s.utils.ObjectYamlUtils;
 import io.harness.k8s.utils.ResourceUtils;
 
-import com.google.common.annotations.VisibleForTesting;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -45,10 +44,12 @@ import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1HorizontalPodAutoscaler;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -89,6 +90,11 @@ public class KubernetesResource {
   private static final String MISSING_DEPLOYMENT_CONFIG_SPEC_MSG = "DeploymentConfig does not have spec";
   private static final String MISSING_CRON_JOB_SPEC_MSG = "CronJob does not have spec";
   private static final String YAML_CONSTRUCTION_EXCEPTION_MESSAGE_FORMAT = "%s %n%s";
+  private static final String MISSING_SERVICE_SPEC_MSG = "Service does not have spec";
+  private static final String MISSING_DEAMONSET_SPEC_MSG = "DaemonSet does not have spec";
+  private static final String MISSING_JOB_SPEC_MSG = "Job does not have spec";
+  private static final String MISSING_POD_SPEC_MSG = "Pod does not have spec";
+  private static final String MISSING_PODDISRUPTIONBUDGET_SPEC_MSG = "PodDisruptionBudget does not have spec";
 
   private KubernetesResourceId resourceId;
   private Object value;
@@ -104,64 +110,6 @@ public class KubernetesResource {
 
   public KubernetesResource setField(String key, Object newValue) {
     ObjectYamlUtils.setField(this.getValue(), key, newValue);
-    return this;
-  }
-
-  public KubernetesResource addLabelsInDeploymentSelector(Map<String, String> labels) {
-    Object k8sResource = getK8sResource();
-
-    if (k8sResource instanceof DeploymentConfig) {
-      DeploymentConfig deploymentConfig = (DeploymentConfig) k8sResource;
-
-      notNullCheck(MISSING_DEPLOYMENT_CONFIG_SPEC_MSG, deploymentConfig.getSpec());
-      Map<String, String> selector = deploymentConfig.getSpec().getSelector();
-      if (selector != null) {
-        selector.putAll(labels);
-      }
-    } else if (k8sResource instanceof V1Deployment) {
-      V1Deployment v1Deployment = (V1Deployment) k8sResource;
-
-      notNullCheck(MISSING_DEPLOYMENT_SPEC_MSG, v1Deployment.getSpec());
-      if (v1Deployment.getSpec().getSelector() == null) {
-        throw new KubernetesYamlException("Deployment spec does not have selector");
-      }
-
-      Map<String, String> matchLabels = v1Deployment.getSpec().getSelector().getMatchLabels();
-      if (matchLabels == null) {
-        matchLabels = new HashMap<>();
-      }
-
-      matchLabels.putAll(labels);
-      v1Deployment.getSpec().getSelector().setMatchLabels(matchLabels);
-    } else if (k8sResource instanceof V1StatefulSet) {
-      V1StatefulSet v1StatefulSet = (V1StatefulSet) k8sResource;
-
-      notNullCheck(MISSING_STATEFULSET_SPEC_MSG, v1StatefulSet.getSpec());
-      if (v1StatefulSet.getSpec().getSelector() == null) {
-        throw new KubernetesYamlException("StatefulSet spec does not have selector");
-      }
-
-      Map<String, String> matchLabels = v1StatefulSet.getSpec().getSelector().getMatchLabels();
-      if (matchLabels == null) {
-        matchLabels = new HashMap<>();
-      }
-
-      matchLabels.putAll(labels);
-      v1StatefulSet.getSpec().getSelector().setMatchLabels(matchLabels);
-    } else {
-      throw new InvalidRequestException(
-          format("Unhandled Kubernetes resource %s while adding labels to selector", this.resourceId.getKind()));
-    }
-
-    try {
-      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
-      this.spec = yaml.dump(k8sResource);
-      this.value = readYaml(this.spec).get(0);
-    } catch (IOException e) {
-      // do nothing
-      noop();
-    }
-
     return this;
   }
 
@@ -185,14 +133,7 @@ public class KubernetesResource {
           format("Unhandled Kubernetes resource %s while setting replicaCount", this.resourceId.getKind()));
     }
 
-    try {
-      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
-      this.spec = yaml.dump(k8sResource);
-      this.value = readYaml(this.spec).get(0);
-    } catch (IOException e) {
-      // do nothing
-      noop();
-    }
+    saveResourceSpec(k8sResource);
 
     return this;
   }
@@ -248,7 +189,7 @@ public class KubernetesResource {
     try {
       Object k8sResource = getK8sResource();
       V1Service v1Service = (V1Service) k8sResource;
-      notNullCheck("Service does not have spec", v1Service.getSpec());
+      notNullCheck(MISSING_SERVICE_SPEC_MSG, v1Service.getSpec());
       return StringUtils.equals(v1Service.getSpec().getType(), "LoadBalancer");
     } catch (KubernetesYamlException ex) {
       log.warn("Error loading YAML while checking if the service is of kind LoadBalancer. "
@@ -259,64 +200,180 @@ public class KubernetesResource {
     return false;
   }
 
-  public KubernetesResource addColorSelectorInService(String color) {
+  public KubernetesResource addLabelsInResourceSelector(Map<String, String> labels, K8sRequestHandlerContext context) {
     Object k8sResource = getK8sResource();
-    V1Service v1Service = (V1Service) k8sResource;
+    Kind kind = Kind.valueOf(this.resourceId.getKind());
+    updateResourceSelector(kind, k8sResource, labels, context);
+    saveResourceSpec(k8sResource);
+    return this;
+  }
 
-    notNullCheck("Service does not have spec", v1Service.getSpec());
-    Map<String, String> selectors = v1Service.getSpec().getSelector();
-    if (selectors == null) {
-      selectors = new HashMap<>();
+  public void updateResourceSelector(
+      Kind kind, Object k8sResource, Map<String, String> labels, K8sRequestHandlerContext context) {
+    Map<String, String> newSelectors = new HashMap<>();
+    switch (kind) {
+      case DeploymentConfig: {
+        DeploymentConfig deploymentConfig = (DeploymentConfig) k8sResource;
+
+        notNullCheck(MISSING_DEPLOYMENT_CONFIG_SPEC_MSG, deploymentConfig.getSpec());
+        Map<String, String> selector = deploymentConfig.getSpec().getSelector();
+        if (selector != null) {
+          newSelectors.putAll(selector);
+        }
+        newSelectors.putAll(labels);
+        deploymentConfig.getSpec().setSelector(newSelectors);
+        if (context != null && context.isEnabledSupportHPAAndPDB()) {
+          KubernetesResourceEventHandler.handleSelectorChange(KubernetesResourceUpdateContext.builder()
+                                                                  .k8sRequestHandlerContext(context)
+                                                                  .kind(kind)
+                                                                  .oldSelectors(selector)
+                                                                  .newSelectors(newSelectors)
+                                                                  .build());
+        }
+        break;
+      }
+      case Deployment: {
+        V1Deployment v1Deployment = (V1Deployment) k8sResource;
+
+        notNullCheck(MISSING_DEPLOYMENT_SPEC_MSG, v1Deployment.getSpec());
+        if (v1Deployment.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("Deployment spec does not have selector");
+        }
+
+        Map<String, String> matchLabels = v1Deployment.getSpec().getSelector().getMatchLabels();
+        if (matchLabels != null) {
+          newSelectors.putAll(matchLabels);
+        }
+
+        newSelectors.putAll(labels);
+        v1Deployment.getSpec().getSelector().setMatchLabels(newSelectors);
+        if (context != null && context.isEnabledSupportHPAAndPDB()) {
+          KubernetesResourceEventHandler.handleSelectorChange(KubernetesResourceUpdateContext.builder()
+                                                                  .k8sRequestHandlerContext(context)
+                                                                  .kind(kind)
+                                                                  .oldSelectors(matchLabels)
+                                                                  .newSelectors(newSelectors)
+                                                                  .build());
+        }
+        break;
+      }
+      case StatefulSet: {
+        V1StatefulSet v1StatefulSet = (V1StatefulSet) k8sResource;
+
+        notNullCheck(MISSING_STATEFULSET_SPEC_MSG, v1StatefulSet.getSpec());
+        if (v1StatefulSet.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("StatefulSet spec does not have selector");
+        }
+
+        Map<String, String> matchLabels = v1StatefulSet.getSpec().getSelector().getMatchLabels();
+        if (matchLabels != null) {
+          newSelectors.putAll(matchLabels);
+        }
+
+        newSelectors.putAll(labels);
+        v1StatefulSet.getSpec().getSelector().setMatchLabels(newSelectors);
+        if (context != null && context.isEnabledSupportHPAAndPDB()) {
+          KubernetesResourceEventHandler.handleSelectorChange(KubernetesResourceUpdateContext.builder()
+                                                                  .k8sRequestHandlerContext(context)
+                                                                  .kind(kind)
+                                                                  .oldSelectors(matchLabels)
+                                                                  .newSelectors(newSelectors)
+                                                                  .build());
+        }
+        break;
+      }
+      case Service: {
+        V1Service v1Service = (V1Service) k8sResource;
+
+        notNullCheck(MISSING_SERVICE_SPEC_MSG, v1Service.getSpec());
+        if (v1Service.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("Service spec does not have selector");
+        }
+
+        Map<String, String> selectors = v1Service.getSpec().getSelector();
+        if (selectors == null) {
+          selectors = new HashMap<>();
+        }
+
+        selectors.putAll(labels);
+        v1Service.getSpec().setSelector(selectors);
+        break;
+      }
+      case PodDisruptionBudget: {
+        V1PodDisruptionBudget v1PodDisruptionBudget = (V1PodDisruptionBudget) k8sResource;
+
+        notNullCheck(MISSING_PODDISRUPTIONBUDGET_SPEC_MSG, v1PodDisruptionBudget.getSpec());
+        if (v1PodDisruptionBudget.getSpec().getSelector() == null) {
+          throw new KubernetesYamlException("PodDisruptionBudget spec does not have selector");
+        }
+
+        Map<String, String> matchLabels = v1PodDisruptionBudget.getSpec().getSelector().getMatchLabels();
+        if (matchLabels == null) {
+          matchLabels = new HashMap<>();
+        }
+
+        matchLabels.putAll(labels);
+        v1PodDisruptionBudget.getSpec().getSelector().setMatchLabels(matchLabels);
+        break;
+      }
+      default: {
+        throw new InvalidRequestException(
+            format("Unhandled Kubernetes resource %s while adding labels to selector", this.resourceId.getKind()));
+      }
     }
+  }
 
+  public KubernetesResource addColorSelector(String color, K8sRequestHandlerContext context) {
+    Map<String, String> selectors = new HashMap();
     selectors.put(HarnessLabels.color, String.valueOf(color));
-    v1Service.getSpec().setSelector(selectors);
-
-    try {
-      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
-      this.spec = yaml.dump(k8sResource);
-      this.value = readYaml(this.spec).get(0);
-    } catch (IOException e) {
-      // do nothing
-      noop();
-    }
-
-    return this;
+    return addLabelsInResourceSelector(selectors, context);
   }
 
-  public KubernetesResource transformName(UnaryOperator<Object> transformer) {
+  public KubernetesResource transformName(UnaryOperator<Object> transformer, K8sRequestHandlerContext context) {
     Object k8sResource = getK8sResource();
-    updateName(k8sResource, transformer);
-    try {
-      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
-      this.spec = yaml.dump(k8sResource);
-      this.value = readYaml(this.spec).get(0);
-    } catch (IOException e) {
-      // do nothing
-      noop();
-    }
+    updateName(k8sResource, transformer, context);
+    saveResourceSpec(k8sResource);
     return this;
   }
 
-  private void updateName(Object k8sResource, UnaryOperator<Object> transformer) {
+  private void updateName(Object k8sResource, UnaryOperator<Object> transformer, K8sRequestHandlerContext context) {
     String newName;
+    String oldName;
 
     Kind kind = Kind.valueOf(this.resourceId.getKind());
     switch (kind) {
       case Deployment:
         V1Deployment v1Deployment = (V1Deployment) k8sResource;
         notNullCheck("Deployment does not have metadata", v1Deployment.getMetadata());
-        newName = (String) transformer.apply(v1Deployment.getMetadata().getName());
+        oldName = v1Deployment.getMetadata().getName();
+        newName = (String) transformer.apply(oldName);
         v1Deployment.getMetadata().setName(newName);
         this.resourceId.setName(newName);
+        if (context != null && context.isEnabledSupportHPAAndPDB()) {
+          KubernetesResourceEventHandler.handleNameChange(KubernetesResourceUpdateContext.builder()
+                                                              .k8sRequestHandlerContext(context)
+                                                              .kind(kind)
+                                                              .oldName(oldName)
+                                                              .newName(newName)
+                                                              .build());
+        }
         break;
 
       case StatefulSet:
         V1StatefulSet v1StatefulSet = (V1StatefulSet) k8sResource;
         notNullCheck("StatefulSet does not have metadata", v1StatefulSet.getMetadata());
-        newName = (String) transformer.apply(v1StatefulSet.getMetadata().getName());
+        oldName = v1StatefulSet.getMetadata().getName();
+        newName = (String) transformer.apply(oldName);
         v1StatefulSet.getMetadata().setName(newName);
         this.resourceId.setName(newName);
+        if (context != null && context.isEnabledSupportHPAAndPDB()) {
+          KubernetesResourceEventHandler.handleNameChange(KubernetesResourceUpdateContext.builder()
+                                                              .k8sRequestHandlerContext(context)
+                                                              .kind(kind)
+                                                              .oldName(oldName)
+                                                              .newName(newName)
+                                                              .build());
+        }
         break;
 
       case ConfigMap:
@@ -346,8 +403,33 @@ public class KubernetesResource {
       case DeploymentConfig:
         DeploymentConfig deploymentConfig = (DeploymentConfig) k8sResource;
         notNullCheck("Deployment Config does not have metadata", deploymentConfig.getMetadata());
-        newName = (String) transformer.apply(deploymentConfig.getMetadata().getName());
+        oldName = deploymentConfig.getMetadata().getName();
+        newName = (String) transformer.apply(oldName);
         deploymentConfig.getMetadata().setName(newName);
+        this.resourceId.setName(newName);
+        if (context != null && context.isEnabledSupportHPAAndPDB()) {
+          KubernetesResourceEventHandler.handleNameChange(KubernetesResourceUpdateContext.builder()
+                                                              .k8sRequestHandlerContext(context)
+                                                              .kind(kind)
+                                                              .oldName(oldName)
+                                                              .newName(newName)
+                                                              .build());
+        }
+        break;
+
+      case HorizontalPodAutoscaler:
+        V1HorizontalPodAutoscaler horizontalPodAutoscaler = (V1HorizontalPodAutoscaler) k8sResource;
+        notNullCheck("Horizontal Pod Autoscaler does not have metadata", horizontalPodAutoscaler.getMetadata());
+        newName = (String) transformer.apply(horizontalPodAutoscaler.getMetadata().getName());
+        horizontalPodAutoscaler.getMetadata().setName(newName);
+        this.resourceId.setName(newName);
+        break;
+
+      case PodDisruptionBudget:
+        V1PodDisruptionBudget podDisruptionBudget = (V1PodDisruptionBudget) k8sResource;
+        notNullCheck("Pod Disruption Budget does not have metadata", podDisruptionBudget.getMetadata());
+        newName = (String) transformer.apply(podDisruptionBudget.getMetadata().getName());
+        podDisruptionBudget.getMetadata().setName(newName);
         this.resourceId.setName(newName);
         break;
 
@@ -356,9 +438,9 @@ public class KubernetesResource {
     }
   }
 
-  public KubernetesResource appendSuffixInName(String suffix) {
+  public KubernetesResource appendSuffixInName(String suffix, K8sRequestHandlerContext context) {
     UnaryOperator<Object> addSuffix = t -> t + suffix;
-    this.transformName(addSuffix);
+    this.transformName(addSuffix, context);
     return this;
   }
 
@@ -383,14 +465,7 @@ public class KubernetesResource {
 
     v1PodTemplateSpec.getMetadata().setLabels(podLabels);
 
-    try {
-      org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
-      this.spec = yaml.dump(k8sResource);
-      this.value = readYaml(this.spec).get(0);
-    } catch (IOException e) {
-      // do nothing
-      noop();
-    }
+    saveResourceSpec(k8sResource);
     return this;
   }
 
@@ -401,6 +476,12 @@ public class KubernetesResource {
     updateConfigMapRef(k8sResource, configMapRefTransformer);
     updateSecretRef(k8sResource, secretRefTransformer);
 
+    saveResourceSpec(k8sResource);
+
+    return this;
+  }
+
+  public void saveResourceSpec(Object k8sResource) {
     try {
       org.yaml.snakeyaml.Yaml yaml = K8sYamlUtils.createYamlWithCustomConstructor();
       this.spec = yaml.dump(k8sResource);
@@ -409,7 +490,6 @@ public class KubernetesResource {
       // do nothing
       noop();
     }
-    return this;
   }
 
   public static String redactSecretValues(String spec) {
@@ -447,13 +527,13 @@ public class KubernetesResource {
         notNullCheck(MISSING_DEPLOYMENT_SPEC_MSG, ((V1Deployment) resource).getSpec());
         return ((V1Deployment) resource).getSpec().getTemplate();
       case DaemonSet:
-        notNullCheck("DaemonSet does not have spec", ((V1DaemonSet) resource).getSpec());
+        notNullCheck(MISSING_DEAMONSET_SPEC_MSG, ((V1DaemonSet) resource).getSpec());
         return ((V1DaemonSet) resource).getSpec().getTemplate();
       case StatefulSet:
-        notNullCheck("StatefulSet does not have spec", ((V1StatefulSet) resource).getSpec());
+        notNullCheck(MISSING_STATEFULSET_SPEC_MSG, ((V1StatefulSet) resource).getSpec());
         return ((V1StatefulSet) resource).getSpec().getTemplate();
       case Job:
-        notNullCheck("Job does not have spec", ((V1Job) resource).getSpec());
+        notNullCheck(MISSING_JOB_SPEC_MSG, ((V1Job) resource).getSpec());
         return ((V1Job) resource).getSpec().getTemplate();
       case DeploymentConfig:
         notNullCheck(MISSING_DEPLOYMENT_CONFIG_SPEC_MSG, ((DeploymentConfig) resource).getSpec());
@@ -473,16 +553,16 @@ public class KubernetesResource {
         notNullCheck(MISSING_DEPLOYMENT_SPEC_MSG, ((V1Deployment) resource).getSpec());
         return ((V1Deployment) resource).getSpec().getTemplate().getSpec();
       case DaemonSet:
-        notNullCheck("DaemonSet does not have spec", ((V1DaemonSet) resource).getSpec());
+        notNullCheck(MISSING_DEAMONSET_SPEC_MSG, ((V1DaemonSet) resource).getSpec());
         return ((V1DaemonSet) resource).getSpec().getTemplate().getSpec();
       case StatefulSet:
-        notNullCheck("StatefulSet does not have spec", ((V1StatefulSet) resource).getSpec());
+        notNullCheck(MISSING_STATEFULSET_SPEC_MSG, ((V1StatefulSet) resource).getSpec());
         return ((V1StatefulSet) resource).getSpec().getTemplate().getSpec();
       case Job:
-        notNullCheck("Job does not have spec", ((V1Job) resource).getSpec());
+        notNullCheck(MISSING_JOB_SPEC_MSG, ((V1Job) resource).getSpec());
         return ((V1Job) resource).getSpec().getTemplate().getSpec();
       case Pod:
-        notNullCheck("Pod does not have spec", ((V1Pod) resource).getSpec());
+        notNullCheck(MISSING_POD_SPEC_MSG, ((V1Pod) resource).getSpec());
         return ((V1Pod) resource).getSpec();
       case DeploymentConfig:
         notNullCheck(MISSING_DEPLOYMENT_CONFIG_SPEC_MSG, ((DeploymentConfig) resource).getSpec());
@@ -497,8 +577,7 @@ public class KubernetesResource {
     return null;
   }
 
-  @VisibleForTesting
-  Object getK8sResource() {
+  public Object getK8sResource() {
     try {
       Kind kind = Kind.valueOf(this.resourceId.getKind());
 
@@ -523,6 +602,10 @@ public class KubernetesResource {
           return Yaml.loadAs(this.spec, DeploymentConfig.class);
         case CronJob:
           return Yaml.loadAs(this.spec, V1CronJob.class);
+        case HorizontalPodAutoscaler:
+          return Yaml.loadAs(this.spec, V1HorizontalPodAutoscaler.class);
+        case PodDisruptionBudget:
+          return Yaml.loadAs(this.spec, V1PodDisruptionBudget.class);
         default:
           unhandled(this.resourceId.getKind());
           throw new KubernetesYamlException("Unhandled Kubernetes resource " + this.resourceId.getKind());

@@ -482,6 +482,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(442, "INSTANCE_SYNC_V2_CG_SUPPORT");
     taskTypeOrdinalMapping.put(443, "COMMAND_TASK_NG_WITH_GIT_CONFIGS");
     taskTypeOrdinalMapping.put(444, "K8S_BLUE_GREEN_STAGE_SCALE_DOWN_TASK");
+    taskTypeOrdinalMapping.put(445, "RANCHER_TEST_CONNECTION_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

@@ -8,6 +8,7 @@
 package io.harness.ng.core.mapper;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.beans.SettingAttribute.SettingCategory.CONNECTOR;
 
@@ -35,6 +36,9 @@ public class NgSmtpDTOMapper {
     smtpConfig.setStartTLS(dto.getValue().isStartTLS());
     smtpConfig.setUsername(dto.getValue().getUsername());
     smtpConfig.setPassword(dto.getValue().getPassword());
+    if (isNotEmpty(dto.getValue().getDelegateSelectors())) {
+      smtpConfig.setDelegateSelectors(dto.getValue().getDelegateSelectors());
+    }
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setName(NG_SMTP_SETTINGS_PREFIX + dto.getName());
     settingAttribute.setUuid(dto.getUuid());
@@ -53,6 +57,9 @@ public class NgSmtpDTOMapper {
     smtpConfigDTO.setStartTLS(smtpConfig.isStartTLS());
     smtpConfigDTO.setUsername(smtpConfig.getUsername());
     smtpConfigDTO.setPassword(smtpConfig.getPassword());
+    if (isNotEmpty(smtpConfig.getDelegateSelectors())) {
+      smtpConfigDTO.setDelegateSelectors(smtpConfig.getDelegateSelectors());
+    }
     return NgSmtpDTO.builder()
         .uuid(settingAttribute.getUuid())
         .accountId(settingAttribute.getAccountId())

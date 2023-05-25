@@ -38,11 +38,11 @@ public class ManagedAccountDao {
 
   public ManagedAccount get(String mspAccountId, String managedAccountId) {
     return hPersistence.createQuery(ManagedAccount.class)
-            .field(ManagedAccountKeys.accountId)
-            .equal(managedAccountId)
-            .field(ManagedAccountKeys.mspAccountId)
-            .equal(mspAccountId)
-            .first();
+        .field(ManagedAccountKeys.accountId)
+        .equal(managedAccountId)
+        .field(ManagedAccountKeys.mspAccountId)
+        .equal(mspAccountId)
+        .first();
   }
 
   public ManagedAccount getDetailsForAccount(String mspAccountId, String accountId) {

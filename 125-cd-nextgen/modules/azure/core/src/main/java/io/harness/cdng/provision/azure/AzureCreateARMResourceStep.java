@@ -317,7 +317,7 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
                                         .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
                                         .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
                                         .provisionerIdentifier(provisionerIdentifier)
-                                        .stageExecutionId(ambiance.getStageExecutionId())
+                                        .stageExecutionId(AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
                                         .azureARMPreDeploymentData(data)
                                         .connectorRef(connectorRef)
                                         .scopeType(scopeType)

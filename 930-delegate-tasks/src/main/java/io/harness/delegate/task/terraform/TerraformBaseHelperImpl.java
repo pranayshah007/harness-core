@@ -343,25 +343,27 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
                 terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
                 terraformExecuteStepRequest.getPlanJsonLogOutputStream(),
                 terraformExecuteStepRequest.isUseOptimizedTfPlan());
-
-        // Generating Human Readable Representation of the tfplan
-        if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()) {
-          executeTerraformHumanReadableShowCommandWithTfClient(
-              terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
-              terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
-              terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
-              terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
-              terraformExecuteStepRequest.isUseOptimizedTfPlan());
-        }
-
-        terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
-            terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
-            terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
-            terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
-            terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
-                                                          : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
       }
+
+      // Generating Human Readable Representation of the tfplan
+      if (terraformExecuteStepRequest.isSaveTerraformHumanReadablePlan()
+          && !terraformExecuteStepRequest.isTerraformCloudCli()) {
+        executeTerraformHumanReadableShowCommandWithTfClient(
+            terraformExecuteStepRequest.isTfPlanDestroy() ? DESTROY : APPLY,
+            terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
+            terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback(),
+            terraformExecuteStepRequest.getPlanHumanReadableOutputStream(),
+            terraformExecuteStepRequest.isUseOptimizedTfPlan());
+      }
+
+      terraformPlanSummary = analyseTerraformPlanSummaryWithTfClient(
+          terraformExecuteStepRequest.isAnalyseTfPlanSummary(), terraformExecuteStepRequest.getTimeoutInMillis(),
+          terraformExecuteStepRequest.getEnvVars(), terraformExecuteStepRequest.getScriptDirectory(),
+          terraformExecuteStepRequest.getLogCallback(), terraformExecuteStepRequest.getPlanLogOutputStream(),
+          terraformExecuteStepRequest.isTfPlanDestroy() ? TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME
+                                                        : TERRAFORM_PLAN_FILE_OUTPUT_NAME);
     }
+
     return TerraformStepResponse.builder().cliResponse(response).terraformPlanSummary(terraformPlanSummary).build();
   }
 

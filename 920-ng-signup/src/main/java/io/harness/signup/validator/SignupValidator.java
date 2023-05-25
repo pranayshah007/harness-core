@@ -9,6 +9,7 @@ package io.harness.signup.validator;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.PASSWORD_STRENGTH_CHECK_FAILED;
 import static io.harness.exception.WingsException.USER;
 
@@ -22,6 +23,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UserAlreadyPresentException;
 import io.harness.exception.WeakPasswordException;
+import io.harness.logging.MdcContextSetter;
+import io.harness.logging.ResponseTimeRecorder;
 import io.harness.ng.core.user.SignupAction;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.signup.SignupDomainDenylistConfiguration;
@@ -32,6 +35,7 @@ import com.google.auth.Credentials;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.io.ByteArrayInputStream;
@@ -39,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -64,6 +69,7 @@ public class SignupValidator {
   private static final String COM = "com";
   private static final String EMAIL = "email";
   private static final String SIGNUP_DOMAIN_DENYLIST_NAME = "signupDomainDenylist.txt";
+  private static final String SIGNUP_DOMAIN_VALIDATION_LOGS_KEY = "signupDomainValidationLogs";
 
   public void validateSignup(SignupDTO dto) {
     validateEmail(dto.getEmail());
@@ -100,16 +106,22 @@ public class SignupValidator {
   }
 
   private void validateSignupDomain(String email) {
-    String domainName = getDomain(email);
-    Set<String> signupDomainDenylist = getSignupDomainDenylist();
-    if (signupDomainDenylist.contains(domainName)) {
-      String errorMessage = "Please use work email for signing up";
-      log.error(errorMessage);
-      throw new SignupException(errorMessage);
+    try (ResponseTimeRecorder ignore =
+             new ResponseTimeRecorder("Validating Signup domain against domainDenylist file present in GCS");
+         MdcContextSetter ignore1 = new MdcContextSetter(Map.of(SIGNUP_DOMAIN_VALIDATION_LOGS_KEY, generateUuid()));) {
+      String domainName = getDomain(email);
+      Set<String> signupDomainDenylist = getSignupDomainDenylist();
+      log.info("Size of signupDomainDenylist: {}", signupDomainDenylist.size());
+      if (signupDomainDenylist.contains(domainName)) {
+        String errorMessage = "Please use work email for signing up";
+        log.error(errorMessage);
+        throw new SignupException(errorMessage);
+      }
     }
   }
 
-  private Set<String> getSignupDomainDenylist() {
+  @VisibleForTesting
+  Set<String> getSignupDomainDenylist() {
     Set<String> signupDomainDenylist = new HashSet<>();
     try {
       byte[] fileContent = downloadFromGCS(SIGNUP_DOMAIN_DENYLIST_NAME);

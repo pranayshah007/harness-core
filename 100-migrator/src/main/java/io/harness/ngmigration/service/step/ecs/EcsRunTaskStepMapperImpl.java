@@ -27,7 +27,6 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
-import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.CaseFormat;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -47,7 +46,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
-public class EcsRunTaskStepMapperImpl extends StepMapper {
+public class EcsRunTaskStepMapperImpl extends EcsBaseStepMapper {
   private static final String RUN_TASK_DEFINITION_JSON = "runTaskDefinition.json";
   private static final String RUN_TASK_REQUEST_DEFINITION_JSON = "runTaskRequestDefinition.json";
 

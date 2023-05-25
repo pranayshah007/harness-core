@@ -15,6 +15,7 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.TaskData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.queue.QueuePublisher;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -60,6 +61,9 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
   @Inject private AlertService alertService;
 
   private static final String CE_MAIL_FROM_ADDRESS = "ce-noreply@harness.io";
+  private static final int TIMEOUT_DURATION = 10;
+  private static final String SMTP_SETUP_ERROR =
+      "Unable to send reset password mail as SMTP server is not configured. Please setup SMTP server or contact your admin";
 
   @Override
   public boolean send(EmailData emailData) {
@@ -113,7 +117,7 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                                                 .async(true)
                                                 .taskType(TaskType.COLLABORATION_PROVIDER_TASK.name())
                                                 .parameters(new Object[] {request})
-                                                .timeout(TimeUnit.MINUTES.toMillis(10))
+                                                .timeout(TimeUnit.MINUTES.toMillis(TIMEOUT_DURATION))
                                                 .build())
                                       .build();
       waitNotifyEngine.waitForAllOn(GENERAL, new EmailNotificationCallBack(), waitId);
@@ -151,6 +155,9 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
     software.wings.helpers.ext.mail.EmailData emailDataDto = emailData.toDTO();
     if (!isDefaultSMTPConfigValid && !isFallBackSMTPConfigValid) {
       sendEmailNotSentAlert(emailDataDto);
+    } else if (isCeMail && !isDefaultSMTPConfigValid) {
+      sendEmailNotSentAlert(emailDataDto);
+      throw new InvalidRequestException(SMTP_SETUP_ERROR);
     } else if (isDefaultSMTPConfigValid) {
       mailSentSuccessFully = true;
       if (!sendMail(defaultSMTPConfig, emailDataDto, isCeMail)

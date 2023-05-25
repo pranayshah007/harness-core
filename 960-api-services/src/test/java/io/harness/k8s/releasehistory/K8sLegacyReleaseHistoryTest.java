@@ -8,6 +8,7 @@
 package io.harness.k8s.releasehistory;
 
 import static io.harness.k8s.releasehistory.ReleaseHistory.createFromData;
+import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.PUNEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,6 +21,8 @@ import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -114,5 +117,56 @@ public class K8sLegacyReleaseHistoryTest extends CategoryTest {
     releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
     release = releaseHistory.getLastSuccessfulRelease();
     assertThat(release).isNull();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void getLatestSuccessfulBlueGreenReleaseTest() {
+    ReleaseHistory releaseHistory = ReleaseHistory.createNew();
+
+    K8sLegacyRelease release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNull();
+
+    releaseHistory = createNewRelease(ImmutableList.of(
+        KubernetesResourceId.builder().kind("Deployment").name("nginx-blue").namespace("default").build()));
+
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNull();
+
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNotNull();
+    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Failed);
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNull();
+
+    releaseHistory = createNewRelease(ImmutableList.of(
+        KubernetesResourceId.builder().kind("Deployment").name("nginx-green").namespace("default").build()));
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNull();
+
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNotNull();
+    assertThat(release.getStatus()).isEqualTo(IK8sRelease.Status.Succeeded);
+
+    releaseHistory = createNewRelease(
+        ImmutableList.of(KubernetesResourceId.builder().kind("Deployment").name("nginx").namespace("default").build()));
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNull();
+
+    releaseHistory.setReleaseStatus(IK8sRelease.Status.Succeeded);
+    release = releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    assertThat(release).isNull();
+  }
+
+  private ReleaseHistory createNewRelease(List<KubernetesResourceId> resources) {
+    List<K8sLegacyRelease> k8sLegacyReleases = new ArrayList<>();
+    k8sLegacyReleases.add(
+        0, K8sLegacyRelease.builder().status(IK8sRelease.Status.InProgress).managedWorkload(resources.get(0)).build());
+    return ReleaseHistory.builder().releases(k8sLegacyReleases).build();
   }
 }

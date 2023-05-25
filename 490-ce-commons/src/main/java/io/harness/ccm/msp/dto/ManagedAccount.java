@@ -15,7 +15,13 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.persistence.*;
+import io.harness.persistence.AccountAccess;
+import io.harness.persistence.CreatedAtAware;
+import io.harness.persistence.CreatedByAware;
+import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UpdatedByAware;
+import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
 import dev.morphia.annotations.Entity;
@@ -26,6 +32,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.data.annotation.TypeAlias;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
 @Builder
@@ -33,6 +41,8 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "ManagedAccountKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "managedAccount", noClassnameStored = true)
+@Document("managedAccount")
+@TypeAlias("managedAccount")
 @OwnedBy(CE)
 public class ManagedAccount implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
                                        CreatedByAware, UpdatedByAware {
@@ -48,7 +58,18 @@ public class ManagedAccount implements PersistentEntity, UuidAware, CreatedAtAwa
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("accountId").unique(true).field(ManagedAccountKeys.accountId).build())
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_accountId")
+                 .unique(true)
+                 .field(ManagedAccountKeys.accountId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_mspAccountId")
+                 .unique(true)
+                 .field(ManagedAccountKeys.accountId)
+                 .field(ManagedAccountKeys.mspAccountId)
+                 .build())
+        .add(CompoundMongoIndex.builder().name("mspAccountId_1").field(ManagedAccountKeys.mspAccountId).build())
         .build();
   }
 }

@@ -106,6 +106,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjec
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.RequestServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -252,6 +253,7 @@ public class CVNextGenMorphiaRegister implements MorphiaRegistrar {
     set.add(Annotation.class);
     set.add(SRMTelemetrySentStatus.class);
     set.add(ActivityBucket.class);
+    set.add(SLIRecordBucket.class);
   }
 
   @Override

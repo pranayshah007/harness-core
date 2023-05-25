@@ -70,6 +70,8 @@ replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
 
+allowedOrigins: ""
+
 image:
   registry: docker.io
   repository: harness/template-service-signed

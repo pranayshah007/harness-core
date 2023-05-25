@@ -73,10 +73,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIACMGetConnectorRef() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("init"));
+    setting.put("command", mapper.valueToTree("init"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))
@@ -117,7 +117,7 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDifferentStepsInputs() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
 
     Mockito.mockStatic(CIStepInfoUtils.class);
     when(CIStepInfoUtils.getPluginCustomStepImage(any(), any(), any(), any())).thenReturn("imageName");
@@ -146,7 +146,7 @@ public class IACMStepUtilTest extends CategoryTest {
       stepVars.put("WORKFLOW", ParameterField.createValueField("workflow"));
       Map<String, JsonNode> setting = new HashMap<>();
       ObjectMapper mapper = new ObjectMapper();
-      setting.put("operation", mapper.valueToTree(commands.get(i)));
+      setting.put("command", mapper.valueToTree(commands.get(i)));
       PluginStepInfo stepInfo = PluginStepInfo.builder()
                                     .envVariables(ParameterField.createValueField(stepVars))
                                     .settings(ParameterField.createValueField(setting))
@@ -162,10 +162,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIACMEnvVarsTransformation() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("init"));
+    setting.put("command", mapper.valueToTree("init"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))
@@ -284,10 +284,10 @@ public class IACMStepUtilTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testIsIACMStep() {
     Map<String, ParameterField<String>> stepVars = new HashMap<>();
-    stepVars.put("WORKSPACE_ID", ParameterField.createValueField("stackID"));
+    stepVars.put("HARNESS_WORKSPACE", ParameterField.createValueField("stackID"));
     Map<String, JsonNode> setting = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
-    setting.put("operation", mapper.valueToTree("plan"));
+    setting.put("command", mapper.valueToTree("plan"));
     PluginStepInfo stepInfo = PluginStepInfo.builder()
                                   .envVariables(ParameterField.createValueField(stepVars))
                                   .settings(ParameterField.createValueField(setting))

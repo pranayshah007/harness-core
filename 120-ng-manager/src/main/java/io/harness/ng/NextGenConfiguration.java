@@ -153,6 +153,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
+  public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
   public static final String SETTINGS_RESOURCE_PACKAGE = "io.harness.ngsettings.remote";
   public static final String FREEZE_RESOURCE_PACKAGE = "io.harness.ng.freeze.resource";
   public static final String MANIFEST_RESOURCE_PACKAGE = "io.harness.ng.core.manifests.resources";
@@ -319,7 +320,8 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.TAS_PACKAGE, NextGenConfiguration.SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE,
                 NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
-                NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE))
+                NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
+                NextGenConfiguration.FAVORITES_PACKAGE))
         .collect(Collectors.toSet());
   }
 

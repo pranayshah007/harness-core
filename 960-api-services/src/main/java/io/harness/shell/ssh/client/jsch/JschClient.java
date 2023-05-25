@@ -562,7 +562,7 @@ public class JschClient extends SshClient {
         if (retryCount == 6) {
           return fetchSSHSession(config, getLogCallback());
         }
-        log.error("Jschexception while SSH connection with retry count {}", retryCount, jse);
+        log.error("Jschexception while SSH connection with retry count {}, cause: {}", retryCount, jse.getMessage());
       }
     }
 

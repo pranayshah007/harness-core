@@ -216,7 +216,7 @@ ciExecutionServiceConfig:
       artifactoryUpload: plugins/artifactory:1.2.0
       cacheGCS: plugins/cache:1.4.6
       cacheS3: plugins/cache:1.4.6
-      iacmTerraform: plugins/harness_terraform:linux-amd64
+      iacmTerraform: plugins/harness_terraform
 
 scmConnectionConfig:
   url: localhost:8091
@@ -249,6 +249,7 @@ pmsGrpcClientConfig:
   authority: localhost
 
 apiUrl: https://localhost:8181/#/
+isLocal: true
 
 shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 

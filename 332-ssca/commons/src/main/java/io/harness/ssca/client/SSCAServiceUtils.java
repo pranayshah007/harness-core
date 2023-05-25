@@ -10,9 +10,11 @@ package io.harness.ssca.client;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ssca.beans.SscaExecutionConstants;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
 import io.harness.ssca.client.beans.SscaAuthToken;
+import io.harness.ssca.client.beans.enforcement.SscaEnforcementSummary;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -85,5 +87,35 @@ public class SSCAServiceUtils {
     envVars.put(SscaExecutionConstants.SSCA_SERVICE_ENDPOINT_VARIABLE, sscaServiceBaseUrl);
 
     return envVars;
+  }
+
+  public SscaEnforcementSummary getEnforcementSummary(String stepExecutionId) {
+    Call<SscaEnforcementSummary> call = sscaServiceClient.getEnforcementSummary(stepExecutionId);
+    Response<SscaEnforcementSummary> response;
+    try {
+      response = call.execute();
+    } catch (IOException ex) {
+      throw new GeneralException("Enforcement Summary Request to SSCA core service failed", ex);
+    }
+
+    if (!response.isSuccessful()) {
+      String errorBody = null;
+      try {
+        errorBody = response.errorBody().string();
+      } catch (IOException e) {
+        log.error("Could not read error body {}", response.errorBody());
+      }
+
+      throw new CIStageExecutionException(String.format(
+          "Could not fetch enforcement summary from SSCA service. status code = %s, message = %s, response = %s",
+          response.code(), response.message() == null ? "null" : response.message(),
+          response.errorBody() == null ? "null" : errorBody));
+    }
+    if (response.body() == null) {
+      throw new CIStageExecutionException(
+          "Could not fetch enforcement summary from SSCA service. Response body is null");
+    }
+
+    return response.body();
   }
 }

@@ -15,6 +15,7 @@ import static io.harness.ngtriggers.Constants.CUSTOM_REPO;
 import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.Constants.GITHUB_REPO;
 import static io.harness.ngtriggers.Constants.GITLAB_REPO;
+import static io.harness.ngtriggers.Constants.JENKINS;
 import static io.harness.ngtriggers.Constants.NEXUS2_REGISTRY;
 import static io.harness.ngtriggers.Constants.NEXUS3_REGISTRY;
 
@@ -49,6 +50,12 @@ public enum TriggerCatalogType implements EntitySubtype {
   @JsonProperty(Constants.GITHUB_PACKAGES) GITHUB_PACKAGES(Constants.GITHUB_PACKAGES, NGTriggerType.ARTIFACT),
   @JsonProperty(NEXUS2_REGISTRY) NEXUS2(NEXUS2_REGISTRY, NGTriggerType.ARTIFACT),
   @JsonProperty(NEXUS3_REGISTRY) NEXUS3(NEXUS3_REGISTRY, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.JENKINS) JENKINS(Constants.JENKINS, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.AZURE_ARTIFACTS) AZURE_ARTIFACTS(Constants.AZURE_ARTIFACTS, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.AMI) AMI(Constants.AMI, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.GOOGLE_CLOUD_STORAGE)
+  GOOGLE_CLOUD_STORAGE(Constants.GOOGLE_CLOUD_STORAGE, NGTriggerType.ARTIFACT),
+  @JsonProperty(Constants.BAMBOO) BAMBOO(Constants.BAMBOO, NGTriggerType.ARTIFACT),
 
   // Manifest
   @JsonProperty(Constants.HELM_CHART) HELM_CHART(Constants.HELM_CHART, NGTriggerType.MANIFEST),

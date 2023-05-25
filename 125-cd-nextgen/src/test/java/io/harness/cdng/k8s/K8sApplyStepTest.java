@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -73,7 +72,6 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTask() {
-    when(cdFeatureFlagHelper.isEnabled(any(), eq(FeatureName.NG_K8_COMMAND_FLAGS))).thenReturn(true);
     K8sApplyStepParameters stepParameters = new K8sApplyStepParameters();
     Map<String, String> k8sCommandFlag = ImmutableMap.of("Apply", "--server-side");
     List<K8sStepCommandFlag> commandFlags =
