@@ -30,7 +30,7 @@ import org.apache.commons.lang3.EnumUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
-public class OrgFavoriteApiImpl implements OrgFavoritesApi {
+public class OrgFavoritesApiImpl implements OrgFavoritesApi {
   @Inject private final FavoritesService favoritesService;
   @Inject private final FavoritesResourceUtils favoritesResourceUtils;
   @Override
