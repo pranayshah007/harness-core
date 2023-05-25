@@ -31,6 +31,7 @@ public class GitCommandExecutionResponse implements DelegateTaskNotifyResponseDa
   private String errorMessage;
   private ErrorCode errorCode;
   private DelegateMetaInfo delegateMetaInfo;
+  private boolean isTimeoutError;
 
   public enum GitCommandStatus { SUCCESS, FAILURE }
 }

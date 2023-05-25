@@ -52,6 +52,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.NoArgsConstructor;
@@ -78,6 +79,11 @@ public class PcfDeployCommandTaskHandler extends PcfCommandTaskHandler {
   public CfCommandExecutionResponse executeTaskInternal(CfCommandRequest cfCommandRequest,
       List<EncryptedDataDetail> encryptedDataDetails, ILogStreamingTaskClient logStreamingTaskClient,
       boolean isInstanceSync) {
+    try {
+      Thread.sleep(Duration.ofMinutes(2).toMillis());
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     if (!(cfCommandRequest instanceof CfCommandDeployRequest)) {
       throw new InvalidArgumentsException(Pair.of("CfCommandRequest", "Must be instance of CfCommandDeployRequest"));
     }

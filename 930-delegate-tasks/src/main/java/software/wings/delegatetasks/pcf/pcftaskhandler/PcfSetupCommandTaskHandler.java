@@ -78,6 +78,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -113,6 +114,11 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   public CfCommandExecutionResponse executeTaskInternal(CfCommandRequest cfCommandRequest,
       List<EncryptedDataDetail> encryptedDataDetails, ILogStreamingTaskClient logStreamingTaskClient,
       boolean isInstanceSync) {
+    try {
+      Thread.sleep(Duration.ofMinutes(2).toMillis());
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     if (!(cfCommandRequest instanceof CfCommandSetupRequest)) {
       throw new InvalidArgumentsException(Pair.of("cfCommandRequest", "Must be instance of CfCommandSetupRequest"));
     }

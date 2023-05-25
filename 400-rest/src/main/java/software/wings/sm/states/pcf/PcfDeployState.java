@@ -9,6 +9,7 @@ package software.wings.sm.states.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.pcf.ResizeStrategy.RESIZE_NEW_FIRST;
@@ -40,6 +41,7 @@ import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
 import io.harness.deployment.InstanceDetails;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -370,6 +372,8 @@ public class PcfDeployState extends State {
       Integer downsizeUpdateCount, PcfDeployStateExecutionData stateExecutionData,
       PcfInfrastructureMapping infrastructureMapping) {
     boolean useAppAutoscalar = setupSweepingOutputPcf.isUseAppAutoscalar();
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
     return CfCommandDeployRequest.builder()
         .activityId(activityId)
         .commandName(PCF_RESIZE_COMMAND)
@@ -391,6 +395,7 @@ public class PcfDeployState extends State {
         .accountId(application.getAccountId())
         .newReleaseName(getApplicationNameFromSetupContext(setupSweepingOutputPcf))
         .timeoutIntervalInMin(setupSweepingOutputPcf.getTimeoutIntervalInMinutes())
+        .timeoutSupported(isTimeoutFailureSupported)
         .downsizeAppDetail(isEmpty(setupSweepingOutputPcf.getAppDetailsToBeDownsized())
                 ? null
                 : setupSweepingOutputPcf.getAppDetailsToBeDownsized().get(0))
@@ -493,6 +498,17 @@ public class PcfDeployState extends State {
             .pcfInstanceElements(pcfInstanceElements)
             .pcfOldInstanceElements(pcfOldInstanceElements)
             .build();
+
+    if (ExecutionStatus.FAILED.equals(executionStatus) && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .stateExecutionData(stateExecutionData)
+          .failureTypes(FailureType.TIMEOUT)
+          .contextElement(instanceElementListParam)
+          .notifyElement(instanceElementListParam)
+          .errorMessage("Timed out while waiting for task to complete")
+          .build();
+    }
 
     return ExecutionResponse.builder()
         .executionStatus(executionStatus)

@@ -8,10 +8,7 @@
 package software.wings.sm.states.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.CF_ALLOW_SPECIAL_CHARACTERS;
-import static io.harness.beans.FeatureName.CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK;
-import static io.harness.beans.FeatureName.CF_CUSTOM_EXTRACTION;
-import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
+import static io.harness.beans.FeatureName.*;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -57,6 +54,7 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -320,6 +318,8 @@ public class PcfSetupState extends State {
 
     boolean nonVersioningInactiveRollbackEnabled =
         featureFlagService.isEnabled(CF_APP_NON_VERSIONING_INACTIVE_ROLLBACK, pcfConfig.getAccountId());
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
     CfCommandSetupRequest cfCommandSetupRequest =
         CfCommandSetupRequest.builder()
             .activityId(activityId)
@@ -338,6 +338,7 @@ public class PcfSetupState extends State {
             .routeMaps(isOriginalRoute ? routeMaps : tempRouteMaps)
             .serviceVariables(serviceVariables)
             .timeoutIntervalInMin(timeoutIntervalInMinutes == null ? Integer.valueOf(5) : timeoutIntervalInMinutes)
+            .timeoutSupported(isTimeoutFailureSupported)
             .maxCount(maxCount)
             .useCurrentCount(useCurrentRunningCount)
             .currentRunningCount(getCurrentRunningCountForSetupRequest())
@@ -710,6 +711,15 @@ public class PcfSetupState extends State {
                                    .build());
     pcfStateHelper.populatePcfVariables(context, setupSweepingOutputPcf);
 
+    if (ExecutionStatus.FAILED.equals(executionStatus) && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .stateExecutionData(stateExecutionData)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage("Timed out while waiting for task to complete")
+          .build();
+    }
+
     return ExecutionResponse.builder()
         .executionStatus(executionStatus)
         .errorMessage(executionResponse.getErrorMessage())
@@ -825,6 +835,8 @@ public class PcfSetupState extends State {
     final DelegateTask gitFetchFileTask = pcfStateHelper.createGitFetchFileAsyncTask(
         context, appManifestMap, activityId, isSelectionLogsTrackingForTasksEnabled());
     gitFetchFileTask.setTags(pcfStateHelper.getRenderedTags(context, tags));
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
 
     final String delegateTaskId = delegateService.queueTaskV2(gitFetchFileTask);
     appendDelegateTaskDetails(context, gitFetchFileTask);
@@ -838,6 +850,7 @@ public class PcfSetupState extends State {
                                 .appManifestMap(appManifestMap)
                                 .activeVersionsToKeep(olderActiveVersionCountToKeep)
                                 .timeout(timeoutIntervalInMinutes)
+                                .timeoutSupported(isTimeoutFailureSupported)
                                 .useAppAutoscalar(useAppAutoscalar)
                                 .enforceSslValidation(enforceSslValidation)
                                 .pcfAppNameFromLegacyWorkflow(pcfAppName)
@@ -862,6 +875,8 @@ public class PcfSetupState extends State {
 
     int expressionFunctorToken = HashGenerator.generateIntegerHash();
     delegateTask.getData().setExpressionFunctorToken(expressionFunctorToken);
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
 
     PcfSetupStateExecutionData newStateExecutionData = PcfSetupStateExecutionData.builder()
                                                            .activityId(activityId)
@@ -869,6 +884,7 @@ public class PcfSetupState extends State {
                                                            .taskType(CUSTOM_MANIFEST_FETCH_TASK)
                                                            .appManifestMap(appManifestMap)
                                                            .timeout(timeoutIntervalInMinutes)
+                                                           .timeoutSupported(isTimeoutFailureSupported)
                                                            .activeVersionsToKeep(olderActiveVersionCountToKeep)
                                                            .useAppAutoscalar(useAppAutoscalar)
                                                            .enforceSslValidation(enforceSslValidation)
@@ -927,6 +943,13 @@ public class PcfSetupState extends State {
 
     if (ExecutionStatus.FAILED == executionStatus) {
       activityService.updateStatus(activityId, appId, executionStatus);
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .failureTypes(FailureType.TIMEOUT)
+            .errorMessage("Timed out while waiting for git task to complete")
+            .build();
+      }
       return ExecutionResponse.builder().executionStatus(executionStatus).build();
     }
 
@@ -955,6 +978,13 @@ public class PcfSetupState extends State {
 
     if (executionStatus == ExecutionStatus.FAILED) {
       activityService.updateStatus(activityId, appId, executionStatus);
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .failureTypes(FailureType.TIMEOUT)
+            .errorMessage("Timed out while waiting for task to complete")
+            .build();
+      }
       return ExecutionResponse.builder().executionStatus(executionStatus).build();
     }
 

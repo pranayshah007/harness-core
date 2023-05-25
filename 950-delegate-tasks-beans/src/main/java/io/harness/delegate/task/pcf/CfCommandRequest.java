@@ -36,6 +36,7 @@ public class CfCommandRequest {
   private boolean useAppAutoscalar;
   private boolean limitPcfThreads;
   private CfCliVersion cfCliVersion;
+  private boolean timeoutSupported;
 
   public enum PcfCommandType {
     SETUP,

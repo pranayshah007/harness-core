@@ -571,9 +571,9 @@ public enum StepType {
 
   // PCF
   PCF_SETUP(PcfSetupState.class, WorkflowServiceHelper.PCF_SETUP, asList(PCF), asList(PhaseStepType.PCF_SETUP),
-      Lists.newArrayList(DeploymentType.PCF), asList(PhaseType.NON_ROLLBACK), asList(BASIC, CANARY, BLUE_GREEN)),
+      Lists.newArrayList(DeploymentType.PCF), asList(PhaseType.NON_ROLLBACK), asList(BASIC, CANARY, BLUE_GREEN), true),
   PCF_RESIZE(PcfDeployState.class, WorkflowServiceHelper.PCF_RESIZE, asList(PCF), asList(PhaseStepType.PCF_RESIZE),
-      Lists.newArrayList(DeploymentType.PCF), asList(PhaseType.NON_ROLLBACK), asList(BASIC, CANARY, BLUE_GREEN)),
+      Lists.newArrayList(DeploymentType.PCF), asList(PhaseType.NON_ROLLBACK), asList(BASIC, CANARY, BLUE_GREEN), true),
   PCF_MAP_ROUTE(MapRouteState.class, PCF_MAP_ROUTE_NAME, asList(PCF), asList(PhaseStepType.PCF_RESIZE),
       Lists.newArrayList(DeploymentType.PCF), asList(PhaseType.NON_ROLLBACK), asList(BASIC, CANARY, BLUE_GREEN)),
   PCF_UNMAP_ROUTE(UnmapRouteState.class, PCF_UNMAP_ROUTE_NAME, asList(PCF), asList(PhaseStepType.PCF_RESIZE),

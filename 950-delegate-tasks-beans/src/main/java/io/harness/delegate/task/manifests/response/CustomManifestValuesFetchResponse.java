@@ -34,4 +34,5 @@ public class CustomManifestValuesFetchResponse implements DelegateTaskNotifyResp
   @NonFinal @Setter String zippedManifestFileId;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
   @NonFinal @Setter private UnitProgressData unitProgressData;
+  private boolean isTimeoutError;
 }

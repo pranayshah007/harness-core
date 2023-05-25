@@ -61,10 +61,10 @@ public class CfCommandDeployRequest extends CfCommandRequest {
       Integer totalPreviousInstanceCount, List<CfServiceData> instanceData, ResizeStrategy resizeStrategy,
       List<String> routeMaps, Integer timeoutIntervalInMin, boolean useCfCLI, CfAppSetupTimeDetails downsizeAppDetail,
       boolean isStandardBlueGreen, PcfManifestsPackage pcfManifestsPackage, boolean useAppAutoscalar,
-      boolean enforceSslValidation, boolean limitPcfThreads, CfCliVersion cfCliVersion) {
+      boolean enforceSslValidation, boolean limitPcfThreads, CfCliVersion cfCliVersion, boolean timeoutSupported) {
     super(accountId, appId, commandName, activityId, pcfCommandType, organization, space, pcfConfig,
         workflowExecutionId, timeoutIntervalInMin, useCfCLI, enforceSslValidation, useAppAutoscalar, limitPcfThreads,
-        cfCliVersion);
+        cfCliVersion, timeoutSupported);
     this.newReleaseName = newReleaseName;
     this.updateCount = updateCount;
     this.downSizeCount = downSizeCount;

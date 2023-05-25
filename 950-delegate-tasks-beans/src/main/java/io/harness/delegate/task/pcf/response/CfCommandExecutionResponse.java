@@ -26,4 +26,5 @@ public class CfCommandExecutionResponse implements DelegateTaskNotifyResponseDat
   private String errorMessage;
   private CommandExecutionStatus commandExecutionStatus;
   private DelegateMetaInfo delegateMetaInfo;
+  private boolean timeoutError;
 }
