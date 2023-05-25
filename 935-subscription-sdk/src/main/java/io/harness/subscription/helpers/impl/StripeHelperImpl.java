@@ -432,10 +432,10 @@ public class StripeHelperImpl implements StripeHelper {
 
   private Set<ModuleType> getModuleTypes(Subscription subscription) {
     Set<ModuleType> moduleTypes = new HashSet<>();
-    subscription.getItems().getData().stream().forEach((SubscriptionItem subscriptionItem) -> {
+    subscription.getItems().getData().forEach((SubscriptionItem subscriptionItem) -> {
       String moduleTypeString = getModuleType(subscriptionItem);
       if (moduleTypeString != null
-          && !moduleTypes.stream().anyMatch(
+          && moduleTypes.stream().noneMatch(
               (ModuleType moduleType) -> moduleType.toString().equals(moduleTypeString))) {
         moduleTypes.add(ModuleType.fromString(moduleTypeString));
       }
