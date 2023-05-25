@@ -9,6 +9,8 @@ package io.harness.cache;
 
 import static java.util.Collections.emptyMap;
 
+import io.harness.exception.InvalidArgumentsException;
+
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +18,9 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
+import javax.cache.configuration.Factory;
+import javax.cache.event.CacheEntryEventFilter;
+import javax.cache.event.CacheEntryListener;
 import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
@@ -198,18 +203,17 @@ public class ResilientCache<K, V> implements Cache<K, V> {
 
   @Override
   public <C extends Configuration<K, V>> C getConfiguration(Class<C> aClass) {
-    try {
-      return cache.getConfiguration(aClass);
-    } catch (Exception e) {
-      log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
-      return null;
+    if (aClass.isAssignableFrom(ResilientCacheConfigurationWrapper.class)) {
+      return (C) new ResilientCacheConfigurationWrapper<K, V>(cache.getConfiguration(Configuration.class));
     }
+    throw new InvalidArgumentsException("Casting to ResilientCacheConfiguration is only supported");
   }
 
   @Override
   public <T> T invoke(K k, EntryProcessor<K, V, T> entryProcessor, Object... objects) throws EntryProcessorException {
     try {
-      return cache.invoke(k, entryProcessor, objects);
+      EntryProcessor<K, V, T> cacheEntryProcessor = new ResilientEntryProcessor<>(entryProcessor);
+      return cache.invoke(k, cacheEntryProcessor, objects);
     } catch (Exception e) {
       log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
       return null;
@@ -218,9 +222,10 @@ public class ResilientCache<K, V> implements Cache<K, V> {
 
   @Override
   public <T> Map<K, EntryProcessorResult<T>> invokeAll(
-      Set<? extends K> set, EntryProcessor<K, V, T> entryProcessor, Object... objects) {
+      Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... objects) {
     try {
-      return cache.invokeAll(set, entryProcessor, objects);
+      EntryProcessor<K, V, T> cacheEntryProcessor = new ResilientEntryProcessor<>(entryProcessor);
+      return cache.invokeAll(keys, cacheEntryProcessor, objects);
     } catch (Exception e) {
       log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
       return emptyMap();
@@ -259,6 +264,9 @@ public class ResilientCache<K, V> implements Cache<K, V> {
   @Override
   public <T> T unwrap(Class<T> aClass) {
     try {
+      if (aClass.isAssignableFrom(getClass())) {
+        return aClass.cast(this);
+      }
       return cache.unwrap(aClass);
     } catch (Exception e) {
       log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
@@ -266,10 +274,52 @@ public class ResilientCache<K, V> implements Cache<K, V> {
     }
   }
 
+  private Factory<CacheEntryListener<? super K, ? super V>> getResilientCacheEntryListenerFactory(
+      Factory<CacheEntryListener<? super K, ? super V>> cacheFactory, ResilientCache<K, V> resilientCache) {
+    return () -> {
+      CacheEntryListener<? super K, ? super V> cacheListener = cacheFactory.create();
+      return new ResilientCacheEntryListener<>(cacheListener, resilientCache);
+    };
+  }
+
+  private CacheEntryListenerConfiguration<K, V> getResilientCacheEntryListenerConfiguration(
+      CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration, ResilientCache<K, V> resilientCache) {
+    return new CacheEntryListenerConfiguration<K, V>() {
+      @Override
+      public Factory<CacheEntryListener<? super K, ? super V>> getCacheEntryListenerFactory() {
+        Factory<CacheEntryListener<? super K, ? super V>> cacheFactory =
+            cacheEntryListenerConfiguration.getCacheEntryListenerFactory();
+        return getResilientCacheEntryListenerFactory(cacheFactory, resilientCache);
+      }
+
+      @Override
+      public boolean isOldValueRequired() {
+        return cacheEntryListenerConfiguration.isOldValueRequired();
+      }
+
+      @Override
+      public Factory<CacheEntryEventFilter<? super K, ? super V>> getCacheEntryEventFilterFactory() {
+        Factory<CacheEntryEventFilter<? super K, ? super V>> cacheEntryEventFilterFactory =
+            cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
+        return () -> {
+          CacheEntryEventFilter<? super K, ? super V> cacheEntryEventFilter = cacheEntryEventFilterFactory.create();
+          return event -> cacheEntryEventFilter.evaluate(new ResilientCacheEntryEventWrapper<>(event, resilientCache));
+        };
+      }
+
+      @Override
+      public boolean isSynchronous() {
+        return cacheEntryListenerConfiguration.isSynchronous();
+      }
+    };
+  }
+
   @Override
   public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
     try {
-      cache.registerCacheEntryListener(cacheEntryListenerConfiguration);
+      CacheEntryListenerConfiguration<K, V> harnessCacheEntryListenerConfiguration =
+          getResilientCacheEntryListenerConfiguration(cacheEntryListenerConfiguration, this);
+      cache.registerCacheEntryListener(harnessCacheEntryListenerConfiguration);
     } catch (Exception e) {
       log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
     }
@@ -278,7 +328,9 @@ public class ResilientCache<K, V> implements Cache<K, V> {
   @Override
   public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
     try {
-      cache.deregisterCacheEntryListener(cacheEntryListenerConfiguration);
+      CacheEntryListenerConfiguration<K, V> harnessCacheEntryListenerConfiguration =
+          getResilientCacheEntryListenerConfiguration(cacheEntryListenerConfiguration, this);
+      cache.deregisterCacheEntryListener(harnessCacheEntryListenerConfiguration);
     } catch (Exception e) {
       log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
     }
@@ -287,7 +339,34 @@ public class ResilientCache<K, V> implements Cache<K, V> {
   @Override
   public Iterator<Entry<K, V>> iterator() {
     try {
-      return cache.iterator();
+      Iterator<Entry<K, V>> cacheIterator = cache.iterator();
+      return new Iterator<Entry<K, V>>() {
+        @Override
+        public boolean hasNext() {
+          return cacheIterator.hasNext();
+        }
+
+        @Override
+        public Entry<K, V> next() {
+          Entry<K, V> cacheEntry = cacheIterator.next();
+          return new Entry<K, V>() {
+            @Override
+            public K getKey() {
+              return cacheEntry.getKey();
+            }
+
+            @Override
+            public V getValue() {
+              return cacheEntry.getValue();
+            }
+
+            @Override
+            public <T> T unwrap(Class<T> clazz) {
+              return cacheEntry.unwrap(clazz);
+            }
+          };
+        }
+      };
     } catch (Exception e) {
       log.error(HARNESS_CACHE_EXCEPTION_MESSAGE, e);
       return null;
