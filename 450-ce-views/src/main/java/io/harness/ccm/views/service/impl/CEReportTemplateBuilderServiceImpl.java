@@ -10,6 +10,8 @@ package io.harness.ccm.views.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
+
 import io.harness.ccm.clickHouse.ClickHouseService;
 import io.harness.ccm.commons.beans.config.ClickHouseConfig;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
@@ -48,6 +50,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -66,6 +69,7 @@ import java.util.TimeZone;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -87,7 +91,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   @Inject @Named("clickHouseConfig") private ClickHouseConfig clickHouseConfig;
   @Inject private ClickHouseService clickHouseService;
   @Inject private ClickHouseViewsBillingServiceImpl clickHouseViewsBillingService;
-  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
 
   // For table construction
   private static final String TABLE_START =
@@ -109,7 +113,8 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String ROW_END = "</tr>";
   private static final String COST_TREND = "<span style=\"font-size: 15px; color: %s\">( %s | %s )</span>";
 
-  private static final String PERSPECTIVE_DEFAULT_URL_TEMPLATE = "/ng/account/%s/ce/perspectives/%s/name/%s";
+  private static final String NG_PATH_CONST = "ng/";
+  private static final String PERSPECTIVE_URL_FORMAT = "/account/%s/ce/perspectives/%s/name/%s";
 
   // Template keys
   private static final String VIEW_NAME = "VIEW_NAME";
@@ -120,9 +125,10 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
   private static final String TOTAL_COST_LAST_WEEK = "TOTAL_COST_LAST_WEEK";
   private static final String TABLE = "TABLE";
   private static final String CHART = "CHART";
-  private static final String PERSPECTIVE_URL = "PERSPECTIVE_URL";
+  private static final String URL = "url";
 
   // Constants
+  private static final String EMPTY_STRING = "";
   private static final String WEEK = "WEEK";
   private static final String DAY = "DAY";
   private static final String THIRTY_DAYS = "30 DAYS";
@@ -151,13 +157,13 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
   @Override
   public Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName) {
-    return getTemplatePlaceholders(accountId, viewId, null, bigQuery, cloudProviderTableName);
+      String accountId, String viewId, BigQuery bigQuery, String cloudProviderTableName, String baseUrl) {
+    return getTemplatePlaceholders(accountId, viewId, null, bigQuery, cloudProviderTableName, baseUrl);
   }
 
   @Override
-  public Map<String, String> getTemplatePlaceholders(
-      String accountId, String viewId, String reportId, BigQuery bigQuery, String cloudProviderTableName) {
+  public Map<String, String> getTemplatePlaceholders(String accountId, String viewId, String reportId,
+      BigQuery bigQuery, String cloudProviderTableName, String baseUrl) {
     Map<String, String> templatePlaceholders = new HashMap<>();
 
     // Get cloud provider table name here
@@ -255,7 +261,7 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
 
     // Generating table for report
     templatePlaceholders.put(TABLE, generateTable(tableData, entity, currency));
-    templatePlaceholders.put(PERSPECTIVE_URL, getPerspectiveUrl(view));
+    templatePlaceholders.put(URL, getPerspectiveUrl(view, baseUrl));
 
     return templatePlaceholders;
   }
@@ -506,8 +512,16 @@ public class CEReportTemplateBuilderServiceImpl implements CEReportTemplateBuild
     return byteArrayOutputStream.toByteArray();
   }
 
-  public String getPerspectiveUrl(CEView view) {
-    return String.format(PERSPECTIVE_DEFAULT_URL_TEMPLATE, view.getAccountId(), view.getUuid(), view.getName());
+  public String getPerspectiveUrl(CEView view, String baseUrl) {
+    try {
+      URIBuilder uriBuilder = new URIBuilder(baseUrl);
+      uriBuilder.setPath(NG_PATH_CONST);
+      uriBuilder.setFragment(format(PERSPECTIVE_URL_FORMAT, view.getAccountId(), view.getUuid(), view.getName()));
+      return uriBuilder.toString();
+    } catch (URISyntaxException e) {
+      log.error("Error in forming View URL for Scheduled Report", e);
+    }
+    return EMPTY_STRING;
   }
 
   private Currency getDestinationCurrency(String accountId) {
