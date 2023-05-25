@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.BOOPESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -19,6 +20,9 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.favorites.ResourceType;
 import io.harness.favorites.entities.Favorite;
@@ -149,11 +153,38 @@ public class FavoritesApiImplTest extends CategoryTest {
     assertThat(deleteAccountFavorite.getEntity()).isNull();
   }
 
-  @Test(expected = InvalidRequestException.class)
+  @Test
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteAccountScopedFavoriteInvalidResourceTypeThrowException() {
-    accountFavoriteApi.deleteAccountFavorite(userId, accountId, "random", resourceId);
+    doThrow(new InvalidRequestException("Please provide a valid resource Type"))
+        .when(favoriteService)
+        .deleteFavorite(accountId, null, null, userId, "random", resourceId);
+    Response response = accountFavoriteApi.deleteAccountFavorite(userId, accountId, "random", resourceId);
+    ResponseMessage errorResponse = ResponseMessage.builder()
+                                        .code(ErrorCode.INVALID_REQUEST)
+                                        .level(Level.ERROR)
+                                        .message("Please provide a valid resource Type")
+                                        .build();
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.getEntity()).isEqualTo(errorResponse);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteAccountScopedFavoriteNullResourceTypeThrowException() {
+    doThrow(new InvalidRequestException("Please provide a valid resource Type"))
+        .when(favoriteService)
+        .deleteFavorite(accountId, null, null, userId, null, resourceId);
+    Response response = accountFavoriteApi.deleteAccountFavorite(userId, accountId, null, resourceId);
+    ResponseMessage errorResponse = ResponseMessage.builder()
+                                        .code(ErrorCode.INVALID_REQUEST)
+                                        .level(Level.ERROR)
+                                        .message("Please provide a valid resource Type")
+                                        .build();
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.getEntity()).isEqualTo(errorResponse);
   }
 
   private Favorite getFavoriteEntity() {

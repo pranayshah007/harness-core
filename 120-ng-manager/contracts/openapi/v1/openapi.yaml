@@ -1377,13 +1377,15 @@ components:
           minLength: 1
           maxLength: 128
         module:
-          type: string
-          description: Harness module
-          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
-          minLength: 1
-          maxLength: 128
+          $ref: '#/components/schemas/ModuleType'
         resource_type:
           type: string
+          enum:
+            - CONNECTOR
+            - DELEGATE
+            - PIPELINE
+            - SECRET
+            - PROJECT
           description: Type of resource
           pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
           minLength: 1
