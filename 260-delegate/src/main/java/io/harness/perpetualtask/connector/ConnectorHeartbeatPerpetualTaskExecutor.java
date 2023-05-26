@@ -37,7 +37,6 @@ import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -55,7 +54,7 @@ import org.eclipse.jetty.server.Response;
 public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExecutor {
   private static final String ERROR_MSG_INVALID_YAML = "Invalid yaml";
   Map<String, ConnectorValidationHandler> connectorTypeToConnectorValidationHandlerMap;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
+  private KryoSerializer kryoSerializer;
   private DelegateAgentManagerClient delegateAgentManagerClient;
   @Inject private NGErrorHelper ngErrorHelper;
 
@@ -69,7 +68,7 @@ public class ConnectorHeartbeatPerpetualTaskExecutor implements PerpetualTaskExe
     String projectIdentifier = taskParams.getProjectIdentifier().getValue();
     String connectorIdentifier = taskParams.getConnectorIdentifier();
     final ConnectorValidationParameterResponse connectorValidationParameterResponse =
-        (ConnectorValidationParameterResponse) referenceFalseKryoSerializer.asObject(
+        (ConnectorValidationParameterResponse) kryoSerializer.asObject(
             taskParams.getConnectorValidationParameterResponse().toByteArray());
     final ConnectorValidationParams connectorValidationParams =
         connectorValidationParameterResponse.getConnectorValidationParams();

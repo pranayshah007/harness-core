@@ -53,8 +53,8 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
-import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper;
-import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceEntityValidationHelper;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -79,7 +79,6 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.remote.utils.ScopeAccessHelper;
-import io.harness.ng.core.service.ServiceEntityValidationHelper;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
@@ -88,6 +87,7 @@ import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.rbac.CDNGRbacUtility;
@@ -477,8 +477,8 @@ public class EnvironmentResourceV2 {
   public ResponseDTO<InstanceGroupedByServiceList>
   getActiveServiceInstancesForEnvironment(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) String serviceIdentifier,
       @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {

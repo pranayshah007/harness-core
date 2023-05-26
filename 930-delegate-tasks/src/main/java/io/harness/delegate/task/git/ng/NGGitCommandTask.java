@@ -91,7 +91,7 @@ public class NGGitCommandTask extends AbstractDelegateRunnableTask {
     CommitAndPushRequest gitCommitRequest = (CommitAndPushRequest) gitCommandParams.getGitCommandRequest();
     log.info(GIT_YAML_LOG_PREFIX + "COMMIT_AND_PUSH: [{}]", gitCommitRequest);
     CommitAndPushResult gitCommitAndPushResult =
-        gitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig);
+        gitService.commitAndPush(gitConfig, gitCommitRequest, getAccountId(), sshSessionConfig, false);
 
     return GitCommandExecutionResponse.builder()
         .gitCommandRequest(gitCommitRequest)

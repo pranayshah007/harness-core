@@ -64,6 +64,9 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
   static final String TEST_SECRET_VALUE = "e55fa2b3e55fe55f";
   static final String TEST_DECRYPTED_VALUE = "abc123";
   static final String TEST_ENV_NAME = "HARNESS_API_KEY";
+  static final String TEST_ENV_NAME1 = "TEST_ENV_NAME1";
+  static final String TEST_ENV_NAME2 = "TEST_ENV_NAME2";
+  static final String TEST_ENV_NAME3 = "TEST_ENV_NAME3";
   static final String TEST_IDENTIFIER = "accountHarnessKey";
   static final String TEST_SECRET_IDENTIFIER = "accountHarnessKey";
   static final String TEST_SECRET_IDENTIFIER1 = "harnessKey";
@@ -247,6 +250,70 @@ public class BackstageEnvVariableServiceImplTest extends CategoryTest {
         .deleteEnvVariableSetupUsage(Arrays.asList(envVariable1, envVariable2), TEST_ACCOUNT_IDENTIFIER);
     verify(setupUsageProducer)
         .publishEnvVariableSetupUsage(Arrays.asList(envVariable1, envVariable2), TEST_ACCOUNT_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testCreateOrUpdate() {
+    checkUserAuth();
+    mockAccountNamespaceMapping();
+
+    BackstageEnvSecretVariable envVariableToAdd1 = new BackstageEnvSecretVariable();
+    envVariableToAdd1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    envVariableToAdd1.envName(TEST_ENV_NAME);
+    envVariableToAdd1.type(BackstageEnvVariable.TypeEnum.SECRET);
+    BackstageEnvSecretVariable envVariableToAdd2 = new BackstageEnvSecretVariable();
+    envVariableToAdd2.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    envVariableToAdd2.envName(TEST_ENV_NAME1);
+    envVariableToAdd2.type(BackstageEnvVariable.TypeEnum.SECRET);
+    BackstageEnvVariableEntity envVariableEntityToAdd1 =
+        mapBinder.get(BackstageEnvVariableType.SECRET).fromDto(envVariableToAdd1, TEST_ACCOUNT_IDENTIFIER);
+    BackstageEnvVariableEntity envVariableEntityToAdd2 =
+        mapBinder.get(BackstageEnvVariableType.SECRET).fromDto(envVariableToAdd2, TEST_ACCOUNT_IDENTIFIER);
+    List<BackstageEnvVariableEntity> entities = Arrays.asList(envVariableEntityToAdd1, envVariableEntityToAdd2);
+    when(backstageEnvVariableRepository.saveAll(entities)).thenReturn(entities);
+    DecryptedSecretValue decryptedSecretValue = DecryptedSecretValue.builder().build();
+    decryptedSecretValue.setDecryptedValue(TEST_SECRET_VALUE);
+    when(ngSecretService.getDecryptedSecretValue(TEST_ACCOUNT_IDENTIFIER, null, null, TEST_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+
+    BackstageEnvSecretVariable envVariableToUpdate1 = new BackstageEnvSecretVariable();
+    envVariableToUpdate1.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    envVariableToUpdate1.envName(TEST_ENV_NAME2);
+    envVariableToUpdate1.type(BackstageEnvVariable.TypeEnum.SECRET);
+    BackstageEnvSecretVariable envVariableToUpdate2 = new BackstageEnvSecretVariable();
+    envVariableToUpdate2.harnessSecretIdentifier(TEST_SECRET_IDENTIFIER);
+    envVariableToUpdate2.envName(TEST_ENV_NAME3);
+    envVariableToUpdate2.type(BackstageEnvVariable.TypeEnum.SECRET);
+    BackstageEnvVariableEntity envVariableEntityToUpdate1 =
+        mapBinder.get(BackstageEnvVariableType.SECRET).fromDto(envVariableToUpdate1, TEST_ACCOUNT_IDENTIFIER);
+    BackstageEnvVariableEntity envVariableEntityToUpdate2 =
+        mapBinder.get(BackstageEnvVariableType.SECRET).fromDto(envVariableToUpdate2, TEST_ACCOUNT_IDENTIFIER);
+    when(backstageEnvVariableRepository.update(envVariableEntityToUpdate1)).thenReturn(envVariableEntityToUpdate1);
+    when(backstageEnvVariableRepository.update(envVariableEntityToUpdate2)).thenReturn(envVariableEntityToUpdate2);
+    decryptedSecretValue = DecryptedSecretValue.builder().build();
+    decryptedSecretValue.setDecryptedValue(TEST_SECRET_VALUE);
+    when(ngSecretService.getDecryptedSecretValue(TEST_ACCOUNT_IDENTIFIER, null, null, TEST_SECRET_IDENTIFIER))
+        .thenReturn(decryptedSecretValue);
+    when(backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(any(), any()))
+        .thenReturn(Arrays.asList(envVariableEntityToUpdate1, envVariableEntityToUpdate2));
+
+    List<BackstageEnvVariable> responseVariables = backstageEnvVariableService.createOrUpdate(
+        Arrays.asList(envVariableToAdd1, envVariableToUpdate1, envVariableToAdd2, envVariableToUpdate2),
+        TEST_ACCOUNT_IDENTIFIER);
+    assertEquals(envVariableToAdd1, responseVariables.get(0));
+    assertEquals(envVariableToUpdate1, responseVariables.get(1));
+    assertEquals(envVariableToAdd2, responseVariables.get(2));
+    assertEquals(envVariableToUpdate2, responseVariables.get(3));
+    verify(k8sClient, times(2)).updateSecretData(eq(TEST_NAMESPACE), eq(BACKSTAGE_SECRET), anyMap(), eq(false));
+    verify(setupUsageProducer)
+        .deleteEnvVariableSetupUsage(
+            Arrays.asList(envVariableToUpdate1, envVariableToUpdate1), TEST_ACCOUNT_IDENTIFIER);
+    verify(setupUsageProducer)
+        .publishEnvVariableSetupUsage(
+            Arrays.asList(envVariableToAdd1, envVariableToUpdate1, envVariableToAdd2, envVariableToUpdate2),
+            TEST_ACCOUNT_IDENTIFIER);
   }
 
   @Test

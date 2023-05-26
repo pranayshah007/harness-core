@@ -33,7 +33,9 @@ import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.FALSE;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -134,6 +136,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -257,8 +260,39 @@ public class NgUserServiceImpl implements NgUserService {
     userMetadataCriteria.and(UserMetadataKeys.userId).in(userMembershipPage.getContent());
     Page<UserMetadata> userMetadataPage =
         userMetadataRepository.findAll(userMetadataCriteria, getPageRequest(pageRequest));
+    if (ngFeatureFlagHelperService.isEnabled(
+            scope.getAccountIdentifier(), FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW)) {
+      try {
+        Page<UserMetadataDTO> userMetadataDTOPage =
+            updateExternallyManagedFlagFromUserAccountLevelData(userMetadataPage, scope.getAccountIdentifier());
+        return PageUtils.getNGPageResponse(userMetadataDTOPage);
+      } catch (Exception exception) {
+        log.error(
+            "Exception while fetching list of NG users using user account level data, falling back to older logic",
+            exception);
+        return PageUtils.getNGPageResponse(userMetadataPage.map(UserMetadataMapper::toDTO));
+      }
+    } else {
+      return PageUtils.getNGPageResponse(userMetadataPage.map(UserMetadataMapper::toDTO));
+    }
+  }
 
-    return PageUtils.getNGPageResponse(userMetadataPage.map(UserMetadataMapper::toDTO));
+  private Page<UserMetadataDTO> updateExternallyManagedFlagFromUserAccountLevelData(
+      Page<UserMetadata> userMetadataPage, String accountIdentifier) {
+    List<String> userEmails = userMetadataPage.get().map(userMetadata -> userMetadata.getEmail()).collect(toList());
+    List<UserInfo> listUserInfoFromCG =
+        listCurrentGenUsers(accountIdentifier, UserFilterNG.builder().emailIds(userEmails).build());
+    Map<String, UserInfo> emailToCGUserInfoMap = new HashMap<>();
+    emailToCGUserInfoMap = listUserInfoFromCG.stream().collect(toMap(u -> u.getEmail(), Function.identity()));
+
+    Page<UserMetadataDTO> userMetadataDTOPage = userMetadataPage.map(user -> UserMetadataMapper.toDTO(user));
+    for (UserMetadataDTO userMetadataDTO : userMetadataDTOPage.getContent()) {
+      UserInfo userInfoFromCG = emailToCGUserInfoMap.get(userMetadataDTO.getEmail());
+      if (isNotEmpty(userMetadataDTO.getEmail()) && null != userInfoFromCG) {
+        userMetadataDTO.setExternallyManaged(userInfoFromCG.isExternallyManaged());
+      }
+    }
+    return userMetadataDTOPage;
   }
 
   private Criteria getUserMembershipCriteria(Scope scope, boolean includeParentScopes) {
@@ -823,6 +857,10 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
+  public Optional<UserInfo> getUserByIdAndAccount(String userId, String accountId) {
+    return CGRestUtils.getResponse(userClient.getUserByIdAndAccount(userId, accountId));
+  }
+  @Override
   public boolean isUserAtScope(String userId, Scope scope) {
     Criteria criteria = Criteria.where(UserMembershipKeys.userId)
                             .is(userId)
@@ -1060,5 +1098,21 @@ public class NgUserServiceImpl implements NgUserService {
                    .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
                    .is(scope.getProjectIdentifier());
     return UsersCountDTO.builder().totalCount(userMembershipRepository.count(criteria)).newCount(newUsersCount).build();
+  }
+
+  @Override
+  public UserMetadata updateUserMetadataInternal(UserMetadataDTO user) {
+    Optional<UserMetadata> savedUserOpt = userMetadataRepository.findDistinctByUserId(user.getUuid());
+    if (!savedUserOpt.isPresent()) {
+      return null;
+    }
+
+    Update update = new Update();
+
+    if (!isNull(user.isExternallyManaged())) {
+      update.set(UserMetadataKeys.externallyManaged, user.isExternallyManaged());
+    }
+
+    return userMetadataRepository.updateFirst(user.getUuid(), update);
   }
 }

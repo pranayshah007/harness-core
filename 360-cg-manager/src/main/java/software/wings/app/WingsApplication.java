@@ -262,6 +262,7 @@ import software.wings.service.impl.InfrastructureMappingServiceImpl;
 import software.wings.service.impl.SettingAttributeObserver;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.impl.UserAccountLevelDataMigrationJob;
+import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.service.impl.applicationmanifest.AppManifestSettingAttributePTaskManager;
 import software.wings.service.impl.applicationmanifest.ManifestPerpetualTaskManger;
@@ -1005,6 +1006,16 @@ public class WingsApplication extends Application<MainConfiguration> {
     });
 
     modules.add(DmsModule.getInstance(shouldEnableDelegateMgmt(configuration)));
+
+    // WE SHOULD AVOID STATIC INJECTS, EXCEPT TO RESOLVE P0/P1 ISSUES.
+    // PLEASE READ ABOUT HOW DO IT AT GUICE OFFICE DOC SITE
+    // https://github.com/google/guice/wiki/Injections#static-injections
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        requestStaticInjection(WorkflowExecutionServiceHelper.class);
+      }
+    });
   }
 
   private void registerEventConsumers(final Injector injector) {

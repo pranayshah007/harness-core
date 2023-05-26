@@ -232,7 +232,7 @@ public class RunStepTest extends CIExecutionTestBase {
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
 
     when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any())).thenReturn(callbackId);
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
              any(), any(), any(), any(), any(), any(), any(), any(), any()))
@@ -416,9 +416,9 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmRunStep.builder().build());
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
         runStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
@@ -464,9 +464,9 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmRunStep.builder().build());
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
         runStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
@@ -511,11 +511,11 @@ public class RunStepTest extends CIExecutionTestBase {
                         .output(VmStageInfraDetails.builder().infraInfo(vmInfraInfo).build())
                         .build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmRunStep.builder().build());
     when(vmStepSerializer.getStepSecrets(any(), any())).thenReturn(new HashSet<>());
     when(vmExecuteStepUtils.convertStep(any())).thenReturn(ExecuteStepRequest.builder());
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
         runStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);

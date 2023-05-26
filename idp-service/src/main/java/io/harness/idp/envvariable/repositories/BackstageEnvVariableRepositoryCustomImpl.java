@@ -58,7 +58,7 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
                             .and(BackstageEnvSecretVariableKeys.harnessSecretIdentifier)
                             .is(harnessSecretIdentifier);
     Query query = new Query(criteria);
-    return Optional.of(mongoTemplate.findOne(query, BackstageEnvVariableEntity.class));
+    return Optional.ofNullable(mongoTemplate.findOne(query, BackstageEnvVariableEntity.class));
   }
 
   @Override
@@ -69,6 +69,20 @@ public class BackstageEnvVariableRepositoryCustomImpl implements BackstageEnvVar
                             .and(BackstageEnvVariableKeys.envName)
                             .in(envNames);
     Query query = new Query(criteria);
+    return mongoTemplate.find(query, BackstageEnvVariableEntity.class);
+  }
+
+  @Override
+  public List<BackstageEnvVariableEntity> findIfEnvsExistByAccountIdentifier(
+      String accountIdentifier, List<String> envNames) {
+    Criteria criteria = Criteria.where(BackstageEnvVariableKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(BackstageEnvVariableKeys.envName)
+                            .in(envNames);
+    Query query = new Query(criteria);
+    // TODO: Projection isn't working with inheritence in the entity. Have to debug further later.
+    // query.fields().include(BackstageEnvVariableKeys.envName);
+    // query.fields().exclude(BackstageEnvVariableKeys.id);
     return mongoTemplate.find(query, BackstageEnvVariableEntity.class);
   }
 

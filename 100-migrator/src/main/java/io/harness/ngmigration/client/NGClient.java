@@ -115,5 +115,7 @@ public interface NGClient {
 
   @POST("user-groups")
   Call<ResponseDTO<UserGroupDTO>> createUserGroup(@Header(X_API_KEY) String auth,
-      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserGroupDTO userGroupDTO);
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @Body UserGroupDTO userGroupDTO);
 }

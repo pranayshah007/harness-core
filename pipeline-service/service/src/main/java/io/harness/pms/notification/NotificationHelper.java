@@ -32,7 +32,9 @@ import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.pms.approval.notification.ApprovalNotificationHandlerImpl;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.helpers.PipelineExpressionHelper;
@@ -41,6 +43,7 @@ import io.harness.pms.pipeline.yaml.BasicPipeline;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -63,6 +66,7 @@ public class NotificationHelper {
   @Inject PmsEngineExpressionService pmsEngineExpressionService;
   @Inject PMSPipelineService pmsPipelineService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
+  @Inject HtmlInputSanitizer userNameSanitizer;
 
   public Optional<PipelineEventType> getEventTypeForStage(NodeExecution nodeExecution) {
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
@@ -91,7 +95,7 @@ public class NotificationHelper {
     if (!ambiance.getMetadata().getIsNotificationConfigured()) {
       return;
     }
-    String identifier = nodeExecution != null ? AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance()) : "";
+    String identifier = getStageIdentifier(nodeExecution);
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -289,7 +293,7 @@ public class NotificationHelper {
       startDate = new Date(startTs * 1000).toString();
       endDate = new Date(endTs * 1000).toString();
     }
-    templateData.put("USER_NAME", userName);
+    templateData.put("USER_NAME", userNameSanitizer.sanitizeInput(userName));
     templateData.put("ORG_IDENTIFIER", orgIdentifier);
     templateData.put("PROJECT_IDENTIFIER", projectIdentifier);
     templateData.put("EVENT_TYPE", pipelineEventType.getDisplayName());
@@ -309,5 +313,21 @@ public class NotificationHelper {
     templateData.put("COLOR", themeColor);
     templateData.put("NODE_STATUS", nodeStatus);
     return templateData;
+  }
+
+  @VisibleForTesting
+  String getStageIdentifier(NodeExecution nodeExecution) {
+    String identifier = nodeExecution != null ? AmbianceUtils.obtainStepIdentifier(nodeExecution.getAmbiance()) : "";
+    // Returning identifier of strategy level in case of stages wrapped in looping strategy as their own identifiers
+    // (stageId_0, stageId_1, etc..) won't match with the actual stage identifier (stageId) mentioned in notification
+    // rules
+    if (nodeExecution != null && nodeExecution.getStepType() != null
+        && nodeExecution.getStepType().getStepCategory() == StepCategory.STAGE) {
+      Optional<Level> strategyLevelOptional = AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance());
+      if (strategyLevelOptional.isPresent()) {
+        identifier = strategyLevelOptional.get().getIdentifier();
+      }
+    }
+    return identifier;
   }
 }

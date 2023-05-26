@@ -80,7 +80,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UrlNotProvidedException;
 import io.harness.exception.UrlNotReachableException;
 import io.harness.exception.WingsException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
@@ -95,8 +94,6 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.logging.Misc;
 import io.harness.oidc.model.OidcTokenRequestData;
-import io.harness.retry.RetryHelper;
-import io.harness.supplier.ThrowingSupplier;
 
 import com.github.scribejava.apis.openid.OpenIdOAuth2AccessToken;
 import com.google.api.client.util.Charsets;
@@ -153,7 +150,6 @@ import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
 import io.github.resilience4j.retry.Retry;
-import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.AppsV1Api;
@@ -181,16 +177,9 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1TokenReviewBuilder;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
-import io.kubernetes.client.util.Watch;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.lang.reflect.Type;
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -207,18 +196,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Call;
-import okhttp3.internal.http2.ConnectionShutdownException;
-import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.time.DateTime;
@@ -245,7 +229,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   @Inject private K8sGlobalConfigService k8sGlobalConfigService;
   @Inject private K8sApiClientHelper k8sApiClientHelper;
 
-  private final Retry retry = buildRetryAndRegisterListeners();
+  private final Retry retry = KubernetesApiRetryUtils.buildRetryAndRegisterListeners(this.getClass().getSimpleName());
 
   @Override
   public HasMetadata createOrReplaceController(KubernetesConfig kubernetesConfig, HasMetadata definition) {
@@ -2329,68 +2313,5 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace(OIDC_ISSUER_URL, providerUrl)
         .replace(OIDC_RERESH_TOKEN, refreshToken)
         .replace(OIDC_AUTH_NAME, authConfigName);
-  }
-
-  public <T extends KubernetesObject> boolean watchRetriesWrapper(WorkloadDetails workloadDetails,
-      ThrowingSupplier<Call> callSupplier, Predicate<Watch.Response<T>> consumer) throws Exception {
-    boolean success;
-    try {
-      success = watchWithRetries(
-          workloadDetails.getWorkloadType(), callSupplier.get(), workloadDetails.getApiClient(), consumer);
-    } catch (ApiException e) {
-      ApiException ex = ExceptionMessageSanitizer.sanitizeException(e);
-      String errorMessage = String.format("Failed to watch rollout status for workload [%s]. ",
-                                workloadDetails.getK8sWorkload().kindNameRef())
-          + ExceptionUtils.getMessage(ex);
-      log.error(errorMessage, ex);
-      workloadDetails.getLogCallback().saveExecutionLog(errorMessage, LogLevel.ERROR);
-      if (workloadDetails.isErrorFramework()) {
-        throw e;
-      }
-      return false;
-    } catch (RuntimeException e) {
-      if (e.getCause() != null) {
-        if (e.getCause() instanceof InterruptedIOException) {
-          log.warn("Kubernetes watch was aborted.", e);
-          Thread.currentThread().interrupt();
-          return false;
-        }
-      }
-      log.error("Runtime exception during Kubernetes watch.", e);
-      throw e;
-    }
-    return success;
-  }
-
-  public <T extends KubernetesObject> boolean watchWithRetries(
-      Type type, Call call, ApiClient apiClient, Predicate<Watch.Response<T>> consumer) {
-    final Supplier<Boolean> v1Supplier = Retry.decorateSupplier(retry, () -> {
-      while (!Thread.currentThread().isInterrupted()) {
-        try (Watch<T> watch = Watch.createWatch(apiClient, call.clone(), type)) {
-          for (Watch.Response<T> event : watch) {
-            if (consumer.test(event)) {
-              return true;
-            }
-          }
-        } catch (IOException e) {
-          IOException ex = ExceptionMessageSanitizer.sanitizeException(e);
-          String errorMessage = "Failed to close Kubernetes watch." + ExceptionUtils.getMessage(ex);
-          log.error(errorMessage, ex);
-          return false;
-        } catch (ApiException e) {
-          throw new RuntimeException(e);
-        }
-      }
-      return false;
-    });
-    return v1Supplier.get();
-  }
-
-  private Retry buildRetryAndRegisterListeners() {
-    final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
-        new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
-            StreamResetException.class, SocketException.class, EOFException.class, SocketTimeoutException.class});
-    RetryHelper.registerEventListeners(exponentialRetry);
-    return exponentialRetry;
   }
 }

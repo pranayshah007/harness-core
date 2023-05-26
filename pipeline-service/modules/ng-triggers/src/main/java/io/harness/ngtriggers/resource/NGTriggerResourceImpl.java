@@ -227,7 +227,8 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
     Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
     if (!ngTriggerEntity.isPresent()) {
-      return ResponseDTO.newResponse(null);
+      throw new EntityNotFoundException(String.format(
+          "Trigger %s does not exist in project %s in org %s", triggerIdentifier, projectIdentifier, orgIdentifier));
     }
     return ResponseDTO.newResponse(ngTriggerEntity.get().getVersion().toString(),
         ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity.get(), true, true, false,

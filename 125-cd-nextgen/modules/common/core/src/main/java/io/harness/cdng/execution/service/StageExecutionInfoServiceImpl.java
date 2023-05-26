@@ -213,6 +213,16 @@ public class StageExecutionInfoServiceImpl implements StageExecutionInfoService 
     return stageExecutionInfoRepository.findByStageExecutionId(stageExecutionId, scope);
   }
 
+  @Override
+  public Optional<StageExecutionInfo> findById(String id) {
+    return stageExecutionInfoRepository.findById(id);
+  }
+
+  @Override
+  public void delete(String id) {
+    stageExecutionInfoRepository.deleteById(id);
+  }
+
   private void updateStageExecutionInfoFromStageExecutionInfoUpdateDTO(
       StageExecutionInfoUpdateDTO stageExecutionInfoUpdateDTO, StageExecutionInfo stageExecutionInfo,
       Map<String, Object> updates) {

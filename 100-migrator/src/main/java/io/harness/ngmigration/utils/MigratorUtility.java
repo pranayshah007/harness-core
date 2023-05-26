@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngmigration.utils.CaseFormat.CAMEL_CASE;
 import static io.harness.ngmigration.utils.CaseFormat.LOWER_CASE;
+import static io.harness.ngmigration.utils.CaseFormat.SNAKE_CASE;
 import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
 import static io.harness.when.beans.WhenConditionStatus.SUCCESS;
 
@@ -95,6 +96,8 @@ public class MigratorUtility {
       ParameterField.createValueField(NGMigrationConstants.RUNTIME_INPUT);
   public static final ParameterField<List<TaskSelectorYaml>> RUNTIME_DELEGATE_INPUT =
       ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
+  public static final ParameterField<Boolean> RUNTIME_BOOLEAN_INPUT =
+      ParameterField.createExpressionField(true, NGMigrationConstants.RUNTIME_INPUT, null, false);
 
   public static final Pattern cgPattern = Pattern.compile("\\$\\{[\\w-.\"()]+}");
   public static final Pattern ngPattern = Pattern.compile("<\\+[\\w-.\"()]+>");
@@ -122,6 +125,9 @@ public class MigratorUtility {
     if (LOWER_CASE == caseFormat) {
       return identifier.toLowerCase();
     }
+    if (SNAKE_CASE == caseFormat) {
+      return generateSnakeCaseIdentifier(name);
+    }
     return identifier;
   }
 
@@ -131,6 +137,24 @@ public class MigratorUtility {
     }
     name = StringUtils.stripAccents(name);
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
+    return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
+  }
+
+  private static String generateSnakeCaseIdentifier(String name) {
+    if (StringUtils.isBlank(name)) {
+      return "";
+    }
+    name = StringUtils.stripAccents(name).toLowerCase();
+    StringBuilder snakeCase = new StringBuilder();
+
+    for (char c : name.toCharArray()) {
+      if (Character.isLetterOrDigit(c)) {
+        snakeCase.append(c);
+      } else {
+        snakeCase.append('_');
+      }
+    }
+    String generated = snakeCase.toString();
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 
@@ -242,13 +266,20 @@ public class MigratorUtility {
 
   public static String getIdentifierWithScope(
       Map<CgEntityId, NGYamlFile> migratedEntities, String entityId, NGMigrationEntityType entityType) {
-    NgEntityDetail detail =
-        migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build()).getNgEntityDetail();
+    NGYamlFile yamlFile = migratedEntities.get(CgEntityId.builder().type(entityType).id(entityId).build());
+    if (yamlFile == null) {
+      return NGMigrationConstants.RUNTIME_INPUT;
+    }
+    NgEntityDetail detail = yamlFile.getNgEntityDetail();
     return getIdentifierWithScope(detail);
   }
 
   public static String getIdentifierWithScope(Scope scope, String name, CaseFormat caseFormat) {
     String identifier = MigratorUtility.generateIdentifier(name, caseFormat);
+    return getScopedIdentifier(scope, identifier);
+  }
+
+  public static String getScopedIdentifier(Scope scope, String identifier) {
     switch (scope) {
       case ACCOUNT:
         return "account." + identifier;

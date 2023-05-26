@@ -59,16 +59,6 @@ public interface PersistentLocker {
   AcquiredLock tryToAcquireLock(Class entityClass, String entityId, Duration timeout);
 
   /**
-   * Try to acquire ephemeral lock.
-   *
-   * @param entityClass the entity class
-   * @param entityId    the entity id
-   * @param timeout     for how long to keep the lock if the app crashes
-   * @return AcquiredLock object
-   */
-  AcquiredLock tryToAcquireEphemeralLock(Class entityClass, String entityId, Duration timeout);
-
-  /**
    * Try to acquire lock.
    *
    * @param name    the lock name
@@ -87,15 +77,6 @@ public interface PersistentLocker {
   AcquiredLock tryToAcquireInfiniteLockWithPeriodicRefresh(String name, Duration waitTime);
 
   /**
-   * Try to acquire ephemeral lock.
-   *
-   * @param name    the lock name
-   * @param timeout for how long to keep the lock if the app crashes
-   * @return AcquiredLock object
-   */
-  AcquiredLock tryToAcquireEphemeralLock(String name, Duration timeout);
-
-  /**
    * Acquire lock.
    *
    * @param entityClass the entity class
@@ -107,6 +88,15 @@ public interface PersistentLocker {
   AcquiredLock waitToAcquireLock(Class entityClass, String entityId, Duration lockTimeout, Duration waitTimeout);
 
   AcquiredLock waitToAcquireLock(String name, Duration lockTimeout, Duration waitTimeout);
+
+  /**
+   * Try to acquire a lock by waiting for the specified wait duration.
+   * @param name    name for the lock
+   * @param lockTimeout for how long to keep the lock if the app crashes
+   * @param waitTimeout  how long to wait to acquire the lock
+   * @return AcquiredLock object or Null
+   */
+  AcquiredLock waitToAcquireLockOptional(String name, Duration lockTimeout, Duration waitTimeout);
 
   /**
    * Destroy lock.

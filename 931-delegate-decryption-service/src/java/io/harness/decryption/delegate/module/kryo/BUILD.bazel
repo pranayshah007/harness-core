@@ -13,6 +13,7 @@ java_library(
     deps = [
         "//931-delegate-decryption-service/src/java/io/harness/decryption/delegate/serializer/kryo:module",
         "//931-secret-providers/src/java/io/harness/serializer/kryo:module",
+        "//954-connector-beans:module",
         "//980-commons/src/main/java/io/harness/serializer:module",
         "@maven//:com_google_guava_guava",
         "@maven//:com_google_inject_guice",

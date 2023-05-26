@@ -57,6 +57,7 @@ import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -100,6 +101,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
   @Inject K8sRollingBaseHandler k8sRollingBaseHandler;
 
   private K8sRollingHandlerConfig k8sRollingHandlerConfig = new K8sRollingHandlerConfig();
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
   private K8sReleaseHandler releaseHandler;
 
   @Override
@@ -361,6 +363,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
       List<KubernetesResource> resources = k8sTaskHelperBase.readManifestAndOverrideLocalSecrets(
           manifestFiles, executionLogCallback, request.isLocalOverrideFeatureFlag());
       k8sRollingHandlerConfig.setResources(resources);
+      k8sRequestHandlerContext.setResources(resources);
       k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
 
       if (request.isInCanaryWorkflow()) {
@@ -450,7 +453,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
 
         executionLogCallback.saveExecutionLog("\nVersioning resources.");
         if (isNotTrue(skipVersioningForAllK8sObjects) && !useDeclarativeRollback) {
-          addRevisionNumber(k8sRollingHandlerConfig.getResources(), currentReleaseNumber);
+          addRevisionNumber(k8sRequestHandlerContext, currentReleaseNumber);
         }
 
         final List<KubernetesResource> deploymentContainingTrackStableSelector = skipAddingTrackSelectorToDeployment
@@ -459,7 +462,8 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
             : emptyList();
 
         k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow,
-            skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector);
+            skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector,
+            k8sRequestHandlerContext);
         k8sRollingBaseHandler.addLabelsInManagedWorkloadPodSpec(inCanaryWorkflow, skipAddingTrackSelectorToDeployment,
             managedWorkloads, deploymentContainingTrackStableSelector, k8sRollingHandlerConfig.getReleaseName());
       }

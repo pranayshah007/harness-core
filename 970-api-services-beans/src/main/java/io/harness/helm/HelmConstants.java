@@ -83,6 +83,7 @@ public final class HelmConstants {
         "KUBECONFIG=${KUBECONFIG_PATH} ${HELM_PATH} version --short ${COMMAND_FLAGS}";
     public static final String HELM_FETCH_ALL_VERSIONS_COMMAND_TEMPLATE =
         "${HELM_PATH} search ${REPO_NAME}/${CHART_NAME} -l ${HELM_HOME_PATH_FLAG} --col-width 300";
+    public static final String HELM_GET_MANIFEST = "${HELM_PATH} get manifest ${RELEASE_NAME}";
   }
 
   public static final class V3Commands {
@@ -120,6 +121,8 @@ public final class HelmConstants {
         "${HELM_PATH} registry login ${REGISTRY_URL} ${USERNAME} ${PASSWORD}";
     public static final String HELM_FETCH_ALL_VERSIONS_COMMAND_TEMPLATE =
         "${HELM_PATH} search repo ${REPO_NAME}/${CHART_NAME} -l --devel --max-col-width 300";
+    public static final String HELM_GET_MANIFEST = "${HELM_PATH} get manifest ${RELEASE_NAME} --namespace=${NAMESPACE}";
+
     public static final String HELM_REPO_FLAGS = " --repository-config ${HELM_CACHE_HOME}/repo-${REPO_NAME}.yaml";
     public static final String HELM_CACHE_HOME = "XDG_CACHE_HOME";
     public static final String HELM_CACHE_HOME_PATH = "${HELM_CACHE_HOME}/repo-${REPO_NAME}";

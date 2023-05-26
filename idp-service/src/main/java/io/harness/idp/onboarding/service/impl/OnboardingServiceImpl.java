@@ -11,6 +11,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.idp.common.CommonUtils.readFileFromClassPath;
+import static io.harness.idp.common.Constants.SLASH_DELIMITER;
+import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.common.YamlUtils.writeObjectAsYaml;
 import static io.harness.idp.onboarding.utils.Constants.BACKSTAGE_LOCATION_URL_TYPE;
 import static io.harness.idp.onboarding.utils.Constants.ENTITY_REQUIRED_ERROR_MESSAGE;
@@ -18,10 +20,9 @@ import static io.harness.idp.onboarding.utils.Constants.ORGANIZATION;
 import static io.harness.idp.onboarding.utils.Constants.PAGE_LIMIT_FOR_ENTITY_FETCH;
 import static io.harness.idp.onboarding.utils.Constants.PROJECT;
 import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_CLASSPATH_LOCATION;
-import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_NAME;
+import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_FILE_NAME;
+import static io.harness.idp.onboarding.utils.Constants.SAMPLE_ENTITY_FOLDER_NAME;
 import static io.harness.idp.onboarding.utils.Constants.SERVICE;
-import static io.harness.idp.onboarding.utils.Constants.SLASH_DELIMITER;
-import static io.harness.idp.onboarding.utils.Constants.SOURCE_FORMAT;
 import static io.harness.idp.onboarding.utils.Constants.STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED;
 import static io.harness.idp.onboarding.utils.Constants.SUCCESS_RESPONSE_STRING;
 import static io.harness.idp.onboarding.utils.Constants.YAML_FILE_EXTENSION;
@@ -43,7 +44,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.common.GsonUtils;
-import io.harness.idp.events.producers.IdpProducer;
+import io.harness.idp.events.producers.IdpEntityCrudStreamProducer;
 import io.harness.idp.gitintegration.beans.CatalogInfraConnectorType;
 import io.harness.idp.gitintegration.beans.CatalogRepositoryDetails;
 import io.harness.idp.gitintegration.entities.CatalogConnectorEntity;
@@ -133,7 +134,7 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Inject StatusInfoService statusInfoService;
   @Inject DelegateSelectorsCache delegateSelectorsCache;
   @Inject AsyncCatalogImportRepository asyncCatalogImportRepository;
-  @Inject IdpProducer idpProducer;
+  @Inject IdpEntityCrudStreamProducer idpEntityCrudStreamProducer;
 
   @Override
   public HarnessEntitiesCountResponse getHarnessEntitiesCount(String accountIdentifier) {
@@ -174,16 +175,20 @@ public class OnboardingServiceImpl implements OnboardingService {
     GenerateYamlResponse generateYamlResponse = new GenerateYamlResponse();
     GenerateYamlResponseGeneratedYaml generatedYaml = new GenerateYamlResponseGeneratedYaml();
     if (!entities.isEmpty()) {
-      Map<String, Map<String, List<String>>> orgProjectsServicesMapping =
-          getOrgProjectsServicesMapping(Collections.singletonList(entities.get(0).getIdentifier()));
-      ServiceResponseDTO serviceResponseDTO = getServiceDTOS(harnessAccount, orgProjectsServicesMapping).get(0);
-      BackstageCatalogComponentEntity backstageCatalogComponentEntity =
-          harnessServiceToBackstageComponent(Collections.singletonList(serviceResponseDTO)).get(0);
-      generatedYaml.setYamlDef(writeObjectAsYaml(backstageCatalogComponentEntity));
-      generatedYaml.setDescription(onboardingModuleConfig.getDescriptionForEntitySelected());
+      Map<String, Map<String, List<String>>> orgProjectsServicesMapping = getOrgProjectsServicesMapping(
+          entities.stream().map(EntitiesForImport::getIdentifier).collect(Collectors.toList()));
+      List<ServiceResponseDTO> serviceResponseDTOS = getServiceDTOS(harnessAccount, orgProjectsServicesMapping);
+      if (serviceResponseDTOS.size() > 0) {
+        ServiceResponseDTO serviceResponseDTO = getServiceDTOS(harnessAccount, orgProjectsServicesMapping).get(0);
+        BackstageCatalogComponentEntity backstageCatalogComponentEntity =
+            harnessServiceToBackstageComponent(Collections.singletonList(serviceResponseDTO)).get(0);
+        generatedYaml.setYamlDef(writeObjectAsYaml(backstageCatalogComponentEntity));
+        generatedYaml.setDescription(onboardingModuleConfig.getDescriptionForEntitySelected());
+      } else {
+        setSampleEntityDetails(generatedYaml);
+      }
     } else {
-      generatedYaml.setYamlDef(readFileFromClassPath(SAMPLE_ENTITY_CLASSPATH_LOCATION));
-      generatedYaml.setDescription(onboardingModuleConfig.getDescriptionForSampleEntity());
+      setSampleEntityDetails(generatedYaml);
     }
     generateYamlResponse.setGeneratedYaml(generatedYaml);
     return generateYamlResponse;
@@ -192,6 +197,8 @@ public class OnboardingServiceImpl implements OnboardingService {
   @Override
   public ImportEntitiesResponse importHarnessEntities(
       String accountIdentifier, ImportEntitiesBase importHarnessEntitiesRequest) throws ExecutionException {
+    processUserRequest(importHarnessEntitiesRequest);
+
     CatalogConnectorInfo catalogConnectorInfo = importHarnessEntitiesRequest.getCatalogConnectorInfo();
 
     if (importHarnessEntitiesRequest.getType().equals(ImportEntitiesBase.TypeEnum.SAMPLE)) {
@@ -218,9 +225,6 @@ public class OnboardingServiceImpl implements OnboardingService {
     ConnectorInfoDTO connectorInfoDTO =
         connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
     String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
-    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
-    createCatalogInfraConnectorInBackstageK8S(
-        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
@@ -234,7 +238,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     log.info("Initialized directories to write yaml files for IDP onboarding import");
 
     String entityTargetParentPath = catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
-        + catalogConnectorInfo.getBranch() + SLASH_DELIMITER + accountIdentifier + entitiesFolderPath + SLASH_DELIMITER;
+        + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER;
 
     Pair<BackstageCatalogEntity, Pair<String, String>> backstageCatalogEntityInitial = getFirstAmongAll(
         catalogInfoLocationParentPath, entityTargetParentPath, catalogDomains, catalogSystems, catalogComponents);
@@ -242,32 +246,33 @@ public class OnboardingServiceImpl implements OnboardingService {
     List<String> initialFileToPush =
         writeEntityAsYamlInFile(Collections.singletonList(backstageCatalogEntityInitial.getFirst()),
             backstageCatalogEntityInitial.getSecond().getFirst());
-    connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), initialFileToPush,
-        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
+    connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore,
+        initialFileToPush, onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
-    log.info("Cleaning up directories created during IDP onboarding");
-    cleanUpDirectories(tmpPathForCatalogInfoYamlStore);
-
+    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
 
     log.info("Finished operation of yaml generation, pushing to source for one initial entity, saving status info");
 
+    log.info("Cleaning up directories created during IDP onboarding");
+    cleanUpDirectories(tmpPathForCatalogInfoYamlStore);
+
     asyncCatalogImportRepository.save(
         AsyncCatalogImportEntity.builder()
             .accountIdentifier(accountIdentifier)
             .catalogDomains(new AsyncCatalogImportDetails(
-                catalogDomains, orgYamlPath, entityTargetParentPath + ORGANIZATION + SLASH_DELIMITER))
+                catalogDomains, orgYamlPath, entitiesFolderPath + SLASH_DELIMITER + ORGANIZATION + SLASH_DELIMITER))
             .catalogSystems(new AsyncCatalogImportDetails(
-                catalogSystems, projectYamlPath, entityTargetParentPath + PROJECT + SLASH_DELIMITER))
+                catalogSystems, projectYamlPath, entitiesFolderPath + SLASH_DELIMITER + PROJECT + SLASH_DELIMITER))
             .catalogComponents(new AsyncCatalogImportDetails(
-                catalogComponents, serviceYamlPath, entityTargetParentPath + SERVICE + SLASH_DELIMITER))
+                catalogComponents, serviceYamlPath, entitiesFolderPath + SLASH_DELIMITER + SERVICE + SLASH_DELIMITER))
             .catalogInfraConnectorType(catalogInfraConnectorType)
             .catalogConnectorInfo(catalogConnectorInfo)
             .userPrincipal((UserPrincipal) SourcePrincipalContextBuilder.getSourcePrincipal())
             .build());
-    boolean producerResult = idpProducer.publishAsyncCatalogImportChangeEventToRedis(accountIdentifier, CREATE_ACTION);
+    boolean producerResult =
+        idpEntityCrudStreamProducer.publishAsyncCatalogImportChangeEventToRedis(accountIdentifier, CREATE_ACTION);
     if (!producerResult) {
       log.error("Error in producing event for async catalog import.");
     }
@@ -290,7 +295,7 @@ public class OnboardingServiceImpl implements OnboardingService {
     String catalogInfoLocationFilePath =
         catalogInfoLocationParentPath + manualImportEntityRequest.getEntityName() + YAML_FILE_EXTENSION;
     String entityTargetParentPath = catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
-        + catalogConnectorInfo.getBranch() + SLASH_DELIMITER + harnessAccount + entitiesFolderPath + SLASH_DELIMITER;
+        + catalogConnectorInfo.getBranch() + entitiesFolderPath + SLASH_DELIMITER;
     String entityTargetFilePath =
         entityTargetParentPath + manualImportEntityRequest.getEntityName() + YAML_FILE_EXTENSION;
 
@@ -302,8 +307,7 @@ public class OnboardingServiceImpl implements OnboardingService {
 
     ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
         ConnectorType.fromString(catalogConnectorEntity.getConnectorProviderType()));
-    connectorProcessor.performPushOperation(harnessAccount, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(),
+    connectorProcessor.performPushOperation(harnessAccount, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore,
         Collections.singletonList(catalogInfoLocationFilePath),
         onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
@@ -341,27 +345,29 @@ public class OnboardingServiceImpl implements OnboardingService {
       List<String> targets;
       List<String> locationTargets = new ArrayList<>();
 
+      ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
+          ConnectorType.fromString(String.valueOf(catalogConnectorInfo.getConnector().getType())));
+
       filesToPush.addAll(writeEntityAsYamlInFile(catalogDomains.getEntities(), orgYamlPath));
-      targets = prepareEntitiesTarget(catalogDomains.getEntities(), catalogDomains.getEntityTargetParentPath());
+      targets = prepareEntitiesTarget(connectorProcessor, catalogConnectorInfo, catalogDomains.getEntities(),
+          catalogDomains.getEntityTargetParentPath());
       locationTargets.addAll(targets);
 
       filesToPush.addAll(writeEntityAsYamlInFile(catalogSystems.getEntities(), projectYamlPath));
-      targets = prepareEntitiesTarget(catalogSystems.getEntities(), catalogSystems.getEntityTargetParentPath());
+      targets = prepareEntitiesTarget(connectorProcessor, catalogConnectorInfo, catalogSystems.getEntities(),
+          catalogSystems.getEntityTargetParentPath());
       locationTargets.addAll(targets);
 
       filesToPush.addAll(writeEntityAsYamlInFile(catalogComponents.getEntities(), serviceYamlPath));
-      targets = prepareEntitiesTarget(catalogComponents.getEntities(), catalogComponents.getEntityTargetParentPath());
+      targets = prepareEntitiesTarget(connectorProcessor, catalogConnectorInfo, catalogComponents.getEntities(),
+          catalogComponents.getEntityTargetParentPath());
       locationTargets.addAll(targets);
 
-      ConnectorProcessor connectorProcessor = connectorProcessorFactory.getConnectorProcessor(
-          ConnectorType.fromString(String.valueOf(catalogConnectorInfo.getConnector().getType())));
       connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-          onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), filesToPush, false);
+          onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier, filesToPush,
+          false);
 
       registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
-      onboardingModuleConfig.getSampleEntities().forEach(sampleEntity
-          -> registerLocationInBackstage(
-              accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, Collections.singletonList(sampleEntity)));
 
       createCatalogInfraConnectorInBackstageK8S(accountIdentifier, catalogConnectorInfo,
           asyncCatalogImportEntity.getCatalogInfraConnectorType(),
@@ -474,6 +480,18 @@ public class OnboardingServiceImpl implements OnboardingService {
     }
   }
 
+  private void setSampleEntityDetails(GenerateYamlResponseGeneratedYaml generatedYaml) {
+    generatedYaml.setYamlDef(readFileFromClassPath(SAMPLE_ENTITY_CLASSPATH_LOCATION));
+    generatedYaml.setDescription(onboardingModuleConfig.getDescriptionForSampleEntity());
+  }
+
+  private void processUserRequest(ImportEntitiesBase importHarnessEntitiesRequest) {
+    String repo = importHarnessEntitiesRequest.getCatalogConnectorInfo().getRepo();
+    if (repo.endsWith(".git")) {
+      importHarnessEntitiesRequest.getCatalogConnectorInfo().setRepo(repo.substring(0, repo.length() - 4));
+    }
+  }
+
   private ImportEntitiesResponse importSampleEntity(String accountIdentifier, CatalogConnectorInfo catalogConnectorInfo)
       throws ExecutionException {
     catalogConnectorInfo.getConnector().setIdentifier(
@@ -484,38 +502,38 @@ public class OnboardingServiceImpl implements OnboardingService {
     log.info("IDP onboarding import - connector processor initialized for type = {}",
         catalogConnectorInfo.getConnector().getType());
 
-    String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(
-        connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier()));
     ConnectorInfoDTO connectorInfoDTO =
         connectorProcessor.getConnectorInfo(accountIdentifier, catalogConnectorInfo.getConnector().getIdentifier());
-    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
-    createCatalogInfraConnectorInBackstageK8S(
-        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+
+    String catalogInfraConnectorType = connectorProcessor.getInfraConnectorType(connectorInfoDTO);
 
     String tmpPathForCatalogInfoYamlStore =
         onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore() + SLASH_DELIMITER + accountIdentifier;
     String entitiesFolderPath = getEntitiesFolderPath(catalogConnectorInfo);
     String catalogInfoLocationParentPath = tmpPathForCatalogInfoYamlStore + entitiesFolderPath + SLASH_DELIMITER;
-    String sampleYamlPath = catalogInfoLocationParentPath + SAMPLE_ENTITY_NAME + SLASH_DELIMITER;
+    String sampleYamlPath = catalogInfoLocationParentPath + SAMPLE_ENTITY_FOLDER_NAME + SLASH_DELIMITER;
 
     createDirectories(sampleYamlPath);
     log.info("Initialized directories to write yaml files for IDP onboarding import");
 
     List<String> sampleEntityFileToPush = new ArrayList<>();
-    String sampleEntityYamlFilePath = sampleYamlPath + SAMPLE_ENTITY_NAME.toLowerCase() + YAML_FILE_EXTENSION;
+    String sampleEntityYamlFilePath = sampleYamlPath + SAMPLE_ENTITY_FILE_NAME + YAML_FILE_EXTENSION;
     writeStringInFile(readFileFromClassPath(SAMPLE_ENTITY_CLASSPATH_LOCATION), sampleEntityYamlFilePath);
     sampleEntityFileToPush.add(sampleEntityYamlFilePath);
 
-    connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo,
-        onboardingModuleConfig.getTmpPathForCatalogInfoYamlStore(), sampleEntityFileToPush,
-        onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
+    connectorProcessor.performPushOperation(accountIdentifier, catalogConnectorInfo, tmpPathForCatalogInfoYamlStore,
+        sampleEntityFileToPush, onboardingModuleConfig.isUseGitServiceGrpcForSingleEntityPush());
 
     List<String> locationTargets = new ArrayList<>();
-    locationTargets.add(catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
-        + catalogConnectorInfo.getBranch() + SLASH_DELIMITER + accountIdentifier + entitiesFolderPath + SLASH_DELIMITER
-        + SAMPLE_ENTITY_NAME + SLASH_DELIMITER + SAMPLE_ENTITY_NAME.toLowerCase() + YAML_FILE_EXTENSION);
+    locationTargets.add(connectorProcessor.getLocationTarget(catalogConnectorInfo,
+        entitiesFolderPath + SLASH_DELIMITER + SAMPLE_ENTITY_FOLDER_NAME + SLASH_DELIMITER + SAMPLE_ENTITY_FILE_NAME
+            + YAML_FILE_EXTENSION));
     registerLocationInBackstage(accountIdentifier, BACKSTAGE_LOCATION_URL_TYPE, locationTargets);
 
+    createCatalogInfraConnectorInBackstageK8S(
+        accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
+
+    saveCatalogConnector(accountIdentifier, catalogConnectorInfo, catalogInfraConnectorType, connectorInfoDTO);
     saveStatusInfo(accountIdentifier, StatusType.ONBOARDING.name(), StatusInfo.CurrentStatusEnum.COMPLETED,
         STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED);
 
@@ -554,7 +572,12 @@ public class OnboardingServiceImpl implements OnboardingService {
       projectDTOS = getProjects(accountIdentifier, null);
       serviceDTOS = getServices(accountIdentifier, (String) null);
     } else {
+      orgToImport = new ArrayList<>(orgProjectsServicesMapping.keySet());
       organizationDTOS = getOrganizationDTOS(accountIdentifier, orgToImport);
+      orgProjectsServicesMapping.forEach((key, value) -> {
+        projectToImport.addAll(value.keySet());
+        orgProjectsMapping.put(key, new ArrayList<>(value.keySet()));
+      });
       projectDTOS = getProjectDTOS(accountIdentifier, orgProjectsMapping);
       serviceDTOS = getServiceDTOS(accountIdentifier, orgProjectsServicesMapping);
     }
@@ -765,9 +788,12 @@ public class OnboardingServiceImpl implements OnboardingService {
     return files;
   }
 
-  private List<String> prepareEntitiesTarget(List<? extends BackstageCatalogEntity> entities, String prefixPath) {
+  private List<String> prepareEntitiesTarget(ConnectorProcessor connectorProcessor,
+      CatalogConnectorInfo catalogConnectorInfo, List<? extends BackstageCatalogEntity> entities, String prefixPath) {
     List<String> targets = new ArrayList<>();
-    entities.forEach(entity -> targets.add(prefixPath + entity.getMetadata().getName() + YAML_FILE_EXTENSION));
+    entities.forEach(entity
+        -> targets.add(connectorProcessor.getLocationTarget(
+            catalogConnectorInfo, prefixPath + entity.getMetadata().getName() + YAML_FILE_EXTENSION)));
     return targets;
   }
 
@@ -786,11 +812,12 @@ public class OnboardingServiceImpl implements OnboardingService {
   private void createCatalogInfraConnectorInBackstageK8S(String accountIdentifier,
       CatalogConnectorInfo catalogConnectorInfo, String catalogInfraConnectorType, ConnectorInfoDTO connectorInfoDTO) {
     try {
-      gitIntegrationService.createConnectorInBackstage(accountIdentifier, connectorInfoDTO,
+      gitIntegrationService.createOrUpdateConnectorInBackstage(accountIdentifier, connectorInfoDTO,
           CatalogInfraConnectorType.valueOf(catalogInfraConnectorType),
           catalogConnectorInfo.getConnector().getIdentifier());
     } catch (Exception e) {
-      log.error("Unable to create infra connector secrets in backstage k8s, ex = {}", e.getMessage(), e);
+      log.error("Error in creating catalog connector in backstage. Error = {}", e.getMessage(), e);
+      throw new InvalidRequestException("Unable to create catalog connector in backstage - " + e.getMessage());
     }
   }
 

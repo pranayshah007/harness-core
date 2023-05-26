@@ -3,6 +3,7 @@
 # Declare variables to be passed into your templates.
 global:
   loadbalancerURL: ""
+  stackDriverLoggingEnabled: false
   database:
     postgres:
       ## - installed = true if installed within cluster
@@ -70,6 +71,8 @@ global:
 replicaCount: 1
 maxSurge: 1
 maxUnavailable: 0
+
+allowedOrigins: ""
 
 image:
   registry: docker.io
@@ -180,3 +183,5 @@ tolerations: []
 affinity: {}
 
 imagePullSecrets: {}
+
+additionalConfigs: {}

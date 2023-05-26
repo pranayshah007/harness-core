@@ -29,11 +29,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -45,6 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("OciHelmChartConfig")
 @RecasterAlias("io.harness.cdng.manifest.yaml.OciHelmChartConfig")
+@FieldNameConstants(innerTypeName = "OciHelmChartConfigKeys")
 public class OciHelmChartConfig implements StoreConfig, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -102,5 +106,17 @@ public class OciHelmChartConfig implements StoreConfig, Visitable, WithConnector
         ociStoreConfig.overrideConnectorRef(overridingConnectorRef);
       }
     }
+  }
+
+  @Override
+  public Set<String> validateAtRuntime() {
+    Set<String> invalidParameters = new HashSet<>();
+    if (StoreConfigHelper.checkStringParameterNullOrInput(getConnectorReference())) {
+      invalidParameters.add("connectorRef");
+    }
+    if (StoreConfigHelper.checkStringParameterNullOrInput(basePath)) {
+      invalidParameters.add(OciHelmChartConfigKeys.basePath);
+    }
+    return invalidParameters;
   }
 }

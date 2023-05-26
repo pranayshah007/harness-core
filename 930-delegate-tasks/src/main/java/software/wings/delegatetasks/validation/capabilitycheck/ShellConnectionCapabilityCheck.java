@@ -29,6 +29,7 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.jcraft.jsch.JSchException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -83,6 +84,9 @@ public class ShellConnectionCapabilityCheck implements CapabilityCheck {
       expectedSshConfig.setSshSessionTimeout(timeout);
       performTest(expectedSshConfig);
       return CapabilityResponse.builder().validated(true).delegateCapability(capability).build();
+    } catch (JSchException ex) {
+      log.info("Exception in sshSession Validation, cause {}", ex.getMessage());
+      return CapabilityResponse.builder().validated(false).delegateCapability(capability).build();
     } catch (Exception ex) {
       log.info("Exception in sshSession Validation", ex);
       return CapabilityResponse.builder().validated(false).delegateCapability(capability).build();

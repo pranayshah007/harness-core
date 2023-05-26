@@ -48,6 +48,7 @@ global:
     enabled: false
   chaos:
     enabled: false
+  stackDriverLoggingEnabled: false
   ingress:
     # -- create ingress objects
     enabled: false
@@ -78,6 +79,8 @@ maxSurge: 1
 maxUnavailable: 0
 
 appLogLevel: "INFO"
+
+allowedOrigins: ""
 
 image:
   registry: docker.io
@@ -217,3 +220,5 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+additionalConfigs: {}

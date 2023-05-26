@@ -65,6 +65,7 @@ import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.dto.Log.Builder;
 import software.wings.persistence.artifact.Artifact;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.impl.aws.model.AwsAmiServiceSetupRequest;
 import software.wings.service.impl.aws.model.AwsAmiServiceSetupRequest.AwsAmiServiceSetupRequestBuilder;
 import software.wings.service.impl.aws.model.AwsAmiServiceSetupResponse;
@@ -216,6 +217,7 @@ public class AwsAmiServiceSetup extends State {
         (EncryptableSetting) cloudProviderSetting.getValue(), context.getAppId(), context.getWorkflowExecutionId());
     String region = infrastructureMapping.getRegion();
     AwsConfig awsConfig = (AwsConfig) cloudProviderSetting.getValue();
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
 
     AwsAmiSetupExecutionData awsAmiExecutionData = AwsAmiSetupExecutionData.builder().build();
     ExecutionStatus executionStatus = ExecutionStatus.SUCCESS;

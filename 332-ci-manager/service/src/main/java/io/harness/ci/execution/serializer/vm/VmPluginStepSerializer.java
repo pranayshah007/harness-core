@@ -96,7 +96,7 @@ public class VmPluginStepSerializer {
 
   public VmStepInfo serialize(PluginStepInfo pluginStepInfo, StageInfraDetails stageInfraDetails, String identifier,
       ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance, List<CIRegistry> registries,
-      ExecutionSource executionSource) {
+      ExecutionSource executionSource, String delegateId) {
     Map<String, String> envVars = new HashMap<>();
 
     if (iacmStepsUtils.isIACMStep(pluginStepInfo)) {
@@ -119,7 +119,20 @@ public class VmPluginStepSerializer {
         envVars.put(key, SerializerUtils.convertJsonNodeToString(entry.getKey(), entry.getValue()));
       }
     }
-    envVars.putAll(resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false));
+
+    boolean fVal = featureFlagService.isEnabled(
+        FeatureName.CI_DISABLE_RESOURCE_OPTIMIZATION, AmbianceUtils.getAccountId(ambiance));
+
+    envVars.putAll(
+        resolveMapParameterV2("envVars", "pluginStep", identifier, pluginStepInfo.getEnvVariables(), false, fVal));
+    if (StringUtils.isNotEmpty(delegateId)) {
+      if (isEmpty(envVars)) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HARNESS_DELEGATE_ID", delegateId);
+    }
+    envVars = CIStepInfoUtils.injectAndResolveLoopingVariables(
+        ambiance, AmbianceUtils.getAccountId(ambiance), featureFlagService, envVars);
 
     String image =
         RunTimeInputHandler.resolveStringParameter("Image", stepName, identifier, pluginStepInfo.getImage(), false);

@@ -65,6 +65,7 @@ public class ZendeskHelper {
       ticketData.put("priority", priority.toString().toLowerCase(Locale.ROOT));
 
       Map<String, Object> requester = new HashMap<>();
+      requester.put("name", emailId);
       requester.put("email", emailId);
       ticketData.put("requester", requester);
       ticketRoot.put("ticket", ticketData);
@@ -107,9 +108,9 @@ public class ZendeskHelper {
     try {
       String json = "{\n"
           + "    \"userIds\": [\n{"
-          + "        \"name\": \"example\",\n"
-          + "        \"type\": \"type\",\n"
-          + "        \"provider\":\"Security Provider\"\n"
+          + "        \"name\": \"name\",\n"
+          + "        \"type\": \"User\",\n"
+          + "        \"provider\":\"Email Security Provider\"\n"
           + "    }\n]"
           + "}";
       RequestBody requestBody = RequestBody.create(MediaType.parse("application/json"), json);

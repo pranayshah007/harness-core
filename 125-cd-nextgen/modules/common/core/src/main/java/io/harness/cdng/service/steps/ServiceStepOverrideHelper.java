@@ -62,7 +62,6 @@ import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -103,7 +102,7 @@ public class ServiceStepOverrideHelper {
         ambiance, manifestsSweepingOutputName, manifestSweepingOutput, StepCategory.STAGE.name());
   }
 
-  @NotNull
+  @NonNull
   public static List<ManifestConfigWrapper> prepareFinalManifests(NGServiceV2InfoConfig ngServiceV2InfoConfig,
       NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride environmentGlobalOverride,
       String envId) {
@@ -135,7 +134,7 @@ public class ServiceStepOverrideHelper {
         svcOverrideManifests, envGlobalManifests, svcIdentifier, envIdentifier, SERVICE_OVERRIDES);
   }
 
-  @NotNull
+  @NonNull
   public static Map<String, List<ManifestConfigWrapper>> getManifestsFromAllLocations(
       NGServiceV2InfoConfig serviceV2Config, NGServiceOverrideConfig serviceOverrideConfig,
       NGEnvironmentGlobalOverride environmentGlobalOverride) {

@@ -252,7 +252,7 @@ public class ScimUserServiceImpl implements ScimUserService {
                                 .equal(true);
 
     if (StringUtils.isNotEmpty(searchQuery)) {
-      userQuery.field(UserKeys.email).equal(searchQuery);
+      userQuery.field(UserKeys.email).equalIgnoreCase(searchQuery);
     }
     List<User> userList = userQuery.asList(new FindOptions().skip(startIndex).limit(count));
     return userList.stream().map(user -> buildUserResponse(user, accountId)).collect(Collectors.toList());
@@ -369,6 +369,9 @@ public class ScimUserServiceImpl implements ScimUserService {
     if ("userName".equals(patchOperation.getPath())) {
       value = value.toLowerCase();
     }
+    if (UserKeys.name.equals(key)) {
+      userService.validateName(patchOperation.getValue(String.class));
+    }
     updateOperation.set(key, value);
     userService.updateUser(user.getUuid(), updateOperation);
   }
@@ -417,6 +420,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       boolean userUpdate = false;
       if (StringUtils.isNotEmpty(displayName) && !displayName.equals(user.getName())) {
         userUpdate = true;
+        userService.validateName(displayName);
         updateOperations.set(UserKeys.name, displayName);
         log.info("SCIM: Updating user's {} name: {}", userId, displayName);
       }

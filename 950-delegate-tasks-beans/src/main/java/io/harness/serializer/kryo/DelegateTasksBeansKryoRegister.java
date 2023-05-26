@@ -253,6 +253,11 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusValidationParams;
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskParams;
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorValidationParams;
+import io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse;
+import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTaskType;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse;
 import io.harness.delegate.beans.connector.scm.ScmValidationParams;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectionTaskParams;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams;
@@ -511,6 +516,7 @@ import io.harness.delegate.task.aws.lambda.request.AwsLambdaRollbackRequest;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaDeployResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaPrepareRollbackResponse;
 import io.harness.delegate.task.aws.lambda.response.AwsLambdaRollbackResponse;
+import io.harness.delegate.task.awssam.AwsSamInfraConfig;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -773,6 +779,7 @@ import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
+import io.harness.delegate.task.k8s.K8sBlueGreenStageScaleDownRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeleteRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployRequest;
 import io.harness.delegate.task.k8s.K8sCanaryDeployResponse;
@@ -2451,6 +2458,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerraformCloudRollbackTaskParams.class, 680030);
     kryo.register(TerraformCloudValidationTaskParams.class, 680031);
     kryo.register(AwsSamInstallationCapability.class, 10000401);
+    kryo.register(AwsSamInfraConfig.class, 10000402);
     kryo.register(AwsLambdaDeployRequest.class, 10000502);
     kryo.register(AwsLambdaDeployResponse.class, 10000503);
     kryo.register(AwsLambdaPrepareRollbackRequest.class, 10000504);
@@ -2477,6 +2485,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(S3StoreTFDelegateConfig.class, 10000524);
     kryo.register(HttpCertificateNG.class, 10000526);
+    kryo.register(RancherTaskParams.class, 20000501);
+    kryo.register(RancherDelegateTaskResponse.class, 20000502);
+    kryo.register(RancherTestConnectionTaskParams.class, 20000503);
+    kryo.register(RancherTestConnectionTaskResponse.class, 20000504);
+    kryo.register(RancherTaskType.class, 20000505);
 
     kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
     kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);
@@ -2485,5 +2498,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(GoogleFunctionGenOneRollbackRequest.class, 1800007);
     kryo.register(GoogleFunctionGenOneRollbackResponse.class, 1800008);
     kryo.register(ServiceHookDelegateConfig.class, 10000527);
+    kryo.register(K8sBlueGreenStageScaleDownRequest.class, 680032);
   }
 }

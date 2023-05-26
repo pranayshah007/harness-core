@@ -57,6 +57,7 @@ import io.harness.ng.core.user.TwoFactorAuthSettingsInfo;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserInfoUpdateDTO;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
+import io.harness.ng.core.user.entities.UserMetadata;
 import io.harness.ng.core.user.remote.dto.UserAggregateDTO;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
@@ -490,7 +491,7 @@ public class UserResource {
   public ResponseDTO<UserInfo>
   updateUserInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true)
                  @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserInfo userInfo) {
-    if (isUserExternallyManaged(userInfo.getUuid())) {
+    if (isUserExternallyManaged(userInfo.getUuid(), accountIdentifier)) {
       log.warn("User is externally managed, cannot update user - userId: {}", userInfo.getUuid());
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
@@ -512,7 +513,7 @@ public class UserResource {
   updateUserInfoV2(@Parameter(description = "User Identifier") @PathParam("userId") String userId,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY)
       String accountIdentifier, @Body UserInfoUpdateDTO userInfo) {
-    if (isUserExternallyManaged(userId)) {
+    if (isUserExternallyManaged(userId, accountIdentifier)) {
       log.warn("User is externally managed, cannot update user - userId: {}", userId);
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be updated via UI/API. To update user information in Harness, update it from your Identity Provider");
@@ -611,12 +612,9 @@ public class UserResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
-    if (isUserExternallyManaged(userId)
-        && (ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier))
-            || !ngFeatureFlagHelperService.isEnabled(
-                accountIdentifier, FeatureName.PL_REMOVE_EXTERNAL_USER_ORG_PROJECT))) {
-      // throw error when an externally managed user is being removed from account or the FF is disabled for org and
-      // project levels
+    if ((ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier)))
+        && isUserExternallyManaged(userId, accountIdentifier)) {
+      // throw error when an externally managed user is being removed from account
       log.error("User is externally managed, cannot delete user - userId: {}", userId);
       throw new InvalidRequestException(
           "User is externally managed by your Identity Provider and cannot be deleted via UI / API. To delete the user from Harness, delete it from your Identity Provider.");
@@ -697,8 +695,8 @@ public class UserResource {
     return ResponseDTO.newResponse(userInfoService.unlockUser(userId, accountIdentifier));
   }
 
-  private boolean isUserExternallyManaged(String userId) {
-    Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(userId);
+  private boolean isUserExternallyManaged(String userId, String accountIdentifier) {
+    Optional<UserInfo> optionalUserInfo = ngUserService.getUserByIdAndAccount(userId, accountIdentifier);
     return optionalUserInfo.map(UserInfo::isExternallyManaged).orElse(false);
   }
 
@@ -743,5 +741,27 @@ public class UserResource {
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
     return ResponseDTO.newResponse(ngUserService.getUsersCount(
         Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), startInterval, endInterval));
+  }
+
+  @PUT
+  @Hidden
+  @Path("update-user-metadata/{userId}")
+  @ApiOperation(value = "update user metadata", nickname = "updateUserMetadata")
+  @Operation(operationId = "updateUserMetadata", summary = "Update User Metadata",
+      description = "Update User Metadata for a user",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns user information")
+      })
+  @InternalApi
+  public ResponseDTO<UserMetadata>
+  updateUserMetadata(@Parameter(description = "user Identifier") @NotNull @PathParam("userId") String userId,
+      @Body UserMetadataDTO userMetadataDTO) {
+    if (!userId.equals(userMetadataDTO.getUuid())) {
+      throw new InvalidRequestException(
+          "UserMetadata passed in the request body does not belong to the userId passed in the path");
+    }
+    return ResponseDTO.newResponse(ngUserService.updateUserMetadataInternal(userMetadataDTO));
   }
 }

@@ -90,7 +90,7 @@ func (e *stepExecutor) Run(ctx context.Context, step *pb.UnitStep) error {
 	}
 
 	if err == nil && !detach {
-		stopAddon(context.Background(), step.GetId(), step.GetContainerPort(), e.log)
+		stopAddon(context.Background(), step.GetId(), uint32(GetContainerPort(step)), e.log)
 	}
 
 	statusErr := e.updateStepStatus(context.Background(), step, stepOutput, artifact, err, time.Since(start))

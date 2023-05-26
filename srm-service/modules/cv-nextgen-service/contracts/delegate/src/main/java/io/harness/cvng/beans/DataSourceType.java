@@ -13,10 +13,6 @@ import static io.harness.cvng.beans.DataSourceType.Constants.DEMO_TEMPLATE_SPLUN
 
 import io.harness.cvng.models.VerificationType;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-
 public enum DataSourceType {
   APP_DYNAMICS("Appdynamics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_APPDYNAMICS, false),
   SPLUNK("Splunk", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, false),
@@ -37,7 +33,9 @@ public enum DataSourceType {
   AWS_PROMETHEUS("AwsPrometheus", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, false),
   SUMOLOGIC_METRICS("SumologicMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true),
   SUMOLOGIC_LOG("SumologicLog", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true),
-  SPLUNK_SIGNALFX_METRICS("SplunkSignalFXMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true);
+  SPLUNK_SIGNALFX_METRICS("SplunkSignalFXMetrics", VerificationType.TIME_SERIES, DEMO_TEMPLATE_PROMETHEUS, true),
+  GRAFANA_LOKI_LOGS("GrafanaLokiLogs", VerificationType.LOG, DEMO_TEMPLATE_SPLUNK, true);
+
   private String displayName;
   private VerificationType verificationType;
   // template prefix that should be used for demo data.
@@ -60,12 +58,6 @@ public enum DataSourceType {
   public VerificationType getVerificationType() {
     return verificationType;
   }
-
-  public static List<DataSourceType> getTimeSeriesTypes() {
-    return new ArrayList<>(EnumSet.of(APP_DYNAMICS, STACKDRIVER, NEW_RELIC, PROMETHEUS, DATADOG_METRICS, DYNATRACE,
-        CUSTOM_HEALTH_METRIC, CLOUDWATCH_METRICS, SUMOLOGIC_METRICS));
-  }
-
   public boolean isNextGenSpec() {
     return isNextGenSpec;
   }

@@ -91,6 +91,8 @@ public interface NgUserService {
 
   void waitForRbacSetup(Scope scope, String userId, String email);
 
+  Optional<UserInfo> getUserByIdAndAccount(String userId, String accountId);
+
   boolean isUserAtScope(String userId, Scope scope);
 
   boolean isUserLastAdminAtScope(String userId, Scope scope);
@@ -121,4 +123,6 @@ public interface NgUserService {
   boolean verifyHarnessSupportGroupUser();
 
   UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
+
+  UserMetadata updateUserMetadataInternal(UserMetadataDTO user);
 }

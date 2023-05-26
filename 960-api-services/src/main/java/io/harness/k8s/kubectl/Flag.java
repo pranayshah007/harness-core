@@ -32,5 +32,7 @@ public enum Flag {
     public String toString() {
       return "dry-run=client";
     }
-  }
+  },
+  client,
+  output
 }

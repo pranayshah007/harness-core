@@ -7,16 +7,12 @@
 
 package io.harness.aggregator;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
-import io.harness.accesscontrol.principals.PrincipalType;
-import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupDBO;
 import io.harness.accesscontrol.principals.usergroups.persistence.UserGroupRepository;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
-import io.harness.aggregator.consumers.ChangeConsumerService;
+import io.harness.aggregator.consumers.ACLGeneratorService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -24,11 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -40,17 +32,16 @@ import org.springframework.data.util.CloseableIterator;
 @OwnedBy(HarnessTeam.PL)
 public class GenerateACLsFromRoleAssignmentsJob {
   private final ACLRepository aclRepository;
-  private final ChangeConsumerService changeConsumerService;
+  private final ACLGeneratorService aclGeneratorService;
   public static final int BATCH_SIZE = 1000;
   private MongoTemplate mongoTemplate;
   private UserGroupRepository userGroupRepository;
 
   @Inject
   public GenerateACLsFromRoleAssignmentsJob(@Named(ACL.PRIMARY_COLLECTION) ACLRepository aclRepository,
-      ChangeConsumerService changeConsumerService, MongoTemplate mongoTemplate,
-      UserGroupRepository userGroupRepository) {
+      ACLGeneratorService aclGeneratorService, MongoTemplate mongoTemplate, UserGroupRepository userGroupRepository) {
     this.aclRepository = aclRepository;
-    this.changeConsumerService = changeConsumerService;
+    this.aclGeneratorService = aclGeneratorService;
     this.mongoTemplate = mongoTemplate;
     this.userGroupRepository = userGroupRepository;
   }
@@ -66,38 +57,10 @@ public class GenerateACLsFromRoleAssignmentsJob {
 
   private long upsertACLs(RoleAssignmentDBO roleAssignment) {
     aclRepository.deleteByRoleAssignmentId(roleAssignment.getId());
-    if (roleAssignment.getPrincipalType() == PrincipalType.USER_GROUP) {
-      long numberOfACLsCreated = 0;
-      Optional<UserGroupDBO> userGroupDBO = userGroupRepository.findByIdentifierAndScopeIdentifier(
-          roleAssignment.getPrincipalIdentifier(), roleAssignment.getScopeIdentifier());
-      if (userGroupDBO.isPresent()) {
-        Set<String> users = userGroupDBO.get().getUsers();
-        if (isNotEmpty(users)) {
-          long offset = 0;
-          while (offset < users.size() + 1) {
-            Set<String> subSetUsers = users.stream().skip(offset).limit(1000).collect(Collectors.toSet());
-            List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment, subSetUsers);
-
-            aclsToCreate.addAll(
-                changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, subSetUsers, new HashSet<>()));
-            aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
-
-            offset += 1000;
-            numberOfACLsCreated += aclsToCreate.size();
-          }
-        } else {
-          log.info("[CreateACLsFromRoleAssignmentsMigration] No users in usergroup {} in scope {}",
-              roleAssignment.getPrincipalIdentifier(), roleAssignment.getScopeIdentifier());
-        }
-      }
-
-      return numberOfACLsCreated;
-    } else {
-      List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment);
-      aclsToCreate.addAll(
-          changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>()));
-      return aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
-    }
+    long numberOfACLsCreated = aclGeneratorService.createACLsForRoleAssignment(roleAssignment);
+    numberOfACLsCreated +=
+        aclGeneratorService.createImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>());
+    return numberOfACLsCreated;
   }
 
   public void migrate(String accountIdentifier) {

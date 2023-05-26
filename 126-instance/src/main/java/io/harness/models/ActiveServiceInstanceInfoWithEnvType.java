@@ -12,10 +12,12 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.execution.Status;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
+@Builder
 @AllArgsConstructor
 @EqualsAndHashCode
 public class ActiveServiceInstanceInfoWithEnvType {

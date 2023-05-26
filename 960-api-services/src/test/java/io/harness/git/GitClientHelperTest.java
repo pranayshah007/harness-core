@@ -762,4 +762,14 @@ public class GitClientHelperTest extends CategoryTest {
     assertThat(GitClientHelper.getCompleteHTTPUrlForGitLab("https://gitlab.com/gitlab160412/testRepo"))
         .isEqualTo("https://gitlab.com/gitlab160412/testRepo");
   }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGetHarnessApiURL() {
+    assertThat(GitClientHelper.getHarnessApiURL("http://git.app.harness.io/acc"))
+        .isEqualTo("http://git.app.harness.io");
+    assertThat(GitClientHelper.getHarnessApiURL("http://git.qa.harness.io/acc")).isEqualTo("http://git.qa.harness.io");
+    assertThat(GitClientHelper.getHarnessApiURL("http://abcd.efgh.app/acc")).isEqualTo("http://abcd.efgh.app");
+  }
 }

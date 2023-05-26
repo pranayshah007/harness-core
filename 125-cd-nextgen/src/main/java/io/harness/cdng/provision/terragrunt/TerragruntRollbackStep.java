@@ -106,7 +106,8 @@ public class TerragruntRollbackStep extends CdTaskExecutable<AbstractTerragruntT
       TerragruntConfig currentConfig = null;
       while (configIterator.hasNext()) {
         rollbackConfig = configIterator.next();
-        if (rollbackConfig.getPipelineExecutionId().equals(ambiance.getPlanExecutionId())) {
+        if (rollbackConfig.getPipelineExecutionId().equals(
+                AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))) {
           if (currentConfig == null) {
             currentConfig = rollbackConfig;
           }

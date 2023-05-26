@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import retrofit2.Response;
@@ -228,7 +229,10 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
           azureArtifactsInternalConfig.getProject(), azureArtifactsInternalConfig.getFeed(),
           azureArtifactsInternalConfig.getPackageId());
 
-      return null;
+      throw new InvalidRequestException(StringUtils.isNotBlank(project)
+              ? String.format(
+                  "No builds found matching project= %s, feed= %s , packageId= %s ", project, feed, packageId)
+              : String.format("No builds found matching  feed= %s , packageId= %s ", feed, packageId));
     }
 
     Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
@@ -243,7 +247,11 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
           azureArtifactsInternalConfig.getProject(), azureArtifactsInternalConfig.getFeed(),
           azureArtifactsInternalConfig.getPackageId());
 
-      return null;
+      throw new InvalidRequestException(StringUtils.isNotBlank(project)
+              ? String.format("No builds found matching project= %s, feed= %s , packageId= %s , versionRegex = %s",
+                  project, feed, packageId, versionRegex)
+              : String.format("No builds found matching  feed= %s , packageId= %s , versionRegex = %s", feed, packageId,
+                  versionRegex));
     } else {
       log.info("Total builds found = {}", builds.size());
     }

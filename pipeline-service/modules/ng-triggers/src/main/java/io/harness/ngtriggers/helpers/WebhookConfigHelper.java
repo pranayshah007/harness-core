@@ -13,6 +13,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
+import static io.harness.ngtriggers.beans.source.WebhookTriggerType.HARNESS;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -42,6 +43,9 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerE
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabMRCommentAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.action.HarnessIssueCommentAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.action.HarnessPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.harness.event.HarnessTriggerEvent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -114,7 +118,7 @@ public class WebhookConfigHelper {
   public boolean isGitSpec(WebhookTriggerConfigV2 webhookTriggerConfig) {
     return webhookTriggerConfig.getType() == GITHUB || webhookTriggerConfig.getType() == GITLAB
         || webhookTriggerConfig.getType() == BITBUCKET || webhookTriggerConfig.getType() == AWS_CODECOMMIT
-        || webhookTriggerConfig.getType() == AZURE;
+        || webhookTriggerConfig.getType() == AZURE || webhookTriggerConfig.getType() == HARNESS;
   }
 
   public static List<AzureRepoPRAction> getAzureRepoPRAction() {
@@ -125,8 +129,16 @@ public class WebhookConfigHelper {
     return Arrays.asList(GithubPRAction.values());
   }
 
+  public static List<HarnessPRAction> getHarnessPRAction() {
+    return Arrays.asList(HarnessPRAction.values());
+  }
+
   public static List<GithubIssueCommentAction> getGithubIssueCommentAction() {
     return Arrays.asList(GithubIssueCommentAction.values());
+  }
+
+  public static List<HarnessIssueCommentAction> getHarnessIssueCommentAction() {
+    return Arrays.asList(HarnessIssueCommentAction.values());
   }
 
   public static List<GithubReleaseAction> getGithubReleaseAction() {
@@ -183,6 +195,17 @@ public class WebhookConfigHelper {
             .collect(toList()));
     githubMap.put(GithubTriggerEvent.RELEASE.getValue(),
         getGithubReleaseAction().stream().map(githubReleaseAction -> githubReleaseAction.getValue()).collect(toList()));
+
+    Map harnessMap = new HashMap<GitEvent, List<GitAction>>();
+    resposeMap.put(HARNESS.getValue(), harnessMap);
+    harnessMap.put(HarnessTriggerEvent.PUSH.getValue(), emptyList());
+    harnessMap.put(HarnessTriggerEvent.PULL_REQUEST.getValue(),
+        getHarnessPRAction().stream().map(githubPRAction -> githubPRAction.getValue()).collect(toList()));
+    harnessMap.put(HarnessTriggerEvent.ISSUE_COMMENT.getValue(),
+        getHarnessIssueCommentAction()
+            .stream()
+            .map(harnessIssueCommentAction -> harnessIssueCommentAction.getValue())
+            .collect(toList()));
 
     Map gitlabMap = new HashMap<GitEvent, List<GitAction>>();
     resposeMap.put(GITLAB.getValue(), gitlabMap);

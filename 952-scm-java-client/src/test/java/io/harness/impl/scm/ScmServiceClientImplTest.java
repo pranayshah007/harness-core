@@ -64,6 +64,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -594,6 +595,27 @@ public class ScmServiceClientImplTest extends CategoryTest {
     gitlabConnectorDTO.setUrl("http://34.170.133.206/gitlab/gitlab-instance-9ca8a1ea/repo1.git");
     slug = helper.getSlug(gitlabConnectorDTO);
     assertEquals(slug, "gitlab/gitlab-instance-9ca8a1ea/repo1");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testgetHarnessSlug() {
+    ScmGitProviderHelper helper = new ScmGitProviderHelper();
+    HarnessConnectorDTO harnessConnectorDTO =
+        HarnessConnectorDTO.builder()
+            .url(
+                "http://git.app.harness.io/kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo")
+            .build();
+    assertThat(helper.getSlug(harnessConnectorDTO))
+        .isEqualTo("kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo/+");
+    harnessConnectorDTO =
+        HarnessConnectorDTO.builder()
+            .url(
+                "http://git.app.harness.io/kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo.git")
+            .build();
+    assertThat(helper.getSlug(harnessConnectorDTO))
+        .isEqualTo("kmpySmUISimoRrJL6NL73w/CITestDemoOrgnpAUTg9bai/CITestDemoProsQQ6BmCDXS/testprivaterepo/+");
   }
 
   private GitFileDetails getGitFileDetailsDefault() {

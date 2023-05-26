@@ -10,7 +10,6 @@ package io.harness.aggregator.consumers;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
-import io.harness.accesscontrol.acl.persistence.ACL;
 import io.harness.accesscontrol.acl.persistence.repositories.ACLRepository;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
@@ -19,7 +18,6 @@ import io.harness.logging.DelayLogContext;
 
 import com.google.inject.Singleton;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,20 +28,20 @@ import org.apache.commons.lang3.StringUtils;
 public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssignmentDBO> {
   private final ACLRepository aclRepository;
   private final RoleAssignmentRepository roleAssignmentRepository;
-  private final ChangeConsumerService changeConsumerService;
+  private final ACLGeneratorService aclGeneratorService;
   private final RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler;
 
   public RoleAssignmentChangeConsumerImpl(ACLRepository aclRepository,
-      RoleAssignmentRepository roleAssignmentRepository, ChangeConsumerService changeConsumerService,
+      RoleAssignmentRepository roleAssignmentRepository, ACLGeneratorService aclGeneratorService,
       RoleAssignmentCRUDEventHandler roleAssignmentCRUDEventHandler) {
     this.aclRepository = aclRepository;
     this.roleAssignmentRepository = roleAssignmentRepository;
-    this.changeConsumerService = changeConsumerService;
+    this.aclGeneratorService = aclGeneratorService;
     this.roleAssignmentCRUDEventHandler = roleAssignmentCRUDEventHandler;
   }
 
   @Override
-  public void consumeUpdateEvent(String id, RoleAssignmentDBO updatedRoleAssignmentDBO) {
+  public boolean consumeUpdateEvent(String id, RoleAssignmentDBO updatedRoleAssignmentDBO) {
     if (!StringUtils.isEmpty(updatedRoleAssignmentDBO.getRoleIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getResourceGroupIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getPrincipalIdentifier())
@@ -54,11 +52,13 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
         long createdCount = createACLs(roleAssignment.get());
         log.info("Number of ACLs created: {} for roleassignment: {}", createdCount, id);
       }
+      return true;
     }
+    return false;
   }
 
   @Override
-  public void consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id) {
     long startTime = System.currentTimeMillis();
     roleAssignmentCRUDEventHandler.handleRoleAssignmentDelete(id);
     long numberOfACLsDeleted = deleteACLs(id);
@@ -67,6 +67,7 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
       log.info("RoleAssignmentChangeConsumerImpl.consumeDeleteEvent: Number of ACLs deleted: {} for {} Time taken: {}",
           numberOfACLsDeleted, id, permissionsChangeTime);
     }
+    return true;
   }
 
   private long deleteACLs(String id) {
@@ -74,20 +75,20 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
   }
 
   private long createACLs(RoleAssignmentDBO roleAssignment) {
-    List<ACL> aclsToCreate = changeConsumerService.getAClsForRoleAssignment(roleAssignment);
-    aclsToCreate.addAll(
-        changeConsumerService.getImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>()));
-    return aclRepository.insertAllIgnoringDuplicates(aclsToCreate);
+    long numberOfACLsCreated = aclGeneratorService.createACLsForRoleAssignment(roleAssignment);
+    numberOfACLsCreated +=
+        aclGeneratorService.createImplicitACLsForRoleAssignment(roleAssignment, new HashSet<>(), new HashSet<>());
+    return numberOfACLsCreated;
   }
 
   @Override
-  public void consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
+  public boolean consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
     long startTime = System.currentTimeMillis();
     Optional<RoleAssignmentDBO> roleAssignmentOptional = roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
         newRoleAssignmentDBO.getIdentifier(), newRoleAssignmentDBO.getScopeIdentifier());
     if (!roleAssignmentOptional.isPresent()) {
       log.info("Role assignment has been deleted, not processing role assignment create event for id: {}", id);
-      return;
+      return true;
     }
     roleAssignmentCRUDEventHandler.handleRoleAssignmentCreate(newRoleAssignmentDBO);
     long numberOfACLsCreated = createACLs(newRoleAssignmentDBO);
@@ -96,5 +97,6 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
       log.info("RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Number of ACLs created: {} for {} Time taken: {}",
           numberOfACLsCreated, id, permissionsChangeTime);
     }
+    return true;
   }
 }

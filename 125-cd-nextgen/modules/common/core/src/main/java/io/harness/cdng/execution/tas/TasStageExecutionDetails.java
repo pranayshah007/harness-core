@@ -40,4 +40,20 @@ public class TasStageExecutionDetails implements ExecutionDetails {
   @Expression(ALLOW_SECRETS) private List<String> routeMaps;
   private Integer desiredCount;
   private Boolean isFirstDeployment;
+  @Override
+  public List<ArtifactOutcome> getArtifactsOutcome() {
+    return artifactsOutcome;
+  }
+  @Override
+  public Map<String, ConfigFileOutcome> getConfigFilesOutcome() {
+    return configFilesOutcome;
+  }
+  @Override
+  public Map<String, Object> getEnvVariables() {
+    return envVariables;
+  }
+  @Override
+  public Map<String, Object> getOutVariables() {
+    return outVariables;
+  }
 }

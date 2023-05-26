@@ -29,6 +29,7 @@ java_library(
         "//960-continuous-features:module",
         "//960-yaml-sdk:module",
         "//999-annotations:module",
+        "//clients/ci:module",
         "//clients/notification:module",
         "//clients/pipeline-service/pms-sdk-core:module",
         "//pipeline-service/modules/orchestration:module",

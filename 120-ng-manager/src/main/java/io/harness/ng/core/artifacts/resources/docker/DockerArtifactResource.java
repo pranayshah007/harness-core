@@ -15,6 +15,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetValidatorType;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
@@ -142,8 +143,9 @@ public class DockerArtifactResource {
   @POST
   @Path("getLastSuccessfulBuild")
   @ApiOperation(value = "Gets docker last successful build", nickname = "getLastSuccessfulBuildForDocker")
-  public ResponseDTO<DockerBuildDetailsDTO> getLastSuccessfulBuild(@QueryParam("imagePath") String imagePath,
-      @QueryParam("connectorRef") String dockerConnectorIdentifier,
+  public ResponseDTO<DockerBuildDetailsDTO> getLastSuccessfulBuild(
+      @QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String dockerConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, DockerRequestDTO requestDTO) {
@@ -159,36 +161,19 @@ public class DockerArtifactResource {
   @ApiOperation(value = "Gets docker last successful build with yaml input for expression resolution",
       nickname = "getLastSuccessfulBuildForDockerWithYaml")
   public ResponseDTO<DockerBuildDetailsDTO>
-  getLastSuccessfulBuildV2(@QueryParam("imagePath") String imagePath,
-      @QueryParam("connectorRef") String dockerConnectorIdentifier, @QueryParam("tag") String tag,
+  getLastSuccessfulBuildV2(@QueryParam(NGArtifactConstants.IMAGE_PATH) String imagePath,
+      @QueryParam(NGArtifactConstants.CONNECTOR_REF) String dockerConnectorIdentifier,
+      @QueryParam(NGArtifactConstants.TAG) String tag,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
       @NotNull @QueryParam("fqnPath") String fqnPath, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
       @NotNull DockerRequestDTO requestDTO, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
-    if (isNotEmpty(serviceRef)) {
-      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
-          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
-      DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
-      if (isEmpty(imagePath)) {
-        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
-      }
-      if (isEmpty(dockerConnectorIdentifier)) {
-        dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();
-      }
-      if (isEmpty(requestDTO.getTag())) {
-        requestDTO.setTag((String) dockerHubArtifactConfig.getTag().fetchFinalValue());
-      }
-      if (isEmpty(requestDTO.getTagRegex())) {
-        requestDTO.setTagRegex((String) dockerHubArtifactConfig.getTagRegex().fetchFinalValue());
-      }
-    }
-    IdentifierRef connectorRef =
-        IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    DockerBuildDetailsDTO buildDetails =
-        dockerResourceService.getSuccessfulBuild(connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
-    return ResponseDTO.newResponse(buildDetails);
+    DockerBuildDetailsDTO dockerBuildDetailsDTO =
+        artifactResourceUtils.getLastSuccessfulBuildV2Docker(imagePath, dockerConnectorIdentifier, tag, accountId,
+            orgIdentifier, projectIdentifier, pipelineIdentifier, fqnPath, gitEntityBasicInfo, requestDTO, serviceRef);
+    return ResponseDTO.newResponse(dockerBuildDetailsDTO);
   }
 
   @GET

@@ -68,14 +68,14 @@ public abstract class ChangeEventMetaDataTransformer<E extends Activity, M exten
   public final ActivityBucket getActivityBucket(E activity) {
     Instant eventTime =
         Objects.isNull(activity.getEventTime()) ? activity.getActivityStartTime() : activity.getEventTime();
-    ActivityBucket activityBucket = ActivityBucket.builder()
-                                        .accountId(activity.getAccountId())
-                                        .orgIdentifier(activity.getOrgIdentifier())
-                                        .projectIdentifier(activity.getProjectIdentifier())
-                                        .monitoredServiceIdentifiers(getMonitoredServiceIdentifiers(activity))
-                                        .bucketTime(DateTimeUtils.roundDownTo5MinBoundary(eventTime))
-                                        .build();
-    return activityBucket;
+    return ActivityBucket.builder()
+        .accountId(activity.getAccountId())
+        .orgIdentifier(activity.getOrgIdentifier())
+        .projectIdentifier(activity.getProjectIdentifier())
+        .monitoredServiceIdentifiers(getMonitoredServiceIdentifiers(activity))
+        .bucketTime(DateTimeUtils.roundDownTo5MinBoundary(eventTime))
+        .type(activity.getType())
+        .build();
   }
   protected List<String> getMonitoredServiceIdentifiers(E activity) {
     return Collections.singletonList(activity.getMonitoredServiceIdentifier());

@@ -19,7 +19,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;

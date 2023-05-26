@@ -43,7 +43,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
@@ -134,7 +133,6 @@ import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -739,9 +737,6 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     final ConnectorInfoDTO connectorInfoDTO =
         ConnectorInfoDTO.builder().connectorType(ConnectorType.NEXUS).connectorConfig(nexusConnectorDTO).build();
     final List<EncryptedDataDetail> encryptedDataDetails = singletonList(EncryptedDataDetail.builder().build());
-    doReturn(true)
-        .when(cdFeatureFlagHelper)
-        .isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEB_APP_NG_NEXUS_PACKAGE);
 
     doReturn(connectorInfoDTO).when(cdStepHelper).getConnector("nexusconnector", ambiance);
     doReturn(encryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(NGAccess.class), any());

@@ -10,7 +10,3 @@ monitoredService:
   sources:
     healthSources:
     changeSources:
-      - name: Harness CD Next Gen
-        identifier: harness_cd_next_gen
-        type: HarnessCDNextGen
-        enabled : true

@@ -112,6 +112,11 @@ public class FakeNextGenService implements NextGenService {
   }
 
   @Override
+  public boolean isProjectDeleted(String accountId, String orgIdentifier, String projectIdentifier) {
+    return true;
+  }
+
+  @Override
   public OrganizationDTO getOrganization(String accountIdentifier, String orgIdentifier) {
     return OrganizationDTO.builder().identifier(orgIdentifier).name("Mocked org name").build();
   }

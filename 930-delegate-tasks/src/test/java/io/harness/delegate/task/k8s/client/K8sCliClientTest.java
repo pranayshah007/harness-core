@@ -29,6 +29,7 @@ import io.harness.delegate.task.k8s.K8sRollingDeployRequest;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sSteadyStateDTO;
+import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
@@ -80,7 +81,8 @@ public class K8sCliClientTest extends CategoryTest {
     boolean result = k8sCliClient.performSteadyStateCheck(k8sSteadyStateDTO);
     assertThat(result).isTrue();
     verify(k8sClientHelper, times(0))
-        .createKubernetesApiClient(any(K8sInfraDelegateConfig.class), any(), any(LogCallback.class));
+        .createKubernetesApiClient(
+            any(K8sInfraDelegateConfig.class), anyString(), any(LogCallback.class), any(KubernetesConfig.class));
   }
 
   @Test

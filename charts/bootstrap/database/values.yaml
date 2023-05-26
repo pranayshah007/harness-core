@@ -27,8 +27,8 @@ mongodb:
   fullnameOverride: "mongodb-replicaset-chart"
   image:
     registry: docker.io
-    repository: bitnami/mongodb
-    tag: 4.4.15
+    repository: harness/mongo
+    tag: 4.4.19
   replicaCount: 3
   arbiter:
     enabled: true

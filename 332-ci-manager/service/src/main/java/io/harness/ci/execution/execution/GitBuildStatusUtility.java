@@ -444,7 +444,7 @@ public class GitBuildStatusUtility {
   }
 
   private ConnectorDetails getGitConnector(NGAccess ngAccess, String connectorRef) {
-    return connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+    return connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
   }
 
   public String getBuildDetailsUrl(Ambiance ambiance) {

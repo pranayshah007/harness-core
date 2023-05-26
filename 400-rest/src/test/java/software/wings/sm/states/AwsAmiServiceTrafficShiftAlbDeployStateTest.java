@@ -18,19 +18,29 @@ import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.AwsAmiInfrastructureMapping.Builder.anAwsAmiInfrastructureMapping;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
+import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.service.impl.aws.model.AwsConstants.AMI_ALB_SETUP_SWEEPING_OUTPUT_NAME;
+import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
+import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
-import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
+import static software.wings.utils.WingsTestConstants.APP_NAME;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
+import static software.wings.utils.WingsTestConstants.ENV_NAME;
 import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -56,37 +66,53 @@ import software.wings.WingsBaseTest;
 import software.wings.api.AmiServiceTrafficShiftAlbSetupElement;
 import software.wings.api.AwsAmiDeployStateExecutionData;
 import software.wings.api.InstanceElement;
+import software.wings.api.PhaseElement;
+import software.wings.api.ServiceElement;
 import software.wings.beans.Activity;
+import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
+import software.wings.beans.Application;
+import software.wings.beans.AwsAmiInfrastructureMapping;
 import software.wings.beans.AwsConfig;
+import software.wings.beans.Environment;
 import software.wings.beans.Service;
+import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.AmiArtifactStream;
 import software.wings.beans.command.AmiCommandUnit;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.ServiceCommand;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.aws.model.AwsAmiPreDeploymentData;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployResponse;
 import software.wings.service.impl.aws.model.AwsAmiServiceTrafficShiftAlbDeployRequest;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.ArtifactStreamService;
 import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.LogService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.StateExecutionService;
+import software.wings.service.intfc.security.SecretManager;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.StateExecutionData;
+import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.spotinst.SpotInstStateHelper;
 
 import com.amazonaws.services.ec2.model.Instance;
 import com.google.common.collect.ImmutableMap;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
 
 @OwnedBy(CDP)
@@ -95,14 +121,18 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
   @Mock private ArtifactStreamService artifactStreamService;
   @Mock private ActivityService activityService;
   @Mock private DelegateService delegateService;
+  @Mock private InfrastructureMappingService mockInfrastructureMappingService;
   @Mock private LogService logService;
   @Mock private SweepingOutputService sweepingOutputService;
   @Mock private AwsStateHelper awsStateHelper;
-  @Mock private AwsAmiServiceStateHelper awsAmiServiceHelper;
+  @Mock private SettingsService mockSettingsService;
+  @Mock private SecretManager mockSecretManager;
+  @Spy @InjectMocks private AwsAmiServiceStateHelper awsAmiServiceHelper;
   @Mock private SpotInstStateHelper spotinstStateHelper;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private FeatureFlagService featureFlagService;
   @Mock private DelegateTaskMigrationHelper delegateTaskMigrationHelper;
+  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks
   private final AwsAmiServiceTrafficShiftAlbDeployState state =
@@ -217,21 +247,44 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
         .when(awsAmiServiceHelper)
         .getSetupElementFromSweepingOutput(mockContext, AMI_ALB_SETUP_SWEEPING_OUTPUT_NAME);
 
-    AwsAmiTrafficShiftAlbData trafficShiftAlbData =
-        AwsAmiTrafficShiftAlbData.builder()
-            .artifact(anArtifact().withUuid(ARTIFACT_ID).build())
-            .app(anApplication().uuid(APP_ID).build())
-            .service(Service.builder().build())
-            .env(anEnvironment().uuid(ENV_ID).build())
-            .awsConfig(AwsConfig.builder().build())
-            .infrastructureMapping(
-                anAwsAmiInfrastructureMapping().withUuid(INFRA_MAPPING_ID).withSpotinstElastiGroupJson("json").build())
-            .awsEncryptedDataDetails(emptyList())
-            .region("region")
-            .serviceId("serviceId")
-            .currentUser(EmbeddedUser.builder().build())
-            .build();
-    doReturn(trafficShiftAlbData).when(awsAmiServiceHelper).populateAlbTrafficShiftSetupData(mockContext);
+    PhaseElement phaseElement =
+        PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
+    WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
+    doReturn(EmbeddedUser.builder().email("user@harness.io").name("user").build()).when(mockParams).getCurrentUser();
+    doReturn(mockParams).when(mockContext).getContextElement(any());
+    String revision = "ami-1234";
+    Artifact artifact = anArtifact().withRevision(revision).build();
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
+    Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
+    doReturn(application).when(workflowStandardParamsExtensionService).getApp(any());
+    Environment environment = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
+    doReturn(environment).when(workflowStandardParamsExtensionService).getEnv(mockParams);
+    Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
+    doReturn(service).when(serviceResourceService).getWithDetails(any(), any());
+    doReturn("10").when(mockContext).renderExpression(eq(BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_BACKOFF_ACCOUNT_VARIABLE));
+    doReturn("10").when(mockContext).renderExpression(eq(MAX_ERROR_RETRY_ACCOUNT_VARIABLE));
+    String classicLb = "classicLb";
+    String targetGroup = "targetGp";
+    String baseAsg = "baseAsg";
+    List<String> stageLbs = Arrays.asList("Stage_LB1", "Stage_LB2");
+    List<String> stageTgs = Arrays.asList("Stage_TG1", "Stage_TG2");
+    AwsAmiInfrastructureMapping infrastructureMapping = anAwsAmiInfrastructureMapping()
+                                                            .withUuid(INFRA_MAPPING_ID)
+                                                            .withEnvId(ENV_ID)
+                                                            .withRegion("us-east-1")
+                                                            .withClassicLoadBalancers(singletonList(classicLb))
+                                                            .withTargetGroupArns(singletonList(targetGroup))
+                                                            .withStageClassicLoadBalancers(stageLbs)
+                                                            .withStageTargetGroupArns(stageTgs)
+                                                            .withAutoScalingGroupName(baseAsg)
+                                                            .build();
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
+    SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    doReturn(cloudProvider).when(mockSettingsService).get(any());
+    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
 
     doReturn(AmiArtifactStream.builder().build()).when(artifactStreamService).get(any());
     doReturn(Activity.builder().uuid(ACTIVITY_ID).commandUnits(singletonList(new AmiCommandUnit())).build())
@@ -276,6 +329,15 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
     assertThat(delegateTask).isNotNull();
     assertThat(delegateTask.getData().getParameters()).isNotNull();
     assertThat(delegateTask.getData().getParameters()[0] instanceof AwsAmiServiceTrafficShiftAlbDeployRequest).isTrue();
+    AwsAmiServiceTrafficShiftAlbDeployRequest params =
+        (AwsAmiServiceTrafficShiftAlbDeployRequest) delegateTask.getData().getParameters()[0];
+    AmazonClientSDKDefaultBackoffStrategy sdkDefaultBackoffStrategy = AmazonClientSDKDefaultBackoffStrategy.builder()
+                                                                          .baseDelayInMs(10)
+                                                                          .throttledBaseDelayInMs(10)
+                                                                          .maxBackoffInMs(10)
+                                                                          .maxErrorRetry(10)
+                                                                          .build();
+    assertThat(params.getAwsConfig().getAmazonClientSDKDefaultBackoffStrategy()).isEqualTo(sdkDefaultBackoffStrategy);
 
     assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(response).isNotNull();

@@ -9,6 +9,7 @@ package io.harness.service.instancesyncperpetualtask;
 
 import static io.harness.perpetualtask.PerpetualTaskType.ASG_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AWS_LAMBDA_INSTANCE_SYNC_NG;
+import static io.harness.perpetualtask.PerpetualTaskType.AWS_SAM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AWS_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_SSH_WINRM_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.AZURE_WEB_APP_NG_INSTANCE_SYNC;
@@ -29,6 +30,7 @@ import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhan
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AsgInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AwsLambdaInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.aws.AwsSshWinrmInstanceSyncPerpetualTaskHandler;
+import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.awssam.AwsSamInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureSshWinrmInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.azure.AzureWebAppInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.customDeployment.CustomDeploymentInstanceSyncPerpetualTaskHandler;
@@ -62,6 +64,7 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
   private final TasInstanceSyncPerpetualTaskHandler tasInstanceSyncPerpetualTaskHandler;
   private final AsgInstanceSyncPerpetualTaskHandler asgInstanceSyncPerpetualTaskHandler;
   private final GoogleFunctionInstanceSyncPerpetualTaskHandler googleFunctionInstanceSyncPerpetualTaskHandler;
+  private final AwsSamInstanceSyncPerpetualTaskHandler awsSamInstanceSyncPerpetualTaskHandler;
   private final AwsLambdaInstanceSyncPerpetualTaskHandler awsLambdaInstanceSyncPerpetualTaskHandler;
 
   public InstanceSyncPerpetualTaskHandler getInstanceSyncPerpetualService(String perpetualTaskType) {
@@ -92,6 +95,8 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
         return asgInstanceSyncPerpetualTaskHandler;
       case GOOGLE_CLOUD_FUNCTION_INSTANCE_SYNC_NG:
         return googleFunctionInstanceSyncPerpetualTaskHandler;
+      case AWS_SAM_INSTANCE_SYNC_NG:
+        return awsSamInstanceSyncPerpetualTaskHandler;
       case AWS_LAMBDA_INSTANCE_SYNC_NG:
         return awsLambdaInstanceSyncPerpetualTaskHandler;
       default:

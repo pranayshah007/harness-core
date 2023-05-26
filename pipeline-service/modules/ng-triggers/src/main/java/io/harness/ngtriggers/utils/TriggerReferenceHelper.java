@@ -11,6 +11,7 @@ import static io.harness.data.structure.HarnessStringUtils.nullIfEmpty;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.beans.IdentifierRef;
@@ -22,15 +23,19 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.protobuf.StringValue;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,9 +51,11 @@ public class TriggerReferenceHelper {
     if (EmptyPredicate.isNotEmpty(ngTriggerConfigV2.getInputSetRefs())) {
       entityDetailProtoDTOList.addAll(getReferredInputSetRefsDetails(ngTriggerConfigV2, accountId));
     }
-    String connectorRef = getConnectorRef(ngTriggerConfigV2);
-    if (EmptyPredicate.isNotEmpty(connectorRef)) {
-      entityDetailProtoDTOList.add(getReferredConnectorDetails(ngTriggerConfigV2, accountId, connectorRef));
+    Set<String> connectorRefs = getConnectorRefs(ngTriggerConfigV2);
+    for (String connectorRef : connectorRefs) {
+      if (EmptyPredicate.isNotEmpty(connectorRefs)) {
+        entityDetailProtoDTOList.add(getReferredConnectorDetails(ngTriggerConfigV2, accountId, connectorRef));
+      }
     }
     return entityDetailProtoDTOList;
   }
@@ -101,21 +108,27 @@ public class TriggerReferenceHelper {
         .build();
   }
 
-  private String getConnectorRef(NGTriggerConfigV2 ngTriggerConfigV2) {
-    String connectorRef = null;
+  private Set<String> getConnectorRefs(NGTriggerConfigV2 ngTriggerConfigV2) {
+    Set<String> connectorRefs = new HashSet<>();
     if (ngTriggerConfigV2.getSource().getType() == WEBHOOK) {
       WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerConfigV2.getSource().getSpec();
-      connectorRef = webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef();
+      connectorRefs.add(webhookTriggerConfigV2.getSpec().fetchGitAware().fetchConnectorRef());
     } else if (ngTriggerConfigV2.getSource().getType() == ARTIFACT) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
-      connectorRef = artifactTriggerConfig.getSpec().fetchConnectorRef();
+      connectorRefs.add(artifactTriggerConfig.getSpec().fetchConnectorRef());
+    } else if (ngTriggerConfigV2.getSource().getType() == MULTI_ARTIFACT) {
+      MultiArtifactTriggerConfig artifactTriggerConfig =
+          (MultiArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
+      for (ArtifactTypeSpec artifactSpec : artifactTriggerConfig.getSources()) {
+        connectorRefs.add(artifactSpec.fetchConnectorRef());
+      }
     } else if (ngTriggerConfigV2.getSource().getType() == MANIFEST) {
       ManifestTriggerConfig manifestTriggerConfig = (ManifestTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
       if (manifestTriggerConfig.getType() == HELM_MANIFEST) {
         HelmManifestSpec helmManifestSpec = (HelmManifestSpec) manifestTriggerConfig.getSpec();
-        connectorRef = helmManifestSpec.getStore().fetchConnectorRef();
+        connectorRefs.add(helmManifestSpec.getStore().fetchConnectorRef());
       }
     }
-    return connectorRef;
+    return connectorRefs;
   }
 }

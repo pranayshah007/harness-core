@@ -125,13 +125,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
       String idpUrl = credentials[0];
       String samlResponseString = credentials[1];
       String accountId = credentials.length >= 3 ? credentials[2] : null;
-      if (isEmpty(idpUrl) && !isEmpty(accountId)) {
-        SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
-        idpUrl = samlSettings.getOrigin();
-        if (!idpUrl.toLowerCase().matches(HTTPS_REGEX)) {
-          idpUrl = (new URIBuilder()).setScheme("https").setHost(idpUrl).build().toString();
-        }
-      }
+      idpUrl = populateIdPUrlIfEmpty(idpUrl, samlResponseString, accountId);
       log.info("SAML: Credentials got from SAML provider is {}, for accountId {}", credentials, accountId);
       String relayState = credentials.length >= 4 ? credentials[3] : "";
       Map<String, String> relayStateData = getRelayStateData(relayState);
@@ -187,7 +181,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
       accountId = StringUtils.isEmpty(accountId) ? user.getDefaultAccountId() : accountId;
       String uuid = user.getUuid();
       try (AutoLogContext ignore = new UserLogContext(accountId, uuid, OVERRIDE_ERROR)) {
-        log.info("SAML: Authenticating via SAML in account {}", accountId);
         Account account = authenticationUtils.getAccount(accountId);
         if (account == null) {
           account = authenticationUtils.getDefaultAccount(user);
@@ -195,32 +188,51 @@ public class SamlBasedAuthHandler implements AuthHandler {
         if (!domainWhitelistCheckerService.isDomainWhitelisted(user, account)) {
           domainWhitelistCheckerService.throwDomainWhitelistFilterException();
         }
-        log.info("SAML: Authenticating via SAML for user in account {}", account.getUuid());
-        SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(account.getUuid());
-
+        log.info("SAML: Authenticating user with id {}, email {} via SAML in account {}", uuid, user.getEmail(),
+            account.getUuid());
         // Occurs when SAML settings are being tested before being enabled
         if (!relayStateData.getOrDefault(SAML_TRIGGER_TYPE, "").equals("login")
             && account.getAuthenticationMechanism() != io.harness.ng.core.account.AuthenticationMechanism.SAML) {
           log.info("SAML test login successful for user: [{}], for account {}", user.getEmail(), accountId);
           throw new WingsException(ErrorCode.SAML_TEST_SUCCESS_MECHANISM_NOT_ENABLED);
         }
-        if (Objects.nonNull(samlSettings) && samlSettings.isAuthorizationEnabled()) {
+
+        List<SamlSettings> samlSettingsList = new ArrayList<>();
+        boolean withMultipleIdpSupport = false;
+        if (featureFlagService.isNotEnabled(FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)) {
+          samlSettingsList.add(ssoSettingService.getSamlSettingsByAccountId(account.getUuid()));
+        } else {
+          withMultipleIdpSupport = true;
+          samlSettingsList.addAll(ssoSettingService.getSamlSettingsListByAccountId(account.getUuid()));
+        }
+
+        SamlSettings toSyncSamlSetting =
+            getMatchingSamlSettingFromResponseAndIssuer(samlResponseString, samlSettingsList, withMultipleIdpSupport);
+
+        if (null != toSyncSamlSetting && toSyncSamlSetting.isAuthorizationEnabled()) {
           List<String> userGroups = getUserGroupsForIdpUrl(idpUrl, samlResponseString, accountId);
           log.info("SAML: UserGroups synced for the user are {}, for account {}", userGroups.toString(), accountId);
           SamlUserAuthorization samlUserAuthorization =
               SamlUserAuthorization.builder().email(user.getEmail()).userGroups(userGroups).build();
 
           // Event Publisher
-          samlUserGroupSync.syncUserGroup(samlUserAuthorization, account.getUuid(), samlSettings.getUuid());
-          try {
-            ngSamlAuthorizationEventPublisher.publishSamlAuthorizationAssertion(
-                samlUserAuthorization, account.getUuid(), samlSettings.getUuid());
-          } catch (Exception e) {
-            log.error(
-                "SAML: Exception in publishing event for SAML Assertion for {} with account {} userGroups {} and SSO {} ",
-                user.getEmail(), account.getUuid(), userGroups, samlSettings.getDisplayName());
-          }
+          samlUserGroupSync.syncUserGroup(samlUserAuthorization, account.getUuid(), toSyncSamlSetting.getUuid());
+          synchronizeSamlUserGroups(
+              samlUserAuthorization, userGroups, account.getUuid(), toSyncSamlSetting.getUuid(), user.getEmail());
+        } else {
+          log.warn(
+              "SAML: No SamlSettings matched the saml response for account {}. UserGroup sync for saml would not have been triggered",
+              account.getUuid());
         }
+
+        if (withMultipleIdpSupport) {
+          log.info(
+              "SAML: MULTIPLE_IDP Syncing user groups for user {} on non signed-in saml settings linked to harness user groups in account {}",
+              user.getEmail(), account.getUuid());
+          processNGSamlGroupSyncForNotSignedInSamlSettings(
+              samlSettingsList, toSyncSamlSetting, user.getEmail(), account.getUuid());
+        }
+
         return new AuthenticationResponse(user);
       }
     } catch (URISyntaxException e) {
@@ -228,8 +240,112 @@ public class SamlBasedAuthHandler implements AuthHandler {
     } catch (UnsupportedEncodingException e) {
       throw new WingsException("Saml Authentication Failed while parsing RelayState", e);
     } catch (SamlException e) {
-      throw new InvalidRequestException("SAML: Couldnt authenticate with User Id for saml", e);
+      throw new InvalidRequestException("SAML: Could not authenticate with User Id for saml", e);
     }
+  }
+
+  @VisibleForTesting
+  void processNGSamlGroupSyncForNotSignedInSamlSettings(
+      List<SamlSettings> samlSettingsList, SamlSettings toSyncSamlSetting, String userEmail, String userAccountId) {
+    samlSettingsList.stream()
+        .filter(Objects::nonNull)
+        .filter(SamlSettings::isAuthorizationEnabled)
+        .filter(setting -> toSyncSamlSetting != null && !setting.getUuid().equals(toSyncSamlSetting.getUuid()))
+        .forEach(setting -> {
+          SamlUserAuthorization samlUserAuthorization = SamlUserAuthorization.builder()
+                                                            .email(userEmail)
+                                                            .userGroups(new ArrayList<>())
+                                                            .build(); // new ArrayList<>() for empty groups
+          synchronizeSamlUserGroups(
+              samlUserAuthorization, new ArrayList<>(), userAccountId, setting.getUuid(), userEmail);
+        });
+  }
+
+  private void synchronizeSamlUserGroups(SamlUserAuthorization samlUserAuthorization, List<String> userGroups,
+      String accountUuid, String samlSettingUuid, String userEmail) {
+    try {
+      ngSamlAuthorizationEventPublisher.publishSamlAuthorizationAssertion(
+          samlUserAuthorization, accountUuid, samlSettingUuid);
+    } catch (Exception e) {
+      log.error(
+          "SAML: Exception in publishing event for SAML Assertion for user {} with account {} userGroups {} and SSO id {} ",
+          userEmail, accountUuid, userGroups, samlSettingUuid);
+    }
+  }
+
+  @VisibleForTesting
+  String populateIdPUrlIfEmpty(String idpUrl, String samlResponseString, String accountId) throws URISyntaxException {
+    if (isEmpty(idpUrl) && !isEmpty(accountId)) {
+      if (featureFlagService.isNotEnabled(FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)) {
+        SamlSettings samlSettings = ssoSettingService.getSamlSettingsByAccountId(accountId);
+        idpUrl = getIdpUrlFromSamlSettingsOrigin(samlSettings);
+      } else {
+        List<SamlSettings> settingsList = ssoSettingService.getSamlSettingsListByAccountId(accountId);
+        SamlSettings resultSettings =
+            settingsList.stream()
+                .filter(setting -> entityIdForSamlResponseMatchesWithSamlSettings(samlResponseString, setting))
+                .findFirst()
+                .orElse(null);
+        if (null != resultSettings) {
+          idpUrl = getIdpUrlFromSamlSettingsOrigin(resultSettings);
+        }
+      }
+    }
+    return idpUrl;
+  }
+
+  private String getIdpUrlFromSamlSettingsOrigin(SamlSettings setting) throws URISyntaxException {
+    String resultIdpUrl = setting.getOrigin();
+    if (isNotEmpty(resultIdpUrl) && !resultIdpUrl.toLowerCase().matches(HTTPS_REGEX)) {
+      resultIdpUrl = (new URIBuilder()).setScheme("https").setHost(resultIdpUrl).build().toString();
+    }
+    return resultIdpUrl;
+  }
+
+  @VisibleForTesting
+  SamlSettings getMatchingSamlSettingFromResponseAndIssuer(
+      String samlResponseString, List<SamlSettings> samlSettingsList, boolean withMultipleIdPSupport) {
+    if (!withMultipleIdPSupport) {
+      return samlSettingsList.get(0);
+    }
+    SamlSettings toSyncSamlSetting = null;
+    for (SamlSettings settingsValue : samlSettingsList) {
+      if (Objects.nonNull(settingsValue) && settingsValue.isAuthorizationEnabled()) {
+        try {
+          SamlClient samlClient = samlClientService.getSamlClient(settingsValue);
+          SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
+          Assertion samlAssertionValue = samlResponse.getAssertion();
+          if (settingsValue.getMetaDataFile() != null && samlAssertionValue.getIssuer() != null
+              && settingsValue.getMetaDataFile().contains(samlAssertionValue.getIssuer().getValue())) {
+            if (isNotEmpty(settingsValue.getEntityIdentifier())) {
+              if (samlAssertionValue.getConditions() != null
+                  && samlAssertionValue.getConditions().getAudienceRestrictions() != null
+                  && samlAssertionValue.getConditions()
+                         .getAudienceRestrictions()
+                         .stream()
+                         .filter(Objects::nonNull)
+                         .anyMatch(ar
+                             -> ar.getAudiences()
+                                    .stream()
+                                    .filter(Objects::nonNull)
+                                    .anyMatch(audience
+                                        -> audience.getAudienceURI() != null
+                                            && audience.getAudienceURI().equalsIgnoreCase(
+                                                settingsValue.getEntityIdentifier())))) {
+                toSyncSamlSetting = settingsValue;
+                break;
+              }
+            } else {
+              toSyncSamlSetting = settingsValue;
+              break;
+            }
+          }
+        } catch (SamlException samlExc) {
+          // continue with next samlSetting in iterator
+        }
+      }
+    }
+    return toSyncSamlSetting;
   }
 
   private Map<String, String> getRelayStateData(String relayState) throws UnsupportedEncodingException {
@@ -337,12 +453,18 @@ public class SamlBasedAuthHandler implements AuthHandler {
 
   private User getUserForIdpUrl(String idpUrl, String samlResponseString, String accountId) throws URISyntaxException {
     String host = new URI(idpUrl).getHost();
-    Iterator<SamlSettings> samlSettingsIterator = samlClientService.getSamlSettingsFromOrigin(host, accountId);
+    Iterator<SamlSettings> samlSettingsIterator =
+        featureFlagService.isNotEnabled(FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+        ? samlClientService.getSamlSettingsFromOrigin(host, accountId)
+        : ssoSettingService.getSamlSettingsIteratorByAccountId(accountId);
     if (samlSettingsIterator != null) {
       while (samlSettingsIterator.hasNext()) {
         SamlSettings samlSettings = samlSettingsIterator.next();
         try {
-          return getUser(samlResponseString, samlSettings);
+          User user = getUser(samlResponseString, samlSettings);
+          if (null != user) {
+            return user;
+          }
         } catch (SamlException e) {
           log.warn("SAML: Could not validate SAML Response idpUrl:[{}], samlSettings url:[{}] for account {}", idpUrl,
               samlSettings.getUrl(), accountId, e);
@@ -356,7 +478,10 @@ public class SamlBasedAuthHandler implements AuthHandler {
       throws URISyntaxException {
     String host = new URI(idpUrl).getHost();
     final HostType hostType = samlClientService.getHostType(idpUrl);
-    Iterator<SamlSettings> samlSettingsIterator = samlClientService.getSamlSettingsFromOrigin(host, accountId);
+    Iterator<SamlSettings> samlSettingsIterator =
+        featureFlagService.isNotEnabled(FeatureName.PL_ENABLE_MULTIPLE_IDP_SUPPORT, accountId)
+        ? samlClientService.getSamlSettingsFromOrigin(host, accountId)
+        : ssoSettingService.getSamlSettingsIteratorByAccountId(accountId);
     if (samlSettingsIterator != null) {
       while (samlSettingsIterator.hasNext()) {
         SamlSettings samlSettings = samlSettingsIterator.next();
@@ -377,7 +502,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
               return getUserGroups(attributeStatements, groupMembershipAttr, accountId);
           }
         } catch (Exception e) {
-          log.error("SAML: Could not fetch userGroups for Account: {}", accountId, e);
+          log.warn("SAML: Could not fetch userGroups for Account: {}", accountId, e);
         }
       }
     }
@@ -603,19 +728,53 @@ public class SamlBasedAuthHandler implements AuthHandler {
     return attributeValue.getTextContent();
   }
 
-  private User getUser(String samlResponseString, SamlSettings samlSettings) throws SamlException {
-    SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
-    SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
-    String nameId = samlResponse.getNameID();
+  private boolean entityIdForSamlResponseMatchesWithSamlSettings(String samlResponseStr, SamlSettings settings) {
     try {
+      SamlClient samlClient = samlClientService.getSamlClient(settings);
+      SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseStr);
+      Assertion samlAssertionValue = samlResponse.getAssertion();
+      if (settings.getMetaDataFile() != null && samlAssertionValue.getIssuer() != null
+          && settings.getMetaDataFile().contains(samlAssertionValue.getIssuer().getValue())) {
+        if (isNotEmpty(settings.getEntityIdentifier()) && samlAssertionValue.getConditions() != null
+            && samlAssertionValue.getConditions().getAudienceRestrictions() != null) {
+          return samlAssertionValue.getConditions()
+              .getAudienceRestrictions()
+              .stream()
+              .filter(Objects::nonNull)
+              .anyMatch(ar
+                  -> ar.getAudiences()
+                         .stream()
+                         .filter(Objects::nonNull)
+                         .anyMatch(audience
+                             -> audience.getAudienceURI() != null
+                                 && audience.getAudienceURI().equalsIgnoreCase(settings.getEntityIdentifier())));
+        } else {
+          return true;
+        }
+      }
+    } catch (SamlException e) {
+      // do nothing
+    }
+    return false;
+  }
+
+  private User getUser(String samlResponseString, SamlSettings samlSettings) throws SamlException {
+    try {
+      SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
+      SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
+      String nameId = samlResponse.getNameID();
       User user = authenticationUtils.getUser(nameId);
       validateUser(user, samlSettings.getAccountId());
       return user;
+    } catch (SamlException e) {
+      log.warn("SAML: SamlResponse cannot be validated for saml settings id=[{}], url=[{}], accountId=[{}]",
+          samlSettings.getUuid(), samlSettings.getUrl(), samlSettings.getAccountId());
     } catch (WingsException e) {
-      log.warn("SAML: SamlResponse contains nameId=[{}] which does not exist in db, url=[{}], accountId=[{}]", nameId,
+      log.warn("SAML: SamlResponse contains nameId which does not exist in db, url=[{}], accountId=[{}]",
           samlSettings.getUrl(), samlSettings.getAccountId());
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST, e);
     }
+    return null;
   }
 
   private String getAccessTokenForAzure(
@@ -630,7 +789,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
                                             .build();
 
     final String authUrl = String.format(AZURE_OAUTH_LOGIN_URL_FORMAT, tenantId);
-
     Request request = new Request.Builder()
                           .url(authUrl)
                           .post(authenticationPayload)

@@ -14,7 +14,7 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
-import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
+import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
@@ -35,7 +35,7 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
   }
 
   public DeploymentReleaseDetails getDeploymentReleaseDetails(
-      List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList) {
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
     throw new UnsupportedOperationException();
   }
 

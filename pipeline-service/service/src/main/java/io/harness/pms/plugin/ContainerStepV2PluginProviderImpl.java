@@ -19,8 +19,12 @@ import io.harness.plancreator.steps.pluginstep.ContainerStepV2PluginProvider;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
+import io.harness.pms.contracts.plan.PluginCreationBatchRequest;
+import io.harness.pms.contracts.plan.PluginCreationBatchResponse;
 import io.harness.pms.contracts.plan.PluginCreationRequest;
 import io.harness.pms.contracts.plan.PluginCreationResponse;
+import io.harness.pms.contracts.plan.PluginCreationResponseList;
+import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.contracts.plan.PluginInfoProviderServiceGrpc;
 import io.harness.pms.contracts.plan.PortDetails;
 import io.harness.pms.contracts.steps.SdkStep;
@@ -36,8 +40,12 @@ import io.harness.steps.plugin.InitContainerV2StepInfo;
 import io.harness.steps.plugin.StepInfo;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +54,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @Singleton
@@ -58,53 +65,81 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject ContainerExecutionConfig containerExecutionConfig;
 
+  /**
+   * Does the following:
+   * - Extracts the step information out of the init container step in form of stepInfos.
+   * -
+   * @param initContainerV2StepInfo
+   * @param ambiance
+   * @return
+   */
   @Override
-  public Map<StepInfo, PluginCreationResponse> getPluginsData(
+  public Map<StepInfo, PluginCreationResponseList> getPluginsDataV2(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance) {
     Set<StepInfo> stepInfos = getStepInfos(initContainerV2StepInfo.getStepsExecutionConfig());
     Set<Integer> usedPorts = new HashSet<>();
-    return stepInfos.stream()
-        .map(stepInfo -> {
-          OSType os = k8sPodInitUtils.getOS(initContainerV2StepInfo.getInfrastructure());
-          PluginCreationResponse pluginInfo =
-              pluginInfoProviderServiceBlockingStubMap.get(ModuleType.fromString(stepInfo.getModuleType()))
-                  .getPluginInfos(PluginCreationRequest.newBuilder()
-                                      .setType(stepInfo.getStepType())
-                                      .setStepJsonNode(stepInfo.getExecutionWrapperConfig().getStep().toString())
-                                      .setAmbiance(ambiance)
-                                      .setAccountId(AmbianceUtils.getAccountId(ambiance))
-                                      .setOsType(os.getYamlName())
-                                      .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
-                                      .build());
-          if (pluginInfo.hasError()) {
-            log.error("Encountered error in plugin info collection {}", pluginInfo.getError());
-            throw new ContainerStepExecutionException(pluginInfo.getError().getMessagesList().toString());
-          }
-          if (isEmpty(pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().getConnectorRef())) {
-            ConnectorDetails connectorDetails = pluginInfo.getPluginDetails()
-                                                    .getImageDetails()
-                                                    .getConnectorDetails()
-                                                    .toBuilder()
-                                                    .setConnectorRef(getConnectorRef(initContainerV2StepInfo, stepInfo))
-                                                    .build();
-            ImageDetails imageDetails = pluginInfo.toBuilder()
-                                            .getPluginDetails()
-                                            .getImageDetails()
-                                            .toBuilder()
-                                            .setConnectorDetails(connectorDetails)
-                                            .build();
-            pluginInfo =
-                pluginInfo.toBuilder()
-                    .setPluginDetails(pluginInfo.getPluginDetails().toBuilder().setImageDetails(imageDetails).build())
-                    .build();
-          }
-          usedPorts.addAll(pluginInfo.getPluginDetails().getTotalPortUsedDetails().getUsedPortsList());
-          return Pair.of(stepInfo, pluginInfo);
-        })
-        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+    OSType os = k8sPodInitUtils.getOS(initContainerV2StepInfo.getInfrastructure());
+
+    // Inorder to batch the requests per module, we have created a map of moduleType to map of stepInfo and
+    // PluginCreationRequest.
+    // StepInfo is required because all the calculation of resources for parallel and strategy depends on the yaml
+    // provided.
+    Map<String, Map<StepInfo, PluginCreationRequest>> moduleToBatchRequest =
+        getModuleToBatchRequest(stepInfos, ambiance, usedPorts, os);
+
+    Map<StepInfo, PluginCreationResponseList> stepInfoPluginCreationResponseListMap = new HashMap<>();
+    for (Map.Entry<String, Map<StepInfo, PluginCreationRequest>> entry : moduleToBatchRequest.entrySet()) {
+      PluginCreationBatchRequest pluginCreationBatchRequest =
+          PluginCreationBatchRequest.newBuilder().addAllPluginCreationRequest(entry.getValue().values()).build();
+      Map<String, StepInfo> stepInfoUuidToStepInfo =
+          entry.getValue().keySet().stream().collect(Collectors.toMap(StepInfo::getStepUuid, stepInfo -> stepInfo));
+      PluginCreationBatchResponse pluginCreationBatchResponse =
+          pluginInfoProviderServiceBlockingStubMap.get(ModuleType.fromString(entry.getKey()))
+              .getPluginInfosList(pluginCreationBatchRequest);
+      for (Map.Entry<String, PluginCreationResponseList> response :
+          pluginCreationBatchResponse.getRequestIdToResponseMap().entrySet()) {
+        stepInfoPluginCreationResponseListMap.put(stepInfoUuidToStepInfo.get(response.getKey()),
+            postProcessResponseList(initContainerV2StepInfo, response.getValue(), usedPorts));
+      }
+    }
+    return stepInfoPluginCreationResponseListMap;
   }
 
-  private String getConnectorRef(InitContainerV2StepInfo initContainerV2StepInfo, StepInfo stepInfo) {
+  /**
+   * Iterates over all the passed stepInfos and club all the stepInfos belonging to the same module in one map.
+   * @param stepInfos
+   * @param ambiance
+   * @param usedPorts
+   * @param os
+   * @return
+   */
+  private Map<String, Map<StepInfo, PluginCreationRequest>> getModuleToBatchRequest(
+      Set<StepInfo> stepInfos, Ambiance ambiance, Set<Integer> usedPorts, OSType os) {
+    Multimap<String, StepInfo> moduleToStepInfo = HashMultimap.create();
+    for (StepInfo stepInfo : stepInfos) {
+      moduleToStepInfo.put(stepInfo.getModuleType(), stepInfo);
+    }
+    Map<String, Map<StepInfo, PluginCreationRequest>> map = new HashMap<>();
+    for (Map.Entry<String, Collection<StepInfo>> entry : moduleToStepInfo.asMap().entrySet()) {
+      Map<StepInfo, PluginCreationRequest> stepInfoToPluginCreationRequest = new HashMap<>();
+      for (StepInfo stepInfo : entry.getValue()) {
+        stepInfoToPluginCreationRequest.put(stepInfo,
+            PluginCreationRequest.newBuilder()
+                .setType(stepInfo.getStepType())
+                .setStepJsonNode(stepInfo.getExecutionWrapperConfig().getStep().toString())
+                .setAmbiance(ambiance)
+                .setAccountId(AmbianceUtils.getAccountId(ambiance))
+                .setOsType(os.getYamlName())
+                .setUsedPortDetails(PortDetails.newBuilder().addAllUsedPorts(usedPorts).build())
+                .setRequestId(stepInfo.getStepUuid())
+                .build());
+      }
+      map.put(entry.getKey(), stepInfoToPluginCreationRequest);
+    }
+    return map;
+  }
+
+  private String getConnectorRef(InitContainerV2StepInfo initContainerV2StepInfo, String stepIdentifier) {
     if (initContainerV2StepInfo.getInfrastructure() instanceof ContainerK8sInfra) {
       ParameterField<String> harnessImageConnectorRef =
           ((ContainerK8sInfra) initContainerV2StepInfo.getInfrastructure()).getSpec().getHarnessImageConnectorRef();
@@ -112,7 +147,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
         return harnessImageConnectorRef.getValue();
       }
     }
-    log.info("Defaulting to default connector for step {}", stepInfo.getStepIdentifier());
+    log.info("Defaulting to default connector for step {}", stepIdentifier);
     return containerExecutionConfig.getDefaultInternalImageConnector();
   }
 
@@ -177,5 +212,51 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
         })
         .filter(Objects::nonNull)
         .findFirst();
+  }
+
+  /**
+   * UsedPorts are being modified by reference in this function.
+   *
+   * @param initContainerV2StepInfo
+   * @param responseList
+   * @param usedPorts
+   */
+  private PluginCreationResponseList postProcessResponseList(InitContainerV2StepInfo initContainerV2StepInfo,
+      PluginCreationResponseList responseList, Set<Integer> usedPorts) {
+    PluginCreationResponseList.Builder updatedResponseList = PluginCreationResponseList.newBuilder();
+    for (PluginCreationResponseWrapper responseV2 : responseList.getResponseList()) {
+      PluginCreationResponse pluginInfo = responseV2.getResponse();
+
+      if (pluginInfo.hasError()) {
+        log.error("Encountered error in plugin info collection {}", pluginInfo.getError());
+        throw new ContainerStepExecutionException(pluginInfo.getError().getMessagesList().toString());
+      }
+      if (isEmpty(pluginInfo.getPluginDetails().getImageDetails().getConnectorDetails().getConnectorRef())) {
+        ConnectorDetails connectorDetails =
+            pluginInfo.getPluginDetails()
+                .getImageDetails()
+                .getConnectorDetails()
+                .toBuilder()
+                .setConnectorRef(getConnectorRef(initContainerV2StepInfo, responseV2.getStepInfo().getIdentifier()))
+                .build();
+        ImageDetails imageDetails = pluginInfo.toBuilder()
+                                        .getPluginDetails()
+                                        .getImageDetails()
+                                        .toBuilder()
+                                        .setConnectorDetails(connectorDetails)
+                                        .build();
+        pluginInfo =
+            pluginInfo.toBuilder()
+                .setPluginDetails(pluginInfo.getPluginDetails().toBuilder().setImageDetails(imageDetails).build())
+                .build();
+      }
+      updatedResponseList.addResponse(PluginCreationResponseWrapper.newBuilder()
+                                          .setStepInfo(responseV2.getStepInfo())
+                                          .setResponse(pluginInfo)
+                                          .build());
+      usedPorts.addAll(pluginInfo.getPluginDetails().getTotalPortUsedDetails().getUsedPortsList());
+    }
+
+    return updatedResponseList.build();
   }
 }

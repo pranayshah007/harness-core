@@ -61,6 +61,8 @@ import io.harness.pcf.CfSdkClient;
 import io.harness.pcf.cfcli.client.CfCliClientImpl;
 import io.harness.pcf.cfsdk.CfSdkClientImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.rancher.RancherHelperService;
+import io.harness.rancher.RancherHelperServiceImpl;
 import io.harness.service.ScmServiceClient;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.SpotInstHelperServiceDelegateImpl;
@@ -148,6 +150,7 @@ public class ConnectorModule extends AbstractModule {
     bind(NGHostService.class).to(NGHostServiceImpl.class);
     bind(GoogleSecretManagerConnectorService.class).to(GoogleSecretManagerConnectorServiceImpl.class);
     bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
+    bind(RancherHelperService.class).to(RancherHelperServiceImpl.class);
     MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.CONNECTOR.toString()).to(ConnectorFilterPropertiesMapper.class);

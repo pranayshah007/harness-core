@@ -9,7 +9,6 @@ package io.harness.perpetualtask;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -20,8 +19,8 @@ import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
-import io.harness.perpetualtask.instancesync.K8sDeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
+import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
@@ -77,13 +76,11 @@ public class K8sInstanceSyncPerpetualTaskV2ExecutorTest extends WingsBaseTest {
     LinkedHashSet<String> namespaces = new LinkedHashSet<>();
     namespaces.add("namespace1");
     K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails =
-        K8sDeploymentReleaseDetails.newBuilder().setReleaseName("releaseName").addAllNamespaces(namespaces).build();
+        K8sDeploymentReleaseDetails.builder().releaseName("releaseName").namespaces(namespaces).build();
     List<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList = new ArrayList<>();
     k8sDeploymentReleaseDetailsList.add(k8sDeploymentReleaseDetails);
     DeploymentReleaseDetails deploymentReleaseDetails =
-        DeploymentReleaseDetails.newBuilder()
-            .addAllDeploymentDetails(k8sDeploymentReleaseDetailsList.stream().map(Any::pack).collect(toList()))
-            .build();
+        DeploymentReleaseDetails.builder().deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList)).build();
     when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
         .thenReturn(List.of(K8sServerInstanceInfo.builder()
                                 .name("instance1")

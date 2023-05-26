@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.job.Sensitivity;
+import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.rule.Owner;
 
@@ -49,7 +50,7 @@ public class TestVerificationJobTest extends CategoryTest {
     VerificationJobInstanceService verificationJobInstanceService = mock(VerificationJobInstanceService.class);
     when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any()))
         .thenReturn(Optional.empty());
-    testVerificationJob.resolveAdditionsFields(verificationJobInstanceService);
+    testVerificationJob.resolveAdditionsFields(verificationJobInstanceService, null);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
   }
 
@@ -63,7 +64,7 @@ public class TestVerificationJobTest extends CategoryTest {
     String baseline = generateUuid();
     when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any()))
         .thenReturn(Optional.of(baseline));
-    testVerificationJob.resolveAdditionsFields(verificationJobInstanceService);
+    testVerificationJob.resolveAdditionsFields(verificationJobInstanceService, BaselineType.LAST);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isEqualTo(baseline);
   }
 

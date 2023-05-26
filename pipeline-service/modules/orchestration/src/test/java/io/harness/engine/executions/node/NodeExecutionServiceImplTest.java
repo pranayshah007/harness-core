@@ -103,6 +103,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .status(Status.QUEUED)
             .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
     NodeExecution savedExecution = nodeExecutionService.save(nodeExecution);
     assertThat(savedExecution.getUuid()).isEqualTo(nodeExecutionId);
   }
@@ -137,6 +139,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .status(Status.SUCCEEDED)
             .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution1);
     nodeExecutionService.save(nodeExecution2);
 
@@ -295,6 +298,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .module("CD")
             .status(Status.SUCCEEDED)
             .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution);
 
     NodeExecution found = nodeExecutionService.getByPlanNodeUuid(planNodeUuid, planExecutionUuid);
@@ -335,6 +339,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .status(Status.RUNNING)
             .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution);
     nodeExecutionService.save(nodeExecution1);
 
@@ -390,6 +395,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .status(Status.QUEUED)
             .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution);
     nodeExecutionService.save(nodeExecution1);
     nodeExecutionService.save(nodeExecution2);
@@ -433,6 +439,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .startTs(System.currentTimeMillis())
             .status(Status.RUNNING)
             .build();
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
+
     nodeExecutionService.save(nodeExecution);
     nodeExecutionService.save(nodeExecution1);
 
@@ -535,6 +543,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .build();
 
     // saving nodeExecution
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution1);
     nodeExecutionService.save(nodeExecution2);
     nodeExecutionService.save(nodeExecution3);
@@ -660,6 +669,7 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
             .build();
 
     // saving nodeExecution
+    doReturn(false).when(nodeExecutionService).checkPresenceOfResolvedParametersForNonIdentityNodes(any());
     nodeExecutionService.save(nodeExecution1);
     nodeExecutionService.save(nodeExecution12);
     nodeExecutionService.save(nodeExecution2);

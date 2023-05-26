@@ -91,6 +91,11 @@ public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, 
                  .field(RuleId.accountId)
                  .sortField(RuleId.createdAt)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("recommendation")
+                 .field(RuleId.isOOTB)
+                 .field(RuleId.forRecommendation)
+                 .build())
         .build();
   }
   public Rule toDTO() {

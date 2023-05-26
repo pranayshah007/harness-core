@@ -26,6 +26,4 @@ public interface CompositeSLORecordService {
   List<CompositeSLORecord> getLatestCountSLORecords(String sloId, int count);
 
   List<CompositeSLORecord> getSLORecordsOfMinutes(String sloId, List<Instant> minutes);
-
-  double getErrorBudgetBurnRate(String sloId, long lookBackDuration, int totalErrorBudgetMinutes);
 }

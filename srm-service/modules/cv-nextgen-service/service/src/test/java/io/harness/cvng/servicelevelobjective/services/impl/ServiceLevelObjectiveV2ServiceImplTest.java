@@ -7,10 +7,10 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
@@ -88,11 +87,13 @@ import io.harness.cvng.servicelevelobjective.beans.slotargetspec.WindowBasedServ
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -124,6 +125,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -143,6 +145,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Mock CompositeSLOServiceImpl compositeSLOService;
   @Mock SideKickService sideKickService;
+
+  @Inject private GraphDataService graphDataService;
 
   @Mock FakeNotificationClient notificationClient;
 
@@ -174,7 +178,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() throws IllegalAccessException, ParseException {
     MockitoAnnotations.initMocks(this);
-    clock = Clock.fixed(Instant.parse("2020-08-21T10:02:06Z"), ZoneOffset.UTC);
+    clock = FIXED_TIME_FOR_TESTS;
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "compositeSLOService", compositeSLOService, true);
     FieldUtils.writeField(serviceLevelIndicatorService, "compositeSLOService", compositeSLOService, true);
     FieldUtils.writeField(compositeSLOService, "hPersistence", hPersistence, true);
@@ -865,6 +869,27 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
     boolean isDeleted = serviceLevelObjectiveV2Service.delete(projectParams, sloDTO.getIdentifier());
     assertThat(isDeleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testForceDelete_Success() {
+    ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveV2Response serviceLevelObjectiveV2Response =
+        serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    boolean isDeleted = serviceLevelObjectiveV2Service.forceDelete(projectParams, sloDTO.getIdentifier());
+    assertThat(isDeleted).isEqualTo(true);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(projectParams,
+        ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2Response.getServiceLevelObjectiveV2DTO().getSpec())
+            .getServiceLevelIndicators()
+            .get(0)
+            .getIdentifier());
+    assertThat(serviceLevelIndicator).isNull();
+    SLOHealthIndicator sloHealthIndicator =
+        sloHealthIndicatorService.getBySLOIdentifier(projectParams, sloDTO.getIdentifier());
+    assertThat(sloHealthIndicator).isNull();
   }
 
   @Test
@@ -2172,8 +2197,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetCVNGLogs() {
-    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
-    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    Instant startTime = FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = FIXED_TIME_FOR_TESTS.instant();
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
         (SimpleServiceLevelObjectiveSpec) sloDTO.getSpec();
@@ -2218,8 +2243,8 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testGetCVNGLogs_ForCompositeSLO() {
-    Instant startTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
-    Instant endTime = CVNGTestConstants.FIXED_TIME_FOR_TESTS.instant();
+    Instant startTime = FIXED_TIME_FOR_TESTS.instant().minusSeconds(5);
+    Instant endTime = FIXED_TIME_FOR_TESTS.instant();
     ServiceLevelObjectiveV2DTO sloDTO = compositeSLODTO;
     String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
         projectParams.getAccountIdentifier(), compositeServiceLevelObjective.getUuid());
@@ -2416,6 +2441,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier(),
         projectParamsTest.getProjectIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    Optional<ServiceLevelIndicator> serviceLevelIndicator =
+        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
+            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+    assertThat(serviceLevelIndicator.isEmpty());
   }
 
   @Test
@@ -2469,6 +2498,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.deleteByOrgIdentifier(AbstractServiceLevelObjective.class,
         projectParamsTest.getAccountIdentifier(), projectParamsTest.getOrgIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    Optional<ServiceLevelIndicator> serviceLevelIndicator =
+        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
+            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+    assertThat(serviceLevelIndicator.isEmpty());
   }
 
   @Test
@@ -2523,6 +2556,10 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     mockServiceLevelObjectiveService.deleteByAccountIdentifier(
         AbstractServiceLevelObjective.class, projectParamsTest.getAccountIdentifier());
     verify(mockServiceLevelObjectiveService, times(3)).delete(any(), any(), anyBoolean());
+    Optional<ServiceLevelIndicator> serviceLevelIndicator =
+        Optional.ofNullable(serviceLevelIndicatorService.getServiceLevelIndicator(
+            projectParamsTest, simpleServiceLevelObjective1.getServiceLevelIndicators().get(0)));
+    assertThat(serviceLevelIndicator.isEmpty());
   }
 
   @Test
@@ -2876,6 +2913,44 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
+  public void testShouldSendNotification_withErrorBudgetBurnRateForRequestBasedSLO() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveV2DTO sloDTO =
+        builderFactory.getSimpleRequestServiceLevelObjectiveV2DTOBuilder().identifier("new_request_based_slo").build();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveV2Service.create(projectParams, sloDTO);
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, sloDTO.getIdentifier());
+    String sliId = serviceLevelIndicatorService
+                       .getServiceLevelIndicator(projectParams,
+                           ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0))
+                       .getUuid();
+    List<Long> goodCounts = Arrays.asList(50l, 60l, 70l, 20l, 40l, 50l, 25l, 75l);
+    List<Long> badCounts = Arrays.asList(10l, 10l, 20l, 10l, 20l, 10l, 20l, 10l);
+    createDataForRequestSLI(clock.instant().minus(8, ChronoUnit.MINUTES), goodCounts, badCounts, sliId);
+    SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
+        SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
+            .threshold(25.0)
+            .lookBackDuration(Duration.ofMinutes(8).toMillis())
+            .build();
+
+    assertThat(((ServiceLevelObjectiveV2ServiceImpl) serviceLevelObjectiveV2Service)
+                   .getNotificationData(serviceLevelObjective, condition)
+                   .shouldSendNotification())
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
   public void testShouldSendNotificationForCompositeSLO_withErrorBudgetBurnRate() {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
@@ -2893,10 +2968,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     Instant startTime = clock.instant().minus(Duration.ofMinutes(10));
     List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75, 2.5, 2.75);
     List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25, 1.5, 2.25);
-    createSLORecords(startTime, startTime.plus(5, ChronoUnit.MINUTES), runningGoodCount, runningBadCount);
+    createSLORecords(startTime.plus(5, ChronoUnit.MINUTES), startTime.plus(10, ChronoUnit.MINUTES), runningGoodCount,
+        runningBadCount);
     SLONotificationRule.SLOErrorBudgetBurnRateCondition condition =
         SLONotificationRule.SLOErrorBudgetBurnRateCondition.builder()
-            .threshold(0.00)
+            .threshold(0.02)
             .lookBackDuration(Duration.ofMinutes(5).toMillis())
             .build();
 
@@ -3164,15 +3240,28 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
 
   private void createSLIRecords(String sliId) {
     Instant startTime = clock.instant().minus(Duration.ofMinutes(10));
-    List<SLIRecord.SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     sliRecordService.create(sliRecordParams, sliId, "verificationTaskId", 0);
   }
 
-  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIRecord.SLIState> sliStates) {
+  private void createDataForRequestSLI(Instant startTime, List<Long> goodCounts, List<Long> badCounts, String sliId) {
+    List<SLIRecordParam> sliRecordParams = new ArrayList<>();
+    for (int i = 0; i < goodCounts.size(); i++) {
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(GOOD)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .badEventCount(badCounts.get(i))
+                              .goodEventCount(goodCounts.get(i))
+                              .build());
+    }
+    sliRecordService.create(sliRecordParams, sliId, sliId, 0);
+  }
+
+  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
     for (int i = 0; i < sliStates.size(); i++) {
-      SLIRecord.SLIState sliState = sliStates.get(i);
+      SLIState sliState = sliStates.get(i);
       long goodCount = 0;
       long badCount = 0;
       if (sliState == GOOD) {

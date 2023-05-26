@@ -22,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -69,7 +70,8 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     String yaml = readFile(filename);
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
-    String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(jsonNode);
+    String templateYaml =
+        RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(new YamlNode(jsonNode).getField("pipeline"));
     assertNotNull(templateYaml);
     assertEquals(templateYaml, expectedTemplateYaml);
     assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
@@ -118,7 +120,7 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
     String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(
-        jsonNode.get("pipeline").get("stages").get(0));
+        new YamlNode(jsonNode.get("pipeline").get("stages").get(0)).getField("stage"));
     assertNotNull(templateYaml);
     assertEquals(templateYaml, expectedTemplateYaml);
     assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
@@ -163,7 +165,7 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     JsonNode jsonNode = mapper.readTree(yaml);
 
-    RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(jsonNode);
+    RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlFieldForStage(new YamlNode(jsonNode).getField("step"));
     assertThat(jsonNode).isEqualTo(mapper.readTree(yaml));
   }
 

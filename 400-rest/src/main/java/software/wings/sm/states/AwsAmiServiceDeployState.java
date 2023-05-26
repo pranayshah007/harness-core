@@ -83,6 +83,7 @@ import software.wings.beans.infrastructure.Host;
 import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.AwsUtils;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.impl.aws.model.AwsAmiResizeData;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployRequest;
 import software.wings.service.impl.aws.model.AwsAmiServiceDeployResponse;
@@ -268,6 +269,7 @@ public class AwsAmiServiceDeployState extends State {
 
     String region = infrastructureMapping.getRegion();
     AwsConfig awsConfig = (AwsConfig) cloudProviderSetting.getValue();
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
 
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(awsConfig, context.getAppId(), context.getWorkflowExecutionId());

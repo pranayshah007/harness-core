@@ -7,12 +7,17 @@
 
 package io.harness.idp.gitintegration.processor.impl;
 
+import static io.harness.idp.common.Constants.SLASH_DELIMITER;
+import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.adapter.GitlabToGitMapper;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabHttpCredentialsOutcomeDTO;
@@ -87,7 +92,20 @@ public class GitlabConnectorProcessor extends ConnectorProcessor {
         (GitlabHttpCredentialsOutcomeDTO) config.getAuthentication().getCredentials().toOutcome();
     GitlabUsernameTokenDTO spec = (GitlabUsernameTokenDTO) outcome.getSpec();
 
+    config.setUrl(catalogConnectorInfo.getRepo());
+
     performPushOperationInternal(accountIdentifier, catalogConnectorInfo, locationParentPath, filesToPush,
-        spec.getUsername(), gitlabConnectorSecret, throughGrpc);
+        spec.getUsername(), gitlabConnectorSecret, config, throughGrpc);
+  }
+
+  @Override
+  public GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig) {
+    return GitlabToGitMapper.mapToGitConfigDTO((GitlabConnectorDTO) connectorConfig);
+  }
+
+  @Override
+  public String getLocationTarget(CatalogConnectorInfo catalogConnectorInfo, String path) {
+    return catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
+        + catalogConnectorInfo.getBranch() + path;
   }
 }

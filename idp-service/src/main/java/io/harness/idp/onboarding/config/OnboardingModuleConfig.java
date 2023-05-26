@@ -10,7 +10,6 @@ package io.harness.idp.onboarding.config;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,6 +26,5 @@ public class OnboardingModuleConfig {
   boolean useGitServiceGrpcForSingleEntityPush;
   String tmpPathForCatalogInfoYamlStore;
   String catalogInfoLocationDefaultPath;
-  List<String> sampleEntities;
   Map<String, String> harnessCiCdAnnotations;
 }

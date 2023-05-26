@@ -6,6 +6,7 @@
  */
 
 package io.harness.cvng.beans.change;
+
 import io.harness.cvng.beans.activity.ActivityType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,7 +25,7 @@ import org.apache.commons.collections4.MapUtils;
 public enum ChangeSourceType {
   //@JsonProperty added for swagger as it doesn't understand @JsonValue
   @JsonProperty("HarnessCDNextGen")
-  HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT, false),
+  HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT, true),
   @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty", ChangeCategory.ALERTS, ActivityType.PAGER_DUTY, false),
   @JsonProperty("K8sCluster") KUBERNETES("K8sCluster", ChangeCategory.INFRASTRUCTURE, ActivityType.KUBERNETES, false),
   @JsonProperty("HarnessCD")

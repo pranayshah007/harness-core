@@ -9,6 +9,7 @@ package io.harness.steps.pipelinestage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -40,7 +41,10 @@ public class PipelineStageOutputs {
   @VariableExpression(skipVariableExpression = true)
   @NotNull
   String name;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> value;
+  @NotNull
+  @VariableExpression(policy = REGULAR_WITH_CUSTOM_FIELD, skipInnerObjectTraversal = true)
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  ParameterField<String> value;
 
   public static Map<String, ParameterField<String>> getMapOfString(List<PipelineStageOutputs> outputs) {
     Map<String, ParameterField<String>> mapOfString = new HashMap<>();

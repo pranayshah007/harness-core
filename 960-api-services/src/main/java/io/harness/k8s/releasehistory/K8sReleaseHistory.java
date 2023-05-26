@@ -8,6 +8,7 @@
 package io.harness.k8s.releasehistory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -82,5 +83,16 @@ public class K8sReleaseHistory implements IK8sReleaseHistory {
         .map(K8sRelease.class ::cast)
         .filter(release -> K8sReleaseSecretHelper.checkReleaseColor(release.getReleaseSecret(), color))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public IK8sRelease getLatestSuccessfulBlueGreenRelease() {
+    Optional<K8sRelease> lastSuccessfulReleaseOptional =
+        releaseHistory.stream()
+            .filter(release -> isNotEmpty(release.getReleaseColor()))
+            .filter(release -> release.getReleaseStatus().equals(IK8sRelease.Status.Succeeded))
+            .max(Comparator.comparing(K8sRelease::getReleaseNumber));
+
+    return lastSuccessfulReleaseOptional.orElse(null);
   }
 }

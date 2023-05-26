@@ -19,7 +19,7 @@ import (
 
 const (
 	buffSize   = 100
-	strMaxSize = 2000 // Keep the last 2k characters in each field.
+	strMaxSize = 8000 // Keep the last 8k characters in each field.
 )
 
 // Junit represents a test report in junit format
@@ -86,7 +86,7 @@ func (j *Junit) GetTests(ctx context.Context) <-chan *types.TestCase {
 			totalTests += testsInFile
 			fileMap[file] = testsInFile
 		}
-		j.Log.Infow("Number of cases parsed in each file: ", fileMap)
+		j.Log.Info("Number of cases parsed in each file: ", fileMap)
 		j.Log.Infow(fmt.Sprintf("parsed %d test cases", totalTests), "num_cases", totalTests)
 	}()
 	return testc

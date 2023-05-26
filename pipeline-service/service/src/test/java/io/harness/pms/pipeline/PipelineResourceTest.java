@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.SATYAM;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -47,6 +49,7 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
@@ -59,8 +62,13 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineGetResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
+import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.template.PipelineRefreshResource;
+import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.rule.Owner;
@@ -81,6 +89,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
@@ -102,6 +111,8 @@ public class PipelineResourceTest extends CategoryTest {
   @Mock PmsFeatureFlagHelper featureFlagHelper;
   @Mock PipelineMetadataService pipelineMetadataService;
   @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
+  @Mock PipelineRefreshService pipelineRefreshService;
+  @InjectMocks PipelineRefreshResource pipelineRefreshResource;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -897,5 +908,37 @@ public class PipelineResourceTest extends CategoryTest {
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineMoveConfigRequestDTO);
 
     assertEquals(responseDTO.getData().getPipelineIdentifier(), PIPELINE_IDENTIFIER);
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testGetValidateResult() {
+    doReturn(
+        Optional.of(
+            PipelineValidationEvent.builder()
+                .status(ValidationStatus.SUCCESS)
+                .result(ValidationResult.builder()
+                            .templateValidationResponse(
+                                TemplateValidationResponseDTO.builder().validYaml(true).exceptionMessage("").build())
+                            .build())
+                .startTs(1L)
+                .endTs(2L)
+                .build()))
+        .when(pipelineAsyncValidationService)
+        .getEventByUuid("uuid1");
+    ResponseDTO.newResponse(
+        pipelineRefreshResource
+            .validateTemplateInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false", null)
+            .getData());
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
+    when(pipelineRefreshService.validateTemplateInputsInPipeline(
+             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "false"))
+        .thenReturn(validateTemplateInputsResponseDTO);
+
+    ResponseDTO<PipelineValidationResponseDTO> responseDTO =
+        pipelineResource.getPipelineValidateResult(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "uuid1");
+    assertThat(responseDTO).isNotNull();
   }
 }

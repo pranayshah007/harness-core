@@ -7,11 +7,14 @@
 
 package io.harness.steps.email;
 
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.vivekveman;
+import static io.harness.steps.email.EmailStep.EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
@@ -30,6 +33,9 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -45,6 +51,7 @@ import java.util.HashSet;
 import java.util.Set;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,6 +62,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import retrofit2.Call;
 import retrofit2.Response;
 @OwnedBy(HarnessTeam.CDC)
 @PrepareForTest({StepUtils.class})
@@ -62,14 +70,41 @@ public class EmailStepTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @InjectMocks EmailStep emailStep;
   @Mock private NotificationClient notificationClient;
-
+  @Mock private NGSettingsClient settingsClient;
+  @Mock private Call<ResponseDTO<SettingValueResponseDTO>> response;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private ILogStreamingStepClient iLogStreamingStepClient;
   private static final String INFRASTRUCTURE_COMMAND_UNIT = "Execute";
+
+  @Before
+  public void beforeRun() throws IOException {
+    when(settingsClient.getSetting(eq(EMAIL_TO_NON_HARNESS_USERS_SETTING_KEY), any(), any(), any()))
+        .thenReturn(response);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(response.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+  }
+
   @Test
   @Owner(developers = vivekveman)
   @Category(UnitTests.class)
   public void testExecuteSyncSuccessWithoutMessage() throws IOException {
+    validateSuccessWithEmailToNonHarness(false);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testExecuteSyncSuccessWithoutMessageAndMailToNonHarness() throws IOException {
+    validateSuccessWithEmailToNonHarness(true);
+  }
+
+  private void validateSuccessWithEmailToNonHarness(boolean mailToNonHarness) throws IOException {
+    if (mailToNonHarness) {
+      SettingValueResponseDTO settingValueResponseDTO =
+          SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+      when(response.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    }
     when(logStreamingStepClientFactory.getLogStreamingStepClient(any())).thenReturn(iLogStreamingStepClient);
     String SUBJECT = "Email Subject";
     String BODY = "Email Body";
@@ -102,7 +137,7 @@ public class EmailStepTest extends CategoryTest {
     ResponseDTO<NotificationTaskResponse> notificationTaskResponseResponseDTO =
         ResponseDTO.newResponse(notificationTaskResponse);
     Response<ResponseDTO<NotificationTaskResponse>> response = Response.success(notificationTaskResponseResponseDTO);
-    response.body().setStatus(io.harness.ng.core.Status.FAILURE);
+    response.body().setStatus(Status.FAILURE);
     mockStatic(UUIDGenerator.class);
     Mockito.when(UUIDGenerator.generateUuid()).thenReturn("notificationId");
 
@@ -115,6 +150,7 @@ public class EmailStepTest extends CategoryTest {
     assertThat(argumentCaptor.getValue().getSubject()).isEqualTo(emailDTO.getSubject());
     assertThat(argumentCaptor.getValue().getToRecipients()).isEqualTo(emailDTO.getToRecipients());
     assertThat(argumentCaptor.getValue().getCcRecipients()).isEqualTo(emailDTO.getCcRecipients());
+    assertThat(argumentCaptor.getValue().isSendToNonHarnessRecipients()).isEqualTo(mailToNonHarness);
     assertThat(stepResponse.getStepOutcomes().iterator().next().getOutcome())
         .isEqualTo(EmailOutcome.builder().notificationId("notificationId").build());
     assertThat(stepResponse.getStatus()).isEqualTo(io.harness.pms.contracts.execution.Status.SUCCEEDED);

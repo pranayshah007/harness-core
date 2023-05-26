@@ -25,6 +25,7 @@ public interface Constants {
   String X_VSS_HEADER = "x-vss-subscriptionid";
   String UNRECOGNIZED_WEBHOOK = "Unrecognized Webhook";
   String X_HUB_SIGNATURE_256 = "X-Hub-Signature-256";
+  String X_HARNESS_TRIGGER = "X-Harness-Trigger";
 
   int SCM_CONFLICT_ERROR_CODE = 409;
   String SCM_CONFLICT_ERROR_MESSAGE = "Cannot update file as it has conflicts with remote";

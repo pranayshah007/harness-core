@@ -4,9 +4,9 @@ kind: Ingress
 metadata:
   name: cv-nextgen
   annotations:
-    { { - if .Values.global.ingress.nginx.objects.annotations } }
-    { { - include "common.tplvalues.render" ( dict "value" .Values.global.ingress.nginx.objects.annotations "context" $ ) | nindent 4 } }
-    { { - end } }
+    {{- if .Values.global.ingress.objects.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.ingress.objects.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
     nginx.ingress.kubernetes.io/rewrite-target: /cv/api/$2
 spec:
   ingressClassName: {{ .Values.global.ingress.className }}

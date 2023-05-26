@@ -10,7 +10,7 @@ package io.harness.cdng.provision.terraform.steps.rolllback;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -54,7 +54,7 @@ public class TerraformRollbackStepInfo implements CDAbstractStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   private ParameterField<String> provisionerIdentifier;
 
-  @YamlSchemaTypes(value = {runtime})
+  @YamlSchemaTypes(value = {expression})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 

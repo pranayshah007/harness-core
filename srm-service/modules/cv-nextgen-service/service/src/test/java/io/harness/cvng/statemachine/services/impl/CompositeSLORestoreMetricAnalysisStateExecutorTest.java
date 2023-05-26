@@ -36,7 +36,7 @@ import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.Composi
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -349,7 +349,7 @@ public class CompositeSLORestoreMetricAnalysisStateExecutorTest extends CvNextGe
     List<SLIState> sliStateList1 =
         Arrays.asList(SLIState.GOOD, SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD);
     List<SLIState> sliStateList2 =
-        Arrays.asList(SLIState.BAD, SLIState.GOOD, SLIState.NO_DATA, SLIState.BAD, SLIState.GOOD);
+        Arrays.asList(SLIState.GOOD, SLIState.BAD, SLIState.NO_DATA, SLIState.BAD, SLIState.GOOD);
     int index = 0;
     for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
       SLIRecord sliRecord1 = SLIRecord.builder()

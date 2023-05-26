@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.time.Instant;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.CollectionUtils;
@@ -64,7 +65,7 @@ public class EcsMapper {
         .launchType(task.launchTypeAsString())
         .taskArn(task.taskArn())
         .taskDefinitionArn(task.taskDefinitionArn())
-        .startedAt(task.startedAt() != null ? task.startedAt().getEpochSecond() : null)
+        .startedAt(task.startedAt() != null ? task.startedAt().getEpochSecond() : Instant.now().getEpochSecond())
         .startedBy(task.startedBy())
         .version(task.version())
         .containers(CollectionUtils.isNotEmpty(task.containers())
