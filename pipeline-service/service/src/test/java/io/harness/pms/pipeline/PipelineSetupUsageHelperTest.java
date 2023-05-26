@@ -46,6 +46,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
@@ -382,7 +383,8 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
             .setDeleteOldReferredByRecords(true)
             .build();
 
-    pipelineSetupUsageHelper.publishSetupUsageEvent(pipelineEntity, referredEntities);
+    pipelineSetupUsageHelper.publishSetupUsageEvent(
+        FilterCreationParams.builder().pipelineEntity(pipelineEntity).build(), referredEntities);
 
     verify(eventProducer)
         .send(Message.newBuilder()
