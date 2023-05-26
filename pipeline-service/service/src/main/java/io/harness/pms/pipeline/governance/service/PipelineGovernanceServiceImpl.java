@@ -100,6 +100,7 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
 
   private String getExpandedPipelineJSONFromYaml(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineYaml, String branch, PipelineEntity pipelineEntity, String action) {
+    log.info(String.format("fetching expanded json for:\n%s", pipelineYaml));
     if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE)) {
       return null;
     }
@@ -129,9 +130,11 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
         jsonExpander.fetchExpansionResponses(expansionRequests, expansionRequestMetadata);
 
     if (null != pipelineEntity) {
+      log.info(String.format("fetching git details for expanded json for %s", pipelineEntity.getIdentifier()));
       addGitDetailsToExpandedYaml(expansionResponseBatches, pipelineEntity, branch);
     } else {
-      addGitDetailsToExpandedYaml(expansionResponseBatches);
+      log.info(String.format("fetching git details for expanded json for:\n%s", pipelineYaml));
+      addGitDetailsToExpandedYaml(expansionResponseBatches, pipelineYaml);
     }
 
     String mergeExpansions = ExpansionsMerger.mergeExpansions(pipelineYaml, expansionResponseBatches);
@@ -155,11 +158,14 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
     return expansionRequestMetadataBuilder.build();
   }
 
-  void addGitDetailsToExpandedYaml(Set<ExpansionResponseBatch> expansionResponseBatches) {
+  void addGitDetailsToExpandedYaml(Set<ExpansionResponseBatch> expansionResponseBatches, String pipelineYaml) {
     ScmGitMetaData scmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+    log.info(String.format("scmGitMetaData: %s\nPipeline:\n%s", scmGitMetaData.toString(), pipelineYaml));
     if (checkIfRemotePipeline(scmGitMetaData)) {
       // Adding GitConfig to expanded Yaml
       expansionResponseBatches.add(getGitDetailsAsExecutionResponse(scmGitMetaData));
+    } else {
+      log.info(String.format("no git details found for expanded json for:\n%s", pipelineYaml));
     }
   }
 
