@@ -33,6 +33,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityGitMetadata;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
@@ -46,6 +47,7 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.merger.helpers.InputSetYamlHelper;
+import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.rbac.InternalReferredEntityExtractor;
 import io.harness.preflight.PreFlightCheckMetadata;
@@ -367,6 +369,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
                 pipelineEntity.getIdentifier()))
             .setType(EntityTypeProtoEnum.PIPELINES)
             .setName(pipelineEntity.getName())
+            .setEntityGitMetadata(EntityGitMetadata.newBuilder().setRepo("repo").setBranch("branch").build())
             .build();
     EntitySetupUsageCreateV2DTO secretEntityReferenceDTO =
         EntitySetupUsageCreateV2DTO.newBuilder()
@@ -384,7 +387,11 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
             .build();
 
     pipelineSetupUsageHelper.publishSetupUsageEvent(
-        FilterCreationParams.builder().pipelineEntity(pipelineEntity).build(), referredEntities);
+        FilterCreationParams.builder()
+            .pipelineEntity(pipelineEntity)
+            .filterCreationGitMetadata(FilterCreationGitMetadata.builder().repo("repo").branch("branch").build())
+            .build(),
+        referredEntities);
 
     verify(eventProducer)
         .send(Message.newBuilder()
