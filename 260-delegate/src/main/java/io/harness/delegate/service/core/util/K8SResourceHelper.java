@@ -16,6 +16,7 @@ import lombok.experimental.UtilityClass;
 public class K8SResourceHelper {
   private static final Pattern RESOURCE_NAME_NORMALIZER = Pattern.compile("_");
   private static final String DEFAULT_RUNNER_NAMESPACE = "bijou-testing";
+  public static final String HARNESS_NAME_LABEL = "harness.io/name";
 
   @NonNull
   public static String getPodName(final String taskGroupId) {
