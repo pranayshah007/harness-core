@@ -46,7 +46,8 @@ public enum AuthorizationServiceHeader {
   IACM_MANAGER("IACMManager"),
   MIGRATOR("MigratorService"),
   IDP_SERVICE("IDPService"),
-  SSCA_SERVICE("SSCAService");
+  SSCA_SERVICE("SSCAService"),
+  IDP_UI("IDPUi");
 
   private final String serviceId;
 
