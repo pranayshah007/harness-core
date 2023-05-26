@@ -146,12 +146,13 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     ArtifactDelegateResponse artifactDelegateResponse =
         DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    DockerArtifactOutcome artifactOutcome = (DockerArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
-    assertThat(((DockerArtifactOutcome) artifactOutcome).getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test
@@ -686,7 +687,10 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     final String bucket = "bucket";
     final String project = "project";
     final String artifactPath = "artifactPath";
-
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url",
+        "https://www.googleapis.com/storage/v1/b/cloud-functions-bucket/o/nodejs-docs-samples%2Fhelloworld.tar.gz");
+    metadata.put("artifactFileSize", "10000");
     GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
         GoogleCloudStorageArtifactConfig.builder()
             .identifier(identifier)
@@ -700,6 +704,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         GoogleCloudStorageArtifactDelegateResponse.builder()
             .bucket(bucket)
             .project(project)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metadata).build())
             .artifactPath(artifactPath)
             .build();
     GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
@@ -713,6 +718,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(googleCloudStorageArtifactOutcome.getArtifactPath()).isEqualTo(artifactPath);
     assertThat(googleCloudStorageArtifactOutcome.getProject()).isEqualTo(project);
     assertThat(googleCloudStorageArtifactOutcome.getBucket()).isEqualTo(bucket);
+    assertThat(googleCloudStorageArtifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test

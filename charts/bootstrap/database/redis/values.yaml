@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 global:
-  storageClassName: ""
+  storageClass: ""
   imagePullSecrets: []
 
 replicaCount: 3
@@ -20,7 +20,7 @@ redis:
       memory: 200Mi
   image:
     registry: docker.io
-    tag: 6.2.7-alpine
+    tag: 6.2.5-alpine
     repository: harness/redis
     pullPolicy: IfNotPresent
     digest: ""
@@ -36,7 +36,7 @@ sentinel:
       memory: 200Mi
   image:
     registry: docker.io
-    tag: 6.2.7-alpine
+    tag: 6.2.5-alpine
     repository: harness/redis
     pullPolicy: IfNotPresent
     digest: ""
@@ -58,7 +58,7 @@ initContainers:
   config_init:
     image:
       registry: docker.io
-      tag: 6.2.7-alpine
+      tag: 6.2.5-alpine
       repository: harness/redis
       pullPolicy: IfNotPresent
       digest: ""

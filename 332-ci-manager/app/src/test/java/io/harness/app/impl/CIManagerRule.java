@@ -204,8 +204,6 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .sscaServiceConfig(
                 SSCAServiceConfig.builder()
                     .httpClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:8186").build())
-                    .baseUrl("http://localhost:8186")
-                    .globalToken("global-token")
                     .build())
             .scmConnectionConfig(ScmConnectionConfig.builder().url("localhost:8181").build())
             .managerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")

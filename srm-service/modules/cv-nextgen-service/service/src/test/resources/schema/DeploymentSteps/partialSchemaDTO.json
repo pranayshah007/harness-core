@@ -312,7 +312,7 @@
           "properties" : {
             "type" : {
               "type" : "string",
-              "enum" : [ "Ignore", "Retry", "MarkAsSuccess", "Abort", "StageRollback", "StepGroupRollback", "PipelineRollback", "ManualIntervention", "ProceedWithDefaultValues", "MarkAsFailure", "RetryStepGroup" ]
+              "enum" : [ "Ignore", "Retry", "MarkAsSuccess", "Abort", "StageRollback", "StepGroupRollback", "PipelineRollback", "ManualIntervention", "ProceedWithDefaultValues", "MarkAsFailure" ]
             }
           },
           "$schema" : "http://json-schema.org/draft-07/schema#"
@@ -765,25 +765,6 @@
           },
           "$schema" : "http://json-schema.org/draft-07/schema#"
         },
-        "RetrySGFailureActionConfig" : {
-          "allOf" : [ {
-            "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
-          }, {
-            "type" : "object",
-            "required" : [ "spec", "type" ],
-            "properties" : {
-              "spec" : {
-                "readOnly" : true,
-                "$ref" : "#/definitions/cvng/RetryFailureSpecConfig"
-              },
-              "type" : {
-                "type" : "string",
-                "enum" : [ "RetryStepGroup" ]
-              }
-            }
-          } ],
-          "$schema" : "http://json-schema.org/draft-07/schema#"
-        },
         "StageRollbackFailureActionConfig" : {
           "allOf" : [ {
             "$ref" : "#/definitions/cvng/FailureStrategyActionConfig"
@@ -892,13 +873,15 @@
             "$ref" : "#/definitions/cvng/VerificationJobSpec"
           }, {
             "type" : "object",
-            "properties" : { }
+            "properties" : {
+              "baseline":{"type":"string","description":"Possible values: [LAST, PINNED]"}
+            }
           } ],
           "$schema" : "http://json-schema.org/draft-07/schema#"
         },
         "VerificationJobSpec" : {
           "type" : "object",
-          "required" : [ "deploymentTag", "duration", "sensitivity" ],
+          "required" : ["deploymentTag", "duration", "sensitivity" ],
           "discriminator" : "type",
           "properties" : {
             "deploymentTag" : {

@@ -43,7 +43,7 @@ public class MarketoSignupHandler implements SignupHandler {
   public boolean handle(UserInvite userInvite) {
     final String emailAddress = userInvite.getEmail().toLowerCase();
     signupService.validateCluster();
-    signupService.validateName(userInvite.getName());
+    userService.validateName(userInvite.getName());
     signupService.validateEmail(emailAddress);
 
     UserInvite userInviteInDB = signupService.getUserInviteByEmail(emailAddress);
@@ -96,7 +96,7 @@ public class MarketoSignupHandler implements SignupHandler {
     char[] password = generatedPassword.toCharArray();
     userInvite.setPassword(password);
     userInvite.setPasswordHash(hashpw(generatedPassword, BCrypt.gensalt()));
-    signupService.validateName(userInvite.getName());
+    userService.validateName(userInvite.getName());
     userService.saveUserInvite(userInvite);
 
     // No user and account is created till here. Once this call is made, only then the account and user's are created.

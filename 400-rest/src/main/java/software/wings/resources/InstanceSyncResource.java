@@ -63,12 +63,13 @@ public class InstanceSyncResource {
   @DelegateAuth
   @GET
   @Path("instance-sync-ng-v2/task/{perpetualTaskId}/details")
-  public Response fetchInstanceSyncV2TaskDetails(
-      @PathParam("perpetualTaskId") String perpetualTaskId, @QueryParam("accountId") String accountId) {
+  public Response fetchInstanceSyncV2TaskDetails(@PathParam("perpetualTaskId") String perpetualTaskId,
+      @QueryParam("page") int page, @QueryParam("page_size") int size, @QueryParam("accountId") String accountId) {
     String perpetualTask = perpetualTaskId.replaceAll("[\r\n]", "");
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new PerpetualTaskLogContext(perpetualTaskId, OVERRIDE_ERROR)) {
-      InstanceSyncTaskDetails details = instanceSyncResponsePublisher.fetchTaskDetails(perpetualTask, accountId);
+      InstanceSyncTaskDetails details =
+          instanceSyncResponsePublisher.fetchTaskDetails(perpetualTask, page, size, accountId);
       return Response.ok(details).build();
     } catch (Exception e) {
       log.error(LOG_ERROR_TEMPLATE, perpetualTask, e);

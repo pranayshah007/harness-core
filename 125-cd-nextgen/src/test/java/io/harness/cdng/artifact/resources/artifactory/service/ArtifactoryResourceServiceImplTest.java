@@ -455,6 +455,17 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryEmpty() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, "", IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_RepositoryInput() {
     assertThatThrownBy(
         ()
@@ -469,6 +480,16 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
   public void testGetSuccessfulBuild_RepositoryFormatNull() {
     assertThatThrownBy(()
                            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH, null,
+                               null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(REPOSITORY_FORMAT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryFormatEmpty() {
+    assertThatThrownBy(()
+                           -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_NAME, "",
                                null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .hasMessage(REPOSITORY_FORMAT_MESSAGE);
   }
@@ -497,6 +518,17 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagEmpty() {
+    assertThatThrownBy(()
+                           -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, ArtifactoryRequestDTO.builder().tag("").build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_TagInput() {
     assertThatThrownBy(()
                            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
@@ -513,6 +545,18 @@ public class ArtifactoryResourceServiceImplTest extends CategoryTest {
         ()
             -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
                 RepositoryFormat.docker.name(), null, ARTIFACTORY_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegexEmpty() {
+    assertThatThrownBy(
+        ()
+            -> artifactoryResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, ArtifactoryRequestDTO.builder().tagRegex("").build(),
+                ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }
 

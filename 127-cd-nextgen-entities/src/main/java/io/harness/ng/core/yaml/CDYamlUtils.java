@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.yaml;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
@@ -27,6 +29,7 @@ import io.serializer.jackson.EdgeCaseRegexModule;
 import io.serializer.jackson.NGHarnessJacksonModule;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -102,5 +105,40 @@ public class CDYamlUtils {
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml");
     }
+  }
+
+  public static String getYamlString(Object object, List<YAMLGenerator.Feature> featureToEnable,
+      List<YAMLGenerator.Feature> featureToDisable) throws JsonProcessingException {
+    YAMLFactory yamlFactory = new YAMLFactory()
+                                  .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                  .enable(YAMLGenerator.Feature.INDENT_ARRAYS_WITH_INDICATOR)
+                                  .enable(YAMLGenerator.Feature.ALWAYS_QUOTE_NUMBERS_AS_STRINGS);
+
+    if (isNotEmpty(featureToEnable)) {
+      for (YAMLGenerator.Feature feature : featureToEnable) {
+        yamlFactory.enable(feature);
+      }
+    }
+    if (isNotEmpty(featureToDisable)) {
+      for (YAMLGenerator.Feature feature : featureToDisable) {
+        yamlFactory.disable(feature);
+      }
+    }
+
+    ObjectMapper localMapper = new ObjectMapper(yamlFactory);
+    localMapper.registerModule(new EdgeCaseRegexModule());
+    localMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    localMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+    localMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    localMapper.setSubtypeResolver(AnnotationAwareJsonSubtypeResolver.newInstance(localMapper.getSubtypeResolver()));
+    localMapper.registerModule(new Jdk8Module());
+    localMapper.registerModule(new GuavaModule());
+    localMapper.registerModule(new JavaTimeModule());
+    localMapper.registerModule(new NGHarnessJacksonModule());
+    return writeString(object, localMapper);
+  }
+
+  private String writeString(Object value, ObjectMapper objectMapper) throws JsonProcessingException {
+    return objectMapper.writeValueAsString(value);
   }
 }

@@ -62,6 +62,8 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -914,6 +916,38 @@ public class CloudformationStepHelperTest extends CategoryTest {
     assertThat(cloudformationConfig.getRoleArn()).isEqualTo("roleArn");
     assertThat(cloudformationConfig.getCapabilities()).isEqualTo(capabilities);
     assertThat(cloudformationConfig.getStackStatusesToMarkAsSuccess()).isEqualTo(stackStatusesToMarkAsSuccess);
+  }
+
+  @Test()
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void getCloudformationConfigForPipelineRollback() {
+    Ambiance ambiance =
+        getAmbiance()
+            .toBuilder()
+            .setMetadata(ExecutionMetadata.newBuilder().setExecutionMode(ExecutionMode.PIPELINE_ROLLBACK).build())
+            .setOriginalStageExecutionIdForRollbackMode("original_exec_id")
+            .build();
+    CloudFormationCreateStackPassThroughData passThroughData =
+        CloudFormationCreateStackPassThroughData.builder().build();
+    CloudformationCreateStackStepConfigurationParameters configuration =
+        CloudformationCreateStackStepConfigurationParameters.builder().build();
+    CloudformationCreateStackStepParameters stepParameters =
+        CloudformationCreateStackStepParameters.infoBuilder()
+            .provisionerIdentifier(ParameterField.createValueField("provisionerIdentifier"))
+            .configuration(configuration)
+            .build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParameters).build();
+    doReturn(TAGS).when(engineExpressionService).renderExpression(any(), eq(TAGS));
+
+    CloudformationConfig cloudformationConfig =
+        cloudformationStepHelper.getCloudformationConfig(ambiance, stepElementParameters, passThroughData);
+
+    assertThat(cloudformationConfig).isNotNull();
+    assertThat(cloudformationConfig.getAccountId()).isEqualTo("account");
+    assertThat(cloudformationConfig.getOrgId()).isEqualTo("org");
+    assertThat(cloudformationConfig.getProjectId()).isEqualTo("project");
+    assertThat(cloudformationConfig.getStageExecutionId()).isEqualTo("original_exec_id");
   }
 
   private StepElementParameters createStepParametersWithS3(boolean tags) {

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: event-service
+  namespace: {{ .Release.Namespace }}
+data:
+  LOGGING_LEVEL: "INFO"
+  MONGO_INDEX_MANAGER_MODE: "AUTO"
+  EVEMTS_MONGO_INDEX_MANAGER_MODE: "AUTO"
+  DEPLOY_MODE: "KUBERNETES_ONPREM"
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  MEMORY: {{ .Values.java.memory | quote }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}

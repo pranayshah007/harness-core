@@ -9,8 +9,12 @@ package io.harness.engine.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -21,5 +25,19 @@ public class FunctorUtils {
       throw new InvalidRequestException("Secret referencing inside a secret is not supported.");
     }
     return "${ngSecretManager.obtain(\"" + secretIdentifier + "\", " + expressionFunctorToken + ")}";
+  }
+
+  public Object fetchFirst(List<Function<String, Optional<Object>>> fns, String key) {
+    if (EmptyPredicate.isEmpty(fns)) {
+      return null;
+    }
+
+    for (Function<String, Optional<Object>> fn : fns) {
+      Optional<Object> optional = fn.apply(key);
+      if (optional.isPresent()) {
+        return optional.get();
+      }
+    }
+    return null;
   }
 }

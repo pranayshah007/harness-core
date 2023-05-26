@@ -303,26 +303,18 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     when(backstageEnvVariableService.getAllSecretIdentifierForMultipleEnvVariablesInAccount(
              any(String.class), anyList()))
         .thenReturn(Collections.emptyList());
-    Exception exception = null;
-    try {
-      configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
-    } catch (InvalidRequestException e) {
-      exception = e;
-    }
-    assertNotNull(exception);
+    mergedPluginConfigs = configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
+    assertNull(mergedPluginConfigs.getConfig());
+    assertEquals(mergedPluginConfigs.getEnvVariables().size(), 0);
 
     // check if no plugin is enabled for an account
 
     when(appConfigRepository.findAllByAccountIdentifierAndConfigTypeAndEnabled(
              TEST_ACCOUNT_IDENTIFIER, TEST_PLUGIN_CONFIG_TYPE, TEST_ENABLED))
         .thenReturn(Collections.emptyList());
-    exception = null;
-    try {
-      configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
-    } catch (InvalidRequestException e) {
-      exception = e;
-    }
-    assertNotNull(exception);
+    mergedPluginConfigs = configManagerServiceImpl.mergeEnabledPluginConfigsForAccount(TEST_ACCOUNT_IDENTIFIER);
+    assertNull(mergedPluginConfigs.getConfig());
+    assertEquals(mergedPluginConfigs.getEnvVariables().size(), 0);
   }
 
   @Test

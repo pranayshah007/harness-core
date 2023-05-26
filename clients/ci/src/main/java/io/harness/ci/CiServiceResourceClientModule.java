@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.remote.CiServiceResourceClient;
 import io.harness.ci.remote.CiServiceResourceClientFactory;
+import io.harness.ci.remote.NoOpCiResourceClient;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
@@ -26,12 +27,14 @@ public class CiServiceResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig serviceHttpClientConfig;
   private final String serviceSecret;
   private final String clientId;
+  private final boolean containerStepConfigureWithCi;
 
-  public CiServiceResourceClientModule(
-      ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret, String clientId) {
+  public CiServiceResourceClientModule(ServiceHttpClientConfig serviceHttpClientConfig, String serviceSecret,
+      String clientId, boolean containerStepConfigureWithCi) {
     this.serviceHttpClientConfig = serviceHttpClientConfig;
     this.serviceSecret = serviceSecret;
     this.clientId = clientId;
+    this.containerStepConfigureWithCi = containerStepConfigureWithCi;
   }
 
   @Provides
@@ -44,6 +47,10 @@ public class CiServiceResourceClientModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    bind(CiServiceResourceClient.class).toProvider(CiServiceResourceClientFactory.class).in(Scopes.SINGLETON);
+    if (containerStepConfigureWithCi) {
+      bind(CiServiceResourceClient.class).toProvider(CiServiceResourceClientFactory.class).in(Scopes.SINGLETON);
+    } else {
+      bind(CiServiceResourceClient.class).to(NoOpCiResourceClient.class);
+    }
   }
 }

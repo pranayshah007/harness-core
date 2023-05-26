@@ -107,7 +107,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -282,12 +281,6 @@ public class AwsApiHelperService {
   public List<BuildDetails> listBuilds(
       AwsInternalConfig awsInternalConfig, String region, String bucketName, String filePathRegex) {
     List<BuildDetails> buildDetailsList = Lists.newArrayList();
-
-    boolean isExpression = filePathRegex.contains("*") || filePathRegex.endsWith("/");
-
-    if (isExpression == false) {
-      return Collections.emptyList();
-    }
 
     try {
       boolean versioningEnabledForBucket = isVersioningEnabledForBucket(awsInternalConfig, bucketName, region);

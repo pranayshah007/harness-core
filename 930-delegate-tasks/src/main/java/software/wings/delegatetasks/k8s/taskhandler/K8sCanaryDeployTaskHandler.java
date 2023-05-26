@@ -45,6 +45,7 @@ import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.releasehistory.IK8sRelease;
@@ -85,6 +86,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
   private K8sReleaseHandler releaseHandler;
 
   private final K8sCanaryHandlerConfig canaryHandlerConfig = new K8sCanaryHandlerConfig();
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
   private boolean canaryWorkloadDeployed;
 
   @Override
@@ -262,6 +264,7 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
           kubernetesConfig.getNamespace(), executionLogCallback, k8sCanaryDeployTaskParameters);
 
       List<KubernetesResource> resources = k8sTaskHelperBase.readManifests(manifestFiles, executionLogCallback);
+      k8sRequestHandlerContext.setResources(resources);
       k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(resources, kubernetesConfig.getNamespace());
 
       k8sTaskHelperBase.updateDestinationRuleManifestFilesWithSubsets(resources,
@@ -306,8 +309,9 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
       }
       canaryHandlerConfig.setCurrentReleaseNumber(currentReleaseNumber);
 
-      boolean success = k8sCanaryBaseHandler.prepareForCanary(canaryHandlerConfig, k8sDelegateTaskParams,
-          k8sCanaryDeployTaskParameters.getSkipVersioningForAllK8sObjects(), executionLogCallback, false);
+      boolean success =
+          k8sCanaryBaseHandler.prepareForCanary(canaryHandlerConfig, k8sRequestHandlerContext, k8sDelegateTaskParams,
+              k8sCanaryDeployTaskParameters.getSkipVersioningForAllK8sObjects(), executionLogCallback, false);
       if (!success) {
         return false;
       }
@@ -336,7 +340,8 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
           unhandled(k8sCanaryDeployTaskParameters.getInstanceUnitType());
       }
 
-      k8sCanaryBaseHandler.updateTargetInstances(canaryHandlerConfig, targetInstances, executionLogCallback);
+      k8sCanaryBaseHandler.updateTargetInstances(
+          canaryHandlerConfig, k8sRequestHandlerContext, targetInstances, executionLogCallback);
 
       IK8sRelease currentRelease = releaseHandler.createRelease(
           canaryHandlerConfig.getReleaseName(), canaryHandlerConfig.getCurrentReleaseNumber());
@@ -360,5 +365,10 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
   @VisibleForTesting
   K8sCanaryHandlerConfig getCanaryHandlerConfig() {
     return canaryHandlerConfig;
+  }
+
+  @VisibleForTesting
+  K8sRequestHandlerContext getK8sRequestHandlerContext() {
+    return k8sRequestHandlerContext;
   }
 }

@@ -31,6 +31,11 @@ public interface ConnectorCrudService {
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
       Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable);
 
+  Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version);
+
   Page<ConnectorResponseDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, ConnectorType type, ConnectorCategory category,
       ConnectorCategory sourceCategory, String version);

@@ -7,7 +7,12 @@
 
 package io.harness.k8s.releasehistory;
 
+import static io.harness.k8s.model.HarnessLabelValues.colorBlue;
+import static io.harness.k8s.model.HarnessLabelValues.colorGreen;
+
+import com.google.common.collect.ImmutableSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -31,4 +36,5 @@ public class K8sReleaseConstants {
   public static final int RELEASE_HISTORY_LIMIT = 2;
   public static final String RELEASE_LABEL_QUERY_SET_FORMAT = "%s in (%s)";
   public static final String RELEASE_LABEL_QUERY_LIST_FORMAT = "%s=%s";
+  public static final Set<String> BLUE_GREEN_COLORS = ImmutableSet.of(colorBlue, colorGreen);
 }

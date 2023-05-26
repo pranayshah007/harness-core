@@ -88,6 +88,13 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
                  .field(ApprovalInstanceKeys.type)
                  .descSortField(ApprovalInstanceKeys.nextIteration)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("planExecutionId_status_type_nodeExecutionId")
+                 .field(ApprovalInstanceKeys.planExecutionId)
+                 .field(ApprovalInstanceKeys.status)
+                 .field(ApprovalInstanceKeys.type)
+                 .field(ApprovalInstanceKeys.nodeExecutionId)
+                 .build())
         .add(
             CompoundMongoIndex.builder()
                 .name(

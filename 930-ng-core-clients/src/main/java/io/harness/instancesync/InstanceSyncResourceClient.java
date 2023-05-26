@@ -43,6 +43,8 @@ public interface InstanceSyncResourceClient {
   @GET(INSTANCE_SYNC + "/task/{perpetualTaskId}/details")
   Call<ResponseDTO<InstanceSyncTaskDetails>> getInstanceSyncTaskDetails(
       @NotEmpty @Path(NGCommonEntityConstants.PERPETUAL_TASK_ID) String perpetualTaskId,
+      @NotEmpty @Query(NGCommonEntityConstants.PAGE) int page,
+      @NotEmpty @Query(NGCommonEntityConstants.PAGE_SIZE) int size,
       @NotEmpty @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId);
 
   @POST(INSTANCE_SYNC + "/v2/response")

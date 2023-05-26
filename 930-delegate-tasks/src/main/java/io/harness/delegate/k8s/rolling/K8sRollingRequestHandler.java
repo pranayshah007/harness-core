@@ -59,6 +59,7 @@ import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -110,6 +111,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   private IK8sReleaseHistory releaseHistory;
   private IK8sRelease release;
   private int currentReleaseNumber;
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
 
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
@@ -313,6 +315,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
             this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
             isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+    k8sRequestHandlerContext.setResources(resources);
 
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
@@ -363,7 +366,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
       if (!skipResourceVersioning && !useDeclarativeRollback) {
         executionLogCallback.saveExecutionLog("\nVersioning resources.");
-        k8sTaskHelperBase.addRevisionNumber(resources, currentReleaseNumber);
+        k8sTaskHelperBase.addRevisionNumber(k8sRequestHandlerContext, currentReleaseNumber);
       }
 
       final List<KubernetesResource> deploymentContainingTrackStableSelector = skipAddingTrackSelectorToDeployment
@@ -374,7 +377,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       k8sRollingBaseHandler.addLabelsInManagedWorkloadPodSpec(inCanaryWorkflow, skipAddingTrackSelectorToDeployment,
           managedWorkloads, deploymentContainingTrackStableSelector, releaseName);
       k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow,
-          skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector);
+          skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector,
+          k8sRequestHandlerContext);
     }
 
     release.setReleaseData(resources, pruningEnabled);

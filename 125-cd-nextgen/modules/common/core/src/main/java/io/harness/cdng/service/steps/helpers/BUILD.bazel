@@ -8,7 +8,7 @@ load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
 
 java_library(
     name = "module",
-    srcs = glob(["*.java"]),
+    srcs = glob(["**/*.java"]),
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",

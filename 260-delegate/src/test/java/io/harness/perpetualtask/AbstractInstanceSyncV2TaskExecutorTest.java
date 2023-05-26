@@ -22,6 +22,7 @@ import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.beans.PageResponse;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponseV2;
 import io.harness.perpetualtask.instancesync.InstanceSyncTaskDetails;
@@ -91,9 +92,13 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
     k8sDeploymentReleaseDetailsList.add(k8sDeploymentReleaseDetails);
     InstanceSyncTaskDetails instanceSyncTaskDetails =
         InstanceSyncTaskDetails.builder()
-            .details(List.of(DeploymentReleaseDetails.builder()
-                                 .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
-                                 .build()))
+            .details(PageResponse.<DeploymentReleaseDetails>builder()
+                         .content(List.of(DeploymentReleaseDetails.builder()
+                                              .deploymentDetails(new ArrayList<>(k8sDeploymentReleaseDetailsList))
+                                              .taskInfoId("taskInfoId")
+                                              .build()))
+                         .totalPages(1)
+                         .build())
             .responseBatchConfig(ResponseBatchConfig.builder()
                                      .releaseCount(RELEASE_COUNT_LIMIT)
                                      .instanceCount(INSTANCE_COUNT_LIMIT)
@@ -122,12 +127,14 @@ public class AbstractInstanceSyncV2TaskExecutorTest extends WingsBaseTest {
                                               .build()))
             .build();
 
-    InstanceSyncTaskDetails instanceSyncTaskDetails = InstanceSyncTaskDetails.builder()
-                                                          .responseBatchConfig(ResponseBatchConfig.builder()
-                                                                                   .releaseCount(RELEASE_COUNT_LIMIT)
-                                                                                   .instanceCount(INSTANCE_COUNT_LIMIT)
-                                                                                   .build())
-                                                          .build();
+    InstanceSyncTaskDetails instanceSyncTaskDetails =
+        InstanceSyncTaskDetails.builder()
+            .details(PageResponse.<DeploymentReleaseDetails>builder().totalPages(1).empty(true).build())
+            .responseBatchConfig(ResponseBatchConfig.builder()
+                                     .releaseCount(RELEASE_COUNT_LIMIT)
+                                     .instanceCount(INSTANCE_COUNT_LIMIT)
+                                     .build())
+            .build();
     aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(instanceSyncTaskDetails);
     when(k8sInstanceSyncV2Helper.getServerInstanceInfoList(any()))
         .thenReturn(

@@ -9,10 +9,10 @@ iconUrl: https://static.harness.io/ng-static/images/favicon.png
 imageUrl: ''
 config: |-
   proxy:
-    '/harness':
+    '/harness/prod':
       target: 'https://app.harness.io/'
       pathRewrite:
-        'api/proxy/harness/?': '/'
+        '/api/proxy/harness/prod/?': '/'
       allowedHeaders:
         - authorization
 exports:

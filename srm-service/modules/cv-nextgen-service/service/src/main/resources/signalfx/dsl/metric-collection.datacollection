@@ -1,4 +1,4 @@
-Var metricApiUrl = concat(Env:baseUrl, "v2/signalflow/execute?start=", Env:startTimeMillis,"&stop=", Env:endTimeMillis, "&resolution=60000")
+Var metricApiUrl = concat(Env:baseUrl, "v2/signalflow/execute?start=", Env:startTimeMillis,"&stop=", Env:endTimeMillis, "&resolution=60000&immediate=true")
 Var collectHostDataString = concat("", Env:collectHostData)
 Var requestIdx = 0
 Var one = 1

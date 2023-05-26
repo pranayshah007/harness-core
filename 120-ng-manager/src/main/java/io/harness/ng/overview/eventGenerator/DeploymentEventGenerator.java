@@ -39,6 +39,7 @@ import com.google.inject.name.Named;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -59,8 +60,9 @@ public class DeploymentEventGenerator implements OrchestrationEventHandler {
   public void handleEvent(OrchestrationEvent event) {
     Ambiance ambiance = event.getAmbiance();
     StepType stepType = AmbianceUtils.getCurrentStepType(ambiance);
+    String nodeType = AmbianceUtils.obtainNodeType(ambiance);
     if (!stepType.getType().equals(ExecutionNodeType.DEPLOYMENT_STAGE_STEP.getName())
-        || !StatusUtils.isFinalStatus(event.getStatus())) {
+        || !StatusUtils.isFinalStatus(event.getStatus()) || Objects.equals(nodeType, "IDENTITY_PLAN_NODE")) {
       return;
     }
     Optional<ServiceStepOutcome> optionalServiceStepOutcome = getServiceOutcomeFromAmbiance(ambiance);

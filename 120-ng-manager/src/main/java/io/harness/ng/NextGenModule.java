@@ -26,6 +26,7 @@ import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
 import static io.harness.authorization.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.SERVICE_DISCOVERY_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
@@ -56,6 +57,8 @@ import io.harness.FreezeOutboxEventHandler;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
+import io.harness.PluginConfiguration;
+import io.harness.PluginModule;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -81,7 +84,6 @@ import io.harness.cdng.fileservice.FileServiceClient;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperService;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepHelperServiceImpl;
-import io.harness.cdng.plugininfoproviders.PluginExecutionConfig;
 import io.harness.client.NgConnectorManagerClientModule;
 import io.harness.connector.ConnectorModule;
 import io.harness.connector.ConnectorResourceClientModule;
@@ -259,6 +261,7 @@ import io.harness.ng.scim.NGScimGroupServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
+import io.harness.ng.servicediscovery.AbstractServiceDiscoveryModule;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM.AwsCodeCommitSCMMapper;
 import io.harness.ng.userprofile.entities.AzureRepoSCM.AzureRepoSCMMapper;
@@ -524,12 +527,6 @@ public class NextGenModule extends AbstractModule {
 
   @Provides
   @Singleton
-  PluginExecutionConfig pluginExecutionConfig() {
-    return this.appConfig.getPluginExecutionConfig();
-  }
-
-  @Provides
-  @Singleton
   public AsyncWaitEngine asyncWaitEngine(WaitNotifyEngine waitNotifyEngine) {
     return new AsyncWaitEngineImpl(waitNotifyEngine, NG_ORCHESTRATION);
   }
@@ -683,6 +680,8 @@ public class NextGenModule extends AbstractModule {
     install(new NGAggregateModule());
     install(new DelegateServiceModule());
     install(NGModule.getInstance());
+    install(PluginModule.getInstance(
+        PluginConfiguration.builder().pluginExecutionConfig(appConfig.getPluginExecutionConfig()).build()));
     install(ExceptionModule.getInstance());
     install(new EventsFrameworkModule(
         this.appConfig.getEventsFrameworkConfiguration(), this.appConfig.getDebeziumConsumersConfigs()));
@@ -787,6 +786,7 @@ public class NextGenModule extends AbstractModule {
     install(new NGLdapModule(appConfig));
     install(new NgVariableModule(appConfig));
     install(new NGIpAllowlistModule(appConfig));
+    install(new NGFavoriteModule(appConfig));
     install(EntitySetupUsageModule.getInstance());
     install(PersistentLockModule.getInstance());
     install(new TransactionOutboxModule(
@@ -835,6 +835,23 @@ public class NextGenModule extends AbstractModule {
       @Override
       public String clientId() {
         return CHAOS_SERVICE.name();
+      }
+    });
+
+    install(new AbstractServiceDiscoveryModule() {
+      @Override
+      public ServiceHttpClientConfig serviceDiscoveryClientConfig() {
+        return appConfig.getServiceDiscoveryServiceClientConfig();
+      }
+
+      @Override
+      public String serviceSecret() {
+        return appConfig.getNextGenConfig().getServiceDiscoveryServiceSecret();
+      }
+
+      @Override
+      public String clientId() {
+        return SERVICE_DISCOVERY_SERVICE.name();
       }
     });
 

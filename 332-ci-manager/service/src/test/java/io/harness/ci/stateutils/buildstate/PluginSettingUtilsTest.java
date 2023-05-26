@@ -23,6 +23,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERI
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
@@ -60,13 +61,28 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.verify.CosignVerifyAttestation;
+import io.harness.ssca.beans.attestation.verify.VerifyAttestation;
+import io.harness.ssca.beans.policy.EnforcementPolicy;
+import io.harness.ssca.beans.source.ImageSbomSource;
+import io.harness.ssca.beans.source.SbomSource;
+import io.harness.ssca.beans.source.SbomSourceType;
+import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
+import io.harness.ssca.beans.store.HarnessStore;
+import io.harness.ssca.beans.store.PolicyStore;
+import io.harness.ssca.beans.store.StoreType;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
 import io.harness.utils.CiCodebaseUtils;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -1054,5 +1070,66 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
     assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
     assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnforcementStepEnvVariables() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("STEP_EXECUTION_ID", null);
+    expected.put("PLUGIN_SBOMSOURCE", "image:tag");
+    expected.put("PLUGIN_TYPE", "Enforce");
+    expected.put("POLICY_FILE_IDENTIFIER", "file");
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        sscaEnforcementStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnforcementStepSecretEnvVariables() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+
+    Map<String, SecretNGVariable> expected = new HashMap<>();
+    SecretRefData secretRefData = SecretRefHelper.createSecretRef("publicKey");
+    expected.put("COSIGN_PUBLIC_KEY",
+        SecretNGVariable.builder()
+            .type(NGVariableType.SECRET)
+            .value(ParameterField.createValueField(secretRefData))
+            .name("COSIGN_PUBLIC_KEY")
+            .build());
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, SecretNGVariable> actual =
+        pluginSettingUtils.getPluginCompatibleSecretVars(sscaEnforcementStepInfo, "identifier");
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  private SscaEnforcementStepInfo getSscaEnforcementStep() {
+    return SscaEnforcementStepInfo.builder()
+        .source(SbomSource.builder()
+                    .type(SbomSourceType.IMAGE)
+                    .sbomSourceSpec(ImageSbomSource.builder()
+                                        .connector(ParameterField.createValueField("conn1"))
+                                        .image(ParameterField.createValueField("image:tag"))
+                                        .build())
+                    .build())
+        .policy(EnforcementPolicy.builder()
+                    .store(PolicyStore.builder()
+                               .type(StoreType.HARNESS)
+                               .storeSpec(HarnessStore.builder().file(ParameterField.createValueField("file")).build())
+                               .build())
+                    .build())
+        .verifyAttestation(
+            VerifyAttestation.builder()
+                .type(AttestationType.COSIGN)
+                .verifyAttestationSpec(
+                    CosignVerifyAttestation.builder().publicKey(ParameterField.createValueField("publicKey")).build())
+                .build())
+        .build();
   }
 }

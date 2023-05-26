@@ -13,6 +13,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.PmsLevelUtils;
+import io.harness.exception.UnexpectedException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
@@ -21,7 +22,9 @@ import io.harness.interrupts.InterruptEffect;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.util.CloseableIterator;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
@@ -44,7 +48,13 @@ public class IdentityNodeExecutionStrategyHelper {
   public NodeExecution createNodeExecution(
       @NotNull Ambiance ambiance, @NotNull IdentityPlanNode node, String notifyId, String parentId, String previousId) {
     String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution originalExecution = nodeExecutionService.get(node.getOriginalNodeExecutionId());
+    NodeExecution originalExecution;
+    if (EmptyPredicate.isEmpty(node.getOriginalNodeExecutionId())) {
+      CloseableIterator<NodeExecution> nodeExecutions = nodeExecutionService.get(node.getAllOriginalNodeExecutionIds());
+      originalExecution = getCorrectNodeExecution(nodeExecutions, ambiance.getLevelsList());
+    } else {
+      originalExecution = nodeExecutionService.get(node.getOriginalNodeExecutionId());
+    }
     NodeExecution execution = NodeExecution.builder()
                                   .uuid(uuid)
                                   .planNode(node)
@@ -53,7 +63,7 @@ public class IdentityNodeExecutionStrategyHelper {
                                   .status(Status.QUEUED)
                                   .unitProgresses(new ArrayList<>())
                                   .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
-                                  .originalNodeExecutionId(node.getOriginalNodeExecutionId())
+                                  .originalNodeExecutionId(originalExecution.getUuid())
                                   .module(node.getServiceName())
                                   .name(node.getName())
                                   .skipGraphType(node.getSkipGraphType())
@@ -84,6 +94,27 @@ public class IdentityNodeExecutionStrategyHelper {
     pmsGraphStepDetailsService.copyStepDetailsForRetry(
         ambiance.getPlanExecutionId(), originalExecution.getUuid(), uuid);
     return nodeExecution;
+  }
+
+  // if a list of node execution IDs is provided, the strategy metadata at all levels currently should match the
+  // strategy metadata in the selected node execution
+  NodeExecution getCorrectNodeExecution(CloseableIterator<NodeExecution> nodeExecutions, List<Level> currLevels) {
+    List<StrategyMetadata> strategyMetadata =
+        currLevels.stream().map(Level::getStrategyMetadata).collect(Collectors.toList());
+    while (nodeExecutions.hasNext()) {
+      NodeExecution nodeExecution = nodeExecutions.next();
+      List<StrategyMetadata> currNodeStrategyMetadata = nodeExecution.getAmbiance()
+                                                            .getLevelsList()
+                                                            .stream()
+                                                            .map(Level::getStrategyMetadata)
+                                                            .collect(Collectors.toList());
+      if (currNodeStrategyMetadata.equals(strategyMetadata)) {
+        return nodeExecution;
+      }
+    }
+    throw new UnexpectedException(
+        "None of the fetched node executions matched the required levels. Current strategy levels: "
+        + strategyMetadata);
   }
 
   // Cloning the nodeExecution. Also copying the original retryIds. We will update the retryIds later in the caller
@@ -168,6 +199,7 @@ public class IdentityNodeExecutionStrategyHelper {
     }
     return newInterruptHistory;
   }
+
   // Copying the nodeExecutions for retried nodes. Will create clone nodeExecution for each retried NodeExecution and
   // update retriedIds with newly created NodeExecutions.
   @VisibleForTesting

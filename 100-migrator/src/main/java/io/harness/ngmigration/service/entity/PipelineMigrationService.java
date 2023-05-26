@@ -295,13 +295,26 @@ public class PipelineMigrationService extends NgMigrationService {
     Map<String, String> infraToStageMap = new HashMap<>();
     for (int i = 0; i < pipeline.getPipelineStages().size(); ++i) {
       PipelineStage pipelineStage = pipeline.getPipelineStages().get(i);
-      if (!isPartOfParallelStage(pipeline.getPipelineStages(), i)) {
-        if (EmptyPredicate.isNotEmpty(parallelStages)) {
-          ngStages.add(StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
-        }
-        parallelStages = null;
-      } else if (parallelStages == null) {
-        parallelStages = new ArrayList<>();
+      switch (getStageType(pipeline.getPipelineStages(), i)) {
+        case "EXISTING_PARALLEL":
+          // If we have existing parallel stages, we do nothing
+          break;
+        case "NEW_PARALLEL":
+          // We add existing parallel stages and reset it to empty list
+          if (EmptyPredicate.isNotEmpty(parallelStages)) {
+            ngStages.add(
+                StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
+          }
+          parallelStages = new ArrayList<>();
+          break;
+        default:
+          // We add existing parallel stages and reset it to null
+          if (EmptyPredicate.isNotEmpty(parallelStages)) {
+            ngStages.add(
+                StageElementWrapperConfig.builder().parallel(JsonPipelineUtils.asTree(parallelStages)).build());
+          }
+          parallelStages = null;
+          break;
       }
       for (PipelineStageElement stageElement : pipelineStage.getPipelineStageElements()) {
         StageElementWrapperConfig stage = null;
@@ -382,6 +395,21 @@ public class PipelineMigrationService extends NgMigrationService {
     files.add(ngYamlFile);
     migratedEntities.putIfAbsent(entityId, ngYamlFile);
     return YamlGenerationDetails.builder().yamlFileList(files).build();
+  }
+
+  // NEW_PARALLEL, SERIAL, EXISTING_PARALLEL
+  private String getStageType(List<PipelineStage> stages, int index) {
+    PipelineStage pipelineStage = stages.get(index);
+    if (pipelineStage.isParallel()) {
+      return "EXISTING_PARALLEL";
+    }
+    if (index + 1 < stages.size()) {
+      PipelineStage nextStage = stages.get(index + 1);
+      if (nextStage.isParallel()) {
+        return "NEW_PARALLEL";
+      }
+    }
+    return "SERIAL";
   }
 
   private boolean isPartOfParallelStage(List<PipelineStage> stages, int index) {

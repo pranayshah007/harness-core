@@ -9,7 +9,7 @@ package io.harness.pms.dashboards;
 
 import static io.harness.NGDateUtils.DAY_IN_MS;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -20,7 +20,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.dashboard.DashboardPipelineExecutionInfo;
 import io.harness.pms.dashboard.DashboardPipelineHealthInfo;
 import io.harness.pms.dashboard.PipelineCountInfo;
-import io.harness.pms.dashboard.PipelineDashboardOverviewResourceV2Impl;
+import io.harness.pms.dashboard.PipelineDashboardOverviewResourceImpl;
 import io.harness.pms.dashboard.PipelineExecutionInfo;
 import io.harness.pms.dashboard.PipelineHealthInfo;
 import io.harness.pms.dashboard.TotalHealthInfo;
@@ -37,7 +37,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
 public class PipelineDashboardOverviewResourceImplTest {
-  @InjectMocks PipelineDashboardOverviewResourceV2Impl pipelineDashboardOverviewResourceV2Impl;
+  @InjectMocks PipelineDashboardOverviewResourceImpl pipelineDashboardOverviewResourceImpl;
   @Mock PipelineDashboardService pipelineDashboardService;
 
   private String ACC_ID = "acc_id";
@@ -51,7 +51,7 @@ public class PipelineDashboardOverviewResourceImplTest {
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
   public void testFetchPipelinedHealth() {
     PipelineHealthInfo pipelineHealthInfo =
@@ -61,14 +61,14 @@ public class PipelineDashboardOverviewResourceImplTest {
         .when(pipelineDashboardService)
         .getDashboardPipelineHealthInfo(ACC_ID, ORG_ID, PRO_ID, "pip", START_TIME, END_TIME,
             START_TIME - (END_TIME - START_TIME) - DAY_IN_MS, "cd");
-    ResponseDTO<DashboardPipelineHealthInfo> healthDto = pipelineDashboardOverviewResourceV2Impl.fetchPipelinedHealth(
+    ResponseDTO<DashboardPipelineHealthInfo> healthDto = pipelineDashboardOverviewResourceImpl.getPipelinedHealth(
         ACC_ID, ORG_ID, PRO_ID, "pip", "cd", START_TIME, END_TIME);
 
     assertThat(healthDto.getData().getExecutions().getTotal().getCount()).isEqualTo(5L);
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
   public void testGetPipelineDashboardExecution() {
     DashboardPipelineExecutionInfo pipelineExecutionInfo =
@@ -84,7 +84,7 @@ public class PipelineDashboardOverviewResourceImplTest {
         .when(pipelineDashboardService)
         .getDashboardPipelineExecutionInfo(ACC_ID, ORG_ID, PRO_ID, "pip", START_TIME, END_TIME, "cd");
     ResponseDTO<DashboardPipelineExecutionInfo> executionDto =
-        pipelineDashboardOverviewResourceV2Impl.getPipelineDashboardExecution(
+        pipelineDashboardOverviewResourceImpl.getPipelineExecution(
             ACC_ID, ORG_ID, PRO_ID, "pip", "cd", START_TIME, END_TIME);
     assertThat(executionDto.getData().getPipelineExecutionInfoList().get(0).getDate()).isEqualTo(10L);
     assertThat(executionDto.getData().getPipelineExecutionInfoList().get(0).getCount().getTotal()).isEqualTo(3L);

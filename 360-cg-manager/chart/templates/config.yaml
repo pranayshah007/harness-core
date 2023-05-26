@@ -6,7 +6,7 @@ metadata:
   annotations: {}
 data:
   GITOPS_SERVICE_CLIENT_BASEURL: http://gitops:7908/api/v1/
-  ALLOWED_ORIGINS: '{{  .Values.global.loadbalancerURL }}'
+  ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   API_URL: '{{  .Values.global.loadbalancerURL }}'
   DELEGATE_METADATA_URL: '{{  .Values.global.loadbalancerURL }}/storage/wingsdelegates/delegateprod.txt'
   UI_SERVER_URL: '{{  .Values.global.loadbalancerURL }}'

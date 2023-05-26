@@ -1,0 +1,91 @@
+{
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1684738746.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proxy"
+  ],
+  "properties": {
+    "proxy": {
+      "$id": "#root/proxy",
+      "title": "Proxy",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "/firehydrant/api"
+      ],
+      "properties": {
+        "/firehydrant/api": {
+          "$id": "#root/proxy//firehydrant/api",
+          "title": "/firehydrant/api",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target",
+            "pathRewrite",
+            "changeOrigin",
+            "headers"
+          ],
+          "properties": {
+            "target": {
+              "$id": "#root/proxy//firehydrant/api/target",
+              "title": "Target",
+              "type": "string",
+              "default": "https://api.firehydrant.io/v1/",
+              "pattern": "((http|https)://)(www.)?[a-zA-Z0-9@:%._\\+~#?&//=]{2,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%._\\+~#?&//=]*)"
+            },
+            "pathRewrite": {
+              "$id": "#root/proxy//firehydrant/api/pathRewrite",
+              "title": "Pathrewrite",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "api/proxy/firehydrant/api/?"
+              ],
+              "properties": {
+                "api/proxy/firehydrant/api/?": {
+                  "$id": "#root/proxy//firehydrant/api/pathRewrite/api/proxy/firehydrant/api/?",
+                  "title": "Api/proxy/firehydrant/api/?",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+          ,
+            "changeOrigin": {
+              "$id": "#root/proxy//firehydrant/api/changeOrigin",
+              "title": "Changeorigin",
+              "type": "boolean",
+              "default": true
+            },
+            "headers": {
+              "$id": "#root/proxy//firehydrant/api/headers",
+              "title": "Headers",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "Authorization"
+              ],
+              "properties": {
+                "Authorization": {
+                  "$id": "#root/proxy//firehydrant/api/headers/Authorization",
+                  "title": "Authorization",
+                  "type": "string",
+                  "default": "",
+                  "pattern": "^.*$"
+                }
+              }
+            }
+
+          }
+        }
+
+      }
+    }
+
+  }
+}

@@ -28,7 +28,7 @@ import io.harness.cdng.infra.mapper.InfrastructureMapper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
-import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.common.NGExpressionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;

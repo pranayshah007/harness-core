@@ -43,9 +43,15 @@ public class BitbucketSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefres
   }
 
   public void registerIterators(int threadPoolSize) {
-    log.info("Register Enabled:{}, Frequency:{}, clientID:{}, clientSecret:{}", configuration.isOauthRefreshEnabled(),
-        configuration.getOauthRefreshFrequency(), configuration.getBitbucketConfig().getClientId(),
-        configuration.getBitbucketConfig().getClientSecret());
+    String clientId = configuration.getBitbucketConfig().getClientId();
+    String clientSecret = configuration.getBitbucketConfig().getClientSecret();
+
+    String clientIdShort = clientId.substring(0, Math.min(clientId.length(), 3));
+    String clientSecretShort = clientSecret.substring(0, Math.min(clientSecret.length(), 3));
+
+    log.info("Register Enabled:{}, Frequency:{}, clientID short:{}, clientSecret short:{}",
+        configuration.isOauthRefreshEnabled(), configuration.getOauthRefreshFrequency(), clientIdShort,
+        clientSecretShort);
 
     if (configuration.isOauthRefreshEnabled()) {
       SpringFilterExpander springFilterExpander = getFilterQuery();

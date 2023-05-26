@@ -24,6 +24,7 @@ import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.telemetry.STOTelemetryRecordsJob;
 import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.ci.execution.ObserverEventConsumer;
@@ -325,6 +326,8 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
       registerTraceFilter(environment, injector);
     }
 
+    initializeSTOUsageMonitoring(configuration, injector);
+
     initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
@@ -561,5 +564,12 @@ public class STOManagerApplication extends Application<CIManagerConfiguration> {
   private void initializePluginPublisher(Injector injector) {
     log.info("Initializing plugin metadata publishing job");
     injector.getInstance(PluginMetadataRecordsJob.class).scheduleTasks();
+  }
+
+  private void initializeSTOUsageMonitoring(CIManagerConfiguration config, Injector injector) {
+    if (BooleanUtils.isTrue(config.getEnableTelemetry())) {
+      log.info("Initializing STO Manager Monitoring");
+      injector.getInstance(STOTelemetryRecordsJob.class).scheduleTasks();
+    }
   }
 }

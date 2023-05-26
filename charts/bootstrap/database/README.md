@@ -28,7 +28,7 @@ A Helm chart for Kubernetes
 | minio.fullnameOverride | string | `"minio"` |  |
 | minio.mode | string | `"standalone"` |  |
 | minio.persistence.size | string | `"200Gi"` |  |
-| mongodb | object | `{"arbiter":{"enabled":true},"architecture":"replicaset","auth":{"existingSecret":"mongodb-replicaset-chart","rootUser":"admin"},"fullnameOverride":"mongodb-replicaset-chart","image":{"registry":"docker.io","repository":"bitnami/mongodb","tag":"4.4.15"},"persistence":{"size":"200Gi"},"podLabels":{"app":"mongodb-replicaset"},"replicaCount":3,"resources":{"limits":{"cpu":4,"memory":"8192Mi"},"requests":{"cpu":4,"memory":"8192Mi"}},"service":{"nameOverride":"mongodb-replicaset-chart"}}` | configurations for mongodb |
+| mongodb | object | `{"arbiter":{"enabled":true},"architecture":"replicaset","auth":{"existingSecret":"mongodb-replicaset-chart","rootUser":"admin"},"fullnameOverride":"mongodb-replicaset-chart","image":{"registry":"docker.io","repository":"harness/mongo","tag":"4.4.19"},"persistence":{"size":"200Gi"},"podLabels":{"app":"mongodb-replicaset"},"replicaCount":3,"resources":{"limits":{"cpu":4,"memory":"8192Mi"},"requests":{"cpu":4,"memory":"8192Mi"}},"service":{"nameOverride":"mongodb-replicaset-chart"}}` | configurations for mongodb |
 | postgresql.auth.database | string | `"overops"` |  |
 | postgresql.auth.existingSecret | string | `"postgres"` |  |
 | postgresql.commonLabels.app | string | `"postgres"` |  |

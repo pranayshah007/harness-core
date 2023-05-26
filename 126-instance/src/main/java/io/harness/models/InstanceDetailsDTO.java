@@ -29,4 +29,6 @@ public class InstanceDetailsDTO {
   String deployedByName;
   String pipelineExecutionName;
   InstanceInfoDTO instanceInfoDTO;
+  String infrastructureMappingId;
+  String instanceKey;
 }

@@ -390,6 +390,17 @@ public class GcrResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_Empty() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, "", GCR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_ImagePath_INPUT() {
     assertThatThrownBy(()
                            -> gcrResourceService.getSuccessfulBuild(
@@ -405,6 +416,18 @@ public class GcrResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
                                GcrRequestDTO.builder().build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGISTRY_HOST_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RegistryHostName_Empty() {
+    assertThatThrownBy(
+        ()
+            -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                GcrRequestDTO.builder().registryHostname("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(REGISTRY_HOST_NAME_MESSAGE);
   }
@@ -435,6 +458,18 @@ public class GcrResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Empty() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               GcrRequestDTO.builder().registryHostname(REGISTRY_HOSTNAME).tag("").build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_Tag_INPUT() {
     assertThatThrownBy(()
                            -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
@@ -451,6 +486,18 @@ public class GcrResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> gcrResourceService.getSuccessfulBuild(
                                IDENTIFIER_REF, IMAGE_PATH, GCR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Empty() {
+    assertThatThrownBy(()
+                           -> gcrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               GcrRequestDTO.builder().registryHostname(REGISTRY_HOSTNAME).tagRegex("").build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }

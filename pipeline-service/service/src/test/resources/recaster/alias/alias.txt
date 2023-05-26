@@ -284,4 +284,3 @@ io.harness.beans.yaml.extended.volumes.V1.TempVolume
 io.harness.plancreator.execution.StepsExecutionConfig
 io.harness.beans.yaml.extended.runtime.CloudRuntime
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
-io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig

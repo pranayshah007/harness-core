@@ -175,23 +175,22 @@ public class RecommendationsOverviewQueryV2 {
     if (accessToAllPerspectives) {
       List<QLCEView> defaultPerspectives =
           ceViewService.getAllViews(accountId, ceViewService.getSampleFolderId(accountId), true, null);
-      QLCEView clusterPerspective =
+      Optional<QLCEView> clusterPerspective =
           defaultPerspectives.stream()
               .filter(qlceView -> qlceView.getName().equalsIgnoreCase(DEFAULT_CLUSTER_VIEW_NAME))
               .collect(Collectors.toList())
               .stream()
-              .findFirst()
-              .get();
-      QLCEView azurePerspective = defaultPerspectives.stream()
-                                      .filter(qlceView -> qlceView.getName().equalsIgnoreCase(DEFAULT_AZURE_VIEW_NAME))
-                                      .collect(Collectors.toList())
-                                      .stream()
-                                      .findFirst()
-                                      .get();
-      clusterPerspectiveId = clusterPerspective.getId();
-      clusterPerspectiveName = clusterPerspective.getName();
-      azurePerspectiveId = azurePerspective.getId();
-      azurePerspectiveName = azurePerspective.getName();
+              .findFirst();
+      Optional<QLCEView> azurePerspective =
+          defaultPerspectives.stream()
+              .filter(qlceView -> qlceView.getName().equalsIgnoreCase(DEFAULT_AZURE_VIEW_NAME))
+              .collect(Collectors.toList())
+              .stream()
+              .findFirst();
+      clusterPerspectiveId = clusterPerspective.isPresent() ? clusterPerspective.get().getId() : null;
+      clusterPerspectiveName = clusterPerspective.isPresent() ? clusterPerspective.get().getName() : null;
+      azurePerspectiveId = azurePerspective.isPresent() ? azurePerspective.get().getId() : null;
+      azurePerspectiveName = azurePerspective.isPresent() ? azurePerspective.get().getName() : null;
       allowedRecommendationsIdAndPerspectives = null;
       condition = applyAllFilters(filter, accountId);
     } else {

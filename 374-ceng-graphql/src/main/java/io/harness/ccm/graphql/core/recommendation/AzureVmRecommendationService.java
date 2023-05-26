@@ -70,6 +70,7 @@ public class AzureVmRecommendationService {
                     .cpuUtilization(azureRecommendation.getTargetVmDetails().getCpuUtilisation())
                     .build())
         .showTerminated(azureRecommendation.getTargetVmDetails().getName().equals("Shutdown"))
+        .jiraDetails(azureRecommendation.getJiraDetails())
         .build();
   }
 }

@@ -105,8 +105,11 @@ public class K8sScaleRequestHandler extends K8sRequestHandler {
     beforePodList = k8sTaskHelperBase.getPodDetails(kubernetesConfig, resourceIdToScale.getNamespace(),
         k8sScaleRequest.getReleaseName(), steadyStateTimeoutInMillis);
 
-    k8sTaskHelperBase.scale(
+    boolean success = k8sTaskHelperBase.scale(
         client, k8SDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, true);
+    if (success) {
+      scaleLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
+    }
 
     if (!k8sScaleRequest.isSkipSteadyStateCheck()) {
       K8sSteadyStateDTO k8sSteadyStateDTO =

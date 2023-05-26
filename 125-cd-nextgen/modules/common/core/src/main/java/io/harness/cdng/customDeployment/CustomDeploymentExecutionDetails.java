@@ -29,4 +29,22 @@ import lombok.experimental.FieldNameConstants;
 public class CustomDeploymentExecutionDetails implements ExecutionDetails {
   private List<ArtifactOutcome> artifactsOutcome;
   private Map<String, ConfigFileOutcome> configFilesOutcome;
+  private Map<String, Object> envVariables;
+  private Map<String, Object> outVariables;
+  @Override
+  public List<ArtifactOutcome> getArtifactsOutcome() {
+    return artifactsOutcome;
+  }
+  @Override
+  public Map<String, ConfigFileOutcome> getConfigFilesOutcome() {
+    return configFilesOutcome;
+  }
+  @Override
+  public Map<String, Object> getEnvVariables() {
+    return envVariables;
+  }
+  @Override
+  public Map<String, Object> getOutVariables() {
+    return outVariables;
+  }
 }

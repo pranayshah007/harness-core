@@ -10,6 +10,7 @@ package io.harness.ccm.graphql.query.recommendation;
 import static io.harness.ccm.RecommenderUtils.CPU_HISTOGRAM_FIRST_BUCKET_SIZE;
 import static io.harness.ccm.RecommenderUtils.HISTOGRAM_BUCKET_SIZE_GROWTH;
 import static io.harness.ccm.RecommenderUtils.MEMORY_HISTOGRAM_FIRST_BUCKET_SIZE;
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
 import static io.harness.rule.OwnerRule.UTSAV;
 
@@ -28,14 +29,20 @@ import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterReques
 import io.harness.ccm.commons.beans.recommendation.models.RecommendNodePoolClusterRequest;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.commons.beans.recommendation.models.VirtualMachine;
+import io.harness.ccm.graphql.core.recommendation.AzureVmRecommendationService;
+import io.harness.ccm.graphql.core.recommendation.EC2RecommendationService;
 import io.harness.ccm.graphql.core.recommendation.ECSRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.NodeRecommendationService;
+import io.harness.ccm.graphql.core.recommendation.RuleRecommendationService;
 import io.harness.ccm.graphql.core.recommendation.WorkloadRecommendationService;
+import io.harness.ccm.graphql.dto.recommendation.AzureVmRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.ContainerHistogramDTO;
+import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
+import io.harness.ccm.graphql.dto.recommendation.RuleRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.WorkloadRecommendationDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
 import io.harness.rule.Owner;
@@ -46,6 +53,7 @@ import software.wings.graphql.datafetcher.ce.recommendation.entity.Cost;
 import com.google.common.collect.ImmutableList;
 import java.math.BigDecimal;
 import java.util.Collections;
+import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,11 +77,15 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
   private static final String CONTAINER_NAME = "containerName";
   private static final String ID = "id0";
   private static final String INSTANCE_TYPE = "n1-standard-4";
+  private static final String UUID = "5fd2b09ea2a4931e7822e8d8";
 
   @Mock private GraphQLUtils graphQLUtils;
   @Mock private WorkloadRecommendationService workloadRecommendationService;
   @Mock private NodeRecommendationService nodeRecommendationService;
   @Mock private ECSRecommendationService ecsRecommendationService;
+  @Mock private AzureVmRecommendationService azureVmRecommendationService;
+  @Mock private EC2RecommendationService ec2RecommendationService;
+  @Mock private RuleRecommendationService ruleRecommendationService;
   @InjectMocks private RecommendationsDetailsQuery detailsQuery;
 
   private static final Cost cost =
@@ -315,6 +327,9 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
     assertECSRecommendationDetails(recommendationDetails);
   }
 
+  @Test
+  @Owner(developers = TRUNAPUSHPA)
+  @Category(UnitTests.class)
   public void testGetECSRecommendationDetailsByIdInRecommendationItemContextNotFound() {
     when(ecsRecommendationService.getECSRecommendationById(eq(ACCOUNT_ID), eq(ID), any(), any(), any()))
         .thenReturn(ECSRecommendationDTO.builder().build());
@@ -323,6 +338,84 @@ public class RecommendationsDetailsQueryTest extends CategoryTest {
         createRecommendationItem(ID, ResourceType.ECS_SERVICE), null, null, 0L, null);
 
     assertECSRecommendationByIdNotFound(recommendationDetails);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetRecommendationDetailsForAzureInstance() {
+    when(azureVmRecommendationService.getAzureVmRecommendationById(eq(ACCOUNT_ID), eq(ID)))
+        .thenReturn(AzureVmRecommendationDTO.builder().id(ID).build());
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.AZURE_INSTANCE, null, null, 0L, null);
+
+    assertThat(recommendationDetails).isNotNull();
+    assertThat(recommendationDetails).isExactlyInstanceOf(AzureVmRecommendationDTO.class);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetRecommendationDetailsForAzureInstance_GetAzureVmRecommendationByIdReturnsNull() {
+    when(azureVmRecommendationService.getAzureVmRecommendationById(eq(ACCOUNT_ID), eq(ID))).thenReturn(null);
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.AZURE_INSTANCE, null, null, 0L, null);
+
+    assertThat(recommendationDetails).isNull();
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetRecommendationDetailsForEC2Instance() {
+    when(ec2RecommendationService.getEC2RecommendationById(eq(ACCOUNT_ID), eq(ID)))
+        .thenReturn(EC2RecommendationDTO.builder().id(ID).build());
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.EC2_INSTANCE, null, null, 0L, null);
+
+    assertThat(recommendationDetails).isNotNull();
+    assertThat(recommendationDetails).isExactlyInstanceOf(EC2RecommendationDTO.class);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetRecommendationDetailsForEC2Instance_GetEC2RecommendationByIdReturnsNull() {
+    when(ec2RecommendationService.getEC2RecommendationById(eq(ACCOUNT_ID), eq(ID))).thenReturn(null);
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.EC2_INSTANCE, null, null, 0L, null);
+
+    assertThat(recommendationDetails).isNull();
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetRecommendationDetailsForGovernance() {
+    when(ruleRecommendationService.getRuleRecommendation(eq(UUID), eq(ACCOUNT_ID)))
+        .thenReturn(RuleRecommendationDTO.builder().uuid(new ObjectId(UUID)).build());
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(UUID, ResourceType.GOVERNANCE, null, null, 0L, null);
+
+    assertThat(recommendationDetails).isNotNull();
+    assertThat(recommendationDetails).isExactlyInstanceOf(RuleRecommendationDTO.class);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetRecommendationDetailsForGovernance_GetRuleRecommendationReturnsNull() {
+    when(ruleRecommendationService.getRuleRecommendation(eq(ACCOUNT_ID), eq(ID))).thenReturn(null);
+
+    final RecommendationDetailsDTO recommendationDetails =
+        detailsQuery.recommendationDetails(ID, ResourceType.GOVERNANCE, null, null, 0L, null);
+
+    assertThat(recommendationDetails).isNull();
   }
 
   private static ECSRecommendationDTO createECSRecommendation() {

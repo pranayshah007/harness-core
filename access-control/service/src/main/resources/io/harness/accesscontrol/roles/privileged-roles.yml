@@ -69,3 +69,4 @@ roles:
       - ccm_cloudAssetGovernanceRule_view
       - core_file_view
       - code_repo_view
+      - servicediscovery_networkmap_view

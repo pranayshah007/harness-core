@@ -253,6 +253,11 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusValidationParams;
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskParams;
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorValidationParams;
+import io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse;
+import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTaskType;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse;
 import io.harness.delegate.beans.connector.scm.ScmValidationParams;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectionTaskParams;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowValidationParams;
@@ -2480,6 +2485,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(S3StoreTFDelegateConfig.class, 10000524);
     kryo.register(HttpCertificateNG.class, 10000526);
+    kryo.register(RancherTaskParams.class, 20000501);
+    kryo.register(RancherDelegateTaskResponse.class, 20000502);
+    kryo.register(RancherTestConnectionTaskParams.class, 20000503);
+    kryo.register(RancherTestConnectionTaskResponse.class, 20000504);
+    kryo.register(RancherTaskType.class, 20000505);
 
     kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
     kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);

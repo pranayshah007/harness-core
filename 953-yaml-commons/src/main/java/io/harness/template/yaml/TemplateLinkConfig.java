@@ -42,4 +42,5 @@ public class TemplateLinkConfig {
   @Pattern(regexp = NGRegexValidatorConstants.VERSION_LABEL_PATTERN) String versionLabel;
   JsonNode templateInputs;
   JsonNode templateVariables;
+  String gitBranch;
 }

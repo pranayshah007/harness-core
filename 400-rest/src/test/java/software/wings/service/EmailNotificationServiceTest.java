@@ -8,6 +8,7 @@
 package software.wings.service;
 
 import static io.harness.ng.core.account.DefaultExperience.CG;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 
 import static software.wings.beans.Account.Builder.anAccount;
@@ -288,6 +289,21 @@ public class EmailNotificationServiceTest extends WingsBaseTest {
         .thenReturn(newArrayList());
     when(mainConfiguration.getSmtpConfig()).thenReturn(null);
     emailDataNotificationService.send(nonSystemEmailBodyData);
+    String errorMessage = emailUtils.getErrorString(nonSystemEmailBodyData.toDTO());
+    verify(alertService)
+        .openAlert(ACCOUNT_ID, GLOBAL_APP_ID, AlertType.EMAIL_NOT_SENT_ALERT,
+            EmailSendingFailedAlert.builder().emailAlertData(errorMessage).build());
+    verifyNoMoreInteractions(mailer, delegateService, queue);
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void testSendCeMail_WhenDefaultSMTPConfigInvalid() {
+    when(settingsService.getGlobalSettingAttributesByType(ACCOUNT_ID, SettingVariableTypes.SMTP.name()))
+        .thenReturn(newArrayList());
+    when(mainConfiguration.getSmtpConfig()).thenReturn(null);
+    emailDataNotificationService.sendCeMail(nonSystemEmailBodyData, true);
     String errorMessage = emailUtils.getErrorString(nonSystemEmailBodyData.toDTO());
     verify(alertService)
         .openAlert(ACCOUNT_ID, GLOBAL_APP_ID, AlertType.EMAIL_NOT_SENT_ALERT,

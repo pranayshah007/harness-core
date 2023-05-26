@@ -122,6 +122,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
           freezeConfigEntity.getProjectIdentifier(), freezeConfigEntity.getIdentifier()));
     } else {
       updateNextIterations(freezeConfigEntity);
+      updateShouldSendNotification(freezeConfigEntity);
       Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         FreezeConfigEntity freezeConfig = freezeConfigRepository.save(freezeConfigEntity);
         outboxService.save(new FreezeEntityCreateEvent(freezeConfig.getAccountId(), freezeConfig));
@@ -129,6 +130,10 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
       }));
     }
     return NGFreezeDtoMapper.prepareFreezeResponseDto(freezeConfigEntity);
+  }
+
+  private void updateShouldSendNotification(FreezeConfigEntity freezeConfigEntity) {
+    freezeConfigEntity.setShouldSendNotification(true);
   }
 
   @Override

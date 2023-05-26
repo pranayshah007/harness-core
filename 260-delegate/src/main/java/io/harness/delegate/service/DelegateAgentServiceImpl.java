@@ -941,13 +941,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.startsWith(message, MIGRATE)) {
       migrate(StringUtils.substringAfter(message, MIGRATE));
     } else if (StringUtils.contains(message, INVALID_TOKEN.name())) {
-      log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+      log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
       initiateSelfDestruct();
     } else if (StringUtils.contains(message, EXPIRED_TOKEN.name())) {
-      log.warn("Delegate used expired token. It will be frozen and drained.");
+      log.error("Delegate used expired token. It will be frozen and drained.");
       freeze();
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
-      log.warn("Delegate used revoked token. It will be frozen and drained.");
+      log.error("Delegate used revoked token. It will be frozen and drained.");
       freeze();
     } else {
       log.warn("Delegate received unhandled message {}", message);
@@ -1096,15 +1096,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Received Error Response: {}", errorResponse);
 
       if (errorResponse.contains(INVALID_TOKEN.name())) {
-        log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+        log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
         initiateSelfDestruct();
       } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
         initiateSelfDestruct();
       } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-        log.warn("Delegate used expired token. It will be frozen and drained.");
+        log.error("Delegate used expired token. It will be frozen and drained.");
         freeze();
       } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-        log.warn("Delegate used revoked token. It will be frozen and drained.");
+        log.error("Delegate used revoked token. It will be frozen and drained.");
         freeze();
       }
 

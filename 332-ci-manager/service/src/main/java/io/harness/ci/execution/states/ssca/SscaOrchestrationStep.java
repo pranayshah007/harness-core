@@ -17,57 +17,29 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
 import io.harness.delegate.task.stepstatus.artifact.SscaArtifactMetadata;
-import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.SscaConstants;
-import io.harness.ssca.client.SSCAServiceClient;
+import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.execution.orchestration.outcome.PublishedSbomArtifact;
 
 import com.google.inject.Inject;
-import java.io.IOException;
-import java.util.Optional;
-import retrofit2.Call;
-import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaOrchestrationStep extends AbstractStepExecutable {
   public static final StepType STEP_TYPE = SscaConstants.SSCA_ORCHESTRATION_STEP_TYPE;
-  private SSCAServiceClient sscaServiceClient;
-
-  @Inject
-  public SscaOrchestrationStep(SSCAServiceClient sscaServiceClient) {
-    this.sscaServiceClient = sscaServiceClient;
-  }
+  @Inject private SSCAServiceUtils sscaServiceUtils;
 
   @Override
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
-    Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
-
-    if (stageLevel.isEmpty()) {
-      throw new CIStageExecutionException("Could not fetch stage details");
-    }
-
     String stepExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    Call<SBOMArtifactResponse> call =
-        sscaServiceClient.getArtifactInfoV2(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
+
+    SBOMArtifactResponse sbomArtifactResponse =
+        sscaServiceUtils.getSbomArtifact(stepExecutionId, AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
-
-    Response<SBOMArtifactResponse> response = null;
-    try {
-      response = call.execute();
-    } catch (IOException e) {
-      throw new CIStageExecutionException("Request to SSCA service call failed", e);
-    }
-    SBOMArtifactResponse sbomArtifactResponse = response.body();
-
-    if (sbomArtifactResponse == null) {
-      return;
-    }
 
     stepStatus.setArtifactMetadata(ArtifactMetadata.builder()
                                        .type(ArtifactMetadataType.SSCA_ARTIFACT_METADATA)

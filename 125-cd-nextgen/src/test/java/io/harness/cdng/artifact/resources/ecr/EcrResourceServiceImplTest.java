@@ -383,6 +383,17 @@ public class EcrResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_ImagePath_Empty() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(
+                               IDENTIFIER_REF, "", ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(IMAGE_PATH_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_ImagePath_Input() {
     assertThatThrownBy(()
                            -> ecrResourceService.getSuccessfulBuild(
@@ -398,6 +409,17 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
                                EcrRequestDTO.builder().build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REGION_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Region_Empty() {
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                               EcrRequestDTO.builder().region("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(REGION_MESSAGE);
   }
@@ -427,6 +449,18 @@ public class EcrResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Empty() {
+    assertThatThrownBy(
+        ()
+            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                EcrRequestDTO.builder().region(REGION).tag("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_Tag_Input() {
     assertThatThrownBy(
         ()
@@ -443,6 +477,18 @@ public class EcrResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> ecrResourceService.getSuccessfulBuild(
                                IDENTIFIER_REF, IMAGE_PATH, ECR_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Empty() {
+    assertThatThrownBy(
+        ()
+            -> ecrResourceService.getSuccessfulBuild(IDENTIFIER_REF, IMAGE_PATH,
+                EcrRequestDTO.builder().region(REGION).tagRegex("").build(), ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }

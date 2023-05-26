@@ -69,6 +69,8 @@ import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
+import io.harness.ccm.msp.service.impl.ManagedAccountServiceImpl;
+import io.harness.ccm.msp.service.intf.ManagedAccountService;
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;
@@ -416,6 +418,7 @@ public class CENextGenModule extends AbstractModule {
     bind(BudgetGroupService.class).to(BudgetGroupServiceImpl.class);
     bind(ClickHouseService.class).to(ClickHouseServiceImpl.class);
     bind(CCMOverviewService.class).to(CCMOverviewServiceImpl.class);
+    bind(ManagedAccountService.class).to(ManagedAccountServiceImpl.class);
 
     if (configuration.isClickHouseEnabled()) {
       bind(ViewsBillingService.class).to(ClickHouseViewsBillingServiceImpl.class);

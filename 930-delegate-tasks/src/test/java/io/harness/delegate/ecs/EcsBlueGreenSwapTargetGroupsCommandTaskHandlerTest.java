@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -54,6 +55,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandlerTest extends Category
   private final String cluster = "cluster";
   private final String region = "us-east-1";
   private final String serviceName = "serviceName";
+  private final Integer sleepTime = 30;
 
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private EcsTaskHelperBase ecsTaskHelperBase;
@@ -97,6 +99,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandlerTest extends Category
             .oldServiceName("oldServiceName")
             .timeoutIntervalInMin(10)
             .isFirstDeployment(false)
+            .downsizeOldServiceDelayInSecs(sleepTime)
             .build();
 
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
@@ -113,6 +116,7 @@ public class EcsBlueGreenSwapTargetGroupsCommandTaskHandlerTest extends Category
         (EcsBlueGreenSwapTargetGroupsResponse) ecsBlueGreenSwapTargetGroupsCommandTaskHandler.executeTaskInternal(
             ecsBlueGreenSwapTargetGroupsRequest, iLogStreamingTaskClient, commandUnitsProgress);
 
+    verify(ecsCommandTaskHelper).sleepInSeconds(ecsBlueGreenSwapTargetGroupsRequest.getDownsizeOldServiceDelayInSecs());
     assertThat(ecsBlueGreenSwapTargetGroupsResponse.getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(ecsBlueGreenSwapTargetGroupsResponse.getEcsBlueGreenSwapTargetGroupsResult().isTrafficShifted())

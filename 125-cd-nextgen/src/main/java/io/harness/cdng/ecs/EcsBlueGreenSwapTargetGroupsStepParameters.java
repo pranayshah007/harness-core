@@ -33,8 +33,9 @@ public class EcsBlueGreenSwapTargetGroupsStepParameters
   @Builder(builderMethodName = "infoBuilder")
   public EcsBlueGreenSwapTargetGroupsStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       String ecsBlueGreenCreateServiceFnq, String ecsBlueGreenSwapTargetGroupsFnq,
-      ParameterField<Boolean> doNotDownsizeOldService) {
-    super(delegateSelectors, doNotDownsizeOldService, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq);
+      ParameterField<Boolean> doNotDownsizeOldService, ParameterField<Integer> downsizeOldServiceDelayInSecs) {
+    super(delegateSelectors, doNotDownsizeOldService, ecsBlueGreenCreateServiceFnq, ecsBlueGreenSwapTargetGroupsFnq,
+        downsizeOldServiceDelayInSecs);
   }
 
   public List<String> getCommandUnits() {

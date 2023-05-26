@@ -369,6 +369,9 @@ public class ScimUserServiceImpl implements ScimUserService {
     if ("userName".equals(patchOperation.getPath())) {
       value = value.toLowerCase();
     }
+    if (UserKeys.name.equals(key)) {
+      userService.validateName(patchOperation.getValue(String.class));
+    }
     updateOperation.set(key, value);
     userService.updateUser(user.getUuid(), updateOperation);
   }
@@ -417,6 +420,7 @@ public class ScimUserServiceImpl implements ScimUserService {
       boolean userUpdate = false;
       if (StringUtils.isNotEmpty(displayName) && !displayName.equals(user.getName())) {
         userUpdate = true;
+        userService.validateName(displayName);
         updateOperations.set(UserKeys.name, displayName);
         log.info("SCIM: Updating user's {} name: {}", userId, displayName);
       }

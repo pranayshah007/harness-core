@@ -318,7 +318,6 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
-    Map<String, String> metadata = null;
     String displayName = null;
     checkSHAEquality(dockerDelegateResponse, dockerConfig.getDigest(), useDelegateResponse);
     if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
@@ -342,7 +341,7 @@ public class ArtifactResponseToOutcomeMapper {
         .dockerConfigJsonSecret(createDockerConfigJsonSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
         .digest(dockerConfig.getDigest() != null ? dockerConfig.getDigest().getValue() : null)
-        .metadata(metadata)
+        .metadata(useDelegateResponse ? getMetadata(dockerDelegateResponse) : null)
         .build();
   }
 
@@ -667,6 +666,7 @@ public class ArtifactResponseToOutcomeMapper {
         .bucket(googleCloudStorageArtifactConfig.getBucket().getValue())
         .artifactPath(useDelegateResponse ? googleCloudStorageArtifactDelegateResponse.getArtifactPath() : "")
         .primaryArtifact(googleCloudStorageArtifactConfig.isPrimaryArtifact())
+        .metadata(getMetadata(googleCloudStorageArtifactDelegateResponse))
         .build();
   }
 
