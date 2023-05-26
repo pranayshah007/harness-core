@@ -168,6 +168,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("triggerAuthenticationPoolConfig") private ThreadPoolConfig triggerAuthenticationPoolConfig;
   @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
+  @JsonProperty("pipelineReferenceExecutorServiceConfig") private ThreadPoolConfig pipelineReferencePoolConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

@@ -10,6 +10,7 @@ package io.harness.ng.core;
 import io.harness.EntityType;
 import io.harness.beans.EntityReference;
 import io.harness.ng.core.entitydetail.EntityDetailDeserializer;
+import io.harness.ng.core.entitydetail.EntityGitMetadata;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Builder;
@@ -25,11 +26,13 @@ public class EntityDetail {
   EntityType type;
   EntityReference entityRef;
   String name;
+  EntityGitMetadata entityGitMetadata;
 
   @Builder
-  public EntityDetail(EntityType type, EntityReference entityRef, String name) {
+  public EntityDetail(EntityType type, EntityReference entityRef, String name, EntityGitMetadata entityGitMetadata) {
     this.type = type;
     this.entityRef = entityRef;
     this.name = name;
+    this.entityGitMetadata = entityGitMetadata;
   }
 }

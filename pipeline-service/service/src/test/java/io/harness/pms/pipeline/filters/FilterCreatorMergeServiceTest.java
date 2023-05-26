@@ -50,6 +50,7 @@ import io.harness.pms.helpers.PrincipalInfoHelper;
 import io.harness.pms.helpers.TriggeredByHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineSetupUsageHelper;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
 import io.harness.pms.sdk.PmsSdkHelper;
@@ -185,8 +186,8 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     doReturn(Collections.singletonList(EntityDetailProtoDTO.newBuilder().build()))
         .when(pmsPipelineTemplateHelper)
         .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
-    FilterCreatorMergeServiceResponse filterCreatorMergeServiceResponse =
-        filterCreatorMergeService.getPipelineInfo(pipelineEntity);
+    FilterCreatorMergeServiceResponse filterCreatorMergeServiceResponse = filterCreatorMergeService.getPipelineInfo(
+        FilterCreationParams.builder().pipelineEntity(pipelineEntity).build());
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(pmsSdkHelper).getServices();
@@ -313,7 +314,9 @@ public class FilterCreatorMergeServiceTest extends PipelineServiceTestBase {
     doReturn(Collections.singletonList(EntityDetailProtoDTO.newBuilder().build()))
         .when(pmsPipelineTemplateHelper)
         .getTemplateReferencesForGivenYaml(anyString(), anyString(), anyString(), anyString());
-    Assertions.assertDoesNotThrow(() -> filterCreatorMergeService.getPipelineInfo(pipelineEntity));
+    Assertions.assertDoesNotThrow(()
+                                      -> filterCreatorMergeService.getPipelineInfo(
+                                          FilterCreationParams.builder().pipelineEntity(pipelineEntity).build()));
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
     verify(pmsSdkHelper).getServices();
