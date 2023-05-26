@@ -271,6 +271,8 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String newAppName = appPrefix + "_6";
     List<String> finalRoutes = Arrays.asList("basicRoute.apps.pcf-harness.com", "shiny-jackal-pa.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
+    doReturn(true).when(cfDeploymentManager).checkUnsettingEnvironmentVariableForAppStatus(any(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -313,6 +315,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
       List<String> finalRoutes, List<String> tempRoutes, CfCommandExecutionResponse cfCommandExecutionResponse)
       throws PivotalClientApiException {
     assertThat(cfCommandExecutionResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     // verify In Active app was up sized
     verify(cfDeploymentManager).upsizeApplicationWithSteadyStateCheck(any(), any());
@@ -396,6 +399,8 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
                                                .urls(tempRoutes)
                                                .applicationName(newAppName)
                                                .build();
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
+    doReturn(true).when(cfDeploymentManager).checkUnsettingEnvironmentVariableForAppStatus(any(), any());
 
     List<ApplicationSummary> existingApplicationSummaries =
         getExistingApplicationSummaries(inActiveApp, activeApp, newApplication);
@@ -474,6 +479,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String newAppName = appPrefix + "_6";
     List<String> finalRoutes = Arrays.asList("basicRoute.apps.pcf-harness.com", "shiny-jackal-pa.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -566,6 +572,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String newAppName = appPrefix + DELIMITER + "4";
     List<String> finalRoutes = Arrays.asList("prod1.apps.pcf-harness.com", "prod2.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -664,6 +671,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String newAppName = appPrefix + INACTIVE_APP_NAME_SUFFIX;
     List<String> finalRoutes = Arrays.asList("prod1.apps.pcf-harness.com", "prod2.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -774,6 +782,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String newAppName = appPrefix + INACTIVE_APP_NAME_SUFFIX;
     List<String> finalRoutes = Arrays.asList("prod1.apps.pcf-harness.com", "prod2.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -896,6 +905,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String newAppName = appPrefix + INACTIVE_APP_NAME_SUFFIX;
     List<String> finalRoutes = Arrays.asList("prod1.apps.pcf-harness.com", "prod2.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -1039,6 +1049,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
         finalRoutes, tempRoutes, newApplication, inActiveApp, true, false, AppNamingStrategy.VERSIONING.name(), false);
 
     CfCommandRequest cfCommandRequest = getRouteUpdateRequest(routeUpdateRequestConfigData);
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfCommandExecutionResponse cfCommandExecutionResponse =
         pcfRouteUpdateCommandTaskHandler.executeTaskInternal(cfCommandRequest, null, logStreamingTaskClient, false);
@@ -1116,6 +1127,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String inActiveAppNameAfterAppSetup = appPrefix + DELIMITER + "2";
     String activeAppNameAfterAppSetup = appPrefix + DELIMITER + "3";
     String newAppNameAfterAppSetup = appPrefix + INACTIVE_APP_NAME_SUFFIX;
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     String activeAppNameAfterSwap = appPrefix + INACTIVE_APP_NAME_SUFFIX;
     String newAppNameAfterSwap = appPrefix;
@@ -1268,6 +1280,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
 
     List<String> finalRoutes = Arrays.asList("prod1.apps.pcf-harness.com", "prod2.apps.pcf-harness.com");
     List<String> tempRoutes = Collections.singletonList("tempBg.apps.pcf-harness.com");
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     CfAppSetupTimeDetails inActiveApp = CfAppSetupTimeDetails.builder()
                                             .activeApp(false)
@@ -1404,6 +1417,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
     String inActiveAppNameAfterAppSetup = appPrefix + DELIMITER + "2";
     String activeAppNameAfterAppSetup = appPrefix;
     String newAppNameAfterAppSetup = appPrefix + INACTIVE_APP_NAME_SUFFIX;
+    doReturn(true).when(cfDeploymentManager).checkSettingEnvironmentVariableForAppStatus(any(), anyBoolean(), any());
 
     String activeAppNameAfterSwap = appPrefix + DELIMITER + "3";
     String newAppNameAfterSwap = appPrefix + DELIMITER + "4";
