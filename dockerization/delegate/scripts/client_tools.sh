@@ -18,8 +18,6 @@ if [[ ( -z "$DISABLE_CLIENT_TOOLS") || ("$DISABLE_CLIENT_TOOLS" = "false") ]]; t
   && curl -s -L -o client-tools/go-template/v0.4.3/go-template https://app.harness.io/public/shared/tools/go-template/release/v0.4.3/bin/linux/$ARCH/go-template \
   && mkdir -m 777 -p client-tools/harness-pywinrm/v0.4-dev \
   && curl -s -L -o client-tools/harness-pywinrm/v0.4-dev/harness-pywinrm https://app.harness.io/public/shared/tools/harness-pywinrm/release/v0.4-dev/bin/linux/$ARCH/harness-pywinrm \
-  && mkdir -m 777 -p client-tools/helm/v2.13.1 \
-  && curl -s -L -o client-tools/helm/v2.13.1/helm https://app.harness.io/public/shared/tools/helm/release/v2.13.1/bin/linux/$ARCH/helm \
   && mkdir -m 777 -p client-tools/helm/v3.1.2 \
   && curl -s -L -o client-tools/helm/v3.1.2/helm https://app.harness.io/public/shared/tools/helm/release/v3.1.2/bin/linux/$ARCH/helm \
   && mkdir -m 777 -p client-tools/helm/v3.8.0 \
