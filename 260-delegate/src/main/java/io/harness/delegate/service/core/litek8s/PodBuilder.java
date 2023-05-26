@@ -80,7 +80,8 @@ public class PodBuilder extends V1PodBuilder {
   }
 
   public PodBuilder withTasks(final List<V1Container> containers) {
-    containers.forEach(container -> container.addVolumeMountsItem(WORKDIR_VOLUME_MNT));
+    containers.forEach(
+        container -> container.addVolumeMountsItem(WORKDIR_VOLUME_MNT).addVolumeMountsItem(ADDON_VOLUME_MNT));
     this.editOrNewSpec().addAllToContainers(containers).endSpec();
     return this;
   }

@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ResourceRequirementsBuilder;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContextBuilder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
@@ -50,7 +51,7 @@ public class ContainerBuilder {
 
   private static final String WORKING_DIR = "/harness";
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
-  private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
+  private static final String ADDON_RUN_ARGS_FORMAT = "--port";
   public static final int RESERVED_LE_PORT = 20001;
 
   public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
@@ -58,7 +59,7 @@ public class ContainerBuilder {
                                                     .withName(K8SResourceHelper.getContainerName(taskId))
                                                     .withImage(containerRuntime.getUses())
                                                     .withCommand(ADDON_RUN_COMMAND)
-                                                    .withArgs(String.format(ADDON_RUN_ARGS_FORMAT, port))
+                                                    .withArgs(List.of(ADDON_RUN_ARGS_FORMAT, String.valueOf(port)))
                                                     .withPorts(getPort(port))
                                                     .withEnv(K8SEnvVar.fromMap(containerRuntime.getEnvMap()))
                                                     .withResources(getResources("100m", "100Mi"))

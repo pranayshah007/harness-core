@@ -102,6 +102,11 @@ message RestoreCacheStep {
   bool fail_if_not_exist = 2;
 }
 
+message ExecuteStep {
+  bytes task_parameters = 1;
+  repeated string execute_command = 2;
+}
+
 message UnitStep {
   string id = 1;
   string display_name = 2;
@@ -112,6 +117,7 @@ message UnitStep {
     PublishArtifactsStep publish_artifacts = 6;
     PluginStep plugin = 9;
     RunTestsStep runTests = 10;
+    ExecuteStep executeTask = 15;
   }
   string callback_token = 7;
   string task_id = 8;

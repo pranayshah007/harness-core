@@ -7,13 +7,18 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.service.core.litek8s.ContainerBuilder.RESERVED_LE_PORT;
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
+import io.harness.delegate.DelegateAgentCommonVariables;
+import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.core.beans.InputData;
 import io.harness.delegate.core.beans.K8SInfra;
 import io.harness.delegate.core.beans.K8SStep;
@@ -25,9 +30,17 @@ import io.harness.delegate.service.core.runner.TaskRunner;
 import io.harness.delegate.service.core.util.AnyUtils;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
 import io.harness.delegate.service.core.util.K8SResourceHelper;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.product.ci.engine.proto.ExecuteStep;
+import io.harness.product.ci.engine.proto.ExecuteStepRequest;
+import io.harness.product.ci.engine.proto.LiteEngineGrpc;
+import io.harness.product.ci.engine.proto.UnitStep;
+import io.harness.utils.TokenUtils;
 
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -36,13 +49,18 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.util.Yaml;
+import java.time.Duration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -53,11 +71,16 @@ public class K8SLiteRunner implements TaskRunner {
   private static final String HARNESS_LOG_PREFIX_VARIABLE = "HARNESS_LOG_PREFIX";
   private static final String LOGGING_SERVICE_URL =
       "http://localhost:8079"; // FixMe: This needs to come from delegate or runner config
+  private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
+  private final int MAX_ATTEMPTS = 3;
+  @Inject private DelegateConfiguration delegateConfiguration;
 
   private final CoreV1Api coreApi;
   private final ContainerBuilder containerBuilder;
   private final SecretsBuilder secretsBuilder;
   //  private final K8EventHandler k8EventHandler;
+  // local {k,v} store - need to get from DB ?
+  private Hashtable<String, String> taskGroupMapping = new Hashtable<>();
 
   @Override
   public void init(final String taskGroupId, final InputData infra) {
@@ -105,9 +128,12 @@ public class K8SLiteRunner implements TaskRunner {
                             .buildPod(containerBuilder, k8sInfra.getResource(), volumes, loggingSecret, portMap);
 
       final var namespace = K8SResourceHelper.getRunnerNamespace();
-      K8SService.clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
-          .create(coreApi);
+      K8SService k8SService =
+          (K8SService) K8SService
+              .clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
+              .create(coreApi);
 
+      taskGroupMapping.put(taskGroupId, k8SService.getSpec().getClusterIP());
       log.info("Creating Task Pod with YAML:\n{}", Yaml.dump(pod));
       coreApi.createNamespacedPod(namespace, pod, null, null, DELEGATE_FIELD_MANAGER, "Warn");
 
@@ -141,7 +167,54 @@ public class K8SLiteRunner implements TaskRunner {
 
   @Override
   public void execute(final String taskGroupId, final InputData tasks) {
-    throw new UnsupportedOperationException("Not implemented");
+    ExecuteStep executeStep = ExecuteStep.newBuilder()
+                                  .setTaskParameters(tasks.getBinaryData())
+                                  .addAllExecuteCommand(List.of("sh", "/opt/harness/start.sh"))
+                                  .build();
+    UnitStep unitStep = UnitStep.newBuilder().setExecuteTask(executeStep).build();
+    ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder().setStep(unitStep).build();
+
+    String accountKey = delegateConfiguration.getDelegateToken();
+    String managerUrl = delegateConfiguration.getManagerUrl();
+    String delegateID = DelegateAgentCommonVariables.getDelegateId();
+    if (isNotEmpty(managerUrl)) {
+      managerUrl = managerUrl.replace("/api/", "");
+      executeStepRequest = executeStepRequest.toBuilder().setManagerSvcEndpoint(managerUrl).build();
+    }
+    if (isNotEmpty(accountKey)) {
+      executeStepRequest =
+          executeStepRequest.toBuilder().setAccountKey(TokenUtils.getDecodedTokenString(accountKey)).build();
+    }
+    if (isNotEmpty(delegateID)) {
+      executeStepRequest = executeStepRequest.toBuilder().setDelegateId(delegateID).build();
+    }
+
+    String target = format("%s:%d", taskGroupMapping.get(taskGroupId), RESERVED_LE_PORT);
+    ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
+    ManagedChannel channel = managedChannelBuilder.build();
+
+    final ExecuteStepRequest finalExecuteStepRequest = executeStepRequest;
+    try {
+      try {
+        RetryPolicy<Object> retryPolicy = getRetryPolicy(
+            format("[Retrying failed call to send execution call to pod %s: {}", taskGroupMapping.get(taskGroupId)),
+            format("Failed to send execution to pod %s after retrying {} times", RESERVED_LE_PORT));
+
+        Failsafe.with(retryPolicy).get(() -> {
+          LiteEngineGrpc.LiteEngineBlockingStub liteEngineBlockingStub = LiteEngineGrpc.newBlockingStub(channel);
+          liteEngineBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS).executeStep(finalExecuteStepRequest);
+          return K8sTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+        });
+
+      } finally {
+        // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
+        // resources the channel should be shut down when it will no longer be used. If it may be used
+        // again leave it running.
+        channel.shutdownNow();
+      }
+    } catch (Exception e) {
+      log.error("Failed to execute step on lite engine target {} with err: {}", target, e);
+    }
   }
 
   @Override
@@ -174,5 +247,14 @@ public class K8SLiteRunner implements TaskRunner {
   @NonNull
   private List<V1EnvFromSource> createSecretRef(final List<V1Secret> secrets) {
     return secrets.stream().map(K8SEnvVar::fromSecret).collect(toList());
+  }
+
+  private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handle(Exception.class)
+        .withDelay(RETRY_SLEEP_DURATION)
+        .withMaxAttempts(MAX_ATTEMPTS)
+        .onFailedAttempt(event -> log.info(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 }
