@@ -1,3 +1,10 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.ccm.msp.dao;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
@@ -28,6 +35,15 @@ public class MarginDetailsDao {
 
   public MarginDetails get(String uuid) {
     return hPersistence.get(MarginDetails.class, uuid);
+  }
+
+  public MarginDetails getMarginDetailsForAccount(String mspAccountId, String accountId) {
+    return hPersistence.createQuery(MarginDetails.class)
+        .field(MarginDetailsKeys.accountId)
+        .equal(accountId)
+        .field(MarginDetailsKeys.mspAccountId)
+        .equal(mspAccountId)
+        .first();
   }
 
   public List<MarginDetails> list(String mspAccountId) {
@@ -96,7 +112,7 @@ public class MarginDetailsDao {
     hPersistence.update(query, updateOperations);
   }
 
-  public MarginDetails unsetMarginRules(String uuid, String accountId) {
+  public MarginDetails unsetMarginRules(String uuid) {
     Query<MarginDetails> query =
         hPersistence.createQuery(MarginDetails.class).field(MarginDetailsKeys.uuid).equal(uuid);
     UpdateOperations<MarginDetails> updateOperations = hPersistence.createUpdateOperations(MarginDetails.class);
@@ -106,9 +122,8 @@ public class MarginDetailsDao {
   }
 
   public boolean delete(String accountId) {
-    Query<MarginDetails> query = hPersistence.createQuery(MarginDetails.class)
-                                     .field(MarginDetailsKeys.accountId)
-                                     .equal(accountId);
+    Query<MarginDetails> query =
+        hPersistence.createQuery(MarginDetails.class).field(MarginDetailsKeys.accountId).equal(accountId);
     return hPersistence.delete(query);
   }
 }

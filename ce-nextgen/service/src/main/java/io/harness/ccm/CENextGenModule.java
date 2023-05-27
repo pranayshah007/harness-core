@@ -69,13 +69,10 @@ import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
 import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
 import io.harness.ccm.jira.CCMJiraHelper;
 import io.harness.ccm.jira.CCMJiraHelperImpl;
-=======
 import io.harness.ccm.msp.service.impl.ManagedAccountServiceImpl;
-<<<<<<< HEAD
 import io.harness.ccm.msp.service.impl.MarginDetailsServiceImpl;
 import io.harness.ccm.msp.service.intf.ManagedAccountService;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
->>>>>>> develop
 import io.harness.ccm.perpetualtask.K8sWatchTaskResourceClientModule;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.rbac.CCMRbacHelperImpl;

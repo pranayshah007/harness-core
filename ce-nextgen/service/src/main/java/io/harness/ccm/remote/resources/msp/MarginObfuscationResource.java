@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.msp.entities.ManagedAccountDetails;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -60,18 +59,6 @@ public class MarginObfuscationResource {
     return ResponseDTO.newResponse(marginDetailsService.save(marginDetails));
   }
 
-  @PUT
-  @ApiOperation(value = "Update margin details", nickname = "updateMarginDetails")
-  @Operation(operationId = "updateMarginDetails", summary = "Update Margin details",
-      responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns id of object created") })
-  public ResponseDTO<MarginDetails>
-  update(@Parameter(description = "Account id of the msp account") @QueryParam(
-             "accountIdentifier") @AccountIdentifier String accountIdentifier,
-      @RequestBody(required = true, description = "Margin details") @NotNull @Valid MarginDetails marginDetails) {
-    return ResponseDTO.newResponse(marginDetailsService.update(marginDetails));
-  }
-
   @GET
   @ApiOperation(value = "Get margin details", nickname = "getMarginDetails")
   @Operation(operationId = "getMarginDetails", summary = "Get Margin details",
@@ -79,8 +66,8 @@ public class MarginObfuscationResource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns margin details for given uuid") })
   public ResponseDTO<MarginDetails>
   get(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
-      @AccountIdentifier String accountIdentifier, @QueryParam("id") String uuid) {
-    return ResponseDTO.newResponse(marginDetailsService.get(uuid));
+      @AccountIdentifier String accountIdentifier, @QueryParam("managedAccountId") String managedAccountId) {
+    return ResponseDTO.newResponse(marginDetailsService.get(accountIdentifier, managedAccountId));
   }
 
   @GET
@@ -99,6 +86,18 @@ public class MarginObfuscationResource {
   }
 
   @PUT
+  @ApiOperation(value = "Update margin details", nickname = "updateMarginDetails")
+  @Operation(operationId = "updateMarginDetails", summary = "Update Margin details",
+      responses =
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns id of object created") })
+  public ResponseDTO<MarginDetails>
+  update(@Parameter(description = "Account id of the msp account") @QueryParam(
+             "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @RequestBody(required = true, description = "Margin details") @NotNull @Valid MarginDetails marginDetails) {
+    return ResponseDTO.newResponse(marginDetailsService.update(marginDetails));
+  }
+
+  @PUT
   @Path("unset-margins")
   @ApiOperation(value = "Unset margin details", nickname = "unsetMarginDetails")
   @Operation(operationId = "unsetMarginDetails", summary = "Unset Margin details",
@@ -107,36 +106,6 @@ public class MarginObfuscationResource {
   public ResponseDTO<MarginDetails>
   unsetMarginDetails(@Parameter(description = "Account id of the msp account") @QueryParam("accountIdentifier")
                      @AccountIdentifier String accountIdentifier, @QueryParam("id") String uuid) {
-    return ResponseDTO.newResponse(marginDetailsService.unsetMargins(uuid, accountIdentifier));
-  }
-
-  @GET
-  @Path("managed-accounts")
-  @ApiOperation(value = "List accounts managed by the msp", nickname = "listManagedAccounts")
-  @Operation(operationId = "listManagedAccounts", summary = "List Managed accounts",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns list of account details for the accounts managed by the msp")
-      })
-  public ResponseDTO<List<ManagedAccountDetails>>
-  listManagedAccounts(@Parameter(description = "Account id of the msp account") @QueryParam(
-      "accountIdentifier") @AccountIdentifier String accountIdentifier) {
-    return ResponseDTO.newResponse(marginDetailsService.listManagedAccountDetails(accountIdentifier));
-  }
-
-  @POST
-  @Path("managed-accounts/add")
-  @ApiOperation(value = "Add managed account", nickname = "addManagedAccount")
-  @Operation(operationId = "addManagedAccount", summary = "Add managed account",
-      responses =
-      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns id of object created") })
-  public ResponseDTO<String>
-  addManagedAccount(@Parameter(description = "Account id of the msp account") @QueryParam(
-                        "accountIdentifier") @AccountIdentifier String accountIdentifier,
-      @QueryParam("managedAccountId") String managedAccountId,
-      @QueryParam("managedAccountName") String managedAccountName) {
-    return ResponseDTO.newResponse(
-        marginDetailsService.addManagedAccount(accountIdentifier, managedAccountId, managedAccountName));
+    return ResponseDTO.newResponse(marginDetailsService.unsetMargins(uuid));
   }
 }

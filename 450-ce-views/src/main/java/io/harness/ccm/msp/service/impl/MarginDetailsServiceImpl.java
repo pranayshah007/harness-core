@@ -1,16 +1,19 @@
+/*
+ * Copyright 2023 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ccm.msp.service.impl;
 
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.AmountDetails;
-import io.harness.ccm.msp.entities.ManagedAccountDetails;
-import io.harness.ccm.msp.entities.ManagedAccountsOverview;
 import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.msp.service.intf.MarginDetailsService;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class MarginDetailsServiceImpl implements MarginDetailsService {
   @Inject MarginDetailsDao marginDetailsDao;
@@ -21,27 +24,8 @@ public class MarginDetailsServiceImpl implements MarginDetailsService {
   }
 
   @Override
-  public String addManagedAccount(String mspAccountId, String managedAccountId, String managedAccountName) {
-    return marginDetailsDao.save(MarginDetails.builder()
-                                     .accountId(managedAccountId)
-                                     .accountName(managedAccountName)
-                                     .mspAccountId(mspAccountId)
-                                     .build());
-  }
-
-  @Override
-  public MarginDetails update(MarginDetails marginDetails) {
-    return marginDetailsDao.update(marginDetails);
-  }
-
-  @Override
-  public MarginDetails unsetMargins(String uuid, String accountId) {
-    return marginDetailsDao.unsetMarginRules(uuid, accountId);
-  }
-
-  @Override
-  public MarginDetails get(String uuid) {
-    return marginDetailsDao.get(uuid);
+  public MarginDetails get(String mspAccountId, String managedAccountId) {
+    return marginDetailsDao.getMarginDetailsForAccount(mspAccountId, managedAccountId);
   }
 
   @Override
@@ -50,89 +34,22 @@ public class MarginDetailsServiceImpl implements MarginDetailsService {
   }
 
   @Override
-  public List<ManagedAccountDetails> listManagedAccountDetails(String mspAccountId) {
-    List<MarginDetails> marginDetailsList = marginDetailsDao.list(mspAccountId);
-    List<ManagedAccountDetails> managedAccountDetails = new ArrayList<>();
-    marginDetailsList.forEach(marginDetails
-        -> managedAccountDetails.add(ManagedAccountDetails.builder()
-                                         .accountId(marginDetails.getAccountId())
-                                         .accountName(marginDetails.getAccountName())
-                                         .build()));
-    return managedAccountDetails;
+  public MarginDetails update(MarginDetails marginDetails) {
+    return marginDetailsDao.update(marginDetails);
   }
 
   @Override
-  public ManagedAccountsOverview getTotalMarkupAndSpend(String mspAccountId) {
-    List<MarginDetails> marginDetailsList = list(mspAccountId);
-    return ManagedAccountsOverview.builder()
-        .totalMarkupAmount(getTotalMarkupAmountDetails(marginDetailsList))
-        .totalSpend(getTotalSpendDetails(marginDetailsList))
-        .build();
+  public MarginDetails unsetMargins(String uuid) {
+    return marginDetailsDao.unsetMarginRules(uuid);
   }
 
-  private AmountDetails getTotalMarkupAmountDetails(List<MarginDetails> marginDetailsList) {
-    return AmountDetails.builder()
-        .currentMonth(marginDetailsList.stream()
-                          .filter(marginDetails -> marginDetails.getMarkupAmountDetails() != null)
-                          .map(marginDetails -> marginDetails.getMarkupAmountDetails().getCurrentMonth())
-                          .collect(Collectors.toList())
-                          .stream()
-                          .mapToDouble(Double::doubleValue)
-                          .sum())
-        .lastMonth(marginDetailsList.stream()
-                       .filter(marginDetails -> marginDetails.getMarkupAmountDetails() != null)
-                       .map(marginDetails -> marginDetails.getMarkupAmountDetails().getLastMonth())
-                       .collect(Collectors.toList())
-                       .stream()
-                       .mapToDouble(Double::doubleValue)
-                       .sum())
-        .currentQuarter(marginDetailsList.stream()
-                            .filter(marginDetails -> marginDetails.getMarkupAmountDetails() != null)
-                            .map(marginDetails -> marginDetails.getMarkupAmountDetails().getCurrentQuarter())
-                            .collect(Collectors.toList())
-                            .stream()
-                            .mapToDouble(Double::doubleValue)
-                            .sum())
-        .lastQuarter(marginDetailsList.stream()
-                         .filter(marginDetails -> marginDetails.getMarkupAmountDetails() != null)
-                         .map(marginDetails -> marginDetails.getMarkupAmountDetails().getLastQuarter())
-                         .collect(Collectors.toList())
-                         .stream()
-                         .mapToDouble(Double::doubleValue)
-                         .sum())
-        .build();
+  @Override
+  public void updateMarkupAmount(String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails) {
+    marginDetailsDao.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails);
   }
 
-  private AmountDetails getTotalSpendDetails(List<MarginDetails> marginDetailsList) {
-    return AmountDetails.builder()
-        .currentMonth(marginDetailsList.stream()
-                          .filter(marginDetails -> marginDetails.getTotalSpendDetails() != null)
-                          .map(marginDetails -> marginDetails.getTotalSpendDetails().getCurrentMonth())
-                          .collect(Collectors.toList())
-                          .stream()
-                          .mapToDouble(Double::doubleValue)
-                          .sum())
-        .lastMonth(marginDetailsList.stream()
-                       .filter(marginDetails -> marginDetails.getTotalSpendDetails() != null)
-                       .map(marginDetails -> marginDetails.getTotalSpendDetails().getLastMonth())
-                       .collect(Collectors.toList())
-                       .stream()
-                       .mapToDouble(Double::doubleValue)
-                       .sum())
-        .currentQuarter(marginDetailsList.stream()
-                            .filter(marginDetails -> marginDetails.getTotalSpendDetails() != null)
-                            .map(marginDetails -> marginDetails.getTotalSpendDetails().getCurrentQuarter())
-                            .collect(Collectors.toList())
-                            .stream()
-                            .mapToDouble(Double::doubleValue)
-                            .sum())
-        .lastQuarter(marginDetailsList.stream()
-                         .filter(marginDetails -> marginDetails.getTotalSpendDetails() != null)
-                         .map(marginDetails -> marginDetails.getTotalSpendDetails().getLastQuarter())
-                         .collect(Collectors.toList())
-                         .stream()
-                         .mapToDouble(Double::doubleValue)
-                         .sum())
-        .build();
+  @Override
+  public void updateTotalSpend(String mspAccountId, String managedAccountId, AmountDetails totalSpendDetails) {
+    marginDetailsDao.updateTotalSpend(mspAccountId, managedAccountId, totalSpendDetails);
   }
 }
