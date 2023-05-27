@@ -7,6 +7,7 @@
 
 package io.harness.serializer.morphia;
 
+import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.BusinessMappingHistory;
 import io.harness.ccm.views.entities.CEReportSchedule;
@@ -39,6 +40,9 @@ public class ViewsMorphiaRegistrar implements MorphiaRegistrar {
     set.add(RuleEnforcement.class);
     set.add(RuleExecution.class);
     set.add(RuleRecommendation.class);
+
+    // msp
+    set.add(MarginDetails.class);
   }
 
   @Override

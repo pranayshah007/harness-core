@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.ccm.msp.dto.ManagedAccount;
 import io.harness.ccm.views.businessmapping.entities.CostTarget;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -58,7 +59,18 @@ public class MarginDetails implements PersistentEntity, UuidAware, CreatedAtAwar
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("accountId").unique(true).field(MarginDetailsKeys.accountId).build())
+        .add(CompoundMongoIndex.builder()
+                 .name("unique_accountId")
+                 .unique(true)
+                 .field(MarginDetailsKeys.accountId)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_mspAccountId")
+                 .unique(true)
+                 .field(MarginDetailsKeys.accountId)
+                 .field(MarginDetailsKeys.mspAccountId)
+                 .build())
+        .add(CompoundMongoIndex.builder().name("mspAccountId_1").field(MarginDetailsKeys.mspAccountId).build())
         .build();
   }
 }
