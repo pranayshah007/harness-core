@@ -7,14 +7,15 @@
 
 package io.harness.ccm.msp.entities;
 
+import static io.harness.annotations.dev.HarnessTeam.CE;
+
 import io.harness.annotations.dev.OwnedBy;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
-
-import static io.harness.annotations.dev.HarnessTeam.CE;
 
 @Value
 @Builder
@@ -22,8 +23,8 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 @EqualsAndHashCode(callSuper = false)
 @OwnedBy(CE)
 public class AmountDetails {
-    Double lastMonth;
-    Double currentMonth;
-    Double currentQuarter;
-    Double lastQuarter;
+  Double lastMonth;
+  Double currentMonth;
+  Double currentQuarter;
+  Double lastQuarter;
 }
