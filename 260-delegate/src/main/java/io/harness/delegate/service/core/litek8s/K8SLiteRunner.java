@@ -7,6 +7,7 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import static io.harness.delegate.service.core.litek8s.ContainerBuilder.RESERVED_LE_PORT;
 import static io.harness.delegate.service.core.util.K8SConstants.DELEGATE_FIELD_MANAGER;
 
 import static java.util.stream.Collectors.flatMapping;
@@ -19,6 +20,7 @@ import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.StepRuntime;
 import io.harness.delegate.service.core.k8s.K8SEnvVar;
 import io.harness.delegate.service.core.k8s.K8SSecret;
+import io.harness.delegate.service.core.k8s.K8SService;
 import io.harness.delegate.service.core.runner.TaskRunner;
 import io.harness.delegate.service.core.util.AnyUtils;
 import io.harness.delegate.service.core.util.ApiExceptionLogger;
@@ -102,10 +104,14 @@ public class K8SLiteRunner implements TaskRunner {
                             .withTasks(createContainers(k8sInfra.getStepsList(), taskSecrets, volumeMounts, portMap))
                             .buildPod(containerBuilder, k8sInfra.getResource(), volumes, loggingSecret, portMap);
 
-      log.info("Creating Task Pod with YAML:\n{}", Yaml.dump(pod));
-      coreApi.createNamespacedPod(
-          K8SResourceHelper.getRunnerNamespace(), pod, null, null, DELEGATE_FIELD_MANAGER, "Warn");
+      final var namespace = K8SResourceHelper.getRunnerNamespace();
+      K8SService.clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
+          .create(coreApi);
 
+      log.info("Creating Task Pod with YAML:\n{}", Yaml.dump(pod));
+      coreApi.createNamespacedPod(namespace, pod, null, null, DELEGATE_FIELD_MANAGER, "Warn");
+
+      log.info("Done creating the task pod for {}!!", taskGroupId);
       // Step 3 - Watch pod logs - normally stop when init finished, but if LE sends response then that's not possible
       // (e.g. delegate replicaset), but we can stop on watch status
       //    Watch<CoreV1Event> watch =

@@ -1,4 +1,4 @@
-Var metricApiUrl = concat(Env:baseUrl, "v2/signalflow/execute?start=", Env:startTimeMillis,"&stop=", Env:endTimeMillis, "&resolution=60000")
+Var metricApiUrl = concat(Env:baseUrl, "v2/signalflow/execute?start=", Env:startTimeMillis,"&stop=", Env:endTimeMillis, "&resolution=60000&immediate=true")
 Var body = concat(Env:query, ".publish()")
 print Var:body
 Var response = sync-call-signalfx(url=Var:metricApiUrl, header=Env:commonHeaders, options=Env:commonOptions, body=Var:body, bodyType=TEXT, method=POST, metricType=RAW)

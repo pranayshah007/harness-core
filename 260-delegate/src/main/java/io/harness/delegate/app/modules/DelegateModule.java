@@ -526,8 +526,10 @@ import io.harness.perpetualtask.manifest.HelmRepositoryService;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 import io.harness.perpetualtask.polling.manifest.HelmChartCollectionService;
 import io.harness.perpetualtask.polling.manifest.ManifestCollectionService;
-import io.harness.rancher.RancherHelperService;
-import io.harness.rancher.RancherHelperServiceImpl;
+import io.harness.rancher.RancherClusterClient;
+import io.harness.rancher.RancherClusterClientImpl;
+import io.harness.rancher.RancherConnectionHelperService;
+import io.harness.rancher.RancherConnectionHelperServiceImpl;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretsDelegateCacheHelperService;
@@ -1285,7 +1287,8 @@ public class DelegateModule extends AbstractModule {
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
     bind(AwsCliClient.class).to(AwsCliClientImpl.class);
     bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
-    bind(RancherHelperService.class).to(RancherHelperServiceImpl.class);
+    bind(RancherConnectionHelperService.class).to(RancherConnectionHelperServiceImpl.class);
+    bind(RancherClusterClient.class).to(RancherClusterClientImpl.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
         MapBinder.newMapBinder(binder(), String.class, CommandUnitExecutorService.class);

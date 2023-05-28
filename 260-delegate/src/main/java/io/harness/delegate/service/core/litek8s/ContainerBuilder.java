@@ -51,7 +51,7 @@ public class ContainerBuilder {
   private static final String WORKING_DIR = "/harness";
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
   private static final String ADDON_RUN_ARGS_FORMAT = "--port %s";
-  private static final int RESERVED_LE_PORT = 20001;
+  public static final int RESERVED_LE_PORT = 20001;
 
   public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()

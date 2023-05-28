@@ -55,6 +55,8 @@ public class InstanceMapper {
         .infraIdentifier(instance.getInfraIdentifier())
         .infraName(instance.getInfraName())
         .podCreatedAt(instance.getPodCreatedAt())
+        .instanceKey(instance.getInstanceKey())
+        .infrastructureMappingId(instance.getInfrastructureMappingId())
         .build();
   }
 

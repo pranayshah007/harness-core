@@ -34,6 +34,8 @@ public class CICredit extends Credit implements PersistentRegularIterable {
   public Long obtainNextIteration(String fieldName) {
     if (CreditsKeys.creditExpiryCheckIteration.equals(fieldName)) {
       return creditExpiryCheckIteration;
+    } else if (CreditsKeys.creditsSendToSegmentIteration.equals(fieldName)) {
+      return creditsSendToSegmentIteration;
     }
     throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
@@ -45,6 +47,13 @@ public class CICredit extends Credit implements PersistentRegularIterable {
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    this.creditExpiryCheckIteration = nextIteration;
+    if (CreditsKeys.creditExpiryCheckIteration.equals(fieldName)) {
+      this.creditExpiryCheckIteration = nextIteration;
+      return;
+    } else if (CreditsKeys.creditsSendToSegmentIteration.equals(fieldName)) {
+      this.creditsSendToSegmentIteration = nextIteration;
+      return;
+    }
+    throw new IllegalArgumentException("Invalid fieldName " + fieldName);
   }
 }

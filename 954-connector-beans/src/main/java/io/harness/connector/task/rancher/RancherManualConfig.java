@@ -21,7 +21,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RancherManualConfigCredentials {
+public class RancherManualConfig {
   String rancherUrl;
   private RancherBearerTokenAuthPassword password;
 }

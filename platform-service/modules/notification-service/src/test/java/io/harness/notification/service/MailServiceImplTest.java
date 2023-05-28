@@ -9,21 +9,27 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.ANKUSH;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.RICHA;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.MailTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.exception.NotificationException;
@@ -45,6 +51,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
@@ -52,9 +59,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
 
 @OwnedBy(PL)
 public class MailServiceImplTest extends CategoryTest {
@@ -65,6 +74,8 @@ public class MailServiceImplTest extends CategoryTest {
   @Mock private MailSenderImpl mailSender;
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Mock private UserNGClient userNGClient;
+  @Mock private Call<ResponseDTO<Boolean>> responseTrue;
+  @Mock private Call<ResponseDTO<Boolean>> responseFalse;
   private MockedStatic<NGRestUtils> restUtilsMockedStatic;
   private MailServiceImpl mailService;
   private String accountId = "accountId";
@@ -72,6 +83,12 @@ public class MailServiceImplTest extends CategoryTest {
   private String emailAdress = "email@harness.io";
   private String id = "id";
   private EmailTemplate emailTemplate = new EmailTemplate();
+  private static final String VALID_EMAIL_1 = "validEmail1@harness.io";
+  private static final String VALID_EMAIL_2 = "validEmail2@harness.io";
+  private static final String INVALID_EMAIL_1 = "invalidEmail1@harness.io";
+  private static final String INVALID_EMAIL_2 = "invalidEmail2@harness.io";
+  private static final List<String> validInvalidPair1 = Arrays.asList(VALID_EMAIL_1, INVALID_EMAIL_1);
+  private static final List<String> validInvalidPair2 = Arrays.asList(VALID_EMAIL_2, INVALID_EMAIL_2);
 
   @Before
   public void setUp() throws Exception {
@@ -81,7 +98,15 @@ public class MailServiceImplTest extends CategoryTest {
     emailTemplate.setBody("this is test mail");
     emailTemplate.setSubject("test notification");
     restUtilsMockedStatic = mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponse(any())).thenReturn(true);
+    //    when(NGRestUtils.getResponse(any())).thenReturn(true);
+
+    when(NGRestUtils.getResponse(responseTrue)).thenReturn(true);
+    when(NGRestUtils.getResponse(responseFalse)).thenReturn(false);
+    when(userNGClient.isEmailIdInAccount("email@harness.io", accountId)).thenReturn(responseTrue);
+    when(userNGClient.isEmailIdInAccount(VALID_EMAIL_1, accountId)).thenReturn(responseTrue);
+    when(userNGClient.isEmailIdInAccount(VALID_EMAIL_2, accountId)).thenReturn(responseTrue);
+    when(userNGClient.isEmailIdInAccount(INVALID_EMAIL_1, accountId)).thenReturn(responseFalse);
+    when(userNGClient.isEmailIdInAccount(INVALID_EMAIL_2, accountId)).thenReturn(responseFalse);
   }
 
   @After
@@ -352,5 +377,62 @@ public class MailServiceImplTest extends CategoryTest {
         .thenReturn(Optional.of("This is a test notification"));
     when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
     assertThatThrownBy(() -> mailService.sendEmail(emailDTO)).isInstanceOf(NotificationException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void sendEmail_ValidRequest_SendToNonHarnessTrue_SmtpConfigFalse() {
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .accountId(accountId)
+                                  .toRecipients(new HashSet<>(validInvalidPair1))
+                                  .ccRecipients(new HashSet<>(validInvalidPair2))
+                                  .sendToNonHarnessRecipients(true)
+                                  .build();
+    doReturn(null).when(notificationSettingsService).getSmtpConfig(accountId);
+
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    ArgumentCaptor<List<String>> toCaptor = ArgumentCaptor.forClass(List.class);
+    ArgumentCaptor<List<String>> ccCaptor = ArgumentCaptor.forClass(List.class);
+    when(mailSender.send(toCaptor.capture(), ccCaptor.capture(), any(), any(), any(), any()))
+        .thenReturn(notificationExpectedResponse);
+    when(notificationTemplateService.getTemplateAsString(any(), any()))
+        .thenReturn(Optional.of("This is a test notification"));
+    when(yamlUtils.read(any(), (TypeReference<EmailTemplate>) any())).thenReturn(emailTemplate);
+    NotificationTaskResponse response = mailService.sendEmail(emailDTO);
+    assertTrue(response.getProcessingResponse().getResult().iterator().next());
+
+    assertThat(toCaptor.getValue().size()).isEqualTo(1);
+    assertThat(ccCaptor.getValue().size()).isEqualTo(1);
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void sendEmail_ValidRequest_SendToNonHarnessTrue_SmtpConfigTrue() {
+    final EmailDTO emailDTO = EmailDTO.builder()
+                                  .notificationId("notificationId")
+                                  .accountId(accountId)
+                                  .toRecipients(new HashSet<>(validInvalidPair1))
+                                  .ccRecipients(new HashSet<>(validInvalidPair2))
+                                  .sendToNonHarnessRecipients(true)
+                                  .build();
+    doReturn(new SmtpConfigResponse()).when(notificationSettingsService).getSmtpConfigResponse(accountId);
+    ArgumentCaptor<DelegateTaskRequest> requestCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
+    when(delegateGrpcClientWrapper.executeSyncTaskV2(requestCaptor.capture()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
+    when(notificationSettingsService.getSmtpConfigResponse(eq(accountId)))
+        .thenReturn(new SmtpConfigResponse(SmtpConfig.builder().build(), Collections.EMPTY_LIST));
+    mailService.sendEmail(emailDTO);
+    DelegateTaskRequest request = requestCaptor.getValue();
+    assertThat(((MailTaskParams) request.getTaskParameters()).getEmailIds().size()).isEqualTo(2);
+    assertThat(((MailTaskParams) request.getTaskParameters()).getCcEmailIds().size()).isEqualTo(2);
   }
 }

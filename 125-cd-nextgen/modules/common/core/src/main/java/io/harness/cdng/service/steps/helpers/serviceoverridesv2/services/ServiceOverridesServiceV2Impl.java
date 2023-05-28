@@ -140,7 +140,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
   }
 
   @Override
-  public Pair<NGServiceOverridesEntity, Boolean> upsert(NGServiceOverridesEntity requestedEntity) {
+  public Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedEntity) {
     validatePresenceOfRequiredFields(
         requestedEntity.getAccountId(), requestedEntity.getEnvironmentRef(), requestedEntity.getType());
     modifyRequestedServiceOverride(requestedEntity);
@@ -228,7 +228,7 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     return ServiceOverridesSpec.builder()
         .variables(mergeVariables(requestedSpec.getVariables(), existingSpec.getVariables()))
         .manifests(mergeManifest(requestedSpec.getManifests(), existingSpec.getManifests()))
-        .configFiles(mergeConfigFiles(requestedSpec.getConfigFiles(), requestedSpec.getConfigFiles()))
+        .configFiles(mergeConfigFiles(requestedSpec.getConfigFiles(), existingSpec.getConfigFiles()))
         .applicationSettings(requestedSpec.getApplicationSettings() == null ? existingSpec.getApplicationSettings()
                                                                             : requestedSpec.getApplicationSettings())
         .connectionStrings(requestedSpec.getConnectionStrings() == null ? existingSpec.getConnectionStrings()

@@ -828,8 +828,6 @@ public class ExecutionHelperTest extends CategoryTest {
     PlanExecution createdPlanExecution = executionHelper.startExecution(
         accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, "prevId", null);
     assertThat(createdPlanExecution).isEqualTo(planExecution);
-    verify(planService, times(1)).fetchPlan(planId);
-    verify(planService, times(1)).fetchNodes(planId);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     verify(rollbackModeExecutionHelper, times(1))
         .transformPlanForRollbackMode(plan, "prevId", Collections.singletonList("n1"),

@@ -151,6 +151,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String OAUTH_RESOURCE_PACKAGE = "io.harness.ng.oauth";
   public static final String LDAP_PACKAGE = "io.harness.ldap.resource";
   public static final String CHAOS_PACKAGE = "io.harness.ng.chaos";
+  public static final String SERVICE_DISCOVERY_PACKAGE = "io.harness.ng.servicediscovery";
 
   public static final String IP_ALLOWLIST_PACKAGE = "io.harness.ipallowlist.resource";
   public static final String FAVORITES_PACKAGE = "io.harness.favorites.remote";
@@ -191,6 +192,8 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("chaosServiceClientConfig") private ServiceHttpClientConfig chaosServiceClientConfig;
+  @JsonProperty("serviceDiscoveryServiceClientConfig")
+  private ServiceHttpClientConfig serviceDiscoveryServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean enableAuth;
@@ -321,7 +324,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.TERRAFORM_CLOUD_RESOURCE_PACKAGE, NextGenConfiguration.GCP_PACKAGE,
                 NextGenConfiguration.EOL_BANNER_RESOURCE_PACKAGE, NextGenConfiguration.TERRAFORM_RESOURCE_PACKAGE,
                 NextGenConfiguration.IP_ALLOWLIST_PACKAGE, NextGenConfiguration.SERVICE_OVERRIDES_PACKAGE,
-                NextGenConfiguration.FAVORITES_PACKAGE))
+                NextGenConfiguration.FAVORITES_PACKAGE, NextGenConfiguration.SERVICE_DISCOVERY_PACKAGE))
         .collect(Collectors.toSet());
   }
 

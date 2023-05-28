@@ -30,5 +30,5 @@ public interface ServiceOverridesServiceV2 {
 
   Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageRequest);
 
-  Pair<NGServiceOverridesEntity, Boolean> upsert(NGServiceOverridesEntity requestedServiceOverride);
+  Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride);
 }

@@ -596,8 +596,6 @@ sscaServiceConfig:
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
   serviceSecret: secret
-  baseUrl: http://localhost:8186
-  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002" # this is dummy token
 
 pipelineAsyncValidationPoolConfig:
   corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}

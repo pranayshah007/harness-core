@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlUtils;
@@ -24,6 +26,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -39,12 +43,13 @@ import lombok.extern.slf4j.Slf4j;
 public class RollbackModeYamlTransformer {
   NodeExecutionService nodeExecutionService;
 
-  String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId) {
+  String transformProcessedYaml(String processedYaml, ExecutionMode executionMode, String originalPlanExecutionId,
+      List<String> stageNodeExecutionIds) {
     switch (executionMode) {
       case PIPELINE_ROLLBACK:
         return transformProcessedYamlForPipelineRollbackMode(processedYaml, originalPlanExecutionId);
       case POST_EXECUTION_ROLLBACK:
-        return transformProcessedYamlForPostExecutionRollbackMode(processedYaml);
+        return transformProcessedYamlForPostExecutionRollbackMode(processedYaml, stageNodeExecutionIds);
       default:
         throw new InvalidRequestException(String.format(
             "Unsupported Execution Mode %s in RollbackModeExecutionHelper while transforming plan for execution with id %s",
@@ -78,7 +83,43 @@ public class RollbackModeYamlTransformer {
                                       .filter(info -> !info.getName().equals(PIPELINE_ROLLBACK_STAGE_NAME))
                                       .map(info -> info.getIdentifier())
                                       .collect(Collectors.toList());
+    return filterProcessedYaml(processedYaml, executedStages);
+  }
 
+  /**
+   * This is to reverse the stages in the processed yaml
+   * Original->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s1
+   *  - stage:
+   *       identifier: s2
+   * Transformed->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s2
+   *   - stage:
+   *       identifier: s1
+   *
+   * If stageNodeExecutionIds contains one element, and it corresponds to the stage s1, then we will get->
+   * pipeline:
+   *   stages:
+   *   - stage:
+   *       identifier: s1
+   */
+  String transformProcessedYamlForPostExecutionRollbackMode(String processedYaml, List<String> stageNodeExecutionIds) {
+    List<String> requiredStageIds = nodeExecutionService
+                                        .getAllWithFieldIncluded(new HashSet<>(stageNodeExecutionIds),
+                                            Collections.singleton(NodeExecutionKeys.identifier))
+                                        .stream()
+                                        .map(NodeExecution::getIdentifier)
+                                        .collect(Collectors.toList());
+    return filterProcessedYaml(processedYaml, requiredStageIds);
+  }
+
+  String filterProcessedYaml(String processedYaml, List<String> requiredStageIds) {
     JsonNode pipelineNode;
     try {
       pipelineNode = YamlUtils.readTree(processedYaml).getNode().getCurrJsonNode();
@@ -92,9 +133,9 @@ public class RollbackModeYamlTransformer {
     for (int i = numStages - 1; i >= 0; i--) {
       JsonNode currentNode = stagesList.get(i);
       if (currentNode.get(YAMLFieldNameConstants.PARALLEL) == null) {
-        handleSerialStage(currentNode, executedStages, reversedStages);
+        handleSerialStage(currentNode, requiredStageIds, reversedStages);
       } else {
-        handleParallelStages(currentNode, executedStages, reversedStages);
+        handleParallelStages(currentNode, requiredStageIds, reversedStages);
       }
     }
     pipelineInnerNode.set(YAMLFieldNameConstants.STAGES, reversedStages);
@@ -121,40 +162,5 @@ public class RollbackModeYamlTransformer {
         break;
       }
     }
-  }
-
-  /**
-   * This is to reverse the stages in the processed yaml
-   * Original->
-   * pipeline:
-   *   stages:
-   *   - stage:
-   *       identifier: s1
-   *  - stage:
-   *       identifier: s2
-   * Transformed->
-   * pipeline:
-   *   stages:
-   *   - stage:
-   *       identifier: s2
-   *   - stage:
-   *       identifier: s1
-   */
-  String transformProcessedYamlForPostExecutionRollbackMode(String processedYaml) {
-    JsonNode pipelineNode;
-    try {
-      pipelineNode = YamlUtils.readTree(processedYaml).getNode().getCurrJsonNode();
-    } catch (IOException e) {
-      throw new UnexpectedException("Unable to transform processed YAML while executing in Rollback Mode");
-    }
-    ObjectNode pipelineInnerNode = (ObjectNode) pipelineNode.get(YAMLFieldNameConstants.PIPELINE);
-    ArrayNode stagesList = (ArrayNode) pipelineInnerNode.get(YAMLFieldNameConstants.STAGES);
-    ArrayNode reversedStages = stagesList.deepCopy().removeAll();
-    int numStages = stagesList.size();
-    for (int i = numStages - 1; i >= 0; i--) {
-      reversedStages.add(stagesList.get(i));
-    }
-    pipelineInnerNode.set(YAMLFieldNameConstants.STAGES, reversedStages);
-    return YamlUtils.write(pipelineNode).replace("---\n", "");
   }
 }

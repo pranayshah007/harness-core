@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VED;
-import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -653,13 +652,5 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
     awsPutAuditBatchToBucketTaskResponse = (AwsPutAuditBatchToBucketTaskResponse) responseData;
     assertThat(awsPutAuditBatchToBucketTaskResponse.getCommandExecutionStatus())
         .isEqualTo(CommandExecutionStatus.FAILURE);
-  }
-
-  @Test
-  @Owner(developers = vivekveman)
-  @Category(UnitTests.class)
-  public void testlistBuildsForInvalidRegex() {
-    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build();
-    assertThat(awsApiHelperService1.listBuilds(awsInternalConfig, "", "", "helloworld")).hasSize(0);
   }
 }

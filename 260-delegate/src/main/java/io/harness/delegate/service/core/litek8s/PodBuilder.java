@@ -7,6 +7,8 @@
 
 package io.harness.delegate.service.core.litek8s;
 
+import static io.harness.delegate.service.core.util.K8SResourceHelper.HARNESS_NAME_LABEL;
+
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -29,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -58,6 +61,7 @@ public class PodBuilder extends V1PodBuilder {
         //        .withLabels(Map.of()) // TODO: Add labels to infra section in the API
         //        .withAnnotations(Map.of()) // TODO: Add annotations to infra section in the API
         .withNamespace(K8SResourceHelper.getRunnerNamespace())
+        .withLabels(Map.of(HARNESS_NAME_LABEL, K8SResourceHelper.getPodName(taskGroupId)))
         .endMetadata()
         .withNewSpec()
         .withRestartPolicy("Never")

@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 20
+version : 21
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -347,6 +347,16 @@ settings :
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: email_to_non_harness_users
+    name: Enable Emails to be sent to non-Harness Users
+    category: CD
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
     allowedScopes:
       - ACCOUNT
       - ORGANIZATION

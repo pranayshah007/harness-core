@@ -167,7 +167,7 @@ public class RollbackModeExecutionHelperTest extends CategoryTest {
         + "      identifier: \"s1\"\n";
     doReturn(transformed)
         .when(rollbackModeYamlTransformer)
-        .transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "oldPlanId");
+        .transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, "oldPlanId", null);
     PlanExecutionMetadata oldPlanExecutionMetadata =
         PlanExecutionMetadata.builder().uuid("randomId").planExecutionId("oldPlanId").processedYaml(original).build();
     String newId = "newId";

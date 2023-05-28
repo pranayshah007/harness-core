@@ -35,17 +35,17 @@ public class RancherNgConfigMapper {
     RancherConfigType rancherConfigType = rancherConnectorConfigDTO.getConfigType();
 
     if (rancherConfigType == RancherConfigType.MANUAL_CONFIG) {
-      RancherConnectorConfigAuthDTO rancherConnectorConfigAuthDTO = rancherConnectorConfigDTO.getConfig();
+      RancherConnectorConfigAuthDTO configDto = rancherConnectorConfigDTO.getConfig();
       RancherConnectorBearerTokenAuthenticationDTO authDTO =
-          (RancherConnectorBearerTokenAuthenticationDTO) rancherConnectorConfigAuthDTO.getCredentials().getAuth();
+          (RancherConnectorBearerTokenAuthenticationDTO) configDto.getCredentials().getAuth();
       authDTO = validateAndDecryptCredentials(authDTO, encryptionDetails);
       return RancherConfig.builder()
-          .credential(RancherManualConfigCredentials.builder()
-                          .rancherUrl(rancherConnectorConfigAuthDTO.getRancherUrl())
-                          .password(RancherBearerTokenAuthPassword.builder()
-                                        .rancherPassword(getDecryptedValueWithNullCheck(authDTO.getPasswordRef()))
-                                        .build())
-                          .build())
+          .manualConfig(RancherManualConfig.builder()
+                            .rancherUrl(configDto.getRancherUrl())
+                            .password(RancherBearerTokenAuthPassword.builder()
+                                          .rancherPassword(getDecryptedValueWithNullCheck(authDTO.getPasswordRef()))
+                                          .build())
+                            .build())
           .build();
     }
 

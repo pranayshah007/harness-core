@@ -18,7 +18,7 @@ import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
 import io.harness.exception.exceptionmanager.ExceptionManager;
-import io.harness.rancher.RancherHelperService;
+import io.harness.rancher.RancherConnectionHelperService;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class RancherValidationHandler implements ConnectorValidationHandler {
   @Inject private RancherNgConfigMapper rancherNgConfigMapper;
-  @Inject private RancherHelperService rancherHelperService;
+  @Inject private RancherConnectionHelperService rancherConnectionHelperService;
   @Inject private ExceptionManager exceptionManager;
 
   @Override
@@ -41,6 +41,8 @@ public class RancherValidationHandler implements ConnectorValidationHandler {
           (RancherTestConnectionTaskParams) connectorValidationParams;
       final RancherConnectorDTO connectorDTO = rancherTestConnectionTaskParams.getRancherConnectorDTO();
       final List<EncryptedDataDetail> encryptedDataDetails = rancherTestConnectionTaskParams.getEncryptedDataDetails();
+      log.info("Started performing rancher connector validation for accountId {} and connectorId {}", accountIdentifier,
+          connectorValidationParams.getConnectorName());
       return validateInternal(connectorDTO, encryptedDataDetails);
     } catch (Exception e) {
       throw exceptionManager.processException(e, MANAGER, log);
@@ -61,7 +63,7 @@ public class RancherValidationHandler implements ConnectorValidationHandler {
   }
 
   private ConnectorValidationResult handleValidateTask(RancherConfig rancherConfig) {
-    return rancherHelperService.testRancherConnection(rancherConfig.getCredential().getRancherUrl(),
-        rancherConfig.getCredential().getPassword().getRancherPassword());
+    return rancherConnectionHelperService.testRancherConnection(rancherConfig.getManualConfig().getRancherUrl(),
+        rancherConfig.getManualConfig().getPassword().getRancherPassword());
   }
 }
