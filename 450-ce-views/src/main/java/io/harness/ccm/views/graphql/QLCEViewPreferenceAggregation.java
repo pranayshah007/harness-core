@@ -5,12 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.ccm.views.entities;
+package io.harness.ccm.views.graphql;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import io.leangen.graphql.annotations.GraphQLNonNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -20,7 +21,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CE)
-public class GCPViewPreferences {
-  Boolean includeDiscounts;
-  Boolean includeTaxes;
+public class QLCEViewPreferenceAggregation {
+  @GraphQLNonNull QLCEViewAggregateOperation operationType;
+  @GraphQLNonNull String columnName;
+  @GraphQLNonNull QLCEViewAggregateArithmeticOperation arithmeticOperationType;
+  @GraphQLNonNull QLCEViewFilter filter;
 }

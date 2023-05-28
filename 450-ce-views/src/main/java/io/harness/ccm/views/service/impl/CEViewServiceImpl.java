@@ -215,11 +215,11 @@ public class CEViewServiceImpl implements CEViewService {
     if (views.size() >= VIEW_COUNT) {
       throw new InvalidRequestException(VIEW_LIMIT_REACHED_EXCEPTION);
     }
-    modifyCEViewAndSetDefaults(ceView);
+    modifyCEViewAndSetDefaults(ceView, false);
     return true;
   }
 
-  private void modifyCEViewAndSetDefaults(CEView ceView) {
+  private void modifyCEViewAndSetDefaults(CEView ceView, boolean updateWithViewPreferenceDefaultSettings) {
     if (ceView.getViewVisualization() == null || ceView.getViewVisualization().getGroupBy() == null) {
       ceView.setViewVisualization(ViewVisualization.builder()
                                       .granularity(ViewTimeGranularity.DAY)
@@ -274,7 +274,8 @@ public class CEViewServiceImpl implements CEViewService {
     }
 
     setDataSources(ceView, viewFieldIdentifierSet);
-    ceView.setViewPreferences(ceViewPreferenceUtils.getCEViewPreferences(ceView));
+    ceView.setViewPreferences(
+        ceViewPreferenceUtils.getCEViewPreferences(ceView, updateWithViewPreferenceDefaultSettings));
   }
 
   private void setDataSources(final CEView ceView, final Set<ViewFieldIdentifier> viewFieldIdentifierSet) {
@@ -304,7 +305,7 @@ public class CEViewServiceImpl implements CEViewService {
 
   @Override
   public CEView update(CEView ceView) {
-    modifyCEViewAndSetDefaults(ceView);
+    modifyCEViewAndSetDefaults(ceView, false);
     // For now, we are not returning AWS account Name in case of AWS Account rules
     return ceViewDao.update(ceView);
   }
@@ -398,6 +399,15 @@ public class CEViewServiceImpl implements CEViewService {
   @Override
   public List<CEView> getAllViews(String accountId) {
     return ceViewDao.list(accountId);
+  }
+
+  @Override
+  public void updateAllPerspectiveWithPerspectivePreferenceDefaultSettings(String accountId) {
+    // [TODO]: will receive only 1 field update event, in for loop
+    for (CEView ceView : getAllViews(accountId)) {
+      modifyCEViewAndSetDefaults(ceView, true);
+      ceViewDao.update(ceView);
+    }
   }
 
   @Override
@@ -592,7 +602,7 @@ public class CEViewServiceImpl implements CEViewService {
       ViewRule rule = ViewRule.builder().viewConditions(Collections.singletonList(condition)).build();
       defaultView.setViewRules(Collections.singletonList(rule));
       defaultView.setViewVisualization(viewVisualization);
-      modifyCEViewAndSetDefaults(defaultView);
+      modifyCEViewAndSetDefaults(defaultView, false);
       ceViewDao.save(defaultView);
     }
   }

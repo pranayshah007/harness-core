@@ -19,7 +19,8 @@ public enum AWSViewPreferenceCost {
   AMORTISED("Amortised"),
   NET_AMORTISED("Net-amortised"),
   BLENDED("Blended"),
-  UNBLENDED("Unblended");
+  UNBLENDED("Unblended"),
+  EFFECTIVE("Effective");
 
   private final String cost;
 

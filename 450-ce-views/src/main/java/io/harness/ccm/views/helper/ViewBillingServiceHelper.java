@@ -47,6 +47,7 @@ import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewGridData;
 import io.harness.ccm.views.graphql.QLCEViewGroupBy;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
+import io.harness.ccm.views.graphql.QLCEViewPreferenceAggregation;
 import io.harness.ccm.views.graphql.QLCEViewRule;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilter;
@@ -58,6 +59,7 @@ import io.harness.ccm.views.graphql.ViewsQueryBuilder;
 import io.harness.ccm.views.graphql.ViewsQueryHelper;
 import io.harness.ccm.views.graphql.ViewsQueryMetadata;
 import io.harness.ccm.views.service.CEViewService;
+import io.harness.ccm.views.utils.CEViewPreferenceUtils;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -96,7 +98,8 @@ public class ViewBillingServiceHelper {
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
   @Inject private ViewParametersHelper viewParametersHelper;
-  @Inject @Named("isClickHouseEnabled") boolean isClickHouseEnabled;
+  @Inject private CEViewPreferenceUtils ceViewPreferenceUtils;
+  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
 
   private static final String COST_DESCRIPTION = "of %s - %s";
   private static final String OTHER_COST_DESCRIPTION = "%s of total";
@@ -550,11 +553,13 @@ public class ViewBillingServiceHelper {
       }
     }
 
+    List<QLCEViewPreferenceAggregation> viewPreferenceAggregations = null;
     if (viewMetadataFilter.isPresent()) {
       QLCEViewMetadataFilter metadataFilter = viewMetadataFilter.get().getViewMetadataFilter();
       final String viewId = metadataFilter.getViewId();
       if (!metadataFilter.isPreview()) {
         CEView ceView = viewService.get(viewId);
+        viewPreferenceAggregations = ceViewPreferenceUtils.getViewPreferenceAggregations(ceView);
         viewRuleList = ceView.getViewRules();
         if (ceView.getViewVisualization() != null) {
           ViewVisualization viewVisualization = ceView.getViewVisualization();
