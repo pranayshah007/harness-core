@@ -9,6 +9,10 @@ package io.harness.cdng.aws.sam;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -18,13 +22,17 @@ import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepOutput;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plugin.AbstractContainerStepV2;
 import io.harness.pms.sdk.core.plugin.ContainerUnitStepUtils;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.product.ci.engine.proto.UnitStep;
 import io.harness.tasks.ResponseData;
@@ -41,6 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
+
+import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -55,6 +66,8 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
                                                .setType(ExecutionNodeType.AWS_SAM_DEPLOY.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
+
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -76,10 +89,34 @@ public class AwsSamDeployStep extends AbstractContainerStepV2<StepElementParamet
     // Check if image exists
     awsSamStepHelper.verifyPluginImageIsProvider(awsSamDeployStepParameters.getImage());
 
+    Map<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
+
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+            ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
+
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage infra details sweeping output cannot be empty");
+    }
+
+    StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
+
+    if (stageInfraDetails instanceof K8StageInfraDetails) {
+      K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
+      Infrastructure infrastructure = k8StageInfraDetails.getInfrastructure();
+      if (infrastructure instanceof K8sDirectInfraYaml) {
+        K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
+        if (!StringUtils.isEmpty(k8sDirectInfraYaml.getSpec().getServiceAccountName().getValue())) {
+          samDeployEnvironmentVariablesMap.put("PLUGIN_USE_IRSA", "true");
+        } else {
+          samDeployEnvironmentVariablesMap.put("PLUGIN_USE_IRSA", "false");
+        }
+      }
+    }
+
     return ContainerUnitStepUtils.serializeStepWithStepParameters(
         getPort(ambiance, stepElementParameters.getIdentifier()), parkedTaskId, logKey,
         stepElementParameters.getIdentifier(), getTimeout(ambiance, stepElementParameters), accountId,
-        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, new HashMap<>(),
+        stepElementParameters.getName(), delegateCallbackTokenSupplier, ambiance, samDeployEnvironmentVariablesMap,
         awsSamDeployStepParameters.getImage().getValue(), Collections.EMPTY_LIST);
   }
 

@@ -97,7 +97,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
             .failureStrategies(cdAbstractStepNode.getFailureStrategies())
             .timeout(cdAbstractStepNode.getTimeout())
             .type(GitCloneStepNode.StepType.GitClone)
-            .identifier(GIT_CLONE_STEP_ID)
+            .identifier(GIT_CLONE_STEP_ID+awsSamDirectoryManifestOutcome.getIdentifier())
             .name(awsSamDirectoryManifestOutcome.getIdentifier())
             .uuid(awsSamDirectoryManifestOutcome.getIdentifier())
             .build();
@@ -138,7 +138,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
               .failureStrategies(cdAbstractStepNode.getFailureStrategies())
               .timeout(cdAbstractStepNode.getTimeout())
               .type(GitCloneStepNode.StepType.GitClone)
-              .identifier(GIT_CLONE_STEP_ID)
+              .identifier(GIT_CLONE_STEP_ID + valuesManifestOutcome.getIdentifier())
               .name(valuesManifestOutcome.getIdentifier())
               .uuid(valuesManifestOutcome.getIdentifier())
               .build();
@@ -146,7 +146,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
       PluginCreationRequest valuesPluginCreationRequest = request.toBuilder().setStepJsonNode(YamlUtils.write(valuesGitCloneStepNode))
               .build();
 
-      PluginCreationResponseWrapper valuesPluginCreationResponseWrapper = gitClonePluginInfoProvider.getPluginInfo(pluginCreationRequest, new HashSet<>(valuesPluginCreationRequest.getUsedPortDetails().getUsedPortsList()));
+      PluginCreationResponseWrapper valuesPluginCreationResponseWrapper = gitClonePluginInfoProvider.getPluginInfo(valuesPluginCreationRequest, new HashSet<>(valuesPluginCreationRequest.getUsedPortDetails().getUsedPortsList()));
       pluginCreationResponseWrapperList.add(valuesPluginCreationResponseWrapper);
     }
 

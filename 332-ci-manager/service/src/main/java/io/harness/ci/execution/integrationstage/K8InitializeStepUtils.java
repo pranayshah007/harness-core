@@ -101,13 +101,7 @@ import io.fabric8.utils.Strings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -370,7 +364,7 @@ public class K8InitializeStepUtils {
       IntegrationStageNode stageNode, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
       String identifier, String stepName, String stepType, long timeout, String accountId, OSType os, Ambiance ambiance,
       Integer extraMemoryPerStep, Integer extraCPUPerStep) {
-    Integer port = portFinder.getNextPort();
+    Integer port = 20002 + new Random().nextInt(2000);
 
     String containerName = format("%s%d", STEP_PREFIX, stepIndex);
     Map<String, String> envVarMap = new HashMap<>();

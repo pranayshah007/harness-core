@@ -16,6 +16,7 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plugin.GitCloneStep;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -84,12 +85,15 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
         StepElementParameters stepElementParameters = StepElementParameters.builder()
                 .name(awsSamDirectoryManifestOutcome.getIdentifier())
                 .spec(gitCloneStepInfo)
-                .identifier(GIT_CLONE_STEP_ID)
+                .identifier(GIT_CLONE_STEP_ID + awsSamDirectoryManifestOutcome.getIdentifier())
                 .build();
 
+        List<Level> samDirectoryLevels = new ArrayList<>();
+        samDirectoryLevels.add(Level.newBuilder(ambiance.getLevels(ambiance.getLevelsCount()-1)).setIdentifier(GIT_CLONE_STEP_ID + awsSamDirectoryManifestOutcome.getIdentifier()).build());
+        Ambiance ambiance1 = Ambiance.newBuilder(ambiance).addAllLevels(samDirectoryLevels).build();
 
         AsyncExecutableResponse samDirectoryAsyncExecutableResponse =
-                gitCloneStep.executeAsyncAfterRbac(ambiance, stepElementParameters, inputPackage);
+                gitCloneStep.executeAsyncAfterRbac(ambiance1, stepElementParameters, inputPackage);
 
         callbackIds.add(samDirectoryAsyncExecutableResponse.getCallbackIdsList().get(0));
 
@@ -116,19 +120,26 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
                     .build();
 
             StepElementParameters valuesStepElementParameters = StepElementParameters.builder()
-                    .name(awsSamDirectoryManifestOutcome.getIdentifier())
+                    .name(valuesManifestOutcome.getIdentifier())
                     .spec(valuesGitCloneStepInfo)
+                    .identifier(GIT_CLONE_STEP_ID + valuesManifestOutcome.getIdentifier())
                     .build();
 
+            List<Level> valuesLevels = new ArrayList<>();
+            valuesLevels.add(Level.newBuilder(ambiance.getLevels(ambiance.getLevelsCount()-1)).setIdentifier(GIT_CLONE_STEP_ID + valuesManifestOutcome.getIdentifier()).build());
+            Ambiance ambiance2 = Ambiance.newBuilder(ambiance).addAllLevels(valuesLevels).build();
 
             AsyncExecutableResponse valuesAsyncExecutableResponse =
-                    gitCloneStep.executeAsyncAfterRbac(ambiance, valuesStepElementParameters, inputPackage);
+                    gitCloneStep.executeAsyncAfterRbac(ambiance2, valuesStepElementParameters, inputPackage);
             callbackIds.add(valuesAsyncExecutableResponse.getCallbackIdsList().get(0));
         }
 
 
 
-        return samDirectoryAsyncExecutableResponse;
+        return AsyncExecutableResponse.newBuilder().addAllCallbackIds(callbackIds)
+                .setStatus(samDirectoryAsyncExecutableResponse.getStatus())
+                .addAllLogKeys(samDirectoryAsyncExecutableResponse.getLogKeysList())
+                .build();
 
     }
 

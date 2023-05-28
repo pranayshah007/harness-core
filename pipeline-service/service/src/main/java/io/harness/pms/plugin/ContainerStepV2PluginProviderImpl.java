@@ -76,8 +76,7 @@ public class ContainerStepV2PluginProviderImpl implements ContainerStepV2PluginP
   @Override
   public Map<StepInfo, PluginCreationResponseList> getPluginsDataV2(
       InitContainerV2StepInfo initContainerV2StepInfo, Ambiance ambiance) {
-    Set<StepInfo> stepInfos = getStepInfos(initContainerV2StepInfo.getStepsExecutionConfig());
-    Set<Integer> usedPorts = new HashSet<>();
+    Set<StepInfo> stepInfos = getStepInfos(initContainerV2StepInfo.getStepsExecutionConfig());Set<Integer> usedPorts = new HashSet<>();
     OSType os = k8sPodInitUtils.getOS(initContainerV2StepInfo.getInfrastructure());
 
     // Inorder to batch the requests per module, we have created a map of moduleType to map of stepInfo and
