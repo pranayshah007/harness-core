@@ -339,15 +339,15 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         getChangeSummary(projectParams, monitoredServiceIdentifier, null, false, Arrays.asList(ChangeCategory.values()),
             Arrays.asList(ChangeSourceType.values()), currentTime.minus(Duration.ofHours(1)), currentTime);
 
-    List<AbstractServiceLevelObjective> serviceLevelObjectives =
-        serviceLevelObjectiveService.getByMonitoredServiceIdentifier(projectParams, monitoredServiceIdentifier);
+    List<SimpleServiceLevelObjective> serviceLevelObjectives =
+        serviceLevelObjectiveService.getByMonitoredServiceIdentifiers(projectParams, Collections.singleton(monitoredServiceIdentifier));
     List<ChangeIncidentReport.AssociatedSLOsDetails> associatedSLOsDetails =
         serviceLevelObjectives.stream()
             .map(serviceLevelObjective -> {
               SLODashboardWidget.SLOGraphData sloGraphData =
                   sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective,
                       TimeRangeParams.builder()
-                          .startTime(clock.instant().minus(Duration.ofDays(1)))
+                          .startTime(clock.instant().minus(Duration.ofHours(1)))
                           .endTime(clock.instant())
                           .build());
               double errorBudgetBurnRate = 0;

@@ -31,7 +31,6 @@ import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.RiskData;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapKeys;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
@@ -78,7 +77,6 @@ public class HeatMapServiceImplTest extends CvNextGenTestBase {
   private String orgIdentifier;
   private CVConfig cvConfig;
   @Inject private HPersistence hPersistence;
-  @Mock private CVConfigService cvConfigService;
   private Clock clock;
   private BuilderFactory builderFactory;
 

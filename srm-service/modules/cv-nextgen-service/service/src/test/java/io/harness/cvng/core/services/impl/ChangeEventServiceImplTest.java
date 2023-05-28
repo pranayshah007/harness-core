@@ -7,6 +7,10 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
+import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -25,6 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
+import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
@@ -32,6 +37,8 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
+import io.harness.cvng.client.NextGenService;
+import io.harness.cvng.core.beans.change.ChangeIncidentReport;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
@@ -41,6 +48,15 @@ import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.impl.ChangeEventServiceImpl.TimelineObject;
 import io.harness.cvng.core.utils.FeatureFlagNames;
+import io.harness.cvng.dashboard.entities.HeatMap;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.utils.ScopedInformation;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
@@ -49,8 +65,11 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,10 +86,17 @@ import org.mockito.MockitoAnnotations;
 
 public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
+  @Inject
+  ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
+  @Inject
+  ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject ActivityService activityService;
   @Inject ChangeEventServiceImpl changeEventService;
   @Inject ChangeSourceService changeSourceService;
+  @Inject
+  SLIRecordService sliRecordService;
   @Inject HPersistence hPersistence;
+  Clock clock;
 
   BuilderFactory builderFactory;
   FeatureFlagService featureFlagService;
@@ -80,6 +106,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Before
   public void before() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
+    clock = FIXED_TIME_FOR_TESTS;
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
     MockitoAnnotations.initMocks(this);
@@ -1135,5 +1162,124 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     Assertions
         .assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
         .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetChangeIncidentReport() {
+    Instant eventTime = clock.instant();
+    List<Activity> activityList = Arrays.asList(
+            builderFactory.getDeploymentActivityBuilder().eventTime(eventTime.minus(Duration.ofMinutes(60))).build(),
+            builderFactory.getInternalChangeActivity_CEBuilder().eventTime(eventTime.minus(Duration.ofMinutes(45))).build(),
+            builderFactory.getInternalChangeActivity_FFBuilder().eventTime(eventTime.minus(Duration.ofMinutes(45))).build(),
+            builderFactory.getKubernetesClusterActivityForAppServiceBuilder()
+                    .eventTime(eventTime.minus(Duration.ofMinutes(15)))
+                    .build());
+    activityList.forEach(activity -> activityService.upsert(activity));
+    ChangeSummaryDTO changeSummaryDTO =
+            changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
+                    null, null, eventTime.minus(Duration.ofMinutes(60)), eventTime);
+
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO =
+            builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    ((RollingSLOTargetSpec) simpleServiceLevelObjectiveDTO.getSloTarget().getSpec()).setPeriodLength("1d");
+    serviceLevelObjectiveService.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO);
+    SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjectiveService.getEntity(builderFactory.getProjectParams(), "sloIdentifier");
+    String sliIdentifier = simpleServiceLevelObjective.getServiceLevelIndicators().get(0);
+    List<SLIState> sliStates = new ArrayList<>();
+    for (int i = 0; i < 30; i++) {
+      sliStates.add(GOOD);
+    }
+    for(int i = 30; i<60; i++) {
+      sliStates.add(BAD);
+    }
+    String sliId = serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(), sliIdentifier).getUuid();
+    createData(eventTime.minus(Duration.ofMinutes(60)), sliStates, sliId, simpleServiceLevelObjective.getUuid());
+
+    createHeatMaps(eventTime.plus(Duration.ofMinutes(10)), FIVE_MIN, CVMonitoringCategory.ERRORS, 1);
+
+    ChangeIncidentReport changeIncidentReport = changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(), builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    assertThat(changeIncidentReport.getChangeSummary().getTotal()).isEqualTo(changeSummaryDTO.getTotal());
+    ChangeIncidentReport.AssociatedSLOsDetails associatedSLODetails = changeIncidentReport.getAssociatedSLOsDetails().get(0);
+    assertThat(associatedSLODetails.getIdentifier()).isEqualTo(simpleServiceLevelObjective.getIdentifier());
+    assertThat(associatedSLODetails.getSloPerformance()).isEqualTo(50);
+    assertThat(associatedSLODetails.getErrorBudgetBurnRate()).isEqualTo(10.41, offset(0.01));
+    ChangeIncidentReport.ServiceHealthDetails serviceHealthDetails = changeIncidentReport.getServiceHealthDetails();
+    assertThat(serviceHealthDetails.getCurrentHealthScore()).isEqualTo(65);
+    assertThat(serviceHealthDetails.getPastHealthScore()).isEqualTo(77);
+    assertThat(serviceHealthDetails.getPercentageChange()).isEqualTo(-15.58, offset(0.01));
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetChangeIncidentReport_NoData() {
+    ChangeIncidentReport changeIncidentReport = changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(), builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    assertThat(changeIncidentReport.getChangeSummary().getTotal().getCount()).isEqualTo(0);
+    assertThat(changeIncidentReport.getAssociatedSLOsDetails().size()).isEqualTo(0);
+    ChangeIncidentReport.ServiceHealthDetails serviceHealthDetails = changeIncidentReport.getServiceHealthDetails();
+    assertThat(serviceHealthDetails.getCurrentHealthScore()).isEqualTo(0);
+    assertThat(serviceHealthDetails.getPastHealthScore()).isEqualTo(0);
+    assertThat(serviceHealthDetails.getPercentageChange()).isEqualTo(0);
+  }
+
+  private void createData(Instant startTime, List<SLIState> sliStates, String sliId, String verificationTaskId) {
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
+    sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
+  }
+
+  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {
+    List<SLIRecordParam> sliRecordParams = new ArrayList<>();
+    for (int i = 0; i < sliStates.size(); i++) {
+      SLIState sliState = sliStates.get(i);
+      long goodCount = 0;
+      long badCount = 0;
+      if (sliState == GOOD) {
+        goodCount++;
+      } else if (sliState == BAD) {
+        badCount++;
+      }
+      sliRecordParams.add(SLIRecordParam.builder()
+              .sliState(sliState)
+              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+              .goodEventCount(goodCount)
+              .badEventCount(badCount)
+              .build());
+    }
+    return sliRecordParams;
+  }
+
+  private void createHeatMaps(
+          Instant endTime, HeatMap.HeatMapResolution heatMapResolution, CVMonitoringCategory category, int numberOfHeatMaps) {
+    for (int i = 0; i < numberOfHeatMaps; i++) {
+      endTime = getBoundaryOfResolution(endTime, heatMapResolution.getBucketSize())
+              .plusMillis(heatMapResolution.getBucketSize().toMillis());
+      Instant startTime = endTime.minus(heatMapResolution.getBucketSize());
+      HeatMap heatMap = builderFactory.heatMapBuilder()
+              .heatMapResolution(heatMapResolution)
+              .category(category)
+              .heatMapBucketStartTime(startTime)
+              .heatMapBucketEndTime(endTime)
+              .build();
+      List<HeatMap.HeatMapRisk> heatMapRisks = new ArrayList<>();
+      int risk = 1;
+      for (Instant time = startTime; time.isBefore(endTime); time = time.plus(heatMapResolution.getResolution())) {
+        heatMapRisks.add(HeatMap.HeatMapRisk.builder()
+                .riskScore((double) risk / 100)
+                .startTime(time)
+                .endTime(time.plus(heatMapResolution.getResolution()))
+                .build());
+        risk++;
+      }
+      heatMap.setHeatMapRisks(heatMapRisks);
+      hPersistence.save(heatMap);
+      endTime = startTime.minus(1, ChronoUnit.MINUTES);
+    }
+  }
+
+  private Instant getBoundaryOfResolution(Instant input, Duration resolution) {
+    long timeStamp = input.toEpochMilli();
+    return Instant.ofEpochMilli(timeStamp - (timeStamp % resolution.toMillis()));
   }
 }
