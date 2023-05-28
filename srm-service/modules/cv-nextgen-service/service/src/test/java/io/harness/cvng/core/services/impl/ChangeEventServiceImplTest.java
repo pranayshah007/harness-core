@@ -65,7 +65,6 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -86,15 +85,12 @@ import org.mockito.MockitoAnnotations;
 
 public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject MonitoredServiceService monitoredServiceService;
-  @Inject
-  ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
-  @Inject
-  ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
+  @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject ActivityService activityService;
   @Inject ChangeEventServiceImpl changeEventService;
   @Inject ChangeSourceService changeSourceService;
-  @Inject
-  SLIRecordService sliRecordService;
+  @Inject SLIRecordService sliRecordService;
   @Inject HPersistence hPersistence;
   Clock clock;
 
@@ -1170,38 +1166,45 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   public void testGetChangeIncidentReport() {
     Instant eventTime = clock.instant();
     List<Activity> activityList = Arrays.asList(
-            builderFactory.getDeploymentActivityBuilder().eventTime(eventTime.minus(Duration.ofMinutes(60))).build(),
-            builderFactory.getInternalChangeActivity_CEBuilder().eventTime(eventTime.minus(Duration.ofMinutes(45))).build(),
-            builderFactory.getInternalChangeActivity_FFBuilder().eventTime(eventTime.minus(Duration.ofMinutes(45))).build(),
-            builderFactory.getKubernetesClusterActivityForAppServiceBuilder()
-                    .eventTime(eventTime.minus(Duration.ofMinutes(15)))
-                    .build());
+        builderFactory.getDeploymentActivityBuilder().eventTime(eventTime.minus(Duration.ofMinutes(60))).build(),
+        builderFactory.getInternalChangeActivity_CEBuilder().eventTime(eventTime.minus(Duration.ofMinutes(45))).build(),
+        builderFactory.getInternalChangeActivity_FFBuilder().eventTime(eventTime.minus(Duration.ofMinutes(45))).build(),
+        builderFactory.getKubernetesClusterActivityForAppServiceBuilder()
+            .eventTime(eventTime.minus(Duration.ofMinutes(15)))
+            .build());
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeSummaryDTO changeSummaryDTO =
-            changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
-                    null, null, eventTime.minus(Duration.ofMinutes(60)), eventTime);
+        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
+            null, null, eventTime.minus(Duration.ofMinutes(60)), eventTime);
 
     ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO =
-            builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
     ((RollingSLOTargetSpec) simpleServiceLevelObjectiveDTO.getSloTarget().getSpec()).setPeriodLength("1d");
     serviceLevelObjectiveService.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO);
-    SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjectiveService.getEntity(builderFactory.getProjectParams(), "sloIdentifier");
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveService.getEntity(
+            builderFactory.getProjectParams(), "sloIdentifier");
     String sliIdentifier = simpleServiceLevelObjective.getServiceLevelIndicators().get(0);
     List<SLIState> sliStates = new ArrayList<>();
     for (int i = 0; i < 30; i++) {
       sliStates.add(GOOD);
     }
-    for(int i = 30; i<60; i++) {
+    for (int i = 30; i < 60; i++) {
       sliStates.add(BAD);
     }
-    String sliId = serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(), sliIdentifier).getUuid();
+    String sliId =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(), sliIdentifier)
+            .getUuid();
     createData(eventTime.minus(Duration.ofMinutes(60)), sliStates, sliId, simpleServiceLevelObjective.getUuid());
 
     createHeatMaps(eventTime.plus(Duration.ofMinutes(10)), FIVE_MIN, CVMonitoringCategory.ERRORS, 1);
 
-    ChangeIncidentReport changeIncidentReport = changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(), builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    ChangeIncidentReport changeIncidentReport =
+        changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(),
+            builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(changeIncidentReport.getChangeSummary().getTotal()).isEqualTo(changeSummaryDTO.getTotal());
-    ChangeIncidentReport.AssociatedSLOsDetails associatedSLODetails = changeIncidentReport.getAssociatedSLOsDetails().get(0);
+    ChangeIncidentReport.AssociatedSLOsDetails associatedSLODetails =
+        changeIncidentReport.getAssociatedSLOsDetails().get(0);
     assertThat(associatedSLODetails.getIdentifier()).isEqualTo(simpleServiceLevelObjective.getIdentifier());
     assertThat(associatedSLODetails.getSloPerformance()).isEqualTo(50);
     assertThat(associatedSLODetails.getErrorBudgetBurnRate()).isEqualTo(10.41, offset(0.01));
@@ -1215,7 +1218,9 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testGetChangeIncidentReport_NoData() {
-    ChangeIncidentReport changeIncidentReport = changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(), builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
+    ChangeIncidentReport changeIncidentReport =
+        changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(),
+            builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier());
     assertThat(changeIncidentReport.getChangeSummary().getTotal().getCount()).isEqualTo(0);
     assertThat(changeIncidentReport.getAssociatedSLOsDetails().size()).isEqualTo(0);
     ChangeIncidentReport.ServiceHealthDetails serviceHealthDetails = changeIncidentReport.getServiceHealthDetails();
@@ -1241,35 +1246,35 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         badCount++;
       }
       sliRecordParams.add(SLIRecordParam.builder()
-              .sliState(sliState)
-              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
-              .goodEventCount(goodCount)
-              .badEventCount(badCount)
-              .build());
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
     }
     return sliRecordParams;
   }
 
-  private void createHeatMaps(
-          Instant endTime, HeatMap.HeatMapResolution heatMapResolution, CVMonitoringCategory category, int numberOfHeatMaps) {
+  private void createHeatMaps(Instant endTime, HeatMap.HeatMapResolution heatMapResolution,
+      CVMonitoringCategory category, int numberOfHeatMaps) {
     for (int i = 0; i < numberOfHeatMaps; i++) {
       endTime = getBoundaryOfResolution(endTime, heatMapResolution.getBucketSize())
-              .plusMillis(heatMapResolution.getBucketSize().toMillis());
+                    .plusMillis(heatMapResolution.getBucketSize().toMillis());
       Instant startTime = endTime.minus(heatMapResolution.getBucketSize());
       HeatMap heatMap = builderFactory.heatMapBuilder()
-              .heatMapResolution(heatMapResolution)
-              .category(category)
-              .heatMapBucketStartTime(startTime)
-              .heatMapBucketEndTime(endTime)
-              .build();
+                            .heatMapResolution(heatMapResolution)
+                            .category(category)
+                            .heatMapBucketStartTime(startTime)
+                            .heatMapBucketEndTime(endTime)
+                            .build();
       List<HeatMap.HeatMapRisk> heatMapRisks = new ArrayList<>();
       int risk = 1;
       for (Instant time = startTime; time.isBefore(endTime); time = time.plus(heatMapResolution.getResolution())) {
         heatMapRisks.add(HeatMap.HeatMapRisk.builder()
-                .riskScore((double) risk / 100)
-                .startTime(time)
-                .endTime(time.plus(heatMapResolution.getResolution()))
-                .build());
+                             .riskScore((double) risk / 100)
+                             .startTime(time)
+                             .endTime(time.plus(heatMapResolution.getResolution()))
+                             .build());
         risk++;
       }
       heatMap.setHeatMapRisks(heatMapRisks);

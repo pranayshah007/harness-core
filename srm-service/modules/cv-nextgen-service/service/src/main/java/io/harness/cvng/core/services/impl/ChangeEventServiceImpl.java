@@ -340,7 +340,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             Arrays.asList(ChangeSourceType.values()), currentTime.minus(Duration.ofHours(1)), currentTime);
 
     List<SimpleServiceLevelObjective> serviceLevelObjectives =
-        serviceLevelObjectiveService.getByMonitoredServiceIdentifiers(projectParams, Collections.singleton(monitoredServiceIdentifier));
+        serviceLevelObjectiveService.getByMonitoredServiceIdentifiers(
+            projectParams, Collections.singleton(monitoredServiceIdentifier));
     List<ChangeIncidentReport.AssociatedSLOsDetails> associatedSLOsDetails =
         serviceLevelObjectives.stream()
             .map(serviceLevelObjective -> {
