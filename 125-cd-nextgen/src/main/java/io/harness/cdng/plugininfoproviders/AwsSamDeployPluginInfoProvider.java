@@ -10,6 +10,7 @@ package io.harness.cdng.plugininfoproviders;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import com.google.inject.name.Named;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -17,6 +18,8 @@ import io.harness.cdng.aws.sam.AwsSamDeployStepInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
 import io.harness.cdng.pipeline.executions.CDPluginInfoProvider;
 import io.harness.cdng.pipeline.steps.CdAbstractStepNode;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -48,14 +51,14 @@ import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
+import org.jooq.tools.StringUtils;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.jooq.tools.StringUtils;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
@@ -65,6 +68,8 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
   @Inject PluginExecutionConfig pluginExecutionConfig;
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+
+  @Inject private AwsSamPluginInfoProviderHelper awsSamPluginInfoProviderHelper;
 
   @Override
   public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
@@ -157,19 +162,25 @@ public class AwsSamDeployPluginInfoProvider implements CDPluginInfoProvider {
         if (!StringUtils.isEmpty(awsManualConfigSpecDTO.getAccessKey())) {
           awsAccessKey = awsManualConfigSpecDTO.getAccessKey();
         } else {
-          awsAccessKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
-              awsManualConfigSpecDTO.getAccessKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+          awsAccessKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(awsManualConfigSpecDTO.getAccessKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
         }
 
-        awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
-            awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(), ambiance.getExpressionFunctorToken());
+        awsSecretKey = NGVariablesUtils.fetchSecretExpressionWithExpressionToken(awsManualConfigSpecDTO.getSecretKeyRef().toSecretRefStringValue(),ambiance.getExpressionFunctorToken());
       }
+
     }
 
     HashMap<String, String> samDeployEnvironmentVariablesMap = new HashMap<>();
-    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", "");
-    samDeployEnvironmentVariablesMap.put(
-        "PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
+
+    ManifestsOutcome manifestsOutcome = (ManifestsOutcome) outcomeService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS)).getOutcome();
+
+    AwsSamDirectoryManifestOutcome awsSamDirectoryManifestOutcome = (AwsSamDirectoryManifestOutcome) awsSamPluginInfoProviderHelper.getAwsSamDirectoryManifestOutcome(manifestsOutcome.values());
+
+    String samDir =  awsSamPluginInfoProviderHelper.getSamDirectoryPathFromAwsSamDirectoryManifestOutcome(awsSamDirectoryManifestOutcome);
+
+    samDeployEnvironmentVariablesMap.put("PLUGIN_SAM_DIR", samDir);
+    samDeployEnvironmentVariablesMap.put("PLUGIN_DEPLOY_COMMAND_OPTIONS", String.join(" ", deployCommandOptions.getValue()));
     samDeployEnvironmentVariablesMap.put("PLUGIN_STACK_NAME", stackName.getValue());
 
     if (awsAccessKey != null) {

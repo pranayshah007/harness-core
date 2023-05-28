@@ -7,6 +7,7 @@
 
 package io.harness.cdng.aws.sam;
 
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.AwsSamInfrastructureOutcome;
@@ -20,7 +21,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.yaml.ParameterField;
 
-import com.google.inject.Inject;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CDP)

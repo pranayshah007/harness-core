@@ -72,6 +72,7 @@ public class InitContainerV2Step implements TaskExecutableWithRbac<InitContainer
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, InitContainerV2StepInfo stepParameters,
       ThrowingSupplier<K8sTaskExecutionResponse> responseDataSupplier) throws Exception {
+
     return initialiseTaskUtils.handleK8sTaskExecutionResponse(responseDataSupplier.get());
   }
 
