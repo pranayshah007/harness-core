@@ -64,7 +64,6 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class HeatMapServiceImplTest extends CvNextGenTestBase {

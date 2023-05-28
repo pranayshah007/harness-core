@@ -37,7 +37,6 @@ import io.harness.cvng.beans.change.ChangeSourceType;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
-import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.change.ChangeIncidentReport;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
@@ -49,6 +48,8 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.core.services.impl.ChangeEventServiceImpl.TimelineObject;
 import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.dashboard.entities.HeatMap;
+import io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution;
+import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
@@ -68,7 +69,6 @@ import dev.morphia.query.Query;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -97,7 +97,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   BuilderFactory builderFactory;
   FeatureFlagService featureFlagService;
 
-  List<String> changeSourceIdentifiers = Arrays.asList("changeSourceID");
+  List<String> changeSourceIdentifiers = List.of("changeSourceID");
 
   @Before
   public void before() throws IllegalAccessException {
@@ -1174,8 +1174,8 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .build());
     activityList.forEach(activity -> activityService.upsert(activity));
     ChangeSummaryDTO changeSummaryDTO =
-        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
-            null, null, eventTime.minus(Duration.ofMinutes(60)), eventTime);
+        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), null, null, null, null,
+            eventTime.minus(Duration.ofMinutes(60)), eventTime);
 
     ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO =
         builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
@@ -1197,7 +1197,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .getUuid();
     createData(eventTime.minus(Duration.ofMinutes(60)), sliStates, sliId, simpleServiceLevelObjective.getUuid());
 
-    createHeatMaps(eventTime.plus(Duration.ofMinutes(10)), FIVE_MIN, CVMonitoringCategory.ERRORS, 1);
+    createHeatMaps(eventTime.plus(Duration.ofMinutes(10)));
 
     ChangeIncidentReport changeIncidentReport =
         changeEventService.getChangeIncidentReport(builderFactory.getProjectParams(),
@@ -1255,32 +1255,29 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     return sliRecordParams;
   }
 
-  private void createHeatMaps(Instant endTime, HeatMap.HeatMapResolution heatMapResolution,
-      CVMonitoringCategory category, int numberOfHeatMaps) {
-    for (int i = 0; i < numberOfHeatMaps; i++) {
-      endTime = getBoundaryOfResolution(endTime, heatMapResolution.getBucketSize())
-                    .plusMillis(heatMapResolution.getBucketSize().toMillis());
-      Instant startTime = endTime.minus(heatMapResolution.getBucketSize());
-      HeatMap heatMap = builderFactory.heatMapBuilder()
-                            .heatMapResolution(heatMapResolution)
-                            .category(category)
-                            .heatMapBucketStartTime(startTime)
-                            .heatMapBucketEndTime(endTime)
-                            .build();
-      List<HeatMap.HeatMapRisk> heatMapRisks = new ArrayList<>();
-      int risk = 1;
-      for (Instant time = startTime; time.isBefore(endTime); time = time.plus(heatMapResolution.getResolution())) {
-        heatMapRisks.add(HeatMap.HeatMapRisk.builder()
-                             .riskScore((double) risk / 100)
-                             .startTime(time)
-                             .endTime(time.plus(heatMapResolution.getResolution()))
-                             .build());
-        risk++;
-      }
-      heatMap.setHeatMapRisks(heatMapRisks);
-      hPersistence.save(heatMap);
-      endTime = startTime.minus(1, ChronoUnit.MINUTES);
+  private void createHeatMaps(Instant endTime) {
+    HeatMapResolution heatMapResolution = FIVE_MIN;
+    endTime = getBoundaryOfResolution(endTime, heatMapResolution.getBucketSize())
+                  .plusMillis(heatMapResolution.getBucketSize().toMillis());
+    Instant startTime = endTime.minus(heatMapResolution.getBucketSize());
+    HeatMap heatMap = builderFactory.heatMapBuilder()
+                          .heatMapResolution(heatMapResolution)
+                          .category(CVMonitoringCategory.ERRORS)
+                          .heatMapBucketStartTime(startTime)
+                          .heatMapBucketEndTime(endTime)
+                          .build();
+    List<HeatMapRisk> heatMapRisks = new ArrayList<>();
+    int risk = 1;
+    for (Instant time = startTime; time.isBefore(endTime); time = time.plus(heatMapResolution.getResolution())) {
+      heatMapRisks.add(HeatMapRisk.builder()
+                           .riskScore((double) risk / 100)
+                           .startTime(time)
+                           .endTime(time.plus(heatMapResolution.getResolution()))
+                           .build());
+      risk++;
     }
+    heatMap.setHeatMapRisks(heatMapRisks);
+    hPersistence.save(heatMap);
   }
 
   private Instant getBoundaryOfResolution(Instant input, Duration resolution) {
