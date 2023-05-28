@@ -369,7 +369,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
                   .scopedMonitoredServiceIdentifier(
                       ScopedInformation.getScopedInformation(serviceLevelObjective.getAccountId(),
                           serviceLevelObjective.getOrgIdentifier(), serviceLevelObjective.getProjectIdentifier(),
-                          ((SimpleServiceLevelObjective) serviceLevelObjective).getMonitoredServiceIdentifier()))
+                          serviceLevelObjective.getMonitoredServiceIdentifier()))
                   .sloPerformance(sloPerformance)
                   .errorBudgetBurnRate(errorBudgetBurnRate)
                   .build();
