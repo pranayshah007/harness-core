@@ -614,7 +614,7 @@ public class UserResource {
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     if ((ScopeLevel.ACCOUNT.equals(ScopeLevel.of(accountIdentifier, orgIdentifier, projectIdentifier)))
         && isUserExternallyManaged(userId, accountIdentifier)) {
-      log.error("Externally managed user with userId: {} is being deleted from account: {}", userId, accountIdentifier);
+      log.warn("Externally managed user with userId: {} is being deleted from account: {}", userId, accountIdentifier);
     }
     ResponseDTO<Boolean> userRemovalResponse = removeUserInternal(
         userId, accountIdentifier, orgIdentifier, projectIdentifier, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
