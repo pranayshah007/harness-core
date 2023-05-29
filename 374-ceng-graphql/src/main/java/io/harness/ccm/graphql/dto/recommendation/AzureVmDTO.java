@@ -23,5 +23,6 @@ public class AzureVmDTO {
   int memory;
   int cores;
   double monthlyCost;
-  Double cpuUtilization;
+  Double avgCpuUtilization;
+  Double maxCpuUtilization;
 }
