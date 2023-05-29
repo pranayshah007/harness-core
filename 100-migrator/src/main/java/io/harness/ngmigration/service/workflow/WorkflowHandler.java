@@ -1056,25 +1056,28 @@ public abstract class WorkflowHandler {
     PhaseStep prePhaseStep = getPreDeploymentPhase(workflow);
     List<WorkflowPhase> phases = getPhases(workflow);
     PhaseStep postPhaseStep = getPostDeploymentPhase(workflow);
-    List<WorkflowPhase> rollbackPhases = getRollbackPhases(workflow);
 
     List<StepExpressionFunctor> stepExpressionFunctors = new ArrayList<>();
 
     if (prePhaseStep != null && EmptyPredicate.isNotEmpty(prePhaseStep.getSteps())) {
-      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Pre Deployment").build();
       prePhaseStep.setName("Pre Deployment");
+      WorkflowPhase prePhase = WorkflowPhaseBuilder.aWorkflowPhase()
+                                   .name("Pre Deployment")
+                                   .phaseSteps(Collections.singletonList(prePhaseStep))
+                                   .build();
       stepExpressionFunctors.addAll(getFunctorForPhase(context, prePhase));
     }
 
     if (EmptyPredicate.isNotEmpty(phases)) {
-      phases.stream()
-          .map(phase -> getFunctorForPhase(context, phase))
-          .forEach(functors -> stepExpressionFunctors.addAll(functors));
+      phases.stream().map(phase -> getFunctorForPhase(context, phase)).forEach(stepExpressionFunctors::addAll);
     }
 
     if (postPhaseStep != null && EmptyPredicate.isNotEmpty(postPhaseStep.getSteps())) {
-      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase().name("Post Deployment").build();
       postPhaseStep.setName("Post Deployment");
+      WorkflowPhase postPhase = WorkflowPhaseBuilder.aWorkflowPhase()
+                                    .name("Post Deployment")
+                                    .phaseSteps(Collections.singletonList(postPhaseStep))
+                                    .build();
       stepExpressionFunctors.addAll(getFunctorForPhase(context, postPhase));
     }
 

@@ -9,6 +9,7 @@ package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.NonNull;
@@ -30,5 +31,7 @@ public interface ServiceOverridesServiceV2 {
 
   Page<NGServiceOverridesEntity> list(Criteria criteria, Pageable pageRequest);
 
-  Pair<NGServiceOverridesEntity, Boolean> upsert(NGServiceOverridesEntity requestedServiceOverride);
+  List<NGServiceOverridesEntity> findAll(Criteria criteria);
+
+  Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride);
 }

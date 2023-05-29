@@ -34,7 +34,6 @@ import static java.util.Collections.singletonList;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.FeatureName;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.Scope;
@@ -97,10 +96,7 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.encryption.SecretRefHelper;
-import io.harness.eraro.ErrorCode;
-import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.WingsException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -524,12 +520,6 @@ public class AzureWebAppStepHelper {
         connectorInfoDTO = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
         break;
       case JENKINS_NAME:
-        if (!cdFeatureFlagHelper.isEnabled(
-                AmbianceUtils.getAccountId(ambiance), FeatureName.AZURE_WEBAPP_NG_JENKINS_ARTIFACTS)) {
-          throw new AccessDeniedException("The Jenkins artifact source in NG is not enabled for this account."
-                  + " Please contact harness customer care.",
-              ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
-        }
         JenkinsArtifactOutcome jenkinsArtifactOutcome = (JenkinsArtifactOutcome) artifactOutcome;
         artifactConfigBuilder.sourceType(JENKINS);
         artifactConfigBuilder.artifactDetails(JenkinsAzureArtifactRequestDetails.builder()

@@ -85,6 +85,7 @@ import io.harness.k8s.apiclient.K8sApiClientHelper;
 import io.harness.k8s.apiclient.KubernetesApiCall;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
@@ -488,7 +489,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     final File kubeConfigDir = Files.createTempDir();
     try (ByteArrayOutputStream errStream = new ByteArrayOutputStream()) {
       persistKubernetesConfig(kubernetesConfig, kubeConfigDir.getPath());
-      final Kubectl client = getKubectlClient(useNewKubectlVersion);
+      final Kubectl client = getKubectlClient(useNewKubectlVersion, kubeConfigDir.getPath());
 
       for (final String workloadType : Arrays.asList(
                Kind.ReplicaSet.name(), Kind.StatefulSet.name(), Kind.DaemonSet.name(), Kind.Deployment.name())) {
@@ -535,9 +536,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   @VisibleForTesting
-  Kubectl getKubectlClient(boolean useNewKubectlVersion) {
-    return Kubectl.client(
-        k8sGlobalConfigService.getKubectlPath(useNewKubectlVersion), K8sConstants.KUBECONFIG_FILENAME);
+  Kubectl getKubectlClient(boolean useNewKubectlVersion, String kubeConfigPath) {
+    return KubectlFactory.getKubectlClient(
+        k8sGlobalConfigService.getKubectlPath(useNewKubectlVersion), K8sConstants.KUBECONFIG_FILENAME, kubeConfigPath);
   }
 
   private void cleanupDir(File kubeConfigDir) {

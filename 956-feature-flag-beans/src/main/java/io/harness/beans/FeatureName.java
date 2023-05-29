@@ -450,8 +450,6 @@ public enum FeatureName {
       "merge context elements workflow variables while resuming pipeline from a stage", HarnessTeam.SPG),
   USE_TEXT_SEARCH_FOR_EXECUTION(
       "With this instead of using regex search we will use text search for CD page in CG", HarnessTeam.SPG),
-  AZURE_WEBAPP_NG_JENKINS_ARTIFACTS(
-      "FF to enable Jenkins as an artifact source option for Azure Web App NG", HarnessTeam.CDP),
   SRM_CUSTOM_CHANGE_SOURCE("UI FF to enable Custom Change Source", HarnessTeam.CV),
   SETTING_ATTRIBUTES_SERVICE_ACCOUNT_TOKEN_MIGRATION("Migrate erroneous service account tokens", HarnessTeam.PL),
   ARTIFACT_SOURCE_TEMPLATE("Flag to add support for artifact source templates", HarnessTeam.CDC),
@@ -765,8 +763,10 @@ public enum FeatureName {
   SPG_DISABLE_CUSTOM_WEBHOOK_V3_URL("This is used to disable customer webhook authentication.", SPG),
   SRM_MICRO_FRONTEND("This FF is used to enable the micro-frontend for SRM", CV),
   CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI("Enable Azure Cloud Asset Governance UI", HarnessTeam.CE),
-  CDS_NEW_PIPELINE_STUDIO("Enables upgraded one canvas pipeline studio with usability fixes", HarnessTeam.CDP),
-  CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC);
+  CDS_PIPELINE_STUDIO_UPGRADES("Enables upgraded one canvas pipeline studio with usability fixes", HarnessTeam.CDP),
+  CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC),
+  PL_DISCOVERY_ENABLE(
+      "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS);
 
   @Deprecated
   FeatureName() {

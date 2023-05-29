@@ -74,8 +74,11 @@ public class AzureRecommendation
   String maxTotalNetworkP95;
   String maxMemoryP95;
   String currencyCode;
+  String currencyCodeInDefaultCurrencyPref;
   Double expectedMonthlySavings;
+  Double expectedMonthlySavingsInDefaultCurrencyPref;
   Double expectedAnnualSavings;
+  Double expectedAnnualSavingsInDefaultCurrencyPref;
   AzureVmDetails currentVmDetails;
   AzureVmDetails targetVmDetails;
   String recommendationMessage;

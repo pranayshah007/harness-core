@@ -94,6 +94,7 @@ import io.harness.k8s.K8sConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.config.K8sGlobalConfigService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -445,8 +446,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
   private List<ContainerInfo> getKubectlContainerInfos(HelmCommandRequestNG commandRequest,
       List<KubernetesResourceId> workloads, LogCallback logCallback, long timeoutInMillis) throws Exception {
-    Kubectl client = Kubectl.client(k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
-        commandRequest.getKubeConfigLocation());
+    Kubectl client = KubectlFactory.getKubectlClient(
+        k8sGlobalConfigService.getKubectlPath(commandRequest.isUseLatestKubectlVersion()),
+        commandRequest.getKubeConfigLocation(), commandRequest.getWorkingDir());
     List<ContainerInfo> containerInfoList = new ArrayList<>();
     final Map<String, List<KubernetesResourceId>> namespacewiseResources =
         workloads.stream().collect(Collectors.groupingBy(KubernetesResourceId::getNamespace));

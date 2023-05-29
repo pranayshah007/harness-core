@@ -730,25 +730,23 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetTemplateResolvedPipelineYaml() {
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false, false);
     assertThatThrownBy(()
                            -> pipelineResource.getTemplateResolvedPipelineYaml(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null))
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "false"))
         .isInstanceOf(EntityNotFoundException.class);
 
     doReturn(Optional.of(entity))
         .when(pmsPipelineService)
-        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false);
+        .getPipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, false, false, true);
 
     String extraYaml = yaml + "extra";
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
-    doReturn(templateMergeResponseDTO)
-        .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
+    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity, "true");
     ResponseDTO<TemplatesResolvedPipelineResponseDTO> templateResolvedPipelineYaml =
         pipelineResource.getTemplateResolvedPipelineYaml(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null);
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, "true");
     assertThat(templateResolvedPipelineYaml.getData().getYamlPipeline()).isEqualTo(yaml);
     assertThat(templateResolvedPipelineYaml.getData().getResolvedTemplatesPipelineYaml()).isEqualTo(extraYaml);
   }

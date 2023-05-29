@@ -26,6 +26,7 @@ import static io.harness.audit.ResourceTypeConstants.USER;
 import static io.harness.audit.ResourceTypeConstants.VARIABLE;
 import static io.harness.authorization.AuthorizationServiceHeader.CHAOS_SERVICE;
 import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.SERVICE_DISCOVERY_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
@@ -260,6 +261,7 @@ import io.harness.ng.scim.NGScimGroupServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
+import io.harness.ng.servicediscovery.AbstractServiceDiscoveryModule;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.userprofile.entities.AwsCodeCommitSCM.AwsCodeCommitSCMMapper;
 import io.harness.ng.userprofile.entities.AzureRepoSCM.AzureRepoSCMMapper;
@@ -833,6 +835,23 @@ public class NextGenModule extends AbstractModule {
       @Override
       public String clientId() {
         return CHAOS_SERVICE.name();
+      }
+    });
+
+    install(new AbstractServiceDiscoveryModule() {
+      @Override
+      public ServiceHttpClientConfig serviceDiscoveryClientConfig() {
+        return appConfig.getServiceDiscoveryServiceClientConfig();
+      }
+
+      @Override
+      public String serviceSecret() {
+        return appConfig.getNextGenConfig().getServiceDiscoveryServiceSecret();
+      }
+
+      @Override
+      public String clientId() {
+        return SERVICE_DISCOVERY_SERVICE.name();
       }
     });
 

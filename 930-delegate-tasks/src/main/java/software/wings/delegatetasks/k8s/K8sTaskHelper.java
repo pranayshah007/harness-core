@@ -48,6 +48,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesResource;
@@ -543,8 +544,8 @@ public class K8sTaskHelper {
       executionLogCallback.saveExecutionLog("Restoring inherited resources: \n");
       executionLogCallback.saveExecutionLog(ManifestHelper.toYamlForLogs(kubernetesResources));
       k8sHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(clusterConfig, false));
-      k8sHandlerConfig.setClient(
-          Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+      k8sHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
       k8sHandlerConfig.setResources(kubernetesResources);
       executionLogCallback.saveExecutionLog("Done.. \n", INFO, SUCCESS);
     } catch (Exception e) {

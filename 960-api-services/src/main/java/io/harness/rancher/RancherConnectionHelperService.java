@@ -7,8 +7,11 @@
 
 package io.harness.rancher;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
 
-public interface RancherHelperService {
+@OwnedBy(HarnessTeam.CDP)
+public interface RancherConnectionHelperService {
   ConnectorValidationResult testRancherConnection(String rancherUrl, String bearerToken);
 }

@@ -449,7 +449,7 @@ public class K8sBlueGreenDeployTaskHandlerTest extends CategoryTest {
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(emptyList());
 
     k8sBlueGreenDeployTaskHandler.init(blueGreenDeployTaskParams, delegateTaskParams, executionLogCallback);
-    verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).readManifests(any(), any());
     verify(k8sTaskHelper, times(1)).renderTemplate(any(), any(), any(), any(), any(), any(), any(), any());
     verify(k8sTaskHelperBase, times(1)).setNamespaceToKubernetesResourcesIfRequired(any(), any());

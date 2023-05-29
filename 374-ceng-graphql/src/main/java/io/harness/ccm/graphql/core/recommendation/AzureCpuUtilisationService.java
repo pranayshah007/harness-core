@@ -42,6 +42,9 @@ public class AzureCpuUtilisationService {
   private static final String AVERAGE_QUERY_TEMPLATE_BIGQUERY = "SELECT avg(average) as average"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
       + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
+  private static final String MAXIMUM_QUERY_TEMPLATE_BIGQUERY = "SELECT max(maximum) as maximum"
+      + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
+      + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
 
   private static final String START_TIME = "startTime";
   private static final String END_TIME = "endTime";
@@ -69,7 +72,7 @@ public class AzureCpuUtilisationService {
       }
       return extractAzureVmCpuUtilisationFromTable(vmId, result);
     } catch (InterruptedException e) {
-      log.error("Failed to get Azure VM Cpu Utilisation for Account:{}, {}", accountIdentifier, e);
+      log.error("Failed to get Azure VM Cpu Utilisation data for Account:{}, {}", accountIdentifier, e);
       Thread.currentThread().interrupt();
     }
     return null;
@@ -91,7 +94,28 @@ public class AzureCpuUtilisationService {
         return row.get(AVERAGE).getValue() == null ? null : row.get(AVERAGE).getDoubleValue();
       }
     } catch (InterruptedException e) {
-      log.error("Failed to get Azure VM Cpu Utilisation for Account:{}, {}", accountIdentifier, e);
+      log.error("Failed to get Azure VM Average Cpu Utilisation for Account:{}, {}", accountIdentifier, e);
+    }
+    return null;
+  }
+
+  public Double getMaximumAzureVmCpuUtilisationData(String vmId, String accountIdentifier, int duration) {
+    long startTime = getStartOfLastDuration(duration);
+    String cloudProviderTableName =
+        bigQueryHelper.getCloudProviderTableName(accountIdentifier, AZURE_VM_INVENTORY_METRIC);
+    String query =
+        format(MAXIMUM_QUERY_TEMPLATE_BIGQUERY, cloudProviderTableName, Instant.ofEpochMilli(startTime), vmId);
+    log.info("Query for Maximum Azure VM Cpu Utilisation: {}", query);
+    BigQuery bigQuery = bigQueryService.get();
+    QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query).build();
+    TableResult result;
+    try {
+      result = bigQuery.query(queryConfig);
+      for (FieldValueList row : result.iterateAll()) {
+        return row.get(MAXIMUM).getValue() == null ? null : row.get(MAXIMUM).getDoubleValue();
+      }
+    } catch (InterruptedException e) {
+      log.error("Failed to get Azure VM Maximum Cpu Utilisation for Account:{}, {}", accountIdentifier, e);
     }
     return null;
   }
@@ -102,8 +126,8 @@ public class AzureCpuUtilisationService {
       azureVmUtilisationResultSet.add(AzureVmUtilisationDTO.builder()
                                           .vmId(vmId)
                                           .averageCpu(row.get(AVERAGE).getDoubleValue())
-                                          .startTime(row.get(START_TIME).getTimestampValue())
-                                          .endTime(row.get(END_TIME).getTimestampValue())
+                                          .startTime(row.get(START_TIME).getTimestampValue() / 1000l)
+                                          .endTime(row.get(END_TIME).getTimestampValue() / 1000l)
                                           .maxCpu(row.get(MAXIMUM).getDoubleValue())
                                           .build());
     }

@@ -380,14 +380,59 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
   private CodeBase getIACMCodebase(PlanCreationContext ctx, String workspaceId) {
     try {
       CodeBaseBuilder iacmCodeBase = CodeBase.builder();
+      BuildBuilder buildObject = builder();
+
       Workspace workspace = serviceUtils.getIACMWorkspaceInfo(
           ctx.getOrgIdentifier(), ctx.getProjectIdentifier(), ctx.getAccountIdentifier(), workspaceId);
-      // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
-      // defined
-      if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
-        iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
+
+      // If the trigger type is WEBHOOK, we need to get the repository name from the webhook payload.
+      // If the trigger is not a WEBHOOK, then we retrieve the repository from the Workspace
+      if (ctx.getMetadata().getMetadata().getTriggerInfo().getTriggerType().name().equals("WEBHOOK")) {
+        // It looks like the connector type in the workspace has to match with the connector type in the webhook,.
+        // I could not find a way to get the connector type from the webhook, so I will use the connector type from the
+        // workspace and assume that both are the same. This is required because if the connector is an account
+        // connector, the repository name can only contain the name and not the full url.
+        if (!Objects.equals(workspace.getRepository_connector(), "") && workspace.getRepository_connector() != null) {
+          iacmCodeBase.repoName(
+              ParameterField.<String>builder()
+                  .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getName())
+                  .build());
+        } else {
+          iacmCodeBase.repoName(
+              ParameterField.<String>builder()
+                  .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getRepo().getClone())
+                  .build());
+        }
+        buildObject.type(BuildType.BRANCH);
+        buildObject.spec(
+            BranchBuildSpec.builder()
+                .branch(ParameterField.<String>builder()
+                            .value(ctx.getMetadata().getTriggerPayload().getParsedPayload().getPr().getPr().getSource())
+                            .build())
+                .build());
       } else {
-        iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
+        // If the repository name is empty, it means that the connector is an account connector and the repo needs to be
+        // defined
+        if (!Objects.equals(workspace.getRepository(), "") && workspace.getRepository() != null) {
+          iacmCodeBase.repoName(ParameterField.<String>builder().value(workspace.getRepository()).build());
+        } else {
+          iacmCodeBase.repoName(ParameterField.<String>builder().value(null).build());
+        }
+        if (!Objects.equals(workspace.getRepository_branch(), "") && workspace.getRepository_branch() != null) {
+          buildObject.type(BuildType.BRANCH);
+          buildObject.spec(BranchBuildSpec.builder()
+                               .branch(ParameterField.<String>builder().value(workspace.getRepository_branch()).build())
+                               .build());
+        } else if (!Objects.equals(workspace.getRepository_commit(), "") && workspace.getRepository_commit() != null) {
+          buildObject.type(BuildType.TAG);
+          buildObject.spec(TagBuildSpec.builder()
+                               .tag(ParameterField.<String>builder().value(workspace.getRepository_commit()).build())
+                               .build());
+        } else {
+          throw new IACMStageExecutionException(
+              "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
+              + workspace);
+        }
       }
 
       iacmCodeBase.connectorRef(ParameterField.<String>builder().value(workspace.getRepository_connector()).build());
@@ -398,23 +443,6 @@ public class IACMStagePMSPlanCreator extends AbstractStagePlanCreator<IACMStageN
 
       // Now we need to build the Build type for the Codebase.
       // We support 2,
-
-      BuildBuilder buildObject = builder();
-      if (!Objects.equals(workspace.getRepository_branch(), "") && workspace.getRepository_branch() != null) {
-        buildObject.type(BuildType.BRANCH);
-        buildObject.spec(BranchBuildSpec.builder()
-                             .branch(ParameterField.<String>builder().value(workspace.getRepository_branch()).build())
-                             .build());
-      } else if (!Objects.equals(workspace.getRepository_commit(), "") && workspace.getRepository_commit() != null) {
-        buildObject.type(BuildType.TAG);
-        buildObject.spec(TagBuildSpec.builder()
-                             .tag(ParameterField.<String>builder().value(workspace.getRepository_commit()).build())
-                             .build());
-      } else {
-        throw new IACMStageExecutionException(
-            "Unexpected connector information while writing the CodeBase block. There was not repository branch nor commit id defined in the workspace "
-            + workspace);
-      }
 
       return iacmCodeBase.build(ParameterField.<Build>builder().value(buildObject.build()).build()).build();
 

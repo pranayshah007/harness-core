@@ -7,6 +7,7 @@
 
 package io.harness.cdng.artifact.steps;
 
+import static io.harness.beans.FeatureName.CDS_ARTIFACTS_PRIMARY_IDENTIFIER;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -25,6 +26,7 @@ import io.harness.cdng.artifact.outcome.ArtifactsOutcome.ArtifactsOutcomeBuilder
 import io.harness.cdng.artifact.outcome.SidecarsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.artifact.utils.ArtifactUtils;
+import io.harness.cdng.artifact.utils.ArtifactsProcessedResponse;
 import io.harness.cdng.common.beans.StepDelegateInfo;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
@@ -77,6 +79,7 @@ import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogHelper;
@@ -119,6 +122,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject ServiceEntityService serviceEntityService;
 
+  @Inject private NGFeatureFlagHelperService featureFlagHelperService;
+
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
     return EmptyStepParameters.class;
@@ -133,6 +138,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, EmptyStepParameters stepParameters, StepInputPackage inputPackage) {
     NGServiceConfig ngServiceConfig;
+    String primaryArtifactRefValue = null;
     try {
       // get service merged with service inputs
       String mergedServiceYaml = cdStepHelper.fetchServiceYamlFromSweepingOutput(ambiance);
@@ -140,8 +146,14 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
         return AsyncExecutableResponse.newBuilder().build();
       }
 
+      ArtifactsProcessedResponse artifactsProcessedResponse =
+          artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
+
+      String processedServiceYaml = artifactsProcessedResponse.getServiceYaml();
+
+      primaryArtifactRefValue = artifactsProcessedResponse.getPrimaryArtifactRef();
+
       // process artifact sources in service yaml and select primary
-      String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
 
       // resolve template refs in primary and sidecar artifacts
       String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -231,8 +243,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       }
     }
     sweepingOutputService.consume(ambiance, ARTIFACTS_STEP_V_2,
-        new ArtifactsStepV2SweepingOutput(
-            primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
+        new ArtifactsStepV2SweepingOutput(primaryArtifactTaskId, artifactConfigMap,
+            artifactConfigMapForNonDelegateTaskTypes, primaryArtifactRefValue),
         "");
     serviceStepsHelper.publishTaskIdsStepDetailsForServiceStep(ambiance, stepDelegateInfos, ARTIFACT_STEP);
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
@@ -331,6 +343,15 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
           if (!EmptyPredicate.isEmpty(taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses())) {
             artifactDelegateResponses =
                 taskResponse.getArtifactTaskExecutionResponse().getArtifactDelegateResponses().get(0);
+          }
+
+          // set primary artifact identifier as primary artifact ref
+          if (featureFlagHelperService.isEnabled(
+                  AmbianceUtils.getAccountId(ambiance), CDS_ARTIFACTS_PRIMARY_IDENTIFIER)) {
+            if (isPrimary && isNotEmpty(artifactsSweepingOutput.getPrimaryArtifactRefValue())
+                && artifactConfig != null) {
+              artifactConfig.setIdentifier(artifactsSweepingOutput.getPrimaryArtifactRefValue());
+            }
           }
 
           ArtifactOutcome artifactOutcome =

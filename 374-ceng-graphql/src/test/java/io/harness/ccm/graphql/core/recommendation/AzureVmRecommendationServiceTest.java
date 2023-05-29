@@ -118,7 +118,8 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
                                .memory(2048)
                                .monthlyCost(130.0)
                                .vmSize(CURRENT)
-                               .cpuUtilization(5.0)
+                               .avgCpuUtilization(5.0)
+                               .maxCpuUtilization(13.0)
                                .region(REGION)
                                .build();
     AzureVmDTO targetVm = AzureVmDTO.builder()
@@ -126,7 +127,8 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
                               .memory(1024)
                               .monthlyCost(65.0)
                               .vmSize(TARGET)
-                              .cpuUtilization(10.0)
+                              .avgCpuUtilization(10.0)
+                              .maxCpuUtilization(26.0)
                               .region(REGION)
                               .build();
     if (target.equalsIgnoreCase(SHUTDOWN)) {
@@ -135,7 +137,8 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
                      .memory(0)
                      .monthlyCost(0.0)
                      .vmSize(SHUTDOWN)
-                     .cpuUtilization(0.0)
+                     .avgCpuUtilization(0.0)
+                     .maxCpuUtilization(0.0)
                      .region(REGION)
                      .build();
     }
@@ -160,15 +163,28 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
     AzureVmDetails currentVm = AzureVmDetails.builder()
                                    .numberOfCores(4)
                                    .memoryInMB(2048)
-                                   .cost(130.0)
+                                   .costInDefaultCurrencyPref(130.0)
                                    .name(CURRENT)
-                                   .cpuUtilisation(5.0)
+                                   .avgCpuUtilisation(5.0)
+                                   .maxCpuUtilisation(13.0)
                                    .build();
-    AzureVmDetails targetVm =
-        AzureVmDetails.builder().numberOfCores(2).memoryInMB(1024).cost(65.0).name(TARGET).cpuUtilisation(10.0).build();
+    AzureVmDetails targetVm = AzureVmDetails.builder()
+                                  .numberOfCores(2)
+                                  .memoryInMB(1024)
+                                  .costInDefaultCurrencyPref(65.0)
+                                  .name(TARGET)
+                                  .avgCpuUtilisation(10.0)
+                                  .maxCpuUtilisation(26.0)
+                                  .build();
     if (target.equalsIgnoreCase(SHUTDOWN)) {
-      targetVm =
-          AzureVmDetails.builder().numberOfCores(0).memoryInMB(0).cost(0.0).name(SHUTDOWN).cpuUtilisation(0.0).build();
+      targetVm = AzureVmDetails.builder()
+                     .numberOfCores(0)
+                     .memoryInMB(0)
+                     .costInDefaultCurrencyPref(0.0)
+                     .name(SHUTDOWN)
+                     .avgCpuUtilisation(0.0)
+                     .maxCpuUtilisation(0.0)
+                     .build();
     }
     return AzureRecommendation.builder()
         .recommendationId(RECOMMENDATION_ID)

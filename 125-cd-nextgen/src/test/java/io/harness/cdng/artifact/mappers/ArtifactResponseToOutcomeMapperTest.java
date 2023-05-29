@@ -146,12 +146,13 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     ArtifactDelegateResponse artifactDelegateResponse =
         DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    DockerArtifactOutcome artifactOutcome = (DockerArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
-    assertThat(((DockerArtifactOutcome) artifactOutcome).getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test
