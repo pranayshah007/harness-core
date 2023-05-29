@@ -44,12 +44,8 @@ public class MarginDetailsServiceImpl implements MarginDetailsService {
   }
 
   @Override
-  public void updateMarkupAmount(String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails) {
-    marginDetailsDao.updateMarkupAmount(mspAccountId, managedAccountId, markupAmountDetails);
-  }
-
-  @Override
-  public void updateTotalSpend(String mspAccountId, String managedAccountId, AmountDetails totalSpendDetails) {
-    marginDetailsDao.updateTotalSpend(mspAccountId, managedAccountId, totalSpendDetails);
+  public void updateMarkupAmount(String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails,
+      AmountDetails totalSpendDetails) {
+    marginDetailsDao.updateMarkupAndTotalSpend(mspAccountId, managedAccountId, markupAmountDetails, totalSpendDetails);
   }
 }

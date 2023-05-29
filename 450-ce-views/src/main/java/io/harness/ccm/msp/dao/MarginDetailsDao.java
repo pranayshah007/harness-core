@@ -90,7 +90,8 @@ public class MarginDetailsDao {
     }
   }
 
-  public void updateMarkupAmount(String mspAccountId, String accountId, AmountDetails markupAmountDetails) {
+  public void updateMarkupAndTotalSpend(
+      String mspAccountId, String accountId, AmountDetails markupAmountDetails, AmountDetails totalSpendDetails) {
     Query<MarginDetails> query = hPersistence.createQuery(MarginDetails.class)
                                      .field(MarginDetailsKeys.accountId)
                                      .equal(accountId)
@@ -98,16 +99,6 @@ public class MarginDetailsDao {
                                      .equal(mspAccountId);
     UpdateOperations<MarginDetails> updateOperations = hPersistence.createUpdateOperations(MarginDetails.class);
     setUnsetUpdateOperations(updateOperations, MarginDetailsKeys.markupAmountDetails, markupAmountDetails);
-    hPersistence.update(query, updateOperations);
-  }
-
-  public void updateTotalSpend(String mspAccountId, String accountId, AmountDetails totalSpendDetails) {
-    Query<MarginDetails> query = hPersistence.createQuery(MarginDetails.class)
-                                     .field(MarginDetailsKeys.accountId)
-                                     .equal(accountId)
-                                     .field(MarginDetailsKeys.mspAccountId)
-                                     .equal(mspAccountId);
-    UpdateOperations<MarginDetails> updateOperations = hPersistence.createUpdateOperations(MarginDetails.class);
     setUnsetUpdateOperations(updateOperations, MarginDetailsKeys.totalSpendDetails, totalSpendDetails);
     hPersistence.update(query, updateOperations);
   }

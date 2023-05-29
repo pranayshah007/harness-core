@@ -18,6 +18,6 @@ public interface MarginDetailsService {
   List<MarginDetails> list(String mspAccountId);
   MarginDetails update(MarginDetails marginDetails);
   MarginDetails unsetMargins(String uuid);
-  void updateMarkupAmount(String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails);
-  void updateTotalSpend(String mspAccountId, String managedAccountId, AmountDetails totalSpendDetails);
+  void updateMarkupAmount(
+      String mspAccountId, String managedAccountId, AmountDetails markupAmountDetails, AmountDetails totalSpendDetails);
 }
