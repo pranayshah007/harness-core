@@ -44,6 +44,7 @@ public class ClusterTableKeys {
   public static final String WORKLOAD_TYPE = "workloadtype";
   public static final String BILLING_AMOUNT = "billingamount";
   public static final String COST = "cost";
+  public static final String MARKUP_AMOUNT = "markupAmount";
   public static final String CPU_BILLING_AMOUNT = "cpubillingamount";
   public static final String MEMORY_BILLING_AMOUNT = "memorybillingamount";
   public static final String USAGE_DURATION_SECONDS = "usagedurationseconds";
@@ -86,6 +87,7 @@ public class ClusterTableKeys {
   public static final String EFFECTIVE_MEMORY_LIMIT = "memorylimit*usagedurationseconds";
   public static final String EFFECTIVE_CPU_UTILIZATION_VALUE = "avgcpuutilizationvalue*usagedurationseconds";
   public static final String EFFECTIVE_MEMORY_UTILIZATION_VALUE = "avgmemoryutilizationvalue*usagedurationseconds";
+  public static final String MARKUP_AMOUNT_AGGREGATION = "cost*(mspMarkupMultiplier - 1)";
   public static final String COUNT = "totalCount";
   public static final String COUNT_INNER = "totalCountInner";
   public static final String PRICING_SOURCE = "pricingsource";
@@ -96,6 +98,7 @@ public class ClusterTableKeys {
   public static final String DEFAULT_GRID_ENTRY_NAME = "Total";
   public static final double DEFAULT_DOUBLE_VALUE = -1d;
   public static final String ID_SEPARATOR = ":";
+  public static final String DEFAULT_MARKUP_IDENTIFIER = "Markup";
 
   // Alias names for aggregation
   public static final String TIME_AGGREGATED_CPU_REQUEST = "timeAggregatedCpuRequest";

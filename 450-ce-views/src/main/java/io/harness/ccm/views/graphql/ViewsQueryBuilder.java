@@ -35,6 +35,8 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_NODE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_SERVICE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.INSTANCE_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.LAUNCH_TYPE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT_AGGREGATION;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TASK_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_CPU_LIMIT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_CPU_REQUEST;
@@ -1989,6 +1991,8 @@ public class ViewsQueryBuilder {
         return TIME_AGGREGATED_MEMORY_REQUEST;
       case EFFECTIVE_MEMORY_UTILIZATION_VALUE:
         return TIME_AGGREGATED_MEMORY_UTILIZATION_VALUE;
+      case MARKUP_AMOUNT_AGGREGATION:
+        return MARKUP_AMOUNT;
       default:
         return value;
     }

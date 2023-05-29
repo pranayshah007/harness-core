@@ -24,7 +24,7 @@ import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV
 import io.harness.ccm.helper.RecommendationQueryHelper;
 import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.FilterValuesDTO;
-import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
+import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
