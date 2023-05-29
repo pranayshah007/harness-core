@@ -38,7 +38,7 @@ public class AzureCpuUtilisationService {
       "SELECT average, maximum, TIMESTAMP_TRUNC(metricStartTime, DAY) AS startTime,"
       + " TIMESTAMP_TRUNC(metricEndTime, DAY) AS endTime"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
+      + " AND vmId = '%s' AND metricName = 'Percentage CPU' order by startTime";
   private static final String AVERAGE_QUERY_TEMPLATE_BIGQUERY = "SELECT avg(average) as average"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
       + " AND vmId = '%s' AND metricName = 'Percentage CPU'";
