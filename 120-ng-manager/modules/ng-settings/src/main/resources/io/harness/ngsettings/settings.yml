@@ -12,6 +12,16 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: git_webhook_polling_for_triggers
+    name: Git Webhook Polling for Triggers
+    category: PMS
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
   - identifier: disable_harness_built_in_secret_manager
     name: Disable Harness Built-In Secret Manager
     category : CONNECTORS
