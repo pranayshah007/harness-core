@@ -31,6 +31,7 @@ import io.harness.favorites.utils.FavoritesResourceUtils;
 import io.harness.rule.Owner;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 import io.harness.spec.server.ng.v1.model.FavoriteResponse;
+import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import java.util.Collections;
 import javax.ws.rs.core.Response;
@@ -41,17 +42,13 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PL)
-public class FavoritesApiImplTest extends CategoryTest {
+public class FavoritesAccountApiImplTest extends CategoryTest {
   private AccountFavoritesApiImpl accountFavoriteApi;
-  private OrgFavoritesApiImpl orgFavoriteApi;
-  private ProjectFavoritesApiImpl projectFavoriteApi;
   private FavoritesResourceUtils favoritesResourceUtils;
   @Mock private FavoritesService favoriteService;
   private final String userId = "userId";
   private final String moduleType = "CD";
   private final String accountId = "accountId";
-  private final String orgId = "org";
-  private final String projectId = "project";
   private final String resourceType_connector = "CONNECTOR";
   private final String resourceId = "resourceUUID";
 
@@ -62,10 +59,10 @@ public class FavoritesApiImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     favoritesResourceUtils = new FavoritesResourceUtils();
     accountFavoriteApi = new AccountFavoritesApiImpl(favoriteService, favoritesResourceUtils);
-    orgFavoriteApi = new OrgFavoritesApiImpl(favoriteService, favoritesResourceUtils);
-    projectFavoriteApi = new ProjectFavoritesApiImpl(favoriteService, favoritesResourceUtils);
-    favoriteDTO =
-        favoriteDTO.module(moduleType).userId(userId).resourceType(resourceType_connector).resourceId(resourceId);
+    favoriteDTO = favoriteDTO.module(io.harness.spec.server.ng.v1.model.ModuleType.fromValue(moduleType))
+                      .userId(userId)
+                      .resourceType(FavoritesResourceType.fromValue(resourceType_connector))
+                      .resourceId(resourceId);
   }
 
   @Test
@@ -83,48 +80,15 @@ public class FavoritesApiImplTest extends CategoryTest {
   @Test
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
-  public void testCreateOrgScopedFavorite() {
+  public void testGetAccountScopedFavoriteWithResourceType() {
     Favorite favoriteEntity = getFavoriteEntity();
-    favoriteDTO.setOrg(orgId);
-    favoriteEntity.setOrgIdentifier(orgId);
-    when(favoriteService.createFavorite(any(), anyString())).thenReturn(favoriteEntity);
-    Response orgFavoriteResponse = orgFavoriteApi.createOrgFavorite(orgId, favoriteDTO, accountId);
-    assertThat(orgFavoriteResponse).isNotNull();
-    assertThat(orgFavoriteResponse.getStatus()).isEqualTo(201);
-    assertThat(orgFavoriteResponse.getEntity()).isEqualTo(getFavoriteResponse(favoriteEntity));
-  }
-
-  @Test
-  @Owner(developers = BOOPESH)
-  @Category(UnitTests.class)
-  public void testCreateProjectScopedFavorite() {
-    Favorite favoriteEntity = getFavoriteEntity();
-    favoriteEntity.setOrgIdentifier(orgId);
-    favoriteEntity.setProjectIdentifier(projectId);
-    favoriteDTO.setOrg(orgId);
-    favoriteDTO.setProject(projectId);
-    when(favoriteService.createFavorite(any(), anyString())).thenReturn(favoriteEntity);
-    Response projectFavoriteResponse =
-        projectFavoriteApi.createProjectFavorite(orgId, projectId, favoriteDTO, accountId);
-    assertThat(projectFavoriteResponse).isNotNull();
-    assertThat(projectFavoriteResponse.getStatus()).isEqualTo(201);
-    assertThat(projectFavoriteResponse.getEntity()).isEqualTo(getFavoriteResponse(favoriteEntity));
-  }
-
-  @Test
-  @Owner(developers = BOOPESH)
-  @Category(UnitTests.class)
-  public void testGetProjectScopedFavoriteWithResourceType() {
-    Favorite favoriteEntity = getFavoriteEntity();
-    favoriteEntity.setOrgIdentifier(orgId);
-    favoriteEntity.setProjectIdentifier(projectId);
-    when(favoriteService.getFavorites(anyString(), anyString(), anyString(), anyString(), any()))
+    when(favoriteService.getFavorites(anyString(), any(), any(), anyString(), any()))
         .thenReturn(Collections.singletonList(favoriteEntity));
-    Response projectFavoriteResponse =
-        projectFavoriteApi.getProjectFavorites(orgId, projectId, userId, accountId, resourceType_connector);
-    assertThat(projectFavoriteResponse).isNotNull();
-    assertThat(projectFavoriteResponse.getStatus()).isEqualTo(200);
-    assertThat(projectFavoriteResponse.getEntity())
+    Response accountFavoriteResponse = accountFavoriteApi.getAccountFavorites(
+        userId, accountId, FavoritesResourceType.fromValue(resourceType_connector));
+    assertThat(accountFavoriteResponse).isNotNull();
+    assertThat(accountFavoriteResponse.getStatus()).isEqualTo(200);
+    assertThat(accountFavoriteResponse.getEntity())
         .isEqualTo(Collections.singletonList(getFavoriteResponse(favoriteEntity)));
   }
 
@@ -135,10 +99,10 @@ public class FavoritesApiImplTest extends CategoryTest {
     Favorite favoriteEntity = getFavoriteEntity();
     when(favoriteService.getFavorites(anyString(), any(), any(), anyString()))
         .thenReturn(Collections.singletonList(favoriteEntity));
-    Response projectFavoriteResponse = accountFavoriteApi.getAccountFavorites(userId, accountId, null);
-    assertThat(projectFavoriteResponse).isNotNull();
-    assertThat(projectFavoriteResponse.getStatus()).isEqualTo(200);
-    assertThat(projectFavoriteResponse.getEntity())
+    Response accountFavoriteResponse = accountFavoriteApi.getAccountFavorites(userId, accountId, null);
+    assertThat(accountFavoriteResponse).isNotNull();
+    assertThat(accountFavoriteResponse.getStatus()).isEqualTo(200);
+    assertThat(accountFavoriteResponse.getEntity())
         .isEqualTo(Collections.singletonList(getFavoriteResponse(favoriteEntity)));
   }
 
@@ -146,8 +110,8 @@ public class FavoritesApiImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteAccountScopedFavorite() {
-    Response deleteAccountFavorite =
-        accountFavoriteApi.deleteAccountFavorite(userId, accountId, resourceType_connector, resourceId);
+    Response deleteAccountFavorite = accountFavoriteApi.deleteAccountFavorite(
+        userId, accountId, FavoritesResourceType.fromValue(resourceType_connector), resourceId);
     assertThat(deleteAccountFavorite).isNotNull();
     assertThat(deleteAccountFavorite.getStatus()).isEqualTo(204);
     assertThat(deleteAccountFavorite.getEntity()).isNull();
@@ -157,10 +121,11 @@ public class FavoritesApiImplTest extends CategoryTest {
   @Owner(developers = BOOPESH)
   @Category(UnitTests.class)
   public void testDeleteAccountScopedFavoriteInvalidResourceTypeThrowException() {
+    FavoritesResourceType favoritesResourceType = FavoritesResourceType.fromValue("Random");
     doThrow(new InvalidRequestException("Please provide a valid resource Type"))
         .when(favoriteService)
-        .deleteFavorite(accountId, null, null, userId, "random", resourceId);
-    Response response = accountFavoriteApi.deleteAccountFavorite(userId, accountId, "random", resourceId);
+        .deleteFavorite(accountId, null, null, userId, favoritesResourceType, resourceId);
+    Response response = accountFavoriteApi.deleteAccountFavorite(userId, accountId, favoritesResourceType, resourceId);
     ResponseMessage errorResponse = ResponseMessage.builder()
                                         .code(ErrorCode.INVALID_REQUEST)
                                         .level(Level.ERROR)
@@ -177,7 +142,8 @@ public class FavoritesApiImplTest extends CategoryTest {
     doThrow(new InvalidRequestException("Please provide a valid resource Type"))
         .when(favoriteService)
         .deleteFavorite(accountId, null, null, userId, null, resourceId);
-    Response response = accountFavoriteApi.deleteAccountFavorite(userId, accountId, null, resourceId);
+    Response response = accountFavoriteApi.deleteAccountFavorite(
+        userId, accountId, FavoritesResourceType.fromValue("Random"), resourceId);
     ResponseMessage errorResponse = ResponseMessage.builder()
                                         .code(ErrorCode.INVALID_REQUEST)
                                         .level(Level.ERROR)
