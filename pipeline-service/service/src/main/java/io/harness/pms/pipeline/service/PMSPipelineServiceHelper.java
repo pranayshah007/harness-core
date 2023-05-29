@@ -101,7 +101,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final TelemetryReporter telemetryReporter;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
-  @Inject PipelineReferenceBackgroundHelper pipelineReferenceBackgroundHelper;
+  @Inject private final PipelineReferenceBackgroundHelper pipelineReferenceBackgroundHelper;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -595,7 +595,7 @@ public class PMSPipelineServiceHelper {
   public void computePipelineReferences(PipelineEntity pipelineEntity, boolean loadFromCache) {
     if (StoreType.REMOTE.equals(pipelineEntity.getStoreType()) && !loadFromCache) {
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-      if (gitEntityInfo.getIsDefaultBranch()) {
+      if (gitEntityInfo != null && gitEntityInfo.getIsDefaultBranch()) {
         String branchName = gitEntityInfo.getBranch();
         pipelineReferenceBackgroundHelper.submitTask(
             FilterCreationParams.builder()
