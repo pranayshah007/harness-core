@@ -18,6 +18,9 @@ import io.harness.cvng.core.beans.RiskProfile;
 import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.CustomHealthMetricCVConfig;
+import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.TimeSeriesThreshold;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
@@ -170,8 +173,9 @@ public class CustomHealthSourceMetricSpec extends MetricHealthSourceSpec {
                                                       .monitoringSourceName(name)
                                                       .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                       .build();
-      mappedCVConfig.setMetricPack(mappedCVConfig.generateMetricPack(
-          metricDefinition.getIdentifier(), metricDefinition.getMetricName(), metricDefinition.getRiskProfile()));
+      mappedCVConfig.setMetricPack(
+          mappedCVConfig.generateMetricPack(existingCvConfig != null ? existingCvConfig.getMetricPack() : null,
+              metricDefinition.getIdentifier(), metricDefinition.getMetricName(), metricDefinition.getRiskProfile()));
       cvConfigMap.put(cvConfigKey, mappedCVConfig);
     });
 
