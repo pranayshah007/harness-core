@@ -13,8 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
-import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
+import static io.harness.ngtriggers.Constants.*;
+import static io.harness.ngtriggers.Constants.MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
@@ -369,7 +369,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
   private void checkAndEnableWebhookPolling(NGTriggerEntity ngTriggerEntity) {
-    if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)
+    if (shouldGitWebhookPolling(ngTriggerEntity)
         && GITHUB.getEntityMetadataName().equalsIgnoreCase(ngTriggerEntity.getMetadata().getWebhook().getType())) {
       String webhookId = ngTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
       String pollInterval = ngTriggerEntity.getPollInterval();
@@ -488,7 +488,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private boolean isWebhookGitPollingEnabled(NGTriggerEntity foundTriggerEntity) {
     if (foundTriggerEntity.getType() == WEBHOOK
         && GITHUB.getEntityMetadataName().equalsIgnoreCase(foundTriggerEntity.getMetadata().getWebhook().getType())
-        && pmsFeatureFlagService.isEnabled(foundTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
+        && shouldGitWebhookPolling(foundTriggerEntity)) {
       if (foundTriggerEntity.getTriggerStatus().getWebhookInfo() != null) {
         String webhookId = foundTriggerEntity.getTriggerStatus().getWebhookInfo().getWebhookId();
         String pollInterval = foundTriggerEntity.getPollInterval();
@@ -737,8 +737,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           return;
         }
 
-        if (pmsFeatureFlagService.isEnabled(
-                triggerDetails.getNgTriggerEntity().getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)) {
+        if (shouldGitWebhookPolling(triggerDetails.getNgTriggerEntity())) {
           String pollInterval = triggerDetails.getNgTriggerEntity().getPollInterval();
           if (StringUtils.isEmpty(pollInterval)) {
             log.info("Polling not enabled for trigger {}, pollInterval {} ",
@@ -812,6 +811,20 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         throw new InvalidRequestException("pipelineBranchName is missing or is empty.");
       }
     }
+  }
+
+  private Boolean shouldGitWebhookPolling(NGTriggerEntity ngTriggerEntity) {
+    if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.NG_SETTINGS)) {
+      String gitWebhookPollingForTriggers =
+          NGRestUtils
+              .getResponse(settingsClient.getSetting(GIT_WEBHOOK_POLLING_FOR_TRIGGERS, ngTriggerEntity.getAccountId(),
+                  ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier()))
+              .getValue();
+      if (gitWebhookPollingForTriggers.equals(GIT_WEBHOOK_POLLING_FOR_TRIGGERS)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private String getPipelineComponent(String triggerYml) {
