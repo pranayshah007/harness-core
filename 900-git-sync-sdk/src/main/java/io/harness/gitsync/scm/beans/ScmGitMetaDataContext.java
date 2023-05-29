@@ -22,12 +22,12 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PL)
 @TypeAlias("ScmGitMetaDataContext")
 public class ScmGitMetaDataContext implements GlobalContextData {
-  public static final String NG_GIT_SYNC_CONTEXT = "SCM_GIT_META_DATA_CONTEXT";
+  public static final String SCM_GIT_META_DATA_CONTEXT = "SCM_GIT_META_DATA_CONTEXT";
 
   @Wither ScmGitMetaData scmGitMetaData;
 
   @Override
   public String getKey() {
-    return NG_GIT_SYNC_CONTEXT;
+    return SCM_GIT_META_DATA_CONTEXT;
   }
 }

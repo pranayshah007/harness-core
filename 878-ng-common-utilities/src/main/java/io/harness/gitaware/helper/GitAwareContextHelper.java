@@ -53,7 +53,8 @@ public class GitAwareContextHelper {
   }
 
   public ScmGitMetaData getScmGitMetaData() {
-    ScmGitMetaDataContext gitMetaDataContext = GlobalContextManager.get(ScmGitMetaDataContext.NG_GIT_SYNC_CONTEXT);
+    ScmGitMetaDataContext gitMetaDataContext =
+        GlobalContextManager.get(ScmGitMetaDataContext.SCM_GIT_META_DATA_CONTEXT);
     if (gitMetaDataContext == null) {
       return ScmGitMetaData.builder().build();
     }

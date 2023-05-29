@@ -319,6 +319,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
+    if (pipelineEntity.isPresent()
+        && gitSyncSdkService.isGitSimplificationEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
 

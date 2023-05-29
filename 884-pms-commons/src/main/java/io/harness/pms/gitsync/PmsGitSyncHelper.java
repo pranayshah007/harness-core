@@ -41,7 +41,8 @@ public class PmsGitSyncHelper {
   public ByteString getGitSyncBranchContextBytesThreadLocal(
       GitSyncableEntity gitSyncableEntity, StoreType storeType, String repoName, String connectorRef) {
     GitSyncBranchContext gitSyncBranchContext = GlobalContextManager.get(GitSyncBranchContext.NG_GIT_SYNC_CONTEXT);
-    ScmGitMetaDataContext gitMetaDataContext = GlobalContextManager.get(ScmGitMetaDataContext.NG_GIT_SYNC_CONTEXT);
+    ScmGitMetaDataContext gitMetaDataContext =
+        GlobalContextManager.get(ScmGitMetaDataContext.SCM_GIT_META_DATA_CONTEXT);
     String branchNameFromSCMGitMetadata =
         gitMetaDataContext == null ? null : gitMetaDataContext.getScmGitMetaData().getBranchName();
     if (gitSyncBranchContext != null && gitSyncBranchContext.getGitBranchInfo() != null) {

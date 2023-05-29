@@ -57,7 +57,9 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
+import io.harness.pms.pipeline.references.PipelineReferenceBackgroundHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -75,10 +77,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
@@ -102,6 +101,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final TelemetryReporter telemetryReporter;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
+  @Inject PipelineReferenceBackgroundHelper pipelineReferenceBackgroundHelper;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -589,6 +589,21 @@ public class PMSPipelineServiceHelper {
       throw NestedExceptionUtils.hintWithExplanationException(format("Invalid module type [%s]", module),
           format("Please select the correct module type %s", ModuleType.getModules()),
           new InvalidRequestException(format("Invalid module type [%s]", module)));
+    }
+  }
+
+  public void computePipelineReferences(PipelineEntity pipelineEntity, boolean loadFromCache) {
+    if (StoreType.REMOTE.equals(pipelineEntity.getStoreType()) && !loadFromCache) {
+      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+      if (gitEntityInfo.getIsDefaultBranch()) {
+        String branchName = gitEntityInfo.getBranch();
+        pipelineReferenceBackgroundHelper.submitTask(
+            FilterCreationParams.builder()
+                .pipelineEntity(pipelineEntity)
+                .filterCreationGitMetadata(
+                    FilterCreationGitMetadata.builder().branch(branchName).repo(pipelineEntity.getRepo()).build())
+                .build());
+      }
     }
   }
 }
