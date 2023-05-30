@@ -27,6 +27,7 @@ import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
+import software.wings.beans.command.ServiceCommand;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.State;
@@ -92,11 +93,19 @@ public class CommandStepMapperImpl extends StepMapper {
       Map<String, String> stepIdToServiceIdMap = workflowHandler.getStepIdToServiceIdMap(context.getWorkflow());
       String commandName = (String) graphNode.getProperties().get("commandName");
       String serviceId = stepIdToServiceIdMap.getOrDefault(graphNode.getId(), UNKNOWN_SERVICE);
-      NGYamlFile template =
-          context.getMigratedEntities().get(CgEntityId.builder()
-                                                .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + commandName)
-                                                .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
-                                                .build());
+      CgEntityId commandId = CgEntityId.builder()
+                                 .id(serviceId + SERVICE_COMMAND_TEMPLATE_SEPARATOR + commandName)
+                                 .type(NGMigrationEntityType.SERVICE_COMMAND_TEMPLATE)
+                                 .build();
+      ServiceCommand serviceCommand = (ServiceCommand) migrationContext.getEntities().get(commandId).getEntity();
+      NGYamlFile template;
+      // If the service command is referencing a template, then use that template
+      if (StringUtils.isNotBlank(serviceCommand.getTemplateUuid())) {
+        template = context.getMigratedEntities().get(
+            CgEntityId.builder().type(NGMigrationEntityType.TEMPLATE).id(serviceCommand.getTemplateUuid()).build());
+      } else {
+        template = context.getMigratedEntities().get(commandId);
+      }
       return getTemplateStepNode(migrationContext, context, phase, phaseStep, graphNode, template, skipCondition);
     } else {
       return defaultTemplateSpecMapper(migrationContext, context, phase, phaseStep, graphNode, skipCondition);

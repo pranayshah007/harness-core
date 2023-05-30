@@ -38,6 +38,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -97,7 +98,8 @@ public class K8sCanaryDeleteRequestHandler extends K8sRequestHandler {
       throws Exception {
     logCallback.saveExecutionLog("Initializing...\n");
 
-    client = Kubectl.client(delegateParams.getKubectlPath(), delegateParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(
+        delegateParams.getKubectlPath(), delegateParams.getKubeconfigPath(), delegateParams.getWorkingDirectory());
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), delegateParams.getWorkingDirectory(), logCallback);
 

@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: 2hxrtfd4bq62u
+  id: ia5ejt6zjg99j
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -17,6 +17,9 @@ tags:
   - name: Input Sets
     description: This contains APIs for Input Sets.
     x-displayName: 'Input Sets [Beta]'
+  - name: Approvals
+    description: This contains APIs for Approvals.
+    x-displayName: 'Approvals [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -549,6 +552,72 @@ paths:
       description: Fetches InputSet YAML from Git Repository and saves a record for it in Harness
       tags:
         - Input Sets
+  '/v1/orgs/{org}/projects/{project}/approvals/execution/{execution-id}':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/ExecutionIdParam'
+    get:
+      summary: Gets Approval Instances by Execution Id
+      operationId: getApprovalInstancesByExecutionId
+      responses:
+        '200':
+          $ref: '#/components/responses/ApprovalInstanceListResponseBody'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                example-resp:
+                  value: {}
+            application/yaml:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                example-resp:
+                  value: |
+                    {}
+      description: Gets Approval Instances by Execution Id
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - name: approval_status
+          in: query
+          description: This filters approval instances based on status
+          schema:
+            type: string
+            enum:
+              - WAITING
+              - APPROVED
+              - REJECTED
+              - FAILED
+              - ABORTED
+              - EXPIRED
+        - name: approval_type
+          in: query
+          description: This filters approval instances based on type
+          schema:
+            type: string
+            enum:
+              - HarnessApproval
+              - JiraApproval
+              - CustomApproval
+              - ServiceNowApproval
+        - name: node_execution_id
+          in: query
+          description: This filters approval instances based on runtime identifier of the step
+          pattern: '^[a-zA-Z_][0-9a-zA-Z_$]{0,127}$'
+          minLength: 1
+          maxLength: 128
+          schema:
+            type: string
+      tags:
+        - Approvals
   '/v1/orgs/{org}/projects/{project}/pipelines/{pipeline}/git-metadata':
     parameters:
       - $ref: '#/components/parameters/OrgParam'
@@ -595,7 +664,7 @@ components:
     GitDetails:
       title: Git Response Details
       x-stoplight:
-        id: qkq00fbqykhxw
+        id: 4mvj6ofdq1dni
       type: object
       description: Git Experience related details of the Entity.
       x-examples:
@@ -635,7 +704,7 @@ components:
     PipelineGetResponseBody:
       title: Pipeline Get Response Body
       x-stoplight:
-        id: twnioaqmn69uy
+        id: 4ccpv1m53gwfk
       description: Pipeline response body.
       x-examples:
         example-get:
@@ -760,7 +829,7 @@ components:
           status: IN_PROGRESS
       type: object
       x-stoplight:
-        id: 6c15cb29289e9
+        id: jr7gdibo4o5ei
       x-internal: true
       properties:
         status:
@@ -792,11 +861,11 @@ components:
           description: UUID of the Pipeline Validation Event
       x-internal: true
       x-stoplight:
-        id: d9465007d1ed7
+        id: zwsfufw9x733c
     PipelineListResponseBody:
       title: Pipeline List Response Body
       x-stoplight:
-        id: kaxl2v3p6i4wx
+        id: 38qjichschh12
       description: Pipeline List response body
       x-examples:
         example-summary:
@@ -890,7 +959,7 @@ components:
     PipelineCreateRequestBody:
       title: Pipeline Create Request Body
       x-stoplight:
-        id: enghevjhz64ca
+        id: 3za5zziqw61vv
       type: object
       description: 'Pipeline request body object '
       x-examples:
@@ -1031,7 +1100,7 @@ components:
     PipelineCreateResponseBody:
       title: Pipeline Create Response Body
       x-stoplight:
-        id: 70uk481o3cw8j
+        id: k574s625xnh7b
       type: object
       description: Pipeline response body
       x-examples:
@@ -1047,7 +1116,7 @@ components:
     YAMLSchemaErrorWrapper:
       title: YAML Schema Error Wrapper
       x-stoplight:
-        id: 64bisstgjyjfh
+        id: 19d7d1vjzhyzp
       type: object
       description: YAML schema error.
       properties:
@@ -1088,7 +1157,7 @@ components:
     NodeInfo:
       title: Entity Details
       x-stoplight:
-        id: wgx64fjolzlcr
+        id: nb8o2jldsyqhw
       type: object
       description: Entity details
       x-examples:
@@ -1119,7 +1188,7 @@ components:
     RecentExecutionInfo:
       title: Recent Execution Information
       x-stoplight:
-        id: bfup5ytbj94pn
+        id: f441cb57ju60m
       type: object
       description: Recent Execution information of the Pipeline.
       properties:
@@ -1191,7 +1260,7 @@ components:
     ExecutorInfo:
       title: Executor Information
       x-stoplight:
-        id: 41793mh9py33c
+        id: 8zaxvlnjdq0fm
       type: object
       description: Information regarding Executor of Pipeline.
       properties:
@@ -1218,7 +1287,7 @@ components:
     GitCreateDetails:
       title: Create Git Details
       x-stoplight:
-        id: 36li0g4pug41q
+        id: b5e6evjl161e2
       type: object
       description: Contains parameters related to creating an Entity for Git Experience.
       x-examples:
@@ -1258,7 +1327,7 @@ components:
     GitUpdateDetails:
       title: Update Git Details
       x-stoplight:
-        id: cko6b02f6trvt
+        id: bhsc1huci2tbs
       type: object
       description: Contains parameters related to updating an Entity for Git Experience.
       x-examples:
@@ -1302,7 +1371,7 @@ components:
     PipelineUpdateRequestBody:
       title: Pipeline Update Request Body
       x-stoplight:
-        id: u6xvv15ghw7kk
+        id: xf68z0500tnd9
       type: object
       description: 'Pipeline request body object '
       x-examples:
@@ -1444,7 +1513,7 @@ components:
     CacheResponseMetadataDTO:
       title: CacheResponseMetadataDTO
       x-stoplight:
-        id: 8l1kpcrxe390j
+        id: p55l9sgf5cxtw
       type: object
       properties:
         cache_state:
@@ -1470,7 +1539,7 @@ components:
     InputSetCreateRequestBody:
       title: Input Set Create Request Body
       x-stoplight:
-        id: hoene5knwaoi1
+        id: guzrpxbvpbmb8
       type: object
       description: Input Set create request body
       x-examples:
@@ -1561,7 +1630,7 @@ components:
     InputSetResponseBody:
       title: Input Set Response Body
       x-stoplight:
-        id: vtg1ivgq0e7fm
+        id: kld3pe82tk55u
       type: object
       description: Response body for Input Set
       properties:
@@ -1652,7 +1721,7 @@ components:
     InputSetErrorDetails:
       title: Input Set Error Details
       x-stoplight:
-        id: iib7daxu8erd3
+        id: 3krsz1s1xn0u7
       type: object
       description: Error details regarding Input Sets.
       properties:
@@ -1695,7 +1764,7 @@ components:
     FQNtoError:
       title: FQN to Error
       x-stoplight:
-        id: s583pocm5mz55
+        id: ohicd5dcgt7mz
       type: object
       description: FQN to error response mapper.
       x-examples:
@@ -1717,7 +1786,7 @@ components:
     InputSetError:
       title: Input Set Error
       x-stoplight:
-        id: h61gwwmbz926g
+        id: ij8iesutubr5v
       type: object
       description: Input Set error
       properties:
@@ -1738,7 +1807,7 @@ components:
     InputSetUpdateRequestBody:
       title: Input Set Update Request Body
       x-stoplight:
-        id: solgy345qd998
+        id: ir75btz7c5xai
       type: object
       description: Input Set update request body
       x-examples:
@@ -1829,7 +1898,7 @@ components:
     InputSetGitUpdateDetails:
       title: InputSetGitUpdateDetails
       x-stoplight:
-        id: tqctl4ilqdk9r
+        id: kdwfuryg4zt8l
       type: object
       description: Contains parameters related to updating an Input Set for Git Experience.
       x-examples:
@@ -1866,7 +1935,7 @@ components:
     InputsResponseBody:
       title: Inputs Response Body
       x-stoplight:
-        id: opv8b35dycaey
+        id: v0zj31nwn28i5
       type: object
       properties:
         inputs:
@@ -1929,7 +1998,7 @@ components:
     ParentStageInfo:
       title: ParentStageInfo
       x-stoplight:
-        id: t0ci6ngiieo6c
+        id: 0n6c23zx6zykb
       type: object
       description: 'Information about parent pipeline '
       properties:
@@ -1958,7 +2027,7 @@ components:
     PipelineMoveConfigRequestBody:
       title: PipelineMoveConfigRequestBody
       x-stoplight:
-        id: ed578c29cb9dc
+        id: r56yd6uec2jgb
       type: object
       description: Request body for moving a pipeline configuration
       properties:
@@ -1971,7 +2040,7 @@ components:
     PipelineMoveConfigResponseBody:
       title: PipelineMoveConfigResponseBody
       x-stoplight:
-        id: e4ec161edc199
+        id: md5apvzmsycpn
       type: object
       description: Response body for configuration to move a pipeline
       properties:
@@ -1986,7 +2055,7 @@ components:
     GitMoveDetails:
       title: Move Git Details
       x-stoplight:
-        id: 4rhd7gzvl7yoe
+        id: zd8ffpr7tv12d
       type: object
       description: Parameters related to moving an entity for Git Experience.
       x-examples:
@@ -2019,7 +2088,7 @@ components:
     InputSetMoveConfigRequestBody:
       title: InputSetMoveConfigRequestBody
       x-stoplight:
-        id: gf4xlhs210icv
+        id: adt1mv71bu2xh
       type: object
       description: Request body for moving an input set configuration.
       properties:
@@ -2034,7 +2103,7 @@ components:
     InputSetMoveConfigResponseBody:
       title: InputSetMoveConfigResponseBody
       x-stoplight:
-        id: yk5yx84ss2dtu
+        id: 15e5ux1ci5elc
       type: object
       properties:
         input_set_identifier:
@@ -2043,7 +2112,7 @@ components:
     TemplateValidationResponseBody:
       title: TemplateValidationResponseBody
       x-stoplight:
-        id: fulzeg8b945v8
+        id: ptuo7pesi1226
       type: object
       description: Has Template Resolution Response.
       properties:
@@ -2054,7 +2123,7 @@ components:
     GitImportInfo:
       title: Import Git Information
       x-stoplight:
-        id: 097qn1j0i7ttn
+        id: rs6paj9m0dnlw
       type: object
       properties:
         connector_ref:
@@ -2071,7 +2140,7 @@ components:
     PipelineImportRequestDTO:
       title: Pipeline Import Request DTO
       x-stoplight:
-        id: nit4pgla9pl9x
+        id: iyzrvo8ml8xm2
       type: object
       description: Information of Pipeline import request DTO
       properties:
@@ -2082,7 +2151,7 @@ components:
     PolicyMetadata:
       title: Policy Metadata
       x-stoplight:
-        id: a26knhi8usi9p
+        id: z7g6ovmudivda
       type: object
       description: Information about the policy metadata
       properties:
@@ -2117,7 +2186,7 @@ components:
     PolicySetMetadata:
       title: Policy Set Metadata
       x-stoplight:
-        id: grf62f1x6zjg6
+        id: j95ozabdimhiq
       type: object
       properties:
         policy_set_identifier:
@@ -2147,7 +2216,7 @@ components:
     GovernanceMetadata:
       title: Governance Metadata
       x-stoplight:
-        id: 8ka8rh6zlypnv
+        id: to1ng7qsbjqly
       type: object
       description: Information about the governance metadata
       properties:
@@ -2183,7 +2252,7 @@ components:
     PipelineSaveResponseBody:
       title: Pipeline Save Response Body
       x-stoplight:
-        id: fccc7af5dc4b0
+        id: gklevnnsl6h3x
       type: object
       properties:
         identifier:
@@ -2196,7 +2265,7 @@ components:
     PipelineImportRequestBody:
       title: PipelineImportRequestBody
       x-stoplight:
-        id: 14d0fsdrgeyh0
+        id: 4bhfgxsbuysmq
       type: object
       description: Pipeline import request body
       properties:
@@ -2207,7 +2276,7 @@ components:
     InputSetImportRequestDTO:
       title: InputSet Import Request DTO
       x-stoplight:
-        id: f89uniiyzwrc3
+        id: p5myk70cfc2pa
       type: object
       description: Information of InputSet import request DTO
       properties:
@@ -2218,7 +2287,7 @@ components:
     InputSetImportRequestBody:
       title: InputSet Import Request Body
       x-stoplight:
-        id: m2fw6smd096g1
+        id: v8uouaq80gtp2
       type: object
       description: InputSet import request body
       properties:
@@ -2229,12 +2298,96 @@ components:
     InputSetImportResponseBody:
       title: InputSet Import Response Body
       x-stoplight:
-        id: 8yb2a8hs1jk4o
+        id: cboehgff9bs2j
       type: object
       properties:
         input_set_identifier:
           type: string
       description: Response body for Input Set import.
+    ApprovalInstanceResponseBody:
+      title: Approval Instance Response Body
+      x-stoplight:
+        id: pw3v8hiyim4h2
+      type: object
+      description: Response body for Approval Instance
+      properties:
+        id:
+          type: string
+          description: Approval Instance identifier
+        type:
+          type: string
+          enum:
+            - HarnessApproval
+            - JiraApproval
+            - CustomApproval
+            - ServiceNowApproval
+          description: Tells the type of Approval
+        status:
+          type: string
+          enum:
+            - WAITING
+            - APPROVED
+            - REJECTED
+            - FAILED
+            - ABORTED
+            - EXPIRED
+          description: Tells the status of Approval
+        deadline:
+          type: integer
+          format: int64
+          description: Deadline timestamp for Approval Instance
+        created:
+          type: integer
+          format: int64
+          description: Creation timestamp for Approval Instance
+        updated:
+          type: integer
+          format: int64
+          description: Last modification timestamp for Approval Instance
+        error_message:
+          type: string
+          description: Error message for the Approval Instance
+        details:
+          type: object
+          description: Approval Instance response details
+      x-examples:
+        example-approval-instance:
+          id: example_approval_instance
+          type: HarnessApproval
+          status: WAITING
+          deadline: 1683953545329
+          details:
+            approvalMessage: |-
+              Please review the following information
+              and approve the pipeline progression
+            includePipelineExecutionHistory: true
+            approvers:
+              userGroups:
+                - example_usergroup_1
+                - example_usergroup_2
+              minimumCount: 3
+              disallowPipelineExecutor: false
+            approvalActivities: []
+            approverInputs:
+              - name: example_input_1
+                defaultValue: example_value_1
+              - name: example_input_2
+                defaultValue: example_value_2
+            validatedApprovalUserGroups:
+              - accountIdentifier: example_account_identifier
+                orgIdentifier: example_org_identifier
+                projectIdentifier: example_project_identifier
+                identifier: example_usergroup_1
+                name: Example Usergroup 1
+              - accountIdentifier: example_account_identifier
+                orgIdentifier: example_org_identifier
+                projectIdentifier: example_project_identifier
+                identifier: example_usergroup_2
+                name: Example Usergroup 2
+            autoRejectEnabled: false
+          created: 1683867145351
+          updated: 1683867145351
+          error_message: example error message
     GitMetadataUpdateRequestBody:
       title: GitMetadataUpdateRequestBody
       x-stoplight:
@@ -2366,6 +2519,13 @@ components:
       schema:
         type: string
       description: Pipeline identifier for the Input Set.
+    ExecutionIdParam:
+      name: execution-id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Pipeline Execution identifier
   responses:
     PipelineCreateResponseBody:
       description: Pipeline response body
@@ -2864,6 +3024,184 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/InputSetImportResponseBody'
+    ApprovalInstanceResponseBody:
+      description: Approval Instance response body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApprovalInstanceResponseBody'
+          examples:
+            example-approval-instance:
+              value:
+                id: example_approval_instance
+                type: HarnessApproval
+                status: WAITING
+                deadline: 1683953545329
+                details:
+                  approvalMessage: |-
+                    Please review the following information
+                    and approve the pipeline progression
+                  includePipelineExecutionHistory: true
+                  approvers:
+                    userGroups:
+                      - example_usergroup_1
+                      - example_usergroup_2
+                    minimumCount: 3
+                    disallowPipelineExecutor: false
+                  approvalActivities: []
+                  approverInputs:
+                    - name: example_input_1
+                      defaultValue: example_value_1
+                    - name: example_input_2
+                      defaultValue: example_value_2
+                  validatedApprovalUserGroups:
+                    - accountIdentifier: example_account_identifier
+                      orgIdentifier: example_org_identifier
+                      projectIdentifier: example_project_identifier
+                      identifier: example_usergroup_1
+                      name: Example Usergroup 1
+                    - accountIdentifier: example_account_identifier
+                      orgIdentifier: example_org_identifier
+                      projectIdentifier: example_project_identifier
+                      identifier: example_usergroup_2
+                      name: Example Usergroup 2
+                  autoRejectEnabled: false
+                  created: 1683867145351
+                  updated: 1683867145351
+                error_message: example error message
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ApprovalInstanceResponseBody'
+          examples:
+            example-approval-instance:
+              value: |
+                id: example_approval_instance
+                type: HarnessApproval
+                status: WAITING
+                deadline: 1683953545329
+                details:
+                  approvalMessage: |-
+                    Please review the following information
+                    and approve the pipeline progression
+                  includePipelineExecutionHistory: true
+                  approvers:
+                    userGroups:
+                      - example_usergroup_1
+                      - example_usergroup_2
+                    minimumCount: 3
+                    disallowPipelineExecutor: false
+                  approvalActivities: []
+                  approverInputs:
+                    - name: example_input_1
+                      defaultValue: example_value_1
+                    - name: example_input_2
+                      defaultValue: example_value_2
+                  validatedApprovalUserGroups:
+                    - accountIdentifier: example_account_identifier
+                      orgIdentifier: example_org_identifier
+                      projectIdentifier: example_project_identifier
+                      identifier: example_usergroup_1
+                      name: Example Usergroup 1
+                    - accountIdentifier: example_account_identifier
+                      orgIdentifier: example_org_identifier
+                      projectIdentifier: example_project_identifier
+                      identifier: example_usergroup_2
+                      name: Example Usergroup 2
+                  autoRejectEnabled: false
+                  created: 1683867145351
+                  updated: 1683867145351
+                error_message: example error message
+    ApprovalInstanceListResponseBody:
+      description: Approval Instances list response body
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ApprovalInstanceResponseBody'
+          examples:
+            example-approval-instances:
+              value:
+                - id: example_approval_instance
+                  type: HarnessApproval
+                  status: WAITING
+                  deadline: 1683953545329
+                  details:
+                    approvalMessage: |-
+                      Please review the following information
+                      and approve the pipeline progression
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - example_usergroup_1
+                        - example_usergroup_2
+                      minimumCount: 3
+                      disallowPipelineExecutor: false
+                    approvalActivities: []
+                    approverInputs:
+                      - name: example_input_1
+                        defaultValue: example_value_1
+                      - name: example_input_2
+                        defaultValue: example_value_2
+                    validatedApprovalUserGroups:
+                      - accountIdentifier: example_account_identifier
+                        orgIdentifier: example_org_identifier
+                        projectIdentifier: example_project_identifier
+                        identifier: example_usergroup_1
+                        name: Example Usergroup 1
+                      - accountIdentifier: example_account_identifier
+                        orgIdentifier: example_org_identifier
+                        projectIdentifier: example_project_identifier
+                        identifier: example_usergroup_2
+                        name: Example Usergroup 2
+                    autoRejectEnabled: false
+                    created: 1683867145351
+                    updated: 1683867145351
+                  error_message: example error message
+        application/yaml:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ApprovalInstanceResponseBody'
+          examples:
+            example-approval-instances:
+              value: |
+                - id: example_approval_instance
+                  type: HarnessApproval
+                  status: WAITING
+                  deadline: 1683953545329
+                  details:
+                    approvalMessage: |-
+                      Please review the following information
+                      and approve the pipeline progression
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      userGroups:
+                        - example_usergroup_1
+                        - example_usergroup_2
+                      minimumCount: 3
+                      disallowPipelineExecutor: false
+                    approvalActivities: []
+                    approverInputs:
+                      - name: example_input_1
+                        defaultValue: example_value_1
+                      - name: example_input_2
+                        defaultValue: example_value_2
+                    validatedApprovalUserGroups:
+                      - accountIdentifier: example_account_identifier
+                        orgIdentifier: example_org_identifier
+                        projectIdentifier: example_project_identifier
+                        identifier: example_usergroup_1
+                        name: Example Usergroup 1
+                      - accountIdentifier: example_account_identifier
+                        orgIdentifier: example_org_identifier
+                        projectIdentifier: example_project_identifier
+                        identifier: example_usergroup_2
+                        name: Example Usergroup 2
+                    autoRejectEnabled: false
+                    created: 1683867145351
+                    updated: 1683867145351
+                  error_message: example error message
     GitMetadataUpdateResponseBody:
       description: Example response
       content:

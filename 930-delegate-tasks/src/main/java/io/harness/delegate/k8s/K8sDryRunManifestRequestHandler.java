@@ -48,6 +48,7 @@ import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.ProcessResponse;
 import io.harness.k8s.kubectl.ApplyCommand;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
@@ -127,7 +128,8 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog(color(format("Release Name: [%s]", this.releaseName), Yellow, Bold));
     this.kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
-    this.client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    this.client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
     KubernetesReleaseDetails releaseDetails = null;
     // For backward compatibility if delegate is released before ng-manager
@@ -150,11 +152,11 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
             this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
             isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
-    return dryRunManifests(k8sDelegateTaskParams, executionLogCallback, request.isUseNewKubectlVersion());
+    return dryRunManifests(k8sDelegateTaskParams, executionLogCallback);
   }
 
-  private String dryRunManifests(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
-      boolean useKubectlNewVersion) throws Exception {
+  private String dryRunManifests(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback)
+      throws Exception {
     try {
       executionLogCallback.saveExecutionLog(color("\nValidating manifests with Dry Run", White, Bold), INFO);
       FileIo.writeUtf8StringToFile(k8sDelegateTaskParams.getWorkingDirectory() + "/" + DRY_RUN_MANIFEST_FILE_NAME,
@@ -163,9 +165,7 @@ public class K8sDryRunManifestRequestHandler extends K8sRequestHandler {
       Kubectl overriddenClient =
           k8sTaskHelperBase.getOverriddenClient(this.client, this.resources, k8sDelegateTaskParams);
 
-      final ApplyCommand dryrun = useKubectlNewVersion
-          ? overriddenClient.apply().filename(DRY_RUN_MANIFEST_FILE_NAME).dryRunClient(true)
-          : overriddenClient.apply().filename(DRY_RUN_MANIFEST_FILE_NAME).dryrun(true);
+      final ApplyCommand dryrun = overriddenClient.apply().filename(DRY_RUN_MANIFEST_FILE_NAME).dryrun(true);
       ProcessResponse response =
           k8sTaskHelperBase.runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();

@@ -289,7 +289,7 @@ public class ConnectorResource {
               "This when set to true along with GitSync enabled for the Connector, you can get one connector entity from each identifier. "
               + "The connector entity can belong to any branch") @QueryParam("getDistinctFromBranches")
       Boolean getDistinctFromBranches,
-      @BeanParam PageRequest pageRequest) {
+      @QueryParam("version") String version, @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
@@ -298,7 +298,7 @@ public class ConnectorResource {
     }
     return ResponseDTO.newResponse(getNGPageResponse(connectorService.list(accountIdentifier, connectorListFilter,
         orgIdentifier, projectIdentifier, filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope,
-        getDistinctFromBranches, getPageRequest(pageRequest))));
+        getDistinctFromBranches, getPageRequest(pageRequest), version)));
   }
 
   @POST

@@ -8,11 +8,14 @@
 package io.harness.ng.chaos;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.k8sinlinemanifest.K8sInlineManifestService;
+import io.harness.ng.k8sinlinemanifest.K8sManifestRequest;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -40,14 +43,16 @@ import retrofit.http.Body;
 @NextGenManagerAuth
 public class ChaosResource {
   ChaosService chaosService;
+  K8sInlineManifestService k8sInlineManifestService;
 
   @POST
   @InternalApi
   @ApiOperation(value = "Apply K8s manifest for chaos", nickname = "chaosK8sApply", hidden = true)
   public ResponseDTO<String> applyChaosK8sManifest(
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank
-      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body ChaosK8sRequest request) {
-    String taskId = chaosService.applyK8sManifest(request);
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body K8sManifestRequest request) {
+    String uid = generateUuid();
+    String taskId = k8sInlineManifestService.applyK8sManifest(request, uid, new ChaosNotifyCallback(uid));
     return ResponseDTO.newResponse(taskId);
   }
 

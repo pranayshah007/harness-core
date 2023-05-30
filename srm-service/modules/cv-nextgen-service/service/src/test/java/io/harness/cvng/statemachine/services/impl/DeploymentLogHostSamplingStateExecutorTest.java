@@ -151,7 +151,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEmpty();
     assertThat(hostSamplingState.getTestHosts()).isEmpty();
@@ -186,7 +186,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -222,7 +222,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getTestHosts()).isEmpty();
@@ -258,7 +258,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -294,7 +294,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -330,7 +330,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -366,7 +366,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -402,7 +402,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -438,7 +438,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.execute(hostSamplingState);
     AnalysisStatus analysisStatus = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
 
-    assertThat(analysisStatus).isEqualTo(AnalysisStatus.TRANSITION);
+    assertThat(analysisStatus).isEqualTo(AnalysisStatus.RUNNING);
     assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
     assertThat(hostSamplingState.getRetryCount()).isEqualTo(0);
     assertThat(hostSamplingState.getControlHosts()).isEqualTo(new HashSet<>(Arrays.asList("host1", "host2")));
@@ -463,7 +463,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
     Map<String, LearningEngineTask.ExecutionStatus> taskStatusMap = new HashMap<>();
     taskStatusMap.put(taskId, LearningEngineTask.ExecutionStatus.SUCCESS);
     AnalysisStatus status = deploymentLogHostSamplingStateExecutor.getExecutionStatus(hostSamplingState);
-    assertThat(status.name()).isEqualTo(AnalysisStatus.TRANSITION.name());
+    assertThat(status.name()).isEqualTo(AnalysisStatus.RUNNING.name());
   }
 
   @Test
@@ -478,7 +478,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
             .build();
     hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
     String taskId = generateUuid();
-    hostSamplingState.setStatus(AnalysisStatus.RUNNING);
+    hostSamplingState.setStatus(AnalysisStatus.TRANSITION);
     hostSamplingState.setTestHosts(new HashSet<>(Collections.singleton("abc")));
     hostSamplingState.setControlHosts(new HashSet<>(Collections.singleton("def")));
     Map<String, LearningEngineTask.ExecutionStatus> taskStatusMap = new HashMap<>();
@@ -512,7 +512,7 @@ public class DeploymentLogHostSamplingStateExecutorTest extends CategoryTest {
   public void testHandleRunning() {
     hostSamplingState.setStatus(AnalysisStatus.RUNNING);
     hostSamplingState = (HostSamplingState) deploymentLogHostSamplingStateExecutor.handleRunning(hostSamplingState);
-    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.RUNNING.name());
+    assertThat(hostSamplingState.getStatus().name()).isEqualTo(AnalysisStatus.TRANSITION.name());
   }
 
   @Test

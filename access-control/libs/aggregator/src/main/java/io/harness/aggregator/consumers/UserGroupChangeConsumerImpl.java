@@ -69,15 +69,15 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
   }
 
   @Override
-  public void consumeUpdateEvent(String id, UserGroupDBO updatedUserGroup) {
+  public boolean consumeUpdateEvent(String id, UserGroupDBO updatedUserGroup) {
     long startTime = System.currentTimeMillis();
     if (updatedUserGroup.getUsers() == null) {
-      return;
+      return false;
     }
 
     Optional<UserGroupDBO> userGroup = userGroupRepository.findById(id);
     if (!userGroup.isPresent()) {
-      return;
+      return true;
     }
 
     Pattern startsWithScope = Pattern.compile("^".concat(userGroup.get().getScopeIdentifier()));
@@ -125,16 +125,19 @@ public class UserGroupChangeConsumerImpl implements ChangeConsumer<UserGroupDBO>
       log.info("UserGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
           numberOfACLsDeleted, id, permissionsChangeTime);
     }
+    return true;
   }
 
   @Override
-  public void consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id) {
     // No need to process separately. Would be processed indirectly when associated role bindings will be deleted
+    return true;
   }
 
   @Override
-  public void consumeCreateEvent(String id, UserGroupDBO createdEntity) {
+  public boolean consumeCreateEvent(String id, UserGroupDBO createdEntity) {
     // we do not consume create event
+    return true;
   }
 
   private static class ReProcessRoleAssignmentOnUserGroupUpdateTask implements Callable<Result> {

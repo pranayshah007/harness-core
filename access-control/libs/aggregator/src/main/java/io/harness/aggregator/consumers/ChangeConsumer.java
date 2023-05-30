@@ -14,26 +14,28 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PL)
 public interface ChangeConsumer<T extends AccessControlEntity> {
-  void consumeUpdateEvent(String id, T updatedEntity);
+  boolean consumeUpdateEvent(String id, T updatedEntity);
 
-  void consumeDeleteEvent(String id);
+  boolean consumeDeleteEvent(String id);
 
-  void consumeCreateEvent(String id, T createdEntity);
+  boolean consumeCreateEvent(String id, T createdEntity);
 
-  default void consumeEvent(OpType opType, String id, T entity) {
+  default boolean consumeEvent(OpType opType, String id, T entity) {
+    boolean result = true;
     switch (opType) {
       case SNAPSHOT:
       case CREATE:
-        consumeCreateEvent(id, entity);
+        result = consumeCreateEvent(id, entity);
         break;
       case UPDATE:
-        consumeUpdateEvent(id, entity);
+        result = consumeUpdateEvent(id, entity);
         break;
       case DELETE:
-        consumeDeleteEvent(id);
+        result = consumeDeleteEvent(id);
         break;
       default:
         break;
     }
+    return result;
   }
 }

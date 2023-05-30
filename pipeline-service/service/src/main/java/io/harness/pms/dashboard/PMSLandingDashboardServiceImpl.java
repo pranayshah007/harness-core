@@ -17,6 +17,7 @@ import io.harness.ng.core.OrgProjectIdentifier;
 import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.PipelinesCount;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -138,8 +139,9 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
         .get(0);
   }
 
+  @VisibleForTesting
   @org.jetbrains.annotations.NotNull
-  private Table<Record2<String, String>> getOrgProjectTable(@NotNull List<OrgProjectIdentifier> orgProjectIdentifiers) {
+  Table<Record2<String, String>> getOrgProjectTable(@NotNull List<OrgProjectIdentifier> orgProjectIdentifiers) {
     Row2<String, String>[] orgProjectRows = new Row2[orgProjectIdentifiers.size()];
     int index = 0;
     for (OrgProjectIdentifier orgProjectIdentifier : orgProjectIdentifiers) {

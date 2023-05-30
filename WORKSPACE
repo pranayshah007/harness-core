@@ -4600,7 +4600,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.19.8")
+go_register_toolchains(version = "1.19.9")
 
 gazelle_dependencies()
 
@@ -4706,7 +4706,7 @@ plain_artifacts = [
     "com.deftlabs:mongo-java-distributed-lock:0.1.7",
     "com.eclipsesource.j2v8:j2v8_macosx_x86_64:4.6.0",
     "com.esotericsoftware.yamlbeans:yamlbeans:1.13",
-    "com.esotericsoftware:kryo:4.0.2",
+    "com.esotericsoftware:kryo:4.0.3",
     "com.esotericsoftware:minlog:1.3.0",
     "com.esotericsoftware:reflectasm:1.11.6",
     "com.fasterxml.jackson.core:jackson-annotations:2.14.2",
@@ -4986,7 +4986,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.50.1",
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.55-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.56-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.10",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:18.0.0",

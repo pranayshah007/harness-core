@@ -163,6 +163,14 @@ public class NGCommonEntityConstants {
   public static final String SERVICE_REF_PARAM_MESSAGE = "Service Reference for Entity";
   public static final String VARIABLE_OVERRIDE_PARAM_MESSAGE = "Variable Overrides for an Environment";
 
+  public static final String START_TIME_PARAM_MESSAGE = "Start Time of the Interval for the Entity.";
+  public static final String END_TIME_PARAM_MESSAGE = "End Time of the Interval for the Entity.";
+  public static final String ARTIFACT_PARAM_MESSAGE =
+      "Fully Qualified Name of the Artifact (artifactPath:artifactVersion). For eg. in case of docker it would be imagePath:tag";
+  public static final String ARTIFACT_PATH_PARAM_MESSAGE = "Image/ArtifactPath of the Artifact";
+  public static final String ARTIFACT_VERSION_PARAM_MESSAGE = "Version of the Artifact";
+  public static final String STATUS_PARAM_MESSAGE = "Deployment status";
+
   // Infrastructures
   public static final String DEPLOY_TO_ALL = "deployToAll";
   public static final String INFRA_IDENTIFIERS = "infraIdentifiers";

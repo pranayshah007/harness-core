@@ -2735,3 +2735,4 @@ a713baa1078b711fa78817ef316247e41e47804a:332-ci-manager/chart/templates/config.y
 a713baa1078b711fa78817ef316247e41e47804a:332-ci-manager/chart/templates/config.yaml:generic-api-key:52
 a713baa1078b711fa78817ef316247e41e47804a:batch-processing/chart/templates/config.yaml:generic-api-key:41
 a713baa1078b711fa78817ef316247e41e47804a:batch-processing/chart/templates/config.yaml:generic-api-key:42
+cb04e6dfddaf18a45690bdc194f5b93fa562a6e4:120-ng-manager/config.yml:generic-api-key:59

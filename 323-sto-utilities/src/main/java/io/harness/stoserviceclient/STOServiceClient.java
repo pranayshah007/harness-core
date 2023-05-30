@@ -27,4 +27,7 @@ public interface STOServiceClient {
   @GET(STOCommonEndpointConstants.STO_SERVICE_SCANS_ENDPOINT)
   Call<JsonObject> getScans(@Header("Authorization") String token, @Query("accountId") String accountId,
       @Query("executionId") String executionId, @Query("page") String page, @Query("pageSize") String pageSize);
+
+  @GET(STOCommonEndpointConstants.STO_SERVICE_USAGE_ALL_ACCOUNTS_ENDPOINT)
+  Call<JsonObject> getUsageAllAccounts(@Header("Authorization") String token);
 }

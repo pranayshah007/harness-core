@@ -146,11 +146,11 @@ import io.harness.k8s.kubectl.DescribeCommand;
 import io.harness.k8s.kubectl.GetCommand;
 import io.harness.k8s.kubectl.GetJobCommand;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.kubectl.RolloutHistoryCommand;
 import io.harness.k8s.kubectl.RolloutStatusCommand;
 import io.harness.k8s.kubectl.ScaleCommand;
 import io.harness.k8s.kubectl.Utils;
-import io.harness.k8s.kubectl.VersionCommand;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.manifest.VersionUtils;
 import io.harness.k8s.model.HarnessAnnotations;
@@ -874,7 +874,8 @@ public class K8sTaskHelperBase {
       return client;
     }
 
-    return Kubectl.client(getLatestVersionOcPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    return KubectlFactory.getOpenShiftClient(getLatestVersionOcPath(), k8sDelegateTaskParams.getKubeconfigPath(),
+        k8sDelegateTaskParams.getWorkingDirectory());
   }
 
   @VisibleForTesting
@@ -1200,10 +1201,9 @@ public class K8sTaskHelperBase {
   }
 
   public boolean dryRunManifests(Kubectl client, List<KubernetesResource> resources,
-      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean useKubectlNewVersion) {
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback) {
     try {
-      return dryRunManifests(
-          client, resources, k8sDelegateTaskParams, executionLogCallback, false, useKubectlNewVersion);
+      return dryRunManifests(client, resources, k8sDelegateTaskParams, executionLogCallback, false);
     } catch (Exception ignore) {
       // Not expected if error framework is not enabled. Make the compiler happy until will not adopt error framework
       // for all steps
@@ -1211,8 +1211,8 @@ public class K8sTaskHelperBase {
     }
   }
   public boolean dryRunManifests(Kubectl client, List<KubernetesResource> resources,
-      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean isErrorFrameworkEnabled,
-      boolean useKubectlNewVersion) throws Exception {
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean isErrorFrameworkEnabled)
+      throws Exception {
     try {
       executionLogCallback.saveExecutionLog(color("\nValidating manifests with Dry Run", White, Bold), INFO);
 
@@ -1221,13 +1221,9 @@ public class K8sTaskHelperBase {
 
       Kubectl overriddenClient = getOverriddenClient(client, resources, k8sDelegateTaskParams);
 
-      final ApplyCommand dryrun = useKubectlNewVersion
-          ? overriddenClient.apply().filename("manifests-dry-run.yaml").dryRunClient(true)
-          : overriddenClient.apply().filename("manifests-dry-run.yaml").dryrun(true);
+      final ApplyCommand dryrun = overriddenClient.apply().filename("manifests-dry-run.yaml").dryrun(true);
       ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, dryrun);
       ProcessResult result = response.getProcessResult();
-      // Getting Version for the kubectl
-      String kubernetesVersion = getKubernetesVersion(k8sDelegateTaskParams, client);
       String resultOutput;
       try {
         resultOutput = result.outputUTF8();
@@ -1245,8 +1241,8 @@ public class K8sTaskHelperBase {
       if (result.getExitValue() != 0) {
         logExecutableFailed(result, executionLogCallback);
         if (isErrorFrameworkEnabled) {
-          throw new KubernetesCliTaskRuntimeException(
-              response, KubernetesCliCommandType.DRY_RUN, kubernetesVersion, resourcesNotCreatedBuilder.toString());
+          throw new KubernetesCliTaskRuntimeException(response, KubernetesCliCommandType.DRY_RUN,
+              client.getVersion() != null ? client.getVersion().toString() : "", resourcesNotCreatedBuilder.toString());
         }
         return false;
       }
@@ -3383,20 +3379,6 @@ public class K8sTaskHelperBase {
           new InvalidArgumentsException("Invalid path to openshift template file"));
     }
     return openshiftTemplatePath;
-  }
-  @VisibleForTesting
-  public String getKubernetesVersion(K8sDelegateTaskParams k8sDelegateTaskParams, Kubectl client) {
-    VersionCommand versionCommand = client.version().jsonVersion();
-    ProcessResult kubernetesVersion;
-    try {
-      kubernetesVersion = runK8sExecutableSilent(k8sDelegateTaskParams, versionCommand);
-      if (!kubernetesVersion.hasOutput()) {
-        return EMPTY;
-      }
-      return kubernetesVersion.outputUTF8();
-    } catch (Exception ex) {
-      return EMPTY;
-    }
   }
 
   private String getFileName(String path) {

@@ -218,13 +218,16 @@ public class SshCommandStepHelper extends CDStepHelper {
     }
   }
 
-  private Map<String, String> getMergedEnvVariablesMap(
+  Map<String, String> getMergedEnvVariablesMap(
       Ambiance ambiance, CommandStepParameters commandStepParameters, InfrastructureOutcome infrastructure) {
     LinkedHashMap<String, Object> evaluatedStageVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+stage.variables>", LinkedHashMap.class);
+    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+        cdExpressionResolver.evaluateExpression(ambiance, "<+pipeline.variables>", LinkedHashMap.class);
 
     Map<String, String> finalEnvVariables = new HashMap<>();
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
+    finalEnvVariables = mergeEnvironmentVariables(evaluatedPipelineVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(getServiceVariables(ambiance), finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(infrastructure.getEnvironment().getVariables(), finalEnvVariables);
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
@@ -387,7 +390,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private SshWinRmRollbackData getSshWinRmRollbackData(
+  SshWinRmRollbackData getSshWinRmRollbackData(
       Ambiance ambiance, Map<String, String> mergedEnvVariables, CommandStepParameters commandStepParameters) {
     String stageExecutionId = ambiance.getStageExecutionId();
     log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
@@ -395,6 +398,10 @@ public class SshCommandStepHelper extends CDStepHelper {
         commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     if (!rollbackData.isPresent()) {
       log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
+
+      // delete current phantom stageExecutionInfo in case of pipeline rollback
+      commandStepRollbackHelper.deleteIfExistsCurrentStageExecutionInfo(ambiance);
+
       throw new SkipRollbackException("Not found previous successful rollback data, hence skipping rollback");
     }
 

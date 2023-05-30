@@ -17,7 +17,6 @@ import io.harness.exception.YamlException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.steps.StepCategory;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.Visitable;
 
@@ -479,7 +478,7 @@ public class YamlNode implements Visitable {
   }
 
   // get the field/node yaml from the complete pipeline yaml.
-  public static String getNodeYaml(String yaml, Ambiance ambiance) {
+  public static JsonNode getNodeYaml(String yaml, Ambiance ambiance) {
     YamlNode currentNode = null;
     try {
       currentNode = YamlNode.fromYamlPath(yaml, "");
@@ -518,7 +517,7 @@ public class YamlNode implements Visitable {
         currentNode = currentNode.gotoPath(nodeId);
       }
     }
-    return new YamlConfig(currentNode.getParentNode().getCurrJsonNode()).getYaml();
+    return currentNode.getParentNode().getCurrJsonNode();
   }
 
   /**

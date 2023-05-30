@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
@@ -113,7 +114,7 @@ public class IACMStepsUtils {
 
   // Extract the keyword operation
   private String extractOperation(PluginStepInfo stepInfo) {
-    TextNode operationTextNode = (TextNode) stepInfo.getSettings().get("operation");
+    TextNode operationTextNode = (TextNode) stepInfo.getSettings().get("command");
 
     if (operationTextNode == null) {
       return "";
@@ -123,18 +124,26 @@ public class IACMStepsUtils {
   }
 
   public Map<String, String> getIACMEnvVariables(Ambiance ambiance, PluginStepInfo stepInfo) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String workspaceId = stepInfo.getEnvVariables().getValue().get(WORKSPACE_ID).getValue();
+    String command = extractOperation(stepInfo);
+    return buildIACMEnvVariables(ambiance, workspaceId, command);
+  }
+  private Map<String, String> buildIACMEnvVariables(Ambiance ambiance, String workspaceId, String command) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
     Workspace workspaceInfo = getIACMWorkspaceInfo(
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
-
-    String command = extractOperation(stepInfo);
 
     createExecution(ambiance, workspaceId);
 
     return getWorkspaceVariables(ambiance, ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(),
         ngAccess.getAccountIdentifier(), workspaceId, command, workspaceInfo);
+  }
+
+  public Map<String, String> getIACMEnvVariables(Ambiance ambiance, IACMTerraformPluginInfo stepInfo) {
+    String workspaceId = stepInfo.getWorkspace();
+    String command = stepInfo.getCommand().getValue();
+    return buildIACMEnvVariables(ambiance, workspaceId, command);
   }
 
   public boolean isIACMStep(PluginStepInfo pluginStepInfo) {
@@ -151,7 +160,25 @@ public class IACMStepsUtils {
     if (workspaceInfo.getProvider_connector() != null) {
       Map<EnvVariableEnum, String> connectorSecretEnvMap = null;
       if (workspaceInfo.getProvisioner().equals("terraform")) {
-        connectorSecretEnvMap = PluginSettingUtils.getConnectorSecretEnvMap(CIStepInfoType.IACM_TERRAFORM);
+        connectorSecretEnvMap = PluginSettingUtils.getConnectorSecretEnvMap(CIStepInfoType.IACM_TERRAFORM_PLUGIN);
+      }
+      ConnectorDetails connectorDetails =
+          connectorUtils.getConnectorDetails(ngAccess, workspaceInfo.getProvider_connector());
+      connectorDetails.setEnvToSecretsMap(connectorSecretEnvMap);
+      return connectorDetails;
+    }
+    return null;
+  }
+
+  public ConnectorDetails retrieveIACMConnectorDetails(Ambiance ambiance, IACMTerraformPluginInfo stepInfo) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    String workspaceId = stepInfo.getWorkspace();
+    Workspace workspaceInfo = getIACMWorkspaceInfo(
+        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), ngAccess.getAccountIdentifier(), workspaceId);
+    if (workspaceInfo.getProvider_connector() != null) {
+      Map<EnvVariableEnum, String> connectorSecretEnvMap = null;
+      if (workspaceInfo.getProvisioner().equals("terraform")) {
+        connectorSecretEnvMap = PluginSettingUtils.getConnectorSecretEnvMap(CIStepInfoType.IACM_TERRAFORM_PLUGIN);
       }
       ConnectorDetails connectorDetails =
           connectorUtils.getConnectorDetails(ngAccess, workspaceInfo.getProvider_connector());

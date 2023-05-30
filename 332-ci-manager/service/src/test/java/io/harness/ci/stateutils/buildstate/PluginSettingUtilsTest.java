@@ -1092,6 +1092,24 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
+  public void testSscaEnforcementStepEnvVariablesForVMInfra() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+    Ambiance ambiance = Ambiance.newBuilder().setExpressionFunctorToken(12345).build();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("STEP_EXECUTION_ID", null);
+    expected.put("PLUGIN_SBOMSOURCE", "image:tag");
+    expected.put("PLUGIN_TYPE", "Enforce");
+    expected.put("POLICY_FILE_IDENTIFIER", "file");
+    expected.put("COSIGN_PUBLIC_KEY", "${ngSecretManager.obtain(\"publicKey\", 12345)}");
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        sscaEnforcementStepInfo, "identifier", 100, ambiance, Type.VM, false, true);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
   public void testSscaEnforcementStepSecretEnvVariables() {
     SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
 

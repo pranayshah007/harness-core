@@ -51,7 +51,7 @@ import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
-import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sSteadyStateDTO;
@@ -184,8 +184,8 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     k8sApplyHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
 
-    k8sApplyHandlerConfig.setClient(
-        Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    k8sApplyHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
 
     List<String> applyFilePaths =
         request.getFilePaths().stream().map(String::trim).filter(StringUtils::isNotBlank).collect(Collectors.toList());
@@ -229,7 +229,7 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     }
 
     k8sTaskHelperBase.dryRunManifests(k8sApplyHandlerConfig.getClient(), k8sApplyHandlerConfig.getResources(),
-        k8sDelegateTaskParams, logCallback, isErrorFrameworkSupported(), request.isUseNewKubectlVersion());
+        k8sDelegateTaskParams, logCallback, isErrorFrameworkSupported());
   }
 
   @VisibleForTesting

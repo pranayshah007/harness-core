@@ -359,7 +359,7 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
         stepStatus.getStepExecutionStatus(), ((CIStepInfo) stepParameters.getSpec()).getStepType().getType(),
         (currentTime - startTime) / 1000);
 
-    if (stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+    if (shouldPublishArtifact(stepStatus)) {
       modifyStepStatus(ambiance, stepStatus, stepIdentifier);
       if (stepStatus.getOutput() != null) {
         StepResponse.StepOutcome stepOutcome =
@@ -468,12 +468,16 @@ public abstract class CommonAbstractStepExecutable extends CiAsyncExecutable {
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(
-        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds,
+        executeOnHarnessHostedDelegates, ambiance.getStageExecutionId());
   }
 
   protected void modifyStepStatus(Ambiance ambiance, StepStatus stepStatus, String stepIdentifier) {
     // Do Nothing
+  }
+
+  protected boolean shouldPublishArtifact(StepStatus stepStatus) {
+    return stepStatus.getStepExecutionStatus() == StepExecutionStatus.SUCCESS;
   }
 
   private String maskTransportExceptionError(String errorMessage) {

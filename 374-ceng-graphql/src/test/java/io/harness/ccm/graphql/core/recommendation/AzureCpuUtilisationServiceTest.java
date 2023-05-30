@@ -56,6 +56,8 @@ public class AzureCpuUtilisationServiceTest extends CategoryTest {
   private FieldValueList vmCpuUtilisationDataList;
   private List<FieldValue> vmAverageCpuUtilisationData;
   private FieldValueList vmAverageCpuUtilisationDataList;
+  private List<FieldValue> vmMaximumCpuUtilisationData;
+  private FieldValueList vmMaximumCpuUtilisationDataList;
 
   private static final String START_TIME = "startTime";
   private static final String END_TIME = "endTime";
@@ -74,8 +76,8 @@ public class AzureCpuUtilisationServiceTest extends CategoryTest {
                                  .vmId(VM_ID)
                                  .averageCpu(12.0)
                                  .maxCpu(20.0)
-                                 .startTime(1684454400000L)
-                                 .endTime(168445440000L)
+                                 .startTime(1684454400L)
+                                 .endTime(168445440L)
                                  .build());
     when(mockBigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, AZURE_VM_INVENTORY_METRIC))
         .thenReturn(String.format(DUMMY_CLOUD_PROVIDER_TABLE_FORMAT, DUMMY_DS, ACCOUNT_ID, AZURE_VM_INVENTORY_METRIC));
@@ -90,8 +92,8 @@ public class AzureCpuUtilisationServiceTest extends CategoryTest {
     vmCpuUtilisationData = new ArrayList<>();
     vmCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "12"));
     vmCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "20"));
-    vmCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "1684454.400000"));
-    vmCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "168445.4400000"));
+    vmCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "1684454.400"));
+    vmCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "168445.4400"));
     vmCpuUtilisationDataList = FieldValueList.of(vmCpuUtilisationData, fieldListVmCpuUtilisationData);
 
     FieldList fieldListAverageVmCpuUtilisationData =
@@ -100,6 +102,13 @@ public class AzureCpuUtilisationServiceTest extends CategoryTest {
     vmAverageCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "19.9"));
     vmAverageCpuUtilisationDataList =
         FieldValueList.of(vmAverageCpuUtilisationData, fieldListAverageVmCpuUtilisationData);
+
+    FieldList fieldListMaximumVmCpuUtilisationData =
+        FieldList.of(Field.newBuilder(MAXIMUM, StandardSQLTypeName.FLOAT64).build());
+    vmMaximumCpuUtilisationData = new ArrayList<>();
+    vmMaximumCpuUtilisationData.add(FieldValue.of(PRIMITIVE, "39.8"));
+    vmMaximumCpuUtilisationDataList =
+        FieldValueList.of(vmMaximumCpuUtilisationData, fieldListMaximumVmCpuUtilisationData);
   }
 
   @Test
@@ -144,5 +153,27 @@ public class AzureCpuUtilisationServiceTest extends CategoryTest {
     final Double result =
         azureCpuUtilisationServiceUnderTest.getAverageAzureVmCpuUtilisationData(VM_ID, ACCOUNT_IDENTIFIER, 1);
     assertThat(result).isEqualTo(19.9);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetMaximumAzureVmCpuUtilisationData() {
+    final Double result =
+        azureCpuUtilisationServiceUnderTest.getMaximumAzureVmCpuUtilisationData(VM_ID, ACCOUNT_IDENTIFIER, 1);
+    assertThat(result).isNull();
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetMaximumAzureVmCpuUtilisationData_TableResultNotEmpty() throws InterruptedException {
+    Iterable<FieldValueList> fieldValueListIterator = Arrays.asList(vmMaximumCpuUtilisationDataList);
+    when(tableResult.iterateAll()).thenReturn(fieldValueListIterator);
+    when(tableResult.getTotalRows()).thenReturn(1L);
+    when(bigQuery.query(any(QueryJobConfiguration.class))).thenReturn(tableResult);
+    final Double result =
+        azureCpuUtilisationServiceUnderTest.getMaximumAzureVmCpuUtilisationData(VM_ID, ACCOUNT_IDENTIFIER, 1);
+    assertThat(result).isEqualTo(39.8);
   }
 }

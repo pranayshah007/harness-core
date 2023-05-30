@@ -33,6 +33,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesCliTaskRuntimeException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -108,7 +109,8 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
     executionLogCallback.saveExecutionLog("Initializing..\n");
     executionLogCallback.saveExecutionLog(
         color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
-    client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
     IK8sReleaseHistory releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
 
     resourceIdsToScale = getResourceIdsToScaleDownStageEnvironment(

@@ -414,8 +414,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(
-        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds,
+        executeOnHarnessHostedDelegates, ambiance.getStageExecutionId());
   }
 
   private StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {

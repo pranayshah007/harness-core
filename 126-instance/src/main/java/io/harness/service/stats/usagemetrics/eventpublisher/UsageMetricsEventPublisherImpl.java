@@ -7,7 +7,6 @@
 
 package io.harness.service.stats.usagemetrics.eventpublisher;
 
-import static io.harness.beans.FeatureName.CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG;
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -23,7 +22,6 @@ import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
 import io.harness.models.constants.TimescaleConstants;
-import io.harness.remote.client.CGRestUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -85,36 +83,23 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
       return dataPointList;
     }
 
-    if (CGRestUtils.getResponse(
-            accountClient.isFeatureFlagEnabled(CDP_PUBLISH_INSTANCE_STATS_FOR_ENV_NG.name(), accountId))) {
-      // Add 1 data point for each env in the service
-      Map<String, List<InstanceDTO>> instancesByEnv =
-          instances.stream()
-              .filter(instanceDTO -> StringUtils.isNotBlank(instanceDTO.getEnvIdentifier()))
-              .collect(groupingBy(InstanceDTO::getEnvIdentifier));
-      instancesByEnv.forEach((String envIdentifier, List<InstanceDTO> instancesForEnv) -> {
-        try {
-          int size = instancesForEnv.size();
-          InstanceDTO instance = instancesForEnv.get(0);
-          Map<String, String> data = populateInstanceData(instance, size);
-          log.info("Adding instance record {} to the list", data);
-          dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
-        } catch (Exception e) {
-          log.error("Error adding instance record for service", e);
-        }
-      });
-    } else {
-      // Add 1 data point per service
+    // Add 1 data point for each env in the service
+    Map<String, List<InstanceDTO>> instancesByEnv =
+        instances.stream()
+            .filter(instanceDTO -> StringUtils.isNotBlank(instanceDTO.getEnvIdentifier()))
+            .collect(groupingBy(InstanceDTO::getEnvIdentifier));
+    instancesByEnv.forEach((String envIdentifier, List<InstanceDTO> instancesForEnv) -> {
       try {
-        int size = instances.size();
-        InstanceDTO instance = instances.get(0);
+        int size = instancesForEnv.size();
+        InstanceDTO instance = instancesForEnv.get(0);
         Map<String, String> data = populateInstanceData(instance, size);
         log.info("Adding instance record {} to the list", data);
         dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
       } catch (Exception e) {
         log.error("Error adding instance record for service", e);
       }
-    }
+    });
+
     return dataPointList;
   }
 

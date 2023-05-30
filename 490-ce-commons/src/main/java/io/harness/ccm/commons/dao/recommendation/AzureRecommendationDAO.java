@@ -86,8 +86,14 @@ public class AzureRecommendationDAO {
             .set(AzureRecommendationKeys.maxMemoryP95, azureRecommendation.getMaxMemoryP95())
             .set(AzureRecommendationKeys.maxTotalNetworkP95, azureRecommendation.getMaxTotalNetworkP95())
             .set(AzureRecommendationKeys.currencyCode, azureRecommendation.getCurrencyCode())
+            .set(AzureRecommendationKeys.currencyCodeInDefaultCurrencyPref,
+                azureRecommendation.getCurrencyCodeInDefaultCurrencyPref())
             .set(AzureRecommendationKeys.expectedMonthlySavings, azureRecommendation.getExpectedMonthlySavings())
+            .set(AzureRecommendationKeys.expectedMonthlySavingsInDefaultCurrencyPref,
+                azureRecommendation.getExpectedMonthlySavingsInDefaultCurrencyPref())
             .set(AzureRecommendationKeys.expectedAnnualSavings, azureRecommendation.getExpectedAnnualSavings())
+            .set(AzureRecommendationKeys.expectedAnnualSavingsInDefaultCurrencyPref,
+                azureRecommendation.getExpectedAnnualSavingsInDefaultCurrencyPref())
             .set(AzureRecommendationKeys.currentVmDetails, azureRecommendation.getCurrentVmDetails())
             .set(AzureRecommendationKeys.targetVmDetails, azureRecommendation.getTargetVmDetails())
             .set(AzureRecommendationKeys.recommendationMessage, azureRecommendation.getRecommendationMessage())
@@ -121,16 +127,16 @@ public class AzureRecommendationDAO {
         .set(CE_RECOMMENDATIONS.NAMESPACE, resourceGroupId)
         .set(CE_RECOMMENDATIONS.NAME, azureRecommendation.getImpactedValue())
         .set(CE_RECOMMENDATIONS.RESOURCETYPE, ResourceType.AZURE_INSTANCE.name())
-        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavings())
-        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCost())
+        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavingsInDefaultCurrencyPref())
+        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCostInDefaultCurrencyPref())
         .set(CE_RECOMMENDATIONS.ISVALID, true)
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())
         .onConflictOnConstraint(CE_RECOMMENDATIONS.getPrimaryKey())
         .doUpdate()
-        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavings())
-        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCost())
+        .set(CE_RECOMMENDATIONS.MONTHLYSAVING, azureRecommendation.getExpectedMonthlySavingsInDefaultCurrencyPref())
+        .set(CE_RECOMMENDATIONS.MONTHLYCOST, azureRecommendation.getCurrentVmDetails().getCostInDefaultCurrencyPref())
         .set(CE_RECOMMENDATIONS.LASTPROCESSEDAT,
             toOffsetDateTime(lastReceivedUntilAt.minus(THRESHOLD_DAYS_TO_SHOW_RECOMMENDATION - 2, ChronoUnit.DAYS)))
         .set(CE_RECOMMENDATIONS.UPDATEDAT, offsetDateTimeNow())

@@ -15,7 +15,9 @@ import io.harness.subscription.handlers.InvoiceUpdatedHandler;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.handlers.SubscriptionDeleteHandler;
 import io.harness.subscription.handlers.SubscriptionUpdateHandler;
+import io.harness.subscription.services.CreditCardService;
 import io.harness.subscription.services.SubscriptionService;
+import io.harness.subscription.services.impl.CreditCardServiceImpl;
 import io.harness.subscription.services.impl.SubscriptionServiceImpl;
 
 import com.google.inject.AbstractModule;
@@ -42,6 +44,7 @@ public class SubscriptionModule extends AbstractModule {
         subscriptionConfig.getAccessControlClientConfiguration(), SUBSCRIPTION_SERVICE.getServiceId()));
     install(SubscriptionSdkModule.createInstance(subscriptionConfig));
     bind(SubscriptionService.class).to(SubscriptionServiceImpl.class);
+    bind(CreditCardService.class).to(CreditCardServiceImpl.class);
 
     MapBinder<String, StripeEventHandler> eventHandlerMapBinder =
         MapBinder.newMapBinder(binder(), String.class, StripeEventHandler.class);

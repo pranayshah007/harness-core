@@ -9,6 +9,7 @@ package io.harness.cvng.cdng.services.impl.resources;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DHRUVX;
+import static io.harness.rule.OwnerRule.NAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,7 +47,9 @@ import io.harness.cvng.cdng.beans.v2.VerificationResult;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.resources.VerifyStepResourceImpl;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.HealthSourceDTO;
+import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
 import io.harness.cvng.resources.VerifyStepResource;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -67,6 +70,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -90,6 +94,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
   private static VerifyStepResource verifyStepResource = new VerifyStepResourceImpl();
   private BuilderFactory builderFactory;
   private VerificationJobInstance verificationJobInstance;
+  private VerificationJobInstance testVerificationJobInstace;
   private CVNGStepTask cvngStepTask;
   private DeploymentActivitySummaryDTO deploymentActivitySummaryDTO;
   private List<MetricsAnalysis> metricsAnalyses;
@@ -115,16 +120,18 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
         verifyStepResource, "deploymentTimeSeriesAnalysisService", deploymentTimeSeriesAnalysisService, true);
     FieldUtils.writeField(verifyStepResource, "stepTaskService", stepTaskService, true);
 
-    loadVerificationRelatedDocuments();
+    loadVerificationRelatedDocuments(verifyStepExecutionId);
     deploymentActivitySummaryDTO = getDeploymentActivitySummaryDTO();
     verificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    verificationJobInstance.setUuid(verifyStepExecutionId);
     metricsAnalyses = new ArrayList<>();
     metricsAnalyses.add(builderFactory.getMetricsAnalysis());
     UserPrincipal userPrincipal = new UserPrincipal("test", "test@harness.io", "test", "accountIdentifier");
     SecurityContextBuilder.setContext(userPrincipal);
 
-    when(stepTaskService.getByCallBackId(any())).thenReturn(cvngStepTask);
-    when(verificationJobInstanceService.getVerificationJobInstance(any())).thenReturn(verificationJobInstance);
+    when(stepTaskService.getByCallBackId(verifyStepExecutionId)).thenReturn(cvngStepTask);
+    when(verificationJobInstanceService.getVerificationJobInstance(verifyStepExecutionId))
+        .thenReturn(verificationJobInstance);
     when(stepTaskService.getDeploymentSummary(any())).thenReturn(deploymentActivitySummaryDTO);
     when(deploymentTimeSeriesAnalysisService.getMetricsAnalysisOverview(any()))
         .thenReturn(MetricsAnalysisOverview.builder().noAnalysis(1).healthy(1).unhealthy(1).warning(1).build());
@@ -181,6 +188,51 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(healthSources.get(0).getIdentifier()).isEqualTo("healthSourceIdentifier");
     assertThat(healthSources.get(0).getType()).isEqualTo(MonitoredServiceDataSourceType.CLOUDWATCH_METRICS);
     assertThat(healthSources.get(0).getProviderType()).isEqualTo(ProviderType.METRICS);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testGetVerificationOverviewForLoadTest() throws IOException {
+    builderFactory = BuilderFactory.getDefault();
+    String testVerificationJobInstanceId = "-q3bCyfZSmyXsybsfr9t3B";
+    loadVerificationRelatedDocuments(testVerificationJobInstanceId);
+    String baselineVerificationJobInstanceId = generateUuid();
+    testVerificationJobInstace = builderFactory.verificationJobInstanceBuilder().build();
+    testVerificationJobInstace.setUuid(testVerificationJobInstanceId);
+
+    VerificationJobInstance baselineVerificationJobInstance = builderFactory.verificationJobInstanceBuilder().build();
+    baselineVerificationJobInstance.setUuid(baselineVerificationJobInstanceId);
+    when(stepTaskService.getByCallBackId(testVerificationJobInstanceId)).thenReturn(cvngStepTask);
+    when(verificationJobInstanceService.getVerificationJobInstance(testVerificationJobInstanceId))
+        .thenReturn(testVerificationJobInstace);
+    when(stepTaskService.getDeploymentSummary(any())).thenReturn(getDeploymentActivitySummaryDTOForLoadTest());
+    Optional<VerificationJobInstance> baselineVerificationJobInstanceIdOptional =
+        Optional.of(baselineVerificationJobInstance);
+    when(verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(
+             ServiceEnvironmentParams.builder()
+                 .environmentIdentifier(testVerificationJobInstace.getResolvedJob().getEnvIdentifier())
+                 .serviceIdentifier(testVerificationJobInstace.getResolvedJob().getServiceIdentifier())
+                 .accountIdentifier(testVerificationJobInstace.getResolvedJob().getAccountId())
+                 .projectIdentifier(testVerificationJobInstace.getResolvedJob().getProjectIdentifier())
+                 .orgIdentifier(testVerificationJobInstace.getResolvedJob().getOrgIdentifier())
+                 .build()))
+        .thenReturn(baselineVerificationJobInstanceIdOptional);
+    when(verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId))
+        .thenReturn(testVerificationJobInstace);
+
+    String url = "http://localhost:9998/account/" + builderFactory.getContext().getAccountId() + "/orgs/"
+        + builderFactory.getContext().getOrgIdentifier() + "/projects/"
+        + builderFactory.getContext().getProjectIdentifier() + "/verifications/" + testVerificationJobInstanceId;
+    Response response = RESOURCES.client().target(url + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
+    assertThat(response.getStatus()).isEqualTo(200);
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+
+    assertThat(verificationOverview.getBaselineOverview().getBaselineVerificationJobInstanceId())
+        .isEqualTo(baselineVerificationJobInstanceId);
+    assertThat(verificationOverview.getBaselineOverview().isApplicableForBaseline()).isTrue();
+    assertThat(verificationOverview.getBaselineOverview().isBaselineExpired()).isFalse();
+    assertThat(verificationOverview.getBaselineOverview().isBaseline()).isEqualTo(false);
   }
 
   @Test
@@ -249,7 +301,7 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
 
     Response response = RESOURCES.client().target(baseUrl + "/overview").request(MediaType.APPLICATION_JSON_TYPE).get();
     assertThat(response.getStatus()).isEqualTo(200);
-    VerificationOverview verificationOverview = response.readEntity(new GenericType<VerificationOverview>() {});
+    VerificationOverview verificationOverview = response.readEntity(new GenericType<>() {});
 
     assertThat(verificationOverview.getSpec().getAnalysedServiceIdentifier())
         .isEqualTo(builderFactory.getContext().getServiceIdentifier());
@@ -297,13 +349,37 @@ public class VerifyStepResourceImplTest extends CvNextGenTestBase {
     assertThat(metricsAnalyses.get(0).getTestDataNodes().get(0).getAppliedThresholds()).isNull();
   }
 
-  private void loadVerificationRelatedDocuments() throws IOException {
+  private void loadVerificationRelatedDocuments(String verificationJobInstanceId) throws IOException {
     String stepTaskDocument = readJsonResourceFile("step-task-1.json");
     cvngStepTask = JsonUtils.asObject(stepTaskDocument, CVNGStepTask.class);
+    cvngStepTask.setVerificationJobInstanceId(verificationJobInstanceId);
+    cvngStepTask.setCallbackId(verificationJobInstanceId);
   }
 
   private String readJsonResourceFile(String fileName) throws IOException {
     return Resources.toString(VerifyStepResourceImplTest.class.getResource("/analysis/" + fileName), Charsets.UTF_8);
+  }
+
+  private DeploymentActivitySummaryDTO getDeploymentActivitySummaryDTOForLoadTest() {
+    long currentTime = System.currentTimeMillis();
+    LoadTestAdditionalInfo loadTestAdditionalInfo = LoadTestAdditionalInfo.builder()
+                                                        .baselineDeploymentTag("baselineDeploymentTag")
+                                                        .currentDeploymentTag("currentDeploymentTag")
+                                                        .baselineStartTime(currentTime)
+                                                        .currentStartTime(currentTime)
+                                                        .build();
+    return DeploymentActivitySummaryDTO.builder()
+        .deploymentVerificationJobInstanceSummary(DeploymentVerificationJobInstanceSummary.builder()
+                                                      .activityStartTime(currentTime)
+                                                      .startTime(currentTime)
+                                                      .verificationJobInstanceId("verificationJobInstanceId")
+                                                      .durationMs(600000L)
+                                                      .progressPercentage(1)
+                                                      .risk(Risk.HEALTHY)
+                                                      .status(ActivityVerificationStatus.VERIFICATION_PASSED)
+                                                      .additionalInfo(loadTestAdditionalInfo)
+                                                      .build())
+        .build();
   }
 
   private DeploymentActivitySummaryDTO getDeploymentActivitySummaryDTO() {

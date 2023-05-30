@@ -379,6 +379,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.rancher.RancherTestConnectionDelegateTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
 import io.harness.delegate.task.scm.ScmGitFileTask;
@@ -525,6 +526,10 @@ import io.harness.perpetualtask.manifest.HelmRepositoryService;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 import io.harness.perpetualtask.polling.manifest.HelmChartCollectionService;
 import io.harness.perpetualtask.polling.manifest.ManifestCollectionService;
+import io.harness.rancher.RancherClusterClient;
+import io.harness.rancher.RancherClusterClientImpl;
+import io.harness.rancher.RancherConnectionHelperService;
+import io.harness.rancher.RancherConnectionHelperServiceImpl;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretsDelegateCacheHelperService;
@@ -1282,6 +1287,8 @@ public class DelegateModule extends AbstractModule {
     bind(HelmDeployServiceNG.class).to(HelmDeployServiceImplNG.class);
     bind(AwsCliClient.class).to(AwsCliClientImpl.class);
     bind(TerraformCloudClient.class).to(TerraformCloudClientImpl.class);
+    bind(RancherConnectionHelperService.class).to(RancherConnectionHelperServiceImpl.class);
+    bind(RancherClusterClient.class).to(RancherClusterClientImpl.class);
 
     MapBinder<String, CommandUnitExecutorService> serviceCommandExecutorServiceMapBinder =
         MapBinder.newMapBinder(binder(), String.class, CommandUnitExecutorService.class);
@@ -2236,6 +2243,9 @@ public class DelegateModule extends AbstractModule {
 
     // AWS EKS
     mapBinder.addBinding(TaskType.AWS_EKS_LIST_CLUSTERS_TASK).toInstance(AwsEKSListClustersDelegateTaskNG.class);
+
+    // RANCHER NG
+    mapBinder.addBinding(TaskType.RANCHER_TEST_CONNECTION_TASK_NG).toInstance(RancherTestConnectionDelegateTask.class);
   }
 
   private void registerSecretManagementBindings() {

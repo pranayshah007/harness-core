@@ -30,6 +30,6 @@ public interface SSCAServiceClient {
   Call<SscaAuthToken> generateAuthToken(@Query("accountIdentifier") String accountIdentifier,
       @Query("orgIdentifier") String orgIdentifier, @Query("projectIdentifier") String projectIdentifier);
 
-  @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ENFORCEMENT_ENDPOINT + "{enforcementId}")
+  @GET(SSCACommonEndpointConstants.SSCA_SERVICE_ENFORCEMENT_ENDPOINT + "{enforcementId}/summary")
   Call<SscaEnforcementSummary> getEnforcementSummary(@Path("enforcementId") String enforcementId);
 }

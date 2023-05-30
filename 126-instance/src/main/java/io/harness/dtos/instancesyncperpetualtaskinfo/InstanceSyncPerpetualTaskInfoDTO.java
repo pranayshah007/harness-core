@@ -26,6 +26,7 @@ public class InstanceSyncPerpetualTaskInfoDTO {
   String infrastructureMappingId;
   List<DeploymentInfoDetailsDTO> deploymentInfoDetailsDTOList;
   String perpetualTaskId;
+  String perpetualTaskIdV2;
   String connectorIdentifier;
   long createdAt;
   long lastUpdatedAt;

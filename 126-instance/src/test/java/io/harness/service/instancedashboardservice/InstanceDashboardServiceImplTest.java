@@ -7,6 +7,7 @@
 
 package io.harness.service.instancedashboardservice;
 
+import static io.harness.entities.RollbackStatus.UNAVAILABLE;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
@@ -132,9 +133,11 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
     environmentInstanceCountModelAggregationResults =
         new AggregationResults<>(environmentInstanceCountModels, new Document());
     InstanceGroupedByPipelineExecution instanceDetailGroupedByPipelineExecution1 =
-        new InstanceGroupedByPipelineExecution(PIPELINE_1, PIPELINE_EXECUTION_1, 1l, instanceList);
+        new InstanceGroupedByPipelineExecution(
+            PIPELINE_1, PIPELINE_EXECUTION_1, 1l, null, null, null, UNAVAILABLE, instanceList);
     InstanceGroupedByPipelineExecution instanceDetailGroupedByPipelineExecution2 =
-        new InstanceGroupedByPipelineExecution(PIPELINE_2, PIPELINE_EXECUTION_2, 2l, instanceList);
+        new InstanceGroupedByPipelineExecution(
+            PIPELINE_2, PIPELINE_EXECUTION_2, 2l, null, null, null, UNAVAILABLE, instanceList);
     instanceDetailGroupedByPipelineExecutionAggregationResults = new AggregationResults<>(
         Arrays.asList(instanceDetailGroupedByPipelineExecution1, instanceDetailGroupedByPipelineExecution2),
         new Document());

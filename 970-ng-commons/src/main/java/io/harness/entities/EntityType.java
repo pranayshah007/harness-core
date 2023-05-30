@@ -452,8 +452,8 @@ public enum EntityType {
   CONTAINER_STEP(
       ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),
   @JsonProperty(EntityTypeConstants.IACM)
-  IACM_TERRAFORM_PLAN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLAN, IdentifierRef.class,
-      EntityYamlRootNames.IACM_TERRAFORM_PLAN),
+  IACM_TERRAFORM_PLUGIN(ModuleType.IACM, EntityTypeConstants.IACM_TERRAFORM_PLUGIN, IdentifierRef.class,
+      EntityYamlRootNames.IACM_TERRAFORM_PLUGIN),
   @JsonProperty(EntityTypeConstants.IACM)
   IACM_TEMPLATE(
       ModuleType.IACM, EntityTypeConstants.IACM_TEMPLATE, IdentifierRef.class, EntityYamlRootNames.IACM_TEMPLATE),

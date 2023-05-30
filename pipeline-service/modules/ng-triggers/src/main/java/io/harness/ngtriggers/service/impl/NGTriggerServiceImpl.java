@@ -198,7 +198,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getIdentifier());
     }
     try {
-      populateCustomWebhookTokenForCustomWebhookTriggers(ngTriggerEntity);
+      // Enabling the FF disables custom webhook authentication
+      if (!pmsFeatureFlagService.isEnabled(
+              ngTriggerEntity.getAccountId(), FeatureName.SPG_DISABLE_CUSTOM_WEBHOOK_V3_URL)) {
+        populateCustomWebhookTokenForCustomWebhookTriggers(ngTriggerEntity);
+      }
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
       performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
