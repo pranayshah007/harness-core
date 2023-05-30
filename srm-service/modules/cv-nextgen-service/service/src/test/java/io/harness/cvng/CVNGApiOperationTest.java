@@ -62,7 +62,9 @@ public class CVNGApiOperationTest extends CategoryTest {
                   .withFailMessage("ApiOperation annotation not present for " + klass)
                   .isTrue();
               ApiOperation apiOperationAnnotation = (ApiOperation) method.getAnnotation(apiOperationClass);
-              assertThat(apiOperationAnnotation.nickname()).isNotBlank();
+              assertThat(apiOperationAnnotation.nickname())
+                  .withFailMessage("ApiOperation annotation nickname not present for " + klass + "#" + method.getName())
+                  .isNotBlank();
               assertThat(uniqueOperationName.contains(apiOperationAnnotation.nickname()))
                   .withFailMessage("nick name " + apiOperationAnnotation.nickname() + " already exists")
                   .isFalse();

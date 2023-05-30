@@ -24,6 +24,8 @@ public interface SignupService {
 
   UserInfo communitySignup(SignupDTO dto) throws WingsException;
 
+  UserInfo marketplaceSignup(SignupDTO dto, String inviteId, String marketPlaceToken) throws WingsException;
+
   boolean createSignupInvite(SignupDTO dto, String captchaToken);
 
   UserInfo completeSignupInvite(

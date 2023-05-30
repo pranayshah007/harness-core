@@ -111,12 +111,6 @@ onboardingModuleConfig:
   useGitServiceGrpcForSingleEntityPush: true
   tmpPathForCatalogInfoYamlStore: /tmp/idp-catalog-onboarding
   catalogInfoLocationDefaultPath: /.harness-idp-entities
-  sampleEntities:
-    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/one.yaml
-    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/two.yaml
-    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml
-    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/four.yaml
-    - https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/five.yaml
   harnessCiCdAnnotations:
     projectUrl: https://localhost:8181/ng/account/accountIdentifier/home/orgs/orgIdentifier/projects/projectIdentifier/details
 

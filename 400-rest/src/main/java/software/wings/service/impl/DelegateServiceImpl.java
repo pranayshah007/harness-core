@@ -257,6 +257,7 @@ import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -607,7 +608,9 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private boolean isDelegateConnected(Delegate delegate) {
-    return delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
+    // for active delegate connection check, use DELEGATE_CACHE directly as it has latest HB updated
+    Delegate delegateFromCache = delegateCache.get(delegate.getAccountId(), delegate.getUuid(), false);
+    return delegateFromCache.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
   }
 
   @Override
@@ -981,7 +984,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
     setUnset(updateOperations, DelegateKeys.lastHeartBeat, delegate.getLastHeartBeat());
     setUnset(updateOperations, DelegateKeys.validUntil,
-        Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
+        Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant()));
     setUnset(updateOperations, DelegateKeys.version, delegate.getVersion());
     // expiration time is only valid for immutable delegates.
     if (delegate.isImmutable()) {
@@ -1134,7 +1137,8 @@ public class DelegateServiceImpl implements DelegateService {
                            .filter(DelegateKeys.uuid, delegate.getUuid()),
         persistence.createUpdateOperations(Delegate.class)
             .set(DelegateKeys.lastHeartBeat, currentTimeMillis())
-            .set(DelegateKeys.validUntil, Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant())));
+            .set(DelegateKeys.validUntil,
+                Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant())));
     delegateTaskService.touchExecutingTasks(
         delegate.getAccountId(), delegate.getUuid(), delegate.getCurrentlyExecutingDelegateTasks());
 
@@ -2733,6 +2737,7 @@ public class DelegateServiceImpl implements DelegateService {
         .project(DelegateKeys.lastHeartBeat, true)
         .project(DelegateKeys.delegateGroupName, true)
         .project(DelegateKeys.description, true)
+        .project(DelegateKeys.immutable, true)
         .get();
   }
 
@@ -2769,7 +2774,7 @@ public class DelegateServiceImpl implements DelegateService {
     }
 
     delegate.setLastHeartBeat(now);
-    delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
+    delegate.setValidUntil(Date.from(OffsetDateTime.now().plus(delegate.ttlMillis(), ChronoUnit.MILLIS).toInstant()));
 
     if (delegate.getDelegateGroupId() != null) {
       if (!delegate.isNg()) {
@@ -2934,9 +2939,13 @@ public class DelegateServiceImpl implements DelegateService {
 
     Delegate delegate = delegateCache.get(accountId, delegateId, true);
 
-    if (delegate == null || DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
-      log.warn("Delegate was not found or is not enabled while checking for profile. Delegate status {}",
-          delegate.getStatus());
+    if (delegate == null) {
+      log.warn("Delegate was not found, while checking for profile.");
+      return null;
+    }
+
+    if (DelegateInstanceStatus.ENABLED != delegate.getStatus()) {
+      log.warn("Delegate not enabled state while checking for profile. Delegate status {}", delegate.getStatus());
       return null;
     }
 

@@ -8,31 +8,49 @@
 package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.azureartifacts.beans.AzureArtifactsInternalConfig;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
+import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsFeeds;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFile;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageFileInfo;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersion;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsPackageVersions;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadata;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsProtocolMetadataData;
+import software.wings.helpers.ext.azure.devops.AzureArtifactsRestClient;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import okhttp3.ResponseBody;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Rule;
@@ -40,8 +58,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.powermock.api.mockito.PowerMockito;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(CDP)
 public class AzureArtifactsRegistryServiceImplTest extends CategoryTest {
@@ -153,6 +175,124 @@ public class AzureArtifactsRegistryServiceImplTest extends CategoryTest {
                                feed, nugetPackageType, nugetPackageName, version))
         .isInstanceOf(InvalidArtifactServerException.class)
         .hasMessageContaining("Failed to download azure artifact");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetLastSuccessfulBuildFromRegexInvalidRegex() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig1 =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRestClient azureArtifactsRestClient = mock(AzureArtifactsRestClient.class);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setId("f5");
+    azureArtifactsFeed.setName("testFeed");
+    azureArtifactsFeed.setProject(null);
+    azureArtifactsFeed.setFullyQualifiedName("feed5");
+
+    AzureArtifactsPackage azureArtifactsPackage = new AzureArtifactsPackage();
+    azureArtifactsPackage.setName(mavenPackageName);
+    azureArtifactsPackage.setId("id");
+    azureArtifactsPackage.setProtocolType("protocol");
+
+    List<AzureArtifactsPackageVersion> azureArtifactsPackageVersion = new ArrayList<>();
+    AzureArtifactsPackageVersion azureArtifactsPackageVersion1 = new AzureArtifactsPackageVersion();
+    azureArtifactsPackageVersion1.setVersion("version");
+    azureArtifactsPackageVersion.add(azureArtifactsPackageVersion1);
+
+    AzureArtifactsPackageVersions azureArtifactsPackageVersions = new AzureArtifactsPackageVersions();
+    azureArtifactsPackageVersions.setCount(1);
+    azureArtifactsPackageVersions.setValue(azureArtifactsPackageVersion);
+
+    AzureArtifactsRegistryServiceImpl azureArtifactsRegistryServiceImpl1 = spy(azureArtifactsRegistryServiceImpl);
+
+    doReturn(Collections.singletonList(azureArtifactsFeed))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listFeeds(any(), any());
+    doReturn(Collections.singletonList(azureArtifactsPackage))
+        .when(azureArtifactsRegistryServiceImpl1)
+        .listPackages(azureArtifactsInternalConfig1, "project", feed, mavenPackageType);
+
+    try (MockedStatic<AzureArtifactsRegistryServiceImpl> mockedStatic =
+             mockStatic(AzureArtifactsRegistryServiceImpl.class)) {
+      mockedStatic.when(() -> AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient(any(), any()))
+          .thenReturn(azureArtifactsRestClient);
+
+      Call<ResponseDTO<AzureArtifactsPackageVersions>> callRequest = PowerMockito.mock(Call.class);
+      doReturn(callRequest).when(callRequest).clone();
+      doReturn(callRequest).when(azureArtifactsRestClient).listPackageVersions(any(), any(), any());
+      doReturn(Response.success(azureArtifactsPackageVersions)).when(callRequest).execute();
+
+      assertThatThrownBy(
+          ()
+              -> azureArtifactsRegistryServiceImpl1.getLastSuccessfulBuildFromRegex(
+                  azureArtifactsInternalConfig1, "maven", mavenPackageName, "abc", feed, "project", "abc"))
+          .isInstanceOf(InvalidRequestException.class)
+          .hasMessage("No builds found matching project= project, feed= testFeed , packageId= id , versionRegex = abc");
+    }
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListFeeds() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRestClient azureArtifactsRestClient = mock(AzureArtifactsRestClient.class);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setName("azureArtifactsFeed");
+
+    AzureArtifactsFeeds azureArtifactsFeeds = new AzureArtifactsFeeds();
+    azureArtifactsFeeds.setValue(Arrays.asList(azureArtifactsFeed));
+
+    try (MockedStatic<AzureArtifactsRegistryServiceImpl> mockedStatic =
+             mockStatic(AzureArtifactsRegistryServiceImpl.class)) {
+      mockedStatic.when(() -> AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient(any(), any()))
+          .thenReturn(azureArtifactsRestClient);
+      mockedStatic.when(() -> AzureArtifactsRegistryServiceImpl.getAuthHeader(any())).thenReturn("Header: Auth");
+
+      Call<ResponseDTO<AzureArtifactsPackageVersions>> callRequest = PowerMockito.mock(Call.class);
+      doReturn(callRequest).when(callRequest).clone();
+      doReturn(callRequest).when(azureArtifactsRestClient).listFeeds(anyString());
+      doReturn(Response.success(azureArtifactsFeeds)).when(callRequest).execute();
+
+      List<AzureArtifactsFeed> result =
+          azureArtifactsRegistryServiceImpl.listFeeds(azureArtifactsInternalConfig, "project");
+      assertThat(result.get(0).getName()).isEqualTo(azureArtifactsFeed.getName());
+    }
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testListFeeds_Fails() throws Exception {
+    AzureArtifactsInternalConfig azureArtifactsInternalConfig =
+        AzureArtifactsInternalConfig.builder().registryUrl("https://dev.azure.com/org").token("testToken").build();
+    AzureArtifactsRestClient azureArtifactsRestClient = mock(AzureArtifactsRestClient.class);
+
+    AzureArtifactsFeed azureArtifactsFeed = new AzureArtifactsFeed();
+    azureArtifactsFeed.setName("azureArtifactsFeed");
+
+    AzureArtifactsFeeds azureArtifactsFeeds = new AzureArtifactsFeeds();
+    azureArtifactsFeeds.setValue(Arrays.asList(azureArtifactsFeed));
+
+    try (MockedStatic<AzureArtifactsRegistryServiceImpl> mockedStatic =
+             mockStatic(AzureArtifactsRegistryServiceImpl.class)) {
+      mockedStatic.when(() -> AzureArtifactsRegistryServiceImpl.getAzureArtifactsRestClient(any(), any()))
+          .thenReturn(azureArtifactsRestClient);
+      mockedStatic.when(() -> AzureArtifactsRegistryServiceImpl.getAuthHeader(any())).thenReturn("Header: Auth");
+
+      Call<ResponseDTO<AzureArtifactsPackageVersions>> callRequest = PowerMockito.mock(Call.class);
+      doReturn(callRequest).when(callRequest).clone();
+      doReturn(callRequest).when(azureArtifactsRestClient).listFeeds(anyString());
+      doReturn(Response.error(404, mock(ResponseBody.class))).when(callRequest).execute();
+
+      assertThatThrownBy(() -> azureArtifactsRegistryServiceImpl.listFeeds(azureArtifactsInternalConfig, "project"))
+          .isInstanceOf(HintException.class)
+          .hasMessage("Failed to get the Azure Feeds list.");
+    }
   }
 
   private AzureArtifactsPackageVersion createArtifactsPackageVersion() {

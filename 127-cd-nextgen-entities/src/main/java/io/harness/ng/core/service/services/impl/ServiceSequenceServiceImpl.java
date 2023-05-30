@@ -27,10 +27,10 @@ public class ServiceSequenceServiceImpl implements ServiceSequenceService {
   }
 
   @Override
-  public ServiceSequence upsertDefaultSequence(ServiceSequence requestServiceSequence) {
+  public ServiceSequence upsertSequence(ServiceSequence requestServiceSequence) {
     Criteria criteria = getCriteriaForSequenceUpdate(requestServiceSequence);
     Update update = new Update();
-    update.set(ServiceSequenceKeys.defaultSequence, requestServiceSequence.getDefaultSequence());
+    update.set(ServiceSequenceKeys.shouldUseCustomSequence, requestServiceSequence.isShouldUseCustomSequence());
     return serviceSequenceRepository.upsert(criteria, update, requestServiceSequence);
   }
 
@@ -50,6 +50,7 @@ public class ServiceSequenceServiceImpl implements ServiceSequenceService {
     Criteria criteria = getCriteriaForSequenceUpdate(requestServiceSequence);
     Update update = new Update();
     update.set(ServiceSequenceKeys.customSequence, requestServiceSequence.getCustomSequence());
+    update.set(ServiceSequenceKeys.shouldUseCustomSequence, requestServiceSequence.isShouldUseCustomSequence());
     return serviceSequenceRepository.upsert(criteria, update, requestServiceSequence);
   }
 

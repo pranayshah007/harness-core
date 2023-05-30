@@ -23,6 +23,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERI
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_MOUNT_PATH;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.JAMES_RICKS;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
@@ -60,12 +61,28 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.verify.CosignVerifyAttestation;
+import io.harness.ssca.beans.attestation.verify.VerifyAttestation;
+import io.harness.ssca.beans.policy.EnforcementPolicy;
+import io.harness.ssca.beans.source.ImageSbomSource;
+import io.harness.ssca.beans.source.SbomSource;
+import io.harness.ssca.beans.source.SbomSourceType;
+import io.harness.ssca.beans.stepinfo.SscaEnforcementStepInfo;
+import io.harness.ssca.beans.store.HarnessStore;
+import io.harness.ssca.beans.store.PolicyStore;
+import io.harness.ssca.beans.store.StoreType;
 import io.harness.ssca.execution.SscaOrchestrationPluginUtils;
+import io.harness.utils.CiCodebaseUtils;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildSpec;
 import io.harness.yaml.extended.ci.codebase.BuildType;
@@ -89,6 +106,8 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   @Inject public PluginSettingUtils pluginSettingUtils;
 
   @Mock private CodebaseUtils codebaseUtils;
+  @Mock private CiCodebaseUtils ciCodebaseUtils;
+
   @Mock private ConnectorUtils connectorUtils;
   @Mock private SscaOrchestrationPluginUtils sscaOrchestrationPluginUtils;
 
@@ -96,6 +115,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
   public void setUp() {
     on(pluginSettingUtils).set("codebaseUtils", codebaseUtils);
     on(pluginSettingUtils).set("connectorUtils", connectorUtils);
+    on(pluginSettingUtils).set("ciCodebaseUtils", ciCodebaseUtils);
     on(pluginSettingUtils).set("sscaOrchestrationPluginUtils", sscaOrchestrationPluginUtils);
     on(codebaseUtils).set("connectorUtils", connectorUtils);
   }
@@ -605,10 +625,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -652,10 +675,13 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, repoName)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -698,10 +724,14 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
     when(codebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
+
+    when(ciCodebaseUtils.getGitConnector(any(), eq(connectorRef))).thenReturn(connectorDetails);
     Map<String, String> gitEnvVars = new HashMap<>();
     gitEnvVars.put(DRONE_REMOTE_URL, scmUrl);
     gitEnvVars.put(DRONE_NETRC_MACHINE, scmProvider);
     when(codebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
+
+    when(ciCodebaseUtils.getGitEnvVariables(connectorDetails, null)).thenReturn(gitEnvVars);
 
     final ParameterField<Build> buildParameter = createBuildParameter(buildType, buildValue);
     final GitCloneStepInfo stepInfo = GitCloneStepInfo.builder()
@@ -940,5 +970,184 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     pluginSettingUtils.setupDlcArgs(dockerStepInfo, "identifier", cacheFrom, cacheTo);
     assertThat(expectedCacheFrom).isEqualTo(dockerStepInfo.getCacheFrom());
     assertThat(expectedCacheTo).isEqualTo(dockerStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testDlcSetupRequiredEcr() {
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField("harness"))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    assertThat(pluginSettingUtils.dlcSetupRequired(ecrStepInfo)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetDlcPrefixEcr() {
+    String accountId = "test-account-id";
+    String repo = "harness";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String expectedPrefix = String.format("%s/%s/", accountId, repo);
+    String prefix = pluginSettingUtils.getDlcPrefix(accountId, "identifier", ecrStepInfo);
+    assertThat(expectedPrefix).isEqualTo(prefix);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsEcr() {
+    String repo = "harness";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testSetupDlcArgsWithCacheArgsEcr() {
+    String repo = "harness";
+    String inputCacheFrom = "inputCacheFrom";
+    String inputCacheTo = "inputCacheTo";
+    ECRStepInfo ecrStepInfo =
+        ECRStepInfo.builder()
+            .imageName(ParameterField.createValueField(repo))
+            .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+            .dockerfile(ParameterField.createValueField("Dockerfile"))
+            .context(ParameterField.createValueField("context"))
+            .target(ParameterField.createValueField("target"))
+            .buildArgs(ParameterField.createValueField(Collections.singletonMap("arg1", "value1")))
+            .labels(ParameterField.createValueField(Collections.singletonMap("label", "label1")))
+            .caching(ParameterField.createValueField(true))
+            .cacheFrom(ParameterField.createValueField(asList(inputCacheFrom)))
+            .cacheTo(ParameterField.createValueField(inputCacheTo))
+            .build();
+
+    String cacheFrom = "cacheFromArg";
+    String cacheTo = "cacheToArg";
+    ParameterField expectedCacheFrom = ParameterField.createValueField(asList(inputCacheFrom, cacheFrom));
+    ParameterField expectedCacheTo = ParameterField.createValueField(cacheTo);
+
+    pluginSettingUtils.setupDlcArgs(ecrStepInfo, "identifier", cacheFrom, cacheTo);
+    assertThat(expectedCacheFrom).isEqualTo(ecrStepInfo.getCacheFrom());
+    assertThat(expectedCacheTo).isEqualTo(ecrStepInfo.getCacheTo());
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnforcementStepEnvVariables() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("STEP_EXECUTION_ID", null);
+    expected.put("PLUGIN_SBOMSOURCE", "image:tag");
+    expected.put("PLUGIN_TYPE", "Enforce");
+    expected.put("POLICY_FILE_IDENTIFIER", "file");
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        sscaEnforcementStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnforcementStepEnvVariablesForVMInfra() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+    Ambiance ambiance = Ambiance.newBuilder().setExpressionFunctorToken(12345).build();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("STEP_EXECUTION_ID", null);
+    expected.put("PLUGIN_SBOMSOURCE", "image:tag");
+    expected.put("PLUGIN_TYPE", "Enforce");
+    expected.put("POLICY_FILE_IDENTIFIER", "file");
+    expected.put("COSIGN_PUBLIC_KEY", "${ngSecretManager.obtain(\"publicKey\", 12345)}");
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        sscaEnforcementStepInfo, "identifier", 100, ambiance, Type.VM, false, true);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnforcementStepSecretEnvVariables() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+
+    Map<String, SecretNGVariable> expected = new HashMap<>();
+    SecretRefData secretRefData = SecretRefHelper.createSecretRef("publicKey");
+    expected.put("COSIGN_PUBLIC_KEY",
+        SecretNGVariable.builder()
+            .type(NGVariableType.SECRET)
+            .value(ParameterField.createValueField(secretRefData))
+            .name("COSIGN_PUBLIC_KEY")
+            .build());
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    Map<String, SecretNGVariable> actual =
+        pluginSettingUtils.getPluginCompatibleSecretVars(sscaEnforcementStepInfo, "identifier");
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  private SscaEnforcementStepInfo getSscaEnforcementStep() {
+    return SscaEnforcementStepInfo.builder()
+        .source(SbomSource.builder()
+                    .type(SbomSourceType.IMAGE)
+                    .sbomSourceSpec(ImageSbomSource.builder()
+                                        .connector(ParameterField.createValueField("conn1"))
+                                        .image(ParameterField.createValueField("image:tag"))
+                                        .build())
+                    .build())
+        .policy(EnforcementPolicy.builder()
+                    .store(PolicyStore.builder()
+                               .type(StoreType.HARNESS)
+                               .storeSpec(HarnessStore.builder().file(ParameterField.createValueField("file")).build())
+                               .build())
+                    .build())
+        .verifyAttestation(
+            VerifyAttestation.builder()
+                .type(AttestationType.COSIGN)
+                .verifyAttestationSpec(
+                    CosignVerifyAttestation.builder().publicKey(ParameterField.createValueField("publicKey")).build())
+                .build())
+        .build();
   }
 }

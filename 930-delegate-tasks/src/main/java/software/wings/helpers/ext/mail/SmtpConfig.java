@@ -32,6 +32,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.SchemaIgnore;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -59,6 +60,7 @@ public class SmtpConfig extends SettingValue implements EncryptableSetting {
   @SchemaIgnore @NotEmpty private String accountId;
 
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;
+  @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
   /**
    * Instantiates a new smtp config.
@@ -68,7 +70,7 @@ public class SmtpConfig extends SettingValue implements EncryptableSetting {
   }
 
   public SmtpConfig(String host, int port, String fromAddress, boolean useSSL, boolean startTLS, String username,
-      char[] password, String accountId, String encryptedPassword) {
+      char[] password, String accountId, String encryptedPassword, Set<String> delegateSelectors) {
     this();
     this.host = host;
     this.port = port;
@@ -79,6 +81,7 @@ public class SmtpConfig extends SettingValue implements EncryptableSetting {
     this.password = password == null ? null : password.clone();
     this.accountId = accountId;
     this.encryptedPassword = encryptedPassword;
+    this.delegateSelectors = delegateSelectors;
   }
 
   public boolean valid() {

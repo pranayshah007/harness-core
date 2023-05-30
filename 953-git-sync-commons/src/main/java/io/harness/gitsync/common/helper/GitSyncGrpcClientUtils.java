@@ -29,10 +29,19 @@ import net.jodah.failsafe.RetryPolicy;
 @OwnedBy(PL)
 public class GitSyncGrpcClientUtils {
   private static final RetryPolicy<Object> RETRY_POLICY = createRetryPolicy();
+  private static final RetryPolicy<Object> RETRY_POLICY_V2 = createRetryPolicyV2();
 
   public <T, R> R retryAndProcessException(Function<T, R> fn, T arg) {
     try {
       return Failsafe.with(RETRY_POLICY).get(() -> fn.apply(arg));
+    } catch (Exception ex) {
+      throw processException(ex);
+    }
+  }
+
+  public <T, R> R retryAndProcessExceptionV2(Function<T, R> fn, T arg) {
+    try {
+      return Failsafe.with(RETRY_POLICY_V2).get(() -> fn.apply(arg));
     } catch (Exception ex) {
       throw processException(ex);
     }
@@ -71,6 +80,25 @@ public class GitSyncGrpcClientUtils {
                 String.format("Git sync grpc retry attempt: %d", event.getAttemptCount()), event.getLastFailure()))
         .onFailure(event
             -> log.error(String.format("Git Sync grpc retry failed after attempts: %d", event.getAttemptCount()),
+                event.getFailure()))
+        .handleIf(throwable -> {
+          if (!(throwable instanceof StatusRuntimeException)) {
+            return false;
+          }
+          StatusRuntimeException statusRuntimeException = (StatusRuntimeException) throwable;
+          return statusRuntimeException.getStatus().getCode() == Status.Code.UNAVAILABLE
+              || statusRuntimeException.getStatus().getCode() == Status.Code.UNKNOWN;
+        });
+  }
+  private RetryPolicy<Object> createRetryPolicyV2() {
+    return new RetryPolicy<>()
+        .withDelay(Duration.ofMillis(750))
+        .withMaxAttempts(1)
+        .onFailedAttempt(event
+            -> log.warn(
+                String.format("Git-service grpc retry attempt: %d", event.getAttemptCount()), event.getLastFailure()))
+        .onFailure(event
+            -> log.error(String.format("Git-service grpc retry failed after attempts: %d", event.getAttemptCount()),
                 event.getFailure()))
         .handleIf(throwable -> {
           if (!(throwable instanceof StatusRuntimeException)) {

@@ -224,6 +224,11 @@ public class GitClientHelper {
     }
   }
 
+  public static String getHarnessApiURL(String url) {
+    String domain = GitClientHelper.getGitSCM(url);
+    return getHttpProtocolPrefix(url) + domain;
+  }
+
   private static boolean isUrlHTTP(String url) {
     return url.startsWith("http") && !url.startsWith("https");
   }

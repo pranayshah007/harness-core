@@ -115,6 +115,9 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class KubernetesHelperService {
+  static {
+    System.setProperty("kubernetes.backwardsCompatibilityInterceptor.disable", "false");
+  }
   @Inject private OidcTokenRetriever oidcTokenRetriever;
 
   public static void validateCluster(String cluster) {

@@ -189,7 +189,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(account);
     User user = anUser().pendingAccounts(Arrays.asList(account)).build();
     wingsPersistence.save(user);
-    assertThat(userServiceImpl.getTotalUserCount("ACCOUNT_ID", true)).isEqualTo(1);
+    assertThat(userServiceImpl.getTotalUserCount("ACCOUNT_ID", true, true, true)).isEqualTo(1);
   }
 
   private void setup() {
@@ -579,12 +579,12 @@ public class UserServiceImplTest extends WingsBaseTest {
     map.put("sort[0][direction]", Arrays.asList("ASC"));
     map.put("sort[0][field]", Arrays.asList("name"));
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 1, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 1, 30, false, true, false, true);
     assertThat(userList.get(1).getName()).isEqualTo("pqr");
 
     map.put("sort[0][field]", Arrays.asList("email"));
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true, false);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "", 0, 30, false, true, false, true);
     assertThat(userList.get(2).getName()).isEqualTo("eFg");
   }
 
@@ -600,11 +600,11 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(1);
     assertThat(userList.get(0).getName()).isEqualTo("pqr");
 
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(2);
   }
 
@@ -637,10 +637,10 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     map.put("sort[0][direction]", Arrays.asList("DESC"));
     map.put("sort[0][field]", Arrays.asList("email"));
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "PqR", 0, 30, false, true, false, true);
     assertThat(userList.get(1).getName()).isEqualTo("pqr");
 
-    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "fgh", 0, 30, false, true, false);
+    userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "fgh", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(0);
   }
 
@@ -674,7 +674,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(1);
     assertThat(userList.get(0).getName()).isEqualTo("pqr1");
     assertThat(userList.get(0).isDisabled()).isEqualTo(false);
@@ -710,7 +710,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, true);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 0, 30, false, true, true, true);
     assertThat(userList.size()).isEqualTo(2);
     assertThat(userList.get(0).getName()).isEqualTo("user-1");
     assertThat(userList.get(0).getDisabled()).isEqualTo(true);
@@ -816,7 +816,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(pageRequest.getUriInfo()).thenReturn(uriInfo);
     when(uriInfo.getQueryParameters(true)).thenReturn(map);
 
-    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 1, 30, false, true, false);
+    List<User> userList = userServiceImpl.listUsers(pageRequest, "ACCOUNT_ID", "ab", 1, 30, false, true, false, true);
     assertThat(userList.size()).isEqualTo(0);
   }
 

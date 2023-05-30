@@ -26,6 +26,7 @@ import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.ci.CiServiceResourceClientModule;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.client.DelegateSelectionLogHttpClientModule;
@@ -73,6 +74,7 @@ import io.harness.persistence.UserProvider;
 import io.harness.plancreator.steps.pluginstep.ContainerStepV2PluginProvider;
 import io.harness.pms.approval.ApprovalResourceService;
 import io.harness.pms.approval.ApprovalResourceServiceImpl;
+import io.harness.pms.approval.api.ApprovalsApiImpl;
 import io.harness.pms.approval.custom.CustomApprovalHelperServiceImpl;
 import io.harness.pms.approval.jira.JiraApprovalHelperServiceImpl;
 import io.harness.pms.approval.notification.ApprovalNotificationHandlerImpl;
@@ -95,6 +97,7 @@ import io.harness.pms.event.entitycrud.AccountEntityCrudStreamListener;
 import io.harness.pms.event.entitycrud.PipelineEntityCRUDStreamListener;
 import io.harness.pms.event.entitycrud.ProjectEntityCrudStreamListener;
 import io.harness.pms.event.pollingevent.PollingEventStreamListener;
+import io.harness.pms.event.triggerwebhookevent.TriggerExecutionEventStreamListener;
 import io.harness.pms.expressions.PMSExpressionEvaluatorProvider;
 import io.harness.pms.health.HealthResource;
 import io.harness.pms.health.HealthResourceImpl;
@@ -165,8 +168,10 @@ import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.servicenow.ServiceNowStepHelperServiceImpl;
 import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.pms.template.service.PipelineRefreshServiceImpl;
+import io.harness.pms.triggers.webhook.service.TriggerWebhookEventExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
+import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookEventExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImpl;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImplV2;
 import io.harness.pms.wait.WaitStepResource;
@@ -183,6 +188,7 @@ import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.spec.server.pipeline.v1.ApprovalsApi;
 import io.harness.spec.server.pipeline.v1.InputSetsApi;
 import io.harness.spec.server.pipeline.v1.InputsApi;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
@@ -328,6 +334,9 @@ public class PipelineServiceModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     install(new TemplateResourceClientModule(configuration.getTemplateServiceClientConfig(),
         configuration.getTemplateServiceSecret(), PIPELINE_SERVICE.toString()));
+    install(
+        new CiServiceResourceClientModule(configuration.getCiServiceClientConfig(), configuration.getCiServiceSecret(),
+            PIPELINE_SERVICE.toString(), configuration.isContainerStepConfigureWithCi()));
     install(NGTriggersModule.getInstance(configuration.getTriggerConfig(),
         configuration.getPipelineServiceClientConfig(), configuration.getPipelineServiceSecret()));
     install(PersistentLockModule.getInstance());
@@ -419,6 +428,7 @@ public class PipelineServiceModule extends AbstractModule {
         .toInstance(new ManagedScheduledExecutorService("ProgressUpdateServiceExecutor-Thread"));
     bind(TriggerWebhookExecutionService.class).to(TriggerWebhookExecutionServiceImpl.class);
     bind(TriggerWebhookExecutionServiceV2.class).to(TriggerWebhookExecutionServiceImplV2.class);
+    bind(TriggerWebhookEventExecutionService.class).to(TriggerWebhookEventExecutionServiceImpl.class);
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("telemetryPublisherExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(1,
@@ -437,6 +447,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(ApprovalResourceService.class).to(ApprovalResourceServiceImpl.class);
     bind(PipelineResource.class).to(PipelineResourceImpl.class);
     bind(PipelinesApi.class).to(PipelinesApiImpl.class);
+    bind(ApprovalsApi.class).to(ApprovalsApiImpl.class);
     bind(InputSetsApi.class).to(InputSetsApiImpl.class);
     bind(PipelineDashboardOverviewResource.class).to(PipelineDashboardOverviewResourceImpl.class);
     bind(PipelineDashboardOverviewResourceV2.class).to(PipelineDashboardOverviewResourceV2Impl.class);
@@ -518,6 +529,10 @@ public class PipelineServiceModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkConstants.POLLING_EVENTS_STREAM))
         .to(PollingEventStreamListener.class);
+
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkConstants.TRIGGER_EXECUTION_EVENTS_STREAM))
+        .to(TriggerExecutionEventStreamListener.class);
   }
 
   @Provides

@@ -58,6 +58,7 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetElementMapper;
 import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.pms.pipeline.PMSInputSetListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.yaml.PipelineVersion;
@@ -533,6 +534,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
     return PMSInputSetListRepoResponse.builder().repositories(inputSetRepoList).build();
+  }
+
+  @Override
+  public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String inputSetIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, true);
+    Update update = PMSInputSetFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
+
+    InputSetEntity inputSetAfterUpdate = inputSetRepository.updateEntity(criteria, update);
+    if (inputSetAfterUpdate == null) {
+      throw new EntityNotFoundException(
+          format("InputSet with id [%s] is not present or has been deleted", inputSetIdentifier));
+    }
+
+    return inputSetAfterUpdate.getIdentifier();
   }
 
   @VisibleForTesting

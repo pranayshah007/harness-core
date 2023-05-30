@@ -39,6 +39,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.CiIntegrationStageUtils;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -246,7 +247,7 @@ public class IntegrationStageUtilsTest {
   public void shouldNotFailForAzureOnPremUrl() {
     String accountUrl = "https://tfs.azureonprem.com/Org/Project/";
     String actualUrl =
-        IntegrationStageUtils.retrieveGenericGitConnectorURL("repo", GitConnectionType.PROJECT, accountUrl);
+        CiIntegrationStageUtils.retrieveGenericGitConnectorURL("repo", GitConnectionType.PROJECT, accountUrl);
     assertThat(actualUrl).isEqualTo(accountUrl + "_git/repo");
   }
 

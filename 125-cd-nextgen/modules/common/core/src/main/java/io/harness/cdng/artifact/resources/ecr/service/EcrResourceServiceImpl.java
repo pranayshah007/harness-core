@@ -12,11 +12,13 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrListImagesDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrResponseDTO;
 import io.harness.cdng.artifact.resources.ecr.mappers.EcrResourceMapper;
+import io.harness.cdng.artifact.utils.ArtifactUtils;
 import io.harness.cdng.common.resources.AwsResourceServiceHelper;
 import io.harness.common.NGTaskType;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -38,6 +40,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Singleton
 @OwnedBy(PIPELINE)
@@ -66,6 +69,10 @@ public class EcrResourceServiceImpl implements EcrResourceService {
   @Override
   public EcrBuildDetailsDTO getSuccessfulBuild(IdentifierRef ecrConnectorRef, String imagePath,
       EcrRequestDTO ecrRequestDTO, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath),
+        MutablePair.of(NGArtifactConstants.REGION, ecrRequestDTO.getRegion()));
+    ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.TAG, ecrRequestDTO.getTag()),
+        MutablePair.of(NGArtifactConstants.TAG_REGEX, ecrRequestDTO.getTagRegex()));
     AwsConnectorDTO connector = serviceHelper.getAwsConnector(ecrConnectorRef);
     BaseNGAccess baseNGAccess =
         serviceHelper.getBaseNGAccess(ecrConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

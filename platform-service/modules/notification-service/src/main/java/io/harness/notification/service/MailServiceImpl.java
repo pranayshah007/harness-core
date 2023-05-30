@@ -55,6 +55,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -146,7 +147,16 @@ public class MailServiceImpl implements ChannelService {
     return true;
   }
 
+  private boolean isSmtpConfigProvided(String accountId) {
+    return Objects.nonNull(notificationSettingsService.getSmtpConfigResponse(accountId));
+  }
+
   public NotificationTaskResponse sendEmail(EmailDTO emailDTO) {
+    // Enable only if SMTP configuration is provided by the user; as we don't want to spam via Harness email
+    if (emailDTO.isSendToNonHarnessRecipients() && !isSmtpConfigProvided(emailDTO.getAccountId())) {
+      emailDTO.setSendToNonHarnessRecipients(false);
+    }
+
     List<String> emails = new ArrayList<>(emailDTO.getToRecipients());
     List<String> ccEmails = new ArrayList<>(emailDTO.getCcRecipients());
     String accountId = emailDTO.getAccountId();
@@ -155,7 +165,7 @@ public class MailServiceImpl implements ChannelService {
           String.format("No account id encountered for %s.", emailDTO.getNotificationId()), DEFAULT_ERROR_CODE, USER);
     }
     validateEmptyEmails(emailDTO, emails, ccEmails, "");
-    String errorMessage = validateEmails(emails, ccEmails, accountId);
+    String errorMessage = validateEmails(emails, ccEmails, accountId, emailDTO.isSendToNonHarnessRecipients());
     validateEmptyEmails(emailDTO, emails, ccEmails, errorMessage);
     NotificationTaskResponse response = sendInSync(
         emails, ccEmails, emailDTO.getSubject(), emailDTO.getBody(), emailDTO.getNotificationId(), accountId);
@@ -179,7 +189,8 @@ public class MailServiceImpl implements ChannelService {
     }
   }
 
-  private String validateEmails(List<String> emails, List<String> ccEmails, String accountId) {
+  private String validateEmails(
+      List<String> emails, List<String> ccEmails, String accountId, boolean sendToNonHarnessRecipients) {
     String errorMessage = "";
     Set<String> invalidEmails = getInvalidEmails(emails);
     invalidEmails.addAll(getInvalidEmails(ccEmails));
@@ -189,8 +200,8 @@ public class MailServiceImpl implements ChannelService {
       errorMessage =
           errorMessage.concat(String.format("Emails %s are invalid.", StringUtils.join(invalidEmails, ", ")));
     }
-    Set<String> notPresentEmails = getAbsentEmails(emails, accountId);
-    notPresentEmails.addAll(getAbsentEmails(ccEmails, accountId));
+    Set<String> notPresentEmails = getAbsentEmails(emails, accountId, sendToNonHarnessRecipients);
+    notPresentEmails.addAll(getAbsentEmails(ccEmails, accountId, sendToNonHarnessRecipients));
     if (!notPresentEmails.isEmpty()) {
       emails.removeAll(notPresentEmails);
       ccEmails.removeAll(notPresentEmails);
@@ -204,9 +215,9 @@ public class MailServiceImpl implements ChannelService {
     return errorMessage;
   }
 
-  private Set<String> getAbsentEmails(List<String> emails, String accountId) {
+  private Set<String> getAbsentEmails(List<String> emails, String accountId, boolean sendToNonHarnessRecipients) {
     return emails.stream()
-        .filter(email -> !getResponse(userNGClient.isEmailIdInAccount(email, accountId)))
+        .filter(email -> !sendToNonHarnessRecipients && !getResponse(userNGClient.isEmailIdInAccount(email, accountId)))
         .collect(Collectors.toSet());
   }
 
@@ -218,7 +229,8 @@ public class MailServiceImpl implements ChannelService {
       List<String> emailIds, String subject, String body, String notificationId, String accountId) {
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse) && Objects.nonNull(smtpConfigResponse.getSmtpConfig())) {
+      Set<String> taskSelectors = getDelegateSelectors(smtpConfigResponse.getSmtpConfig());
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -232,6 +244,7 @@ public class MailServiceImpl implements ChannelService {
                                   .smtpConfig(smtpConfigResponse.getSmtpConfig())
                                   .encryptionDetails(smtpConfigResponse.getEncryptionDetails())
                                   .build())
+              .taskSelectors(taskSelectors)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
       String taskId = delegateGrpcClientWrapper.submitAsyncTaskV2(delegateTaskRequest, Duration.ZERO);
@@ -253,9 +266,10 @@ public class MailServiceImpl implements ChannelService {
     NotificationTaskResponse notificationTaskResponse;
     NotificationProcessingResponse notificationProcessingResponse;
     SmtpConfigResponse smtpConfigResponse = notificationSettingsService.getSmtpConfigResponse(accountId);
-    if (Objects.nonNull(smtpConfigResponse)) {
+    if (Objects.nonNull(smtpConfigResponse) && Objects.nonNull(smtpConfigResponse.getSmtpConfig())) {
       final Map<String, String> ngTaskSetupAbstractionsWithOwner =
           getNGTaskSetupAbstractionsWithOwner(accountId, null, null);
+      Set<String> taskSelectors = getDelegateSelectors(smtpConfigResponse.getSmtpConfig());
       DelegateTaskRequest delegateTaskRequest =
           DelegateTaskRequest.builder()
               .accountId(accountId)
@@ -270,6 +284,7 @@ public class MailServiceImpl implements ChannelService {
                                   .smtpConfig(smtpConfigResponse.getSmtpConfig())
                                   .encryptionDetails(smtpConfigResponse.getEncryptionDetails())
                                   .build())
+              .taskSelectors(taskSelectors)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
       DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
@@ -349,6 +364,10 @@ public class MailServiceImpl implements ChannelService {
       recipients.addAll(resolvedRecipients);
     }
     return recipients.stream().distinct().collect(Collectors.toList());
+  }
+
+  private Set<String> getDelegateSelectors(SmtpConfig smtpConfig) {
+    return isEmpty(smtpConfig.getDelegateSelectors()) ? new HashSet<>() : smtpConfig.getDelegateSelectors();
   }
 
   @Getter

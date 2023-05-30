@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: event-service
+  namespace: {{ .Release.Namespace }}
+spec:
+  minAvailable: 1
+  selector:
+   matchLabels:
+    app: event-service

@@ -21,8 +21,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel(description = "This is the change Source entity defined in Harness",
-    subTypes = {HarnessCDCurrentGenChangeSourceSpec.class, HarnessCDChangeSourceSpec.class,
-        PagerDutyChangeSourceSpec.class, KubernetesChangeSourceSpec.class, CustomChangeSourceSpec.class})
+    subTypes = {HarnessCDCurrentGenChangeSourceSpec.class, PagerDutyChangeSourceSpec.class,
+        KubernetesChangeSourceSpec.class, CustomChangeSourceSpec.class})
 public abstract class ChangeSourceSpec {
   @JsonIgnore public abstract ChangeSourceType getType();
   @JsonIgnore public abstract boolean connectorPresent();

@@ -36,6 +36,7 @@ public class CiTelemetryPublisher {
   @Inject ModuleLicenseRepository moduleLicenseRepository;
 
   String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
+  String COUNT_HOSTED_CREDITS_USED = "ci_credits_used";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
   static final long A_DAY_MINUS_TEN_MINS = 85800000;
@@ -62,13 +63,20 @@ public class CiTelemetryPublisher {
             map.put(GROUP_ID, accountId);
             map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
             long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
-            if (existing.size() != 0 || developersCount != 0) {
-              map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
+            long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId);
+            if (existing.size() != 0) {
+              if (developersCount != 0) {
+                map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
+              }
+              if (developersCount != 0) {
+                map.put(COUNT_HOSTED_CREDITS_USED, hostedCreditUsage);
+              }
               telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
                   TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
             } else {
               map.put(COUNT_ACTIVE_DEVELOPERS, null);
+              map.put(COUNT_HOSTED_CREDITS_USED, null);
               telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
                   TelemetryOption.builder().sendForCommunity(true).build());
               log.info("Account {} does not have CI Module, sending null as count", accountId);

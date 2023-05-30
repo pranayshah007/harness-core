@@ -796,7 +796,7 @@ public class ClickHouseQueryResponseHelper {
 
   public String fetchStringValue(ResultSet resultSet, String field, String fieldName) throws SQLException {
     String value = resultSet.getString(field);
-    if (isEmpty(value)) {
+    if (!isEmpty(value)) {
       return value;
     }
     return fieldName;

@@ -103,4 +103,6 @@ public interface ServiceEntityService {
 
   ValidateTemplateInputsResponseDTO validateTemplateInputs(
       String accountId, String orgId, String projectId, String serviceIdentifier, String loadFromCache);
+
+  String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml);
 }

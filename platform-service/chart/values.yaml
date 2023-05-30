@@ -4,6 +4,7 @@
 global:
   loadbalancerURL: "http://test/abc"
   imagePullSecrets: []
+  stackDriverLoggingEnabled: false
   smtpCreateSecret:
     enabled: false
     SMTP_PASSWORD: ""
@@ -158,3 +159,5 @@ tolerations: []
 affinity: {}
 
 imagePullSecrets: {}
+
+additionalConfigs: {}

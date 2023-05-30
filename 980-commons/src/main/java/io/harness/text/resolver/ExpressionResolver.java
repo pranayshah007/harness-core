@@ -17,7 +17,16 @@ public interface ExpressionResolver {
   String nullStringValue = "null";
   String resolveInternal(String expression);
   default String resolve(String expression) {
-    String resolvedExpression = resolveInternal(expression);
+    String resolvedExpression;
+    try {
+      resolvedExpression = resolveInternal(expression);
+    } catch (Exception ex) {
+      if (getExpressionMode() == ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED) {
+        throw ex;
+      } else {
+        resolvedExpression = nullStringValue;
+      }
+    }
     // If ExpressionMode is ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED and expression is resolved to
     // null value(means unresolved), do not replace with null value, instead keep the original expression as is.
     if (getExpressionMode() == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED

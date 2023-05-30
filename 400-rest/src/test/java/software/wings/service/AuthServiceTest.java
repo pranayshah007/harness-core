@@ -9,6 +9,7 @@ package software.wings.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ADITYA;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -103,7 +104,9 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.google.inject.Inject;
 import dev.morphia.AdvancedDatastore;
 import io.serializer.HObjectMapper;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -135,6 +138,7 @@ public class AuthServiceTest extends WingsBaseTest {
   private final String INVALID_TOKEN = "INVALID_TOKEN";
   private final String EXPIRED_TOKEN = "EXPIRED_TOKEN";
   private final String NOT_AVAILABLE_TOKEN = "NOT_AVAILABLE_TOKEN";
+  private final String SMALL_TOKEN = "FOUR";
   private final String AUTH_SECRET = "AUTH_SECRET";
 
   @Mock private GenericDbCache cache;
@@ -480,6 +484,26 @@ public class AuthServiceTest extends WingsBaseTest {
   public void shouldValidateValidToken() {
     AuthToken authToken = authService.validateToken(VALID_TOKEN);
     assertThat(authToken).isNotNull().isInstanceOf(AuthToken.class);
+  }
+
+  @Test
+  @Owner(developers = ADITYA)
+  @Category(UnitTests.class)
+  public void shouldValidateSmallLengthToken() {
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    PrintStream printStream = new PrintStream(outputStream);
+    System.setOut(printStream);
+    AuthToken authTokenInDB = new AuthToken(ACCOUNT_ID, USER_ID, 86400000L);
+    when(advancedDatastore.get(AuthToken.class, SMALL_TOKEN)).thenReturn(authTokenInDB);
+    AuthToken authToken = authService.validateToken(SMALL_TOKEN);
+    assertThat(authToken).isNotNull().isInstanceOf(AuthToken.class);
+    assertThat(authToken).isEqualTo(authTokenInDB);
+    String logMessage = outputStream.toString();
+    String expectedMessage =
+        String.format("Token with prefix %s not found in cache hence fetching it from db", SMALL_TOKEN);
+    assertThat(logMessage).contains(expectedMessage);
+    System.setOut(System.out);
+    verify(advancedDatastore, times(1)).get(AuthToken.class, SMALL_TOKEN);
   }
 
   /**

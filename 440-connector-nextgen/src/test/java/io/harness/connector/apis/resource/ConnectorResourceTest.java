@@ -176,10 +176,11 @@ public class ConnectorResourceTest extends CategoryTest {
     final Page<ConnectorResponseDTO> page =
         PageTestUtils.getPage(Arrays.asList(ConnectorResponseDTO.builder().build()), 1);
     when(connectorService.list(
-             anyString(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), any()))
+             anyString(), any(), anyString(), anyString(), anyString(), anyString(), any(), any(), any(), any()))
         .thenReturn(page);
     ResponseDTO<PageResponse<ConnectorResponseDTO>> connectorSummaryListResponse = connectorResource.list(
         accountIdentifier, searchTerm, orgIdentifier, projectIdentifier, filterIdentifier, false, null, null, false,
+        null,
         PageRequest.builder()
             .pageSize(100)
             .pageIndex(0)
@@ -188,7 +189,7 @@ public class ConnectorResourceTest extends CategoryTest {
             .build());
     Mockito.verify(connectorService, times(1))
         .list(eq(accountIdentifier), eq(null), eq(orgIdentifier), eq(projectIdentifier), eq(filterIdentifier),
-            eq(searchTerm), eq(false), eq(false), any());
+            eq(searchTerm), eq(false), eq(false), any(), any());
     assertThat(connectorSummaryListResponse.getData()).isNotNull();
   }
 

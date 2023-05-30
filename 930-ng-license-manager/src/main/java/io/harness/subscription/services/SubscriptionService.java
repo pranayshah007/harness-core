@@ -28,7 +28,7 @@ public interface SubscriptionService {
   EnumMap<UsageKey, Long> getRecommendationRc(String accountIdentifier, RecommendationRequest recommendationRequest);
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
-  void payInvoice(String invoiceId);
+  void payInvoice(String invoiceId, String accountIdentifier);
 
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionRequest subscriptionRequest);
   SubscriptionDetailDTO updateSubscription(

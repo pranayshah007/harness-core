@@ -109,6 +109,7 @@ public class IACMManagerConfiguration extends Configuration implements AssetsBun
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
   @JsonProperty("apiUrl") private String apiUrl;
+  @JsonProperty("isLocal") boolean isLocal;
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
 

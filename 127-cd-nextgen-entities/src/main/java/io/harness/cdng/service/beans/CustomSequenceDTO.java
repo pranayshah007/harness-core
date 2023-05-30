@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 @Data
 @Builder
 public class CustomSequenceDTO {
-  @NotNull List<EnvAndEnvGroupCard> EnvAndEnvGroupCardList;
+  @NotNull List<EnvAndEnvGroupCard> envAndEnvGroupCardList;
 
   @Data
   @Builder

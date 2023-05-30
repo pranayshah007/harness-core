@@ -9,9 +9,13 @@ package io.harness.engine.interrupts.handlers;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
+import static io.harness.pms.contracts.execution.Status.QUEUED;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
@@ -21,12 +25,17 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationTestHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
+import io.harness.plan.PlanNode;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.rule.Owner;
@@ -34,6 +43,8 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedList;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -193,5 +204,66 @@ public class UserMarkedFailAllInterruptHandlerTest extends OrchestrationTestBase
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
     assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_SUCCESSFULLY);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testHandleChildNodes() {
+    String planExecutionId = generateUuid();
+    String interruptUuid = generateUuid();
+    Interrupt interruptWithNodeExecutionId = Interrupt.builder()
+                                                 .uuid(interruptUuid)
+                                                 .nodeExecutionId("nodeExecutionId")
+                                                 .type(InterruptType.USER_MARKED_FAIL_ALL)
+                                                 .interruptConfig(InterruptConfig.newBuilder().build())
+                                                 .planExecutionId(planExecutionId)
+                                                 .state(State.REGISTERED)
+                                                 .build();
+
+    mongoTemplate.save(interruptWithNodeExecutionId);
+
+    String nodeExecution1Id = generateUuid();
+    Ambiance.Builder ambianceBuilder = Ambiance.newBuilder().setPlanExecutionId(planExecutionId);
+    PlanNode planNode1 = preparePlanNode(false, "pipeline", "pipelineValue", "PIPELINE");
+    NodeExecution nodeExecution1 =
+        NodeExecution.builder()
+            .uuid(nodeExecution1Id)
+            .ambiance(ambianceBuilder.addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecution1Id, planNode1)).build())
+            .planNode(planNode1)
+            .status(QUEUED)
+            .build();
+    List<NodeExecution> nodeExecutionList1 = asList(nodeExecution1);
+
+    when(nodeExecutionService.markLeavesDiscontinuing(any())).thenReturn(1L);
+
+    CloseableIterator<NodeExecution> iterator =
+        OrchestrationTestHelper.createCloseableIterator(nodeExecutionList1.iterator());
+
+    when(nodeExecutionService.fetchNodeExecutionsWithoutOldRetriesAndStatusInIterator(anyString(), any(), any()))
+        .thenReturn(iterator);
+
+    List<NodeExecution> extractedChildExecutions = new LinkedList<>();
+    extractedChildExecutions.add(NodeExecution.builder().uuid("childUuid").status(QUEUED).build());
+    when(nodeExecutionService.extractChildExecutions(
+             interruptWithNodeExecutionId.getNodeExecutionId(), true, new LinkedList<>(), new LinkedList<>(), true))
+        .thenReturn(extractedChildExecutions);
+    Interrupt handledInterrupt = userMarkedFailAllInterruptHandler.handleChildNodes(
+        interruptWithNodeExecutionId, interruptWithNodeExecutionId.getNodeExecutionId());
+    assertThat(handledInterrupt).isNotNull();
+    assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);
+    assertThat(handledInterrupt.getState()).isEqualTo(State.PROCESSED_SUCCESSFULLY);
+  }
+
+  private PlanNode preparePlanNode(
+      boolean skipExpressionChain, String identifier, String paramValue, String groupName) {
+    return PlanNode.builder()
+        .uuid(generateUuid())
+        .name(identifier)
+        .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+        .identifier(identifier)
+        .skipExpressionChain(skipExpressionChain)
+        .group(groupName)
+        .build();
   }
 }

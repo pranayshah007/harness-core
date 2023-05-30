@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -29,5 +30,6 @@ public class NGTriggerExpressionEvaluator extends EngineExpressionEvaluator {
   protected void initialize() {
     super.initialize();
     addToContext(SetupAbstractionKeys.trigger, new TriggerFunctor(ambiance, planExecutionMetadataService));
+    addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));
   }
 }

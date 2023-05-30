@@ -1,0 +1,74 @@
+{
+  "definitions": {
+
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/object1684060232.json",
+  "title": "Root",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "integrations"
+  ],
+  "properties": {
+    "integrations": {
+      "$id": "#root/integrations",
+      "title": "Integrations",
+      "type": "object",
+      "required": [
+        "bitbucketServer"
+      ],
+      "properties": {
+        "bitbucketServer": {
+          "$id": "#root/integrations/bitbucketServer",
+          "title": "Bitbucketserver",
+          "type": "array",
+          "default": [
+
+          ],
+          "items": {
+            "$id": "#root/integrations/bitbucketServer/items",
+            "title": "Items",
+            "type": "object",
+            "required": [
+              "host",
+              "apiBaseUrl",
+              "username",
+              "password"
+            ],
+            "properties": {
+              "host": {
+                "$id": "#root/integrations/bitbucketServer/items/host",
+                "title": "Host",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "apiBaseUrl": {
+                "$id": "#root/integrations/bitbucketServer/items/apiBaseUrl",
+                "title": "Apibaseurl",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "username": {
+                "$id": "#root/integrations/bitbucketServer/items/username",
+                "title": "Username",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              },
+              "password": {
+                "$id": "#root/integrations/bitbucketServer/items/password",
+                "title": "Password",
+                "type": "string",
+                "default": "",
+                "pattern": "^.*$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

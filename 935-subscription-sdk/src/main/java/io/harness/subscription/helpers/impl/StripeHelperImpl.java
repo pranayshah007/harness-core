@@ -39,6 +39,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Address;
+import com.stripe.model.Card;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
@@ -408,8 +409,13 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
-  public void payInvoice(String invoiceId) {
-    stripeHandler.payInvoice(invoiceId);
+  public void payInvoice(String invoiceId, String accountIdentifier) {
+    stripeHandler.payInvoice(invoiceId, accountIdentifier);
+  }
+
+  @Override
+  public Card deleteCard(String customerIdentifier, String creditCardIdentifier) {
+    return stripeHandler.deleteCard(customerIdentifier, creditCardIdentifier);
   }
 
   @Override

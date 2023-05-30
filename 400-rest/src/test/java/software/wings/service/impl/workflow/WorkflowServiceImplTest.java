@@ -9,6 +9,7 @@ package software.wings.service.impl.workflow;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.BUHA;
@@ -925,6 +926,7 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
   public void shouldThrowExceptionWhenTimeoutErrorFailureTypeIsProvidedOnOrchestrationLevel() {
+    when(featureFlagService.isNotEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, null)).thenReturn(true);
     CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
         aCanaryOrchestrationWorkflow()
             .withFailureStrategies(Collections.singletonList(

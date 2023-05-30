@@ -78,6 +78,7 @@ import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
 import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
@@ -174,9 +175,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       return createPipeline(pipelineEntity);
     }
 
-    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-        pipelineEntity.getIdentifier());
+    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
     applyGitXSettingsIfApplicable(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier());
     checkProjectExists(
@@ -477,8 +476,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(updatedEntity).build();
     }
-    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
+    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity);
     GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
         pipelineEntity, throwExceptionIfGovernanceFails, false);
     if (governanceMetadata.getDeny()) {
@@ -908,6 +906,22 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, moveConfigDTO, pipeline);
 
     return PipelineCRUDResult.builder().pipelineEntity(movedPipelineEntity).build();
+  }
+
+  @Override
+  public String updateGitMetadata(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PMSUpdateGitDetailsParams updateGitDetailsParams) {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
+    Update update = PMSPipelineFilterHelper.getUpdateWithGitMetadata(updateGitDetailsParams);
+
+    PipelineEntity pipelineAfterUpdate = pmsPipelineRepository.updateEntity(criteria, update);
+    if (pipelineAfterUpdate == null) {
+      throw new EntityNotFoundException(
+          format("Pipeline with id [%s] is not present or has been deleted", pipelineIdentifier));
+    }
+
+    return pipelineAfterUpdate.getIdentifier();
   }
 
   @VisibleForTesting

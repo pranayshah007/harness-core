@@ -10,13 +10,13 @@ package io.harness.ng.core.eolbanner.resources;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.eolbanner.EOLBannerService;
 import io.harness.ng.core.eolbanner.dto.EOLBannerRequestDTO;
 import io.harness.ng.core.eolbanner.dto.EOLBannerResponseDTO;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;

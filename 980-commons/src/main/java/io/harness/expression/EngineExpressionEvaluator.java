@@ -23,6 +23,7 @@ import io.harness.exception.exceptionmanager.exceptionhandler.JexlRuntimeExcepti
 import io.harness.expression.common.ExpressionConstants;
 import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.functors.DateTimeFunctor;
+import io.harness.serializer.JsonUtils;
 import io.harness.text.resolver.ExpressionResolver;
 import io.harness.text.resolver.StringReplacer;
 import io.harness.text.resolver.TrackingExpressionResolver;
@@ -30,6 +31,7 @@ import io.harness.text.resolver.TrackingExpressionResolver;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +59,8 @@ public class EngineExpressionEvaluator {
 
   private static final Pattern VALID_VARIABLE_FIELD_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   private static final Pattern ALIAS_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
+  public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
+  public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
 
   private static final int MAX_DEPTH = 15;
 
@@ -531,6 +535,9 @@ public class EngineExpressionEvaluator {
   }
 
   protected Object evaluateByCreatingExpression(@NotNull String expression, @NotNull EngineJexlContext ctx) {
+    if (ctx.isFeatureFlagEnabled(PIE_EXECUTION_JSON_SUPPORT)) {
+      return engine.createScript(expression).execute(ctx);
+    }
     JexlExpression jexlExpression = engine.createExpression(expression);
     return jexlExpression.evaluate(ctx);
   }
@@ -631,12 +638,23 @@ public class EngineExpressionEvaluator {
       return expressionMode;
     }
 
+    public boolean isAnyCollection(Object value) {
+      return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
+          || value instanceof Iterable;
+    }
+
     @Override
     public String resolveInternal(String expression) {
       try {
         Object value = engineExpressionEvaluator.evaluateExpressionBlock(expression, ctx, depth, expressionMode);
         if (value == null) {
           unresolvedExpressions.add(expression);
+        }
+        if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
+          // Use the asJson only when the FF is enabled.
+          if (isAnyCollection(value)) {
+            return JsonUtils.asJson(value);
+          }
         }
         return String.valueOf(value);
       } catch (UnresolvedExpressionsException ex) {

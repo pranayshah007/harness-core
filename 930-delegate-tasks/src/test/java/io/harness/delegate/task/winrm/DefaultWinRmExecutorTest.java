@@ -40,6 +40,7 @@ import io.harness.ng.core.dto.secrets.WinRmCommandParameter;
 import io.harness.rule.Owner;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.ssh.SshHelperUtils;
+import io.harness.ssh.WinRmCommandResult;
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -285,7 +286,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
       when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenReturn(true);
+          .thenReturn(WinRmCommandResult.builder().success(true).build());
       CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", null, true);
       assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
@@ -311,7 +312,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
       when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenReturn(true);
+          .thenReturn(WinRmCommandResult.builder().success(true).build());
       CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd", true);
       assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
@@ -337,7 +338,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
       when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenReturn(true);
+          .thenReturn(WinRmCommandResult.builder().success(true).build());
       CommandExecutionStatus status = spyDefaultWinRmExecutor.executeCommandString("cmd");
       assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
@@ -391,7 +392,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
       when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenReturn(true);
+          .thenReturn(WinRmCommandResult.builder().success(true).build());
       ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
       assertThat(response.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
@@ -417,7 +418,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
       when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenReturn(true);
+          .thenReturn(WinRmCommandResult.builder().success(true).build());
       ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
       assertThat(response.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     }
@@ -443,7 +444,7 @@ public class DefaultWinRmExecutorTest extends CategoryTest {
       when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
 
       mockStatic.when(() -> SshHelperUtils.executeLocalCommand(anyString(), any(), any(), anyBoolean(), any()))
-          .thenReturn(true);
+          .thenReturn(WinRmCommandResult.builder().success(true).build());
       ExecuteCommandResponse response = spyDefaultWinRmExecutor.executeCommandString("cmd", Collections.EMPTY_LIST);
       assertThat(response.getStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     }

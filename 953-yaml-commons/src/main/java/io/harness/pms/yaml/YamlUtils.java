@@ -84,6 +84,15 @@ public class YamlUtils {
     mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
+  // Takes stringified yaml as input and returns the JsonNode
+  public JsonNode readAsJsonNode(String yaml) {
+    try {
+      return mapper.readTree(yaml);
+    } catch (IOException ex) {
+      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
+    }
+  }
+
   public <T> T read(String yaml, Class<T> cls) throws IOException {
     return mapper.readValue(yaml, cls);
   }
@@ -100,7 +109,15 @@ public class YamlUtils {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml");
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
+    }
+  }
+
+  public String writeYamlString(Object object) {
+    try {
+      return mapper.writeValueAsString(object).replace("---\n", "");
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
   }
 
@@ -718,13 +735,18 @@ public class YamlUtils {
 
   private void removeUuidInObject(JsonNode node) {
     ObjectNode objectNode = (ObjectNode) node;
+    List<String> removalKeyList = new ArrayList<>();
     for (Iterator<Entry<String, JsonNode>> it = objectNode.fields(); it.hasNext();) {
       Entry<String, JsonNode> field = it.next();
       if (field.getKey().equals(YamlNode.UUID_FIELD_NAME)) {
-        objectNode.remove(field.getKey());
+        removalKeyList.add(field.getKey());
       } else {
         removeUuid(field.getValue());
       }
+    }
+
+    for (String key : removalKeyList) {
+      objectNode.remove(key);
     }
   }
 

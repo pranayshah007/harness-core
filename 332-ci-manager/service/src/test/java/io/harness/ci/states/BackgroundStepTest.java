@@ -184,10 +184,10 @@ public class BackgroundStepTest extends CIExecutionTestBase {
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
 
     when(ciDelegateTaskExecutor.queueParkedDelegateTask(any(), anyLong(), any())).thenReturn(callbackId);
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     when(backgroundStepProtobufSerializer.serializeStepWithStepParameters(
-             any(), any(), any(), any(), any(), any(), any()))
+             any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
 
     AsyncExecutableResponse asyncExecutableResponse =
@@ -232,9 +232,9 @@ public class BackgroundStepTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
 
-    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any()))
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(VmBackgroundStep.builder().build());
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false))).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any(), eq(false), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
         backgroundStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);

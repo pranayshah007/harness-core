@@ -73,4 +73,5 @@ public class ResourceTypeConstants {
   public static final String NG_ACCOUNT_DETAILS = "NG_ACCOUNT_DETAILS";
   public static final String BUDGET_GROUP = "BUDGET_GROUP";
   public static final String IP_ALLOWLIST_CONFIG = "IP_ALLOWLIST_CONFIG";
+  public static final String NETWORK_MAP = "NETWORK_MAP";
 }

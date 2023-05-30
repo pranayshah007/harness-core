@@ -168,11 +168,11 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
     if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       applyRequestBuilder.serviceHooks(k8sStepHelper.getServiceHooks(ambiance));
     }
-    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
-      Map<String, String> k8sCommandFlag =
-          k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags());
-      applyRequestBuilder.k8sCommandFlags(k8sCommandFlag);
-    }
+
+    Map<String, String> k8sCommandFlag =
+        k8sStepHelper.getDelegateK8sCommandFlag(k8sApplyStepParameters.getCommandFlags());
+    applyRequestBuilder.k8sCommandFlags(k8sCommandFlag);
+
     K8sApplyRequest k8sApplyRequest = applyRequestBuilder.build();
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);
 

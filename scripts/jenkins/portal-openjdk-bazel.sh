@@ -4,7 +4,6 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 ### Dockerization of Manager ####### Doc
-set -x
 set -e
 
 SCRIPT_DIR="$(dirname $0)"
@@ -253,14 +252,14 @@ cd ../..
 mkdir -p dist/template-service
 cd dist/template-service
 
-cp ${HOME}/.bazel-dirs/bin/840-template-service/module_deploy.jar template-service-capsule.jar
-cp ../../840-template-service/config.yml .
-cp ../../840-template-service/keystore.jks .
-cp ../../840-template-service/key.pem .
-cp ../../840-template-service/cert.pem .
-cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
-cp ../../840-template-service/src/main/resources/jfr/default.jfc .
-cp ../../840-template-service/src/main/resources/jfr/profile.jfc .
+cp ${HOME}/.bazel-dirs/bin/template-service/service/module_deploy.jar template-service-capsule.jar
+cp ../../template-service/config/config.yml .
+cp ../../template-service/config/keystore.jks .
+cp ../../template-service/config/key.pem .
+cp ../../template-service/config/cert.pem .
+cp ../../template-service/service/src/main/resources/redisson-jcache.yaml .
+cp ../../template-service/service/src/main/resources/jfr/default.jfc .
+cp ../../template-service/service/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/template-service/Dockerfile-template-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .

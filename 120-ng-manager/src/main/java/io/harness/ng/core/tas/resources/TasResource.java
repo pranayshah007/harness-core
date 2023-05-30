@@ -148,8 +148,8 @@ public class TasResource {
       })
   public ResponseDTO<List<String>>
   getTasSpacesV2(@AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @ProjectIdentifier @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @QueryParam("organization") String organization,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,

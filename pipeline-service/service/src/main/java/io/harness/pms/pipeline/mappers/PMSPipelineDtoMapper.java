@@ -459,6 +459,7 @@ public class PMSPipelineDtoMapper {
         .startTs(event.getStartTs())
         .endTs(event.getEndTs())
         .templateValidationResponse(event.getResult().getTemplateValidationResponse())
+        .validateTemplateReconcileResponseDTO(event.getResult().getValidateTemplateReconcileResponseDTO())
         .build();
   }
 

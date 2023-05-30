@@ -289,7 +289,7 @@ public class SubscriptionResourceTest extends CategoryTest {
   public void testPayInvoice() {
     RestResponse responseDTO = subscriptionResource.payInvoice(ACCOUNT_IDENTIFIER, INVOICE_ID);
 
-    Mockito.verify(subscriptionService, times(1)).payInvoice(INVOICE_ID);
+    Mockito.verify(subscriptionService, times(1)).payInvoice(INVOICE_ID, ACCOUNT_IDENTIFIER);
     assertThat(responseDTO).isNotNull();
   }
 }

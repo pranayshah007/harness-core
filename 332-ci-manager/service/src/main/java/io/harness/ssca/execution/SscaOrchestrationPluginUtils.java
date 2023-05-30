@@ -11,12 +11,16 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ngexception.CIStageExecutionUserException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.OrchestrationStepEnvVariables;
 import io.harness.ssca.beans.OrchestrationStepSecretVariables;
 import io.harness.ssca.beans.SscaConstants;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.CosignAttestation;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
 import io.harness.ssca.beans.stepinfo.SscaOrchestrationStepInfo;
@@ -24,6 +28,7 @@ import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
 import io.harness.ssca.client.SSCAServiceUtils;
 import io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -38,7 +43,7 @@ public class SscaOrchestrationPluginUtils {
   @Inject private SSCAServiceUtils sscaServiceUtils;
 
   public Map<String, String> getSscaOrchestrationStepEnvVariables(
-      SscaOrchestrationStepInfo stepInfo, String identifier, Ambiance ambiance) {
+      SscaOrchestrationStepInfo stepInfo, String identifier, Ambiance ambiance, Type type) {
     String tool = stepInfo.getTool().getType().toString();
     String format = getFormat(stepInfo);
 
@@ -58,19 +63,43 @@ public class SscaOrchestrationPluginUtils {
             .stepExecutionId(runtimeId)
             .stepIdentifier(identifier)
             .build();
-    return SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
+    Map<String, String> envMap = SscaOrchestrationStepPluginUtils.getSScaOrchestrationStepEnvVariables(envVariables);
+    if (type == Type.VM) {
+      envMap.putAll(getSscaOrchestrationSecretEnvMap(stepInfo, ambiance.getExpressionFunctorToken()));
+    }
+    return envMap;
   }
 
   public static Map<String, SecretNGVariable> getSscaOrchestrationSecretVars(SscaOrchestrationStepInfo stepInfo) {
     Map<String, SecretNGVariable> secretNGVariableMap = new HashMap<>();
-    if (stepInfo.getAttestation() != null && stepInfo.getAttestation().getPrivateKey() != null) {
-      OrchestrationStepSecretVariables secretVariables =
-          OrchestrationStepSecretVariables.builder()
-              .attestationPrivateKey(stepInfo.getAttestation().getPrivateKey())
-              .build();
+    if (stepInfo.getAttestation() != null && AttestationType.COSIGN.equals(stepInfo.getAttestation().getType())) {
+      CosignAttestation cosignAttestation = (CosignAttestation) stepInfo.getAttestation().getAttestationSpec();
+      OrchestrationStepSecretVariables secretVariables = OrchestrationStepSecretVariables.builder()
+                                                             .attestationPrivateKey(cosignAttestation.getPrivateKey())
+                                                             .cosignPassword(cosignAttestation.getPassword())
+                                                             .build();
       return SscaOrchestrationStepPluginUtils.getSscaOrchestrationSecretVars(secretVariables);
     }
     return secretNGVariableMap;
+  }
+
+  private Map<String, String> getSscaOrchestrationSecretEnvMap(
+      SscaOrchestrationStepInfo stepInfo, long expressionFunctorToken) {
+    Map<String, String> secretEnvMap = new HashMap<>();
+    if (stepInfo.getAttestation() != null && AttestationType.COSIGN.equals(stepInfo.getAttestation().getType())) {
+      CosignAttestation cosignAttestation = (CosignAttestation) stepInfo.getAttestation().getAttestationSpec();
+      if (EmptyPredicate.isNotEmpty(cosignAttestation.getPrivateKey())) {
+        secretEnvMap.put(SscaOrchestrationStepPluginUtils.COSIGN_PRIVATE_KEY,
+            NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+                cosignAttestation.getPrivateKey(), expressionFunctorToken));
+      }
+      if (EmptyPredicate.isNotEmpty(cosignAttestation.getPassword())) {
+        secretEnvMap.put(SscaOrchestrationStepPluginUtils.COSIGN_PASSWORD,
+            NGVariablesUtils.fetchSecretExpressionWithExpressionToken(
+                cosignAttestation.getPassword(), expressionFunctorToken));
+      }
+    }
+    return secretEnvMap;
   }
 
   private static String getFormat(SscaOrchestrationStepInfo stepInfo) {

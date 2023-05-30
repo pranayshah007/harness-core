@@ -16,10 +16,10 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.gcpsecretmanager.outcome.GcpSecretManagerConnectorOutcomeDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -78,8 +78,12 @@ public class GcpSecretManagerConnectorDTO extends ConnectorConfigDTO implements 
   @Override
   public void validate() {
     if (BooleanUtils.isTrue(assumeCredentialsOnDelegate)) {
-      Preconditions.checkNotNull(this.delegateSelectors, "delegateSelectors cannot be null");
-      Preconditions.checkState(this.delegateSelectors.size() > 0, "delegateSelectors cannot be empty");
+      if (this.delegateSelectors == null) {
+        throw new InvalidRequestException("delegateSelectors cannot be null");
+      }
+      if (this.delegateSelectors.isEmpty()) {
+        throw new InvalidRequestException("delegateSelectors cannot be empty");
+      }
     }
   }
 }

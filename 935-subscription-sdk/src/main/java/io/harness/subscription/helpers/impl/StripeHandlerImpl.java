@@ -16,6 +16,7 @@ import io.harness.telemetry.TelemetryReporter;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Card;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
@@ -38,13 +39,18 @@ import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionSearchParams;
 import com.stripe.param.SubscriptionUpdateParams;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StripeHandlerImpl {
   private final TelemetryReporter telemetryReporter;
   private static final String SUBSCRIPTION = "subscription";
+  private static final String SUBSCRIPTION_PAYMENT_SUCCEEDED = "Subscription Payment Succeeded";
+  private static final String SUBSCRIPTION_PAYMENT_FAILED = "Subscription Payment Failed";
 
   @Inject
   StripeHandlerImpl(TelemetryReporter telemetryReporter) {
@@ -200,12 +206,15 @@ public class StripeHandlerImpl {
     }
   }
 
-  Invoice payInvoice(String invoiceId) {
+  Invoice payInvoice(String invoiceId, String accountIdentifier) {
     try {
       Invoice invoice = Invoice.retrieve(invoiceId);
 
+      sendTelemetryEvent(SUBSCRIPTION_PAYMENT_SUCCEEDED, invoice.getCustomerEmail(), accountIdentifier, null);
       return invoice.pay();
     } catch (StripeException e) {
+      log.error(SUBSCRIPTION_PAYMENT_FAILED + ": {} at {}", e.getMessage(), e.getStackTrace());
+      sendTelemetryEvent(SUBSCRIPTION_PAYMENT_FAILED, null, accountIdentifier, null);
       throw new InvalidRequestException("Unable to preview upcoming invoice", e);
     }
   }
@@ -246,6 +255,22 @@ public class StripeHandlerImpl {
       return invoice.finalizeInvoice();
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to finalize invoice", e);
+    }
+  }
+
+  public Card deleteCard(String customerIdentifier, String cardIdentifier) {
+    try {
+      Map<String, Object> retrieveParams = new HashMap<>();
+      List<String> expandList = new ArrayList<>();
+      expandList.add("sources");
+      retrieveParams.put("expand", expandList);
+      Customer customer = Customer.retrieve(customerIdentifier, retrieveParams, null);
+
+      Card card = (Card) customer.getSources().retrieve(cardIdentifier);
+
+      return card.delete();
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to delete card", e);
     }
   }
 

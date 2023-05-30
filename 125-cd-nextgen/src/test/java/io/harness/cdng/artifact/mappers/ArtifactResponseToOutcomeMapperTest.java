@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -47,6 +48,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -60,6 +62,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -109,6 +112,8 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   private static final String REGION = "region";
   private static final String REPO_NAME = "repoName";
   private static final String TYPE = "type";
+  private static final String FEED = "feed";
+  private static final String PACKAGE_URL = "packageUrl";
   private static final String MESSAGE = String.format(
       "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: %s\nAvailable digests:\n%s (V1)\n%s (V2)",
       "sha", SHA, SHA_V2);
@@ -146,12 +151,13 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     ArtifactDelegateResponse artifactDelegateResponse =
         DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    DockerArtifactOutcome artifactOutcome = (DockerArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
-    assertThat(((DockerArtifactOutcome) artifactOutcome).getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test
@@ -205,19 +211,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testToNexusArtifactOutcome() {
-    NexusRegistryDockerConfig nexusRegistryDockerConfig =
-        NexusRegistryDockerConfig.builder()
-            .artifactPath(ParameterField.createValueField("IMAGE"))
-            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
-            .build();
-    ArtifactConfig artifactConfig =
-        NexusRegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
-            .repository(ParameterField.createValueField("REPO_NAME"))
-            .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
-            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
-            .digest(DIGEST)
-            .build();
+    ArtifactConfig artifactConfig = getSampleNexusRegistryArtifactConfig(DIGEST);
     ArtifactDelegateResponse artifactDelegateResponse =
         NexusArtifactDelegateResponse.builder().buildDetails(ARTIFACT_BUILD_DETAILS_NG).label(LABEL).build();
 
@@ -292,14 +286,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testToArtifactoryArtifactOutcome() {
-    ArtifactConfig artifactConfig =
-        ArtifactoryRegistryArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField("connector"))
-            .repository(ParameterField.createValueField("REPO_NAME"))
-            .artifactPath(ParameterField.createValueField("IMAGE"))
-            .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
-            .digest(DIGEST)
-            .build();
+    ArtifactConfig artifactConfig = getSampleArtifactoryRegistryArtifactConfig(DIGEST);
     ArtifactDelegateResponse artifactDelegateResponse =
         ArtifactoryArtifactDelegateResponse.builder().buildDetails(ARTIFACT_BUILD_DETAILS_NG).label(LABEL).build();
 
@@ -391,14 +378,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testToAcrArtifactOutcome() {
-    ArtifactConfig artifactConfig = AcrArtifactConfig.builder()
-                                        .connectorRef(ParameterField.createValueField("connector"))
-                                        .subscriptionId(ParameterField.createValueField("123456-6543-3456-654321"))
-                                        .registry(ParameterField.createValueField("AZURE_REGISTRY"))
-                                        .repository(ParameterField.createValueField("REPO_NAME"))
-                                        .tag(ParameterField.createValueField("TAG"))
-                                        .digest(DIGEST)
-                                        .build();
+    ArtifactConfig artifactConfig = getSampleAcrArtifactConfig(DIGEST);
 
     ArtifactDelegateResponse artifactDelegateResponse =
         AcrArtifactDelegateResponse.builder().label(LABEL).buildDetails(ARTIFACT_BUILD_DETAILS_NG).build();
@@ -594,19 +574,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void getGarArtifactOutcomeTest() {
-    GoogleArtifactRegistryConfig googleArtifactRegistryConfig =
-        GoogleArtifactRegistryConfig.builder()
-            .pkg(ParameterField.createValueField(PKG))
-            .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
-            .identifier(IDENTIFIER)
-            .project(ParameterField.createValueField(PROJECT))
-            .region(ParameterField.createValueField(REGION))
-            .repositoryName(ParameterField.createValueField(REPO_NAME))
-            .versionRegex(ParameterField.createValueField(VERSION_REGEX))
-            .digest(DIGEST)
-            .isPrimaryArtifact(true)
-            .googleArtifactRegistryType(ParameterField.<String>builder().value(TYPE).build())
-            .build();
+    GoogleArtifactRegistryConfig googleArtifactRegistryConfig = getSampleGoogleArtifactRegistryConfig(DIGEST);
     GarDelegateResponse garDelegateResponse =
         GarDelegateResponse.builder()
             .version(VERSION)
@@ -637,16 +605,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void getGCRArtifactOutcomeTest() {
-    GcrArtifactConfig gcrArtifactConfig =
-        GcrArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
-            .identifier(IDENTIFIER)
-            .registryHostname(ParameterField.createValueField(ArtifactMetadataKeys.REGISTRY_HOSTNAME))
-            .tagRegex(ParameterField.createValueField(VERSION_REGEX))
-            .isPrimaryArtifact(true)
-            .imagePath(ParameterField.createValueField(IMAGE_PATH))
-            .digest(DIGEST)
-            .build();
+    GcrArtifactConfig gcrArtifactConfig = getSampleGcrArtifactConfig(DIGEST);
     GcrArtifactDelegateResponse gcrArtifactDelegateResponse =
         GcrArtifactDelegateResponse.builder()
             .tag(VERSION)
@@ -673,15 +632,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void getECRArtifactOutcomeTest() {
-    EcrArtifactConfig ecrArtifactConfig = EcrArtifactConfig.builder()
-                                              .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
-                                              .identifier(IDENTIFIER)
-                                              .tagRegex(ParameterField.createValueField(VERSION_REGEX))
-                                              .isPrimaryArtifact(true)
-                                              .imagePath(ParameterField.createValueField(IMAGE_PATH))
-                                              .digest(DIGEST)
-                                              .region(ParameterField.createValueField(REGION))
-                                              .build();
+    EcrArtifactConfig ecrArtifactConfig = getSampleEcrArtifactConfig(DIGEST);
 
     EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
         EcrArtifactDelegateResponse.builder()
@@ -709,16 +660,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
   public void getGithubPackagesArtifactOutcomeTest() {
-    GithubPackagesArtifactConfig githubPackagesArtifactConfig =
-        GithubPackagesArtifactConfig.builder()
-            .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
-            .identifier(IDENTIFIER)
-            .versionRegex(ParameterField.createValueField(VERSION_REGEX))
-            .primaryArtifact(true)
-            .packageName(ParameterField.createValueField(IMAGE_PATH))
-            .packageType(DOCKER)
-            .digest(DIGEST)
-            .build();
+    GithubPackagesArtifactConfig githubPackagesArtifactConfig = getSampleGithubPackagesArtifactConfig(DIGEST);
 
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
         GithubPackagesArtifactDelegateResponse.builder()
@@ -750,7 +692,10 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     final String bucket = "bucket";
     final String project = "project";
     final String artifactPath = "artifactPath";
-
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url",
+        "https://www.googleapis.com/storage/v1/b/cloud-functions-bucket/o/nodejs-docs-samples%2Fhelloworld.tar.gz");
+    metadata.put("artifactFileSize", "10000");
     GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
         GoogleCloudStorageArtifactConfig.builder()
             .identifier(identifier)
@@ -764,6 +709,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         GoogleCloudStorageArtifactDelegateResponse.builder()
             .bucket(bucket)
             .project(project)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metadata).build())
             .artifactPath(artifactPath)
             .build();
     GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
@@ -777,6 +723,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(googleCloudStorageArtifactOutcome.getArtifactPath()).isEqualTo(artifactPath);
     assertThat(googleCloudStorageArtifactOutcome.getProject()).isEqualTo(project);
     assertThat(googleCloudStorageArtifactOutcome.getBucket()).isEqualTo(bucket);
+    assertThat(googleCloudStorageArtifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test
@@ -870,11 +817,132 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDigestMismatch() {
     List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
-    List<ArtifactConfig> artifactConfigList = getArtifactConfigList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(DIGEST_FALSE);
 
     for (int i = 0; i < artifactConfigList.size(); i++) {
       checkThrowsWhenDigestMismatch(artifactConfigList.get(i), artifactDelegateResponseList.get(i));
     }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMismatch_NullDigest() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(null);
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), true);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMismatch_NullValueDigest() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(ParameterField.createValueField(null));
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), true);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMismatch_EmptyValueDigest() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(ParameterField.createValueField(""));
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), true);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMismatch_InputValueDigest() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(ParameterField.createValueField("<+input>-abc"));
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), true);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMismatch_FalseDigestUseDelegateResponseFalse() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(DIGEST_FALSE);
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), false);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMatch_SHAV1() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(ParameterField.createValueField(SHA));
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), false);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testDigestMatch_SHAV2() {
+    List<ArtifactDelegateResponse> artifactDelegateResponseList = getArtifactDelegateResponseList();
+    List<ArtifactConfig> artifactConfigList = getArtifactConfigList(DIGEST);
+
+    for (int i = 0; i < artifactConfigList.size(); i++) {
+      ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+          artifactConfigList.get(i), artifactDelegateResponseList.get(i), false);
+    }
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getAzureArtifactOutcomeTest() {
+    AzureArtifactsConfig azureArtifactsConfig = getSampleAzureArtifactConfig();
+
+    AzureArtifactsDelegateResponse azureArtifactsDelegateResponse = AzureArtifactsDelegateResponse.builder()
+                                                                        .packageUrl(PACKAGE_URL)
+                                                                        .version(VERSION)
+                                                                        .buildDetails(ARTIFACT_BUILD_DETAILS_NG)
+                                                                        .build();
+    AzureArtifactsOutcome azureArtifactsOutcome =
+        (AzureArtifactsOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+            azureArtifactsConfig, azureArtifactsDelegateResponse, true);
+    assertThat(azureArtifactsOutcome.getVersion()).isEqualTo(VERSION);
+    assertThat(azureArtifactsOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(azureArtifactsOutcome.getVersionRegex()).isEqualTo(VERSION_REGEX);
+    assertThat(azureArtifactsOutcome.getType()).isEqualTo(ArtifactSourceType.AZURE_ARTIFACTS.getDisplayName());
+    assertThat(azureArtifactsOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(azureArtifactsOutcome.isPrimaryArtifact()).isEqualTo(true);
+    assertThat(azureArtifactsOutcome.getMetadata()).isEqualTo(METADATA);
+    assertThat(azureArtifactsOutcome.getPackageName()).isEqualTo(IMAGE_PATH);
+    assertThat(azureArtifactsOutcome.getImage()).isEqualTo(PACKAGE_URL);
+    assertThat(azureArtifactsOutcome.getFeed()).isEqualTo(FEED);
+    assertThat(azureArtifactsOutcome.getProject()).isEqualTo(PROJECT);
+    assertThat(azureArtifactsOutcome.getPackageType()).isEqualTo(RepositoryFormat.docker.name());
+    assertThat(azureArtifactsOutcome.getScope()).isEqualTo(PROJECT);
+    assertThat(azureArtifactsOutcome.getImagePullSecret()).isEqualTo("<+imagePullSecret.identifier>");
   }
 
   private void checkThrowsWhenDigestMismatch(
@@ -885,17 +953,15 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         .hasMessage(MESSAGE);
   }
 
-  private List<ArtifactConfig> getArtifactConfigList() {
+  private List<ArtifactConfig> getArtifactConfigList(ParameterField<String> digest) {
     List<ArtifactConfig> artifactConfigList = new ArrayList<>();
-    artifactConfigList.add(GoogleArtifactRegistryConfig.builder().digest(DIGEST_FALSE).build());
-    artifactConfigList.add(GcrArtifactConfig.builder().digest(DIGEST_FALSE).build());
-    artifactConfigList.add(AcrArtifactConfig.builder().digest(DIGEST_FALSE).build());
-    artifactConfigList.add(EcrArtifactConfig.builder().digest(DIGEST_FALSE).build());
-    artifactConfigList.add(NexusRegistryArtifactConfig.builder().digest(DIGEST_FALSE).repositoryFormat(DOCKER).build());
-    artifactConfigList.add(
-        ArtifactoryRegistryArtifactConfig.builder().digest(DIGEST_FALSE).repositoryFormat(DOCKER).build());
-    artifactConfigList.add(GithubPackagesArtifactConfig.builder().digest(DIGEST_FALSE).build());
-
+    artifactConfigList.add(getSampleGoogleArtifactRegistryConfig(digest));
+    artifactConfigList.add(getSampleGcrArtifactConfig(digest));
+    artifactConfigList.add(getSampleAcrArtifactConfig(digest));
+    artifactConfigList.add(getSampleEcrArtifactConfig(digest));
+    artifactConfigList.add(getSampleNexusRegistryArtifactConfig(digest));
+    artifactConfigList.add(getSampleArtifactoryRegistryArtifactConfig(digest));
+    artifactConfigList.add(getSampleGithubPackagesArtifactConfig(digest));
     return artifactConfigList;
   }
 
@@ -916,5 +982,106 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     artifactDelegateResponseList.add(
         GithubPackagesArtifactDelegateResponse.builder().buildDetails(artifactBuildDetailsNG).build());
     return artifactDelegateResponseList;
+  }
+
+  private NexusRegistryArtifactConfig getSampleNexusRegistryArtifactConfig(ParameterField<String> digest) {
+    NexusRegistryDockerConfig nexusRegistryDockerConfig =
+        NexusRegistryDockerConfig.builder()
+            .artifactPath(ParameterField.createValueField("IMAGE"))
+            .repositoryPort(ParameterField.createValueField("TEST_REPO"))
+            .build();
+    return NexusRegistryArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField("connector"))
+        .repository(ParameterField.createValueField("REPO_NAME"))
+        .nexusRegistryConfigSpec(nexusRegistryDockerConfig)
+        .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
+        .digest(digest)
+        .build();
+  }
+
+  private ArtifactoryRegistryArtifactConfig getSampleArtifactoryRegistryArtifactConfig(ParameterField<String> digest) {
+    return ArtifactoryRegistryArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField("connector"))
+        .repository(ParameterField.createValueField("REPO_NAME"))
+        .artifactPath(ParameterField.createValueField("IMAGE"))
+        .repositoryFormat(ParameterField.createValueField(RepositoryFormat.docker.name()))
+        .digest(digest)
+        .build();
+  }
+
+  private AcrArtifactConfig getSampleAcrArtifactConfig(ParameterField<String> digest) {
+    return AcrArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField("connector"))
+        .subscriptionId(ParameterField.createValueField("123456-6543-3456-654321"))
+        .registry(ParameterField.createValueField("AZURE_REGISTRY"))
+        .repository(ParameterField.createValueField("REPO_NAME"))
+        .tag(ParameterField.createValueField("TAG"))
+        .digest(digest)
+        .build();
+  }
+
+  private GoogleArtifactRegistryConfig getSampleGoogleArtifactRegistryConfig(ParameterField<String> digest) {
+    return GoogleArtifactRegistryConfig.builder()
+        .pkg(ParameterField.createValueField(PKG))
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .project(ParameterField.createValueField(PROJECT))
+        .region(ParameterField.createValueField(REGION))
+        .repositoryName(ParameterField.createValueField(REPO_NAME))
+        .versionRegex(ParameterField.createValueField(VERSION_REGEX))
+        .digest(digest)
+        .isPrimaryArtifact(true)
+        .googleArtifactRegistryType(ParameterField.<String>builder().value(TYPE).build())
+        .build();
+  }
+
+  private GcrArtifactConfig getSampleGcrArtifactConfig(ParameterField<String> digest) {
+    return GcrArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .registryHostname(ParameterField.createValueField(ArtifactMetadataKeys.REGISTRY_HOSTNAME))
+        .tagRegex(ParameterField.createValueField(VERSION_REGEX))
+        .isPrimaryArtifact(true)
+        .imagePath(ParameterField.createValueField(IMAGE_PATH))
+        .digest(digest)
+        .build();
+  }
+
+  private EcrArtifactConfig getSampleEcrArtifactConfig(ParameterField<String> digest) {
+    return EcrArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .tagRegex(ParameterField.createValueField(VERSION_REGEX))
+        .isPrimaryArtifact(true)
+        .imagePath(ParameterField.createValueField(IMAGE_PATH))
+        .digest(digest)
+        .region(ParameterField.createValueField(REGION))
+        .build();
+  }
+
+  private GithubPackagesArtifactConfig getSampleGithubPackagesArtifactConfig(ParameterField<String> digest) {
+    return GithubPackagesArtifactConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .versionRegex(ParameterField.createValueField(VERSION_REGEX))
+        .primaryArtifact(true)
+        .packageName(ParameterField.createValueField(IMAGE_PATH))
+        .packageType(DOCKER)
+        .digest(digest)
+        .build();
+  }
+
+  private AzureArtifactsConfig getSampleAzureArtifactConfig() {
+    return AzureArtifactsConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .versionRegex(ParameterField.createValueField(VERSION_REGEX))
+        .primaryArtifact(true)
+        .packageName(ParameterField.createValueField(IMAGE_PATH))
+        .packageType(DOCKER)
+        .feed(ParameterField.createValueField(FEED))
+        .project(ParameterField.createValueField(PROJECT))
+        .scope(ParameterField.createValueField(PROJECT))
+        .build();
   }
 }

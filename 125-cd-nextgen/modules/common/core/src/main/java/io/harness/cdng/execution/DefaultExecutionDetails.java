@@ -16,11 +16,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-
 @OwnedBy(CDP)
 @Data
 @Builder
 @JsonTypeName("defaultExecutionDetails")
 public class DefaultExecutionDetails implements ExecutionDetails {
   private List<ArtifactOutcome> artifactsOutcome;
+  @Override
+  public List<ArtifactOutcome> getArtifactsOutcome() {
+    return artifactsOutcome;
+  }
 }

@@ -69,4 +69,12 @@ public class K8SLegacyReleaseHistory implements IK8sReleaseHistory {
                 && release.getManagedWorkload().getName().endsWith(color))
         .collect(Collectors.toList());
   }
+
+  @Override
+  public IK8sRelease getLatestSuccessfulBlueGreenRelease() {
+    if (isNotEmpty(releaseHistory.getReleases())) {
+      return releaseHistory.getLatestSuccessfulBlueGreenRelease();
+    }
+    return null;
+  }
 }

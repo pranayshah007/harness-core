@@ -24,7 +24,14 @@ exports:
       name: EntityPagerDutyCard
       addByDefault: true
       layoutSchemaSpecs:
-        component: EntityPagerDutyCard
+        component: EntitySwitch
         specs:
-          gridProps:
-            md: 6
+          cases:
+            - if: isPagerDutyAvailable
+              content:
+                component: EntityPagerDutyCard
+                specs:
+                  props:
+                    variant: gridItem
+                  gridProps:
+                    md: 6

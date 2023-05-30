@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step.asg;
 
-import static io.harness.ngmigration.utils.NGMigrationConstants.PLEASE_FIX_ME;
+import static io.harness.ngmigration.utils.NGMigrationConstants.RUNTIME_FIELD;
 
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepInfo;
 import io.harness.cdng.aws.asg.AsgBlueGreenDeployStepNode;
@@ -58,11 +58,11 @@ public class AsgRollingDeployStepMapperImpl extends StepMapper {
     AsgBlueGreenDeployStepNode node = new AsgBlueGreenDeployStepNode();
     baseSetup(state, node, identifierCaseFormat);
     node.setAsgBlueGreenDeployStepInfo(AsgBlueGreenDeployStepInfo.infoBuilder()
-                                           .loadBalancer(ParameterField.createValueField(PLEASE_FIX_ME))
-                                           .prodListener(ParameterField.createValueField(PLEASE_FIX_ME))
-                                           .prodListenerRuleArn(ParameterField.createValueField(PLEASE_FIX_ME))
-                                           .stageListener(ParameterField.createValueField(PLEASE_FIX_ME))
-                                           .stageListenerRuleArn(ParameterField.createValueField(PLEASE_FIX_ME))
+                                           .loadBalancer(RUNTIME_FIELD)
+                                           .prodListener(RUNTIME_FIELD)
+                                           .prodListenerRuleArn(RUNTIME_FIELD)
+                                           .stageListener(RUNTIME_FIELD)
+                                           .stageListenerRuleArn(RUNTIME_FIELD)
                                            .useAlreadyRunningInstances(ParameterField.createValueField(false))
                                            .build());
     return node;

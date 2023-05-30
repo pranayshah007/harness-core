@@ -40,7 +40,7 @@ public class FakeFeatureFlagSRMProducer {
                                  .setUser(ffEventBody.getUser())
                                  .build())
             .setExecutionTime(ffEventBody.getStartTime())
-            .setType("FEATURE_FLAG")
+            .setType(ffEventBody.getType())
             .build();
 
     Message message = Message.newBuilder().setData(featureFlagEvent.toByteString()).build();
@@ -61,5 +61,6 @@ public class FakeFeatureFlagSRMProducer {
     List<String> descriptions;
     String changeEventLink;
     String internalChangeLink;
+    String type;
   }
 }

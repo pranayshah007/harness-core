@@ -238,7 +238,6 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody.Part;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -942,13 +941,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.startsWith(message, MIGRATE)) {
       migrate(StringUtils.substringAfter(message, MIGRATE));
     } else if (StringUtils.contains(message, INVALID_TOKEN.name())) {
-      log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+      log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
       initiateSelfDestruct();
     } else if (StringUtils.contains(message, EXPIRED_TOKEN.name())) {
-      log.warn("Delegate used expired token. It will be frozen and drained.");
+      log.error("Delegate used expired token. It will be frozen and drained.");
       freeze();
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
-      log.warn("Delegate used revoked token. It will be frozen and drained.");
+      log.error("Delegate used revoked token. It will be frozen and drained.");
       freeze();
     } else {
       log.warn("Delegate received unhandled message {}", message);
@@ -1061,12 +1060,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         response = call.clone().execute();
         responseBody = response.body();
         if (responseBody == null) {
+          log.warn("No response from manager on attempt {}, retrying. {}}", attempt, failureMessage);
           attempt++;
         }
       } catch (Exception exception) {
-        if (exception instanceof StreamResetException && attempt < MAX_ATTEMPTS) {
+        if (attempt < MAX_ATTEMPTS) {
+          log.warn(
+              "Failed getting response from manager on attempt {}, retrying. {}}", attempt, failureMessage, exception);
           attempt++;
-          log.warn(String.format("%s : Attempt: %d", failureMessage, attempt));
         } else {
           throw exception;
         }
@@ -1081,7 +1082,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       response = executeCallWithRetryableException(call, failureMessage);
       return response.body();
     } catch (Exception e) {
-      log.error("error executing rest call", e);
+      log.error("error executing acquire call", e);
       throw e;
     } finally {
       handleResponse(response);
@@ -1095,15 +1096,15 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       log.warn("Received Error Response: {}", errorResponse);
 
       if (errorResponse.contains(INVALID_TOKEN.name())) {
-        log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
+        log.error("Delegate used invalid token. Self destruct procedure will be initiated.");
         initiateSelfDestruct();
       } else if (errorResponse.contains(format(DUPLICATE_DELEGATE_ERROR_MESSAGE, delegateId, delegateConnectionId))) {
         initiateSelfDestruct();
       } else if (errorResponse.contains(EXPIRED_TOKEN.name())) {
-        log.warn("Delegate used expired token. It will be frozen and drained.");
+        log.error("Delegate used expired token. It will be frozen and drained.");
         freeze();
       } else if (errorResponse.contains(REVOKED_TOKEN.name()) || errorResponse.contains("Revoked Delegate Token")) {
-        log.warn("Delegate used revoked token. It will be frozen and drained.");
+        log.error("Delegate used revoked token. It will be frozen and drained.");
         freeze();
       }
 

@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -29,6 +28,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.PipelineMoveConfigRequestDTO;
+import io.harness.gitsync.GitMetadataUpdateRequestInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityCreateInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -44,6 +44,7 @@ import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.api.PipelinesApiUtils;
+import io.harness.pms.pipeline.gitsync.PMSUpdateGitDetailsParams;
 import io.harness.pms.pipeline.mappers.GitXCacheMapper;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -63,6 +64,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBo
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.YamlSchemaResource;
@@ -464,23 +466,29 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<TemplatesResolvedPipelineResponseDTO> getTemplateResolvedPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
     log.info(
         String.format("Retrieving templates resolved pipeline with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
+    boolean loadFromCacheBool = GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache);
 
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, loadFromCacheBool);
 
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }
 
+    // This is required so the remote template references are fetched from correct repo and branch and not from
+    // `default` branch.
+    PipelineGitXHelper.setupGitParentEntityDetails(
+        accountId, orgId, projectId, pipelineEntity.get().getConnectorRef(), pipelineEntity.get().getRepo());
+
     String pipelineYaml = pipelineEntity.get().getYaml();
 
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), BOOLEAN_FALSE_VALUE);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), loadFromCache);
     String templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
     TemplatesResolvedPipelineResponseDTO templatesResolvedPipelineResponseDTO =
         TemplatesResolvedPipelineResponseDTO.builder()
@@ -546,5 +554,19 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineValidationResponseDTO response =
         PMSPipelineDtoMapper.buildPipelineValidationResponseDTO(pipelineValidationEvent);
     return ResponseDTO.newResponse(response);
+  }
+
+  @Override
+  public ResponseDTO<PMSGitUpdateResponseDTO> updateGitMetadataForPipeline(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      GitMetadataUpdateRequestInfoDTO gitMetadataUpdateRequestInfo) {
+    String pipelineAfterUpdate =
+        pmsPipelineService.updateGitMetadata(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            PMSUpdateGitDetailsParams.builder()
+                .connectorRef(gitMetadataUpdateRequestInfo.getConnectorRef())
+                .filePath(gitMetadataUpdateRequestInfo.getFilePath())
+                .repoName(gitMetadataUpdateRequestInfo.getRepoName())
+                .build());
+    return ResponseDTO.newResponse(PMSGitUpdateResponseDTO.builder().identifier(pipelineAfterUpdate).build());
   }
 }

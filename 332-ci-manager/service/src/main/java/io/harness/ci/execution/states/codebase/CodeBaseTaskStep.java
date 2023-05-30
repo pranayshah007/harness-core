@@ -108,7 +108,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance),
         RunTimeInputHandler.resolveStringParameterV2("connectorRef", STEP_TYPE.getType(),
-            ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), false));
+            ambiance.getStageExecutionId(), stepParameters.getConnectorRef(), false),
+        true);
 
     ScmGitRefTaskParams scmGitRefTaskParams = obtainTaskParameters(manualExecutionSource, connectorDetails,
         RunTimeInputHandler.resolveStringParameterV2(
@@ -160,7 +161,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         "repoName", STEP_TYPE.getType(), ambiance.getStageExecutionId(), stepParameters.getRepoName(), false);
     if (executionSource.getType() == MANUAL) {
       NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+      ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
       ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       // fetch scm details via manager
       if (connectorUtils.hasApiAccess(connectorDetails)) {

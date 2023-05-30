@@ -7,6 +7,7 @@ data:
   MOCK_ACCESS_CONTROL_SERVICE: 'false'
   AUDIT_ENABLED: 'true'
   ENABLE_RESOURCE_GROUP: 'true'
+  STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
   EVENTS_FRAMEWORK_USE_SENTINEL: 'true'
   EVENTS_FRAMEWORK_SENTINEL_MASTER_NAME: 'harness-redis'
   EVENTS_FRAMEWORK_REDIS_SENTINELS: 'redis://redis-sentinel-harness-announce-0.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-1.{{ .Release.Namespace  }}:26379,redis://redis-sentinel-harness-announce-2.{{ .Release.Namespace  }}:26379'
@@ -26,6 +27,9 @@ data:
   AUDIT_CLIENT_BASEURL: 'http://platform-service.{{ .Release.Namespace }}.svc.cluster.local:9005/api/'
   TEMPLATE_SERVICE_BASE_URL: 'http://template-service:15002/api/'
   MEMORY: {{ .Values.java.memory | quote }}
+  {{- if .Values.additionalConfigs }}
+  {{- toYaml .Values.additionalConfigs | nindent 2 }}
+  {{- end }}
 
 kind: ConfigMap
 metadata:

@@ -8,6 +8,7 @@
 package io.harness.k8s.releasehistory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.BLUE_GREEN_COLORS;
 
 import static java.util.stream.Collectors.toList;
 
@@ -147,5 +148,15 @@ public class ReleaseHistory {
 
   public ReleaseHistory cloneInternal() {
     return ReleaseHistory.builder().version(this.version).releases(new ArrayList<>(this.releases)).build();
+  }
+
+  public K8sLegacyRelease getLatestSuccessfulBlueGreenRelease() {
+    for (K8sLegacyRelease release : this.getReleases()) {
+      if (release.getStatus() == IK8sRelease.Status.Succeeded
+          && BLUE_GREEN_COLORS.stream().anyMatch(color -> release.getManagedWorkload().getName().endsWith(color))) {
+        return release;
+      }
+    }
+    return null;
   }
 }

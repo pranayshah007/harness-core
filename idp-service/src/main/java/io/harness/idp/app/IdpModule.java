@@ -13,6 +13,7 @@ import static io.harness.idp.provision.ProvisionConstants.PROVISION_MODULE_CONFI
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 import io.harness.AccessControlClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.callback.DelegateCallback;
@@ -242,6 +243,8 @@ public class IdpModule extends AbstractModule {
         appConfig.getAccessControlClientConfiguration(), IDP_SERVICE.getServiceId()));
     install(
         new NgConnectorManagerClientModule(appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret()));
+    install(new AccountClientModule(
+        appConfig.getManagerClientConfig(), appConfig.getManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new OrganizationClientModule(appConfig.getNgManagerServiceHttpClientConfig(),
         appConfig.getNgManagerServiceSecret(), IDP_SERVICE.getServiceId()));
     install(new ProjectClientModule(appConfig.getNgManagerServiceHttpClientConfig(),

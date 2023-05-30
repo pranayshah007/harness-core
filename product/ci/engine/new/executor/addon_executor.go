@@ -39,10 +39,10 @@ func ExecuteStepOnAddon(ctx context.Context, step *pb.UnitStep, tmpFilePath stri
 	}
 
 	st := time.Now()
-	containerPort := step.GetContainerPort()
+
 	stepID := step.GetId()
 
-	addonClient, err := newAddonClient(uint(containerPort), log)
+	addonClient, err := newAddonClient(GetContainerPort(step), log)
 	if err != nil {
 		log.Errorw("Unable to create CI addon client", "step_id", stepID,
 			"elapsed_time_ms", utils.TimeSince(st), zap.Error(err))

@@ -89,13 +89,14 @@ public class DeploymentStateMachineServiceImpl extends AnalysisStateMachineServi
           testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
           testTimeSeriesAnalysisState.setInputs(inputForAnalysis);
           stateMachine.setCurrentState(testTimeSeriesAnalysisState);
+        } else {
+          DeploymentMetricHostSamplingState deploymentMetricHostSamplingState = new DeploymentMetricHostSamplingState();
+          deploymentMetricHostSamplingState.setStatus(AnalysisStatus.CREATED);
+          deploymentMetricHostSamplingState.setInputs(inputForAnalysis);
+          inputForAnalysis.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+          deploymentMetricHostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
+          stateMachine.setCurrentState(deploymentMetricHostSamplingState);
         }
-        DeploymentMetricHostSamplingState deploymentMetricHostSamplingState = new DeploymentMetricHostSamplingState();
-        deploymentMetricHostSamplingState.setStatus(AnalysisStatus.CREATED);
-        deploymentMetricHostSamplingState.setInputs(inputForAnalysis);
-        inputForAnalysis.setVerificationJobInstanceId(verificationJobInstance.getUuid());
-        deploymentMetricHostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
-        stateMachine.setCurrentState(deploymentMetricHostSamplingState);
         break;
       case LOG:
         AnalysisState analysisState = createDeploymentLogState(inputForAnalysis, verificationJobInstance);

@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public final class STOStepSpecTypeConstants {
   public static final String RUN = "Run";
   public static final String BACKGROUND = "Background";
-  public static final String SECURITY = "Security";
+  public static final String SECURITY = "Security Tests";
   public static final String CONTAINER_SECURITY = "Container Security";
   public static final String CONFIGURATION = "Configuration";
   public static final String SAST = "SAST";

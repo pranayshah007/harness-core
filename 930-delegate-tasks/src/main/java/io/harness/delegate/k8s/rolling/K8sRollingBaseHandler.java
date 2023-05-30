@@ -31,6 +31,7 @@ import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -99,23 +100,23 @@ public class K8sRollingBaseHandler {
     }
   }
 
-  public void addLabelsInDeploymentSelectorForCanary(
-      boolean inCanaryWorkflow, List<KubernetesResource> workloads, boolean skipAddingTrackSelectorToDeployment) {
+  public void addLabelsInDeploymentSelectorForCanary(boolean inCanaryWorkflow, List<KubernetesResource> workloads,
+      boolean skipAddingTrackSelectorToDeployment, K8sRequestHandlerContext context) {
     if (!inCanaryWorkflow && !skipAddingTrackSelectorToDeployment) {
       return;
     }
-    addDeploymentSelector(workloads);
+    addDeploymentSelector(workloads, context);
   }
 
-  private void addDeploymentSelector(List<KubernetesResource> managedWorkloads) {
+  private void addDeploymentSelector(List<KubernetesResource> managedWorkloads, K8sRequestHandlerContext context) {
     if (isEmpty(managedWorkloads)) {
       return;
     }
     for (KubernetesResource kubernetesResource : managedWorkloads) {
       if (ImmutableSet.of(Kind.Deployment.name(), Kind.DeploymentConfig.name())
               .contains(kubernetesResource.getResourceId().getKind())) {
-        kubernetesResource.addLabelsInDeploymentSelector(
-            ImmutableMap.of(HarnessLabels.track, HarnessLabelValues.trackStable));
+        kubernetesResource.addLabelsInResourceSelector(
+            ImmutableMap.of(HarnessLabels.track, HarnessLabelValues.trackStable), context);
       }
     }
   }
@@ -209,11 +210,11 @@ public class K8sRollingBaseHandler {
 
   public void addLabelsInDeploymentSelectorForCanary(boolean inCanaryWorkflow,
       boolean skipAddingTrackSelectorToDeployment, List<KubernetesResource> managedWorkloads,
-      List<KubernetesResource> deploymentContainingTrackStableSelector) {
+      List<KubernetesResource> deploymentContainingTrackStableSelector, K8sRequestHandlerContext context) {
     if (skipAddingTrackSelectorToDeployment) {
-      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, deploymentContainingTrackStableSelector, true);
+      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, deploymentContainingTrackStableSelector, true, context);
     } else {
-      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads, false);
+      addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow, managedWorkloads, false, context);
     }
   }
 

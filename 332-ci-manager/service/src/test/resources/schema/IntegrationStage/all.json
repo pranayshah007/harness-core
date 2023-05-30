@@ -16,7 +16,7 @@
         },
         {
           "type": "string",
-          "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+          "pattern": "(<\\+.+>.*)",
           "minLength": 1
         }
       ]
@@ -487,9 +487,6 @@
     "Attestation": {
       "type": "object",
       "properties": {
-        "privateKey": {
-          "type": "string"
-        },
         "type": {
           "type": "string",
           "enum": [
@@ -2233,8 +2230,7 @@
     "CodeBase": {
       "type": "object",
       "required": [
-        "build",
-        "connectorRef"
+        "build"
       ],
       "properties": {
         "build": {
@@ -2520,6 +2516,178 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ContainerInfraYamlSpec": {
+      "type": "object",
+      "required": [
+        "connectorRef",
+        "namespace",
+        "resources"
+      ],
+      "properties": {
+        "annotations": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "automountServiceAccountToken": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "connectorRef": {
+          "type": "string"
+        },
+        "containerSecurityContext": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/SecurityContext"
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
+        "hostNames": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "initTimeout": {
+          "type": "string"
+        },
+        "labels": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2147483647
+        },
+        "nodeSelector": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "os": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "Linux",
+                "MacOS",
+                "Windows"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "priorityClassName": {
+          "type": "string"
+        },
+        "resources": {
+          "$ref": "#/definitions/ContainerResource"
+        },
+        "runAsUser": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "serviceAccountName": {
+          "type": "string"
+        },
+        "tolerations": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Toleration"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
+        "volumes": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CIVolume"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ContainerResource": {
       "type": "object",
       "required": [
@@ -2566,6 +2734,22 @@
               "type": "string"
             },
             "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/VerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "publicKey": {
               "type": "string"
             }
           }
@@ -2811,6 +2995,30 @@
             },
             "target": {
               "$ref": "#/definitions/STOYamlTarget"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DelegateInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepGroupInfra"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "Delegate",
+                "Noop"
+              ]
             }
           }
         }
@@ -3208,6 +3416,32 @@
                 }
               ]
             },
+            "cacheFrom": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "cacheTo": {
+              "type": "string"
+            },
+            "caching": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -3355,6 +3589,15 @@
         "size": {
           "type": "string",
           "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|<\\+input>$"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnforcementPolicy": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/PolicyStore"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4222,6 +4465,22 @@
         }
       ]
     },
+    "HarnessStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HostPathVolume": {
       "allOf": [
         {
@@ -4351,25 +4610,20 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "IACMTemplateInfo": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/StepSpecType"
-        },
-        {
-          "type": "object"
-        }
-      ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "IACMTerraformPlanInfo": {
+    "IACMTerraformPluginInfo": {
       "allOf": [
         {
           "$ref": "#/definitions/StepSpecType"
         },
         {
           "type": "object",
+          "required": [
+            "command"
+          ],
           "properties": {
+            "command": {
+              "type": "string"
+            },
             "env": {
               "oneOf": [
                 {
@@ -4380,15 +4634,8 @@
                 }
               ]
             },
-            "tfVars": {
-              "oneOf": [
-                {
-                  "$ref": "#/definitions/ParameterFieldMapStringString"
-                },
-                {
-                  "type": "string"
-                }
-              ]
+            "image": {
+              "type": "string"
             }
           }
         }
@@ -4713,7 +4960,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -4997,6 +5244,34 @@
             },
             "workDir": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "K8sDirectInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepGroupInfra"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/ContainerInfraYamlSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "Delegate",
+                "Noop"
+              ]
             }
           }
         }
@@ -7388,6 +7663,39 @@
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PolicyStore": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "harness"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessStore"
+              }
+            }
+          }
+        }
+      ]
     },
     "PrismaCloudStepInfo": {
       "allOf": [
@@ -10196,6 +10504,33 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SscaEnforcementStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "policy",
+            "source",
+            "verifyAttestation"
+          ],
+          "properties": {
+            "policy": {
+              "$ref": "#/definitions/EnforcementPolicy"
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "verifyAttestation": {
+              "$ref": "#/definitions/VerifyAttestation"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SscaOrchestrationStepInfo": {
       "allOf": [
         {
@@ -10789,30 +11124,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "IACMTemplate"
+                "const": "IACMTerraformPlugin"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/IACMTemplateInfo"
-              }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "type": {
-                "const": "IACMTerraformPlan"
-              }
-            }
-          },
-          "then": {
-            "properties": {
-              "spec": {
-                "$ref": "#/definitions/IACMTerraformPlanInfo"
+                "$ref": "#/definitions/IACMTerraformPluginInfo"
               }
             }
           }
@@ -11253,6 +11572,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "SscaEnforcement"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SscaEnforcementStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "SscaOrchestration"
               }
             }
@@ -11444,7 +11779,7 @@
             },
             {
               "type": "string",
-              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "pattern": "(<\\+.+>.*)",
               "minLength": 1
             }
           ]
@@ -11471,6 +11806,19 @@
         "name": {
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
+        },
+        "sharedPaths": {
+          "$ref": "#/definitions/ParameterFieldListString"
+        },
+        "stepGroupInfra": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/DelegateInfra"
+            },
+            {
+              "$ref": "#/definitions/K8sDirectInfra"
+            }
+          ]
         },
         "steps": {
           "type": "array",
@@ -11548,6 +11896,21 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StepGroupInfra": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "KubernetesDirect",
+            "Delegate",
+            "Noop"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StepSpecType": {
       "type": "object",
       "discriminator": "type",
@@ -11572,6 +11935,10 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StoreSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StrategyConfig": {
@@ -11707,6 +12074,9 @@
             "advanced": {
               "$ref": "#/definitions/STOYamlAdvancedSettings"
             },
+            "auth": {
+              "$ref": "#/definitions/STOYamlAuth"
+            },
             "baseImageConnectorRefs": {
               "$ref": "#/definitions/ParameterFieldListString"
             },
@@ -11715,6 +12085,9 @@
               "enum": [
                 "default"
               ]
+            },
+            "image": {
+              "$ref": "#/definitions/STOYamlImage"
             },
             "imagePullPolicy": {
               "oneOf": [
@@ -11840,6 +12213,9 @@
         "templateRef"
       ],
       "properties": {
+        "gitBranch": {
+          "type": "string"
+        },
         "templateInputs": {
           "$ref": "#/definitions/JsonNode"
         },
@@ -12468,6 +12844,40 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "VerifyAttestation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignVerifyAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "VerifyAttestationSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "VmBuildJobInfo": {

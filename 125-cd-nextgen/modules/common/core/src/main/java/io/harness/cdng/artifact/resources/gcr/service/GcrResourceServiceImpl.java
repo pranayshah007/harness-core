@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.NGArtifactConstants;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrRequestDTO;
 import io.harness.cdng.artifact.resources.gcr.dtos.GcrResponseDTO;
@@ -63,6 +64,7 @@ import javax.annotation.Nonnull;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 @Singleton
 @Slf4j
@@ -108,6 +110,10 @@ public class GcrResourceServiceImpl implements GcrResourceService {
   @Override
   public GcrBuildDetailsDTO getSuccessfulBuild(IdentifierRef gcrConnectorRef, String imagePath,
       GcrRequestDTO gcrRequestDTO, String orgIdentifier, String projectIdentifier) {
+    ArtifactUtils.validateIfAllValuesAssigned(MutablePair.of(NGArtifactConstants.IMAGE_PATH, imagePath),
+        MutablePair.of(NGArtifactConstants.REGISTRY_HOST_NAME, gcrRequestDTO.getRegistryHostname()));
+    ArtifactUtils.validateIfAnyValueAssigned(MutablePair.of(NGArtifactConstants.TAG, gcrRequestDTO.getTag()),
+        MutablePair.of(NGArtifactConstants.TAG_REGEX, gcrRequestDTO.getTagRegex()));
     GcpConnectorDTO connector = getConnector(gcrConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(gcrConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);

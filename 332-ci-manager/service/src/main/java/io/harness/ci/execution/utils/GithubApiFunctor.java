@@ -59,7 +59,7 @@ public class GithubApiFunctor implements ExpressionFunctor {
         if (connectorUtils == null) {
           throw new FunctorException("ConnectorUtils must be provided to functor when fetch connector is true");
         }
-        ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
+        ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef, true);
         connectorDetailsMap.put(tokenVariable, connectorDetails);
       }
 

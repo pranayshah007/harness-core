@@ -74,7 +74,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   private final BroadcasterFactory broadcasterFactory;
   private final PerpetualTaskScheduleService perpetualTaskScheduleService;
   private static final int TASK_FAILED_EXECUTION_LIMIT = 5;
-  public static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 5;
+  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 5;
 
   @Inject private MainConfiguration mainConfiguration;
   @Inject private RemoteObserverInformer remoteObserverInformer;

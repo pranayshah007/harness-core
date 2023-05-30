@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -55,4 +56,7 @@ public class SmtpConfigDTO {
   @Schema(description = "Password credential to authenticate with SMTP server.")
   @JsonProperty("password")
   private char[] password;
+  @Schema(description = "List of delegate selectors of delegates used by SMTP server as connectivity mode.")
+  @JsonProperty("delegateSelectors")
+  private Set<String> delegateSelectors;
 }

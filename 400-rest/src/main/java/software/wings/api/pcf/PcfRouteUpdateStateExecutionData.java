@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
+import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 
@@ -45,6 +46,7 @@ public class PcfRouteUpdateStateExecutionData extends StateExecutionData impleme
   private List<String> tags;
   private boolean isRollback;
   private boolean isUpSizeInActiveApp;
+  private CfInBuiltVariablesUpdateValues finalAppDetails;
 
   @Override
   public Map<String, ExecutionDataValue> getExecutionDetails() {
@@ -112,6 +114,7 @@ public class PcfRouteUpdateStateExecutionData extends StateExecutionData impleme
     return PcfRouteSwapExecutionSummary.builder()
         .organization(pcfCommandRequest.getOrganization())
         .space(pcfCommandRequest.getSpace())
+        .finalAppDetails(finalAppDetails)
         .pcfRouteUpdateRequestConfigData(pcfRouteUpdateRequestConfigData)
         .build();
   }

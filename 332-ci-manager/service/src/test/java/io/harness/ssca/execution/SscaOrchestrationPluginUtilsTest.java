@@ -9,7 +9,8 @@ package io.harness.ssca.execution;
 
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.ssca.execution.SscaOrchestrationPluginUtils.getSscaOrchestrationSecretVars;
-import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.ATTESTATION_PRIVATE_KEY;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PASSWORD;
+import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.COSIGN_PRIVATE_KEY;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_FORMAT;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMDESTINATION;
 import static io.harness.ssca.execution.orchestration.SscaOrchestrationStepPluginUtils.PLUGIN_SBOMSOURCE;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.encryption.Scope;
@@ -29,6 +31,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.ssca.beans.Attestation;
+import io.harness.ssca.beans.attestation.AttestationType;
+import io.harness.ssca.beans.attestation.CosignAttestation;
 import io.harness.ssca.beans.source.ImageSbomSource;
 import io.harness.ssca.beans.source.SbomSource;
 import io.harness.ssca.beans.source.SbomSourceType;
@@ -39,6 +43,7 @@ import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration;
 import io.harness.ssca.beans.tools.syft.SyftSbomOrchestration.SyftOrchestrationFormat;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -74,7 +79,7 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
                             .putSetupAbstractions("projectIdentifier", "projectIdentifier")
                             .build();
     Map<String, String> sscaEnvVarMap =
-        sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance);
+        sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.K8);
     assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
     assertThat(sscaEnvVarMap).hasSize(9);
     assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
@@ -90,14 +95,19 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetSscaOrchestrationSecretVars() {
     SscaOrchestrationStepInfo stepInfo =
-        SscaOrchestrationStepInfo.builder().attestation(Attestation.builder().privateKey("test").build()).build();
+        SscaOrchestrationStepInfo.builder()
+            .attestation(Attestation.builder()
+                             .type(AttestationType.COSIGN)
+                             .attestationSpec(CosignAttestation.builder().password("test").privateKey("key").build())
+                             .build())
+            .build();
 
     Map<String, SecretNGVariable> secretNGVariableMap = getSscaOrchestrationSecretVars(stepInfo);
-    assertThat(secretNGVariableMap).isNotNull().isNotEmpty().hasSize(1);
-    assertThat(secretNGVariableMap.get(ATTESTATION_PRIVATE_KEY)).isNotNull();
-    SecretNGVariable variable = secretNGVariableMap.get(ATTESTATION_PRIVATE_KEY);
+    assertThat(secretNGVariableMap).isNotNull().isNotEmpty().hasSize(2);
+    assertThat(secretNGVariableMap.get(COSIGN_PASSWORD)).isNotNull();
+    SecretNGVariable variable = secretNGVariableMap.get(COSIGN_PASSWORD);
     assertThat(variable.getType()).isEqualTo(NGVariableType.SECRET);
-    assertThat(variable.getName()).isEqualTo(ATTESTATION_PRIVATE_KEY);
+    assertThat(variable.getName()).isEqualTo(COSIGN_PASSWORD);
     assertThat(variable.getValue()).isNotNull();
     SecretRefData secretRefData = variable.getValue().getValue();
     assertThat(secretRefData).isNotNull();
@@ -106,14 +116,64 @@ public class SscaOrchestrationPluginUtilsTest extends CIExecutionTestBase {
 
     SscaOrchestrationStepInfo accountLevelSecretStepInfo =
         SscaOrchestrationStepInfo.builder()
-            .attestation(Attestation.builder().privateKey("account.test").build())
+            .attestation(
+                Attestation.builder()
+                    .type(AttestationType.COSIGN)
+                    .attestationSpec(CosignAttestation.builder().password("account.test").privateKey("key").build())
+                    .build())
             .build();
     Map<String, SecretNGVariable> secretVariableMap1 = getSscaOrchestrationSecretVars(accountLevelSecretStepInfo);
-    assertThat(secretVariableMap1).isNotEmpty().hasSize(1);
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY)).isNotNull();
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY).getValue().getValue()).isNotNull();
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY).getValue().getValue().getScope())
-        .isEqualTo(Scope.ACCOUNT);
-    assertThat(secretVariableMap1.get(ATTESTATION_PRIVATE_KEY).getValue().getValue().getIdentifier()).isEqualTo("test");
+    assertThat(secretVariableMap1).isNotEmpty().hasSize(2);
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD)).isNotNull();
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD).getValue().getValue()).isNotNull();
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD).getValue().getValue().getScope()).isEqualTo(Scope.ACCOUNT);
+    assertThat(secretVariableMap1.get(COSIGN_PASSWORD).getValue().getValue().getIdentifier()).isEqualTo("test");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testGetSscaOrcherstrationStepEnvVariablesForVM() {
+    long expressionFunctorToken = 12345;
+    SscaOrchestrationStepInfo stepInfo =
+        SscaOrchestrationStepInfo.builder()
+            .tool(SbomOrchestrationTool.builder()
+                      .type(SbomOrchestrationToolType.SYFT)
+                      .sbomOrchestrationSpec(
+                          SyftSbomOrchestration.builder().format(SyftOrchestrationFormat.SPDX_JSON).build())
+                      .build())
+            .source(SbomSource.builder()
+                        .type(SbomSourceType.IMAGE)
+                        .sbomSourceSpec(ImageSbomSource.builder()
+                                            .image(ParameterField.createValueField("image:tag"))
+                                            .connector(ParameterField.createValueField("conn1"))
+                                            .build())
+                        .build())
+            .attestation(
+                Attestation.builder()
+                    .type(AttestationType.COSIGN)
+                    .attestationSpec(CosignAttestation.builder().password("account.test").privateKey("key").build())
+                    .build())
+            .build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions("accountId", "accountId")
+                            .putSetupAbstractions("orgIdentifier", "orgIdentifier")
+                            .putSetupAbstractions("projectIdentifier", "projectIdentifier")
+                            .setExpressionFunctorToken(expressionFunctorToken)
+                            .build();
+    Map<String, String> sscaEnvVarMap =
+        sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(stepInfo, "id1", ambiance, Type.VM);
+    assertThat(sscaEnvVarMap).isNotNull().isNotEmpty();
+    assertThat(sscaEnvVarMap).hasSize(11);
+    assertThat(sscaEnvVarMap.get(PLUGIN_TOOL)).isEqualTo(SbomOrchestrationToolType.SYFT.toString());
+    assertThat(sscaEnvVarMap.get(PLUGIN_FORMAT)).isEqualTo(SyftOrchestrationFormat.SPDX_JSON.toString());
+    assertThat(sscaEnvVarMap.get(PLUGIN_SBOMSOURCE)).isEqualTo("image:tag");
+    assertThat(sscaEnvVarMap.get(PLUGIN_TYPE)).isEqualTo("Orchestrate");
+    assertThat(sscaEnvVarMap.get(PLUGIN_SBOMDESTINATION)).isEqualTo("harness/sbom");
+    assertThat(sscaEnvVarMap.get(SKIP_NORMALISATION)).isEqualTo("true");
+    assertThat(sscaEnvVarMap.get(COSIGN_PASSWORD))
+        .isEqualTo(NGVariablesUtils.fetchSecretExpressionWithExpressionToken("account.test", expressionFunctorToken));
+    assertThat(sscaEnvVarMap.get(COSIGN_PRIVATE_KEY))
+        .isEqualTo(NGVariablesUtils.fetchSecretExpressionWithExpressionToken("key", expressionFunctorToken));
   }
 }

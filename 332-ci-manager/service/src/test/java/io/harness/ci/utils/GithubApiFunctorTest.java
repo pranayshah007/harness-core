@@ -107,9 +107,10 @@ public class GithubApiFunctorTest extends CategoryTest {
                                             .ngAccess(ngAccess)
                                             .build();
 
-    when(connectorUtils.getConnectorDetails(ngAccess, "codeBaseConnectorRef")).thenThrow(new RuntimeException());
+    when(connectorUtils.getConnectorDetails(ngAccess, "codeBaseConnectorRef", true)).thenThrow(new RuntimeException());
 
-    when(connectorUtils.getConnectorDetails(ngAccess, "account.anotherConnector")).thenThrow(new RuntimeException());
+    when(connectorUtils.getConnectorDetails(ngAccess, "account.anotherConnector", true))
+        .thenThrow(new RuntimeException());
     assertThatThrownBy(githubApiFunctor::token).isInstanceOf(FunctorException.class);
     assertThatThrownBy(() -> githubApiFunctor.token("account.anotherConnector")).isInstanceOf(FunctorException.class);
   }

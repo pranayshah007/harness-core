@@ -44,8 +44,9 @@ import io.harness.delegate.beans.DelegateTaskAbortEvent;
 import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.configuration.DelegateConfiguration;
+import io.harness.delegate.core.beans.AcquireTasksResponse;
 import io.harness.delegate.core.beans.ExecutionStatusResponse;
-import io.harness.delegate.core.beans.TaskDescriptor;
+import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.delegate.service.core.client.DelegateCoreManagerClient;
@@ -168,7 +169,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private final AtomicBoolean selfDestruct = new AtomicBoolean(false);
 
   protected abstract void abortTask(DelegateTaskAbortEvent taskEvent);
-  protected abstract void executeTask(@NonNull TaskDescriptor task);
+  protected abstract void executeTask(String id, List<TaskPayload> tasks);
   protected abstract List<String> getCurrentlyExecutingTaskIds();
   protected abstract List<TaskType> getSupportedTasks();
   protected abstract void onDelegateStart();
@@ -292,8 +293,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
         currentlyAcquiringTasks.add(delegateTaskId);
         log.debug("Try to acquire DelegateTask - accountId: {}", getDelegateConfiguration().getAccountId());
 
-        final var pluginDescriptors = acquireTask(delegateTaskId);
-        pluginDescriptors.forEach(this::executeTask);
+        final var taskGroup = acquireTask(delegateTaskId);
+        executeTask(taskGroup.getId(), taskGroup.getTasksList());
       } catch (final IOException e) {
         log.error("Unable to get task for validation", e);
       } catch (final Exception e) {
@@ -305,14 +306,15 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     }
   }
 
-  protected List<TaskDescriptor> acquireTask(final String delegateTaskId) throws IOException {
+  protected AcquireTasksResponse acquireTask(final String delegateTaskId) throws IOException {
     final var response = executeRestCall(managerClient.acquireProtoTask(DelegateAgentCommonVariables.getDelegateId(),
         delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
 
     final var pluginDescriptors = response.getTasksList();
-    log.info("Delegate {} received tasks {} for delegateInstance {}", DelegateAgentCommonVariables.getDelegateId(),
-        pluginDescriptors, DELEGATE_INSTANCE_ID);
-    return pluginDescriptors;
+    log.info("Delegate {} received tasks group {} of {} tasks for delegateInstance {}",
+        DelegateAgentCommonVariables.getDelegateId(), response.getId(), response.getTasksList().size(),
+        DELEGATE_INSTANCE_ID);
+    return response;
   }
 
   private void shutdownExecutors() throws InterruptedException {

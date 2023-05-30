@@ -7,6 +7,7 @@
 
 package io.harness.k8s.kubectl;
 
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.PUNEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,16 @@ public class VersionCommandTest extends CategoryTest {
     Kubectl client = Kubectl.client(null, null);
     VersionCommand versionCommand = client.version();
 
-    assertThat(versionCommand.command()).isEqualTo("kubectl version");
+    assertThat(versionCommand.command()).isEqualTo("kubectl version ");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testClientOnlyJson() {
+    Kubectl client = Kubectl.client(null, null);
+    VersionCommand versionCommand = client.version().clientOnly().jsonVersion();
+
+    assertThat(versionCommand.command()).isEqualTo("kubectl version --client=true --output=json ");
   }
 }

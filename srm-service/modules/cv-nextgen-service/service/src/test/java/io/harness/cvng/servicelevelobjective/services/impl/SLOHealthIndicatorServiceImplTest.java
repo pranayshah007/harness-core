@@ -8,8 +8,8 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.beans.DataCollectionExecutionStatus.QUEUED;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
-import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
@@ -31,8 +31,8 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
@@ -210,7 +210,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
 
   private void insertDummySLIRecords(int numOfGoodRecords, int numOfBadReocrds, Instant startTime, Instant endTime,
       String sliId, String verificationTaskId, int sliVersion) {
-    List<SLIRecord.SLIState> sliStateList = new ArrayList<>();
+    List<SLIState> sliStateList = new ArrayList<>();
 
     Duration increment = Duration.between(startTime, endTime);
 
@@ -228,10 +228,9 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
         getSLIRecordParams(startTime, sliStateList, increment), sliId, verificationTaskId, sliVersion);
   }
 
-  private List<SLIRecordParam> getSLIRecordParams(
-      Instant startTime, List<SLIRecord.SLIState> sliStates, Duration increment) {
+  private List<SLIRecordParam> getSLIRecordParams(Instant startTime, List<SLIState> sliStates, Duration increment) {
     List<SLIRecordParam> sliRecordParams = new ArrayList<>();
-    for (SLIRecord.SLIState sliState : sliStates) {
+    for (SLIState sliState : sliStates) {
       long goodCount = 0;
       long badCount = 0;
       if (sliState == GOOD) {

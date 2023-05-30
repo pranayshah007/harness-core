@@ -106,6 +106,7 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.WebhookConfigService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -217,6 +218,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock private EnforcementClientService enforcementClientService;
   @Mock private FeatureFlagService featureFlagService;
 
+  @Mock private WebhookConfigService webhookConfigService;
+
   @Mock private NgLicenseHttpClient ngLicenseHttpClient;
 
   private BuilderFactory builderFactory;
@@ -279,6 +282,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                         .projectIdentifier(projectIdentifier)
                         .build();
     environmentParams = builderFactory.getContext().getServiceEnvironmentParams();
+
+    when(webhookConfigService.getWebhookApiBaseUrl()).thenReturn("http://localhost:6457/cv/api/");
 
     FieldUtils.writeField(monitoredServiceService, "setupUsageEventService", setupUsageEventService, true);
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", changeSourceUpdateHandlerMap, true);
@@ -810,13 +815,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testUpdate_ChangeSourceCreation() {
-    MonitoredServiceDTO monitoredServiceDTO =
-        createMonitoredServiceDTOBuilder()
-            .sources(Sources.builder()
-                         .changeSources(
-                             new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())))
-                         .build())
-            .build();
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder().build();
     MonitoredServiceDTO savedMonitoredServiceDTO =
         monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
             .getMonitoredServiceDTO();
@@ -824,8 +823,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceDTO toUpdateMonitoredServiceDTO =
         createMonitoredServiceDTOBuilder()
             .sources(Sources.builder()
-                         .changeSources(
-                             new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build(),
+                         .changeSources(new HashSet<>(
+                             Arrays.asList(builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build(),
                                  builderFactory.getPagerDutyChangeSourceDTOBuilder().build())))
                          .build())
             .build();
@@ -1763,11 +1762,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             + "  environmentRef:\n"
             + "  sources:\n"
             + "    healthSources:\n"
-            + "    changeSources:\n"
-            + "      - name: Harness CD Next Gen\n"
-            + "        identifier: harness_cd_next_gen\n"
-            + "        type: HarnessCDNextGen\n"
-            + "        enabled : true\n");
+            + "    changeSources:\n");
 
     assert (monitoredServiceService.getYamlTemplate(projectParams, MonitoredServiceType.INFRASTRUCTURE))
         .equals("monitoredService:\n"
@@ -1795,11 +1790,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             + "  environmentRef:\n"
             + "  sources:\n"
             + "    healthSources:\n"
-            + "    changeSources:\n"
-            + "      - name: Harness CD Next Gen\n"
-            + "        identifier: harness_cd_next_gen\n"
-            + "        type: HarnessCDNextGen\n"
-            + "        enabled : true\n");
+            + "    changeSources:\n");
   }
 
   @Test
@@ -1820,11 +1811,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             + "  environmentRef:\n"
             + "  sources:\n"
             + "    healthSources:\n"
-            + "    changeSources:\n"
-            + "      - name: Harness CD Next Gen\n"
-            + "        identifier: harness_cd_next_gen\n"
-            + "        type: HarnessCDNextGen\n"
-            + "        enabled : true\n");
+            + "    changeSources:\n");
 
     assert (monitoredServiceService.getYamlTemplate(updatedProjectParams, MonitoredServiceType.INFRASTRUCTURE))
         .equals("monitoredService:\n"
@@ -2487,7 +2474,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                      .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
                                         .stream()
                                         .collect(Collectors.toSet()))
-                     .changeSources(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())
+                     .changeSources(Arrays.asList(builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build())
                                         .stream()
                                         .collect(Collectors.toSet()))
                      .build())

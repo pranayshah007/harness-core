@@ -18,4 +18,5 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.SSCA)
 public class OrchestrationStepSecretVariables {
   String attestationPrivateKey;
+  String cosignPassword;
 }
