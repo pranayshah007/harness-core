@@ -80,6 +80,11 @@ public class UserDBO implements PersistentRegularIterable, AccessControlEntity {
                  .field(UserDBOKeys.identifier)
                  .unique(true)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("dummy_email_identifier")
+                 .field(UserDBOKeys.email)
+                 .field(UserDBOKeys.identifier)
+                 .build())
         .build();
   }
 
