@@ -41,8 +41,6 @@ chmod +x build/build_jar.sh
 chmod +x build/build_dist.sh
 
 build/build_jar.sh
-#chmod +x ${SERVICE_NAME}/build/build_dist.sh
-#${SERVICE_NAME}/build/build_dist.sh || true
-#
-#echo "INFO: list the jars built"
-#find . -name "*.jar"
+
+echo "INFO: list the jars built"
+find . -name "*.jar"
