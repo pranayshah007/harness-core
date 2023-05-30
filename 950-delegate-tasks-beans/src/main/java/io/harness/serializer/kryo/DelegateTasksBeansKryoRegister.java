@@ -254,6 +254,8 @@ import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskPara
 import io.harness.delegate.beans.connector.pdcconnector.HostConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorValidationParams;
 import io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse;
+import io.harness.delegate.beans.connector.rancher.RancherListClustersTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherListClustersTaskResponse;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
 import io.harness.delegate.beans.connector.rancher.RancherTaskType;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams;
@@ -2490,6 +2492,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(RancherTestConnectionTaskParams.class, 20000503);
     kryo.register(RancherTestConnectionTaskResponse.class, 20000504);
     kryo.register(RancherTaskType.class, 20000505);
+    kryo.register(RancherListClustersTaskParams.class, 20000506);
+    kryo.register(RancherListClustersTaskResponse.class, 20000507);
 
     kryo.register(GoogleFunctionGenOneDeployRequest.class, 1800003);
     kryo.register(GoogleFunctionGenOneDeployResponse.class, 1800004);

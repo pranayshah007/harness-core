@@ -1,6 +1,4 @@
 openapi: 3.0.3
-x-stoplight:
-  id: 3tg85j842xd7d
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -43,6 +41,9 @@ tags:
   - name: Project Favorites
     description: This contains APIs for project-scoped Favorites.
     x-displayName: 'Project Favorites [Beta]'
+  - name: Rancher Infrastructure
+    description: This contains APIs for Rancher infra entities.
+    x-displayName: 'Rancher Infrastructure [Beta]'
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
@@ -1278,7 +1279,7 @@ paths:
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       x-internal: true
-  '/v1/connectors/{connector}/rancher/clusters':
+  '/v1/rancher/connectors/{connector}/clusters':
     parameters:
       - $ref: '#/components/parameters/ConnectorPathParam'
     get:
@@ -1292,7 +1293,9 @@ paths:
       description: List rancher clusters using the given account level rancher connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-  '/v1/orgs/{org}/connectors/{connector}/rancher/clusters':
+      security:
+        - x-api-key: []
+  '/v1/rancher/orgs/{org}/connectors/{connector}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ConnectorPathParam'
@@ -1306,8 +1309,10 @@ paths:
       operationId: list-org-scoped-rancher-clusters-using-connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
       description: List rancher clusters using the given org level rancher connector
-  '/v1/orgs/{org}/projects/{project}/connectors/{connector}/rancher/clusters':
+  '/v1/rancher/orgs/{org}/projects/{project}/connectors/{connector}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -1322,8 +1327,10 @@ paths:
       operationId: list-project-scoped-rancher-clusters-using-connector
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
       description: List rancher clusters using the given project level rancher connector
-  '/v1/environments/{environment}/infrastructureDefinitions/{infrastructureDefinition}/rancher/clusters':
+  '/v1/rancher/environments/{environment}/infrastructureDefinitions/{infrastructureDefinition}/clusters':
     parameters:
       - $ref: '#/components/parameters/EnvironmentPathParam'
       - $ref: '#/components/parameters/InfrastructureDefinitionPathParam'
@@ -1337,8 +1344,10 @@ paths:
       operationId: list-account-scoped-rancher-clusters-using-env-and-infra
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
       description: List rancher clusters using the given account level environment and infrastructure definition.
-  '/v1/orgs/{org}/environments/{environment}/infrastructureDefinitions/{infrastructureDefinition}/rancher/clusters':
+  '/v1/rancher/orgs/{org}/environments/{environment}/infrastructureDefinitions/{infrastructureDefinition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/EnvironmentPathParam'
@@ -1353,8 +1362,10 @@ paths:
       operationId: list-org-scoped-rancher-clusters-using-env-and-infra
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
       description: List rancher clusters using the given org level environment and infrastructure definition.
-  '/v1/orgs/{org}/projects/{project}/environments/{environment}/infrastructureDefinitions/{infrastructureDefinition}/rancher/clusters':
+  '/v1/rancher/orgs/{org}/projects/{project}/environments/{environment}/infrastructureDefinitions/{infrastructureDefinition}/clusters':
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
@@ -1370,6 +1381,8 @@ paths:
       operationId: list-project-scoped-rancher-clusters-using-env-and-infra
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
+      security:
+        - x-api-key: []
       description: List rancher clusters using the given project level environment and infrastructure definition.
 components:
   schemas:
@@ -2893,14 +2906,6 @@ components:
               value:
                 - cluster1
                 - cluster2
-        application/xml:
-          schema:
-            type: object
-            properties: {}
-        multipart/form-data:
-          schema:
-            type: object
-            properties: {}
   requestBodies:
     ServiceRequest:
       content:

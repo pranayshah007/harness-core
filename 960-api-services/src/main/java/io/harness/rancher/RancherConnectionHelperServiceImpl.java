@@ -7,6 +7,8 @@
 
 package io.harness.rancher;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectivityStatus;
@@ -15,6 +17,9 @@ import io.harness.exception.ExceptionUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -39,5 +44,17 @@ public class RancherConnectionHelperServiceImpl implements RancherConnectionHelp
           .status(ConnectivityStatus.FAILURE)
           .build();
     }
+  }
+
+  @Override
+  public List<String> listClusters(String rancherUrl, String bearerToken) {
+    RancherListClustersResponse listClustersResponse = rancherClusterClient.listClusters(bearerToken, rancherUrl);
+    List<RancherListClustersResponse.RancherClusterItem> clustersData = listClustersResponse.getData();
+    if (isEmpty(clustersData)) {
+      return Collections.emptyList();
+    }
+    return clustersData.stream()
+        .map(RancherListClustersResponse.RancherClusterItem::getName)
+        .collect(Collectors.toList());
   }
 }
