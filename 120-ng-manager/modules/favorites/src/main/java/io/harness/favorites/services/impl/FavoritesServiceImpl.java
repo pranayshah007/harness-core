@@ -55,7 +55,9 @@ public class FavoritesServiceImpl implements FavoritesService {
   @Override
   public List<Favorite> getFavorites(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String userId, FavoritesResourceType resourceTypeDTO) {
-    if (resourceTypeDTO == null || EnumUtils.getEnum(ResourceType.class, resourceTypeDTO.toString()) == null) {
+    ResourceType resourceType =
+        resourceTypeDTO != null ? EnumUtils.getEnum(ResourceType.class, resourceTypeDTO.toString()) : null;
+    if (resourceType == null) {
       throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
     }
     return favoriteRepository
@@ -73,8 +75,10 @@ public class FavoritesServiceImpl implements FavoritesService {
 
   @Override
   public void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      FavoritesResourceType resourceType, String resourceId) throws InvalidRequestException {
-    if (resourceType == null || EnumUtils.getEnum(ResourceType.class, resourceType.toString()) == null) {
+      FavoritesResourceType resourceTypeDTO, String resourceId) throws InvalidRequestException {
+    ResourceType resourceType =
+        resourceTypeDTO != null ? EnumUtils.getEnum(ResourceType.class, resourceTypeDTO.toString()) : null;
+    if (resourceType == null) {
       throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
     }
     favoriteRepository
