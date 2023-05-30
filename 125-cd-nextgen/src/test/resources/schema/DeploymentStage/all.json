@@ -15837,7 +15837,14 @@
       "type": "object",
       "properties": {
         "parallel": {
-          "type": "boolean"
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

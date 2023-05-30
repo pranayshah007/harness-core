@@ -1885,6 +1885,12 @@ components:
             value:
               type: string
               description: Value of the Secret
+            additional_metadata:
+              type: object
+              properties:
+                values:
+                  type: object
+              description: Additional metadata of the secret if any exist
           required:
             - type
             - secret_manager_identifier
@@ -3310,7 +3316,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SecretValidationMetadata'
+            $ref: '#/components/schemas/SecretRequest'
           examples:
             Example 1:
               value:

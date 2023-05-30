@@ -57,6 +57,7 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.references.FilterCreationParams;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -522,7 +523,8 @@ public class PMSPipelineServiceHelper {
   }
 
   private PipelineEntity updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
-    FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
+    FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(
+        FilterCreationParams.builder().pipelineEntity(pipelineEntity).build());
     PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
                                    .withStageNames(filtersAndStageCount.getStageNames());
     newEntity.getFilters().clear();

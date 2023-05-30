@@ -89,7 +89,7 @@ public class YamlUtils {
     try {
       return mapper.readTree(yaml);
     } catch (IOException ex) {
-      throw new InvalidRequestException(String.format("Couldn't convert yaml to json node %s", yaml), ex);
+      throw new InvalidRequestException("Couldn't convert yaml to json node", ex);
     }
   }
 
@@ -109,7 +109,7 @@ public class YamlUtils {
     try {
       return mapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml");
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
   }
 
@@ -117,7 +117,7 @@ public class YamlUtils {
     try {
       return mapper.writeValueAsString(object).replace("---\n", "");
     } catch (JsonProcessingException e) {
-      throw new InvalidRequestException("Couldn't convert object to Yaml");
+      throw new InvalidRequestException("Couldn't convert object to Yaml", e);
     }
   }
 

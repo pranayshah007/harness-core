@@ -61,7 +61,7 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (currentLevel != null && currentLevel.hasStrategyMetadata()) {
       Map<String, Object> strategyMap =
-          StrategyUtils.fetchStrategyObjectMap(currentLevel, ambiance.getMetadata().getUseMatrixFieldName());
+          StrategyUtils.fetchStrategyObjectMap(currentLevel, AmbianceUtils.shouldUseMatrixFieldName(ambiance));
       for (Map.Entry<String, Object> entry : strategyMap.entrySet()) {
         String strategyKey = String.format("%s.%s", getExpansionPathUsingLevels(ambiance), entry.getKey());
         if (ClassUtils.isPrimitiveOrWrapper(entry.getValue().getClass())) {

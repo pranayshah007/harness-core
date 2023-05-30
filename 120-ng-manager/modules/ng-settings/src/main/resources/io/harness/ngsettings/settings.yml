@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 21
+version : 22
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -162,6 +162,7 @@ settings :
   - identifier: enable_node_execution_audit_events
     name: Enable Node Execution Audit Events
     category: PMS
+    groupIdentifier: pms_execution_settings
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: false

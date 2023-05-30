@@ -34,11 +34,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CE)
 public class AzureCpuUtilisationService {
-  private static final String QUERY_TEMPLATE_BIGQUERY =
-      "SELECT average, maximum, TIMESTAMP_TRUNC(metricStartTime, DAY) AS startTime,"
+  private static final String QUERY_TEMPLATE_BIGQUERY = "SELECT AVG(average) AS average, MAX(maximum) AS maximum,"
+      + " TIMESTAMP_TRUNC(metricStartTime, DAY) AS startTime,"
       + " TIMESTAMP_TRUNC(metricEndTime, DAY) AS endTime"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
-      + " AND vmId = '%s' AND metricName = 'Percentage CPU' order by startTime";
+      + " AND vmId = '%s' AND metricName = 'Percentage CPU'"
+      + " GROUP BY startTime, endTime ORDER BY startTime";
   private static final String AVERAGE_QUERY_TEMPLATE_BIGQUERY = "SELECT avg(average) as average"
       + " FROM %s WHERE (TIMESTAMP_TRUNC(metricStartTime, DAY) >= '%s')"
       + " AND vmId = '%s' AND metricName = 'Percentage CPU'";

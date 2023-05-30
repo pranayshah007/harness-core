@@ -487,9 +487,6 @@
     "Attestation": {
       "type": "object",
       "properties": {
-        "privateKey": {
-          "type": "string"
-        },
         "type": {
           "type": "string",
           "enum": [

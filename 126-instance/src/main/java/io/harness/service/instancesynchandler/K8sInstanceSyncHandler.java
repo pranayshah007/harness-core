@@ -26,6 +26,8 @@ import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.helper.K8sCloudConfigMetadata;
+import io.harness.helper.K8sInfrastructureUtility;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -92,12 +94,7 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
         log.warn("Unexpected type of deploymentInfoDto, expected K8sDeploymentInfoDTO found {}",
             deploymentInfoDTO != null ? deploymentInfoDTO.getClass().getSimpleName() : null);
       } else {
-        // Todo: Add Cluster Name as well
-        K8sDeploymentInfoDTO k8sDeploymentInfoDTO = (K8sDeploymentInfoDTO) deploymentInfoDTO;
-        k8sDeploymentReleaseDetailsList.add(K8sDeploymentReleaseDetails.builder()
-                                                .releaseName(k8sDeploymentInfoDTO.getReleaseName())
-                                                .namespaces(k8sDeploymentInfoDTO.getNamespaces())
-                                                .build());
+        k8sDeploymentReleaseDetailsList.add(K8sInfrastructureUtility.getK8sDeploymentReleaseDetails(deploymentInfoDTO));
       }
     }
     return DeploymentReleaseDetails.builder()
@@ -145,10 +142,14 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     K8sServerInstanceInfo k8sServerInstanceInfo = (K8sServerInstanceInfo) serverInstanceInfoList.get(0);
     LinkedHashSet<String> namespaces = getNamespaces(serverInstanceInfoList);
 
+    K8sCloudConfigMetadata k8sCloudConfigMetadata =
+        K8sInfrastructureUtility.getK8sCloudConfigMetadata(infrastructureOutcome);
+
     return K8sDeploymentInfoDTO.builder()
         .namespaces(namespaces)
         .releaseName(k8sServerInstanceInfo.getReleaseName())
         .blueGreenStageColor(k8sServerInstanceInfo.getBlueGreenColor())
+        .cloudConfigMetadata(k8sCloudConfigMetadata)
         .build();
   }
 

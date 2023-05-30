@@ -2737,6 +2737,7 @@ public class DelegateServiceImpl implements DelegateService {
         .project(DelegateKeys.lastHeartBeat, true)
         .project(DelegateKeys.delegateGroupName, true)
         .project(DelegateKeys.description, true)
+        .project(DelegateKeys.immutable, true)
         .get();
   }
 

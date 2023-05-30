@@ -85,6 +85,7 @@ public class HelmCommandRequest implements TaskParameters, ActivityAccess, Execu
   private boolean useNewKubectlVersion;
   private boolean useLatestChartMuseumVersion;
   private String gcpKeyPath;
+  private boolean useRefactorSteadyStateCheck;
 
   public HelmCommandRequest(HelmCommandType helmCommandType, boolean mergeCapabilities) {
     this.helmCommandType = helmCommandType;

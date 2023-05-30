@@ -858,7 +858,7 @@ public class InstanceSyncServiceImplTest extends InstancesTestBase {
 
     instanceSyncService.processInstanceSyncByPerpetualTask(
         ACCOUNT_IDENTIFIER, PERPETUAL_TASK, instanceSyncPerpetualTaskResponse);
-    verify(instanceSyncHelper, times(1)).cleanUpInstanceSyncPerpetualTaskInfo(any());
+    verify(instanceSyncHelper, times(1)).cleanUpInstanceSyncPerpetualTaskInfo(any(), anyBoolean());
     verify(instanceService, times(1)).deleteAll(eq(instancesList));
   }
 }

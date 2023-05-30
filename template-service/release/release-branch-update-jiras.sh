@@ -12,7 +12,7 @@ KEYS=$(git log --pretty=oneline --abbrev-commit |\
 echo $KEYS
 
 #FIX_TEMPLATE_VERSION value to be same as used in release-branch-create-pie-version.sh
-FIX_TEMPLATE_VERSION="TEMPLATE-""$VERSION"
+FIX_TEMPLATE_VERSION="TEMPLATESERVICE-""$VERSION"
 FINAL_KEYS=()
 for KEY in ${KEYS[@]}
   do
@@ -22,7 +22,7 @@ for KEY in ${KEYS[@]}
 
     components=$(echo "${response}" | jq -r '.fields.components')
 
-    if name=$(echo "${components}" | jq -r '.[] | select(.name == "Pipeline") | .name'); test -n "${name}"; then
+    if name=$(echo "${components}" | jq -r '.[] | select(.name == "Template Library") | .name'); test -n "${name}"; then
       FINAL_KEYS+=( "$KEY" )
     fi
   done

@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.msp.dto.ManagedAccount;
 import io.harness.ccm.msp.service.intf.ManagedAccountService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.google.inject.Inject;
@@ -45,6 +46,7 @@ import org.springframework.stereotype.Service;
 @Consumes(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
 @Hidden
+@InternalApi
 @Slf4j
 @Service
 @OwnedBy(CE)

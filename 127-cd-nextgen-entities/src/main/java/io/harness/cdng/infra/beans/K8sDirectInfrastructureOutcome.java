@@ -10,6 +10,7 @@ package io.harness.cdng.infra.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.VariableExpression;
@@ -35,5 +36,10 @@ public class K8sDirectInfrastructureOutcome extends InfrastructureOutcomeAbstrac
   @Override
   public String getKind() {
     return InfrastructureKind.KUBERNETES_DIRECT;
+  }
+
+  @Override
+  public K8sCloudConfigMetadata getInfraOutcomeMetadata() {
+    return null;
   }
 }

@@ -247,6 +247,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.cache.Cache;
@@ -841,5 +842,14 @@ public class PipelineServiceModule extends AbstractModule {
   @Named("jsonExpansionRequestBatchSize")
   public Integer getjsonExpansionRequestBatchSize() {
     return configuration.getJsonExpansionBatchSize();
+  }
+
+  @Provides
+  @Singleton
+  @Named("pipelineSetupUsageCreationExecutorService")
+  public ExecutorService pipelineSetupUsageCreationExecutorService() {
+    return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineSetupUsageCreationPoolConfig(), 1,
+        new ThreadFactoryBuilder().setNameFormat("PipelineSetupUsageCreationExecutorService-%d").build(),
+        new ThreadPoolExecutor.AbortPolicy()));
   }
 }

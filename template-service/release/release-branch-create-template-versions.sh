@@ -5,7 +5,7 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 set -ex
 
-export FIX_TEMPLATE_VERSION="TEMPLATE-""$VERSION"
+export FIX_TEMPLATE_VERSION="TEMPLATESERVICE-""$VERSION"
 RELDATE=$(date +'%Y-%m-%d')
 IFS="-" read -ra PROJNUM <<< "$KEY"
 PROJ="CDS"

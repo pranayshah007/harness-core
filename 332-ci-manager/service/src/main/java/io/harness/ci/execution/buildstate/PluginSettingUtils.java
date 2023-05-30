@@ -180,10 +180,10 @@ public class PluginSettingUtils extends PluginServiceImpl {
         return getGitCloneStepInfoEnvVariables((GitCloneStepInfo) stepInfo, ambiance, gitConnector, identifier);
       case SSCA_ORCHESTRATION:
         return sscaOrchestrationPluginUtils.getSscaOrchestrationStepEnvVariables(
-            (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance);
+            (SscaOrchestrationStepInfo) stepInfo, identifier, ambiance, infraType);
       case SSCA_ENFORCEMENT:
         return SscaEnforcementPluginHelper.getSscaEnforcementStepEnvVariables(
-            (SscaEnforcementStepInfo) stepInfo, identifier, ambiance);
+            (SscaEnforcementStepInfo) stepInfo, identifier, ambiance, infraType);
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
     }

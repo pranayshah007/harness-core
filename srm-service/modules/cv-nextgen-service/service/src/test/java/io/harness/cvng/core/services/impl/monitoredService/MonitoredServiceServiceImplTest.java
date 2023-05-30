@@ -51,6 +51,7 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag.TagType;
@@ -65,7 +66,6 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.Deplo
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;

@@ -20,6 +20,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.observers.NodeStartInfo;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -39,8 +41,22 @@ public class NodeExecutionOutboxHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    nodeStartInfo = NodeStartInfo.builder().nodeExecution(NodeExecution.builder().group("PIPELINE").build()).build();
-    nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(NodeExecution.builder().group("PIPELINE").build()).build();
+    nodeStartInfo =
+        NodeStartInfo.builder()
+            .nodeExecution(
+                NodeExecution.builder()
+                    .ambiance(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+                    .group("PIPELINE")
+                    .build())
+            .build();
+    nodeUpdateInfo =
+        NodeUpdateInfo.builder()
+            .nodeExecution(
+                NodeExecution.builder()
+                    .ambiance(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build())
+                    .group("PIPELINE")
+                    .build())
+            .build();
   }
 
   @Test

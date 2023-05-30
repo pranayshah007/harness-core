@@ -21,6 +21,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.constants.ViewFieldConstants;
 import io.harness.ccm.msp.dao.MarginDetailsDao;
 import io.harness.ccm.msp.entities.MarginDetails;
+import io.harness.ccm.msp.service.intf.MarginDetailsBqService;
+import io.harness.ccm.msp.service.intf.MspValidationService;
 import io.harness.ccm.views.businessmapping.entities.CostTarget;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewIdCondition;
@@ -41,6 +43,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class MarginDetailsServiceImplTest extends CategoryTest {
   @Mock private MarginDetailsDao marginDetailsDao;
+  @Mock private MarginDetailsBqService marginDetailsBqService;
+  @Mock private MspValidationService mspValidationService;
   @InjectMocks @Inject private MarginDetailsServiceImpl marginDetailsService;
 
   private static final String MANAGED_ACCOUNT_ID = "account_id";
@@ -60,6 +64,7 @@ public class MarginDetailsServiceImplTest extends CategoryTest {
     when(marginDetailsDao.list(MSP_ACCOUNT_ID)).thenReturn(Collections.singletonList(getDummyMarginDetails()));
     when(marginDetailsDao.update(getUpdatedDummyMarginDetails())).thenReturn(getUpdatedDummyMarginDetails());
     when(marginDetailsDao.unsetMarginRules(UUID)).thenReturn(getDummyMarginDetailsPostUnset());
+    when(marginDetailsDao.get(UUID)).thenReturn(getDummyMarginDetails());
   }
 
   @Test
