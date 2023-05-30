@@ -39,7 +39,6 @@ yum install zlib-devel -y
 chmod +x scripts/bazel/UpdateVersionInfoyaml.sh
 chmod +x build/build_jar.sh
 chmod +x build/build_dist.sh
-chmod +x build/service.py
 
 build/build_jar.sh
 #chmod +x ${SERVICE_NAME}/build/build_dist.sh
