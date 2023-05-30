@@ -4,7 +4,6 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 import json
-import base64
 import os
 import re
 import datetime
@@ -51,20 +50,18 @@ publisher = pubsub_v1.PublisherClient()
 COSTCATEGORIESUPDATETOPIC = os.environ.get('COSTCATEGORIESUPDATETOPIC', 'ccm-bigquery-batch-update')
 
 
-def main(event, context):
-    """Triggered from a message on a Cloud Pub/Sub topic.
-    Args:
-         event (dict): Event payload.
-         context (google.cloud.functions.Context): Metadata for the event.
+def main(request):
     """
-    print(event)
-    data = base64.b64decode(event['data']).decode('utf-8')
-    event_json = json.loads(data)
-    jsonData = event_json.get("data", {}).get("message", {})
+    Triggered from an HTTP Request.
+    """
+    print(request)
+    jsonData = request.get_json(force=True)
     print(jsonData)
 
     # Set accountid for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
+    print_(jsonData.get("accountId"))
+    return "CF executed successfully."
     jsonData["cloudProvider"] = "AWS"
     ps = jsonData["path"].split("/")
     if len(ps) == 4:
