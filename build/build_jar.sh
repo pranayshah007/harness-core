@@ -16,22 +16,39 @@ BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_syml
 
 declare -A service_map
 
-service_map["manager"]="360-cg-manager"
-service_map["ng-manager"]="120-ng-manager"
-service_map["access-control"]="access-control/service"
-service_map["migrator"]="100-migrator"
-service_map["change-data-capture"]="110-change-data-capture"
-service_map["iacm-manager"]="310-iacm-manager/app"
-service_map["sto-manager"]="315-sto-manager/app"
+if [ "${SERVICE_NAME}" == "manager" ]; then
+  service_map["manager"]="360-cg-manager"
+elif [ "${SERVICE_NAME}" == "ng-manager" ]; then
+  service_map["ng-manager"]="120-ng-manager"
+elif [ "${SERVICE_NAME}" == "migrator" ]; then
+  service_map["migrator"]="100-migrator"
+elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
+  service_map["change-data-capture"]="110-change-data-capture"
+elif [ "${SERVICE_NAME}" == "iacm-manager" ]; then
+  service_map["iacm-manager"]="310-iacm-manager/app"
+elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
+  service_map["sto-manager"]="315-sto-manager/app"
+elif [ "${SERVICE_NAME}" == "ci-manager" ]; then
+  service_map["ci-manager"]="332-ci-manager/app"
+elif [ "${SERVICE_NAME}" == "idp-service" ]; then
+  service_map["idp-service"]=${SERVICE_NAME}"/src/main/java/io/harness/idp/app"
+elif [ "${SERVICE_NAME}" == "srm-service" ]; then
+  service_map["srm-service"]=${SERVICE_NAME}"/modules/cv-nextgen-service/service"
+else
+  service_map[${SERVICE_NAME}]=${SERVICE_NAME}"/service"
+fi
+#
+#service_map["debezium-service"]=${SERVICE_NAME}"/service"
+#service_map["pipeline-service"]=${SERVICE_NAME}"/service"
+#service_map["platform-service"]=${SERVICE_NAME}"/service"
+#service_map["template-service"]=${SERVICE_NAME}"/service"
+#service_map["access-control"]="${SERVICE_NAME}/service"
+#service_map["batch-processing"]=${SERVICE_NAME}"/service"
+
+
+service_map["batch-processing"]=${SERVICE_NAME}"/service"
 service_map["ci-manager"]="332-ci-manager/app"
-service_map["batch-processing"]="batch-processing/service"
-service_map["ce-nextgen"]="ce-nextgen/service"
-service_map["debezium-service"]="debezium-service/service"
-service_map["idp-service"]="idp-service/src/main/java/io/harness/idp/app"
-service_map["pipeline-service"]="pipeline-service/service"
-service_map["platform-service"]="platform-service/service"
-service_map["srm-service"]="srm-service/modules/cv-nextgen-service/service"
-service_map["template-service"]="template-service/service"
+service_map["manager"]="360-cg-manager"
 
 
 key="${SERVICE_NAME}"
