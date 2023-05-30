@@ -34,15 +34,12 @@ service_map["platform-service"]="platform-service/service"
 service_map["srm-service"]="srm-service/modules/cv-nextgen-service/service"
 service_map["template-service"]="template-service/service"
 
-SERVICE_MODULE=${SERVICE_NAME}"/service:module_deploy.jar"
 
-
+key="${SERVICE_NAME}"
+echo $key
 for key in "${!service_map[@]}"; do
   bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 done
-
-#bazel ${bazelrc} build //$SERVICE_MODULE ${BAZEL_ARGUMENTS}
-
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   module=pipeline-service
