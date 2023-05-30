@@ -42,12 +42,11 @@ modify_service_name() {
 
   if [[ -z $modified_service_name ]]; then
     modified_service_name="$SERVICE_NAME"
-  else
-    if [[ -n ${modified_service_name_with_app[$modified_service_name]} ]]; then
+  fi
+  if [[ -n ${modified_service_name_with_app[$modified_service_name]} ]]; then
       modified_service_name+="/app"
-    elif [[ -n ${modified_service_name_with_service[$modified_service_name]} ]]; then
+  elif [[ -n ${modified_service_name_with_service[$modified_service_name]} ]]; then
       modified_service_name+="/service"
-    fi
   fi
 
   echo "$modified_service_name"
