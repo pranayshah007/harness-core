@@ -16,28 +16,6 @@ BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_syml
 
 declare -A service_map
 
-#if [ "${SERVICE_NAME}" == "manager" ]; then
-#  service_map["manager"]="360-cg-manager"
-#elif [ "${SERVICE_NAME}" == "ng-manager" ]; then
-#  service_map["ng-manager"]="120-ng-manager"
-#elif [ "${SERVICE_NAME}" == "migrator" ]; then
-#  service_map["migrator"]="100-migrator"
-#elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
-#  service_map["change-data-capture"]="110-change-data-capture"
-#elif [ "${SERVICE_NAME}" == "iacm-manager" ]; then
-#  service_map["iacm-manager"]="310-iacm-manager/app"
-#elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
-#  service_map["sto-manager"]="315-sto-manager/app"
-#elif [ "${SERVICE_NAME}" == "ci-manager" ]; then
-#  service_map["ci-manager"]="332-ci-manager/app"
-#elif [ "${SERVICE_NAME}" == "idp-service" ]; then
-#  service_map["idp-service"]=${SERVICE_NAME}"/src/main/java/io/harness/idp/app"
-#elif [ "${SERVICE_NAME}" == "srm-service" ]; then
-#  service_map["srm-service"]=${SERVICE_NAME}"/modules/cv-nextgen-service/service"
-#else
-#  service_map[${SERVICE_NAME}]=${SERVICE_NAME}"/service"
-#fi
-
 case "${SERVICE_NAME}" in
   "manager")
     service_map["manager"]="360-cg-manager"
