@@ -84,8 +84,7 @@ public class WinRmDownloadArtifactCommandHandlerTest {
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testShouldDownloadArtifactWithWinRmExecutor() {
-    when(defaultWinRmExecutor.executeCommandString(COMMAND_STRING, false, false))
-        .thenReturn(CommandExecutionStatus.SUCCESS);
+    when(defaultWinRmExecutor.executeCommandString(COMMAND_STRING)).thenReturn(CommandExecutionStatus.SUCCESS);
     WinrmTaskParameters winrmTaskParameters =
         getWinrmTaskParameters(downloadArtifactCommandUnit, Collections.emptyList());
     CommandExecutionStatus result =
