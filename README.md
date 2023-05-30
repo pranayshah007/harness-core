@@ -25,7 +25,7 @@ https://harness.atlassian.net/wiki/spaces/BT/pages/21101969665/How+to+setup+loca
 2. Install JDK11 locally - 11.0.19 Temurin build 
    
 Download JDK 11 for MAC
-`curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.19_7.tar.gz`
+`curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.19%2B7/OpenJDK11U-jdk_x64_mac_hotspot_11.0.19_7.tar.gz`
 
 Untar it
 `tar -xzf OpenJDK11U-jdk_x64_mac_hotspot_11.0.19_7.tar.gz`
