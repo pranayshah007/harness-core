@@ -61,9 +61,8 @@ public class FavoritesServiceImpl implements FavoritesService {
       throw new InvalidRequestException(INVALID_RESOURCE_TYPE_ERROR_MESSAGE);
     }
     return favoriteRepository
-        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceType(accountIdentifier,
-            orgIdentifier, projectIdentifier, userId,
-            EnumUtils.getEnum(ResourceType.class, resourceTypeDTO.toString()));
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceType(
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType);
   }
 
   @Override
@@ -83,7 +82,6 @@ public class FavoritesServiceImpl implements FavoritesService {
     }
     favoriteRepository
         .deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndUserIdentifierAndResourceTypeAndResourceIdentifier(
-            accountIdentifier, orgIdentifier, projectIdentifier, userId,
-            EnumUtils.getEnum(ResourceType.class, resourceType.toString()), resourceId);
+            accountIdentifier, orgIdentifier, projectIdentifier, userId, resourceType, resourceId);
   }
 }
