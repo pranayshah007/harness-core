@@ -40,7 +40,8 @@ public class TerraformCloudConfigDAL {
             .filter(TerraformCloudConfigKeys.orgId, AmbianceUtils.getOrgIdentifier(ambiance))
             .filter(TerraformCloudConfigKeys.projectId, AmbianceUtils.getProjectIdentifier(ambiance))
             .filter(TerraformCloudConfigKeys.provisionerIdentifier, provisionerIdentifier)
-            .filter(TerraformCloudConfigKeys.stageExecutionId, ambiance.getStageExecutionId())
+            .filter(
+                TerraformCloudConfigKeys.stageExecutionId, AmbianceUtils.getStageExecutionIdForExecutionMode(ambiance))
             .order(Sort.ascending(TerraformCloudConfigKeys.createdAt));
     return query.get();
   }

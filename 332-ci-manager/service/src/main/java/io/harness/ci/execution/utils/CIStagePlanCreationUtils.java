@@ -85,13 +85,14 @@ public class CIStagePlanCreationUtils {
             long maxBuildsPerDay = validationService.getMaxBuildPerDay(accountId);
             if (countPerDay.getOrDefault(day, 0L) >= maxBuildsPerDay) {
               if (maxBuildsPerDay == 0) {
-                log.error("Your account is not verified. To request verification, contact support: support@harness.io");
+                log.error(
+                    "We apologize, but your account is not verified for Harness Cloud. To resolve this issue, please use your work email or contact support to request account verification: support@harness.io");
                 throw new CIStageExecutionException(
-                    "Your account is not verified. To request verification, contact support: support@harness.io");
+                    "We apologize, but your account is not verified for Harness Cloud. To resolve this issue, please use your work email or contact support to request account verification: support@harness.io");
               } else {
-                log.error("You have reached your account limits. Please contact support: support@harness.io");
+                log.error("You have reached the account limit. Please contact support: support@harness.io");
                 throw new CIStageExecutionException(
-                    "You have reached your account limits. Please contact support: support@harness.io");
+                    "You have reached the account limit. Please contact support: support@harness.io");
               }
             }
           }

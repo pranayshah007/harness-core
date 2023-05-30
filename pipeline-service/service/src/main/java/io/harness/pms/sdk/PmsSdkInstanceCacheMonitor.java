@@ -42,13 +42,9 @@ public class PmsSdkInstanceCacheMonitor {
   public void scheduleCacheSync() {
     long initialDelay = new SecureRandom().nextInt(1);
     try {
-      try {
-        executorService.scheduleAtFixedRate(this::syncCache, initialDelay, 1, TimeUnit.HOURS);
-      } catch (Exception e) {
-        log.error("Exception while creating a scheduled sdk instance cache sync", e);
-      }
-    } catch (Exception ex) {
-      log.error("Exception while creating a scheduled sdk instance cache sync", ex);
+      executorService.scheduleAtFixedRate(this::syncCache, initialDelay, 1, TimeUnit.HOURS);
+    } catch (Exception e) {
+      log.error("Exception while creating a scheduled sdk instance cache sync", e);
     }
   }
 

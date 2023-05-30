@@ -64,16 +64,16 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
   }
 
   @Override
-  public void consumeUpdateEvent(String id, ResourceGroupDBO updatedResourceGroup) {
+  public boolean consumeUpdateEvent(String id, ResourceGroupDBO updatedResourceGroup) {
     long startTime = System.currentTimeMillis();
     if (updatedResourceGroup.getResourceSelectors() == null && updatedResourceGroup.getResourceSelectorsV2() == null
         && updatedResourceGroup.getScopeSelectors() == null) {
-      return;
+      return false;
     }
 
     Optional<ResourceGroupDBO> resourceGroup = resourceGroupRepository.findById(id);
     if (!resourceGroup.isPresent()) {
-      return;
+      return true;
     }
 
     Criteria criteria =
@@ -113,16 +113,19 @@ public class ResourceGroupChangeConsumerImpl implements ChangeConsumer<ResourceG
       log.info("ResourceGroupChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
           numberOfACLsDeleted, id, permissionsChangeTime);
     }
+    return true;
   }
 
   @Override
-  public void consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id) {
     // No need to process separately. Would be processed indirectly when associated role bindings will be deleted
+    return true;
   }
 
   @Override
-  public void consumeCreateEvent(String id, ResourceGroupDBO createdEntity) {
+  public boolean consumeCreateEvent(String id, ResourceGroupDBO createdEntity) {
     // we do not consume create event
+    return true;
   }
 
   private static class ReProcessRoleAssignmentOnResourceGroupUpdateTask implements Callable<Result> {

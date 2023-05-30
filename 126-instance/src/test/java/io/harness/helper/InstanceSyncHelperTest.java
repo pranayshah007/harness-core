@@ -58,7 +58,7 @@ public class InstanceSyncHelperTest extends InstancesTestBase {
                                                                             .id(ID)
                                                                             .perpetualTaskId(PERPETUAL_TASK_ID)
                                                                             .build();
-    instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
+    instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO, false);
     verify(instanceSyncPerpetualTaskService, times(1))
         .deletePerpetualTask(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier(),
             instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());

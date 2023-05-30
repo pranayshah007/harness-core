@@ -7,9 +7,8 @@
 
 package io.harness.ngmigration.expressions.step;
 
+import io.harness.ngmigration.beans.ScriptProvisionerOutput;
 import io.harness.ngmigration.beans.StepOutput;
-
-import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptProvisionerStepFunctor extends StepExpressionFunctor {
   private StepOutput stepOutput;
@@ -21,12 +20,10 @@ public class ShellScriptProvisionerStepFunctor extends StepExpressionFunctor {
 
   @Override
   public synchronized Object get(Object key) {
-    if (StringUtils.equals(stepOutput.getStageIdentifier(), getCurrentStageIdentifier())) {
-      return String.format("<+execution.steps.%s.steps.%s.output.%s>", stepOutput.getStepGroupIdentifier(),
-          stepOutput.getStepIdentifier(), key);
-    }
-
-    return String.format("<+pipeline.stages.%s.spec.execution.steps.%s.steps.%s.output.%s>",
-        stepOutput.getStageIdentifier(), stepOutput.getStepGroupIdentifier(), stepOutput.getStepIdentifier(), key);
+    return ScriptProvisionerOutput.builder()
+        .stepOutput(stepOutput)
+        .currentStageIdentifier(getCurrentStageIdentifier())
+        .key((String) key)
+        .build();
   }
 }

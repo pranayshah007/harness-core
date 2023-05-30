@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -72,7 +73,10 @@ public class VersionUtilsTest extends CategoryTest {
     List<KubernetesResource> resources = processYaml(fileContents);
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, 1);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, 1);
 
     assertThat(resourcesWithRevision.get(0).getResourceId().isVersioned()).isEqualTo(true);
 
@@ -93,7 +97,10 @@ public class VersionUtilsTest extends CategoryTest {
     List<KubernetesResource> resources = processYaml(fileContents);
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, 1);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, 1);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-1");
@@ -114,7 +121,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-" + revision);
@@ -143,7 +153,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-" + revision);
@@ -164,7 +177,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-" + revision);
@@ -185,7 +201,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-" + revision);
@@ -206,7 +225,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-" + revision);
@@ -227,7 +249,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getField("metadata.name"))
         .isEqualTo(resources.get(0).getField("metadata.name") + "-" + revision);
@@ -260,7 +285,10 @@ public class VersionUtilsTest extends CategoryTest {
     int revision = 100;
 
     List<KubernetesResource> resourcesWithRevision = processYaml(fileContents);
-    addRevisionNumber(resourcesWithRevision, revision);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithRevision);
+
+    addRevisionNumber(context, revision);
 
     assertThat(resourcesWithRevision.get(0).getResourceId().isVersioned()).isEqualTo(false);
 
@@ -298,7 +326,10 @@ public class VersionUtilsTest extends CategoryTest {
     List<KubernetesResource> resources = processYaml(fileContents);
     List<KubernetesResource> resourcesWithSuffixedResources = processYaml(fileContents);
 
-    addSuffixToConfigmapsAndSecrets(resourcesWithSuffixedResources, testSuffix, logCallback);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithSuffixedResources);
+
+    addSuffixToConfigmapsAndSecrets(context, testSuffix, logCallback);
 
     assertThat(resourcesWithSuffixedResources.get(2).getField(
                    "spec.template.spec.containers[0].env[0].valueFrom.configMapKeyRef.name"))
@@ -367,8 +398,10 @@ public class VersionUtilsTest extends CategoryTest {
     String fileContents = Resources.toString(url, StandardCharsets.UTF_8);
     List<KubernetesResource> resources = processYaml(fileContents);
     List<KubernetesResource> resourcesWithSuffixedResources = processYaml(fileContents);
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(resourcesWithSuffixedResources);
 
-    addSuffixToConfigmapsAndSecrets(resourcesWithSuffixedResources, testSuffix, logCallback);
+    addSuffixToConfigmapsAndSecrets(context, testSuffix, logCallback);
 
     assertThat(resourcesWithSuffixedResources.get(2).getField(
                    "spec.template.spec.containers[0].env[0].valueFrom.configMapKeyRef.name"))
@@ -402,7 +435,11 @@ public class VersionUtilsTest extends CategoryTest {
     KubernetesResource configmap = resources.get(0);
     configmap.getResourceId().setName(name);
     configmap.setSpec(configmap.getSpec().replace("name: configmap", "name: " + name));
-    addSuffixToConfigmapsAndSecrets(List.of(configmap), suffix, logCallback);
+
+    K8sRequestHandlerContext context = new K8sRequestHandlerContext();
+    context.setResources(List.of(configmap));
+
+    addSuffixToConfigmapsAndSecrets(context, suffix, logCallback);
     assertThat(configmap.getResourceId().getName()).isEqualTo(expectedName);
   }
 

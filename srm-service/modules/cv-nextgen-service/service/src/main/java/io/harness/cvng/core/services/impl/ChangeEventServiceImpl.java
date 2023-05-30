@@ -28,8 +28,8 @@ import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO.CategoryCountDetails;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
+import io.harness.cvng.beans.change.ChangeSummaryDTO.CategoryCountDetails;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.ChangeTimelineBuilder;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
@@ -507,14 +507,13 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @VisibleForTesting
   Query<Activity> createTextSearchQuery(Instant startTime, Instant endTime, String searchText,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes) {
-    Query<Activity> query = hPersistence.createQuery(Activity.class)
-                                .search(searchText)
-                                .field(ActivityKeys.eventTime)
-                                .lessThan(endTime)
-                                .field(ActivityKeys.eventTime)
-                                .greaterThanOrEq(startTime)
-                                .disableValidation();
-    return query;
+    return hPersistence.createQuery(Activity.class)
+        .search(searchText)
+        .field(ActivityKeys.eventTime)
+        .lessThan(endTime)
+        .field(ActivityKeys.eventTime)
+        .greaterThanOrEq(startTime)
+        .disableValidation();
   }
 
   @VisibleForTesting

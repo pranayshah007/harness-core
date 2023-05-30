@@ -574,6 +574,14 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                .as(InstanceKeys.lastPipelineExecutionName)
                                .first(InstanceKeys.lastDeployedAt)
                                .as(InstanceKeys.lastDeployedAt)
+                               .first(InstanceKeys.stageNodeExecutionId)
+                               .as(InstanceKeys.stageNodeExecutionId)
+                               .first(InstanceKeys.stageStatus)
+                               .as(InstanceKeys.stageStatus)
+                               .first(InstanceKeys.stageSetupId)
+                               .as(InstanceKeys.stageSetupId)
+                               .first(InstanceKeys.rollbackStatus)
+                               .as(InstanceKeys.rollbackStatus)
                                .push(Aggregation.ROOT)
                                .as(InstanceSyncConstants.INSTANCES);
 

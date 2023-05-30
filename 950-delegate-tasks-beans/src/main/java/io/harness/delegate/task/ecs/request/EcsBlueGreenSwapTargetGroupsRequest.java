@@ -38,4 +38,5 @@ public class EcsBlueGreenSwapTargetGroupsRequest
   String newServiceName;
   boolean isFirstDeployment;
   boolean doNotDownsizeOldService;
+  @NonFinal @Expression(ALLOW_SECRETS) Integer downsizeOldServiceDelayInSecs;
 }

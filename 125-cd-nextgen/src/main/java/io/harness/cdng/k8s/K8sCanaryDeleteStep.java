@@ -112,6 +112,7 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
                 NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
+            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     return queueCanaryDeleteRequest(stepElementParameters, request, ambiance, infrastructure, releaseName);
@@ -128,6 +129,7 @@ public class K8sCanaryDeleteStep extends CdTaskExecutable<K8sDeployResponse> {
                 NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
             .useDeclarativeRollback(k8sStepHelper.isDeclarativeRollbackEnabled(ambiance))
+            .enabledSupportHPAAndPDB(cdStepHelper.isEnabledSupportHPAAndPDB(AmbianceUtils.getAccountId(ambiance)))
             .build();
 
     return queueCanaryDeleteRequest(stepElementParameters, request, ambiance, infrastructure, releaseName);

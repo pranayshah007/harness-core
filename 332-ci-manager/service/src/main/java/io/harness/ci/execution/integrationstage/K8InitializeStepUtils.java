@@ -328,6 +328,7 @@ public class K8InitializeStepUtils {
       case UPLOAD_GCS:
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, stageNode,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, ambiance, extraMemoryPerStep, extraCPUPerStep);
@@ -388,7 +389,7 @@ public class K8InitializeStepUtils {
       secretVarMap.putAll(getSecretVariablesMap(stageNode.getPipelineVariables()));
       secretVarMap.putAll(getSecretVariablesMap(stageNode.getVariables()));
     }
-    secretVarMap.putAll(pluginSettingUtils.getPluginCompatibleSecretVars(stepInfo));
+    secretVarMap.putAll(pluginSettingUtils.getPluginCompatibleSecretVars(stepInfo, identifier));
 
     Boolean privileged = null;
     if (CIStepInfoUtils.getPrivilegedMode(stepInfo) != null) {
@@ -1116,6 +1117,7 @@ public class K8InitializeStepUtils {
       case SECURITY:
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return ((PluginCompatibleStep) ciStepInfo).getResources();
       default:
         throw new CIStageExecutionException(

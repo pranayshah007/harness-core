@@ -25,6 +25,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
@@ -43,6 +44,9 @@ import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePaths
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryRequestDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.custom.CustomResourceService;
+import io.harness.cdng.artifact.resources.docker.dtos.DockerBuildDetailsDTO;
+import io.harness.cdng.artifact.resources.docker.dtos.DockerRequestDTO;
+import io.harness.cdng.artifact.resources.docker.service.DockerResourceService;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceService;
@@ -126,6 +130,7 @@ public class ArtifactResourceUtils {
   @Inject ServiceEntityService serviceEntityService;
   @Inject EnvironmentService environmentService;
   @Inject NexusResourceService nexusResourceService;
+  @Inject DockerResourceService dockerResourceService;
   @Inject GARResourceService garResourceService;
   @Inject GcrResourceService gcrResourceService;
   @Inject EcrResourceService ecrResourceService;
@@ -955,6 +960,44 @@ public class ArtifactResourceUtils {
     return customResourceService.getBuilds(script, versionPath, arrayPath,
         NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
         delegateSelector);
+  }
+
+  public DockerBuildDetailsDTO getLastSuccessfulBuildV2Docker(String imagePath, String dockerConnectorIdentifier,
+      String tag, String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
+      String fqnPath, GitEntityFindInfoDTO gitEntityBasicInfo, DockerRequestDTO requestDTO, String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService =
+          locateArtifactInService(accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+      DockerHubArtifactConfig dockerHubArtifactConfig = (DockerHubArtifactConfig) artifactSpecFromService;
+      if (isEmpty(imagePath)) {
+        imagePath = (String) dockerHubArtifactConfig.getImagePath().fetchFinalValue();
+      }
+      if (isEmpty(dockerConnectorIdentifier)) {
+        dockerConnectorIdentifier = dockerHubArtifactConfig.getConnectorRef().getValue();
+      }
+      if (isEmpty(requestDTO.getTag())) {
+        requestDTO.setTag((String) dockerHubArtifactConfig.getTag().fetchFinalValue());
+      }
+      if (isEmpty(requestDTO.getTagRegex())) {
+        requestDTO.setTagRegex((String) dockerHubArtifactConfig.getTagRegex().fetchFinalValue());
+      }
+    }
+
+    dockerConnectorIdentifier = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), dockerConnectorIdentifier, fqnPath, gitEntityBasicInfo, serviceRef);
+    imagePath = getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), imagePath, fqnPath, gitEntityBasicInfo, serviceRef);
+
+    requestDTO.setTag(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), requestDTO.getTag(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    requestDTO.setTagRegex(getResolvedFieldValue(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        requestDTO.getRuntimeInputYaml(), requestDTO.getTagRegex(), fqnPath, gitEntityBasicInfo, serviceRef));
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(dockerConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+    return dockerResourceService.getSuccessfulBuild(
+        connectorRef, imagePath, requestDTO, orgIdentifier, projectIdentifier);
   }
 
   public GcrBuildDetailsDTO getSuccessfulBuildV2GCR(String imagePath, String gcrConnectorIdentifier, String accountId,

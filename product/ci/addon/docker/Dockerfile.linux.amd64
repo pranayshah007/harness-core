@@ -14,8 +14,7 @@
 # > docker build -t harness/ci-addon:tag1.0 -f product/ci/addon/Dockerfile $(bazel info bazel-bin)/product/ci/addon/
 
 
-FROM us.gcr.io/platform-205701/ubi/ubi-base:8.7
-USER root
+FROM redhat/ubi8-minimal
 RUN microdnf update \
     && microdnf install shadow-utils \
     curl \

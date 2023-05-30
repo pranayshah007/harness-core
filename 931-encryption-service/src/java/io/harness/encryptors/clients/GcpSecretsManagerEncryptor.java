@@ -126,6 +126,7 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
         EncryptedRecordData.builder()
             .path(secretText.getPath())
             .encryptionKey(secretText.getName())
+            .additionalMetadata(secretText.getAdditionalMetadata())
             .name(secretText.getName())
             .build(),
         encryptionConfig));

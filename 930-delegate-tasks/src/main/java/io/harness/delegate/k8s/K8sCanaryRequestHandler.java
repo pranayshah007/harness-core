@@ -48,10 +48,11 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesReleaseDetails;
-import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.ServiceHookAction;
@@ -83,6 +84,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
 
   private final K8sCanaryHandlerConfig k8sCanaryHandlerConfig = new K8sCanaryHandlerConfig();
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
   private boolean canaryWorkloadDeployed;
   private boolean saveReleaseHistory;
   private K8sReleaseHandler releaseHandler;
@@ -97,6 +99,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     }
 
     K8sCanaryDeployRequest k8sCanaryDeployRequest = (K8sCanaryDeployRequest) k8sDeployRequest;
+    k8sRequestHandlerContext.setEnabledSupportHPAAndPDB(k8sCanaryDeployRequest.isEnabledSupportHPAAndPDB());
     releaseHandler = k8sTaskHelperBase.getReleaseHandler(k8sCanaryDeployRequest.isUseDeclarativeRollback());
     k8sCanaryHandlerConfig.setReleaseName(k8sCanaryDeployRequest.getReleaseName());
     k8sCanaryHandlerConfig.setManifestFilesDirectory(
@@ -175,6 +178,12 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     wrapUpLogCallback.saveExecutionLog("\nDone.", INFO, CommandExecutionStatus.SUCCESS);
 
     String canaryObjectsNames = canaryWorkload.getResourceId().namespaceKindNameRef();
+
+    if (k8sRequestHandlerContext.isEnabledSupportHPAAndPDB()) {
+      canaryObjectsNames = k8sCanaryBaseHandler.appendHPAAndPDBNamesToCanaryWorkloads(
+          canaryObjectsNames, k8sRequestHandlerContext.getResourcesForNameUpdate());
+    }
+
     if (k8sCanaryDeployRequest.isUseDeclarativeRollback()) {
       canaryObjectsNames = k8sCanaryBaseHandler.appendSecretAndConfigMapNamesToCanaryWorkloads(
           canaryObjectsNames, k8sCanaryHandlerConfig.getResources());
@@ -212,6 +221,11 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
             canaryObjectsNames, k8sCanaryHandlerConfig.getResources());
       }
 
+      if (k8sRequestHandlerContext.isEnabledSupportHPAAndPDB()) {
+        canaryObjectsNames = k8sCanaryBaseHandler.appendHPAAndPDBNamesToCanaryWorkloads(
+            canaryObjectsNames, k8sRequestHandlerContext.getResourcesForNameUpdate());
+      }
+
       k8sCanaryDataBuilder.canaryWorkload(canaryObjectsNames);
     }
 
@@ -225,8 +239,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
     k8sCanaryHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
-    k8sCanaryHandlerConfig.setClient(
-        Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    k8sCanaryHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
 
     IK8sReleaseHistory releaseHistory =
         releaseHandler.getReleaseHistory(k8sCanaryHandlerConfig.getKubernetesConfig(), request.getReleaseName());
@@ -256,6 +270,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         k8sDelegateTaskParams.getWorkingDirectory(), logCallback);
     List<KubernetesResource> resources =
         k8sTaskHelperBase.readManifests(manifestFiles, logCallback, isErrorFrameworkSupported());
+    k8sRequestHandlerContext.setResources(resources);
     k8sTaskHelperBase.setNamespaceToKubernetesResourcesIfRequired(
         resources, k8sCanaryHandlerConfig.getKubernetesConfig().getNamespace());
 
@@ -278,13 +293,13 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     }
 
     k8sTaskHelperBase.dryRunManifests(k8sCanaryHandlerConfig.getClient(), k8sCanaryHandlerConfig.getResources(),
-        k8sDelegateTaskParams, logCallback, true, request.isUseNewKubectlVersion());
+        k8sDelegateTaskParams, logCallback, true);
   }
 
   @VisibleForTesting
   void prepareForCanary(K8sCanaryDeployRequest k8sCanaryDeployRequest, K8sDelegateTaskParams k8sDelegateTaskParams,
       LogCallback logCallback) throws Exception {
-    k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, k8sDelegateTaskParams,
+    k8sCanaryBaseHandler.prepareForCanary(k8sCanaryHandlerConfig, k8sRequestHandlerContext, k8sDelegateTaskParams,
         k8sCanaryDeployRequest.isSkipResourceVersioning(), logCallback, true);
     Integer currentInstances =
         k8sCanaryBaseHandler.getCurrentInstances(k8sCanaryHandlerConfig, k8sDelegateTaskParams, logCallback);
@@ -310,7 +325,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
         unhandled(k8sCanaryDeployRequest.getInstanceUnitType());
     }
 
-    k8sCanaryBaseHandler.updateTargetInstances(k8sCanaryHandlerConfig, targetInstances, logCallback);
+    k8sCanaryBaseHandler.updateTargetInstances(
+        k8sCanaryHandlerConfig, k8sRequestHandlerContext, targetInstances, logCallback);
 
     IK8sRelease currentRelease = releaseHandler.createRelease(
         k8sCanaryHandlerConfig.getReleaseName(), k8sCanaryHandlerConfig.getCurrentReleaseNumber());
@@ -329,5 +345,10 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
   @VisibleForTesting
   K8sCanaryHandlerConfig getK8sCanaryHandlerConfig() {
     return k8sCanaryHandlerConfig;
+  }
+
+  @VisibleForTesting
+  K8sRequestHandlerContext getK8sRequestHandlerContext() {
+    return k8sRequestHandlerContext;
   }
 }

@@ -297,7 +297,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
         }
       }
 
-      StepArtifacts stepArtifacts = handleArtifact(artifactMetadata, stepParameters);
+      StepArtifacts stepArtifacts = handleArtifactForVm(artifactMetadata, stepParameters, ambiance);
       buildArtifacts(ambiance, stepIdentifier, stepArtifacts, stepResponseBuilder);
       return stepResponseBuilder.build();
     } else if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
@@ -324,6 +324,11 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
   protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {
     return null;
+  }
+
+  protected StepArtifacts handleArtifactForVm(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    return handleArtifact(artifactMetadata, stepParameters);
   }
 
   @Override
@@ -360,6 +365,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
       case RESTORE_CACHE_S3:
       case GIT_CLONE:
       case SSCA_ORCHESTRATION:
+      case SSCA_ENFORCEMENT:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
             stepName, os, ambiance);
@@ -413,8 +419,8 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(
-        abstractions, task, taskSelectors, eligibleToExecuteDelegateIds, executeOnHarnessHostedDelegates);
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds,
+        executeOnHarnessHostedDelegates, ambiance.getStageExecutionId());
   }
 
   private StepStatusTaskResponseData filterK8StepResponse(Map<String, ResponseData> responseDataMap) {

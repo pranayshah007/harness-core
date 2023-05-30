@@ -106,7 +106,7 @@ public class TemplateMergeServiceHelper {
           templateCacheMap, templateUniqueIdentifier.getVersionMaker(), loadFromCache);
       return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
     } finally {
-      log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {} took {}ms ",
+      log.debug("[TemplateService] Finished fetching Template {} from project {}, org {}, account {} took {}ms ",
           templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId,
           System.currentTimeMillis() - start);
     }

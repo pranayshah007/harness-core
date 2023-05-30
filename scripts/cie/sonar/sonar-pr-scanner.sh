@@ -4,7 +4,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-set -e
+set -ex
 
 trap 'report_error' ERR
 
@@ -17,6 +17,7 @@ function report_error(){
 function usage() {
   echo "This scripts runs sonar scan to generate reports for vulnerabilities \
   on files in a PR."
+  exit 0
 }
 
 function check_cmd_status() {
@@ -72,11 +73,12 @@ scripts/bazel/generate_credentials.sh
 
 create_empty_files "$PR_MODULES_JAVAC_FILE $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"
 
-while getopts ":hb:c:" opt; do
+while getopts ":hb:c:k:" opt; do
   case $opt in
     h) usage; exit 5 ;;
     b) BASE_SHA=$OPTARG ;;
     c) COMMIT_SHA=$OPTARG ;;
+    k) SONAR_KEY=$OPTARG ;;
     *) echo "Invalid Flag"; exit 5 ;;
   esac
 done
@@ -87,11 +89,19 @@ check_cmd_status "$?" "Failed to list harness core modules."
 
 GIT_DIFF="git diff --name-only $COMMIT_SHA..$BASE_SHA"
 
-PR_FILES=$($GIT_DIFF | tr '\r\n' ',' | rev | cut -c2- | rev)
-check_cmd_status "$?" "Failed to get diff between commits."
-#echo "PR_FILES: $PR_FILES"
+echo "------------------------------------------------"
+echo "GIT DIFF: $GIT_DIFF"
+echo "------------------------------------------------"
 
-PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | grep -v 'product\|commons' | tr '\r\n' ' ')
+for FILE in `$GIT_DIFF`;
+  do
+    [ -f "${FILE}" ] && PR_FILES+=("${FILE}") || echo "${FILE} not found....."
+  done
+PR_FILES=$(echo ${PR_FILES[@]} | tr ' ' ',')
+check_cmd_status "$?" "Failed to get diff between commits."
+echo "PR_FILES: ${PR_FILES}"
+
+PR_MODULES=$($GIT_DIFF | awk -F/ '{print $1}' | sort -u | grep -v '^product\|^commons' | tr '\r\n' ' ')
 check_cmd_status "$?" "Failed to get modules from commits."
 echo "PR_MODULES: $PR_MODULES"
 
@@ -128,10 +138,6 @@ echo "----------PR_MODULES_JAVAC_FILE-----------"
 cat $PR_MODULES_JAVAC_FILE
 echo "---------------------"
 
-if [ ! -s $PR_MODULES_JAVAC_FILE ]; then
-  echo "INFO: No need to run Sonar Scan."; exit 0
-fi
-
 export SONAR_JAVAC_FILES=$(get_info_from_file $PR_MODULES_JAVAC_FILE)
 export SONAR_LIBS_FILES=$(get_info_from_file $PR_MODULES_LIB_FILE)
 export SONAR_SRCS=$(get_info_from_file $PR_SRCS_FILE)
@@ -156,5 +162,12 @@ echo "sonar.pullrequest.github.repository=$REPO_NAME" >> ${SONAR_CONFIG_FILE}
 
 echo "INFO: Sonar Properties"
 cat ${SONAR_CONFIG_FILE}
+
+if [ ! -s $PR_MODULES_JAVAC_FILE ]; then
+  echo "INFO: No need to run Sonar Scan."; exit 0
+else
+  echo "INFO: Running Sonar Scan."
+  sonar-scanner -Dsonar.login=${SONAR_KEY} -Dsonar.host.url=https://sonar.harness.io
+fi
 
 clean_temp_files "$PR_MODULES_JAVAC_FILE $PR_SRCS_FILE $PR_TEST_INCLUSION_FILE $PR_MODULES_LIB_FILE"

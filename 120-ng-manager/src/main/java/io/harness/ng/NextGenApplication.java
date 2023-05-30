@@ -66,6 +66,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.connector.gitsync.ConnectorGitSyncHelper;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.credit.schedular.CICreditExpiryIteratorHandler;
+import io.harness.credit.schedular.SendProvisionedCICreditsToSegmentHandler;
 import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
 import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
 import io.harness.enforcement.client.custom.CustomRestrictionInterface;
@@ -651,6 +652,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         .registerIterators(ngIteratorsConfig.getOauthTokenRefreshIteratorConfig().getThreadPoolSize());
     injector.getInstance(NGVaultUnsetRenewalHandler.class).registerIterators(5);
     injector.getInstance(CICreditExpiryIteratorHandler.class).registerIterator(2);
+    injector.getInstance(SendProvisionedCICreditsToSegmentHandler.class).registerIterator(2);
   }
 
   public void registerJobs(Injector injector) {

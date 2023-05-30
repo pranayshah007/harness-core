@@ -5,6 +5,7 @@
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 approvalInstances {"name": "accountId_orgIdentifier_projectIdentifier_pipelineIdentifier_approvalKey_status_isAutoRejectEnabled", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1, "approvalKey": 1, "status": 1, "isAutoRejectEnabled": 1}
 approvalInstances {"name": "nodeExecutionId_1", "background": true} {"nodeExecutionId": 1}
+approvalInstances {"name": "planExecutionId_status_type_nodeExecutionId", "background": true} {"planExecutionId": 1, "status": 1, "type": 1, "nodeExecutionId": 1}
 approvalInstances {"name": "status_deadline", "background": true} {"status": 1, "deadline": 1}
 approvalInstances {"name": "status_type_nextIteration", "background": true} {"status": 1, "type": 1, "nextIteration": -1}
 approvalInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

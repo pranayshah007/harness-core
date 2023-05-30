@@ -198,7 +198,7 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
-  public static final String IACM_TERRAFORM_PLAN = "IACMTerraformPlan";
+  public static final String IACM_TERRAFORM_PLUGIN = "IACMTerraformPlugin";
   public static final String IACM_TEMPLATE = "IACMTemplate";
   public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";

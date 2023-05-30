@@ -31,7 +31,6 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +47,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.utils.URIBuilder;
 import org.springframework.scheduling.support.CronSequenceGenerator;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -65,9 +63,6 @@ public class CEReportScheduleResource {
   @Inject private CloudBillingHelper cloudBillingHelper;
   @Inject private BigQueryService bigQueryService;
   @Inject private MainConfiguration mainConfiguration;
-
-  private static final String CE_VIEW_URL = "/account/%s/continuous-efficiency/views-explorer/%s";
-  private static final String URL = "url";
 
   @Inject
   public CEReportScheduleResource(CEReportScheduleService ceReportScheduleService) {
@@ -177,15 +172,9 @@ public class CEReportScheduleResource {
       return prepareResponse(rr, Response.Status.BAD_REQUEST);
     }
     log.info("Valid viewId and recipients list");
+    String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(accountId, unified);
     Map<String, String> templatePlaceholders = ceReportTemplateBuilderService.getTemplatePlaceholders(
-        accountId, viewId, bigQueryService.get(), cloudBillingHelper.getCloudProviderTableName(accountId, unified));
-
-    try {
-      templatePlaceholders.put(URL, buildAbsoluteUrl(String.format(CE_VIEW_URL, accountId, viewId)));
-    } catch (URISyntaxException e) {
-      log.error("Error in forming View URL for Scheduled Report", e);
-      templatePlaceholders.put(URL, "");
-    }
+        accountId, viewId, bigQueryService.get(), cloudProviderTableName, mainConfiguration.getPortal().getUrl());
 
     EmailData emailData = EmailData.builder()
                               .templateName("ce_scheduled_report")
@@ -212,12 +201,5 @@ public class CEReportScheduleResource {
 
   private Response prepareResponse(RestResponse restResponse, Response.Status status) {
     return Response.status(status).entity(restResponse).type(MediaType.APPLICATION_JSON).build();
-  }
-
-  public String buildAbsoluteUrl(String fragment) throws URISyntaxException {
-    String baseUrl = mainConfiguration.getPortal().getUrl();
-    URIBuilder uriBuilder = new URIBuilder(baseUrl);
-    uriBuilder.setFragment(fragment);
-    return uriBuilder.toString();
   }
 }

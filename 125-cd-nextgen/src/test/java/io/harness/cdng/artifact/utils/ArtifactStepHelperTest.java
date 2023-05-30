@@ -34,6 +34,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -93,7 +94,8 @@ public class ArtifactStepHelperTest extends CDNGTestBase {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessArtifactsInYamlWithOneArtifactAndPrimaryArtifactRefSet() throws IOException {
-    YamlField yamlField = artifactStepHelper.processArtifactsInYaml(ambiance, serviceEntityYaml);
+    YamlField yamlField =
+        YamlUtils.readTree(artifactStepHelper.processArtifactsInYaml(ambiance, serviceEntityYaml).getServiceYaml());
     YamlField serviceDefField =
         yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
     YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
@@ -107,8 +109,9 @@ public class ArtifactStepHelperTest extends CDNGTestBase {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessArtifactsInYamlWithOneArtifactAndPrimaryArtifactRefNull() throws IOException {
-    YamlField yamlField =
-        artifactStepHelper.processArtifactsInYaml(ambiance, getServiceEntityYamlWithNullPrimaryArtifact());
+    YamlField yamlField = YamlUtils.readTree(
+        artifactStepHelper.processArtifactsInYaml(ambiance, getServiceEntityYamlWithNullPrimaryArtifact())
+            .getServiceYaml());
     YamlField serviceDefField =
         yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
     YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);
@@ -122,8 +125,10 @@ public class ArtifactStepHelperTest extends CDNGTestBase {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessArtifactsInYamlWithMultipleArtifactAndPrimaryArtifactRefSet() throws IOException {
-    YamlField yamlField = artifactStepHelper.processArtifactsInYaml(
-        ambiance, getServiceEntityYamlWithMultipleSourcesAndPrimaryArtifactSet());
+    YamlField yamlField = YamlUtils.readTree(
+        artifactStepHelper
+            .processArtifactsInYaml(ambiance, getServiceEntityYamlWithMultipleSourcesAndPrimaryArtifactSet())
+            .getServiceYaml());
     YamlField serviceDefField =
         yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
     YamlField serviceSpecField = serviceDefField.getNode().getField(YamlTypes.SERVICE_SPEC);

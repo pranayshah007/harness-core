@@ -27,4 +27,10 @@ message EntityDetailProtoDTO {
     TriggerReferenceProtoDTO triggerRef = 7;
   }
   string name = 4;
+  EntityGitMetadata entityGitMetadata = 8;
+}
+
+message EntityGitMetadata {
+  string repo = 1;
+  string branch = 2;
 }

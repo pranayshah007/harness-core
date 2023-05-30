@@ -23,6 +23,8 @@ public class AzureVmDetails {
   int numberOfCores;
   int memoryInMB;
   double cost;
+  double costInDefaultCurrencyPref;
   String name;
-  Double cpuUtilisation;
+  Double avgCpuUtilisation;
+  Double maxCpuUtilisation;
 }

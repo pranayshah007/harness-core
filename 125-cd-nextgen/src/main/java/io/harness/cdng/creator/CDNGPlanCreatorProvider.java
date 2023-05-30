@@ -1103,7 +1103,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Elastigroup Deploy")
             .setType(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
             .build();
 
@@ -1111,7 +1110,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Elastigroup Rollback")
             .setType(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK)
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
             .build();
 
@@ -1120,7 +1118,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Elastigroup Setup")
             .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
     StepInfo terragruntPlan = StepInfo.newBuilder()
@@ -1167,7 +1164,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Elastigroup BG Stage Setup")
             .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
     StepInfo elastigroupSwapRoute =
@@ -1175,7 +1171,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Elastigroup Swap Route")
             .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
     StepInfo asgCanaryDeploy =
@@ -1183,7 +1178,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Canary Deploy")
             .setType(StepSpecTypeConstants.ASG_CANARY_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgCanaryDelete =
@@ -1191,7 +1185,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasCanaryAppSetup =
@@ -1254,7 +1247,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Rolling Deploy")
             .setType(StepSpecTypeConstants.ASG_ROLLING_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgRollingRollback =
@@ -1262,7 +1254,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Rolling Rollback")
             .setType(StepSpecTypeConstants.ASG_ROLLING_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgBlueGreenDeploy =
@@ -1270,7 +1261,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Blue Green Deploy")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_DEPLOY)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo asgBlueGreenRollback =
@@ -1278,7 +1268,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Blue Green Rollback")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_ROLLBACK)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasRollingDeploy =
@@ -1306,7 +1295,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addCategory("Helm")
                                                           .addFolderPaths("Kubernetes")
                                                           .build())
-                                     .setFeatureFlag(FeatureName.K8S_DRY_RUN_NG.name())
                                      .build();
 
     StepInfo asgBlueGreenSwapService =
@@ -1314,7 +1302,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("ASG Blue Green Swap Service")
             .setType(StepSpecTypeConstants.ASG_BLUE_GREEN_SWAP_SERVICE)
             .setStepMetaData(StepMetaData.newBuilder().addAllCategory(ASG_CATEGORY).setFolderPath(ASG).build())
-            .setFeatureFlag(FeatureName.CDS_ASG_NG.name())
             .build();
 
     StepInfo tasRouteMapping =
@@ -1381,7 +1368,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo k8sBGStageScaleDown =
         StepInfo.newBuilder()
-            .setName("K8s Blue Green Stage Scale Down")
+            .setName("Blue Green Stage Scale Down")
             .setType(StepSpecTypeConstants.K8S_BLUE_GREEN_STAGE_SCALE_DOWN)
             .setFeatureRestrictionName(FeatureRestrictionName.K8S_BLUE_GREEN_STAGE_SCALE_DOWN.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").addFolderPaths("Kubernetes").build())

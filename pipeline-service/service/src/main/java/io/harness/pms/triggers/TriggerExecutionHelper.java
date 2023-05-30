@@ -529,8 +529,10 @@ public class TriggerExecutionHelper {
   @VisibleForTesting
   TriggeredBy generateTriggerdBy(
       String executionTagForGitEvent, NGTriggerEntity ngTriggerEntity, TriggerPayload triggerPayload, String eventId) {
-    TriggeredBy.Builder builder =
-        TriggeredBy.newBuilder().setIdentifier(ngTriggerEntity.getIdentifier()).setUuid("systemUser");
+    TriggeredBy.Builder builder = TriggeredBy.newBuilder()
+                                      .setIdentifier(ngTriggerEntity.getIdentifier())
+                                      .setTriggerIdentifier(ngTriggerEntity.getIdentifier())
+                                      .setUuid("systemUser");
     if (isNotBlank(executionTagForGitEvent)) {
       builder.putExtraInfo(PlanExecution.EXEC_TAG_SET_BY_TRIGGER, executionTagForGitEvent);
       builder.putExtraInfo(TRIGGER_REF, generateTriggerRef(ngTriggerEntity));

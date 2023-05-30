@@ -1384,6 +1384,8 @@
 9146:io.harness.cvng.beans.signalfx.SignalFXMetricSampleDataRequest
 9147:io.harness.cvng.beans.SignalFXMetricDataCollectionInfo
 9148:io.harness.cvng.beans.SignalFXMetricDataCollectionInfo.MetricCollectionInfo
+9149:io.harness.cvng.beans.grafanaloki.GrafanaLokiLogSampleDataRequest
+9150:io.harness.cvng.beans.GrafanaLokiLogDataCollectionInfo
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
@@ -3219,3 +3221,17 @@
 10000524:io.harness.delegate.beans.storeconfig.S3StoreTFDelegateConfig
 10000526:io.harness.beans.HttpCertificateNG
 10000527:software.wings.beans.ServiceHookDelegateConfig
+20000501:io.harness.delegate.beans.connector.rancher.RancherTaskParams
+20000502:io.harness.delegate.beans.connector.rancher.RancherDelegateTaskResponse
+20000503:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams
+20000504:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse
+20000505:io.harness.delegate.beans.connector.rancher.RancherTaskType
+20000601:io.harness.delegate.beans.connector.rancher.RancherAuthType
+20000602:io.harness.delegate.beans.connector.rancher.RancherConfigType
+20000603:io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO
+20000604:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTO
+20000605:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthCredentialsDTOSerializer
+20000606:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthDTO
+20000607:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigAuthenticationSpecDTO
+20000608:io.harness.delegate.beans.connector.rancher.RancherConnectorConfigDTO
+20000609:io.harness.delegate.beans.connector.rancher.RancherConnectorDTO

@@ -19,7 +19,6 @@ import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventio
 import io.harness.yaml.core.failurestrategy.markFailure.MarkAsFailFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.marksuccess.MarkAsSuccessFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
-import io.harness.yaml.core.failurestrategy.retry.RetrySGFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StageRollbackFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.rollback.StepGroupFailureActionConfig;
@@ -42,7 +41,6 @@ import javax.validation.constraints.NotNull;
       @Type(value = ProceedWithDefaultValuesFailureActionConfig.class,
           name = NGFailureActionTypeConstants.PROCEED_WITH_DEFAULT_VALUES),
       @Type(value = MarkAsFailFailureActionConfig.class, name = NGFailureActionTypeConstants.MARK_AS_FAILURE),
-      @Type(value = RetrySGFailureActionConfig.class, name = NGFailureActionTypeConstants.RETRY_STEP_GROUP)
 })
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface FailureStrategyActionConfig {

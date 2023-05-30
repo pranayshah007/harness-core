@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.MongoUtils.setUnset;
+import static io.harness.ng.core.common.beans.Generation.CG;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
@@ -278,7 +279,7 @@ public class LdapGroupSyncJobHelper {
           }
           log.info("LDAPIterator: user found from system is {}", user);
 
-          if (user != null && userService.isUserAssignedToAccount(user, accountId)) {
+          if (user != null && userService.isUserAssignedToAccountInGeneration(user, accountId, CG)) {
             log.info("LDAPIterator: user {} already assigned to account {}", user.getEmail(), accountId);
             userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
             log.info("LDAPIterator: adding existing user {} to groups {}  in accountId {}", user.getUuid(),

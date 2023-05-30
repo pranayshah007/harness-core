@@ -57,17 +57,20 @@ public class EntityCrudStreamListener implements MessageListener {
         return true;
       }
       EntityChangeDTO entityChangeDTO;
-      try {
-        entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
-      } catch (InvalidProtocolBufferException e) {
-        throw new InvalidRequestException(
-            String.format("Exception in unpacking EntityChangeDTO for id %s", messageId), e);
-      }
       EventMessageHandler eventMessageHandler = eventMessageHandlerFactory.getEventMessageHandler(entityType);
       if (eventMessageHandler != null) {
-        eventMessageHandler.handleMessage(message, entityChangeDTO, action);
-        log.info("Completed processing the crud event with the id {}", messageId);
+        try {
+          entityChangeDTO = EntityChangeDTO.parseFrom(message.getMessage().getData());
+        } catch (InvalidProtocolBufferException e) {
+          throw new InvalidRequestException(
+              String.format("Exception in unpacking EntityChangeDTO for id %s", messageId), e);
+        }
+        if (entityChangeDTO != null) {
+          eventMessageHandler.handleMessage(message, entityChangeDTO, action);
+          log.info("Completed processing the crud event with the id {}", messageId);
+        }
       }
+
       return true;
     } catch (Exception e) {
       log.error("Error processing the crud event with the id {} for entity type {}", messageId,

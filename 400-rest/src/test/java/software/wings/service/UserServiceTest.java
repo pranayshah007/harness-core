@@ -18,6 +18,7 @@ import static io.harness.eraro.ErrorCode.INVALID_CREDENTIAL;
 import static io.harness.ng.core.common.beans.Generation.CG;
 import static io.harness.ng.core.common.beans.Generation.NG;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -111,6 +112,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.event.handler.impl.EventPublishHelper;
 import io.harness.event.model.EventType;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SignupException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.UserAlreadyPresentException;
@@ -1600,6 +1602,16 @@ public class UserServiceTest extends WingsBaseTest {
   }
 
   @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testValidateNameThrowsInvalidArgumentsException() {
+    final String blankName = "  ";
+    assertThatThrownBy(() -> userService.validateName(blankName)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> userService.validateName(null)).isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(() -> userService.validateName("<a href='http://authorization.site'>Click ME</a>"))
+        .isInstanceOf(InvalidRequestException.class);
+  }
+  @Test
   @Owner(developers = RUSHABH)
   @Category(UnitTests.class)
   public void testJWTToken() {
@@ -1757,16 +1769,17 @@ public class UserServiceTest extends WingsBaseTest {
     Account account = getAccount(PAID);
     account.setUuid("accountId");
 
-    User user = anUser()
-                    .name(userName)
-                    .appId(generateUuid())
-                    .defaultAccountId(account.getUuid())
-                    .token(token)
-                    .accounts(Arrays.asList(account))
-                    .email("emailId")
-                    .emailVerified(true)
-                    .uuid("userId")
-                    .build();
+    User user =
+        anUser()
+            .name("Evil<img src=https://poc.shellcode.se/spongebob-ninja.jpg><h1>Hacker</h1><svg/onload=alert()>")
+            .appId(generateUuid())
+            .defaultAccountId(account.getUuid())
+            .token(token)
+            .accounts(Arrays.asList(account))
+            .email("emailId")
+            .emailVerified(true)
+            .uuid("userId")
+            .build();
 
     userService.sendAccountLockedNotificationMail(user, 2);
     verify(emailDataNotificationService, times(1)).send(any(EmailData.class));

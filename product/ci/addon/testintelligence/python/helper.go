@@ -16,6 +16,7 @@ import (
 var (
 	getFiles     = utils.GetFiles
 	getWorkspace = external.GetWrkspcPath
+	defaultTestGlobs = []string{"test_*.py", "*_test.py"}
 )
 
 // GetPythonTests returns list of RunnableTests in the workspace with cs extension.
@@ -28,6 +29,9 @@ func GetPythonTests(testGlobs []string) ([]types.RunnableTest, error) {
 	}
 
 	files, _ := getFiles(fmt.Sprintf("%s/**/*.py", wp))
+	if len(testGlobs) == 0 {
+		testGlobs = defaultTestGlobs
+	}
 	for _, path := range files {
 		if path == "" {
 			continue

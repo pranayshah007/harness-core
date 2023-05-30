@@ -27,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -47,6 +48,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -60,6 +62,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -109,6 +112,8 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
   private static final String REGION = "region";
   private static final String REPO_NAME = "repoName";
   private static final String TYPE = "type";
+  private static final String FEED = "feed";
+  private static final String PACKAGE_URL = "packageUrl";
   private static final String MESSAGE = String.format(
       "Artifact image SHA256 validation failed: image sha256 digest mismatch.\n Requested digest: %s\nAvailable digests:\n%s (V1)\n%s (V2)",
       "sha", SHA, SHA_V2);
@@ -146,12 +151,13 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     ArtifactDelegateResponse artifactDelegateResponse =
         DockerArtifactDelegateResponse.builder().buildDetails(buildDetails).build();
 
-    ArtifactOutcome artifactOutcome =
-        ArtifactResponseToOutcomeMapper.toArtifactOutcome(artifactConfig, artifactDelegateResponse, true);
+    DockerArtifactOutcome artifactOutcome = (DockerArtifactOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+        artifactConfig, artifactDelegateResponse, true);
 
     assertThat(artifactOutcome).isNotNull();
     assertThat(artifactOutcome).isInstanceOf(DockerArtifactOutcome.class);
-    assertThat(((DockerArtifactOutcome) artifactOutcome).getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getDigest()).isEqualTo("V1_DIGEST");
+    assertThat(artifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test
@@ -686,7 +692,10 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     final String bucket = "bucket";
     final String project = "project";
     final String artifactPath = "artifactPath";
-
+    Map<String, String> metadata = new HashMap<>();
+    metadata.put("url",
+        "https://www.googleapis.com/storage/v1/b/cloud-functions-bucket/o/nodejs-docs-samples%2Fhelloworld.tar.gz");
+    metadata.put("artifactFileSize", "10000");
     GoogleCloudStorageArtifactConfig googleCloudStorageArtifactConfig =
         GoogleCloudStorageArtifactConfig.builder()
             .identifier(identifier)
@@ -700,6 +709,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         GoogleCloudStorageArtifactDelegateResponse.builder()
             .bucket(bucket)
             .project(project)
+            .buildDetails(ArtifactBuildDetailsNG.builder().metadata(metadata).build())
             .artifactPath(artifactPath)
             .build();
     GoogleCloudStorageArtifactOutcome googleCloudStorageArtifactOutcome =
@@ -713,6 +723,7 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     assertThat(googleCloudStorageArtifactOutcome.getArtifactPath()).isEqualTo(artifactPath);
     assertThat(googleCloudStorageArtifactOutcome.getProject()).isEqualTo(project);
     assertThat(googleCloudStorageArtifactOutcome.getBucket()).isEqualTo(bucket);
+    assertThat(googleCloudStorageArtifactOutcome.getMetadata()).isEqualTo(metadata);
   }
 
   @Test
@@ -904,6 +915,36 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
     }
   }
 
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getAzureArtifactOutcomeTest() {
+    AzureArtifactsConfig azureArtifactsConfig = getSampleAzureArtifactConfig();
+
+    AzureArtifactsDelegateResponse azureArtifactsDelegateResponse = AzureArtifactsDelegateResponse.builder()
+                                                                        .packageUrl(PACKAGE_URL)
+                                                                        .version(VERSION)
+                                                                        .buildDetails(ARTIFACT_BUILD_DETAILS_NG)
+                                                                        .build();
+    AzureArtifactsOutcome azureArtifactsOutcome =
+        (AzureArtifactsOutcome) ArtifactResponseToOutcomeMapper.toArtifactOutcome(
+            azureArtifactsConfig, azureArtifactsDelegateResponse, true);
+    assertThat(azureArtifactsOutcome.getVersion()).isEqualTo(VERSION);
+    assertThat(azureArtifactsOutcome.getConnectorRef()).isEqualTo(CONNECTOR_REF);
+    assertThat(azureArtifactsOutcome.getVersionRegex()).isEqualTo(VERSION_REGEX);
+    assertThat(azureArtifactsOutcome.getType()).isEqualTo(ArtifactSourceType.AZURE_ARTIFACTS.getDisplayName());
+    assertThat(azureArtifactsOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
+    assertThat(azureArtifactsOutcome.isPrimaryArtifact()).isEqualTo(true);
+    assertThat(azureArtifactsOutcome.getMetadata()).isEqualTo(METADATA);
+    assertThat(azureArtifactsOutcome.getPackageName()).isEqualTo(IMAGE_PATH);
+    assertThat(azureArtifactsOutcome.getImage()).isEqualTo(PACKAGE_URL);
+    assertThat(azureArtifactsOutcome.getFeed()).isEqualTo(FEED);
+    assertThat(azureArtifactsOutcome.getProject()).isEqualTo(PROJECT);
+    assertThat(azureArtifactsOutcome.getPackageType()).isEqualTo(RepositoryFormat.docker.name());
+    assertThat(azureArtifactsOutcome.getScope()).isEqualTo(PROJECT);
+    assertThat(azureArtifactsOutcome.getImagePullSecret()).isEqualTo("<+imagePullSecret.identifier>");
+  }
+
   private void checkThrowsWhenDigestMismatch(
       ArtifactConfig artifactConfig, ArtifactDelegateResponse artifactDelegateResponse) {
     assertThatThrownBy(
@@ -1027,6 +1068,20 @@ public class ArtifactResponseToOutcomeMapperTest extends CategoryTest {
         .packageName(ParameterField.createValueField(IMAGE_PATH))
         .packageType(DOCKER)
         .digest(digest)
+        .build();
+  }
+
+  private AzureArtifactsConfig getSampleAzureArtifactConfig() {
+    return AzureArtifactsConfig.builder()
+        .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
+        .identifier(IDENTIFIER)
+        .versionRegex(ParameterField.createValueField(VERSION_REGEX))
+        .primaryArtifact(true)
+        .packageName(ParameterField.createValueField(IMAGE_PATH))
+        .packageType(DOCKER)
+        .feed(ParameterField.createValueField(FEED))
+        .project(ParameterField.createValueField(PROJECT))
+        .scope(ParameterField.createValueField(PROJECT))
         .build();
   }
 }

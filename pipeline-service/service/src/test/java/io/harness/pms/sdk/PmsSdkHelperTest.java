@@ -10,6 +10,7 @@ package io.harness.pms.sdk;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
+import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
@@ -51,6 +52,7 @@ public class PmsSdkHelperTest {
   @Mock private Map<ModuleType, PlanCreationServiceGrpc.PlanCreationServiceBlockingStub> planCreatorServices;
   @Mock private PmsSdkInstanceService pmsSdkInstanceService;
   @Mock private HSet<String> stepsVisibleInUI;
+  @Mock PmsSdkHelper pmsSdkHelperMock;
   @InjectMocks PmsSdkHelper pmsSdkHelper;
 
   @Before
@@ -81,7 +83,6 @@ public class PmsSdkHelperTest {
     ClassLoader classLoader = this.getClass().getClassLoader();
     final URL testFile = classLoader.getResource("pipeline.yml");
     String yamlContent = Resources.toString(testFile, Charsets.UTF_8);
-
     boolean result = pmsSdkHelper.containsSupportedDependencyByYamlPath(planCreatorServiceInfo,
         Dependencies.newBuilder().setYaml(yamlContent).putDependencies("pipeline", "pipeline").build());
     assertTrue(result);
@@ -130,5 +131,42 @@ public class PmsSdkHelperTest {
     boolean result = pmsSdkHelper.containsSupportedDependencyByYamlPath(
         planCreatorServiceInfo, Dependencies.newBuilder().setYaml(yamlContent).build());
     assertFalse(result);
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetServiceAffinityForGivenDependency() {
+    HashMap<String, String> map = new HashMap<>();
+    map.put("pipeline", "yaml");
+    Set<Map.Entry<String, String>> s = map.entrySet();
+
+    for (Map.Entry<String, String> it : s) {
+      Map<String, String> serviceAffinityMap = new HashMap<>();
+      serviceAffinityMap.put("pipeline", "yaml");
+      String affinityService = pmsSdkHelper.getServiceAffinityForGivenDependency(serviceAffinityMap, it);
+      assertEquals(affinityService, "yaml");
+    }
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testCatchExceptionInContainsSupportedSingleDependencyByYamlPath() {
+    PlanCreatorServiceInfo planCreatorServiceInfo = new PlanCreatorServiceInfo(
+        Collections.singletonMap(YAMLFieldNameConstants.PIPELINE, Collections.singleton(PlanCreatorUtils.ANY_TYPE)),
+        null);
+
+    HashMap<String, String> map = new HashMap<>();
+    map.put("pipeline", "yaml");
+    Set<Map.Entry<String, String>> s = map.entrySet();
+
+    for (Map.Entry<String, String> dependencyEntry : s) {
+      assertThatThrownBy(()
+                             -> PmsSdkHelper.containsSupportedSingleDependencyByYamlPath(
+                                 planCreatorServiceInfo, null, dependencyEntry, "0"))
+          .isInstanceOf(InvalidRequestException.class)
+          .hasMessage("Invalid yaml during plan creation for dependency path - yaml");
+    }
   }
 }

@@ -80,6 +80,7 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
   private String gcpKeyPath;
   private String releaseHistoryPrefix;
   @Expression(ALLOW_SECRETS) List<ServiceHookDelegateConfig> serviceHooks;
+  private boolean useRefactorSteadyStateCheck;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

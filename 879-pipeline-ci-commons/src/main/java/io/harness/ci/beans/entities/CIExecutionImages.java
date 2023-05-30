@@ -36,4 +36,5 @@ public class CIExecutionImages {
   @NotBlank String cacheS3Tag;
   @NotBlank String securityTag;
   @NotBlank String sscaOrchestrationTag;
+  @NotBlank String sscaEnforcementTag;
 }

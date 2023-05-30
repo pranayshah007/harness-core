@@ -10,6 +10,7 @@ package io.harness.decryption.delegate.module.kryo;
 import io.harness.decryption.delegate.serializer.kryo.SecretProviderKryoRegistrar;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.KryoSerializer;
+import io.harness.serializer.kryo.ConnectorBeansKryoRegistrar;
 import io.harness.serializer.kryo.SecretConfigKryoRegistrar;
 import io.harness.serializer.kryo.SecretManagerClientKryoRegistrar;
 
@@ -29,6 +30,7 @@ public class SecretsKryoModule extends AbstractModule {
         .add(SecretConfigKryoRegistrar.class)
         .add(SecretProviderKryoRegistrar.class)
         .add(SecretManagerClientKryoRegistrar.class)
+        .add(ConnectorBeansKryoRegistrar.class)
         .build();
   }
 

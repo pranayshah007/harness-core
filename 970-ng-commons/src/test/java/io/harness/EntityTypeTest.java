@@ -194,7 +194,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(160, "IACM_STEPS");
     entityTypeOrdinalMapping.put(161, "IACM");
     entityTypeOrdinalMapping.put(162, "CONTAINER_STEP");
-    entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLAN");
+    entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLUGIN");
     entityTypeOrdinalMapping.put(164, "IACM_TEMPLATE");
     entityTypeOrdinalMapping.put(165, "ELASTIGROUP_BG_STAGE_SETUP_STEP");
     entityTypeOrdinalMapping.put(166, "ELASTIGROUP_SWAP_ROUTE_STEP");
@@ -243,6 +243,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(209, "K8S_BLUE_GREEN_STAGE_SCALE_DOWN");
     entityTypeOrdinalMapping.put(210, "AWS_SAM_BUILD");
     entityTypeOrdinalMapping.put(211, "SEMGREP");
+    entityTypeOrdinalMapping.put(212, "SSCA_ENFORCEMENT");
 
     entityTypeConstantMapping =
         entityTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

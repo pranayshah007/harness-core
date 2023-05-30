@@ -39,6 +39,8 @@ public interface NodeExecutionService {
    */
   NodeExecution get(String nodeExecutionId);
 
+  CloseableIterator<NodeExecution> get(List<String> nodeExecutionIds);
+
   /**
    * Fetches nodeExecution and uses id Index
    * @param nodeExecutionId

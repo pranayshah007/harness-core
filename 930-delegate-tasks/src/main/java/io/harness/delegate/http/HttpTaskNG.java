@@ -88,10 +88,9 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
   }
 
   @NotNull
-  private static HttpCertificate getHttpCertificate(HttpTaskParametersNg httpTaskParametersNg) {
-    HttpCertificateBuilder httpCertificate = HttpCertificate.builder();
-
+  protected static HttpCertificate getHttpCertificate(HttpTaskParametersNg httpTaskParametersNg) {
     if (httpTaskParametersNg.getCertificateNG() != null) {
+      HttpCertificateBuilder httpCertificate = HttpCertificate.builder();
       if (httpTaskParametersNg.getCertificateNG().getCertificate() != null) {
         httpCertificate.cert(httpTaskParametersNg.getCertificateNG().getCertificate().toCharArray());
       }
@@ -99,8 +98,10 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
         httpCertificate.certKey(httpTaskParametersNg.getCertificateNG().getCertificateKey().toCharArray());
       }
       httpCertificate.keyStoreType(httpTaskParametersNg.getCertificateNG().getKeyStoreType());
+      return httpCertificate.build();
     }
-    return httpCertificate.build();
+    // To keep existing behavior, if certificate is not set then set certificate as null
+    return null;
   }
 
   @Override

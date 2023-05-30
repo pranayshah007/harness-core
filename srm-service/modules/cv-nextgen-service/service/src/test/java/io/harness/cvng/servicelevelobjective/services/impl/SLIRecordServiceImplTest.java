@@ -43,7 +43,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -220,6 +222,40 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
     List<SLIRecordParam> updatedSliRecordParams = getSLIRecordParam(updatedStartTime, updatedSliStates);
     sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
     SLIRecord updatedLastRecord = sliRecordService.getLatestSLIRecord(sliId);
+    assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(6);
+    assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(3);
+    assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdate_duplicateRecords() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z");
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, NO_DATA, NO_DATA, NO_DATA, NO_DATA);
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
+    sliRecordService.create(sliRecordParams, sliId, verificationTaskId, 0);
+    List<SLIRecord> sliRecords = sliRecordService.getLatestCountSLIRecords(sliId, 4);
+    SLIRecord lastRecord = sliRecordService.getLatestSLIRecord(sliId);
+    assertThat(lastRecord.getRunningBadCount()).isEqualTo(1);
+    assertThat(sliRecords.size()).isEqualTo(4);
+    for (SLIRecord sliRecord : sliRecords) {
+      sliRecord.setUuid(generateUuid());
+      sliRecord.setSliState(BAD);
+    }
+    hPersistence.saveBatch(sliRecords);
+    sliRecords = sliRecordService.getLatestCountSLIRecords(sliId, 50);
+    assertThat(sliRecords.size()).isEqualTo(14);
+    Instant updatedStartTime = Instant.parse("2020-07-27T10:55:00Z");
+    List<SLIState> updatedSliStates = Arrays.asList(BAD, BAD, BAD, BAD, BAD);
+    List<SLIRecordParam> updatedSliRecordParams = getSLIRecordParam(updatedStartTime, updatedSliStates);
+    sliRecordService.create(updatedSliRecordParams, sliId, verificationTaskId, 1);
+    sliRecords = sliRecordService.getSLIRecords(
+        sliId, updatedStartTime.plus(4, ChronoUnit.MINUTES), updatedStartTime.plus(5, ChronoUnit.MINUTES));
+    sliRecords = sliRecords.stream()
+                     .sorted(Comparator.comparingLong(SLIRecord::getLastUpdatedAt).reversed())
+                     .collect(Collectors.toList());
+    SLIRecord updatedLastRecord = sliRecords.get(0);
     assertThat(updatedLastRecord.getRunningBadCount()).isEqualTo(6);
     assertThat(updatedLastRecord.getRunningGoodCount()).isEqualTo(3);
     assertThat(updatedLastRecord.getSliVersion()).isEqualTo(1);

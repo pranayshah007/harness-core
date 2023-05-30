@@ -338,6 +338,10 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
               .pipelineId(pipelineId)
               .planExecutionId(planExecutionId)
               .lastDeployedAt(lastDeployedAt)
+              .stageNodeExecutionId(instanceGroupedByPipelineExecution.getStageNodeExecutionId())
+              .stageSetupId(instanceGroupedByPipelineExecution.getStageSetupId())
+              .stageStatus(instanceGroupedByPipelineExecution.getStageStatus())
+              .rollbackStatus(instanceGroupedByPipelineExecution.getRollbackStatus())
               .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances), isGitOps))
               .build());
     });

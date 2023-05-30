@@ -247,7 +247,6 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                 .applicableFailureTypes(failureTypes)
                 .nextNodeId(nextNodeUuid)
                 .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
-                .retryActionConfig(actionUnderRetry)
                 .retryCount(retryCount.getValue())
                 .strategyToUuid(PlanCreatorUtilsCommon.getRollbackStrategyMap(currentField))
                 .waitIntervalList(retryAction.getSpecConfig()

@@ -226,7 +226,7 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
         .saveRelease(anyBoolean(), anyBoolean(), any(KubernetesConfig.class), any(IK8sRelease.class),
             any(IK8sReleaseHistory.class), anyString());
     verify(baseHandler, times(1))
-        .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), anyList());
+        .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), anyList(), any());
   }
 
   @Test

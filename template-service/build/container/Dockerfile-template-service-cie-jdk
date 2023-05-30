@@ -18,7 +18,8 @@ COPY --chown=65534:65534 profile.jfc /opt/harness/
 
 COPY --chown=65534:65534 scripts /opt/harness
 
-CMD [ "./run.sh" ]
+RUN chmod +x /opt/harness/*.sh
+CMD [ "/opt/harness/run.sh" ]
 
 
 ############################ON PREM#########################

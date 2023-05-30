@@ -30,12 +30,12 @@ import io.harness.iacm.creator.variables.IACMStepVariableCreator;
 import io.harness.iacm.plan.creator.filter.IACMStageFilterJsonCreator;
 import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreator;
 import io.harness.iacm.plan.creator.stage.IACMStagePMSPlanCreatorV1;
+import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreator;
 import io.harness.iacm.plan.creator.step.IACMPMSStepFilterJsonCreatorV1;
 import io.harness.iacm.plan.creator.step.IACMPluginStepPlanCretorV1;
 import io.harness.iacm.plan.creator.step.IACMStepFilterJsonCreatorV2;
 import io.harness.iacm.plan.creator.step.IACMStepPlanCreator;
-import io.harness.iacm.plan.creator.step.IACMTemplateStepVariableCreator;
-import io.harness.iacm.plan.creator.step.IACMTerraformPlanStepVariableCreator;
+import io.harness.iacm.plan.creator.step.IACMTerraformPluginStepVariableCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -88,11 +88,12 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
   public List<FilterJsonCreator> getFilterJsonCreators() {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new IACMStageFilterJsonCreator()); // Filter for the Stage
-    filterJsonCreators.add(new IACMStepFilterJsonCreatorV2()); // Filter for the supported stages in the stage
+    filterJsonCreators.add(new IACMPMSStepFilterJsonCreator()); // Filter for the supported steps in the stage v0
+    filterJsonCreators.add(new IACMStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator()); // Filter for the Execution step
 
     // V1 Filters
-    filterJsonCreators.add(new IACMPMSStepFilterJsonCreatorV1()); // Step filters for V1
+    filterJsonCreators.add(new IACMPMSStepFilterJsonCreatorV1()); // Filter for the supported steps in the stage v1
 
     injectorUtils.injectMembers(filterJsonCreators);
 
@@ -105,8 +106,7 @@ public class IACMPipelineServiceInfoProvider implements PipelineServiceInfoProvi
     variableCreators.add(new IACMStageVariableCreator()); // Variable creator for the stage
     variableCreators.add(new IACMStepVariableCreator()); // V1 step variable creator for external steps
     variableCreators.add(new PluginStepVariableCreator()); // variable creator for the plugin step
-    variableCreators.add(new IACMTerraformPlanStepVariableCreator());
-    variableCreators.add(new IACMTemplateStepVariableCreator());
+    variableCreators.add(new IACMTerraformPluginStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new ActionStepVariableCreator()); // variable creator for the action step
     variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));

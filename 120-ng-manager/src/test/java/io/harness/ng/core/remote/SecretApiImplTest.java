@@ -42,7 +42,6 @@ import io.harness.spec.server.ng.v1.model.SecretRequest;
 import io.harness.spec.server.ng.v1.model.SecretResponse;
 import io.harness.spec.server.ng.v1.model.SecretSpec;
 import io.harness.spec.server.ng.v1.model.SecretTextSpec;
-import io.harness.spec.server.ng.v1.model.SecretValidationMetadata;
 import io.harness.spec.server.ng.v1.model.SecretValidationResponse;
 
 import java.util.Collections;
@@ -516,11 +515,17 @@ public class SecretApiImplTest extends CategoryTest {
   public void testValidateProjectSecretRef_Success() {
     String secretManagerIdentifier = randomAlphabetic(10);
     String secretRefPath = randomAlphabetic(10);
-    SecretValidationMetadata secretValidationMetaData =
-        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
-    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(true);
-    Response response = projectSecretApi.validateProjectSecretRef(org, project, secretValidationMetaData, account);
+    SecretRequest secretRequest =
+        new SecretRequest().secret(new Secret()
+                                       .name(randomAlphabetic(10))
+                                       .identifier(randomAlphabetic(10))
+                                       .spec(new SecretTextSpec()
+                                                 .value(secretRefPath)
+                                                 .valueType(SecretTextSpec.ValueTypeEnum.REFERENCE)
+                                                 .secretManagerIdentifier(secretManagerIdentifier)
+                                                 .type(SecretSpec.TypeEnum.SECRETTEXT)));
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), any())).thenReturn(true);
+    Response response = projectSecretApi.validateProjectSecretRef(org, project, secretRequest, account);
     SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
     assertThat(secretValidationResponse.isSuccess());
   }
@@ -531,11 +536,17 @@ public class SecretApiImplTest extends CategoryTest {
   public void testValidateProjectSecretRef_Negative() {
     String secretManagerIdentifier = randomAlphabetic(10);
     String secretRefPath = randomAlphabetic(10);
-    SecretValidationMetadata secretValidationMetaData =
-        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
-    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(false);
-    Response response = projectSecretApi.validateProjectSecretRef(org, project, secretValidationMetaData, account);
+    SecretRequest secretRequest =
+        new SecretRequest().secret(new Secret()
+                                       .name(randomAlphabetic(10))
+                                       .identifier(randomAlphabetic(10))
+                                       .spec(new SecretTextSpec()
+                                                 .value(secretRefPath)
+                                                 .valueType(SecretTextSpec.ValueTypeEnum.REFERENCE)
+                                                 .secretManagerIdentifier(secretManagerIdentifier)
+                                                 .type(SecretSpec.TypeEnum.SECRETTEXT)));
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), any())).thenReturn(false);
+    Response response = projectSecretApi.validateProjectSecretRef(org, project, secretRequest, account);
     SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
     assertThat(!secretValidationResponse.isSuccess());
   }
@@ -546,11 +557,17 @@ public class SecretApiImplTest extends CategoryTest {
   public void testValidateOrgSecretRef_Success() {
     String secretManagerIdentifier = randomAlphabetic(10);
     String secretRefPath = randomAlphabetic(10);
-    SecretValidationMetadata secretValidationMetaData =
-        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
-    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(true);
-    Response response = orgSecretApi.validateOrgSecretRef(org, secretValidationMetaData, account);
+    SecretRequest secretRequest =
+        new SecretRequest().secret(new Secret()
+                                       .name(randomAlphabetic(10))
+                                       .identifier(randomAlphabetic(10))
+                                       .spec(new SecretTextSpec()
+                                                 .value(secretRefPath)
+                                                 .valueType(SecretTextSpec.ValueTypeEnum.REFERENCE)
+                                                 .secretManagerIdentifier(secretManagerIdentifier)
+                                                 .type(SecretSpec.TypeEnum.SECRETTEXT)));
+    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), any(), any())).thenReturn(true);
+    Response response = orgSecretApi.validateOrgSecretRef(org, secretRequest, account);
     SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
     assertThat(secretValidationResponse.isSuccess());
   }
@@ -561,11 +578,17 @@ public class SecretApiImplTest extends CategoryTest {
   public void testValidateAccountSecretRef_Success() {
     String secretManagerIdentifier = randomAlphabetic(10);
     String secretRefPath = randomAlphabetic(10);
-    SecretValidationMetadata secretValidationMetaData =
-        new SecretValidationMetadata().secretManagerIdentifier(secretManagerIdentifier).secretRefPath(secretRefPath);
-    when(ngEncryptedDataService.validateSecretRef(anyString(), anyString(), anyString(), anyString(), anyString()))
-        .thenReturn(true);
-    Response response = accountSecretApi.validateAccountSecretRef(secretValidationMetaData, account);
+    SecretRequest secretRequest =
+        new SecretRequest().secret(new Secret()
+                                       .name(randomAlphabetic(10))
+                                       .identifier(randomAlphabetic(10))
+                                       .spec(new SecretTextSpec()
+                                                 .value(secretRefPath)
+                                                 .valueType(SecretTextSpec.ValueTypeEnum.REFERENCE)
+                                                 .secretManagerIdentifier(secretManagerIdentifier)
+                                                 .type(SecretSpec.TypeEnum.SECRETTEXT)));
+    when(ngEncryptedDataService.validateSecretRef(anyString(), any(), any(), any())).thenReturn(true);
+    Response response = accountSecretApi.validateAccountSecretRef(secretRequest, account);
     SecretValidationResponse secretValidationResponse = (SecretValidationResponse) response.getEntity();
     assertThat(secretValidationResponse.isSuccess());
   }

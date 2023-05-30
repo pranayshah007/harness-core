@@ -10,6 +10,7 @@ package io.harness.repositories.serviceoverridesv2.custom;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -20,4 +21,6 @@ public interface ServiceOverrideRepositoryCustomV2 {
   DeleteResult delete(Criteria criteria);
 
   Page<NGServiceOverridesEntity> findAll(Criteria criteria, Pageable pageRequest);
+
+  List<NGServiceOverridesEntity> findAll(Criteria criteria);
 }

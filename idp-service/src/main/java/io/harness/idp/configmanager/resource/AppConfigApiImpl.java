@@ -48,7 +48,8 @@ public class AppConfigApiImpl implements AppConfigApi {
       appConfigResponse.appConfig(updatedAppConfig);
       return Response.status(Response.Status.OK).entity(appConfigResponse).build();
     } catch (Exception e) {
-      log.error(e.getMessage());
+      log.error("Error in saving or updating configs for Plugin id - {} in account - {}",
+          body.getAppConfig().getConfigId(), harnessAccount, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();
@@ -66,7 +67,7 @@ public class AppConfigApiImpl implements AppConfigApi {
       appConfigResponse.appConfig(disabledPluginAppConfig);
       return Response.status(Response.Status.OK).entity(appConfigResponse).build();
     } catch (Exception e) {
-      log.error(e.getMessage());
+      log.error("Error in enabling - {} for plugin id - {} in account - {}", isEnabled, pluginId, harnessAccount, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

@@ -38,6 +38,7 @@ import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import com.jcraft.jsch.JSchException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -69,8 +70,12 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
       hostConnectionTest.setSshSessionTimeout(timeout);
       performTest(hostConnectionTest);
       capabilityResponseBuilder.validated(true);
+    } catch (JSchException e) {
+      log.error("Failed to validate host - public dns: {}, message: {}", capability.getValidationInfo().getPublicDns(),
+          ExceptionMessageSanitizer.sanitizeException(e).getMessage());
+      capabilityResponseBuilder.validated(false);
     } catch (Exception e) {
-      log.error("Failed to validate host - public dns:" + capability.getValidationInfo().getPublicDns(),
+      log.error("Failed to validate host - public dns: " + capability.getValidationInfo().getPublicDns(),
           ExceptionMessageSanitizer.sanitizeException(e));
       capabilityResponseBuilder.validated(false);
     }

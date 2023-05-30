@@ -24,6 +24,7 @@ public interface IK8sReleaseHistory extends IsEmpty {
   IK8sReleaseHistory cloneInternal();
 
   List<IK8sRelease> getReleasesMatchingColor(String color, int currentReleaseNumber);
+  IK8sRelease getLatestSuccessfulBlueGreenRelease();
 
   default int getNextReleaseNumber(boolean inCanaryWorkflow) {
     if (!inCanaryWorkflow) {

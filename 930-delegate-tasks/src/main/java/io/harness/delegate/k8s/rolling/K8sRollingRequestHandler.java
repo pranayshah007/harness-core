@@ -57,8 +57,10 @@ import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResource;
@@ -110,6 +112,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
   private IK8sReleaseHistory releaseHistory;
   private IK8sRelease release;
   private int currentReleaseNumber;
+  private K8sRequestHandlerContext k8sRequestHandlerContext = new K8sRequestHandlerContext();
 
   @Override
   protected K8sDeployResponse executeTaskInternal(K8sDeployRequest k8sDeployRequest,
@@ -293,7 +296,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
-    client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
     releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
     currentReleaseNumber = releaseHistory.getNextReleaseNumber(request.isInCanaryWorkflow());
@@ -313,6 +317,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
         k8sRollingBaseHandler.prepareResourcesAndRenderTemplate(request, k8sDelegateTaskParams, manifestOverrideFiles,
             this.kubernetesConfig, this.manifestFilesDirectory, this.releaseName, request.isLocalOverrideFeatureFlag(),
             isErrorFrameworkSupported(), request.isInCanaryWorkflow(), executionLogCallback);
+    k8sRequestHandlerContext.setResources(resources);
 
     serviceHookHandler.execute(ServiceHookType.POST_HOOK, ServiceHookAction.TEMPLATE_MANIFEST,
         k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
@@ -323,8 +328,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       return;
     }
 
-    k8sTaskHelperBase.dryRunManifests(
-        client, resources, k8sDelegateTaskParams, executionLogCallback, true, request.isUseNewKubectlVersion());
+    k8sTaskHelperBase.dryRunManifests(client, resources, k8sDelegateTaskParams, executionLogCallback, true);
   }
 
   private void prepareForRolling(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,
@@ -363,7 +367,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
 
       if (!skipResourceVersioning && !useDeclarativeRollback) {
         executionLogCallback.saveExecutionLog("\nVersioning resources.");
-        k8sTaskHelperBase.addRevisionNumber(resources, currentReleaseNumber);
+        k8sTaskHelperBase.addRevisionNumber(k8sRequestHandlerContext, currentReleaseNumber);
       }
 
       final List<KubernetesResource> deploymentContainingTrackStableSelector = skipAddingTrackSelectorToDeployment
@@ -374,7 +378,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       k8sRollingBaseHandler.addLabelsInManagedWorkloadPodSpec(inCanaryWorkflow, skipAddingTrackSelectorToDeployment,
           managedWorkloads, deploymentContainingTrackStableSelector, releaseName);
       k8sRollingBaseHandler.addLabelsInDeploymentSelectorForCanary(inCanaryWorkflow,
-          skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector);
+          skipAddingTrackSelectorToDeployment, managedWorkloads, deploymentContainingTrackStableSelector,
+          k8sRequestHandlerContext);
     }
 
     release.setReleaseData(resources, pruningEnabled);

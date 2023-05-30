@@ -89,6 +89,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/registries:module",
         "//980-commons/src/main/java/io/harness/registries/exceptions:module",
         "//980-commons/src/main/java/io/harness/rest:module",
+        "//980-commons/src/main/java/io/harness/sanitizer:module",
         "//980-commons/src/main/java/io/harness/secret:module",
         "//980-commons/src/main/java/io/harness/security:module",
         "//980-commons/src/main/java/io/harness/security/annotations:module",

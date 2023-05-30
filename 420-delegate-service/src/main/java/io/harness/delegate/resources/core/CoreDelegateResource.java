@@ -16,15 +16,19 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.core.beans.AcquireTasksResponse;
-import io.harness.delegate.core.beans.ExecutionEnvironment;
+import io.harness.delegate.core.beans.EmptyDirVolume;
 import io.harness.delegate.core.beans.ExecutionMode;
 import io.harness.delegate.core.beans.ExecutionPriority;
 import io.harness.delegate.core.beans.InputData;
+import io.harness.delegate.core.beans.K8SInfra;
+import io.harness.delegate.core.beans.K8SStep;
 import io.harness.delegate.core.beans.PluginSource;
+import io.harness.delegate.core.beans.Resource;
 import io.harness.delegate.core.beans.ResourceRequirements;
+import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.core.beans.SecretConfig;
-import io.harness.delegate.core.beans.TaskDescriptor;
-import io.harness.delegate.core.beans.TaskSecret;
+import io.harness.delegate.core.beans.StepRuntime;
+import io.harness.delegate.core.beans.TaskPayload;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -40,10 +44,12 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.swagger.annotations.Api;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -85,30 +91,52 @@ public class CoreDelegateResource {
           delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
       final long timeout = delegateTaskPackage.getData().getTimeout();
 
+      final var logPrefix = generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions());
+
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
       final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
-      final List<TaskSecret> protoSecrets = createProtoSecrets(delegateTaskPackage);
+      final List<Secret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
-      final var pluginDesc =
-          TaskDescriptor.newBuilder()
+      final var resources = ResourceRequirements.newBuilder()
+                                .setMemory("128Mi")
+                                .setCpu("0.1")
+                                .setTimeout(Duration.newBuilder().setSeconds(timeout).build())
+                                .build();
+      final var k8sStep =
+          K8SStep.newBuilder()
               .setId(taskId)
               .setMode(ExecutionMode.MODE_ONCE)
               .setPriority(delegateTaskPackage.getData().isAsync() ? ExecutionPriority.PRIORITY_DEFAULT
                                                                    : ExecutionPriority.PRIORITY_HIGH)
-              .setInput(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
+              //              .setInput(InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build())
               .addAllInputSecrets(protoSecrets)
-              .setRuntime(ExecutionEnvironment.newBuilder()
+              .setRuntime(StepRuntime.newBuilder()
                               .setType(delegateTaskPackage.getData().getTaskType())
                               .setSource(PluginSource.SOURCE_IMAGE)
                               .setUses(getImage(delegateTaskPackage.getData().getTaskType()))
-                              .setResource(ResourceRequirements.newBuilder()
-                                               .setMemory("128Mi")
-                                               .setCpu("0.1")
-                                               .setTimeout(Duration.newBuilder().setSeconds(timeout).build())
-                                               .build())
+                              .setResource(resources)
                               .build())
+              .setLoggingToken(delegateTaskPackage.getLogStreamingToken())
               .build();
-      final var response = AcquireTasksResponse.newBuilder().addTasks(pluginDesc).build();
+      final var emptyDir = EmptyDirVolume.newBuilder().setName("marko-dir").setPath("/harness/marko").build();
+      final var k8SInfra = K8SInfra
+                               .newBuilder()
+                               //                               .addAllInfraSecrets(protoSecrets) // Not supported now
+                               .addSteps(k8sStep)
+                               .setResource(resources)
+                               .setWorkingDir("pera")
+                               .addResources(Resource.newBuilder().setSpec(Any.pack(emptyDir)).build())
+                               .setLogPrefix(logPrefix)
+                               .build();
+
+      final TaskPayload task =
+          TaskPayload.newBuilder()
+              .setInfraData(InputData.newBuilder().setProtoData(Any.pack(k8SInfra)).build()) // Infra input
+              .setTaskData(
+                  InputData.newBuilder().setBinaryData(ByteString.copyFrom(taskDataBytes)).build()) // Task input
+              .build();
+
+      final var response = AcquireTasksResponse.newBuilder().setId(taskId).addTasks(task).build();
 
       return Response.ok(response).build();
     } catch (final Exception e) {
@@ -117,7 +145,7 @@ public class CoreDelegateResource {
     }
   }
 
-  private List<TaskSecret> createProtoSecrets(final DelegateTaskPackage delegateTaskPackage) {
+  private List<Secret> createProtoSecrets(final DelegateTaskPackage delegateTaskPackage) {
     final Map<EncryptionConfig, List<EncryptedRecord>> kryoSecrets =
         delegateTaskPackage.getSecretDetails().values().stream().collect(Collectors.groupingBy(secret
             -> delegateTaskPackage.getEncryptionConfigs().get(secret.getConfigUuid()),
@@ -129,23 +157,13 @@ public class CoreDelegateResource {
         .collect(Collectors.toList());
   }
 
-  private TaskSecret createProtoSecret(final EncryptionConfig config, final List<EncryptedRecord> secrets) {
+  private Secret createProtoSecret(final EncryptionConfig config, final List<EncryptedRecord> secrets) {
     final var configBytes = kryoSerializer.asDeflatedBytes(config);
     final var secretsBytes = kryoSerializer.asDeflatedBytes(secrets);
 
-    return TaskSecret.newBuilder()
+    return Secret.newBuilder()
         .setConfig(SecretConfig.newBuilder().setBinaryData(ByteString.copyFrom(configBytes)).build())
         .setSecrets(InputData.newBuilder().setBinaryData(ByteString.copyFrom(secretsBytes)).build())
-        .setRuntime(ExecutionEnvironment.newBuilder()
-                        .setType("SECRET") // Fixme: Secret type doesn't exist right now
-                        .setSource(PluginSource.SOURCE_IMAGE)
-                        .setUses("us.gcr.io/gcr-play/secret-provider:secrets")
-                        .setResource(ResourceRequirements.newBuilder()
-                                         .setMemory("128Mi")
-                                         .setCpu("0.1")
-                                         .setTimeout(Duration.newBuilder().setSeconds(600).build())
-                                         .build())
-                        .build())
         .build();
   }
 
@@ -158,5 +176,17 @@ public class CoreDelegateResource {
       default:
         throw new UnsupportedOperationException("Unsupported task type " + taskType);
     }
+  }
+
+  private String generateLogBaseKey(LinkedHashMap<String, String> logStreamingAbstractions) {
+    // Generate base log key that will be used for writing logs to log streaming service
+    StringBuilder logBaseKey = new StringBuilder();
+    for (Map.Entry<String, String> entry : logStreamingAbstractions.entrySet()) {
+      if (logBaseKey.length() != 0) {
+        logBaseKey.append('/');
+      }
+      logBaseKey.append(entry.getKey()).append(':').append(entry.getValue());
+    }
+    return logBaseKey.toString();
   }
 }

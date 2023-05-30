@@ -71,6 +71,8 @@ public class InstanceDetailsMapper {
         .pipelineExecutionName(instanceDTO.getLastPipelineExecutionName())
         .podName(instanceDTO.getInstanceInfoDTO().getPodName())
         .instanceInfoDTO(instanceDTO.getInstanceInfoDTO())
+        .instanceKey(instanceDTO.getInstanceKey())
+        .infrastructureMappingId(instanceDTO.getInfrastructureMappingId())
         // TODO set terraform instance
         .build();
   }

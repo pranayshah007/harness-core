@@ -162,7 +162,7 @@ public class TerraformCloudStepHelper {
             .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
             .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
             .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
             .stageExecutionId(ambiance.getStageExecutionId())
             .provisionerId(provisionerIdentifier)
             .tfPlanJsonFieldId(planFileJsonId)

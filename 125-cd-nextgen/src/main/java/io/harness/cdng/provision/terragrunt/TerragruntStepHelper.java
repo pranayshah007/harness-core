@@ -776,7 +776,7 @@ public class TerragruntStepHelper {
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .entityId(
                 generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId());
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance));
 
     StoreConfigWrapper store = spec.getConfigFiles().getStore();
     StoreConfigType storeConfigType = store.getType();
@@ -836,7 +836,7 @@ public class TerragruntStepHelper {
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .entityId(
                 generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
             .configFiles(
                 inheritOutput.getConfigFiles() != null ? inheritOutput.getConfigFiles().toGitStoreConfigDTO() : null)
             .useConnectorCredentials(inheritOutput.isUseConnectorCredentials())
@@ -874,20 +874,21 @@ public class TerragruntStepHelper {
   }
 
   public void saveTerragruntConfig(TerragruntConfig rollbackConfig, Ambiance ambiance) {
-    TerragruntConfig terragruntConfig = TerragruntConfig.builder()
-                                            .accountId(AmbianceUtils.getAccountId(ambiance))
-                                            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
-                                            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-                                            .entityId(rollbackConfig.getEntityId())
-                                            .pipelineExecutionId(ambiance.getPlanExecutionId())
-                                            .configFiles(rollbackConfig.getConfigFiles())
-                                            .varFileConfigs(rollbackConfig.getVarFileConfigs())
-                                            .backendConfigFile(rollbackConfig.getBackendConfigFile())
-                                            .environmentVariables(rollbackConfig.getEnvironmentVariables())
-                                            .workspace(rollbackConfig.getWorkspace())
-                                            .targets(rollbackConfig.getTargets())
-                                            .runConfiguration(rollbackConfig.getRunConfiguration())
-                                            .build();
+    TerragruntConfig terragruntConfig =
+        TerragruntConfig.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+            .entityId(rollbackConfig.getEntityId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
+            .configFiles(rollbackConfig.getConfigFiles())
+            .varFileConfigs(rollbackConfig.getVarFileConfigs())
+            .backendConfigFile(rollbackConfig.getBackendConfigFile())
+            .environmentVariables(rollbackConfig.getEnvironmentVariables())
+            .workspace(rollbackConfig.getWorkspace())
+            .targets(rollbackConfig.getTargets())
+            .runConfiguration(rollbackConfig.getRunConfiguration())
+            .build();
 
     terragruntConfigDAL.saveTerragruntConfig(terragruntConfig);
   }
