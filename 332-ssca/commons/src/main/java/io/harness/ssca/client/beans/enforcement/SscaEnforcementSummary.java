@@ -9,18 +9,23 @@ package io.harness.ssca.client.beans.enforcement;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ssca.client.beans.Artifact;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @Builder
 @OwnedBy(HarnessTeam.SSCA)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SscaEnforcementSummary {
-  String artifactId;
-  String artifactVersion;
+  Artifact artifact;
   String enforcementId;
   String status;
-  String allowListViolationCount;
-  String denyListViolationCount;
+  int allowListViolationCount;
+  int denyListViolationCount;
 }

@@ -14,6 +14,7 @@ java_library(
         "//:lombok",
         "//260-delegate/src/main/java/io/harness/delegate/service/common:module",
         "//260-delegate/src/main/java/io/harness/delegate/service/core/k8s:module",
+        "//260-delegate/src/main/java/io/harness/delegate/service/core/runner:module",
         "//920-delegate-agent-beans:module",
         "//950-delegate-tasks-beans:module",
         "//955-delegate-beans:module",

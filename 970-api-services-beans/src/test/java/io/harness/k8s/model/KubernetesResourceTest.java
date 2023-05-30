@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.AVMOHAN;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PUNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -897,8 +898,85 @@ public class KubernetesResourceTest extends CategoryTest {
       KubernetesYamlException exception = (KubernetesYamlException) throwable;
       String errorMessage = exception.getParams().get("reason").toString();
       assertThat(errorMessage).contains("Failed to load spec for resource kind: Secret, name: test-secret");
-      assertThat(errorMessage).contains("Cannot create property=data for JavaBean=class V1Secret");
-      assertThat(errorMessage).contains("in 'reader', line 7, column 3:");
+      return true;
+    });
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testYamlConstructorMessageExtractionWithDeploymentErrors() throws IOException {
+    URL url = this.getClass().getResource("/deployment-invalid-value.yaml");
+    String fileContents = Resources.toString(url, StandardCharsets.UTF_8);
+    String expectedError = "Failed to load spec for resource kind: Deployment, name: myapp-deployment-2 \n"
+        + "Cannot create spec for V1Deployment  \n"
+        + "  line 10, column 3:\n"
+        + "      template:\n"
+        + "      ^\n"
+        + "  line 11, column 5:\n"
+        + "        metadata:\n"
+        + "        ^\n"
+        + "  line 17, column 7:\n"
+        + "          containers:\n"
+        + "          ^\n"
+        + "  line 18, column 11:\n"
+        + "            - name: nginx-container\n"
+        + "              ^\n"
+        + "Unable to find property 'dummy' on class: io.kubernetes.client.openapi.models.V1Container\n"
+        + "  line 19, column 18:\n"
+        + "              dummy: nginx\n"
+        + "                     ^\n"
+        + "\n"
+        + "  line 18, column 9:\n"
+        + "            - name: nginx-container\n"
+        + "            ^\n"
+        + "\n"
+        + "  line 17, column 7:\n"
+        + "          containers:\n"
+        + "          ^\n"
+        + "\n"
+        + "  line 11, column 5:\n"
+        + "        metadata:\n"
+        + "        ^\n";
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    assertThatThrownBy(resource::getK8sResource).matches(throwable -> {
+      KubernetesYamlException exception = (KubernetesYamlException) throwable;
+      String errorMessage = exception.getParams().get("reason").toString();
+      assertEquals(expectedError, errorMessage);
+      return true;
+    });
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testYamlConstructorMessageExtractionWithServiceErrors() throws IOException {
+    URL url = this.getClass().getResource("/service-invalid-value.yaml");
+    String fileContents = Resources.toString(url, StandardCharsets.UTF_8);
+    String expectedError = "Failed to load spec for resource kind: Service, name: my-service \n"
+        + "Cannot create spec for V1Service  \n"
+        + "  line 6, column 3:\n"
+        + "      selector:\n"
+        + "      ^\n"
+        + "  line 9, column 5:\n"
+        + "      - protocol: TCP\n"
+        + "        ^\n"
+        + "Unable to find property 'dummyPort' on class: io.kubernetes.client.openapi.models.V1ServicePort\n"
+        + "  line 10, column 16:\n"
+        + "        dummyPort: 80\n"
+        + "                   ^\n"
+        + "\n"
+        + "  line 9, column 3:\n"
+        + "      - protocol: TCP\n"
+        + "      ^\n";
+
+    KubernetesResource resource = processYaml(fileContents).get(0);
+
+    assertThatThrownBy(resource::getK8sResource).matches(throwable -> {
+      KubernetesYamlException exception = (KubernetesYamlException) throwable;
+      String errorMessage = exception.getParams().get("reason").toString();
+      assertEquals(expectedError, errorMessage);
       return true;
     });
   }

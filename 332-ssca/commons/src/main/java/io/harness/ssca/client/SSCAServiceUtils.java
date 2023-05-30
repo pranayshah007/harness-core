@@ -10,9 +10,12 @@ package io.harness.ssca.client;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.ssca.beans.SscaExecutionConstants;
 import io.harness.ssca.beans.entities.SSCAServiceConfig;
+import io.harness.ssca.client.beans.SBOMArtifactResponse;
 import io.harness.ssca.client.beans.SscaAuthToken;
 import io.harness.ssca.client.beans.enforcement.SscaEnforcementSummary;
 
@@ -117,5 +120,24 @@ public class SSCAServiceUtils {
     }
 
     return response.body();
+  }
+
+  public SBOMArtifactResponse getSbomArtifact(
+      String stepExecutionId, String accountId, String orgId, String projectId) {
+    Call<SBOMArtifactResponse> call = sscaServiceClient.getArtifactInfoV2(stepExecutionId, accountId, orgId, projectId);
+
+    SBOMArtifactResponse sbomArtifactResponse = null;
+    try {
+      sbomArtifactResponse = NGRestUtils.getGeneralResponse(call);
+    } catch (InvalidRequestException e) {
+      throw new CIStageExecutionException(
+          String.format("Could not fetch sbom artifact from SSCA service. Error message: %s", e.getMessage()));
+    }
+
+    if (sbomArtifactResponse == null) {
+      throw new CIStageExecutionException("Could not fetch sbom artifact from SSCA service. Response body is null");
+    }
+
+    return sbomArtifactResponse;
   }
 }

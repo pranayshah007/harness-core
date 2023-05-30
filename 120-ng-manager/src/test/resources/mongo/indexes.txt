@@ -100,8 +100,9 @@ instanceNG {"name": "accountIdentifier_1_deletedAt_1_createdAt_1", "background":
 instanceNG {"name": "unique_instanceKey_infrastructureMappingId_idx", "unique": true} {"instanceKey": 1, "infrastructureMappingId": 1}
 instanceSyncPerpetualTaskMapping {"name": "connectorIdentifier_accountId_orgId_projectId_idx", "background": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1}
 instanceSyncPerpetualTaskMapping {"name": "unique_connectorIdentifier_accountId_orgId_projectId_perpetualTaskId_idx", "unique": true} {"accountId": 1, "orgId": 1, "projectId": 1, "connectorIdentifier": 1, "perpetualTaskId": 1}
+instanceSyncPerpetualTasksInfoNG {"name": "accountIdentifier_perpetualTaskIdV2_idx", "background": true} {"accountIdentifier": 1, "perpetualTaskIdV2": 1}
 instanceSyncPerpetualTasksInfoNG {"name": "infrastructureMappingId_1", "unique": true} {"infrastructureMappingId": 1}
-instanceSyncPerpetualTasksInfoNG {"name": "perpetualTaskId_1", "unique": true} {"perpetualTaskId": 1}
+instanceSyncPerpetualTasksInfoNG {"name": "perpetualTaskId_1", "background": true} {"perpetualTaskId": 1}
 invites {"name": "ng_invite_account_org_project_identifiers_email_role_deleted", "background": true} {"deleted": 1, "email": 1, "accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 invites {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 ipAllowlist {"name": "accountId_allowedSourceType_index", "background": true} {"accountIdentifier": 1, "allowedSourceType": 1}

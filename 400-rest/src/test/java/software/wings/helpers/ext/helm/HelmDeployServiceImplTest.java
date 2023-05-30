@@ -71,6 +71,7 @@ import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmCommandResponse;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
 import io.harness.delegate.task.helm.HelmTestConstants;
+import io.harness.delegate.task.helm.steadystate.HelmSteadyStateService;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.GeneralException;
@@ -94,6 +95,7 @@ import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.releasehistory.IK8sRelease;
 import io.harness.k8s.releasehistory.ReleaseHistory;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.rule.Owner;
 
@@ -142,6 +144,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -173,6 +176,7 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
   @Mock private HelmHelper helmHelper;
   @Mock private ScmFetchFilesHelper scmFetchFilesHelper;
   @Mock private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
+  @Mock private HelmSteadyStateService helmSteadyStateService;
   @InjectMocks private HelmDeployServiceImpl helmDeployService;
 
   @Captor private ArgumentCaptor<HelmCommandFlag> commandFlagCaptor;
@@ -265,7 +269,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), eq(false), any(), any()))
+        .thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
     when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(), anyList(), any(), any(), any(), any(), any(), any()))
@@ -315,7 +320,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     when(helmClient.releaseHistory(any(), eq(false))).thenReturn(helmCliReleaseHistoryResponse);
     when(helmClient.install(any(), eq(false))).thenReturn(helmCliResponse);
     when(helmClient.listReleases(any(), eq(false))).thenReturn(helmCliListReleasesResponse);
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), eq(false), any(), any()))
+        .thenReturn(true);
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(resources);
     when(k8sTaskHelperBase.getContainerInfos(any(), any(), any(), anyLong())).thenReturn(containerInfos);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(
@@ -1009,7 +1015,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
         KubernetesResourceId.builder().namespace("default-2").name("resource-2").kind(Kind.Deployment.name()).build();
     KubernetesResourceId resource3 =
         KubernetesResourceId.builder().namespace("default-3").name("resource-3").kind(Kind.Deployment.name()).build();
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), eq(false), any(), any()))
+        .thenReturn(true);
 
     HelmInstallCommandResponse result = null;
     ReleaseHistory releaseHistory = ReleaseHistory.createNew();
@@ -1315,7 +1322,8 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     List<KubernetesResourceId> resourceIds =
         resources.stream().map(KubernetesResource::getResourceId).collect(Collectors.toList());
 
-    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), any(), any())).thenReturn(true);
+    when(containerDeploymentDelegateHelper.useK8sSteadyStateCheck(anyBoolean(), eq(false), any(), any()))
+        .thenReturn(true);
     when(k8sTaskHelperBase.doStatusCheckAllResourcesForHelm(any(Kubectl.class), eq(resourceIds), anyString(),
              anyString(), anyString(), anyString(), any(ExecutionLogCallback.class), any()))
         .thenReturn(false);
@@ -1867,5 +1875,130 @@ public class HelmDeployServiceImplTest extends WingsBaseTest {
     } finally {
       deleteDirectoryAndItsContentIfExists(manifestDirPath.toString());
     }
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testSteadyStateUsingGetManifestDeployK8sSteadyStateCheckEnabled() {
+    testSteadyStateUsingGetManifestDeploy(true);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testSteadyStateUsingGetManifestDeployK8sSteadyStateCheckDisabled() {
+    testSteadyStateUsingGetManifestDeploy(false);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testSteadyStateUsingGetManifestRollbackK8sSteadyStateCheckEnabled() {
+    testSteadyStateUsingGetManifestRollback(true);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testSteadyStateUsingGetManifestRollbackK8sSteadyStateCheckDisabled() {
+    testSteadyStateUsingGetManifestRollback(false);
+  }
+
+  @SneakyThrows
+  private void testSteadyStateUsingGetManifestDeploy(boolean k8sSteadyStateCheckEnabled) {
+    helmCliReleaseHistoryResponse.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
+    helmCliListReleasesResponse.setCommandExecutionStatus(SUCCESS);
+    helmCliResponse.setCommandExecutionStatus(SUCCESS);
+    helmInstallCommandRequest.setUseRefactorSteadyStateCheck(true);
+    helmInstallCommandRequest.setK8SteadyStateCheckEnabled(k8sSteadyStateCheckEnabled);
+
+    final KubernetesResourceId workloadId =
+        KubernetesResourceId.builder().name("helm-deployment").namespace("default-2").kind("Deployment").build();
+    final List<KubernetesResource> resources = ImmutableList.of(
+        KubernetesResource.builder().resourceId(workloadId).build(),
+        KubernetesResource.builder()
+            .resourceId(
+                KubernetesResourceId.builder().name("helm-configmap").namespace("default-1").kind("ConfigMap").build())
+            .build());
+
+    final List<ContainerInfo> containerInfos =
+        ImmutableList.of(ContainerInfo.builder().hostName("helm-deployment.harness.io").build());
+
+    doReturn(helmCliListReleasesResponse).when(helmClient).releaseHistory(any(HelmCommandData.class), eq(false));
+    doReturn(helmCliResponse).when(helmClient).install(any(HelmCommandData.class), eq(false));
+    doReturn(helmCliListReleasesResponse).when(helmClient).listReleases(any(HelmCommandData.class), eq(false));
+    doReturn(true)
+        .when(containerDeploymentDelegateHelper)
+        .useK8sSteadyStateCheck(
+            eq(k8sSteadyStateCheckEnabled), eq(true), any(ContainerServiceParams.class), any(LogCallback.class));
+    doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
+    doReturn(singletonList(workloadId)).when(helmSteadyStateService).findEligibleWorkloadIds(eq(resources));
+
+    doReturn(containerInfos).when(k8sTaskHelperBase).getContainerInfos(any(), anyString(), eq("default-2"), anyLong());
+    doReturn(true)
+        .when(k8sTaskHelperBase)
+        .doStatusCheckAllResourcesForHelm(
+            any(), eq(singletonList(workloadId)), any(), any(), any(), any(), any(), any());
+
+    HelmInstallCommandResponse helmCommandResponse =
+        (HelmInstallCommandResponse) helmDeployService.deploy(helmInstallCommandRequest);
+    assertThat(helmCommandResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(helmCommandResponse.getContainerInfoList()).isNotEmpty();
+    assertThat(helmCommandResponse.getContainerInfoList()).isEqualTo(containerInfos);
+
+    verify(k8sTaskHelperBase, never()).getReleaseHistoryFromSecret(any(), anyString());
+    verify(k8sTaskHelperBase, times(1))
+        .doStatusCheckAllResourcesForHelm(
+            any(Kubectl.class), eq(singletonList(workloadId)), any(), any(), eq("default-2"), any(), any(), any());
+  }
+
+  @SneakyThrows
+  private void testSteadyStateUsingGetManifestRollback(boolean k8sSteadyStateCheckEnabled) {
+    final HelmRollbackCommandRequest request = HelmRollbackCommandRequest.builder()
+                                                   .containerServiceParams(ContainerServiceParams.builder().build())
+                                                   .chartSpecification(HelmChartSpecification.builder()
+                                                                           .chartName(HelmTestConstants.CHART_NAME_KEY)
+                                                                           .chartUrl("http://127.0.0.1")
+                                                                           .build())
+                                                   .releaseName("first-release")
+                                                   .useRefactorSteadyStateCheck(true)
+                                                   .k8SteadyStateCheckEnabled(k8sSteadyStateCheckEnabled)
+                                                   .build();
+
+    helmCliResponse.setCommandExecutionStatus(SUCCESS);
+
+    final KubernetesResourceId workloadId =
+        KubernetesResourceId.builder().name("rollback-deployment").namespace("rollback").kind("Deployment").build();
+    final List<KubernetesResource> resources = ImmutableList.of(
+        KubernetesResource.builder().resourceId(workloadId).build(),
+        KubernetesResource.builder()
+            .resourceId(KubernetesResourceId.builder().name("secret-1").namespace("default").kind("secrets").build())
+            .build());
+
+    final List<ContainerInfo> containerInfos =
+        ImmutableList.of(ContainerInfo.builder().hostName("helm-deployment.harness.io").build());
+
+    doReturn(true)
+        .when(containerDeploymentDelegateHelper)
+        .useK8sSteadyStateCheck(
+            eq(k8sSteadyStateCheckEnabled), eq(true), any(ContainerServiceParams.class), any(LogCallback.class));
+    doReturn(helmCliResponse).when(helmClient).rollback(any(HelmCommandData.class), eq(false));
+    doReturn(resources).when(helmSteadyStateService).readManifestFromHelmRelease(any(HelmCommandData.class));
+    doReturn(singletonList(workloadId)).when(helmSteadyStateService).findEligibleWorkloadIds(eq(resources));
+    doReturn(containerInfos).when(k8sTaskHelperBase).getContainerInfos(any(), anyString(), eq("rollback"), anyLong());
+    doReturn(true)
+        .when(k8sTaskHelperBase)
+        .doStatusCheckAllResourcesForHelm(
+            any(), eq(singletonList(workloadId)), any(), any(), any(), any(), any(), any());
+
+    HelmInstallCommandResponse helmCommandResponse = (HelmInstallCommandResponse) helmDeployService.rollback(request);
+    assertThat(helmCommandResponse.getCommandExecutionStatus()).isEqualTo(SUCCESS);
+    assertThat(helmCommandResponse.getContainerInfoList()).isEqualTo(containerInfos);
+
+    verify(k8sTaskHelperBase, never()).getReleaseHistoryFromSecret(any(), anyString());
+    verify(k8sTaskHelperBase, times(1))
+        .doStatusCheckAllResourcesForHelm(
+            any(Kubectl.class), eq(singletonList(workloadId)), any(), any(), eq("rollback"), any(), any(), any());
   }
 }

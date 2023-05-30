@@ -41,6 +41,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -132,17 +133,38 @@ public class PipelineExecutorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRunPipelineWithInputSetReferencesList() {
-    doReturnStatementsForFreshRun(null, true, null);
+    doReturn(runtimeInputYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
 
-    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetReferencesList(
-        accountId, orgId, projectId, pipelineId, moduleType, inputSetReferences, pipelineBranch, pipelineRepoId, null);
+    doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(any());
+    RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
+
+    doReturn(execArgs)
+        .when(executionHelper)
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null);
+
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
+
+    MergeInputSetRequestDTOPMS mergeInputSetRequestDTOPMS =
+        MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetReferences).build();
+    PlanExecutionResponseDto planExecutionResponse = pipelineExecutor.runPipelineWithInputSetReferencesList(accountId,
+        orgId, projectId, pipelineId, moduleType, mergeInputSetRequestDTOPMS, pipelineBranch, pipelineRepoId, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
     verify(validateAndMergeHelper, times(1))
-        .getMergeInputSetFromPipelineTemplate(
-            accountId, orgId, projectId, pipelineId, inputSetReferences, pipelineBranch, pipelineRepoId, null);
-    verifyStatementsForFreshRun(null, true, null);
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
+    verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    verify(executionHelper, times(1))
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, null, retryExecutionParameters, false, false, null);
   }
 
   @Test
@@ -191,15 +213,41 @@ public class PipelineExecutorTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRerunPipelineWithInputSetReferencesList() {
-    doReturnStatementsForFreshRun(originalExecutionId, true, null);
+    doReturn(runtimeInputYaml)
+        .when(validateAndMergeHelper)
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
 
+    doReturn(pipelineEntity).when(executionHelper).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    doReturn(executionTriggerInfo).when(executionHelper).buildTriggerInfo(any());
+    RetryExecutionParameters retryExecutionParameters = RetryExecutionParameters.builder().isRetry(false).build();
+
+    doReturn(execArgs)
+        .when(executionHelper)
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+            null);
+
+    doReturn(planExecution)
+        .when(executionHelper)
+        .startExecution(accountId, orgId, projectId, metadata, planExecutionMetadata, false, null, null, null);
+
+    MergeInputSetRequestDTOPMS mergeInputSetRequestDTOPMS =
+        MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetReferences).build();
     PlanExecutionResponseDto planExecutionResponse =
         pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgId, projectId, pipelineId, moduleType,
-            originalExecutionId, inputSetReferences, pipelineBranch, pipelineRepoId, false, null);
+            originalExecutionId, mergeInputSetRequestDTOPMS, pipelineBranch, pipelineRepoId, false, null);
     assertThat(planExecutionResponse.getPlanExecution()).isEqualTo(planExecution);
     assertThat(planExecutionResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
 
-    verifyStatementsForFreshRun(originalExecutionId, true, null);
+    verify(validateAndMergeHelper, times(1))
+        .getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgId, projectId, pipelineId,
+            inputSetReferences, pipelineBranch, pipelineRepoId, null, null, false, false);
+    verify(executionHelper, times(1)).fetchPipelineEntity(accountId, orgId, projectId, pipelineId);
+    verify(executionHelper, times(1))
+        .buildExecutionArgs(pipelineEntity, moduleType, runtimeInputYaml, Collections.emptyList(),
+            Collections.emptyMap(), executionTriggerInfo, originalExecutionId, retryExecutionParameters, false, false,
+            null);
   }
 
   private void doReturnStatementsForFreshRun(

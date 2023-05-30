@@ -138,4 +138,13 @@ public class BitbucketConnectorProcessor extends ConnectorProcessor {
   public GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig) {
     return BitbucketToGitMapper.mapToGitConfigDTO((BitbucketConnectorDTO) connectorConfig);
   }
+
+  @Override
+  public String getLocationTarget(CatalogConnectorInfo catalogConnectorInfo, String path) {
+    String repo = catalogConnectorInfo.getRepo();
+    repo = repo.replace("/scm/", "/projects/");
+    int reposPos = repo.lastIndexOf("/");
+    repo = repo.substring(0, reposPos + 1) + "repos/" + repo.substring(reposPos + 1);
+    return repo + "/raw" + path + "?at=refs/heads/" + catalogConnectorInfo.getBranch();
+  }
 }

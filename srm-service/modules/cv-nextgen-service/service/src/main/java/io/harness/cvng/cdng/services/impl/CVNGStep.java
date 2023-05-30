@@ -21,6 +21,7 @@ import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
+import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
@@ -237,9 +238,12 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
             .monitoredServiceTemplateVersionLabel(monitoredServiceTemplateVersionLabel)
             .cvConfigs(cvConfigs)
             .build();
+    String baselineType = stepParameters.getBaseline() != null ? stepParameters.getBaseline().getValue() : null;
     VerificationJobInstanceBuilder verificationJobInstanceBuilder =
         fillOutCommonJobInstanceProperties(serviceEnvironmentParams.getAccountIdentifier(), deploymentStartTime,
-            verificationJob.resolveAdditionsFields(verificationJobInstanceService), verificationStartTime);
+            verificationJob.resolveAdditionsFields(verificationJobInstanceService,
+                baselineType != null ? BaselineType.valueOf(baselineType) : BaselineType.LAST),
+            verificationStartTime, baselineType != null ? BaselineType.valueOf(baselineType) : BaselineType.LAST);
     validateJob(verificationJob);
     verificationJobInstanceBuilder.name(stepName);
     return verificationJobInstanceBuilder;
@@ -437,13 +441,15 @@ public class CVNGStep extends AsyncExecutableWithCapabilities {
     activityService.abort(cvngStepTask.getActivityId());
   }
 
-  private VerificationJobInstanceBuilder fillOutCommonJobInstanceProperties(
-      String accountId, Instant deploymentStartTime, VerificationJob verificationJob, Instant verficationStartTime) {
+  private VerificationJobInstanceBuilder fillOutCommonJobInstanceProperties(String accountId,
+      Instant deploymentStartTime, VerificationJob verificationJob, Instant verficationStartTime,
+      BaselineType baselineType) {
     return VerificationJobInstance.builder()
         .accountId(accountId)
         .executionStatus(ExecutionStatus.QUEUED)
         .deploymentStartTime(deploymentStartTime)
         .startTime(verficationStartTime)
+        .baselineType(baselineType)
         .resolvedJob(verificationJob);
   }
 

@@ -100,4 +100,9 @@ public class AzureRepoConnectorProcessor extends ConnectorProcessor {
   public GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig) {
     return AzureRepoToGitMapper.mapToGitConfigDTO((AzureRepoConnectorDTO) connectorConfig);
   }
+
+  @Override
+  public String getLocationTarget(CatalogConnectorInfo catalogConnectorInfo, String path) {
+    return catalogConnectorInfo.getRepo() + "?path=" + path + "&version=GB" + catalogConnectorInfo.getBranch();
+  }
 }

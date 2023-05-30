@@ -9,15 +9,19 @@ package io.harness.cvng.statemachine.services.api;
 
 import static io.harness.cvng.analysis.beans.LogClusterLevel.L2;
 
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
+import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.DeploymentLogHostSamplingState;
 import io.harness.cvng.statemachine.entities.LogClusterState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
+import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -27,6 +31,8 @@ public class DeploymentLogClusterStateExecutor extends LogClusterStateExecutor<D
   @Inject private FeatureFlagService featureFlagService;
 
   @Inject private VerificationTaskService verificationTaskService;
+
+  @Inject private VerificationJobInstanceService verificationJobInstanceService;
 
   @Override
   protected List<String> scheduleAnalysis(AnalysisInput analysisInput, LogClusterState analysisState) {
@@ -53,10 +59,19 @@ public class DeploymentLogClusterStateExecutor extends LogClusterStateExecutor<D
         deploymentLogClusterState.setStatus(AnalysisStatus.CREATED);
         return deploymentLogClusterState;
       case L2:
-        DeploymentLogHostSamplingState deploymentLogHostSamplingState = new DeploymentLogHostSamplingState();
-        deploymentLogHostSamplingState.setInputs(analysisState.getInputs());
-        deploymentLogHostSamplingState.setStatus(AnalysisStatus.CREATED);
-        return deploymentLogHostSamplingState;
+        VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
+            analysisState.getInputs().getVerificationJobInstanceId());
+        if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
+          DeploymentLogAnalysisState deploymentLogAnalysisState = DeploymentLogAnalysisState.builder().build();
+          deploymentLogAnalysisState.setInputs(analysisState.getInputs());
+          deploymentLogAnalysisState.setStatus(AnalysisStatus.CREATED);
+          return deploymentLogAnalysisState;
+        } else {
+          DeploymentLogHostSamplingState deploymentLogHostSamplingState = new DeploymentLogHostSamplingState();
+          deploymentLogHostSamplingState.setInputs(analysisState.getInputs());
+          deploymentLogHostSamplingState.setStatus(AnalysisStatus.CREATED);
+          return deploymentLogHostSamplingState;
+        }
       default:
         throw new AnalysisStateMachineException("Unknown cluster level in handleTransition "
             + "of ServiceGuardLogClusterState: " + analysisState.getClusterLevel());

@@ -10,4 +10,4 @@ package io.harness.ngmigration.utils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-@OwnedBy(HarnessTeam.CDC) public enum CaseFormat { CAMEL_CASE, LOWER_CASE }
+@OwnedBy(HarnessTeam.CDC) public enum CaseFormat { CAMEL_CASE, LOWER_CASE, SNAKE_CASE }

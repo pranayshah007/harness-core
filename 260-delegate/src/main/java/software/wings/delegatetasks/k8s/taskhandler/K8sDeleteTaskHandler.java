@@ -43,6 +43,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sConstants;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.KubernetesConfig;
@@ -167,7 +168,8 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     try {
-      client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+      client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
       kubernetesConfig =
           containerDeploymentDelegateHelper.getKubernetesConfig(k8sDeleteTaskParameters.getK8sClusterConfig(), false);
 
@@ -225,7 +227,8 @@ public class K8sDeleteTaskHandler extends K8sTaskHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     try {
-      client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+      client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
       kubernetesConfig =
           containerDeploymentDelegateHelper.getKubernetesConfig(k8sDeleteTaskParameters.getK8sClusterConfig(), false);
 

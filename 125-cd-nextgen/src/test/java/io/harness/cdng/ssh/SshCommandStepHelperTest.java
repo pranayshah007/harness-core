@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,6 +72,7 @@ import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.SkipRollbackException;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -107,15 +109,19 @@ import io.harness.steps.shellscript.ShellType;
 import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -247,6 +253,8 @@ public class SshCommandStepHelperTest extends CategoryTest {
   private OptionalSweepingOutput variablesSweepingOutput =
       OptionalSweepingOutput.builder().found(true).output(new VariablesSweepingOutput()).build();
 
+  MockedStatic<CommandStepUtils> mockStaticCommandStepUtils;
+
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
@@ -274,7 +282,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .when(sshWinRmArtifactHelper)
         .getArtifactDelegateConfigConfig(artifactoryArtifact, ambiance);
 
-    Mockito.mockStatic(CommandStepUtils.class);
+    mockStaticCommandStepUtils = Mockito.mockStatic(CommandStepUtils.class);
     PowerMockito.when(CommandStepUtils.getWorkingDirectory(eq(workingDirParam), any(ScriptType.class), anyBoolean()))
         .thenReturn(workingDir);
     doNothing()
@@ -286,6 +294,11 @@ public class SshCommandStepHelperTest extends CategoryTest {
     doReturn(fileDelegateConfig)
         .when(sshWinRmConfigFileHelper)
         .getFileDelegateConfig(any(), eq(ambiance), anyBoolean());
+  }
+
+  @After
+  public void cleanup() {
+    mockStaticCommandStepUtils.close();
   }
 
   private HarnessStore getHarnessStore() {
@@ -544,6 +557,82 @@ public class SshCommandStepHelperTest extends CategoryTest {
     verify(executionSweepingOutputService)
         .consume(
             eq(ambiance), eq(OutcomeExpressionConstants.SSH_WINRM_PREPARE_ROLLBACK_DATA_OUTCOME), any(), anyString());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetSshWinRmRollbackData_shouldDeletePhantomStageExecutionInfo() {
+    Map<String, String> mergedEnvVariables = new HashMap<>();
+    CommandStepParameters commandStepParameters = CommandStepParameters.infoBuilder().build();
+
+    when(commandStepRollbackHelper.getRollbackData(any(), any(), any())).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> helper.getSshWinRmRollbackData(ambiance, mergedEnvVariables, commandStepParameters))
+        .isInstanceOf(SkipRollbackException.class)
+        .hasMessage("Not found previous successful rollback data, hence skipping rollback");
+
+    ArgumentCaptor<Ambiance> argumentCaptor = ArgumentCaptor.forClass(Ambiance.class);
+    verify(commandStepRollbackHelper, times(1)).deleteIfExistsCurrentStageExecutionInfo(argumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testGetMergedEnvVariablesMap() {
+    LinkedHashMap<String, Object> evaluatedStageVariables =
+        new LinkedHashMap<>(Map.of("var1", "value1s", "var2", "value2s"));
+    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+        new LinkedHashMap<>(Map.of("var1", "value1p", "var3", "value3p"));
+    LinkedHashMap<String, Object> envVariables = new LinkedHashMap<>(Map.of("var4", "value4"));
+    LinkedHashMap<String, Object> taskParamEnvVariables = new LinkedHashMap<>(Map.of("var5", "value5"));
+
+    PdcInfrastructureOutcome pdcInfrastructureOutcome =
+        PdcInfrastructureOutcome.builder()
+            .environment(EnvironmentOutcome.builder().variables(envVariables).build())
+            .build();
+
+    CommandStepParameters commandStepParameters =
+        CommandStepParameters.infoBuilder().environmentVariables(taskParamEnvVariables).build();
+
+    doReturn(evaluatedStageVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+stage.variables>"), any());
+    doReturn(evaluatedPipelineVariables)
+        .when(cdExpressionResolver)
+        .evaluateExpression(any(), eq("<+pipeline.variables>"), any());
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedStageVariables), any(Map.class)))
+        .thenReturn(evaluatedStageVariables);
+
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(evaluatedPipelineVariables), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+          }
+        });
+
+    PowerMockito
+        .when(CommandStepUtils.mergeEnvironmentVariables(
+            eq(commandStepParameters.getEnvironmentVariables()), any(Map.class)))
+        .thenReturn(new HashMap() {
+          {
+            putAll(evaluatedStageVariables);
+            putAll(evaluatedPipelineVariables);
+            putAll(envVariables);
+            putAll(taskParamEnvVariables);
+          }
+        });
+
+    Map<String, String> result =
+        helper.getMergedEnvVariablesMap(ambiance, commandStepParameters, pdcInfrastructureOutcome);
+
+    assertThat(result.get("var1")).isEqualTo("value1p");
+    assertThat(result.get("var2")).isEqualTo("value2s");
+    assertThat(result.get("var3")).isEqualTo("value3p");
+    assertThat(result.get("var4")).isEqualTo("value4");
+    assertThat(result.get("var5")).isEqualTo("value5");
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

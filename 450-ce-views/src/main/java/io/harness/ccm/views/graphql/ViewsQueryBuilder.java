@@ -35,6 +35,8 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_NODE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.GROUP_BY_SERVICE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.INSTANCE_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.LAUNCH_TYPE;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT;
+import static io.harness.ccm.views.utils.ClusterTableKeys.MARKUP_AMOUNT_AGGREGATION;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TASK_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_CPU_LIMIT;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_AGGREGATED_CPU_REQUEST;
@@ -46,6 +48,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.timescaledb.Tables.ANOMALIES;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.msp.entities.MarginDetails;
 import io.harness.ccm.views.businessmapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessmapping.entities.CostTarget;
 import io.harness.ccm.views.businessmapping.entities.SharedCost;
@@ -101,15 +104,13 @@ import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(CE)
 public class ViewsQueryBuilder {
-  @Inject private ViewCustomFieldDao viewCustomFieldDao;
-  @Inject private BusinessMappingService businessMappingService;
-  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
-
+  public static final String EMPTY_STRING = "";
   public static final String K8S_NODE = "K8S_NODE";
   public static final String K8S_POD = "K8S_POD";
   public static final String K8S_POD_FARGATE = "K8S_POD_FARGATE";
@@ -145,6 +146,15 @@ public class ViewsQueryBuilder {
   private static final String CLOUD_PROVIDERS_CUSTOM_GROUPING_QUERY =
       "CASE WHEN cloudProvider = 'CLUSTER' THEN 'CLUSTER' ELSE 'CLOUD' END";
   private static final String MULTI_IF_STATEMENT_OPENING = "multiIf(";
+  private static final String CLICKHOUSE_DISTINCT = "distinct %s";
+  private static final String CLICKHOUSE_LABEL_KEYS = "arrayJoin(labels.keys)";
+  private static final String CLICKHOUSE_LABEL_VALUES = "arrayJoin(labels.values)";
+
+  private static final Double DEFAULT_MARKUP = 1.0;
+
+  @Inject private ViewCustomFieldDao viewCustomFieldDao;
+  @Inject private BusinessMappingService businessMappingService;
+  @Inject @Named("isClickHouseEnabled") private boolean isClickHouseEnabled;
 
   public SelectQuery getQuery(List<ViewRule> rules, List<QLCEViewFilter> filters, List<QLCEViewTimeFilter> timeFilters,
       List<QLCEViewGroupBy> groupByList, List<QLCEViewAggregation> aggregations,
@@ -640,7 +650,7 @@ public class ViewsQueryBuilder {
     selectQuery.addCustomGroupings(LABEL_VALUE_ALIAS);
     selectQuery.addCustomGroupings(WORKLOAD_NAME);
 
-    selectQuery.addCondition(new CustomCondition(getSearchCondition(UNNESTED_LABEL_KEY_COLUMN, "")));
+    selectQuery.addCondition(new CustomCondition(getSearchCondition(UNNESTED_LABEL_KEY_COLUMN, EMPTY_STRING)));
 
     if (!filters.isEmpty()) {
       decorateQueryWithFilters(selectQuery, filters, tableIdentifier);
@@ -811,7 +821,8 @@ public class ViewsQueryBuilder {
 
       List<Condition> conditionList = new ArrayList<>();
       if (isClickHouseQuery()) {
-        conditionList.add(BinaryCondition.equalTo(new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName()), ""));
+        conditionList.add(
+            BinaryCondition.equalTo(new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName()), EMPTY_STRING));
       }
       conditionList.add(UnaryCondition.isNull(new CustomSql(ViewsMetaDataFields.INSTANCE_TYPE.getFieldName())));
       conditionList.add(new InCondition(
@@ -869,8 +880,8 @@ public class ViewsQueryBuilder {
 
     for (QLCEViewFilter filter : filters) {
       QLCEViewFieldInput viewFieldInput = getModifiedQLCEViewFieldInput(filter.getField(), isClusterTable);
-      String searchString = "";
-      String sortKey = "";
+      String searchString = EMPTY_STRING;
+      String sortKey;
       if (filter.getValues().length != 0) {
         searchString = filter.getValues()[0];
       }
@@ -880,27 +891,25 @@ public class ViewsQueryBuilder {
         case AZURE:
         case CLUSTER:
         case COMMON:
+          String columnName = getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId());
           if (isSharedCostOuterQuery) {
             query.addAliasedColumn(
                 new CustomSql(String.format(DISTINCT, viewFieldInput.getFieldId())), viewFieldInput.getFieldId());
           } else {
-            query.addAliasedColumn(new CustomSql(String.format(
-                                       DISTINCT, getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()))),
-                viewFieldInput.getFieldId());
+            query.addAliasedColumn(new CustomSql(String.format(DISTINCT, columnName)), viewFieldInput.getFieldId());
             if (AWS_ACCOUNT_FIELD.equals(viewFieldInput.getFieldName()) && filter.getValues().length != 1) {
               // Skipping the first string for InCondition that client is passing in the search filter
               // Considering only the AWS account Ids
-              query.addCondition(ComboCondition.or(
-                  new InCondition(new CustomSql(getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId())),
-                      Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
-                  getSearchCondition(
-                      getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString)));
+              query.addCondition(
+                  ComboCondition.or(new InCondition(new CustomSql(columnName),
+                                        Arrays.stream(filter.getValues()).skip(1).toArray(Object[] ::new)),
+                      getSearchCondition(columnName, searchString)));
             } else {
-              query.addCondition(getSearchCondition(
-                  getColumnNameForField(tableIdentifier, viewFieldInput.getFieldId()), searchString));
+              query.addCondition(getSearchCondition(columnName, searchString));
             }
           }
-          sortKey = viewFieldInput.getFieldId();
+          query.addCondition(BinaryCondition.notEqualTo(new CustomSql(columnName), EMPTY_STRING));
+          sortKey = columnName;
           break;
         case LABEL:
           if (viewFieldInput.getFieldId().equals(LABEL_KEY.getFieldName())) {
@@ -908,15 +917,19 @@ public class ViewsQueryBuilder {
               query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_KEY_UN_NESTED.getAlias())),
                   LABEL_KEY_UN_NESTED.getAlias());
             } else {
-              if (!isClickHouseQuery()) {
-                query.addCustomGroupings(LABEL_KEY_UN_NESTED.getAlias());
-                query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_KEY_UN_NESTED.getFieldName())),
+              if (isClickHouseQuery()) {
+                query.addAliasedColumn(new CustomSql(String.format(CLICKHOUSE_DISTINCT, CLICKHOUSE_LABEL_KEYS)),
                     LABEL_KEY_UN_NESTED.getAlias());
                 query.addCondition(
-                    new CustomCondition(getSearchCondition(LABEL_KEY_UN_NESTED.getFieldName(), searchString)));
+                    BinaryCondition.notEqualTo(new CustomSql(LABEL_KEY_UN_NESTED.getAlias()), EMPTY_STRING));
               } else {
-                query.addAliasedColumn(
-                    new CustomSql(String.format("distinct arrayJoin(%s)", "labels.keys")), LABEL_KEY.getAlias());
+                query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_KEY_UN_NESTED.getFieldName())),
+                    LABEL_KEY_UN_NESTED.getAlias());
+                query.addCustomGroupings(LABEL_KEY_UN_NESTED.getAlias());
+                query.addCondition(
+                    new CustomCondition(getSearchCondition(LABEL_KEY_UN_NESTED.getFieldName(), searchString)));
+                query.addCondition(
+                    BinaryCondition.notEqualTo(new CustomSql(LABEL_KEY_UN_NESTED.getFieldName()), EMPTY_STRING));
               }
             }
             sortKey = LABEL_KEY_UN_NESTED.getAlias();
@@ -925,14 +938,25 @@ public class ViewsQueryBuilder {
               query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_VALUE_UN_NESTED.getAlias())),
                   LABEL_VALUE_UN_NESTED.getAlias());
             } else {
-              if (!isClickHouseQuery()) {
-                query.addCustomGroupings(LABEL_VALUE_UN_NESTED.getAlias());
+              if (isClickHouseQuery()) {
                 query.addCondition(
-                    getCondition(getLabelKeyFilter(new String[] {viewFieldInput.getFieldName()}), tableIdentifier));
+                    getCondition(getLabelKeyFilter(new String[] {viewFieldInput.getFieldName()}, CLICKHOUSE_LABEL_KEYS),
+                        tableIdentifier));
+                query.addAliasedColumn(new CustomSql(String.format(CLICKHOUSE_DISTINCT, CLICKHOUSE_LABEL_VALUES)),
+                    LABEL_VALUE_UN_NESTED.getAlias());
+                query.addCondition(
+                    BinaryCondition.notEqualTo(new CustomSql(LABEL_VALUE_UN_NESTED.getAlias()), EMPTY_STRING));
+              } else {
+                query.addCustomGroupings(LABEL_VALUE_UN_NESTED.getAlias());
+                query.addCondition(getCondition(
+                    getLabelKeyFilter(new String[] {viewFieldInput.getFieldName()}, LABEL_KEY_UN_NESTED.getFieldName()),
+                    tableIdentifier));
                 query.addAliasedColumn(new CustomSql(String.format(DISTINCT, LABEL_VALUE_UN_NESTED.getFieldName())),
                     LABEL_VALUE_UN_NESTED.getAlias());
                 query.addCondition(
                     new CustomCondition(getSearchCondition(LABEL_VALUE_UN_NESTED.getFieldName(), searchString)));
+                query.addCondition(
+                    BinaryCondition.notEqualTo(new CustomSql(LABEL_VALUE_UN_NESTED.getFieldName()), EMPTY_STRING));
               }
             }
             sortKey = LABEL_VALUE_UN_NESTED.getAlias();
@@ -984,10 +1008,9 @@ public class ViewsQueryBuilder {
           throw new InvalidRequestException("Invalid View Field Identifier " + viewFieldInput.getIdentifier());
       }
       fields.add(filter.getField());
-      if (!sortKey.isEmpty()) {
-        sortKey = String.format(LOWER, sortKey);
+      if (StringUtils.isNotEmpty(sortKey)) {
+        query.addCustomOrdering(String.format(LOWER, sortKey), OrderObject.Dir.ASCENDING);
       }
-      query.addCustomOrdering(sortKey, OrderObject.Dir.ASCENDING);
     }
     log.info("Query for view filter {}", query);
 
@@ -1023,7 +1046,7 @@ public class ViewsQueryBuilder {
       SelectQuery selectQuery, boolean isLabelsPresent, List<String> labelKeyList, boolean isLabelsKeyFilterQuery) {
     if (isLabelsPresent) {
       if (isLabelsKeyFilterQuery || labelKeyList.isEmpty()
-          || (labelKeyList.size() == 1 && labelKeyList.get(0).equals(""))) {
+          || (labelKeyList.size() == 1 && labelKeyList.get(0).equals(EMPTY_STRING))) {
         if (!isClickHouseQuery()) {
           selectQuery.addCustomJoin(leftJoinLabels);
         }
@@ -1138,10 +1161,10 @@ public class ViewsQueryBuilder {
     return labelsKeysListAcrossCustomFields;
   }
 
-  private QLCEViewFilter getLabelKeyFilter(String[] values) {
+  private QLCEViewFilter getLabelKeyFilter(String[] values, String fieldName) {
     return QLCEViewFilter.builder()
         .field(QLCEViewFieldInput.builder()
-                   .fieldId(LABEL_KEY_UN_NESTED.getFieldName())
+                   .fieldId(fieldName)
                    .identifier(ViewFieldIdentifier.LABEL)
                    .identifierName(ViewFieldIdentifier.LABEL.getDisplayName())
                    .build())
@@ -1560,7 +1583,8 @@ public class ViewsQueryBuilder {
     return QLCEViewFilter.builder()
         .field(getViewFieldInput(condition.getViewField()))
         .operator(mapViewIdOperatorToQLCEViewFilterOperator(condition.getViewOperator()))
-        .values(getStringArray(Objects.isNull(condition.getValues()) ? ImmutableList.of("") : condition.getValues()))
+        .values(getStringArray(
+            Objects.isNull(condition.getValues()) ? ImmutableList.of(EMPTY_STRING) : condition.getValues()))
         .build();
   }
 
@@ -1744,7 +1768,7 @@ public class ViewsQueryBuilder {
         break;
       case NULL:
         if (isClickHouseQuery()) {
-          condition = BinaryCondition.equalTo(conditionKey, "");
+          condition = BinaryCondition.equalTo(conditionKey, EMPTY_STRING);
         } else {
           condition = UnaryCondition.isNull(conditionKey);
         }
@@ -1918,6 +1942,18 @@ public class ViewsQueryBuilder {
     return new CustomSql(multiIfStatement.toString());
   }
 
+  public String getSQLCaseStatementForMarginDetails(MarginDetails marginDetails, String tableIdentifier) {
+    CaseStatement caseStatement = new CaseStatement();
+    if (Objects.nonNull(marginDetails.getMarginRules())) {
+      for (CostTarget costTarget : marginDetails.getMarginRules()) {
+        caseStatement.addWhen(getConsolidatedRuleCondition(costTarget.getRules(), tableIdentifier),
+            getRoundedDoubleValue(DEFAULT_MARKUP + (costTarget.getMarginPercentage() / 100)));
+      }
+      caseStatement.addElse(DEFAULT_MARKUP);
+    }
+    return new CustomSql(caseStatement).toString();
+  }
+
   public String getAliasFromField(QLCEViewFieldInput field) {
     switch (field.getIdentifier()) {
       case AWS:
@@ -1989,6 +2025,8 @@ public class ViewsQueryBuilder {
         return TIME_AGGREGATED_MEMORY_REQUEST;
       case EFFECTIVE_MEMORY_UTILIZATION_VALUE:
         return TIME_AGGREGATED_MEMORY_UTILIZATION_VALUE;
+      case MARKUP_AMOUNT_AGGREGATION:
+        return MARKUP_AMOUNT;
       default:
         return value;
     }
@@ -2007,7 +2045,7 @@ public class ViewsQueryBuilder {
   }
 
   private String getSearchStringForLikeOperator(String searchString) {
-    if (searchString == null || searchString.equals("")) {
+    if (searchString == null || searchString.equals(EMPTY_STRING)) {
       return "'%'";
     } else {
       return "'%" + searchString + "%'";
@@ -2020,7 +2058,7 @@ public class ViewsQueryBuilder {
 
   public String getTableIdentifier(String cloudProviderTableName) {
     StringTokenizer tokenizer = new StringTokenizer(cloudProviderTableName, ".");
-    String tableIdentifier = "";
+    String tableIdentifier = EMPTY_STRING;
     while (tokenizer.hasMoreTokens()) {
       tableIdentifier = tokenizer.nextToken();
     }
@@ -2033,5 +2071,9 @@ public class ViewsQueryBuilder {
       return ViewFieldUtils.getClickHouseColumnMapping().get(key);
     }
     return field;
+  }
+
+  private double getRoundedDoubleValue(double value) {
+    return Math.round(value * 100D) / 100D;
   }
 }

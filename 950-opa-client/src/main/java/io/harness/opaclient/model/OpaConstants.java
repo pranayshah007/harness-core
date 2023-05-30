@@ -24,4 +24,5 @@ public interface OpaConstants {
   String OPA_STATUS_PASS = "pass";
   String OPA_STATUS_WARNING = "warning";
   String OPA_STATUS_ERROR = "error";
+  String OPA_EVALUATION_TYPE_TEMPLATE = "template";
 }

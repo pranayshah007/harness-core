@@ -638,6 +638,11 @@ public class EngineExpressionEvaluator {
       return expressionMode;
     }
 
+    public boolean isAnyCollection(Object value) {
+      return value instanceof Map || value instanceof Collection || value instanceof String[] || value instanceof List
+          || value instanceof Iterable;
+    }
+
     @Override
     public String resolveInternal(String expression) {
       try {
@@ -647,7 +652,7 @@ public class EngineExpressionEvaluator {
         }
         if (ctx.isFeatureFlagEnabled("CI_DISABLE_RESOURCE_OPTIMIZATION")) {
           // Use the asJson only when the FF is enabled.
-          if (value instanceof Collection) {
+          if (isAnyCollection(value)) {
             return JsonUtils.asJson(value);
           }
         }

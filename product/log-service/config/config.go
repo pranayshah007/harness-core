@@ -62,6 +62,11 @@ type Config struct {
 		GcpProject  string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_PROJECT"`
 		GcpJsonPath string `envconfig:"LOG_SERVICE_SECRET_RESOLUTION_GCP_JSON_PATH"`
 	}
+
+	GenAI struct {
+		Endpoint          string `envconfig:"LOG_SERVICE_GENAI_ENDPOINT"`
+		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
+	}
 }
 
 // Load loads the configuration from the environment.

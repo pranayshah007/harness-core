@@ -1,0 +1,27 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
+        "//120-ng-manager/modules/favorites/contracts/src/main/java/io/harness/favorites:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/services:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/utils:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "@maven//:com_google_inject_guice",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)
+
+run_analysis_per_module()

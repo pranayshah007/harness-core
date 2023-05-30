@@ -24,6 +24,7 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.handler.PipelineAsyncValidationHandler;
 import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
+import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.repositories.pipeline.validation.async.PipelineValidationEventRepository;
 
 import com.google.inject.Inject;
@@ -44,15 +45,18 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
   private final Executor executor;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineGovernanceService pipelineGovernanceService;
+  private final PipelineRefreshService pipelineRefreshService;
 
   @Inject
   public PipelineAsyncValidationServiceImpl(PipelineValidationEventRepository pipelineValidationEventRepository,
       @Named("PipelineAsyncValidationExecutorService") Executor executor,
-      PMSPipelineTemplateHelper pipelineTemplateHelper, PipelineGovernanceService pipelineGovernanceService) {
+      PMSPipelineTemplateHelper pipelineTemplateHelper, PipelineGovernanceService pipelineGovernanceService,
+      PipelineRefreshService pipelineRefreshService) {
     this.pipelineValidationEventRepository = pipelineValidationEventRepository;
     this.executor = executor;
     this.pipelineTemplateHelper = pipelineTemplateHelper;
     this.pipelineGovernanceService = pipelineGovernanceService;
+    this.pipelineRefreshService = pipelineRefreshService;
   }
 
   @Override
@@ -71,8 +75,8 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
     PipelineValidationEvent savedPipelineValidationEvent =
         pipelineValidationEventRepository.save(pipelineValidationEvent);
 
-    executor.execute(new PipelineAsyncValidationHandler(
-        savedPipelineValidationEvent, loadFromCache, this, pipelineTemplateHelper, pipelineGovernanceService));
+    executor.execute(new PipelineAsyncValidationHandler(savedPipelineValidationEvent, loadFromCache, this,
+        pipelineTemplateHelper, pipelineGovernanceService, pipelineRefreshService));
     return savedPipelineValidationEvent;
   }
 

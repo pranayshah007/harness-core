@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobType;
+import io.harness.cvng.cdng.beans.v2.BaselineType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -23,6 +24,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -104,19 +106,26 @@ public class TestVerificationJob extends VerificationJob {
   public boolean collectHostData() {
     return false;
   }
+
   @Override
-  public VerificationJob resolveAdditionsFields(VerificationJobInstanceService verificationJobInstanceService) {
-    if (baselineVerificationJobInstanceId == null) {
+  public VerificationJob resolveAdditionsFields(
+      VerificationJobInstanceService verificationJobInstanceService, BaselineType baselineType) {
+    ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
+                                                            .accountIdentifier(getAccountId())
+                                                            .orgIdentifier(getOrgIdentifier())
+                                                            .projectIdentifier(getProjectIdentifier())
+                                                            .serviceIdentifier(getServiceIdentifier())
+                                                            .environmentIdentifier(getEnvIdentifier())
+                                                            .build();
+    if (baselineVerificationJobInstanceId == null && (baselineType == null || baselineType.equals(BaselineType.LAST))) {
       baselineVerificationJobInstanceId =
-          verificationJobInstanceService
-              .getLastSuccessfulTestVerificationJobExecutionId(ServiceEnvironmentParams.builder()
-                                                                   .accountIdentifier(getAccountId())
-                                                                   .orgIdentifier(getOrgIdentifier())
-                                                                   .projectIdentifier(getProjectIdentifier())
-                                                                   .serviceIdentifier(getServiceIdentifier())
-                                                                   .environmentIdentifier(getEnvIdentifier())
-                                                                   .build())
+          verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(serviceEnvironmentParams)
               .orElse(null);
+    } else if (baselineVerificationJobInstanceId == null && Objects.equals(baselineType, BaselineType.PINNED)) {
+      baselineVerificationJobInstanceId =
+          verificationJobInstanceService.getPinnedBaselineVerificationJobInstance(serviceEnvironmentParams)
+              .orElse(null)
+              .getUuid();
     }
     return this;
   }

@@ -225,18 +225,30 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
       Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable) {
     Page<Connector> connectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, null);
+    return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
+  }
+
+  @Override
+  public Page<ConnectorResponseDTO> list(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
+      String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
+    Page<Connector> connectors =
+        listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+            includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, version);
     return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
   }
 
   private Page<Connector> listHelper(String accountIdentifier, ConnectorFilterPropertiesDTO filterProperties,
       String orgIdentifier, String projectIdentifier, String filterIdentifier, String searchTerm,
-      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable) {
+      Boolean includeAllConnectorsAccessibleAtScope, Boolean getDistinctFromBranches, Pageable pageable,
+      String version) {
     Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
-    Criteria criteria =
-        filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier, projectIdentifier,
-            filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope, isBuiltInSMDisabled);
+    Criteria criteria = filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier,
+        projectIdentifier, filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope,
+        isBuiltInSMDisabled, version);
     Page<Connector> connectors;
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
@@ -1175,7 +1187,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       Boolean getDistinctFromBranches, Pageable pageable) {
     filterProperties.setTypes(List.of(ConnectorType.KUBERNETES_CLUSTER));
     Page<Connector> k8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable);
+        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, pageable, null);
 
     List<String> k8sConnectorRefList = new ArrayList<>();
     for (Connector k8sConnector : k8sConnectors) {
@@ -1186,8 +1198,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     Pageable ccmK8sPageable = getPageRequest(0, 100, null);
     filterProperties.setTypes(List.of(ConnectorType.CE_KUBERNETES_CLUSTER));
     filterProperties.setCcmConnectorFilter(CcmConnectorFilter.builder().k8sConnectorRef(k8sConnectorRefList).build());
-    Page<Connector> ccmK8sConnectors = listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier,
-        filterIdentifier, searchTerm, includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, ccmK8sPageable);
+    Page<Connector> ccmK8sConnectors =
+        listHelper(accountIdentifier, filterProperties, orgIdentifier, projectIdentifier, filterIdentifier, searchTerm,
+            includeAllConnectorsAccessibleAtScope, getDistinctFromBranches, ccmK8sPageable, null);
     log.info("ccmK8sConnectors count elements: {} pages: {}", ccmK8sConnectors.getTotalElements(),
         ccmK8sConnectors.getTotalPages());
     return getCcmK8sResponseList(accountIdentifier, orgIdentifier, projectIdentifier, k8sConnectors, ccmK8sConnectors);

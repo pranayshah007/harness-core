@@ -36,6 +36,7 @@ import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.ExecutionInputRepository;
 import io.harness.repositories.ExecutionInputRepositoryCustomImpl;
 import io.harness.rule.Owner;
@@ -149,11 +150,15 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
                                                          .template(template)
                                                          .build();
     doReturn(executionInputInstance1).when(executionInputRepositoryMock).save(any());
-    doReturn(fullExecutionInputYamlMap).when(executionInputServiceHelper).getExecutionInputMap(eq(template), any());
+    doReturn(fullExecutionInputYamlMap)
+        .when(executionInputServiceHelper)
+        .getExecutionInputMap(eq(YamlUtils.readAsJsonNode(template)), any());
     doReturn(NodeExecution.builder().ambiance(Ambiance.newBuilder().build()).build())
         .when(nodeExecutionService)
         .getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus);
-    doReturn(fullExecutionInputYaml).when(pmsEngineExpressionService).resolve(any(), any(), any());
+    doReturn(YamlUtils.readAsJsonNode(fullExecutionInputYaml))
+        .when(pmsEngineExpressionService)
+        .resolve(any(), any(), any());
 
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
@@ -171,16 +176,18 @@ public class ExecutionInputServiceImplTest extends OrchestrationTestBase {
     assertEquals(inputInstanceIdCapture.getValue(), inputInstanceId);
 
     // Providing invalid input values. Would return false.
-    doReturn("a:b").when(pmsEngineExpressionService).resolve(any(), any(), any());
+    doReturn(YamlUtils.readAsJsonNode("a:b")).when(pmsEngineExpressionService).resolve(any(), any(), any());
     assertFalse(inputService.continueExecution(nodeExecutionId, "a:b"));
 
     // Giving partial user input. MergedUserInput should contain provided field's value and other value should be
     // expression.
     doReturn(mergedTemplateForPartialInputMap)
         .when(executionInputServiceHelper)
-        .getExecutionInputMap(eq(template), any());
+        .getExecutionInputMap(eq(YamlUtils.readAsJsonNode(template)), any());
 
-    doReturn(partialExecutionInputYaml).when(pmsEngineExpressionService).resolve(any(), any(), any());
+    doReturn(YamlUtils.readAsJsonNode(partialExecutionInputYaml))
+        .when(pmsEngineExpressionService)
+        .resolve(any(), any(), any());
     assertTrue(inputService.continueExecution(nodeExecutionId, partialExecutionInputYaml));
     verify(executionInputRepositoryMock, times(2)).save(inputInstanceArgumentCaptor.capture());
     verify(waitNotifyEngine, times(2)).doneWith(inputInstanceIdCapture.capture(), any());

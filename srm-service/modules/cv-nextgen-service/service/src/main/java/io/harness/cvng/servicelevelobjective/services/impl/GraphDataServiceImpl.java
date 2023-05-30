@@ -218,7 +218,11 @@ public class GraphDataServiceImpl implements GraphDataService {
       SLIValue sliValue = SLIValue.getRunningCountDifference(sliRecord, prevSLIRecord);
       double totalErrorBudget =
           (sliValue.getTotal() * (100 - compositeServiceLevelObjective.getSloTargetPercentage())) / 100;
-      sloErrorBudgetBurnDown += weightage * ((totalErrorBudget - sliValue.getBadCount()) * 100) / totalErrorBudget;
+      double errorBudgetBurned = 100.0;
+      if (totalErrorBudget != 0.0) {
+        errorBudgetBurned = ((totalErrorBudget - sliValue.getBadCount()) * 100) / totalErrorBudget;
+      }
+      sloErrorBudgetBurnDown += weightage * errorBudgetBurned;
     }
     return sloErrorBudgetBurnDown;
   }

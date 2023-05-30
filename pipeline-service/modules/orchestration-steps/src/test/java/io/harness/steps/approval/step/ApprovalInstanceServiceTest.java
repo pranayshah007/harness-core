@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -31,6 +32,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.jira.JiraIssueNG;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -66,6 +68,7 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import dev.morphia.mapping.Mapper;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -98,6 +101,10 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
   @Mock private PlanExecutionService planExecutionService;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private PmsEngineExpressionService pmsEngineExpressionService;
+  private static final String planExecutionId = "planExecutionId";
+  private static final ApprovalStatus approvalStatus = ApprovalStatus.WAITING;
+  private static final ApprovalType approvalType = ApprovalType.HARNESS_APPROVAL;
+  private static final String nodeExecutionId = "nodeExecutionId";
   @Spy @Inject @InjectMocks private ApprovalInstanceServiceImpl approvalInstanceServiceImpl;
 
   @Test
@@ -661,5 +668,58 @@ public class ApprovalInstanceServiceTest extends CategoryTest {
     jiraApprovalInstance.setTicketFields(updatedApprovalInstanceTicketFields);
     approvalInstanceServiceImpl.updateTicketFieldsInJiraApprovalInstance(jiraApprovalInstance, jiraIssueNG);
     verify(approvalInstanceRepository, times(2)).updateFirst(any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetApprovalInstancesByExecutionId() {
+    assertThatThrownBy(() -> {
+      approvalInstanceServiceImpl.getApprovalInstancesByExecutionId("", null, null, null);
+    }).isInstanceOf(InvalidRequestException.class);
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(
+        planExecutionId, approvalStatus, approvalType, nodeExecutionId);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .is(approvalStatus)
+                     .and(ApprovalInstanceKeys.type)
+                     .is(approvalType)
+                     .and(ApprovalInstanceKeys.nodeExecutionId)
+                     .is(nodeExecutionId));
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(planExecutionId, approvalStatus, approvalType, null);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .is(approvalStatus)
+                     .and(ApprovalInstanceKeys.type)
+                     .is(approvalType));
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(planExecutionId, null, approvalType, nodeExecutionId);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .in(Arrays.asList(ApprovalStatus.values()))
+                     .and(ApprovalInstanceKeys.type)
+                     .is(approvalType)
+                     .and(ApprovalInstanceKeys.nodeExecutionId)
+                     .is(nodeExecutionId));
+
+    approvalInstanceServiceImpl.getApprovalInstancesByExecutionId(
+        planExecutionId, approvalStatus, null, nodeExecutionId);
+    verify(approvalInstanceRepository, times(1))
+        .findAll(Criteria.where(ApprovalInstanceKeys.planExecutionId)
+                     .is(planExecutionId)
+                     .and(ApprovalInstanceKeys.status)
+                     .is(approvalStatus)
+                     .and(ApprovalInstanceKeys.type)
+                     .in(Arrays.asList(ApprovalType.values()))
+                     .and(ApprovalInstanceKeys.nodeExecutionId)
+                     .is(nodeExecutionId));
   }
 }

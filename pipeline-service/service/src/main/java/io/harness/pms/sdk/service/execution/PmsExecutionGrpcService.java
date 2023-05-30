@@ -19,6 +19,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.stub.StreamObserver;
@@ -48,7 +49,8 @@ public class PmsExecutionGrpcService extends PmsExecutionServiceImplBase {
     responseObserver.onCompleted();
   }
 
-  private void updatePipelineInfoJson(ExecutionSummaryUpdateRequest request) {
+  @VisibleForTesting
+  void updatePipelineInfoJson(ExecutionSummaryUpdateRequest request) {
     String moduleName = request.getModuleName();
     String planExecutionId = request.getPlanExecutionId();
     Map<String, Object> pipelineInfoDoc = RecastOrchestrationUtils.fromJson(request.getPipelineModuleInfoJson());
@@ -74,7 +76,8 @@ public class PmsExecutionGrpcService extends PmsExecutionServiceImplBase {
     pmsExecutionSummaryRepository.update(query, update);
   }
 
-  private void updateStageModuleInfo(ExecutionSummaryUpdateRequest request) {
+  @VisibleForTesting
+  void updateStageModuleInfo(ExecutionSummaryUpdateRequest request) {
     String stageUuid = request.getNodeUuid();
     String moduleName = request.getModuleName();
     String stageInfo = request.getNodeModuleInfoJson();

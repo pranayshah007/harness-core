@@ -5,14 +5,19 @@
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
 set +e
+# Define colors
+RED="\e[1m\e[91m"
+GREEN='\033[1;32m'
+YELLOW='\033[1;33m'
+NC="\e[0m"
 
 export BRANCH_PREFIX=`echo ${ghprbTargetBranch} | sed 's/\(........\).*/\1/g'`
-echo "INFO: BRANCH_PREFIX=$BRANCH_PREFIX"
+echo -e "${YELLOW}INFO: BRANCH_PREFIX=$BRANCH_PREFIX${NC}"
 
 function check_file_present(){
      local_file=$1
      if [ ! -f "$local_file" ]; then
-        echo "ERROR: $LINENO: File $local_file not found. Exiting"
+        echo -e "${RED}ERROR: $LINENO: File $local_file not found. Exiting${NC}"
         exit 1
      fi
 }
@@ -20,10 +25,10 @@ function check_file_present(){
 # function to check all field for Bug ticket
 function check_bug_ticket(){
   if [ "$1" = "null" ]; then
-    echo "ERROR: JIRA FIELD: bug resolution is empty" >> /tmp/error_fields
+    echo -e "${RED}JIRA FIELD: The bug resolution field is empty. Please provide a resolution.${NC}" >> /tmp/error_fields
   fi
   if [ "$2" = "null" ]; then
-    echo "ERROR: JIRA FIELD: Jira Resolved As is not selected" >>/tmp/error_fields
+    echo -e "${RED}JIRA FIELD: The Jira Resolved As field is not selected. Please select a resolution option${NC}" >>/tmp/error_fields
   fi
   if [ -f /tmp/error_fields ]; then
     cat /tmp/error_fields
@@ -34,7 +39,8 @@ function check_bug_ticket(){
 # function to check field for Story ticket
 function check_story_ticket(){
   if [ $1 = "null" ]; then
-    echo "ERROR: JIRA FIELD: FF Added is not updated, Please update FF added to proceed" >> /tmp/error_fields
+    echo -e "${RED}ERROR: The JIRA field 'FF Added' has not been updated. Please ensure that 'FF Added' is updated before proceeding${NC}">> /tmp/error_fields
+
   fi
 
   if [ -f /tmp/error_fields ]; then
@@ -48,27 +54,23 @@ PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
-# Check commit message if there's a single commit
-#if [ $(git rev-list --count $ghprbActualCommit ^origin/develop)  -eq 1 ]; then
-#    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
-#fi
 COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|\[hotfixpreqa]|feat|fix|techdebt|hotfixpreqa"
 KEY=`echo "${ghprbPullTitle}" | grep -o -iE "\[(${PROJECTS})-[0-9]+][: ]" | grep -o -iE "(${PROJECTS})-[0-9]+"`
 if [[ -z $KEY ]]; then
-  echo "Cannot extract Jira key from $ghprbPullTitle"
-  echo "Make sure that your PR Title is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>"
+  echo -e "${RED}Cannot extract Jira key from $ghprbPullTitle${NC}"
+  echo -e "${RED}Make sure that your PR Title is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>${NC}"
   exit 1
 fi
 
 
 
-echo "JIRA Key is : $KEY "
+echo -e "${YELLOW}JIRA Key is : $KEY ${NC}"
 
 jira_response=`curl -X GET -H "Content-Type: application/json" https://harness.atlassian.net/rest/api/2/issue/${KEY}?fields=issuetype,customfield_10687,customfield_10709,customfield_10748,customfield_10763,customfield_10785,priority --user $JIRA_USERNAME:$JIRA_PASSWORD`
 
 errorsFound=`echo "${jira_response}" | jq ".errorMessages" | tr -d '"'`
 if [[ ! $errorsFound == "null" ]]; then
-  echo "Error returned fetching Jira key given in PR title ($KEY)"
+  echo -e "${RED}ERROR returned fetching Jira key given in PR title ($KEY)${NC}"
   echo "$errorsFound"
   exit 1
 fi
@@ -93,14 +95,14 @@ fi
 
 # BT-1465 - Disallow PRs on issuetype question
 if [ "${issuetype}" = "Question" ]; then
-  echo "ERROR: Cannot commit code on Question issue type."
+  echo -e "${RED}ERROR: Cannot commit code on Question issue type.${NC}"
   exit 1
 fi
 
 # shellcheck disable=SC2076
 if [[ "${BRANCH_PREFIX}" = "release/"  && ( ${PRIORITY_LIST[*]} =~ "${prioritytype}" ) ]]
 then
-  echo -e "ERROR: Hotfix merge to 'release/*' is blocked, unless it's P0 or P1. Use capital letters for Jira ID in PR message.\n"
+  echo -e "${RED}ERROR: Hotfix merge to 'release/*' is blocked, unless it's P0 or P1. Use capital letters for Jira ID in PR message.${NC}"
 
   # check ticket fields
   if [ "${issuetype}" = "Story" ]; then
@@ -111,8 +113,8 @@ then
   exit 1
 fi
 
-echo "issueType is ${issuetype}"
-echo "INFO: Checking JIRA STATUS OF issueType ${issuetype}"
+echo -e "${YELLOW}ISSUETYPE is ${issuetype}${NC}"
+echo -e "${YELLOW}INFO: Checking JIRA STATUS OF issueType ${issuetype}${NC}"
 
 if [ "${issuetype}" = "Bug" ]; then
   check_bug_ticket "${bug_resolution}" "${jira_resolved_as}"
@@ -120,4 +122,4 @@ elif [ "${issuetype}" = "Story" ]; then
   check_story_ticket "${ff_added}"
 fi
 
-echo "JIRA Key is : $KEY has all the mandatory details"
+echo -e "${GREEN}JIRA Key is : $KEY has all the mandatory details${NC}"

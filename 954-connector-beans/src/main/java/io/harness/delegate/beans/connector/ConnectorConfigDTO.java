@@ -46,6 +46,7 @@ import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyConnectorDTO;
 import io.harness.delegate.beans.connector.pdcconnector.PhysicalDataCenterConnectorDTO;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -120,6 +121,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = BambooConnectorDTO.class, name = "Bamboo"),
       @JsonSubTypes.Type(value = TerraformCloudConnectorDTO.class, name = "TerraformCloud"),
       @JsonSubTypes.Type(value = SignalFXConnectorDTO.class, name = "SignalFX"),
+      @JsonSubTypes.Type(value = RancherConnectorDTO.class, name = "Rancher"),
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")

@@ -86,7 +86,7 @@ func (j *Junit) GetTests(ctx context.Context) <-chan *types.TestCase {
 			totalTests += testsInFile
 			fileMap[file] = testsInFile
 		}
-		j.Log.Infow("Number of cases parsed in each file: ", fileMap)
+		j.Log.Info("Number of cases parsed in each file: ", fileMap)
 		j.Log.Infow(fmt.Sprintf("parsed %d test cases", totalTests), "num_cases", totalTests)
 	}()
 	return testc

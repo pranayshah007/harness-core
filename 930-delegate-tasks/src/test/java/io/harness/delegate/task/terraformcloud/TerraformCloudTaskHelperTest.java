@@ -451,7 +451,7 @@ public class TerraformCloudTaskHelperTest {
   private List<PolicyCheckData> getPolicyCheckData(boolean failed) {
     PolicyCheckData.Attributes.Result result =
         PolicyCheckData.Attributes.Result.builder()
-            .sentinel(
+            .sentinel_parsed(
                 PolicyCheckData.Attributes.Result.Sentinel.builder()
                     .data(Map.of("",
                         PolicyCheckData.Attributes.Result.Sentinel.PolicyData.builder()

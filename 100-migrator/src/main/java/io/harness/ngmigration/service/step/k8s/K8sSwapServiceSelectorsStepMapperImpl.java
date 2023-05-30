@@ -13,6 +13,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.SupportStatus;
 import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -24,7 +25,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
-public class K8sSwapServiceSelectorsStepMapperImpl extends K8sAbstractStepMapperImpl {
+public class K8sSwapServiceSelectorsStepMapperImpl extends StepMapper {
   @Override
   public SupportStatus stepSupportStatus(GraphNode graphNode) {
     return SupportStatus.SUPPORTED;

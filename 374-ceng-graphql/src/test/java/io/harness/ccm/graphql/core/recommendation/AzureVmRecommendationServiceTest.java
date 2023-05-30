@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.beans.recommendation.CCMJiraDetails;
 import io.harness.ccm.commons.dao.recommendation.AzureRecommendationDAO;
 import io.harness.ccm.commons.entities.azure.AzureRecommendation;
 import io.harness.ccm.commons.entities.azure.AzureVmDetails;
@@ -53,13 +54,28 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
   private final String CONNECTOR_NAME = "connectorName";
   private final String VM_ID = "vmId";
   private final String CONNECTOR_ID = "connectorId";
+  private final String JIRA_CONNECTOR_REF = "jiraConnectorRef";
 
   @Test
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
   public void testGetAzureVmRecommendationById_ShutdownRecommendation() {
-    expectedResult = getAzureVmRecommendationDTO(SHUTDOWN);
-    azureRecommendation = getAzureRecommendation(SHUTDOWN);
+    expectedResult = getAzureVmRecommendationDTO(SHUTDOWN, null);
+    azureRecommendation = getAzureRecommendation(SHUTDOWN, null);
+    when(mockAzureRecommendationDAO.fetchAzureRecommendationById(ACCOUNT_ID, UUID)).thenReturn(azureRecommendation);
+
+    final AzureVmRecommendationDTO result =
+        azureVmRecommendationServiceUnderTest.getAzureVmRecommendationById(ACCOUNT_ID, UUID);
+
+    assertThat(result).isEqualTo(expectedResult);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetAzureVmRecommendationById_ShutdownRecommendationWithJiraDetails() {
+    expectedResult = getAzureVmRecommendationDTO(SHUTDOWN, getCcmJiraDetails());
+    azureRecommendation = getAzureRecommendation(SHUTDOWN, getCcmJiraDetails());
     when(mockAzureRecommendationDAO.fetchAzureRecommendationById(ACCOUNT_ID, UUID)).thenReturn(azureRecommendation);
 
     final AzureVmRecommendationDTO result =
@@ -72,8 +88,8 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
   @Owner(developers = ANMOL)
   @Category(UnitTests.class)
   public void testGetAzureVmRecommendationById_VmRightSizingRecommendation() {
-    expectedResult = getAzureVmRecommendationDTO(VM_RIGHT_SIZING);
-    azureRecommendation = getAzureRecommendation(VM_RIGHT_SIZING);
+    expectedResult = getAzureVmRecommendationDTO(VM_RIGHT_SIZING, null);
+    azureRecommendation = getAzureRecommendation(VM_RIGHT_SIZING, null);
     when(mockAzureRecommendationDAO.fetchAzureRecommendationById(ACCOUNT_ID, UUID)).thenReturn(azureRecommendation);
 
     final AzureVmRecommendationDTO result =
@@ -82,13 +98,28 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
     assertThat(result).isEqualTo(expectedResult);
   }
 
-  private AzureVmRecommendationDTO getAzureVmRecommendationDTO(String target) {
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testGetAzureVmRecommendationById_VmRightSizingRecommendationWithJiraDetails() {
+    expectedResult = getAzureVmRecommendationDTO(VM_RIGHT_SIZING, getCcmJiraDetails());
+    azureRecommendation = getAzureRecommendation(VM_RIGHT_SIZING, getCcmJiraDetails());
+    when(mockAzureRecommendationDAO.fetchAzureRecommendationById(ACCOUNT_ID, UUID)).thenReturn(azureRecommendation);
+
+    final AzureVmRecommendationDTO result =
+        azureVmRecommendationServiceUnderTest.getAzureVmRecommendationById(ACCOUNT_ID, UUID);
+
+    assertThat(result).isEqualTo(expectedResult);
+  }
+
+  private AzureVmRecommendationDTO getAzureVmRecommendationDTO(String target, CCMJiraDetails ccmJiraDetails) {
     AzureVmDTO currentVm = AzureVmDTO.builder()
                                .cores(4)
                                .memory(2048)
                                .monthlyCost(130.0)
                                .vmSize(CURRENT)
-                               .cpuUtilization(5.0)
+                               .avgCpuUtilization(5.0)
+                               .maxCpuUtilization(13.0)
                                .region(REGION)
                                .build();
     AzureVmDTO targetVm = AzureVmDTO.builder()
@@ -96,7 +127,8 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
                               .memory(1024)
                               .monthlyCost(65.0)
                               .vmSize(TARGET)
-                              .cpuUtilization(10.0)
+                              .avgCpuUtilization(10.0)
+                              .maxCpuUtilization(26.0)
                               .region(REGION)
                               .build();
     if (target.equalsIgnoreCase(SHUTDOWN)) {
@@ -105,7 +137,8 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
                      .memory(0)
                      .monthlyCost(0.0)
                      .vmSize(SHUTDOWN)
-                     .cpuUtilization(0.0)
+                     .avgCpuUtilization(0.0)
+                     .maxCpuUtilization(0.0)
                      .region(REGION)
                      .build();
     }
@@ -122,22 +155,36 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
         .current(currentVm)
         .showTerminated(target.equalsIgnoreCase(SHUTDOWN))
         .target(targetVm)
+        .jiraDetails(ccmJiraDetails)
         .build();
   }
 
-  private AzureRecommendation getAzureRecommendation(String target) {
+  private AzureRecommendation getAzureRecommendation(String target, CCMJiraDetails ccmJiraDetails) {
     AzureVmDetails currentVm = AzureVmDetails.builder()
                                    .numberOfCores(4)
                                    .memoryInMB(2048)
-                                   .cost(130.0)
+                                   .costInDefaultCurrencyPref(130.0)
                                    .name(CURRENT)
-                                   .cpuUtilisation(5.0)
+                                   .avgCpuUtilisation(5.0)
+                                   .maxCpuUtilisation(13.0)
                                    .build();
-    AzureVmDetails targetVm =
-        AzureVmDetails.builder().numberOfCores(2).memoryInMB(1024).cost(65.0).name(TARGET).cpuUtilisation(10.0).build();
+    AzureVmDetails targetVm = AzureVmDetails.builder()
+                                  .numberOfCores(2)
+                                  .memoryInMB(1024)
+                                  .costInDefaultCurrencyPref(65.0)
+                                  .name(TARGET)
+                                  .avgCpuUtilisation(10.0)
+                                  .maxCpuUtilisation(26.0)
+                                  .build();
     if (target.equalsIgnoreCase(SHUTDOWN)) {
-      targetVm =
-          AzureVmDetails.builder().numberOfCores(0).memoryInMB(0).cost(0.0).name(SHUTDOWN).cpuUtilisation(0.0).build();
+      targetVm = AzureVmDetails.builder()
+                     .numberOfCores(0)
+                     .memoryInMB(0)
+                     .costInDefaultCurrencyPref(0.0)
+                     .name(SHUTDOWN)
+                     .avgCpuUtilisation(0.0)
+                     .maxCpuUtilisation(0.0)
+                     .build();
     }
     return AzureRecommendation.builder()
         .recommendationId(RECOMMENDATION_ID)
@@ -151,6 +198,11 @@ public class AzureVmRecommendationServiceTest extends CategoryTest {
         .duration("7")
         .connectorId(CONNECTOR_ID)
         .connectorName(CONNECTOR_NAME)
+        .jiraDetails(ccmJiraDetails)
         .build();
+  }
+
+  private CCMJiraDetails getCcmJiraDetails() {
+    return CCMJiraDetails.builder().connectorRef(JIRA_CONNECTOR_REF).build();
   }
 }

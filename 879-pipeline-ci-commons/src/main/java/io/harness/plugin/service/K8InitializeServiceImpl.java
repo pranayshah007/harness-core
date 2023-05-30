@@ -64,7 +64,7 @@ public class K8InitializeServiceImpl implements K8sInitializeService {
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
     Map<String, SecretNGVariable> secretVarMap = getSecretMap(stageNode);
-    secretVarMap.putAll(pluginService.getPluginCompatibleSecretVars(stepInfo));
+    secretVarMap.putAll(pluginService.getPluginCompatibleSecretVars(stepInfo, identifier));
 
     Boolean privileged = null;
 

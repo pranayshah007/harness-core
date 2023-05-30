@@ -10,6 +10,7 @@ package software.wings.scheduler;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.mongo.MongoUtils.setUnset;
+import static io.harness.ng.core.common.beans.Generation.CG;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
@@ -233,7 +234,7 @@ public class LdapGroupSyncJob implements Job {
       Set<UserGroup> userGroups = entry.getValue();
 
       User user = userService.getUserByEmail(ldapUserResponse.getEmail());
-      if (user != null && userService.isUserAssignedToAccount(user, accountId)) {
+      if (user != null && userService.isUserAssignedToAccountInGeneration(user, accountId, CG)) {
         userService.addUserToUserGroups(accountId, user, Lists.newArrayList(userGroups), true, true);
       } else {
         UserInvite userInvite = anUserInvite()

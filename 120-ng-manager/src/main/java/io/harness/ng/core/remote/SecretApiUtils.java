@@ -48,6 +48,7 @@ import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
+import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.spec.server.ng.v1.model.SSHKerberosTGTKeyTabFileSpec;
 import io.harness.spec.server.ng.v1.model.SSHKerberosTGTPasswordSpec;
 import io.harness.spec.server.ng.v1.model.SSHKeyPathSpec;
@@ -65,6 +66,7 @@ import com.google.inject.Inject;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
@@ -202,11 +204,17 @@ public class SecretApiUtils {
 
   private SecretSpecDTO fromSecretText(Secret secret) {
     SecretTextSpec secretTextSpec = (SecretTextSpec) secret.getSpec();
-
+    AdditionalMetadata additionalMetadata = null;
+    if (secretTextSpec.getAdditionalMetadata() != null) {
+      additionalMetadata = AdditionalMetadata.builder()
+                               .values((Map<String, String>) secretTextSpec.getAdditionalMetadata().getValues())
+                               .build();
+    }
     return SecretTextSpecDTO.builder()
         .secretManagerIdentifier(secretTextSpec.getSecretManagerIdentifier())
         .valueType(ValueType.valueOf(secretTextSpec.getValueType().value()))
         .value(secretTextSpec.getValue())
+        .additionalMetadata(additionalMetadata)
         .build();
   }
 

@@ -39,6 +39,7 @@ public class SecurityStep extends AbstractStepExecutable {
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     StepResponse stepResponse = super.handleAsyncResponseInternal(ambiance, stepParameters, responseDataMap);
     StepResponseBuilder responseBuilder = stepResponse.toBuilder();
+    responseBuilder.clearStepOutcomes();
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);

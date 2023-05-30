@@ -44,7 +44,11 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.ngmigration.beans.MigrationContext;
 import io.harness.ngmigration.beans.NGYamlFile;
+import io.harness.ngmigration.beans.StepOutput;
 import io.harness.ngmigration.beans.SupportStatus;
+import io.harness.ngmigration.beans.WorkflowMigrationContext;
+import io.harness.ngmigration.expressions.step.StepExpressionFunctor;
+import io.harness.ngmigration.expressions.step.TerragruntStepFunctor;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.utils.MigratorUtility;
 import io.harness.ngmigration.utils.NGMigrationConstants;
@@ -57,14 +61,17 @@ import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.PhaseStep;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.beans.Workflow;
+import software.wings.beans.WorkflowPhase;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.sm.states.provision.TerragruntDestroyState;
 import software.wings.sm.states.provision.TerragruntProvisionState;
 
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -413,5 +420,25 @@ public abstract class BaseTerragruntProvisionerMapper extends StepMapper {
       applyStepNode.setTerragruntApplyStepInfo(stepInfo);
       return applyStepNode;
     }
+  }
+
+  @Override
+  public List<StepExpressionFunctor> getExpressionFunctor(
+      WorkflowMigrationContext migrationContext, WorkflowPhase phase, PhaseStep phaseStep, GraphNode graphNode) {
+    String sweepingOutputName = "terragrunt";
+    return Lists.newArrayList(String.format("context.%s", sweepingOutputName), String.format("%s", sweepingOutputName))
+        .stream()
+        .map(exp
+            -> StepOutput.builder()
+                   .stageIdentifier(
+                       MigratorUtility.generateIdentifier(phase.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepIdentifier(MigratorUtility.generateIdentifier(
+                       graphNode.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .stepGroupIdentifier(MigratorUtility.generateIdentifier(
+                       phaseStep.getName(), migrationContext.getIdentifierCaseFormat()))
+                   .expression(exp)
+                   .build())
+        .map(TerragruntStepFunctor::new)
+        .collect(Collectors.toList());
   }
 }
