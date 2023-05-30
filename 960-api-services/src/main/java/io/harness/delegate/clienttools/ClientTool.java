@@ -27,7 +27,7 @@ public enum ClientTool {
   //  CF("cf", "", "./client-tools/helm/", "./cf --version", "", ImmutableList.copyOf(CfVersion.values()),
   //  CfVersion.V7),
   HELM("helm", "public/shared/tools/helm/release/%s/bin/%s/%s/helm", "./client-tools/helm/", "version -c",
-      "storage/harness-download/harness-helm/release/%s/bin/%s/%s/helm", ImmutableList.copyOf(HelmVersion.values()),
+      "storage/harness-download/harness-helm/release/%s/bin/%s/%s/helm", List.of(HelmVersion.V3, HelmVersion.V3_8),
       HelmVersion.V3_8),
   KUBECTL("kubectl", "public/shared/tools/kubectl/release/%s/bin/%s/%s/kubectl", "./client-tools/kubectl/",
       "version --short --client", "storage/harness-download/kubernetes-release/release/%s/bin/%s/%s/kubectl",
