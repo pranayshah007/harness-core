@@ -501,8 +501,7 @@ public class HelmClientImplTest extends CategoryTest {
 
     doThrow(new HelmClientRuntimeException(helmClientException))
         .when(helmClient)
-        .executeWithExceptionHandling(
-            eq("KUBECONFIG=.kube2/config helm get manifest release-retry --namespace=default"),
+        .executeWithExceptionHandling(eq("helm get manifest release-retry --namespace=default"),
             eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
             anyMap());
     doReturn("helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V3);
@@ -510,8 +509,7 @@ public class HelmClientImplTest extends CategoryTest {
     assertThatThrownBy(() -> helmClient.getManifest(commandData, "default"))
         .isInstanceOf(HelmClientRuntimeException.class);
     verify(helmClient, times(3))
-        .executeWithExceptionHandling(
-            eq("KUBECONFIG=.kube2/config helm get manifest release-retry --namespace=default"),
+        .executeWithExceptionHandling(eq("helm get manifest release-retry --namespace=default"),
             eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
             anyMap());
   }
@@ -544,8 +542,7 @@ public class HelmClientImplTest extends CategoryTest {
       return successfulResponse;
     })
         .when(helmClient)
-        .executeWithExceptionHandling(
-            eq("KUBECONFIG=.kube2/config helm get manifest release-retry-successful --namespace=default"),
+        .executeWithExceptionHandling(eq("helm get manifest release-retry-successful --namespace=default"),
             eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
             anyMap());
     doReturn("helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V3);
@@ -555,8 +552,7 @@ public class HelmClientImplTest extends CategoryTest {
     assertThat(resultResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(resultResponse.getOutput()).isEqualTo("manifest.yaml content");
     verify(helmClient, times(2))
-        .executeWithExceptionHandling(
-            eq("KUBECONFIG=.kube2/config helm get manifest release-retry-successful --namespace=default"),
+        .executeWithExceptionHandling(eq("helm get manifest release-retry-successful --namespace=default"),
             eq(HelmCliCommandType.GET_MANIFEST), eq("Failed to retrieve helm manifest"), any(OutputStream.class),
             anyMap());
   }
@@ -583,7 +579,7 @@ public class HelmClientImplTest extends CategoryTest {
 
     HelmCliResponse resultResponse = helmClient.getManifest(commandData, "default");
 
-    assertThat(executedCommand.getValue()).isEqualTo("KUBECONFIG=.kube/config " + expectedCommand);
+    assertThat(executedCommand.getValue()).isEqualTo(expectedCommand);
     assertThat(resultResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(resultResponse.getOutput()).isEqualTo("manifest.yaml content");
   }

@@ -61,9 +61,6 @@ public class HelmCommandDataMapper {
       helmCommandData.setNewReleaseVersion(helmRollbackCommandRequest.getNewReleaseVersion());
       helmCommandData.setRollBackVersion(helmRollbackCommandRequest.getRollbackVersion());
       helmCommandData.setTimeOutInMillis(helmRollbackCommandRequest.getTimeoutInMillis());
-      if (helmRollbackCommandRequest.getContainerServiceParams() != null) {
-        helmCommandData.setNamespace(helmRollbackCommandRequest.getContainerServiceParams().getNamespace());
-      }
     }
     return helmCommandData;
   }

@@ -8,7 +8,6 @@
 package software.wings.helpers.ext.container;
 
 import static io.harness.k8s.model.KubernetesClusterAuthType.OIDC;
-import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -19,13 +18,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -136,7 +133,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, false, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback());
     assertThat(result).isTrue();
   }
 
@@ -159,7 +156,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, false, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback());
     assertThat(result).isTrue();
   }
 
@@ -182,7 +179,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        true, false, containerServiceParams, new ExecutionLogCallback());
+        true, containerServiceParams, new ExecutionLogCallback());
     assertThat(result).isFalse();
   }
 
@@ -191,7 +188,7 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testIsK8sVersion116OrAboveWithFeatureFlagDisabled() {
     boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-        false, false, ContainerServiceParams.builder().build(), new ExecutionLogCallback());
+        false, ContainerServiceParams.builder().build(), new ExecutionLogCallback());
     assertThat(result).isFalse();
   }
 
@@ -284,36 +281,5 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
         .createKubeconfig(any(RancherConfig.class), anyList(), anyString(), anyString());
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(params);
     verify(rancherTaskHelper, times(1)).createKubeconfig(rancherConfig, null, "sampleCluster", "sampleNamespace");
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testUseK8sSteadyStateCheckBothFlagsDisabled() {
-    final ContainerServiceParams containerServiceParams = mock(ContainerServiceParams.class);
-
-    boolean result =
-        containerDeploymentDelegateHelper.useK8sSteadyStateCheck(false, false, containerServiceParams, logCallback);
-
-    assertThat(result).isFalse();
-    verify(kubernetesContainerService, never()).getVersionAsString(any(KubernetesConfig.class));
-  }
-
-  @Test
-  @Owner(developers = ABOSII)
-  @Category(UnitTests.class)
-  public void testUseK8sSteadyStateRefactorSteadyStateCheckEnabled() {
-    final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().namespace("default").build();
-    final ContainerServiceParams containerServiceParams = mock(ContainerServiceParams.class);
-    final String version = "1.16";
-
-    doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
-    doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
-
-    boolean result =
-        containerDeploymentDelegateHelper.useK8sSteadyStateCheck(false, true, containerServiceParams, logCallback);
-
-    assertThat(result).isTrue();
-    verify(kubernetesContainerService, times(1)).getVersionAsString(eq(kubernetesConfig));
   }
 }

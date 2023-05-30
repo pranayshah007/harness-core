@@ -56,13 +56,12 @@ public class HelmRollbackCommandRequest extends HelmCommandRequest {
       K8sDelegateManifestConfig sourceRepoConfig, HelmVersion helmVersion, String ocPath, String workingDir,
       GitFileConfig gitFileConfig, List<String> variableOverridesYamlFiles, boolean k8SteadyStateCheckEnabled,
       boolean mergeCapabilities, boolean isGitHostConnectivityCheck, boolean useLatestChartMuseumVersion,
-      boolean useNewKubectlVersion, String gcpKeyPath, boolean useRefactorSteadyStateCheck) {
+      boolean useNewKubectlVersion, String gcpKeyPath) {
     super(HelmCommandType.ROLLBACK, accountId, appId, kubeConfigLocation, commandName, activityId,
         containerServiceParams, releaseName, chartSpecification, repoName, gitConfig, encryptedDataDetails,
         executionLogCallback, commandFlags, helmCommandFlag, sourceRepoConfig, helmVersion, ocPath, workingDir,
         variableOverridesYamlFiles, gitFileConfig, k8SteadyStateCheckEnabled, mergeCapabilities,
-        isGitHostConnectivityCheck, useLatestChartMuseumVersion, useNewKubectlVersion, gcpKeyPath,
-        useRefactorSteadyStateCheck);
+        isGitHostConnectivityCheck, useLatestChartMuseumVersion, useNewKubectlVersion, gcpKeyPath);
     this.newReleaseVersion = newReleaseVersion;
     this.prevReleaseVersion = prevReleaseVersion;
     this.rollbackVersion = rollbackVersion;
