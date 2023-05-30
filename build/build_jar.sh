@@ -52,7 +52,7 @@ modify_service_name() {
       modified_service_name+="/service"
   fi
 
-  export $modified_service_name
+  echo "$modified_service_name"
 }
 
 # Call the function and pass the service name as an argument
