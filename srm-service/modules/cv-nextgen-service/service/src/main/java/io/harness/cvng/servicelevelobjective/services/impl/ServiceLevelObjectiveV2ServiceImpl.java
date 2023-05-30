@@ -443,19 +443,20 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
     ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO =
         sloEntityToSLOResponse(serviceLevelObjectiveV2).getServiceLevelObjectiveV2DTO();
-    if (validateReferencedCompositeSLOForSimpleSLO
-        && serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
-      List<String> referencedCompositeSLOIdentifiers =
-          compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
-              .stream()
-              .map(CompositeServiceLevelObjective::getIdentifier)
-              .collect(Collectors.toList());
-      if (isNotEmpty(referencedCompositeSLOIdentifiers)) {
-        throw new InvalidRequestException(String.format(
-            "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
-            identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
-            projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
-            String.join(", ", referencedCompositeSLOIdentifiers)));
+    if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      if (validateReferencedCompositeSLOForSimpleSLO) {
+        List<String> referencedCompositeSLOIdentifiers =
+            compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
+                .stream()
+                .map(CompositeServiceLevelObjective::getIdentifier)
+                .collect(Collectors.toList());
+        if (isNotEmpty(referencedCompositeSLOIdentifiers)) {
+          throw new InvalidRequestException(String.format(
+              "Can't delete the SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s. This is associated with Composite SLO with identifier%s %s.",
+              identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+              projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
+              String.join(", ", referencedCompositeSLOIdentifiers)));
+        }
       }
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
@@ -489,6 +490,37 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                            .build());
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
+
+  @Override
+  public boolean forceDelete(ProjectParams projectParams, String identifier) {
+    AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
+    if (serviceLevelObjective != null) {
+      if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+        serviceLevelIndicatorService.deleteByIdentifier(
+            projectParams, ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators());
+        notificationRuleService.delete(projectParams,
+            serviceLevelObjective.getNotificationRuleRefs()
+                .stream()
+                .map(NotificationRuleRef::getNotificationRuleRef)
+                .collect(Collectors.toList()));
+      } else {
+        String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+            serviceLevelObjective.getAccountId(), serviceLevelObjective.getUuid());
+        if (StringUtils.isNotBlank(verificationTaskId)) {
+          sideKickService.schedule(
+              VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+              clock.instant().plus(Duration.ofMinutes(15)));
+        }
+      }
+    }
+    sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
+    sloHealthIndicatorService.delete(projectParams, identifier);
+    annotationService.delete(projectParams, identifier);
+    sloTimeScaleService.deleteServiceLevelObjective(projectParams, identifier);
+
+    return hPersistence.delete(serviceLevelObjective);
+  }
+
   @Override
   public void setMonitoredServiceSLOsEnableFlag(
       ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled) {

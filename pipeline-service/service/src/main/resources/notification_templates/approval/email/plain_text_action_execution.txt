@@ -1,0 +1,20 @@
+subject: "Pipeline ${pipelineName} ${status}."
+body: "
+<html>
+<b>Pipeline  <a href=\"${pipelineExecutionLink}\">${pipelineName}</a>  ${status}</b><br><br>
+
+<b>Actions:</b><br>
+<b>${action}</b><br><br>
+
+<b>Organization:</b> ${orgName}<br>
+<b>Project:</b> ${projectName}<br>
+<b>Triggered by:</b> ${triggeredBy}<br><br>
+
+<b>Pipeline execution summary:</b><br>
+Upcoming Stages: ${upcomingStages}<br>
+Completed Stages: ${finishedStages}<br>
+Running Stages: ${runningStages}<br><br>
+
+<i>Pipeline started on ${startedAt} </i><br>
+</html>
+"

@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 28
+version: 29
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -130,3 +130,5 @@ resourceTypes:
     permissionKey: idpsettings
   - identifier: CODE_REPOSITORY
     permissionKey: repo
+  - identifier: NETWORK_MAP
+    permissionKey: networkmap

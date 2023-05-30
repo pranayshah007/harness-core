@@ -21,6 +21,7 @@ import com.mongodb.DBCollection;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -40,8 +41,8 @@ public class AddValidUntilToDelegate implements Migration {
                                                                      .fetch())) {
       while (delegateInstances.hasNext()) {
         final Delegate delegateInstance = delegateInstances.next();
-        final ZonedDateTime zonedDateTime =
-            ZonedDateTime.ofInstant(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant(), ZoneOffset.UTC);
+        final ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(
+            OffsetDateTime.now().plus(delegateInstance.ttlMillis(), ChronoUnit.MILLIS).toInstant(), ZoneOffset.UTC);
 
         if (i % 1000 == 0) {
           bulkWriteOperation.execute();

@@ -52,7 +52,12 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
     Update update = new Update();
     String stepInputsKey =
         String.format("%s.%s", getExpansionPathUsingLevels(ambiance), PlanExpansionConstants.STEP_INPUTS);
-    update.set(stepInputsKey, Document.parse(RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs.clone())));
+    String stepInputsJson = RecastOrchestrationUtils.pruneRecasterAdditions(stepInputs.clone());
+
+    // If size of stepInputs is greater than 4KB then we will ignore.
+    if (stepInputsJson.length() <= 4096) {
+      update.set(stepInputsKey, Document.parse(stepInputsJson));
+    }
     Level currentLevel = AmbianceUtils.obtainCurrentLevel(ambiance);
     if (currentLevel != null && currentLevel.hasStrategyMetadata()) {
       Map<String, Object> strategyMap =
@@ -66,8 +71,10 @@ public class PlanExpansionServiceImpl implements PlanExpansionService {
         }
       }
     }
-    planExecutionExpansionRepository.update(
-        ambiance.getPlanExecutionId(), update, moduleConfig.getExpandedJsonLockConfig().getLockTimeOutInMinutes());
+    if (!update.getUpdateObject().isEmpty()) {
+      planExecutionExpansionRepository.update(
+          ambiance.getPlanExecutionId(), update, moduleConfig.getExpandedJsonLockConfig().getLockTimeOutInMinutes());
+    }
   }
 
   @Override

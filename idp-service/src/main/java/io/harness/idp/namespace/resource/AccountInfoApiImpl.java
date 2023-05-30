@@ -35,6 +35,7 @@ public class AccountInfoApiImpl implements AccountInfoApi {
       NamespaceInfo accountInfo = namespaceService.getAccountIdForNamespace(namespace);
       return Response.status(Response.Status.OK).entity(accountInfo).build();
     } catch (Exception e) {
+      log.error("Error in fetching account for namespace - {}", namespace, e);
       return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
           .entity(ResponseMessage.builder().message(e.getMessage()).build())
           .build();

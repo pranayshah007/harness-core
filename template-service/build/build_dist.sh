@@ -20,18 +20,20 @@ fi
 
 BAZEL_BIN="${HOME}/.bazel-dirs/bin"
 
-cp ${BAZEL_BIN}/template-service/module_deploy.jar template-service-capsule.jar
-cp ../../template-service/config.yml .
-cp ../../keystore.jks .
-cp ../../template-service/key.pem .
-cp ../../template-service/cert.pem .
-cp ../../template-service/src/main/resources/redisson-jcache.yaml .
-cp ../../template-service/src/main/resources/jfr/default.jfc .
-cp ../../template-service/src/main/resources/jfr/profile.jfc .
+cp ${BAZEL_BIN}/template-service/service/module_deploy.jar template-service-capsule.jar
+cp ../../template-service/config/config.yml .
+cp ../../template-service/config/keystore.jks .
+cp ../../template-service/config/key.pem .
+cp ../../template-service/config/cert.pem .
+cp ../../template-service/service/src/main/resources/redisson-jcache.yaml .
+cp ../../template-service/service/src/main/resources/jfr/default.jfc .
+cp ../../template-service/service/src/main/resources/jfr/profile.jfc .
 
-cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp -r ../../dockerization/template-service/scripts/ .
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
+
+cp ../../template-service/build/container/Dockerfile-template-service-cie-jdk ./Dockerfile-cie-jdk
+cp -r ../../template-service/build/container/scripts/ .
 
 cp ../../protocol.info .
 java -jar template-service-capsule.jar scan-classpath-metadata

@@ -16,6 +16,7 @@ import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -58,7 +59,8 @@ public class ExecutionInputServiceHelperlTest extends OrchestrationTestBase {
         + "        temp: \"tempValue\"\n";
 
     JsonNode inputJsonNode = objectMapper.readTree(inputYaml);
-    Map<String, Object> responseMap = executionInputServiceHelper.getExecutionInputMap(template, inputJsonNode);
+    Map<String, Object> responseMap =
+        executionInputServiceHelper.getExecutionInputMap(YamlUtils.readAsJsonNode(template), inputJsonNode);
     assertEquals(getValueInMap("step.spec.source.spec.script", responseMap), "echo Hi");
 
     template = "stage:\n"
@@ -89,7 +91,7 @@ public class ExecutionInputServiceHelperlTest extends OrchestrationTestBase {
         + "    value: true\n";
 
     inputJsonNode = objectMapper.readTree(inputYaml);
-    responseMap = executionInputServiceHelper.getExecutionInputMap(template, inputJsonNode);
+    responseMap = executionInputServiceHelper.getExecutionInputMap(YamlUtils.readAsJsonNode(template), inputJsonNode);
     assertEquals(getValueInMap("stage.variables.var1", responseMap), "echo ExecutionInputValue");
     assertEquals(getValueInMap("stage.variables.var2", responseMap), 1.2);
     assertEquals(getValueInMap("stage.variables.var3", responseMap), true);
@@ -109,7 +111,7 @@ public class ExecutionInputServiceHelperlTest extends OrchestrationTestBase {
         + "      userGroups:\n"
         + "        - account.LocalUserGroup\n";
     inputJsonNode = objectMapper.readTree(inputYaml);
-    responseMap = executionInputServiceHelper.getExecutionInputMap(template, inputJsonNode);
+    responseMap = executionInputServiceHelper.getExecutionInputMap(YamlUtils.readAsJsonNode(template), inputJsonNode);
     assertTrue(getValueInMap("step.spec.approvers.userGroups", responseMap) instanceof ArrayList);
     assertEquals(((ArrayList<?>) getValueInMap("step.spec.approvers.userGroups", responseMap)).size(), 1);
     assertEquals(

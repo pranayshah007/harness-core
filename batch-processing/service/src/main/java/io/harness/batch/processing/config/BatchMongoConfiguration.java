@@ -16,6 +16,7 @@ import io.harness.persistence.UserProvider;
 
 import software.wings.security.ThreadLocalUserProvider;
 
+import com.mongodb.ReadPreference;
 import dev.morphia.AdvancedDatastore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -46,7 +47,10 @@ public class BatchMongoConfiguration {
 
   @Bean
   public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
-    return new MongoTemplate(mongoDbFactory);
+    MongoTemplate mongoTemplate = new MongoTemplate(mongoDbFactory);
+    log.info("Setting read preference in mongo template as secondary preferred");
+    mongoTemplate.setReadPreference(ReadPreference.secondaryPreferred());
+    return mongoTemplate;
   }
 
   @Bean

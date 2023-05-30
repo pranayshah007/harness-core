@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.validation.async.handler;
 
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -18,6 +19,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.TemplateValidationResponseDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
@@ -27,6 +29,7 @@ import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
+import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -42,6 +45,7 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   @Mock PipelineAsyncValidationService validationService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PipelineGovernanceService pipelineGovernanceService;
+  @Mock PipelineRefreshService pipelineRefreshService;
 
   PipelineEntity pipelineEntity;
   PipelineValidationEvent pipelineValidationEvent;
@@ -49,13 +53,18 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    pipelineEntity = PipelineEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
+    pipelineEntity = PipelineEntity.builder()
+                         .accountId("acc")
+                         .orgIdentifier("org")
+                         .projectIdentifier("proj")
+                         .identifier("pipeline")
+                         .build();
     pipelineValidationEvent = PipelineValidationEvent.builder()
                                   .uuid("abc123")
                                   .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
                                   .build();
-    pipelineAsyncValidationHandler = new PipelineAsyncValidationHandler(
-        pipelineValidationEvent, false, validationService, pipelineTemplateHelper, pipelineGovernanceService);
+    pipelineAsyncValidationHandler = new PipelineAsyncValidationHandler(pipelineValidationEvent, false,
+        validationService, pipelineTemplateHelper, pipelineGovernanceService, pipelineRefreshService);
   }
 
   @Test
@@ -64,6 +73,12 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   public void testSuccessfulRun() {
     TemplateMergeResponseDTO templateMergeResponse =
         TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build();
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
+    doReturn(validateTemplateInputsResponseDTO)
+        .when(pipelineRefreshService)
+        .validateTemplateInputsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), "false");
     doReturn(templateMergeResponse)
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, true, false);
@@ -76,6 +91,9 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
     pipelineAsyncValidationHandler.run();
     verify(validationService, times(1))
         .updateEvent("abc123", ValidationStatus.IN_PROGRESS, ValidationResult.builder().build());
+    verify(pipelineRefreshService, times(1))
+        .validateTemplateInputsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), "false");
     verify(validationService, times(1))
         .updateEvent("abc123", ValidationStatus.IN_PROGRESS,
             ValidationResult.builder()
@@ -104,6 +122,9 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
             ValidationResult.builder()
                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(true).build())
                 .build());
+    verify(pipelineRefreshService, times(0))
+        .validateTemplateInputsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), "false");
   }
 
   @Test
@@ -126,5 +147,24 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
             ValidationResult.builder()
                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                 .build());
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testReconcileForFailure() {
+    doReturn(ValidateTemplateInputsResponseDTO.builder().validYaml(false).build())
+        .when(pipelineRefreshService)
+        .validateTemplateInputsInPipeline("acc", "org", "proj", "pipeline", "false");
+    TemplateMergeResponseDTO templateMergeResponse =
+        TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build();
+    ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
+        ValidateTemplateInputsResponseDTO.builder().build();
+    pipelineAsyncValidationHandler.run();
+    verify(validationService, times(1))
+        .updateEvent("abc123", ValidationStatus.IN_PROGRESS, ValidationResult.builder().build());
+    verify(pipelineRefreshService, times(1))
+        .validateTemplateInputsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), "false");
   }
 }

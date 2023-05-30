@@ -21,6 +21,7 @@ java_library(
         "//960-persistence:module",
         "//960-yaml-sdk:module",
         "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/sanitizer:module",
         "//950-ng-core:module",
         "//959-ng-persistence:module",
         "//953-yaml-commons:module",

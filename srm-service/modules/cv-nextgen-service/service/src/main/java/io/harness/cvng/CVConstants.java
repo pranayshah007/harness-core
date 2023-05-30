@@ -19,6 +19,7 @@ import java.util.Set;
 public interface CVConstants {
   String SERVICE_BASE_URL = "/cv/api";
   Duration MAX_DATA_RETENTION_DURATION = Duration.ofDays(180);
+  Duration BASELINE_RETENTION_DURATION = Duration.ofDays(730);
   /**
    * This should be set in findOption for the queries that are potentially working with large data.
    * This should be used for anything that is using

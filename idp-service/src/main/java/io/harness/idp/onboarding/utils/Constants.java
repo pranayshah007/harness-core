@@ -27,13 +27,12 @@ public class Constants {
   public static final String ENTITY_UNKNOWN_LIFECYCLE = "Unknown";
   public static final String ENTITY_UNKNOWN_REF = "Unknown";
   public static final int PAGE_LIMIT_FOR_ENTITY_FETCH = 1000;
-  public static final String SAMPLE_ENTITY_NAME = "SAMPLE-ENTITY";
-  public static final String SAMPLE_ENTITY_CLASSPATH_LOCATION = "configs/sample-entity.yaml";
+  public static final String SAMPLE_ENTITY_FOLDER_NAME = "sample";
+  public static final String SAMPLE_ENTITY_FILE_NAME = "catalog-info";
+  public static final String SAMPLE_ENTITY_CLASSPATH_LOCATION = "configs/catalog-info.yaml";
   public static final String ENTITY_REQUIRED_ERROR_MESSAGE =
       "At-least one entity of type organization / project / service should be provided";
-  public static final String SLASH_DELIMITER = "/";
   public static final String YAML_FILE_EXTENSION = ".yaml";
-  public static final String SOURCE_FORMAT = "blob";
   public static final String BACKSTAGE_LOCATION_URL_TYPE = "url";
   public static final String STATUS_UPDATE_REASON_FOR_ONBOARDING_COMPLETED =
       "Customer imported harness entities to IDP";

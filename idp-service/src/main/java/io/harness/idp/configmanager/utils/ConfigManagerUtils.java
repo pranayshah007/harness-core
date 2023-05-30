@@ -68,6 +68,8 @@ public class ConfigManagerUtils {
   private static final String LIGHTHOUSE_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/lighthouse-schema.json";
 
   private static final String JIRA_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/jira-schema.json";
+  private static final String FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH = "configs/json-schemas/firehydrant-schema.json";
+  private static final String HARNESS_CI_CD_JSON_SCHEMA_PATH = "configs/json-schemas/harness-ci-cd-schema.json";
 
   public String asYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
@@ -78,7 +80,10 @@ public class ConfigManagerUtils {
 
   public JsonNode asJsonNode(String yamlString) throws IOException {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    JsonNode jsonNode = mapper.readTree(yamlString);
+    JsonNode jsonNode = mapper.createObjectNode();
+    if (yamlString != null) {
+      jsonNode = mapper.readTree(yamlString);
+    }
     return jsonNode;
   }
 
@@ -177,6 +182,10 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(LIGHTHOUSE_PLUGIN_JSON_SCHEMA_PATH);
       case "jira":
         return readFileFromClassPath(JIRA_PLUGIN_JSON_SCHEMA_PATH);
+      case "firehydrant":
+        return readFileFromClassPath(FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH);
+      case "harness-ci-cd":
+        return readFileFromClassPath(HARNESS_CI_CD_JSON_SCHEMA_PATH);
       default:
         return null;
     }

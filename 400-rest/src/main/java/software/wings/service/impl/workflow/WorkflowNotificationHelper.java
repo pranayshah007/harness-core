@@ -38,6 +38,7 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.context.ContextElementType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.sanitizer.HtmlInputSanitizer;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Application;
@@ -128,6 +129,7 @@ public class WorkflowNotificationHelper {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Inject private SubdomainUrlHelperIntfc subdomainUrlHelper;
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
+  @Inject private HtmlInputSanitizer userNameSanitizer;
 
   private final DateFormat dateFormat = new SimpleDateFormat("MMM d");
   private final DateFormat timeFormat = new SimpleDateFormat("HH:mm z");
@@ -406,7 +408,7 @@ public class WorkflowNotificationHelper {
     placeHolderValues.put("WORKFLOW_NAME", context.getWorkflowExecutionName());
     placeHolderValues.put("WORKFLOW_URL", workflowUrl);
     placeHolderValues.put("VERB", NotificationMessageResolver.getStatusVerb(status));
-    placeHolderValues.put(USER_NAME, triggeredBy);
+    placeHolderValues.put(USER_NAME, userNameSanitizer.sanitizeInput(triggeredBy));
     placeHolderValues.put("APP_NAME", app.getName());
     placeHolderValues.put(APPLICATION + NAME, app.getName());
     placeHolderValues.put("START_TS_SECS", Long.toString(startTs / 1000L));

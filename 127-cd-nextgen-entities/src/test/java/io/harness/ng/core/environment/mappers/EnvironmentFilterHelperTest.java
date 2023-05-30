@@ -95,10 +95,10 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     Update updateOperations = EnvironmentFilterHelper.getUpdateOperations(environment);
     Set<String> stringSet = ((Document) updateOperations.getUpdateObject().get("$set")).keySet();
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(Environment.class);
-    Set<String> excludedFields =
-        new HashSet<>(Arrays.asList(EnvironmentKeys.id, EnvironmentKeys.createdAt, EnvironmentKeys.version,
-            EnvironmentKeys.yaml, EnvironmentKeys.branch, EnvironmentKeys.filePath, EnvironmentKeys.isFromDefaultBranch,
-            EnvironmentKeys.objectIdOfYaml, EnvironmentKeys.yamlGitConfigRef, EnvironmentKeys.rootFolder, "class"));
+    Set<String> excludedFields = new HashSet<>(Arrays.asList(EnvironmentKeys.id, EnvironmentKeys.createdAt,
+        EnvironmentKeys.version, EnvironmentKeys.yaml, EnvironmentKeys.branch, EnvironmentKeys.filePath,
+        EnvironmentKeys.isFromDefaultBranch, EnvironmentKeys.objectIdOfYaml, EnvironmentKeys.yamlGitConfigRef,
+        EnvironmentKeys.rootFolder, "class", EnvironmentKeys.isMigratedToOverride));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =

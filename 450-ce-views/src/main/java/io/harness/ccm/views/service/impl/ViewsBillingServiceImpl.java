@@ -23,6 +23,7 @@ import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantM
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantMinStartTime;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantSystemCost;
 import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityConstantUnallocatedCost;
+import static io.harness.ccm.views.graphql.ViewMetaDataConstants.entityMarkupAmount;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.LABEL_KEY_ALIAS;
 import static io.harness.ccm.views.graphql.ViewsQueryBuilder.LABEL_VALUE_ALIAS;
 import static io.harness.ccm.views.utils.ClusterTableKeys.ACTUAL_IDLE_COST;
@@ -796,6 +797,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
             break;
           case entityConstantCost:
           case entityConstantClusterCost:
+          case entityMarkupAmount:
             cost = getNumericValue(row, field);
             viewCostDataBuilder.cost(totalCost);
             break;

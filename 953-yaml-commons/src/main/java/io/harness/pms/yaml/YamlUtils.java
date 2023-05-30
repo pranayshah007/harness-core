@@ -84,6 +84,15 @@ public class YamlUtils {
     mapper.coercionConfigFor(ArrayList.class).setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty);
   }
 
+  // Takes stringified yaml as input and returns the JsonNode
+  public JsonNode readAsJsonNode(String yaml) {
+    try {
+      return mapper.readTree(yaml);
+    } catch (IOException ex) {
+      throw new InvalidRequestException(String.format("Couldn't convert yaml to json node %s", yaml), ex);
+    }
+  }
+
   public <T> T read(String yaml, Class<T> cls) throws IOException {
     return mapper.readValue(yaml, cls);
   }
@@ -99,6 +108,14 @@ public class YamlUtils {
   public String write(Object object) {
     try {
       return mapper.writeValueAsString(object);
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Couldn't convert object to Yaml");
+    }
+  }
+
+  public String writeYamlString(Object object) {
+    try {
+      return mapper.writeValueAsString(object).replace("---\n", "");
     } catch (JsonProcessingException e) {
       throw new InvalidRequestException("Couldn't convert object to Yaml");
     }

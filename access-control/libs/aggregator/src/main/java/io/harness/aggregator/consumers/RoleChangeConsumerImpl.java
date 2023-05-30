@@ -63,15 +63,15 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
   }
 
   @Override
-  public void consumeUpdateEvent(String id, RoleDBO updatedRole) {
+  public boolean consumeUpdateEvent(String id, RoleDBO updatedRole) {
     long startTime = System.currentTimeMillis();
     if (updatedRole.getPermissions() == null) {
-      return;
+      return false;
     }
 
     Optional<RoleDBO> role = roleRepository.findById(id);
     if (!role.isPresent()) {
-      return;
+      return true;
     }
 
     Criteria criteria = Criteria.where(RoleAssignmentDBOKeys.roleIdentifier).is(role.get().getIdentifier());
@@ -109,16 +109,19 @@ public class RoleChangeConsumerImpl implements ChangeConsumer<RoleDBO> {
       log.info("RoleChangeConsumerImpl.consumeUpdateEvent: Number of ACLs deleted: {} for {} Time taken: {}",
           numberOfACLsDeleted, id, permissionsChangeTime);
     }
+    return true;
   }
 
   @Override
-  public void consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id) {
     // No need to process separately. Would be processed indirectly when associated role bindings will be deleted
+    return true;
   }
 
   @Override
-  public void consumeCreateEvent(String id, RoleDBO createdEntity) {
+  public boolean consumeCreateEvent(String id, RoleDBO createdEntity) {
     // we do not consume create event
+    return true;
   }
 
   private static class ReProcessRoleAssignmentOnRoleUpdateTask implements Callable<Result> {

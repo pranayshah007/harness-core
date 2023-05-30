@@ -94,8 +94,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_insert() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);
@@ -174,8 +172,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
   public void testRegister_insertWithNoMonitoredService() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO =
         builderFactory.harnessCDChangeEventDTOBuilder().monitoredServiceIdentifier(null).build();
 
@@ -206,9 +202,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_update() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
-
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
     changeEventService.register(changeEventDTO);
     Long eventTime = 123L;
@@ -267,8 +260,6 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testRegister_noChangeSource() {
-    changeSourceService.create(builderFactory.getContext().getMonitoredServiceParams(),
-        new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())));
     ChangeEventDTO changeEventDTO = builderFactory.harnessCDChangeEventDTOBuilder().build();
 
     changeEventService.register(changeEventDTO);

@@ -34,8 +34,7 @@ import io.harness.cdng.gitops.beans.ClusterResponse;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.mappers.ClusterEntityMapper;
 import io.harness.cdng.gitops.service.ClusterService;
-import io.harness.cdng.serviceoverridesv2.validators.EnvironmentValidationHelper;
-import io.harness.cdng.validations.helper.OrgAndProjectValidationHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.EnvironmentValidationHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
@@ -43,6 +42,7 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.utils.OrgAndProjectValidationHelper;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.security.annotations.NextGenManagerAuth;
 

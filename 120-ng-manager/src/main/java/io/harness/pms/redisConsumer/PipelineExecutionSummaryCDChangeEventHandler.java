@@ -71,7 +71,8 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends DebeziumAbstra
     if (node.get(PipelineExecutionSummaryKeys.startTs) != null) {
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS, node.get(PipelineExecutionSummaryKeys.startTs).asLong());
     }
-    if (node.get(PipelineExecutionSummaryKeys.endTs) != null) {
+    if (node.get(PipelineExecutionSummaryKeys.endTs) != null
+        && !node.get(PipelineExecutionSummaryKeys.endTs).isNull()) {
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS, node.get(PipelineExecutionSummaryKeys.endTs).asLong());
     }
     if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo) != null) {

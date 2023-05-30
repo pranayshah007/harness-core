@@ -34,7 +34,6 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.WingsException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
-import io.harness.execution.PlanExecution.PlanExecutionKeys;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.execution.RetryStagesMetadata;
@@ -114,7 +113,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.InternalServerErrorException;
 import lombok.AccessLevel;
@@ -487,17 +485,10 @@ public class ExecutionHelper {
       PlanCreationBlobResponse resp;
       Plan plan;
       try {
-        if (executionMetadata.getExecutionMode() == ExecutionMode.POST_EXECUTION_ROLLBACK) {
-          String originalPlanId =
-              planExecutionService.getWithFieldsIncluded(previousExecutionId, Set.of(PlanExecutionKeys.planId))
-                  .getPlanId();
-          plan = planService.fetchPlan(originalPlanId).withPlanNodes(planService.fetchNodes(originalPlanId));
-        } else {
-          String version = executionMetadata.getHarnessVersion();
-          resp = planCreatorMergeService.createPlanVersioned(
-              accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
-          plan = PlanExecutionUtils.extractPlan(resp);
-        }
+        String version = executionMetadata.getHarnessVersion();
+        resp = planCreatorMergeService.createPlanVersioned(
+            accountId, orgIdentifier, projectIdentifier, version, executionMetadata, planExecutionMetadata);
+        plan = PlanExecutionUtils.extractPlan(resp);
       } catch (IOException e) {
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
         throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(e)), e);
@@ -691,13 +682,16 @@ public class ExecutionHelper {
 
       List<SettingResponseDTO> response = NGRestUtils.getResponse(responseDTOCall);
 
+      // TODO: The filed useMatrixFieldName is redundant, we can make use of the settingToValueMap values. Please make
+      // sure before removing the field from proto that its not being used anywhere. Also there has been some releases
+      // after removing the usages of the field to maintain Backward compatibility.
       for (SettingResponseDTO settingDto : response) {
         SettingDTO setting = settingDto.getSetting();
-        if (setting.getName().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
+        if (setting.getIdentifier().equals(NGPipelineSettingsConstant.ENABLE_MATRIX_FIELD_NAME_SETTING.getName())
             && setting.getValue().equals("true")) {
           builder.setUseMatrixFieldName(true);
         } else {
-          builder.putSettingToValueMap(setting.getName(), setting.getValue());
+          builder.putSettingToValueMap(setting.getIdentifier(), setting.getValue());
         }
       }
     } catch (Exception e) {

@@ -30,6 +30,7 @@ public class ServiceOverrideRepositoryHelper {
     update.set(NGServiceOverridesEntityKeys.spec, serviceOverridesEntity.getSpec());
     update.setOnInsert(NGServiceOverridesEntityKeys.createdAt, System.currentTimeMillis());
     update.set(NGServiceOverridesEntityKeys.lastModifiedAt, System.currentTimeMillis());
+    update.set(NGServiceOverridesEntityKeys.isV2, Boolean.TRUE);
     return update;
   }
 

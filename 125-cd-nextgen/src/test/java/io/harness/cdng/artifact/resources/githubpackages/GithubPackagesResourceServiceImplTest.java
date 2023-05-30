@@ -1238,6 +1238,17 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_PackageName_Empty() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, "", PACKAGE_TYPE,
+                               null, null, ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_NAME_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetLastSuccessfulBuild_PackageName_Input() {
     assertThatThrownBy(
         ()
@@ -1253,6 +1264,17 @@ public class GithubPackagesResourceServiceImplTest extends CategoryTest {
   public void testGetLastSuccessfulBuild_PackageType_Null() {
     assertThatThrownBy(()
                            -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, PACKAGE_NAME, null,
+                               null, null, ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(PACKAGE_TYPE_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuild_PackageType_Empty() {
+    assertThatThrownBy(()
+                           -> githubPackagesResourceService.getLastSuccessfulVersion(IDENTIFIER_REF, PACKAGE_NAME, "",
                                null, null, ORG_IDENTIFIER, ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(PACKAGE_TYPE_MESSAGE);

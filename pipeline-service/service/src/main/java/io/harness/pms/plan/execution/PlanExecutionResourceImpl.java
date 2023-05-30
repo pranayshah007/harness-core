@@ -269,10 +269,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
       PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    PlanExecutionResponseDto planExecutionResponseDto =
-        pipelineExecutor.runPipelineWithInputSetReferencesList(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, mergeInputSetRequestDTO.getInputSetReferences(),
-            gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), notes);
+    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetReferencesList(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, mergeInputSetRequestDTO,
+        gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 
@@ -293,10 +292,9 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     if (pmsFeatureFlagService.isEnabled(accountId, PIE_GET_FILE_CONTENT_ONLY)) {
       PipelineGitXHelper.setUserFlowContext(USER_FLOW.EXECUTION);
     }
-    PlanExecutionResponseDto planExecutionResponseDto =
-        pipelineExecutor.rerunPipelineWithInputSetReferencesList(accountId, orgIdentifier, projectIdentifier,
-            pipelineIdentifier, moduleType, originalExecutionId, mergeInputSetRequestDTO.getInputSetReferences(),
-            gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), false, notes);
+    PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.rerunPipelineWithInputSetReferencesList(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, originalExecutionId,
+        mergeInputSetRequestDTO, gitEntityBasicInfo.getBranch(), gitEntityBasicInfo.getYamlGitConfigId(), false, notes);
     return ResponseDTO.newResponse(planExecutionResponseDto);
   }
 

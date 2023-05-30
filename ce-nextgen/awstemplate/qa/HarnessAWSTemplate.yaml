@@ -290,27 +290,23 @@ Resources:
               - Effect: Allow
                 Action:
                   - ec2:Describe*
+                  - ec2:DeleteSnapshot
+                  - ec2:DeleteVolume
                   - ec2:Get*
                   - ec2:ListImagesInRecycleBin
                   - ec2:ListSnapshotsInRecycleBin
-                  - elasticbeanstalk:Check*
-                  - elasticbeanstalk:Describe*
-                  - elasticbeanstalk:List*
-                  - elasticbeanstalk:Request*
-                  - elasticbeanstalk:Retrieve*
-                  - elasticbeanstalk:Validate*
-                  - elasticbeanstalk:DeleteVolume
                   - elasticloadbalancing:Describe*
                   - rds:Describe*
-                  - rds:Download*
                   - rds:List*
                   - autoscaling-plans:Describe*
                   - autoscaling-plans:GetScalingPlanResourceForecastData
                   - autoscaling:Describe*
                   - autoscaling:GetPredictiveScalingForecast
-                  - s3:DescribeJob'
+                  - s3:DescribeJob
                   - s3:Get*
-                  - s3:List* 
+                  - s3:List*
+                  - cloudwatch:GetMetricStatistics
+                  - tag:GetResources
                 Resource: "*"
       Roles:
         - !Ref HarnessCloudFormationRole

@@ -28,6 +28,7 @@ import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
+import static io.harness.delegate.beans.connector.ConnectorType.HARNESS;
 import static io.harness.delegate.beans.connector.scm.adapter.AzureRepoToGitMapper.mapToGitConnectionType;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI_CODE_BASE;
@@ -66,6 +67,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.ci.buildstate.CodebaseUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.pipeline.executions.beans.CIImageDetails;
@@ -87,6 +89,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.harness.HarnessConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -397,14 +400,14 @@ public class IntegrationStageUtils {
     BaseNGAccess baseNGAccess = IntegrationStageUtils.getBaseNGAccess(
         ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier());
 
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier, true);
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
   }
 
   private static boolean treatWebhookAsManualExecutionWithContextV2(Ambiance ambiance, String connectorIdentifier,
       ConnectorUtils connectorUtils, ParsedPayload parsedPayload, CodeBase codeBase, long version) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier);
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorIdentifier, true);
     return treatWebhookAsManualExecutionV2(connectorDetails, codeBase, parsedPayload, version);
   }
 
@@ -455,6 +458,10 @@ public class IntegrationStageUtils {
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       url = getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+    } else if (gitConnector.getConnectorType() == HARNESS) {
+      HarnessConnectorDTO gitConfigDTO = (HarnessConnectorDTO) gitConnector.getConnectorConfig();
+      url = CodebaseUtils.getCompleteHarnessUrl(gitConfigDTO.getUrl(), gitConnector.getOrgIdentifier(),
+          gitConnector.getProjectIdentifier(), ciCodebase.getRepoName().getValue());
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }

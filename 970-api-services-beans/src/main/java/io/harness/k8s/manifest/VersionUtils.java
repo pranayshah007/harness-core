@@ -22,6 +22,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.k8s.model.HarnessAnnotations;
+import io.harness.k8s.model.K8sRequestHandlerContext;
 import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -74,19 +75,19 @@ public class VersionUtils {
     }
   }
 
-  public static void addRevisionNumber(List<KubernetesResource> resources, int revision) {
+  public static void addRevisionNumber(K8sRequestHandlerContext context, int revision) {
     Set<KubernetesResourceId> versionedResources = new HashSet<>();
     UnaryOperator<Object> appendRevision = t -> t + revisionSeparator + revision;
 
-    for (KubernetesResource resource : resources) {
+    for (KubernetesResource resource : context.getResources()) {
       if (shouldVersion(resource)) {
         versionedResources.add(resource.getResourceId().cloneInternal());
-        resource.transformName(appendRevision);
+        resource.transformName(appendRevision, context);
         resource.getResourceId().setVersioned(true);
       }
     }
 
-    for (KubernetesResource resource : resources) {
+    for (KubernetesResource resource : context.getResources()) {
       if (shouldUpdateVersionedReferences(resource)) {
         UnaryOperator<Object> updateConfigMapReference =
             createTransformationOperator(resource, ConfigMap, versionedResources, revisionSeparator + revision);
@@ -98,8 +99,9 @@ public class VersionUtils {
   }
 
   public static void addSuffixToConfigmapsAndSecrets(
-      List<KubernetesResource> resources, String suffixWithoutSeparator, LogCallback logCallback) {
-    String suffix = getLongestPossibleSuffix(resources, revisionSeparator + suffixWithoutSeparator, logCallback);
+      K8sRequestHandlerContext context, String suffixWithoutSeparator, LogCallback logCallback) {
+    String suffix =
+        getLongestPossibleSuffix(context.getResources(), revisionSeparator + suffixWithoutSeparator, logCallback);
 
     if (isEmpty(suffix)) {
       return;
@@ -108,14 +110,14 @@ public class VersionUtils {
     UnaryOperator<Object> appendSuffixOperator = t -> t + suffix;
     Set<KubernetesResourceId> suffixedResources = new HashSet<>();
 
-    for (KubernetesResource resource : resources) {
+    for (KubernetesResource resource : context.getResources()) {
       if (shouldVersion(resource)) {
         suffixedResources.add(resource.getResourceId().cloneInternal());
-        resource.transformName(appendSuffixOperator);
+        resource.transformName(appendSuffixOperator, context);
       }
     }
 
-    for (KubernetesResource resource : resources) {
+    for (KubernetesResource resource : context.getResources()) {
       if (shouldUpdateVersionedReferences(resource)) {
         UnaryOperator<Object> updateConfigmapReference =
             createTransformationOperator(resource, ConfigMap, suffixedResources, suffix);

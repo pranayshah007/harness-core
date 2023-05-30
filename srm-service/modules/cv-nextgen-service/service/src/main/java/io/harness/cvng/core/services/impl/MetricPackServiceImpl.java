@@ -138,6 +138,9 @@ public class MetricPackServiceImpl implements MetricPackService {
   public static final String SUMOLOGIC_DSL;
   public static final String SUMOLOGIC_LOG_SAMPLE_DSL;
   public static final String SUMOLOGIC_METRIC_SAMPLE_DSL;
+  private static final URL GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL_PATH =
+      MetricPackServiceImpl.class.getResource("/grafanaloki/dsl/grafana-loki-log-sample-data.datacollection");
+  public static final String GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL;
 
   private static final URL SIGNALFX_METRIC_DSL_PATH =
       MetricPackServiceImpl.class.getResource("/signalfx/dsl/metric-collection.datacollection");
@@ -167,6 +170,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     String sumologicMetricSampleDsl = null;
     String signalfxMetricSampleDsl = null;
     String signalFXDsl = null;
+    String grafanaLokiLogSampleDataDsl = null;
     try {
       appDPeformancePackDsl = Resources.toString(APPDYNAMICS_PERFORMANCE_PACK_DSL_PATH, Charsets.UTF_8);
       appDqualityPackDsl = Resources.toString(APPDYNAMICS_QUALITY_PACK_DSL_PATH, Charsets.UTF_8);
@@ -187,6 +191,7 @@ public class MetricPackServiceImpl implements MetricPackService {
       sumologicMetricSampleDsl = Resources.toString(SUMOLOGIC_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
       signalfxMetricSampleDsl = Resources.toString(SIGNALFX_METRIC_SAMPLE_DSL_PATH, Charsets.UTF_8);
       signalFXDsl = Resources.toString(SIGNALFX_METRIC_DSL_PATH, Charsets.UTF_8);
+      grafanaLokiLogSampleDataDsl = Resources.toString(GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL_PATH, Charsets.UTF_8);
     } catch (Exception e) {
       // TODO: this should throw an exception but we risk delegate not starting up. We can remove this log term and
       // throw and exception once things stabilize
@@ -211,6 +216,7 @@ public class MetricPackServiceImpl implements MetricPackService {
     SUMOLOGIC_METRIC_SAMPLE_DSL = sumologicMetricSampleDsl;
     SIGNALFX_DSL = signalFXDsl;
     SIGNALFX_METRIC_SAMPLE_DSL = signalfxMetricSampleDsl;
+    GRAFANA_LOKI_LOG_SAMPLE_DATA_DSL = grafanaLokiLogSampleDataDsl;
   }
 
   @Inject private HPersistence hPersistence;

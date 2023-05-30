@@ -86,8 +86,9 @@ public class OrchestrationLogPublisher implements PlanStatusUpdateObserver, Step
         orchestrationLogCache.put(planExecutionId, 1L);
       }
     } catch (Exception ex) {
-      log.error(
-          "Exception occurred while publishing orchestrationLogEvent for planExecutionId: {}", planExecutionId, ex);
+      log.error(String.format("Exception occurred while publishing orchestrationLogEvent for planExecutionId: %s",
+                    planExecutionId),
+          ex);
     }
   }
 

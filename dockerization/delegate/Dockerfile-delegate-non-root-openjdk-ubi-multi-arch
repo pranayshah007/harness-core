@@ -28,6 +28,7 @@ WORKDIR /opt/harness-delegate
 
 ARG disable_client_tools
 ARG TARGETARCH
+ENV LANG=en_US.UTF-8
 RUN ./client_tools.sh $disable_client_tools $TARGETARCH\
     && chmod -R 755 /opt/harness-delegate \
     && chgrp -R 0 /opt/harness-delegate  \

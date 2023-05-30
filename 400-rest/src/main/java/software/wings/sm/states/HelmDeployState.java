@@ -1064,7 +1064,7 @@ public class HelmDeployState extends State {
             }
 
             helmChartConfigTaskParams.setUseCache(helmVersion != HelmVersion.V2
-                && featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
+                && !featureFlagService.isEnabled(DISABLE_HELM_REPO_YAML_CACHE, context.getAccountId()));
 
             helmChartConfigTaskParams.setCheckIncorrectChartVersion(true);
 

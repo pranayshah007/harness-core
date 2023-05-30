@@ -714,7 +714,7 @@ public class TerraformStepHelper {
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .entityId(
                 generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
             .configFiles(
                 inheritOutput.getConfigFiles() != null ? inheritOutput.getConfigFiles().toGitStoreConfigDTO() : null)
             .useConnectorCredentials(inheritOutput.isUseConnectorCredentials())
@@ -781,7 +781,7 @@ public class TerraformStepHelper {
             .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
             .entityId(
                 generateFullIdentifier(getParameterFieldValue(stepParameters.getProvisionerIdentifier()), ambiance))
-            .pipelineExecutionId(ambiance.getPlanExecutionId());
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance));
 
     StoreConfigWrapper store = spec.getConfigFiles().getStore();
     StoreConfigType storeConfigType = store.getType();
@@ -877,21 +877,22 @@ public class TerraformStepHelper {
   }
 
   public void saveTerraformConfig(TerraformConfig rollbackConfig, Ambiance ambiance) {
-    TerraformConfig terraformConfig = TerraformConfig.builder()
-                                          .accountId(AmbianceUtils.getAccountId(ambiance))
-                                          .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
-                                          .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
-                                          .entityId(rollbackConfig.getEntityId())
-                                          .pipelineExecutionId(ambiance.getPlanExecutionId())
-                                          .configFiles(rollbackConfig.getConfigFiles())
-                                          .fileStoreConfig(rollbackConfig.getFileStoreConfig())
-                                          .varFileConfigs(rollbackConfig.getVarFileConfigs())
-                                          .backendConfig(rollbackConfig.getBackendConfig())
-                                          .environmentVariables(rollbackConfig.getEnvironmentVariables())
-                                          .workspace(rollbackConfig.getWorkspace())
-                                          .targets(rollbackConfig.getTargets())
-                                          .isTerraformCloudCli(rollbackConfig.isTerraformCloudCli)
-                                          .build();
+    TerraformConfig terraformConfig =
+        TerraformConfig.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .orgId(AmbianceUtils.getOrgIdentifier(ambiance))
+            .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
+            .entityId(rollbackConfig.getEntityId())
+            .pipelineExecutionId(AmbianceUtils.getPlanExecutionIdForExecutionMode(ambiance))
+            .configFiles(rollbackConfig.getConfigFiles())
+            .fileStoreConfig(rollbackConfig.getFileStoreConfig())
+            .varFileConfigs(rollbackConfig.getVarFileConfigs())
+            .backendConfig(rollbackConfig.getBackendConfig())
+            .environmentVariables(rollbackConfig.getEnvironmentVariables())
+            .workspace(rollbackConfig.getWorkspace())
+            .targets(rollbackConfig.getTargets())
+            .isTerraformCloudCli(rollbackConfig.isTerraformCloudCli)
+            .build();
 
     terraformConfigDAL.saveTerraformConfig(terraformConfig);
   }

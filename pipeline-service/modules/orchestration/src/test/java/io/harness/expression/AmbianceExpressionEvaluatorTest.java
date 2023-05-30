@@ -29,6 +29,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
+import io.harness.engine.expressions.NodeExecutionsCache;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.expression.common.ExpressionMode;
@@ -78,6 +79,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
   @Mock private PlanExecutionService planExecutionService;
   @Inject private InputSetValidatorFactory inputSetValidatorFactory;
   @Mock private PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock NodeExecutionsCache nodeExecutionsCache;
 
   @Before
   public void setup() {
@@ -249,8 +251,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
             .setMatrixMetadata(MatrixMetadata.newBuilder().addMatrixCombination(1).putMatrixValues("a", "1").build())
             .build());
 
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache))
+                                             .build());
 
     validateSingleExpression(evaluator, "strategy.matrix.a", "1", false);
     validateSingleExpression(evaluator, "strategy.iteration", 0, false);
@@ -268,8 +272,10 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
                                                               .build())
                                           .build());
 
-    EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
+    EngineExpressionEvaluator evaluator =
+        prepareEngineExpressionEvaluator(new ImmutableMap.Builder<String, Object>()
+                                             .put("strategy", new StrategyFunctor(ambiance, nodeExecutionsCache))
+                                             .build());
 
     validateSingleExpression(evaluator, "strategy.repeat.partition", Arrays.asList("host1", "host2", "host3"), false);
     validateSingleExpression(evaluator, "strategy.repeat.item", "value", false);

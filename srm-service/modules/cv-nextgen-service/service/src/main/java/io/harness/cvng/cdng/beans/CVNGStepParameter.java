@@ -29,6 +29,7 @@ public class CVNGStepParameter implements SpecParameters {
   ParameterField<String> sensitivity;
   ParameterField<Boolean> failOnNoAnalysis;
   VerificationJobSpec spec;
+  ParameterField<String> baseline;
   MonitoredServiceNode monitoredService;
 
   public String getServiceIdentifier() {

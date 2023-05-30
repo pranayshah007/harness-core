@@ -43,4 +43,8 @@ public class EcsBlueGreenSwapTargetGroupsBaseStepInfo {
 
   @JsonIgnore String ecsBlueGreenCreateServiceFnq;
   @JsonIgnore String ecsBlueGreenSwapTargetGroupsFnq;
+
+  @ApiModelProperty(dataType = SwaggerConstants.INTEGER_CLASSPATH)
+  @YamlSchemaTypes({string})
+  ParameterField<Integer> downsizeOldServiceDelayInSecs;
 }

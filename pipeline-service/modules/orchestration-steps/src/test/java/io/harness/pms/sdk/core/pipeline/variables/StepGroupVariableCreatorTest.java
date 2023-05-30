@@ -88,7 +88,8 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
     assertThat(fqnPropertiesList)
         .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.name",
             "pipeline.stages.stage1.spec.execution.steps.sg1.delegateSelectors",
-            "pipeline.stages.stage1.spec.execution.steps.sg1.when.condition");
+            "pipeline.stages.stage1.spec.execution.steps.sg1.when.condition",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.sharedPaths");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -98,7 +99,8 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
                                               .map(YamlProperties::getFqn)
                                               .collect(Collectors.toList());
     assertThat(fqnExtraPropertiesList)
-        .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
+        .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.stepGroupInfra",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
             "pipeline.stages.stage1.spec.execution.steps.sg1.startTs",
             "pipeline.stages.stage1.spec.execution.steps.sg1.endTs");
 

@@ -1172,8 +1172,7 @@
     "CodeBase": {
       "type": "object",
       "required": [
-        "build",
-        "connectorRef"
+        "build"
       ],
       "properties": {
         "build": {
@@ -1824,6 +1823,30 @@
           "properties": {
             "execution": {
               "$ref": "#/definitions/ExecutionElementConfig"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "DelegateInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepGroupInfra"
+        },
+        {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "Delegate",
+                "Noop"
+              ]
             }
           }
         }
@@ -3250,6 +3273,34 @@
     },
     "JsonNode": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "K8sDirectInfra": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepGroupInfra"
+        },
+        {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/ContainerInfraYamlSpec"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "KubernetesDirect",
+                "Delegate",
+                "Noop"
+              ]
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "KeyValuesCriteriaSpec": {
@@ -7804,6 +7855,19 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,127}$"
         },
+        "sharedPaths": {
+          "$ref": "#/definitions/ParameterFieldListString"
+        },
+        "stepGroupInfra": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/DelegateInfra"
+            },
+            {
+              "$ref": "#/definitions/K8sDirectInfra"
+            }
+          ]
+        },
         "steps": {
           "type": "array",
           "items": {
@@ -7878,6 +7942,21 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StepGroupInfra": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "KubernetesDirect",
+            "Delegate",
+            "Noop"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StepSpecType": {
@@ -8038,6 +8117,9 @@
         "templateRef"
       ],
       "properties": {
+        "gitBranch": {
+          "type": "string"
+        },
         "templateInputs": {
           "$ref": "#/definitions/JsonNode"
         },

@@ -9,6 +9,7 @@ package io.harness.k8s.kubectl;
 
 public class VersionCommand extends AbstractExecutable {
   private boolean jsonVersion;
+  private boolean clientOnly;
   public VersionCommand(Kubectl client) {
     this.client = client;
   }
@@ -20,12 +21,20 @@ public class VersionCommand extends AbstractExecutable {
     return this;
   }
 
+  public VersionCommand clientOnly() {
+    this.clientOnly = true;
+    return this;
+  }
+
   @Override
   public String command() {
     StringBuilder command = new StringBuilder();
-    command.append(client.command()).append("version");
+    command.append(client.command()).append("version ");
+    if (clientOnly) {
+      command.append(Kubectl.flag(Flag.client, true));
+    }
     if (jsonVersion) {
-      command.append(" --output=json");
+      command.append(Kubectl.flag(Flag.output, "json"));
     }
     return command.toString();
   }

@@ -233,6 +233,18 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Repository_Empty() {
+    assertThatThrownBy(
+        ()
+            -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, "", REPO_PORT, IMAGE_PATH,
+                RepositoryFormat.docker.name(), null, NEXUS_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_Repository_Input() {
     assertThatThrownBy(
         ()
@@ -249,6 +261,17 @@ public class NexusResourceServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
                                null, null, NEXUS_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(REPOSITORY_FORMAT_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_RepositoryFormat_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               "", null, NEXUS_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(REPOSITORY_FORMAT_MESSAGE);
   }
@@ -279,6 +302,18 @@ public class NexusResourceServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = ABHISHEK)
   @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_Tag_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, NexusRequestDTO.builder().tag("").build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
   public void testGetSuccessfulBuild_Tag_Input() {
     assertThatThrownBy(()
                            -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
@@ -296,6 +331,18 @@ public class NexusResourceServiceImplTest extends CategoryTest {
         ()
             -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
                 RepositoryFormat.docker.name(), null, NEXUS_REQUEST_DTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(TAG_TAG_REGEX_MESSAGE);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void testGetSuccessfulBuild_TagRegex_Empty() {
+    assertThatThrownBy(()
+                           -> nexusResourceService.getSuccessfulBuild(IDENTIFIER_REF, REPO_NAME, REPO_PORT, IMAGE_PATH,
+                               RepositoryFormat.docker.name(), null, NexusRequestDTO.builder().tagRegex("").build(),
+                               ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(TAG_TAG_REGEX_MESSAGE);
   }

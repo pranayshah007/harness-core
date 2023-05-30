@@ -9,7 +9,10 @@ package io.harness.cdng.manifest.yaml.kinds;
 
 import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Fetch;
 import static io.harness.cdng.manifest.yaml.HelmCommandFlagType.Template;
+import static io.harness.cdng.manifest.yaml.StoreConfigHelper.CONNECTOR_REF;
+import static io.harness.cdng.manifest.yaml.StoreConfigHelper.FOLDER_PATH;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,12 +22,15 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.HelmManifestCommandFlag;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
@@ -132,5 +138,27 @@ public class HelmChartManifestTest extends CategoryTest {
         .containsExactlyInAnyOrder("--template", "--debug");
 
     assertThat(result).isEqualTo(original);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testValidateAtRuntime() {
+    HelmChartManifest helmChartManifest = HelmChartManifest.builder()
+                                              .chartName(ParameterField.createValueField("<+input>"))
+                                              .store(ParameterField.createValueField(
+                                                  StoreConfigWrapper.builder()
+                                                      .spec(GithubStore.builder()
+                                                                .commitId(ParameterField.createValueField("commitId"))
+                                                                .connectorRef(null)
+                                                                .folderPath(ParameterField.createValueField("<+input>"))
+                                                                .build())
+                                                      .build()))
+                                              .build();
+    Set<String> invalidParameters = helmChartManifest.validateAtRuntime();
+    Set<String> expectedInvalidParameters = new HashSet<>();
+    expectedInvalidParameters.add(CONNECTOR_REF);
+    expectedInvalidParameters.add(FOLDER_PATH);
+    assertThat(invalidParameters).isEqualTo(expectedInvalidParameters);
   }
 }

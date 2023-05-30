@@ -30,4 +30,6 @@ public class PublishedSbomArtifact {
   String sbomUrl;
   String stepExecutionId;
   boolean isSbomAttested;
+  int allowListViolationCount;
+  int denyListViolationCount;
 }

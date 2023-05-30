@@ -1,0 +1,47 @@
+// Copyright 2022 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate.core.beans;
+import "google/protobuf/any.proto";
+option java_multiple_files = true;
+
+/*
+  Intended for defining any additional resources the plugin should use, e.g. additional volume
+ */
+message Resource {
+  google.protobuf.Any spec = 1;
+  ResourceType type = 2;
+}
+
+/*
+  Supported resource types. UNKNOWN resource type should not be used
+ */
+enum ResourceType {
+  RES_UNKNOWN = 0;
+  RES_VOLUME = 1;
+}
+
+message EmptyDirVolume {
+  string name = 1;
+  string path = 2;
+  string size = 3;
+  string medium = 4;
+}
+
+message HostPathVolume {
+  string name = 1;
+  string path = 2;
+  string hostPath = 3;
+  string type = 4;
+}
+
+message PVCVolume {
+  string name = 1;
+  string path = 2;
+  string pvc_name = 3;
+  bool readonly = 4;
+}

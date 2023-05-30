@@ -154,7 +154,7 @@ BAZEL_MODULES="\
   //platform-service/modules/audit-service:module \
   //platform-service/modules/notification-service:module \
   //platform-service/modules/resource-group-service:module \
-  //template-service:module \
+  //template-service/service:module \
   //865-cg-events:module \
   //867-polling-contracts:module \
   //870-cg-orchestration:module \

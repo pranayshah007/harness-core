@@ -37,11 +37,13 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogCallback;
 
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.k8s.K8sTaskHelper;
@@ -107,10 +109,13 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
     List<K8sPod> beforePodList = k8sTaskHelperBase.getPodDetails(kubernetesConfig, resourceIdToScale.getNamespace(),
         k8sScaleTaskParameters.getReleaseName(), steadyStateTimeoutInMillis);
 
-    success = k8sTaskHelperBase.scale(client, k8sDelegateTaskParams, resourceIdToScale, targetReplicaCount,
-        new ExecutionLogCallback(delegateLogService, k8sScaleTaskParameters.getAccountId(),
-            k8sScaleTaskParameters.getAppId(), k8sScaleTaskParameters.getActivityId(), Scale),
-        false);
+    LogCallback scaleLogCallback = new ExecutionLogCallback(delegateLogService, k8sScaleTaskParameters.getAccountId(),
+        k8sScaleTaskParameters.getAppId(), k8sScaleTaskParameters.getActivityId(), Scale);
+    success = k8sTaskHelperBase.scale(
+        client, k8sDelegateTaskParams, resourceIdToScale, targetReplicaCount, scaleLogCallback, false);
+    if (success) {
+      scaleLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
+    }
 
     if (!success) {
       return k8sTaskHelper.getK8sTaskExecutionResponse(k8sScaleResponse, CommandExecutionStatus.FAILURE);
@@ -153,7 +158,8 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     try {
-      client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+      client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
       if (StringUtils.isEmpty(k8sScaleTaskParameters.getWorkload())) {
         executionLogCallback.saveExecutionLog("\nNo Workload found to scale.");

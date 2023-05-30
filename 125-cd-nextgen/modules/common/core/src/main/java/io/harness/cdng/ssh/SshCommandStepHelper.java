@@ -387,7 +387,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .build();
   }
 
-  private SshWinRmRollbackData getSshWinRmRollbackData(
+  SshWinRmRollbackData getSshWinRmRollbackData(
       Ambiance ambiance, Map<String, String> mergedEnvVariables, CommandStepParameters commandStepParameters) {
     String stageExecutionId = ambiance.getStageExecutionId();
     log.info("Start getting rollback data from DB, stageExecutionId: {}", stageExecutionId);
@@ -395,6 +395,10 @@ public class SshCommandStepHelper extends CDStepHelper {
         commandStepRollbackHelper.getRollbackData(ambiance, mergedEnvVariables, commandStepParameters);
     if (!rollbackData.isPresent()) {
       log.info("Not found rollback data from DB, hence skipping rollback, stageExecutionId: {}", stageExecutionId);
+
+      // delete current phantom stageExecutionInfo in case of pipeline rollback
+      commandStepRollbackHelper.deleteIfExistsCurrentStageExecutionInfo(ambiance);
+
       throw new SkipRollbackException("Not found previous successful rollback data, hence skipping rollback");
     }
 

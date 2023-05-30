@@ -10,6 +10,7 @@ go_library(
     srcs = [
         "addon_executor.go",
         "async_executor.go",
+        "service_discovery.go",
         "step_executor.go",
     ],
     importpath = "github.com/harness/harness-core/product/ci/engine/new/executor",
@@ -36,6 +37,7 @@ go_test(
     srcs = [
         "addon_executor_test.go",
         "async_executor_test.go",
+        "service_discovery_test.go",
         "step_executor_test.go",
     ],
     embed = [":executor"],

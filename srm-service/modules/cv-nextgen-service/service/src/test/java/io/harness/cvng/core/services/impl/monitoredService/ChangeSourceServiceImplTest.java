@@ -82,7 +82,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testCreate() {
-    ChangeSourceDTO changeSourceDTO = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDTO = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
     Set<ChangeSourceDTO> changeSourceDTOToBeCreated = new HashSet<>(Arrays.asList(changeSourceDTO));
 
     changeSourceService.create(monitoredServiceParams, changeSourceDTOToBeCreated);
@@ -100,7 +100,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreate_forDemoWithFFOff() {
     ChangeSourceDTO changeSourceDTO =
-        builderFactory.getHarnessCDChangeSourceDTOBuilder().identifier("cdng_dev").build();
+        builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().identifier("cdng_dev").build();
     Set<ChangeSourceDTO> changeSourceDTOToBeCreated = new HashSet<>(Arrays.asList(changeSourceDTO));
     changeSourceService.create(monitoredServiceParams, changeSourceDTOToBeCreated);
     ChangeSource changeSource = changeSourceService.get(monitoredServiceParams, changeSourceDTO.getIdentifier());
@@ -113,7 +113,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreate_forDemoWithFFOn() throws IllegalAccessException {
     ChangeSourceDTO changeSourceDTO =
-        builderFactory.getHarnessCDChangeSourceDTOBuilder().identifier("cdng_dev").build();
+        builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().identifier("cdng_dev").build();
     Set<ChangeSourceDTO> changeSourceDTOToBeCreated = new HashSet<>(Arrays.asList(changeSourceDTO));
     FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
     when(featureFlagService.isFeatureFlagEnabled(
@@ -131,9 +131,10 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testCreate_withNonUniqueIdentifier() {
-    ChangeSourceDTO changeSourceDto1 = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
-    ChangeSourceDTO changeSourceDto2 =
-        builderFactory.getHarnessCDChangeSourceDTOBuilder().identifier(changeSourceDto1.getIdentifier()).build();
+    ChangeSourceDTO changeSourceDto1 = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDto2 = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder()
+                                           .identifier(changeSourceDto1.getIdentifier())
+                                           .build();
     Set<ChangeSourceDTO> changeSourceDTOToBeCreated = new HashSet<>(Arrays.asList(changeSourceDto1, changeSourceDto2));
     assertThatThrownBy(() -> changeSourceService.create(monitoredServiceParams, changeSourceDTOToBeCreated))
         .isInstanceOf(InvalidRequestException.class);
@@ -143,7 +144,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testUpdate() {
-    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
     ChangeSourceDTO kubeChangeSourceDto = builderFactory.getKubernetesChangeSourceDTOBuilder().build();
     Set<ChangeSourceDTO> updateDtos = new HashSet<>(Arrays.asList(changeSourceDto, kubeChangeSourceDto));
     String updatedName = "UPDATED_NAME";
@@ -166,7 +167,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
   public void testDelete() {
-    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
     Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
     changeSourceService.create(monitoredServiceParams, dtos);
 
@@ -242,7 +243,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testDeleteByProjectIdentifier() {
-    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
     Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
     mockChangeSourceService.create(monitoredServiceParams, dtos);
 
@@ -255,7 +256,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testDeleteByOrgIdentifier() {
-    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
     Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
     mockChangeSourceService.create(monitoredServiceParams, dtos);
 
@@ -268,7 +269,7 @@ public class ChangeSourceServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testDeleteByAccountIdentifier() {
-    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDChangeSourceDTOBuilder().build();
+    ChangeSourceDTO changeSourceDto = builderFactory.getHarnessCDCurrentGenChangeSourceDTOBuilder().build();
     Set<ChangeSourceDTO> dtos = new HashSet<>(Arrays.asList(changeSourceDto));
     mockChangeSourceService.create(monitoredServiceParams, dtos);
 

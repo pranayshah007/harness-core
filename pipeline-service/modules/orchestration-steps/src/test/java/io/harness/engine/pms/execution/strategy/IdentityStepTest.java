@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.SHALINI;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -99,7 +100,7 @@ public class IdentityStepTest extends CategoryTest {
 
     // nodeExecution formation
     NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(any());
+    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
 
     StepResponse stepResponse = identityStep.handleChildResponse(ambiance, identityParams, null);
     verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");
@@ -120,7 +121,7 @@ public class IdentityStepTest extends CategoryTest {
         ExecutableResponse.newBuilder().setChildren(expectedChildrenExecutable).build();
     NodeExecution nodeExecution =
         NodeExecution.builder().uuid("nodeUuid").executableResponse(executableResponse).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(any());
+    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
 
     ChildrenExecutableResponse childrenExecutableResponse = identityStep.obtainChildren(ambiance, identityParams, null);
     verify(pmsSweepingOutputService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");
@@ -137,7 +138,7 @@ public class IdentityStepTest extends CategoryTest {
 
     // nodeExecution formation
     NodeExecution nodeExecution = NodeExecution.builder().uuid("nodeUuid").status(Status.ABORTED).build();
-    doReturn(nodeExecution).when(nodeExecutionService).get(any());
+    doReturn(nodeExecution).when(nodeExecutionService).get(anyString());
 
     StepResponse stepResponse = identityStep.handleChildrenResponse(ambiance, identityParams, null);
     verify(pmsOutcomeService, times(1)).cloneForRetryExecution(ambiance, "nodeUuid");

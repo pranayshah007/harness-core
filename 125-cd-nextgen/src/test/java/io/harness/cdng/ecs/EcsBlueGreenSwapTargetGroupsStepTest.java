@@ -28,6 +28,7 @@ import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.ecs.EcsBlueGreenSwapTargetGroupsResult;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.EcsServerInstanceInfo;
@@ -82,6 +83,7 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
       EcsBlueGreenSwapTargetGroupsStepParameters.infoBuilder()
           .ecsBlueGreenCreateServiceFnq("serviceFnq")
           .doNotDownsizeOldService(ParameterField.<Boolean>builder().value(true).build())
+          .downsizeOldServiceDelayInSecs(ParameterField.<Integer>builder().value(60).build())
           .build();
   private final StepElementParameters stepElementParameters =
       StepElementParameters.builder().spec(ecsSpecParameters).timeout(ParameterField.createValueField("10m")).build();
@@ -271,6 +273,8 @@ public class EcsBlueGreenSwapTargetGroupsStepTest extends CategoryTest {
             .doNotDownsizeOldService(
                 ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue() != null
                 && ecsBlueGreenSwapTargetGroupsStepParameters.getDoNotDownsizeOldService().getValue())
+            .downsizeOldServiceDelayInSecs(
+                ParameterFieldHelper.getParameterFieldValue(ecsSpecParameters.getDownsizeOldServiceDelayInSecs()))
             .build();
 
     verify(ecsStepCommonHelper)

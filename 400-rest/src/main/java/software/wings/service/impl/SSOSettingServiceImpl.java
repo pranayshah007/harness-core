@@ -568,7 +568,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     }
     updateNextIterations(settings);
     LdapSettings savedSettings = wingsPersistence.saveAndGet(LdapSettings.class, settings);
-    ldapGroupScheduledHandler.wakeup();
+    ldapGroupScheduledHandler.handle(savedSettings);
     auditServiceHelper.reportForAuditingUsingAccountId(settings.getAccountId(), null, settings, Event.Type.CREATE);
     ngAuditLoginSettingsForLdapUpload(savedSettings.getAccountId(), savedSettings);
     log.info("Auditing creation of LDAP Settings for account={}", settings.getAccountId());
@@ -608,7 +608,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
         settings.getAccountId(), oldSettings, savedSettings, Event.Type.UPDATE);
     ngAuditLoginSettingsForLdapUpdate(settings.getAccountId(), currentLdapSettings, savedSettings);
     log.info("Auditing updation of LDAP for account={}", savedSettings.getAccountId());
-    ldapGroupScheduledHandler.wakeup();
+    ldapGroupScheduledHandler.handle(savedSettings);
     return savedSettings;
   }
 

@@ -10,6 +10,7 @@ package io.harness.repositories.custom;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookRegistrationStatus;
@@ -82,13 +83,15 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
                   || webhookAutoRegistrationStatus.getRegistrationResult() == WebhookRegistrationStatus.ERROR))) {
         triggerStatus.setStatus(StatusResult.FAILED);
 
-        if (!pollingSubscriptionStatus.getDetailedMessage().isEmpty()) {
+        if (pollingSubscriptionStatus != null
+            && EmptyPredicate.isNotEmpty(pollingSubscriptionStatus.getDetailedMessage())) {
           detailedMessages.add(pollingSubscriptionStatus.getDetailedMessage());
         }
-        if (!validationStatus.getDetailedMessage().isEmpty()) {
+        if (validationStatus != null && EmptyPredicate.isNotEmpty(validationStatus.getDetailedMessage())) {
           detailedMessages.add(validationStatus.getDetailedMessage());
         }
-        if (!webhookAutoRegistrationStatus.getDetailedMessage().isEmpty()) {
+        if (webhookAutoRegistrationStatus != null
+            && EmptyPredicate.isNotEmpty(webhookAutoRegistrationStatus.getDetailedMessage())) {
           detailedMessages.add(webhookAutoRegistrationStatus.getDetailedMessage());
         }
       } else {

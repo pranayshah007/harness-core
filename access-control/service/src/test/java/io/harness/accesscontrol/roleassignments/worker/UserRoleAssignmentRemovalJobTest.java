@@ -45,7 +45,6 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.Before;
@@ -70,7 +69,7 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     featureFlagService = mock(FeatureFlagService.class);
     accountClient = mock(AccountClient.class);
     userRoleAssignmentRemovalJob = new UserRoleAssignmentRemovalJob(
-        roleAssignmentRepository, featureFlagService, accountClient, scopeService, persistentLocker);
+        roleAssignmentRepository, featureFlagService, accountUtils, scopeService, persistentLocker);
   }
 
   @Test
@@ -85,9 +84,9 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     Set<String> accounts = new HashSet<>();
     accounts.add(accountIdentifier);
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
+    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
-    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
+    when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -183,9 +182,9 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     accounts.add(accountIdentifier);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
+    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
-    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
+    when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -219,11 +218,11 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
     Set<String> accounts = new HashSet<>();
     accounts.add(accountIdentifier);
-    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
+    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
-    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
+    when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -257,11 +256,11 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
     Set<String> accounts = new HashSet<>();
     accounts.add(accountIdentifier);
-    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(accounts);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(true);
+    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
-    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
+    when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
@@ -296,9 +295,9 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     String projectIdentifier = randomAlphabetic(10);
 
     when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
-    when(featureFlagService.getAccountIds(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS)).thenReturn(Collections.EMPTY_SET);
+    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(false);
 
-    when(accountUtils.getAllNGAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
+    when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
     String principalIdentifier = randomAlphabetic(10);
     RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
         accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);

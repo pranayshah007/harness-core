@@ -13,6 +13,7 @@ import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CETModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
+import io.harness.licensing.beans.modules.ChaosModuleLicenseDTO;
 import io.harness.licensing.beans.modules.IACMModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.modules.SRMModuleLicenseDTO;
@@ -140,7 +141,20 @@ public class ModuleLicenseSummaryHelper {
         break;
       case CHAOS:
         licensesWithSummaryDTO = ChaosLicenseSummaryDTO.builder().build();
-        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {};
+        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {
+          ChaosModuleLicenseDTO temp = (ChaosModuleLicenseDTO) moduleLicenseDTO;
+          ChaosLicenseSummaryDTO chaosLicenseSummaryDTO = (ChaosLicenseSummaryDTO) summaryDTO;
+          if (current < temp.getExpiryTime()) {
+            if (temp.getTotalChaosInfrastructures() != null) {
+              chaosLicenseSummaryDTO.setTotalChaosExperimentRuns(ModuleLicenseUtils.computeAdd(
+                  chaosLicenseSummaryDTO.getTotalChaosExperimentRuns(), temp.getTotalChaosExperimentRuns()));
+            }
+            if (temp.getTotalChaosInfrastructures() != null) {
+              chaosLicenseSummaryDTO.setTotalChaosInfrastructures(ModuleLicenseUtils.computeAdd(
+                  chaosLicenseSummaryDTO.getTotalChaosExperimentRuns(), temp.getTotalChaosInfrastructures()));
+            }
+          }
+        };
         break;
       case IACM:
         licensesWithSummaryDTO = IACMLicenseSummaryDTO.builder().build();

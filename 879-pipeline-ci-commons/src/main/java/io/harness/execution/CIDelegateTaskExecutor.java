@@ -70,17 +70,17 @@ public class CIDelegateTaskExecutor {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false);
+    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Ambiance ambiance, TaskData taskData, String accountId) {
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
-    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false);
+    return queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>(), false, ambiance.getStageExecutionId());
   }
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
-      List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates) {
+      List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, String stageId) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest =
@@ -89,6 +89,7 @@ public class CIDelegateTaskExecutor {
             .accountId(accountId)
             .serializationFormat(taskData.getSerializationFormat())
             .taskSelectors(taskSelectors)
+            .stageId(stageId)
             .taskType(taskData.getTaskType())
             .taskParameters(extractTaskParameters(taskData))
             .executionTimeout(Duration.ofHours(12))

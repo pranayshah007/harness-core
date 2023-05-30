@@ -17,8 +17,10 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.secretmanagerclient.SecretType.SSHKey;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
+import static io.harness.secretmanagerclient.SecretType.WinRmCredentials;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
@@ -297,6 +299,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
 
   @VisibleForTesting
   public boolean checkIfSecretManagerUsedIsHarnessManaged(String accountIdentifier, SecretDTOV2 dto) {
+    /**
+     * SSH and WinRm are special kind of secrets and are not associated to any secret manager, therefore return false in
+     * such a case.
+     */
+    if (dto.getType() == SSHKey || dto.getType() == WinRmCredentials) {
+      return false;
+    }
+
     final String secretManagerIdentifier = getSecretManagerIdentifier(dto);
     /**
      * Using scope identifiers of secret because as of now Secrets can be created using SM at same scope. This should

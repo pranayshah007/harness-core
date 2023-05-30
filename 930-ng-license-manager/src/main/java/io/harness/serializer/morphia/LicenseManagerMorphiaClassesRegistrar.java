@@ -21,6 +21,7 @@ import io.harness.licensing.entities.modules.SRMModuleLicense;
 import io.harness.licensing.entities.modules.STOModuleLicense;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.subscription.entities.CreditCard;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
 
@@ -41,6 +42,7 @@ public class LicenseManagerMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(SubscriptionDetail.class);
     set.add(IACMModuleLicense.class);
     set.add(Credit.class);
+    set.add(CreditCard.class);
     set.add(CICredit.class);
     set.add(CETModuleLicense.class);
   }
