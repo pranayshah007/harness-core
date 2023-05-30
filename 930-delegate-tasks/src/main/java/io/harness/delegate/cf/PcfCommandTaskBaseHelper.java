@@ -525,38 +525,13 @@ public class PcfCommandTaskBaseHelper {
       return null;
     }
     String releaseNamePrefix = cfRequestConfig.getApplicationName();
-
-    // For existing
-    ApplicationSummary activeApplication = previousReleases.get(previousReleases.size() - 1);
-    boolean logPrinted = false;
     List<ApplicationSummary> activeVersions = new ArrayList<>();
-    for (int i = previousReleases.size() - 1; i >= 0; i--) {
-      ApplicationSummary applicationSummary = previousReleases.get(i);
-      cfRequestConfig.setApplicationName(applicationSummary.getName());
 
-      if (pcfDeploymentManager.isActiveApplication(cfRequestConfig, executionLogCallback)) {
-        activeApplication = applicationSummary;
-        activeVersions.add(applicationSummary);
-        logPrinted = true;
-        executionLogCallback.saveExecutionLog(
-            String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
-                PcfUtils.encodeColor(applicationSummary.getName())));
-      }
-    }
+    ApplicationSummary activeApplication = null;
+    activeApplication = findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback, activeVersions);
 
-    if (!logPrinted) {
-      for (int i = previousReleases.size() - 1; i >= 0; i--) {
-        ApplicationSummary applicationSummary = previousReleases.get(i);
-
-        if (releaseNamePrefix.equals(applicationSummary.getName())) {
-          activeApplication = applicationSummary;
-          activeVersions.add(applicationSummary);
-          logPrinted = true;
-          executionLogCallback.saveExecutionLog(
-              String.format("Found current Active App: [%s], as it has same name as release name specified by user",
-                  PcfUtils.encodeColor(activeApplication.getName())));
-        }
-      }
+    if (isEmpty(activeVersions)) {
+      activeApplication = findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback, activeVersions);
     }
 
     if (isNotEmpty(activeVersions) && activeVersions.size() > 1) {
@@ -571,10 +546,52 @@ public class PcfCommandTaskBaseHelper {
       throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
     }
 
-    if (!logPrinted) {
+    if (isEmpty(activeVersions)) {
+      StringBuilder msgBuilder =
+              new StringBuilder(256)
+                      .append("Invalid PCF Deployment State. No applications were found having Env variable as ")
+                      .append(HARNESS__STATUS__IDENTIFIER)
+                      .append(
+                              ": ACTIVE' identifier and no applications were found having same name as release name as specified by customer.");
+      executionLogCallback.saveExecutionLog(msgBuilder.toString(), ERROR);
+      throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
+    }
+
+    return activeApplication;
+  }
+
+  private ApplicationSummary findActiveBasedOnEnvironmentVariable(List<ApplicationSummary> previousReleases,
+                                                         CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions) throws PivotalClientApiException {
+  // For existing
+  ApplicationSummary activeApplication = null;
+    for (int i = previousReleases.size() - 1; i >= 0; i--) {
+    ApplicationSummary applicationSummary = previousReleases.get(i);
+    cfRequestConfig.setApplicationName(applicationSummary.getName());
+
+    if (pcfDeploymentManager.isActiveApplication(cfRequestConfig, executionLogCallback)) {
+      activeApplication = applicationSummary;
+      activeVersions.add(applicationSummary);
       executionLogCallback.saveExecutionLog(
-          String.format("Found current Active App: [%s], as it's most recent application",
-              PcfUtils.encodeColor(activeApplication.getName())));
+              String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+                      PcfUtils.encodeColor(applicationSummary.getName())));
+    }
+  }
+    return activeApplication;
+  }
+
+  public ApplicationSummary findActiveBasedOnServiceName(List<ApplicationSummary> previousReleases,
+                                                                 String releaseNamePrefix, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions) throws PivotalClientApiException {
+    ApplicationSummary activeApplication = null;
+    for (int i = previousReleases.size() - 1; i >= 0; i--) {
+      ApplicationSummary applicationSummary = previousReleases.get(i);
+
+      if (releaseNamePrefix.equals(applicationSummary.getName())) {
+        activeApplication = applicationSummary;
+        activeVersions.add(applicationSummary);
+        executionLogCallback.saveExecutionLog(
+                String.format("Found current Active App: [%s], as it has same name as release name specified by user",
+                        PcfUtils.encodeColor(activeApplication.getName())));
+      }
     }
     return activeApplication;
   }
