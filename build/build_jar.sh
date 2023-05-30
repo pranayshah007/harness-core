@@ -38,7 +38,7 @@ modify_service_name() {
     ["batch-processing"]=1
   )
 
-  local modified_service_name="${modified_service_name[SERVICE_NAME]}"
+  local modified_service_name="${modified_service_name[$SERVICE_NAME]}"
 
   if [[ -z $modified_service_name ]]; then
     modified_service_name="$SERVICE_NAME"
