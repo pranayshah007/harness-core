@@ -59,7 +59,7 @@ import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
-import io.harness.pms.pipeline.references.PipelineReferenceBackgroundHelper;
+import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -104,7 +104,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final TelemetryReporter telemetryReporter;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
-  @Inject private final PipelineReferenceBackgroundHelper pipelineReferenceBackgroundHelper;
+  @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -600,7 +600,7 @@ public class PMSPipelineServiceHelper {
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
       if (gitEntityInfo != null && gitEntityInfo.getIsDefaultBranch()) {
         String branchName = gitEntityInfo.getBranch();
-        pipelineReferenceBackgroundHelper.submitTask(
+        pipelineSetupUsageCreationHelper.submitTask(
             FilterCreationParams.builder()
                 .pipelineEntity(pipelineEntity)
                 .filterCreationGitMetadata(
