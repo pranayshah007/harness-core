@@ -15,6 +15,8 @@ import static software.wings.beans.TaskType.RANCHER_LIST_CLUSTERS_TASK_NG;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
@@ -46,6 +48,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j
 public class RancherClusterHelper {

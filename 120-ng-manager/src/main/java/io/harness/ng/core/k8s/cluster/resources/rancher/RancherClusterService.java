@@ -9,6 +9,8 @@ package io.harness.ng.core.k8s.cluster.resources.rancher;
 
 import static io.harness.ng.core.k8s.cluster.resources.rancher.RancherClusterHelper.throwExceptionIfTaskFailed;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
@@ -21,6 +23,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(HarnessTeam.CDP)
 @Singleton
 @Slf4j
 public class RancherClusterService {

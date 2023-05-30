@@ -12,6 +12,8 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static java.lang.String.format;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
@@ -21,7 +23,10 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
+@OwnedBy(HarnessTeam.CDP)
+@Slf4j
 @UtilityClass
 public class InfrastructureHelper {
   @Inject InfrastructureEntityService infrastructureEntityService;

@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.k8s.cluster.resources.rancher;
 
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.infrastructure.resource.InfrastructureHelper;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -17,8 +19,9 @@ import com.google.inject.Inject;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 
-@NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
+@OwnedBy(HarnessTeam.CDP)
 public class RancherInfrastructureApiImpl implements RancherInfrastructureApi {
   @Inject RancherClusterService rancherService;
 
