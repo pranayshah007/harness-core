@@ -35,10 +35,7 @@ service_map["template-service"]="template-service/service"
 
 
 key="${SERVICE_NAME}"
-for key in "${!service_map[@]}"; do
-  echo ${service_map[$key]}
-  bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
-done
+bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   module=pipeline-service
