@@ -116,21 +116,24 @@ public class NGVariableUtilsTest extends CategoryTest {
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Value not provided for required variable: var1");
     Map<String, Object> variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var3));
-    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.size()).isEqualTo(2);
     assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createValueField(""));
 
     assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariables(List.of(var2, var3, var1), 0L))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Value not provided for required variable: var1");
     variableMap = NGVariablesUtils.getMapOfVariables(List.of(var2, var3), 0L);
-    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.size()).isEqualTo(2);
     assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createValueField(""));
 
     assertThatThrownBy(() -> NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(List.of(var2, var3, var1)))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Value not provided for required variable: var1");
     variableMap = NGVariablesUtils.getMapOfVariablesWithoutSecretExpression(List.of(var2, var3));
-    assertThat(variableMap.size()).isEqualTo(1);
+    assertThat(variableMap.size()).isEqualTo(2);
     assertThat(variableMap.get("var3")).isEqualTo(ParameterField.createValueField("value"));
+    assertThat(variableMap.get("var2")).isEqualTo(ParameterField.createValueField(""));
   }
 }

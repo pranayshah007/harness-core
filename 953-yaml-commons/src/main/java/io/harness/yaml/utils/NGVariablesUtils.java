@@ -166,12 +166,16 @@ public class NGVariablesUtils {
 
   private ParameterField<?> getNonSecretValue(NGVariable variable) {
     ParameterField<?> value = variable.getCurrentValue();
-    if (ParameterField.isNull(value) || (!value.isExpression() && ObjectUtils.isEmpty(value.getValue()))) {
+    if (ParameterField.isNull(value) || (!value.isExpression() && value.getValue() == null)) {
       if (variable.isRequired()) {
         throw new InvalidRequestException(
             String.format("Value not provided for required variable: %s", variable.getName()));
       }
       return null;
+    }
+    if (variable.isRequired() && ObjectUtils.isEmpty(value.getValue())) {
+      throw new InvalidRequestException(
+          String.format("Value not provided for required variable: %s", variable.getName()));
     }
     return value;
   }
