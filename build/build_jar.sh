@@ -14,56 +14,34 @@ fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
 
-if [ "${SERVICE_NAME}" == "access-control" ]; then
-#  SERVICE_MODULE="access-control/service:module //access-control/service:module_deploy.jar"
-  SERVICE_MODULE="access-control/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "ng-manager" ]; then
-    SERVICE_MODULE="120-ng-manager:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "migrator" ]; then
-    SERVICE_MODULE="100-migrator:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
-    SERVICE_MODULE="110-change-data-capture:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "iacm-manager" ]; then
-#    SERVICE_MODULE="310-iacm-manager/app:module //310-iacm-manager/app:module_deploy.jar"
-  SERVICE_MODULE="310-iacm-manager/app:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "sto-manager" ]; then
-#    SERVICE_MODULE="315-sto-manager/app:module //315-sto-manager/app:module_deploy.jar"
-     SERVICE_MODULE="315-sto-manager/app:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "ci-manager" ]; then
-#    SERVICE_MODULE="332-ci-manager/app:module //332-ci-manager/app:module_deploy.jar"
-      SERVICE_MODULE="332-ci-manager/app:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "batch-processing" ]; then
-#    SERVICE_MODULE="batch-processing/service:module //batch-processing/service:module_deploy.jar"
-     SERVICE_MODULE="batch-processing/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "audit-event-streaming" ]; then
-#    SERVICE_MODULE="audit-event-streaming/service:module //audit-event-streaming/service:module_deploy.jar"
-    SERVICE_MODULE="audit-event-streaming/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "ce-nextgen" ]; then
-#    SERVICE_MODULE="ce-nextgen/service:module //ce-nextgen/service:module_deploy.jar"
-    SERVICE_MODULE="ce-nextgen/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "debezium-service" ]; then
-#    SERVICE_MODULE="debezium-service/service:module //debezium-service/service:module_deploy.jar"
-    SERVICE_MODULE="debezium-service/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "idp-service" ]; then
-#    SERVICE_MODULE="idp-service/src/main/java/io/harness/idp/app:module //idp-service/src/main/java/io/harness/idp/app:module_deploy.jar"
-    SERVICE_MODULE="idp-service/src/main/java/io/harness/idp/app:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "pipeline-service" ]; then
-#    SERVICE_MODULE="pipeline-service/service:module //pipeline-service/service:module_deploy.jar"
-    SERVICE_MODULE="pipeline-service/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "platform-service" ]; then
-#    SERVICE_MODULE="platform-service/service:module //platform-service/service:module_deploy.jar"
-    SERVICE_MODULE="platform-service/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "srm-service" ]; then
-#    SERVICE_MODULE="srm-service/modules/cv-nextgen-service/service:module //srm-service/modules/cv-nextgen-service/service:module_deploy.jar"
-    SERVICE_MODULE="srm-service/modules/cv-nextgen-service/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "template-service" ]; then
-    SERVICE_MODULE="template-service/service:module_deploy.jar"
-elif [ "${SERVICE_NAME}" == "manager" ]; then
-    SERVICE_MODULE="360-cg-manager:module_deploy.jar"
-fi
+declare -A service_map
+
+service_map["manager"]="360-cg-manager"
+service_map["ng-manager"]="120-ng-manager"
+service_map["access-control"]="access-control/service"
+service_map["migrator"]="100-migrator"
+service_map["change-data-capture"]="110-change-data-capture"
+service_map["iacm-manager"]="310-iacm-manager/app"
+service_map["sto-manager"]="315-sto-manager/app"
+service_map["ci-manager"]="332-ci-manager/app"
+service_map["batch-processing"]="batch-processing/service"
+service_map["audit-event-streaming"]="audit-event-streaming/service"
+service_map["ce-nextgen"]="ce-nextgen/service"
+service_map["debezium-service"]="debezium-service/service"
+service_map["idp-service"]="idp-service/src/main/java/io/harness/idp/app"
+service_map["pipeline-service"]="pipeline-service/service"
+service_map["platform-service"]="platform-service/service"
+service_map["srm-service"]="srm-service/modules/cv-nextgen-service/service"
+service_map["template-service"]="template-service/service"
+
+SERVICE_MODULE=${SERVICE_NAME}"/service:module_deploy.jar"
 
 
-bazel ${bazelrc} build //$SERVICE_MODULE ${BAZEL_ARGUMENTS}
+for key in "${!service_map[@]}"; do
+  bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
+done
+
+#bazel ${bazelrc} build //$SERVICE_MODULE ${BAZEL_ARGUMENTS}
 
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
