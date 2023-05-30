@@ -85,5 +85,5 @@ if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi
 
-chmod +x ${SERVICE_NAME}/build/build_dist.sh
-${SERVICE_NAME}/build/build_dist.sh || true
+#chmod +x ${SERVICE_NAME}/build/build_dist.sh
+#${SERVICE_NAME}/build/build_dist.sh || true
