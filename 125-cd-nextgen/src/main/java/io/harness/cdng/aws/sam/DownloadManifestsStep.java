@@ -95,7 +95,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
         AsyncExecutableResponse samDirectoryAsyncExecutableResponse =
                 gitCloneStep.executeAsyncAfterRbac(ambiance1, stepElementParameters, inputPackage);
 
-        callbackIds.add(samDirectoryAsyncExecutableResponse.getCallbackIdsList().get(0));
+        callbackIds.addAll(samDirectoryAsyncExecutableResponse.getCallbackIdsList());
 
         ValuesManifestOutcome valuesManifestOutcome = (ValuesManifestOutcome) getAwsSamValuesManifestOutcome(manifestsOutcome.values());
 
@@ -131,7 +131,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
 
             AsyncExecutableResponse valuesAsyncExecutableResponse =
                     gitCloneStep.executeAsyncAfterRbac(ambiance2, valuesStepElementParameters, inputPackage);
-            callbackIds.add(valuesAsyncExecutableResponse.getCallbackIdsList().get(0));
+            callbackIds.addAll(valuesAsyncExecutableResponse.getCallbackIdsList());
         }
 
 
@@ -140,7 +140,6 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
                 .setStatus(samDirectoryAsyncExecutableResponse.getStatus())
                 .addAllLogKeys(samDirectoryAsyncExecutableResponse.getLogKeysList())
                 .build();
-
     }
 
     public String getValuesPathFromValuesManifestOutcome(ValuesManifestOutcome valuesManifestOutcome) {
