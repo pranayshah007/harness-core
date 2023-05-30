@@ -23,6 +23,9 @@ modify_service_name() {
     ["iacm-manager"]="310-iacm-manager"
     ["sto-manager"]="315-sto-manager"
     ["ci-manager"]="332-ci-manager"
+    ["iacm-manager"]="310-iacm-manager"
+    ["sto-manager"]="315-sto-manager"
+    ["ci-manager"]="332-ci-manager"
   )
   declare -A modified_service_name_with_app=(
     ["310-iacm-manager"]=1
@@ -49,14 +52,11 @@ modify_service_name() {
       modified_service_name+="/service"
   fi
 
-  echo "$modified_service_name"
+  export $modified_service_name
 }
 
 # Call the function and pass the service name as an argument
 modified_service_name=$(modify_service_name "$SERVICE_NAME")
-
-# Print the modified service name
-echo "$modified_service_name"
 
 bazel ${bazelrc} build //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
@@ -84,5 +84,6 @@ if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi
 
-#chmod +x ${SERVICE_NAME}/build/build_dist.sh
-#${SERVICE_NAME}/build/build_dist.sh || true
+service=$(echo "$modified_service_name" | cut -d'/' -f1)
+chmod +x ${service}/build/build_dist.sh
+${service}/build/build_dist.sh || true
