@@ -14,43 +14,47 @@ fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
 
-declare -A service_map
+#declare -A service_map
+#
+#case "${SERVICE_NAME}" in
+#  "manager")
+#    service_map["manager"]="360-cg-manager"
+#    ;;
+#  "ng-manager")
+#    service_map["ng-manager"]="120-ng-manager"
+#    ;;
+#  "migrator")
+#    service_map["migrator"]="100-migrator"
+#    ;;
+#  "change-data-capture")
+#    service_map["change-data-capture"]="110-change-data-capture"
+#    ;;
+#  "iacm-manager")
+#    service_map["iacm-manager"]="310-iacm-manager/app"
+#    ;;
+#  "sto-manager")
+#    service_map["sto-manager"]="315-sto-manager/app"
+#    ;;
+#  "ci-manager")
+#    service_map["ci-manager"]="332-ci-manager/app"
+#    ;;
+#  "idp-service")
+#    service_map["idp-service"]="${SERVICE_NAME}/src/main/java/io/harness/idp/app"
+#    ;;
+#  "srm-service")
+#    service_map["srm-service"]="${SERVICE_NAME}/modules/cv-nextgen-service/service"
+#    ;;
+#  *)
+#    service_map["${SERVICE_NAME}"]="${SERVICE_NAME}/service"
+#    ;;
+#esac
 
-case "${SERVICE_NAME}" in
-  "manager")
-    service_map["manager"]="360-cg-manager"
-    ;;
-  "ng-manager")
-    service_map["ng-manager"]="120-ng-manager"
-    ;;
-  "migrator")
-    service_map["migrator"]="100-migrator"
-    ;;
-  "change-data-capture")
-    service_map["change-data-capture"]="110-change-data-capture"
-    ;;
-  "iacm-manager")
-    service_map["iacm-manager"]="310-iacm-manager/app"
-    ;;
-  "sto-manager")
-    service_map["sto-manager"]="315-sto-manager/app"
-    ;;
-  "ci-manager")
-    service_map["ci-manager"]="332-ci-manager/app"
-    ;;
-  "idp-service")
-    service_map["idp-service"]="${SERVICE_NAME}/src/main/java/io/harness/idp/app"
-    ;;
-  "srm-service")
-    service_map["srm-service"]="${SERVICE_NAME}/modules/cv-nextgen-service/service"
-    ;;
-  *)
-    service_map["${SERVICE_NAME}"]="${SERVICE_NAME}/service"
-    ;;
-esac
+modified_service_name=$(python service.py "$SERVICE_NAME")
+echo "$modified_service_name"
+#key="${SERVICE_NAME}"
+#bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
-key="${SERVICE_NAME}"
-bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
+bazel ${bazelrc} build //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   module=pipeline-service
@@ -72,3 +76,6 @@ if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
   bazel ${bazelrc} run ${BAZEL_ARGUMENTS}  //001-microservice-intfc-tool:module -- kryo-file=/tmp/KryoDeps.text proto-file=/tmp/ProtoDeps.text ignore-json | grep "Codebase Hash:" > ${moduleName}-protocol.info
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi
+
+chmod +x ${SERVICE_NAME}/build/build_dist.sh
+${SERVICE_NAME}/build/build_dist.sh || true
