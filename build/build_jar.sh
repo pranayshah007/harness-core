@@ -14,47 +14,55 @@ fi
 BAZEL_DIRS=${HOME}/.bazel-dirs
 BAZEL_ARGUMENTS="--show_timestamps --announce_rc --experimental_convenience_symlinks=normal --symlink_prefix=${BAZEL_DIRS}/"
 
-#declare -A service_map
-#
-#case "${SERVICE_NAME}" in
-#  "manager")
-#    service_map["manager"]="360-cg-manager"
-#    ;;
-#  "ng-manager")
-#    service_map["ng-manager"]="120-ng-manager"
-#    ;;
-#  "migrator")
-#    service_map["migrator"]="100-migrator"
-#    ;;
-#  "change-data-capture")
-#    service_map["change-data-capture"]="110-change-data-capture"
-#    ;;
-#  "iacm-manager")
-#    service_map["iacm-manager"]="310-iacm-manager/app"
-#    ;;
-#  "sto-manager")
-#    service_map["sto-manager"]="315-sto-manager/app"
-#    ;;
-#  "ci-manager")
-#    service_map["ci-manager"]="332-ci-manager/app"
-#    ;;
-#  "idp-service")
-#    service_map["idp-service"]="${SERVICE_NAME}/src/main/java/io/harness/idp/app"
-#    ;;
-#  "srm-service")
-#    service_map["srm-service"]="${SERVICE_NAME}/modules/cv-nextgen-service/service"
-#    ;;
-#  *)
-#    service_map["${SERVICE_NAME}"]="${SERVICE_NAME}/service"
-#    ;;
-#esac
+modify_service_name() {
+  declare -A modified_service_name=(
+    ["ng-manager"]="120-ng-manager"
+    ["migrator"]="100-migrator"
+    ["manager"]="360-cg-manager"
+    ["change-data-capture"]="110-change-data-capture"
+    ["iacm-manager"]="310-iacm-manager"
+    ["sto-manager"]="315-sto-manager"
+    ["ci-manager"]="332-ci-manager"
+  )
+  declare -A modified_service_name_with_app=(
+    ["310-iacm-manager"]=1
+    ["315-sto-manager"]=1
+    ["332-ci-manager"]=1
+  )
+  declare -A modified_service_name_with_service=(
+    ["debezium-service"]=1
+    ["pipeline-service"]=1
+    ["platform-service"]=1
+    ["template-service"]=1
+    ["access-control"]=1
+    ["batch-processing"]=1
+  )
 
-modified_service_name=$(python service.py "$SERVICE_NAME")
+  local modified_service_name="${modified_service_name[SERVICE_NAME]}"
+
+  if [[ -z $modified_service_name ]]; then
+    modified_service_name="$SERVICE_NAME"
+  else
+    if [[ -n ${modified_service_name1[$modified_service_name]} ]]; then
+      modified_service_name+="\/app"
+    elif [[ -n ${modified_service_name2[$modified_service_name]} ]]; then
+      modified_service_name+="\/service"
+    fi
+  fi
+
+  echo "$modified_service_name"
+}
+
+# Call the function and pass the service name as an argument
+modified_service_name=$(modify_service_name "$SERVICE_NAME")
+
+# Print the modified service name
 echo "$modified_service_name"
-#key="${SERVICE_NAME}"
-#bazel ${bazelrc} build //${service_map[$key]}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
 bazel ${bazelrc} build //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
+
+
+
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
   module=pipeline-service
