@@ -278,7 +278,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(true).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(true)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -352,7 +353,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(false)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
@@ -428,7 +430,8 @@ public class MultiDeploymentSpawnerStepTest extends CategoryTest {
                               .values(ParameterField.createValueField(environmentYamlV2s))
                               .build())
             .services(ServicesYaml.builder()
-                          .servicesMetadata(ServicesMetadata.builder().parallel(false).build())
+                          .servicesMetadata(
+                              ServicesMetadata.builder().parallel(ParameterField.createValueField(false)).build())
                           .values(ParameterField.createValueField(serviceYamlV2s))
                           .build())
             .build();
