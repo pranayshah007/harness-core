@@ -8,6 +8,7 @@
 package io.harness.delegate.heartbeat;
 
 import static io.harness.mongo.MongoUtils.setUnset;
+import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.time.Duration.ofMinutes;
 
@@ -49,7 +50,8 @@ public class DelegateHeartBeatSyncFromRedis implements Runnable {
               .map(Delegate::getUuid)
               .collect(Collectors.toList());
       // update DB with current time stamp
-      Query<Delegate> query = persistence.createQuery(Delegate.class).field(DelegateKeys.uuid).in(delegates);
+      Query<Delegate> query =
+          persistence.createQuery(Delegate.class, excludeAuthority).field(DelegateKeys.uuid).in(delegates);
       final UpdateOperations<Delegate> updateOperations = persistence.createUpdateOperations(Delegate.class);
       setUnset(updateOperations, DelegateKeys.lastHeartBeat, System.currentTimeMillis());
       persistence.update(query, updateOperations);
