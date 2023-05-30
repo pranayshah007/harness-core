@@ -8,6 +8,7 @@
 package io.harness.batch.processing.tasklet;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.ccm.msp.entities.AmountDetails.AmountDetailsBuilder;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.batch.processing.ccm.CCMJobConstants;
@@ -43,8 +44,8 @@ public class MspMarkupAmountTasklet implements Tasklet {
     List<MarginDetails> marginDetailsList = marginDetailsService.list(mspAccountId);
     for (MarginDetails marginDetails : marginDetailsList) {
       String managedAccountId = marginDetails.getAccountId();
-      AmountDetails.AmountDetailsBuilder markupAmountDetailsBuilder = AmountDetails.builder();
-      AmountDetails.AmountDetailsBuilder totalSpendDetailsBuilder = AmountDetails.builder();
+      AmountDetailsBuilder markupAmountDetailsBuilder = AmountDetails.builder();
+      AmountDetailsBuilder totalSpendDetailsBuilder = AmountDetails.builder();
       for (Interval interval : Interval.values()) {
         Pair<Long, Long> startAndEndTimes = getInterval(interval);
         ManagedAccountStats stats = managedAccountDataService.getManagedAccountStats(
