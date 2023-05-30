@@ -846,10 +846,10 @@ public class PipelineServiceModule extends AbstractModule {
 
   @Provides
   @Singleton
-  @Named("pipelineReferenceExecutorService")
-  public ExecutorService pipelineReferenceExecutorService() {
-    return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineReferencePoolConfig(), 1,
-        new ThreadFactoryBuilder().setNameFormat("PipelineReferenceExecutorService-%d").build(),
+  @Named("pipelineSetupUsageCreationExecutorService")
+  public ExecutorService pipelineSetupUsageCreationExecutorService() {
+    return new ManagedExecutorService(ThreadPool.create(configuration.getPipelineSetupUsageCreationPoolConfig(), 1,
+        new ThreadFactoryBuilder().setNameFormat("PipelineSetupUsageCreationExecutorService-%d").build(),
         new ThreadPoolExecutor.AbortPolicy()));
   }
 }

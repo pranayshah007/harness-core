@@ -16,7 +16,7 @@ import io.harness.logging.AutoLogContext;
 import software.wings.beans.EntityType;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-public class PipelineReferencesLogContext extends AutoLogContext {
+public class PipelineSetupUsageLogContext extends AutoLogContext {
   public static final String ENTITY_TYPE = "entityType";
   public static final String ENTITY_ID = "entityId";
   public static final String ACCOUNT_ID = "accountId";
@@ -24,7 +24,7 @@ public class PipelineReferencesLogContext extends AutoLogContext {
   public static final String PROJECT_ID = "projectId";
   public static final String USE_CASE = "useCase";
 
-  public PipelineReferencesLogContext(
+  public PipelineSetupUsageLogContext(
       Scope scope, String entityId, AutoLogContext.OverrideBehavior behavior, String useCase) {
     super(NullSafeImmutableMap.<String, String>builder()
               .put(ENTITY_TYPE, EntityType.PIPELINE.name())

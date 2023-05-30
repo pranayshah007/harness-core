@@ -18,11 +18,11 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public class PipelineReferencesRunnable implements Runnable {
+public class PipelineSetupUsageCreationRunnable implements Runnable {
   @Inject FilterCreatorMergeService filterCreatorMergeService;
   private FilterCreationParams filterCreationParams;
 
-  public PipelineReferencesRunnable(FilterCreationParams filterCreationParams) {
+  public PipelineSetupUsageCreationRunnable(FilterCreationParams filterCreationParams) {
     this.filterCreationParams = filterCreationParams;
   }
 
@@ -31,17 +31,16 @@ public class PipelineReferencesRunnable implements Runnable {
     try (ResponseTimeRecorder ignore2 = new ResponseTimeRecorder("PipelineReferencesRunnable BG Task")) {
       String pipelineIdentifier = filterCreationParams.getPipelineEntity().getIdentifier();
       try {
-        log.info(String.format(
-            "Calculating pipeline references in the background for pipelineIdentifier: %s", pipelineIdentifier));
+        log.info(String.format("Calculating pipeline setup usage creation in the background for pipelineIdentifier: %s",
+            pipelineIdentifier));
         //        The filter service is being called here as the references are calculated as part of filter creation
         filterCreatorMergeService.getPipelineInfo(filterCreationParams);
-        log.info("Successfully calculated pipeline references and updated entitySetupUsage db.");
       } catch (IOException e) {
-        log.error(
-            String.format("Faced an IO exception while calculating reference for pipeline: %s.", pipelineIdentifier));
+        log.error(String.format(
+            "Faced an IO exception while calculating setup usage creation for pipeline: %s.", pipelineIdentifier));
       } catch (Exception exception) {
-        log.error("Faced exception while calculating reference for pipeline {} in BG THREAD : ", pipelineIdentifier,
-            exception);
+        log.error("Faced exception while calculating setup usage creation for pipeline {} in BG THREAD : ",
+            pipelineIdentifier, exception);
       }
     }
   }

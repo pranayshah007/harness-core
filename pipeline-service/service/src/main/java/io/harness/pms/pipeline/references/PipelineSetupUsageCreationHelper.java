@@ -23,14 +23,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public class PipelineReferenceBackgroundHelper {
+public class PipelineSetupUsageCreationHelper {
   private ExecutorService executor;
   private Injector injector;
-  private final String USE_CASE = "Pipeline Reference Background Task";
+  private final String USE_CASE = "Pipeline Setup Usage Creation Background Task";
 
   @Inject
-  public PipelineReferenceBackgroundHelper(
-      @Named("pipelineReferenceExecutorService") ExecutorService executor, Injector injector) {
+  public PipelineSetupUsageCreationHelper(
+      @Named("pipelineSetupUsageCreationExecutorService") ExecutorService executor, Injector injector) {
     this.executor = executor;
     this.injector = injector;
   }
@@ -39,17 +39,18 @@ public class PipelineReferenceBackgroundHelper {
     PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
     Scope pipelineScope = Scope.of(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier());
-    try (PipelineReferencesLogContext ignore1 = new PipelineReferencesLogContext(
+    try (PipelineSetupUsageLogContext ignore1 = new PipelineSetupUsageLogContext(
              pipelineScope, pipelineEntity.getAccountIdentifier(), OVERRIDE_ERROR, USE_CASE)) {
       try {
-        PipelineReferencesRunnable pipelineReferencesRunnable = new PipelineReferencesRunnable(filterCreationParams);
-        injector.injectMembers(pipelineReferencesRunnable);
-        executor.execute(pipelineReferencesRunnable);
+        PipelineSetupUsageCreationRunnable pipelineSetupUsageCreationRunnable =
+            new PipelineSetupUsageCreationRunnable(filterCreationParams);
+        injector.injectMembers(pipelineSetupUsageCreationRunnable);
+        executor.execute(pipelineSetupUsageCreationRunnable);
       } catch (RejectedExecutionException rejectedExecutionException) {
-        log.warn("Skipping background task for pipeline {} reference calculation as task queue is full : {}",
+        log.warn("Skipping background pipeline setup usage creation task for pipeline {} as task queue is full : {}",
             pipelineEntity.getIdentifier(), rejectedExecutionException.getMessage());
       } catch (Exception exception) {
-        log.error("Faced exception while submitting background pipeline: {} reference calculation task",
+        log.error("Faced exception while submitting background pipeline setup usage creation task for pipeline: {}",
             pipelineEntity.getIdentifier(), exception);
       }
     }
