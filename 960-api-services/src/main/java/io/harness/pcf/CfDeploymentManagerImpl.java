@@ -60,6 +60,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
@@ -70,6 +72,7 @@ import org.cloudfoundry.operations.routes.Route;
 import org.zeroturnaround.exec.StartedProcess;
 
 @Singleton
+@Slf4j
 @OwnedBy(CDP)
 public class CfDeploymentManagerImpl implements CfDeploymentManager {
   public static final String DELIMITER = "__";
@@ -705,6 +708,22 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         Collections.singletonMap(
             HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__STAGE__IDENTIFIER),
         cfRequestConfig, executionLogCallback);
+
+    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryPolicy retryPolicy =
+            RetryPolicy.builder()
+                    .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .finalErrorMessage(String.format(
+                            "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .retry(3)
+                    .build();
+
+    retryAbleTaskExecutor.execute(()
+                    -> checkSettingEnvironmentVariableForAppStatus(
+            cfRequestConfig, activeStatus, executionLogCallback),
+            executionLogCallback, log, retryPolicy);
   }
 
   @Override
@@ -716,6 +735,22 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         Collections.singletonMap(
             HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__INACTIVE__IDENTIFIER),
         cfRequestConfig, executionLogCallback);
+
+    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryPolicy retryPolicy =
+            RetryPolicy.builder()
+                    .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .finalErrorMessage(String.format(
+                            "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .retry(3)
+                    .build();
+
+    retryAbleTaskExecutor.execute(()
+                    -> checkSettingEnvironmentVariableForAppStatusNG(
+            cfRequestConfig, activeStatus, executionLogCallback),
+            executionLogCallback, log, retryPolicy);
   }
 
   @Override
@@ -778,6 +813,23 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         }
       }
     }
+
+    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
+    RetryPolicy retryPolicy =
+            RetryPolicy.builder()
+                    .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .finalErrorMessage(String.format(
+                            "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
+                            encodeColor(cfRequestConfig.getApplicationName())))
+                    .retry(3)
+                    .build();
+
+    retryAbleTaskExecutor.execute(
+            ()
+                    -> checkUnsettingEnvironmentVariableForAppStatus(
+                    cfRequestConfig, executionLogCallback),
+            executionLogCallback, log, retryPolicy);
   }
 
   @Override

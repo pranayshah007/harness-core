@@ -5,10 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.cf.retry;
+package io.harness.pcf;
 
 import io.harness.pcf.PivotalClientApiException;
 
-public interface RetryAbleTaskForVerfication {
-  boolean execute() throws PivotalClientApiException;
+public interface RetryAbleTask {
+  void execute() throws PivotalClientApiException;
 }

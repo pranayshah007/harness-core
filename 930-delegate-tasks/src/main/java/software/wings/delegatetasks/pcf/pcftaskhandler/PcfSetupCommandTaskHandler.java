@@ -43,7 +43,6 @@ import io.harness.delegate.beans.pcf.CfInternalConfig;
 import io.harness.delegate.cf.PcfCommandTaskHandler;
 import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutorForEnvVariables;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
@@ -721,7 +720,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfCommandSetupRequest cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
       ApplicationSummary activeApplication, CfAppSetupTimeDetails inactiveAppVersionDetails,
-      LogCallback executionLogCallback) {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     if (EmptyPredicate.isEmpty(previousReleases)) {
       return;
     }
@@ -790,15 +789,13 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   @VisibleForTesting
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       CfCommandSetupRequest cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback executionLogCallback) {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog(new StringBuilder()
                                               .append("# Application Being Downsized To 0: ")
                                               .append(encodeColor(applicationSummary.getName()))
                                               .toString());
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables =
-        RetryAbleTaskExecutorForEnvVariables.getExecutor();
     if (cfCommandSetupRequest.isUseAppAutoscalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -811,7 +808,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
 
     unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
     unsetEnvVariables(
-        cfRequestConfig, cfCommandSetupRequest, executionLogCallback, retryAbleTaskExecutorForEnvVariables);
+        cfRequestConfig, cfCommandSetupRequest, executionLogCallback);
     downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
   }
 
@@ -841,29 +838,13 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   }
 
   private void unsetEnvVariables(CfRequestConfig cfRequestConfig, CfCommandSetupRequest cfCommandSetupRequest,
-      LogCallback executionLogCallback, RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor) {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     if (!cfCommandSetupRequest.isBlueGreen()) {
       return;
     }
 
     // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .finalErrorMessage(String.format(
-                "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .retry(3)
-            .build();
-
-    retryAbleTaskExecutor.execute(
-        ()
-            -> pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy,
-        ()
-            -> pcfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(
-                cfRequestConfig, executionLogCallback));
+    pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
   }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,

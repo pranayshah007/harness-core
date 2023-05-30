@@ -54,7 +54,6 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutorForEnvVariables;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadContext;
@@ -453,7 +452,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) {
+      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) throws PivotalClientApiException {
     if (isEmpty(previousReleases) || previousReleases.size() == 1) {
       return;
     }
@@ -507,13 +506,11 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   }
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback executionLogCallback) {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog(
         "# Application Being Downsized To 0: " + encodeColor(applicationSummary.getName()));
 
     RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-    RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutorForEnvVariables =
-        RetryAbleTaskExecutorForEnvVariables.getExecutor();
     if (setupRequestNG.isUseAppAutoScalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -525,7 +522,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     cfRequestConfig.setDesiredCount(0);
 
     unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
-    unsetEnvVariables(cfRequestConfig, executionLogCallback, retryAbleTaskExecutorForEnvVariables);
+    unsetEnvVariables(cfRequestConfig, executionLogCallback);
     downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
   }
 
@@ -555,25 +552,10 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
-      RetryAbleTaskExecutorForEnvVariables retryAbleTaskExecutor) {
+  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     // TODO this only for BG
     // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .finalErrorMessage(String.format(
-                "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
-                encodeColor(cfRequestConfig.getApplicationName())))
-            .retry(3)
-            .build();
-
-    retryAbleTaskExecutor.execute(
-        ()
-            -> cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-        executionLogCallback, log, retryPolicy,
-        () -> cfDeploymentManager.checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback));
+    cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
   }
 
   private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
