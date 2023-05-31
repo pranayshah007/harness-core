@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
+import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -52,7 +53,7 @@ public class STOTelemetryPublisher {
           map.put(GROUP_TYPE, ACCOUNT);
           map.put(GROUP_ID, usage.accountId);
           map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-          map.put(LICENSE_USAGE, max(usage.scanCount / 100, usage.developerCount));
+          map.put(LICENSE_USAGE, max(ceil(usage.scanCount / 100.0), usage.developerCount));
           telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
               TelemetryOption.builder().sendForCommunity(false).build());
           log.info("Scheduled STOTelemetryPublisher event sent! for account {}", usage.accountId);
