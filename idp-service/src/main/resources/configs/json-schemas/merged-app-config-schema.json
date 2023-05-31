@@ -9,6 +9,7 @@
     "app",
     "backend",
     "proxy",
+    "auth",
     "kubernetes",
     "kafka",
     "integrations",
@@ -26,6 +27,10 @@
     "proxy": {
       "$id": "#root/proxy",
       "title": "Proxy"
+    },
+    "auth": {
+      "$id": "#root/auth",
+      "title": "Auth"
     },
     "kubernetes": {
       "$id": "#root/kubernetes",
