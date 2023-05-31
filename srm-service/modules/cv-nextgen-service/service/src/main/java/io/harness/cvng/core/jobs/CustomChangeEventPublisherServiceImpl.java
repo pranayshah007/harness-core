@@ -24,7 +24,7 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
   @Inject @Named(CUSTOM_CHANGE_EVENT) private Producer eventProducer;
 
   @Override
-  public void registerCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
+  public void publishCustomChangeEvent(ProjectParams projectParams, String monitoredServiceIdentifier,
       String changeSourceIdentifier, CustomChangeWebhookPayload customChangeWebhookPayload) {
     eventProducer.send(getCustomChangeEventMessage(
         projectParams, monitoredServiceIdentifier, changeSourceIdentifier, customChangeWebhookPayload));
@@ -45,6 +45,9 @@ public class CustomChangeEventPublisherServiceImpl implements CustomChangeEventP
     if (customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity() != null) {
       customChangeEventDetailsBuilder.setExternalLinkToEntity(
           customChangeWebhookPayload.getEventDetail().getExternalLinkToEntity());
+    }
+    if (customChangeWebhookPayload.getEventDetail().getChannelUrl() != null) {
+      customChangeEventDetailsBuilder.setChannelUrl(customChangeWebhookPayload.getEventDetail().getChannelUrl());
     }
 
     CustomChangeEventDTO.Builder customChangeEventDTOBuilder =
