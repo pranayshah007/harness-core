@@ -26,6 +26,7 @@ import io.harness.expression.functors.DateTimeFunctor;
 import io.harness.serializer.JsonUtils;
 import io.harness.text.resolver.ExpressionResolver;
 import io.harness.text.resolver.StringReplacer;
+import io.harness.text.resolver.StringReplacerResponse;
 import io.harness.text.resolver.TrackingExpressionResolver;
 
 import com.google.common.collect.ImmutableList;
@@ -48,6 +49,7 @@ import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.impl.NoOpLog;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -61,6 +63,7 @@ public class EngineExpressionEvaluator {
   private static final Pattern ALIAS_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z_0-9]*$");
   public static final String ENABLED_FEATURE_FLAGS_KEY = "ENABLED_FEATURE_FLAGS";
   public static final String PIE_EXECUTION_JSON_SUPPORT = "PIE_EXECUTION_JSON_SUPPORT";
+  public static final String PIE_EXPRESSION_CONCATENATION = "PIE_EXPRESSION_CONCATENATION";
 
   private static final int MAX_DEPTH = 15;
 
@@ -249,9 +252,15 @@ public class EngineExpressionEvaluator {
       @NotNull String expression, @NotNull EngineJexlContext ctx, int depth, ExpressionMode expressionMode) {
     checkDepth(depth, expression);
     EvaluateExpressionResolver resolver = new EvaluateExpressionResolver(this, ctx, depth, expressionMode);
-    String finalExpression = runStringReplacer(expression, resolver);
+
     try {
-      return evaluateInternal(finalExpression, ctx);
+      if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
+        StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
+        return evaluateInternalV2(replacerResponse, ctx);
+      } else {
+        String finalExpression = runStringReplacer(expression, resolver);
+        return evaluateInternal(finalExpression, ctx);
+      }
     } catch (JexlException ex) {
       if (ex.getCause() instanceof EngineFunctorException) {
         throw new EngineExpressionEvaluationException(
@@ -542,6 +551,51 @@ public class EngineExpressionEvaluator {
     return jexlExpression.evaluate(ctx);
   }
 
+  /**
+   * Evaluate an expression with the given context. This variant is non-recursive and doesn't support harness
+   * expressions - variables delimited by <+...>.
+   * It checks smartly if rendered expressions needs to be evaluated or not
+   */
+  protected Object evaluateInternalV2(@NotNull StringReplacerResponse response, @NotNull EngineJexlContext ctx) {
+    return evaluateByCreatingExpressionV2(response, ctx);
+  }
+
+  protected Object evaluateByCreatingExpressionV2(
+      @NotNull StringReplacerResponse response, @NotNull EngineJexlContext ctx) {
+    // All expressions in the input are rendered thus no jexl evaluation required.
+    String expression = response.getFinalExpressionValue();
+
+    if (ctx.isFeatureFlagEnabled(PIE_EXECUTION_JSON_SUPPORT)) {
+      Script script = (Script) engine.createScript(expression);
+      if (shouldRenderAndNotEvaluate(response, script, ctx)) {
+        return expression;
+      }
+      return script.execute(ctx);
+    }
+    JexlExpression jexlExpression = engine.createExpression(expression);
+    Script script = (Script) jexlExpression;
+    if (shouldRenderAndNotEvaluate(response, script, ctx)) {
+      return expression;
+    }
+    return jexlExpression.evaluate(ctx);
+  }
+
+  private boolean shouldRenderAndNotEvaluate(StringReplacerResponse response, Script script, EngineJexlContext ctx) {
+    if (!response.isOnlyRenderedExpressions()) {
+      return false;
+    }
+
+    Set<List<String>> variables = script.getVariables();
+    for (List<String> variableList : variables) {
+      for (String s : variableList) {
+        if (ctx.has(s)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   protected Object evaluateByCreatingScript(@NotNull String expression, @NotNull EngineJexlContext ctx) {
     return engine.createScript(expression).execute(ctx);
   }
@@ -578,6 +632,13 @@ public class EngineExpressionEvaluator {
     StringReplacer replacer =
         new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);
     return replacer.replace(expression);
+  }
+
+  private static StringReplacerResponse runStringReplacerWithResponse(
+      @NotNull String expression, @NotNull ExpressionResolver resolver) {
+    StringReplacer replacer =
+        new StringReplacer(resolver, ExpressionConstants.EXPR_START, ExpressionConstants.EXPR_END);
+    return replacer.replaceWithRenderCheck(expression);
   }
 
   public static boolean isSingleExpression(String str) {
@@ -690,6 +751,11 @@ public class EngineExpressionEvaluator {
     }
 
     @Override
+    public Object getContextValue(String key) {
+      return ctx.get(key);
+    }
+
+    @Override
     public String resolveInternal(String expression) {
       try {
         Object value = engineExpressionEvaluator.evaluateExpressionBlock(expression, ctx, depth - 1, expressionMode);
@@ -732,6 +798,11 @@ public class EngineExpressionEvaluator {
     }
 
     @Override
+    public Object getContextValue(String key) {
+      return ctx.get(key);
+    }
+
+    @Override
     public String resolveInternal(String expression) {
       PartialEvaluateResult result = engineExpressionEvaluator.partialEvaluateExpressionBlock(
           expression, ctx, partialCtx, depth - 1, expressionMode);
@@ -757,6 +828,11 @@ public class EngineExpressionEvaluator {
     @Override
     public ExpressionMode getExpressionMode() {
       return expressionMode;
+    }
+
+    @Override
+    public Object getContextValue(String key) {
+      return partialCtx.get(key);
     }
 
     @Override
