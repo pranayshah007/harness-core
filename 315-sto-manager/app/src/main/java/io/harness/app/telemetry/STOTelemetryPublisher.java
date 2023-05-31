@@ -44,7 +44,7 @@ public class STOTelemetryPublisher {
   public void recordTelemetry() {
     log.info("STOTelemetryPublisher recordTelemetry execute started.");
     try {
-      long timestamp = Instant.now().minus(3, ChronoUnit.MINUTES).toEpochMilli();
+      long timestamp = Instant.now().toEpochMilli();
       final Gson gson = new Gson();
       STOUsageReport allUsage =
           gson.fromJson(stoServiceUtils.getUsageAllAcounts(GLOBAL_ACCOUNT_ID, timestamp), STOUsageReport.class);
