@@ -35,6 +35,7 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -102,25 +103,32 @@ public abstract class LearningEngineTask extends VerificationTaskBase
   @FdTtlIndex
   private Date validUntil = Date.from(OffsetDateTime.now().plusDays(31).toInstant());
 
+  @AllArgsConstructor
   public enum LearningEngineTaskType {
-    SERVICE_GUARD_TIME_SERIES,
-    LOG_CLUSTER,
-    SERVICE_GUARD_LOG_ANALYSIS,
-    CANARY_LOG_ANALYSIS,
-    TEST_LOG_ANALYSIS,
-    TIME_SERIES_CANARY,
-    CANARY_DEPLOYMENT_TIME_SERIES,
-    BEFORE_AFTER_DEPLOYMENT_TIME_SERIES,
-    SERVICE_GUARD_FEEDBACK_ANALYSIS,
-    BEFORE_AFTER_DEPLOYMENT_LOG,
-    CANARY_DEPLOYMENT_LOG,
-    LOG_ANALYSIS,
-    TIME_SERIES_LOAD_TEST,
-    LOG_FEEDBACK;
+    SERVICE_GUARD_TIME_SERIES(LearningEngineFlavour.SRM),
+    LOG_CLUSTER(LearningEngineFlavour.SRM),
+    SERVICE_GUARD_LOG_ANALYSIS(LearningEngineFlavour.SRM),
+    CANARY_LOG_ANALYSIS(LearningEngineFlavour.CV),
+    TEST_LOG_ANALYSIS(LearningEngineFlavour.CV),
+    TIME_SERIES_CANARY(LearningEngineFlavour.CV),
+    CANARY_DEPLOYMENT_TIME_SERIES(LearningEngineFlavour.CV),
+    BEFORE_AFTER_DEPLOYMENT_TIME_SERIES(LearningEngineFlavour.CV),
+    SERVICE_GUARD_FEEDBACK_ANALYSIS(LearningEngineFlavour.SRM),
+    BEFORE_AFTER_DEPLOYMENT_LOG(LearningEngineFlavour.CV),
+    CANARY_DEPLOYMENT_LOG(LearningEngineFlavour.CV),
+    LOG_ANALYSIS(LearningEngineFlavour.SRM),
+    TIME_SERIES_LOAD_TEST(LearningEngineFlavour.CV),
+    LOG_FEEDBACK(LearningEngineFlavour.CV);
+
+    private LearningEngineFlavour flavour;
 
     public static List<LearningEngineTaskType> getDeploymentTaskTypes() {
-      return Arrays.asList(TIME_SERIES_CANARY, TIME_SERIES_LOAD_TEST, CANARY_LOG_ANALYSIS, TEST_LOG_ANALYSIS);
+      return Arrays.stream(LearningEngineTaskType.values())
+          .filter(taskType -> taskType.flavour.equals(LearningEngineFlavour.CV))
+          .collect(Collectors.toList());
     }
+
+    public static enum LearningEngineFlavour { CV, SRM }
   }
 
   public enum ExecutionStatus {
