@@ -12,6 +12,7 @@ import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_NUMBER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_OWNER_LABEL_VALUE;
+import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_SECRET_RELEASE_COLOR_KEY;
 import static io.harness.k8s.releasehistory.K8sReleaseConstants.RELEASE_STATUS_LABEL_KEY;
 import static io.harness.rule.OwnerRule.ABHINAV2;
@@ -46,8 +47,11 @@ public class K8sReleaseSecretHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExtractLabelValueFromRelease() {
     V1Secret release = createSecret("1", "Status");
+    release.getMetadata().putLabelsItem(RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY, "primary");
     assertThat(K8sReleaseSecretHelper.getReleaseLabelValue(release, RELEASE_NUMBER_LABEL_KEY)).isEqualTo("1");
     assertThat(K8sReleaseSecretHelper.getReleaseLabelValue(release, "SomeUnknownKey")).isEmpty();
+    assertThat(K8sReleaseSecretHelper.getReleaseLabelValue(release, RELEASE_SECRET_RELEASE_BG_ENVIRONMENT_KEY))
+        .isEqualTo("primary");
 
     V1Secret secret =
         new V1SecretBuilder().withMetadata(new V1ObjectMetaBuilder().withName(SECRET_NAME).build()).build();
