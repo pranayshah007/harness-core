@@ -23,10 +23,12 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
+pwd
+ls
 cp ${HOME}/.bazel-dirs/bin/310-iacm-manager/app/module_deploy.jar iacm-manager-capsule.jar
 cp ../../310-iacm-manager/config/iacm-manager-config.yml .
 cp ../../keystore.jks .
-  cp ../../310-iacm-manager/config/key.pem .
+cp ../../310-iacm-manager/config/key.pem .
 cp ../../310-iacm-manager/config/cert.pem .
 cp ../../310-iacm-manager/app/src/main/resources/redisson-jcache.yaml .
 cp ../../310-iacm-manager/app/src/main/resources/enterprise-redisson-jcache.yaml .
@@ -37,6 +39,9 @@ cp ../../310-iacm-manager/build/container/Dockerfile-iacmmanager-ubi ./Dockerfil
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../310-iacm-manager/build/container/scripts/ .
+
+pwd
+ls
 java -jar iacm-manager-capsule scan-classpath-metadata
 
 cd ../..
