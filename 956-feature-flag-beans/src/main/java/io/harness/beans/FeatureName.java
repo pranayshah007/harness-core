@@ -772,6 +772,12 @@ public enum FeatureName {
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",
+      HarnessTeam.CDP),
+  CDS_HELM_STEADY_STATE_CHECK_1_16_V2_CG(
+      "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for CG",
+      HarnessTeam.CDP),
+  CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG(
+      "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for NG",
       HarnessTeam.CDP);
 
   @Deprecated
