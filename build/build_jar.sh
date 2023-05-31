@@ -57,6 +57,7 @@ modify_service_name() {
 # Call the function and pass the service name as an argument
 modified_service_name=$(modify_service_name "$SERVICE_NAME")
 
+if [ ]
 bazel ${bazelrc} build //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
 
 
@@ -82,5 +83,10 @@ if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
 fi
 
 service=$(echo "$modified_service_name" | cut -d'/' -f1)
-chmod +x ${service}/build/build_dist.sh
-${service}/build/build_dist.sh || true
+if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" ]]; then
+    chmod +x build/build_dist.sh
+    build/build_dist.sh || true
+else
+  chmod +x ${service}/build/build_dist.sh
+  ${service}/build/build_dist.sh || true
+fi
