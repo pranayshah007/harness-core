@@ -39,6 +39,8 @@ modify_service_name() {
     ["template-service"]=1
     ["access-control"]=1
     ["batch-processing"]=1
+    ["audit-event-streaming"]=1
+    ["ce-nextgen"]=1
   )
 
   local modified_service_name="${modified_service_name[$SERVICE_NAME]}"
@@ -51,16 +53,12 @@ modify_service_name() {
   elif [[ -n ${modified_service_name_with_service[$modified_service_name]} ]]; then
       modified_service_name+="/service"
   fi
-
-  echo "$modified_service_name"
 }
 
 # Call the function and pass the service name as an argument
 modified_service_name=$(modify_service_name "$SERVICE_NAME")
 
 bazel ${bazelrc} build //${modified_service_name}":module_deploy.jar" ${BAZEL_ARGUMENTS}
-
-
 
 
 if [ "${SERVICE_NAME}" == "pipeline-service" ]; then
