@@ -50,6 +50,8 @@ modify_service_name() {
   elif [[ -n ${modified_service_name_with_service[$modified_service_name]} ]]; then
       modified_service_name+="/service"
   fi
+
+  echo "$modified_service_name"
 }
 
 # Call the function and pass the service name as an argument
