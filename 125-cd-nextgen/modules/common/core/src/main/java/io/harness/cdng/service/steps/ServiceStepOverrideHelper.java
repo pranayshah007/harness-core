@@ -58,8 +58,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -164,6 +166,43 @@ public class ServiceStepOverrideHelper {
 
     checkCrossLocationDuplicateManifestIdentifiers(
         svcOverrideManifests, envGlobalManifests, svcIdentifier, envIdentifier, SERVICE_OVERRIDES);
+  }
+
+  public static void validateOverridesTypeAndUniquenessV2(
+      Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsMapGroupByType,
+      List<ManifestConfigWrapper> svcManifests) {
+    Set<String> existingUniqueIdentifier = new HashSet<>();
+
+    checkDuplicateIdentifiersAndThrow(svcManifests, existingUniqueIdentifier, SERVICE);
+
+    if (isNotEmpty(manifestsMapGroupByType)) {
+      for (Entry<ServiceOverridesType, List<ManifestConfigWrapper>> overrideManifestEntry :
+          manifestsMapGroupByType.entrySet()) {
+        checkDuplicateIdentifiersAndThrow(
+            overrideManifestEntry.getValue(), existingUniqueIdentifier, overrideManifestEntry.getKey().toString());
+        validateAllowedManifestTypesInOverrides(
+            overrideManifestEntry.getValue(), overrideManifestEntry.getKey().toString());
+      }
+    }
+  }
+
+  private static void checkDuplicateIdentifiersAndThrow(
+      List<ManifestConfigWrapper> svcManifests, Set<String> existingUniqueIdentifier, String location) {
+    List<String> duplicateIdentifiers = svcManifests.stream()
+                                            .filter(manifestWrapper -> manifestWrapper.getManifest() != null)
+                                            .map(manifestWrapper -> manifestWrapper.getManifest().getIdentifier())
+                                            .filter(identifier -> !existingUniqueIdentifier.add(identifier))
+                                            .collect(Collectors.toList());
+    if (isNotEmpty(duplicateIdentifiers)) {
+      throw new InvalidRequestException(
+          String.format("found duplicate identifiers %s in %s", duplicateIdentifiers.toString(), location));
+    }
+
+    Set<String> newIdentifiers = svcManifests.stream()
+                                     .filter(manifestWrapper -> manifestWrapper.getManifest() != null)
+                                     .map(manifestWrapper -> manifestWrapper.getManifest().getIdentifier())
+                                     .collect(Collectors.toSet());
+    existingUniqueIdentifier.addAll(newIdentifiers);
   }
 
   @NonNull
