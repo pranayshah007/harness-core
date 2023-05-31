@@ -342,8 +342,9 @@ public class PlanExecutionResourceTest extends CategoryTest {
         .when(pipelineExecutor)
         .rerunPipelineWithInputSetPipelineYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
             "originalExecutionId", yaml, false, false, null);
-    ResponseDTO<PlanExecutionResponseDto> response = planExecutionResource.runPipelineWithInputSetPipelineYaml(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, false, false, yaml, null);
+    ResponseDTO<PlanExecutionResponseDto> response =
+        planExecutionResource.rerunPipelineWithInputSetPipelineYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+            "originalExecutionId", PIPELINE_IDENTIFIER, null, false, yaml, null);
     assertEquals(USER_FLOW.EXECUTION, ThreadOperationContextHelper.getThreadOperationContextUserFlow());
     assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
   }
@@ -358,8 +359,8 @@ public class PlanExecutionResourceTest extends CategoryTest {
         .when(pipelineExecutor)
         .rerunPipelineWithInputSetPipelineYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
             "originalExecutionId", yaml, false, false, null);
-    planExecutionResource.runPipelineWithInputSetPipelineYaml(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, false, false, yaml, null);
+    planExecutionResource.rerunPipelineWithInputSetPipelineYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+        "originalExecutionId", PIPELINE_IDENTIFIER, null, false, yaml, null);
     assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
   }
 
