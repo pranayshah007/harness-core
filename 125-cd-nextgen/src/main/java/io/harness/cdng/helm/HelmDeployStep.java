@@ -219,7 +219,9 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NEW_KUBECTL_VERSION))
             .releaseHistoryPrefix(nativeHelmStepHelper.getReleaseHistoryPrefix(ambiance))
             .shouldOpenFetchFilesLogStream(true)
-            .ignoreReleaseHistFailStatus(ignoreHelmHistFailure);
+            .ignoreReleaseHistFailStatus(ignoreHelmHistFailure)
+            .useRefactorSteadyStateCheck(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG));
 
     if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_K8S_SERVICE_HOOKS_NG)) {
       helmCommandRequestBuilder.serviceHooks(nativeHelmStepHelper.getServiceHooks(ambiance));
