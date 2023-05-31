@@ -478,13 +478,13 @@ orchestrationRedisEventsConfig:
   pipelineFacilitatorEvent:
     maxTopicSize: ${PIPELINE_FACILITATOR_EVENT_MAX_TOPIC_SIZE:-5000}
   pipelineNodeStartEvent:
-    maxTopicSize: ${PIPELINE_NODE_START_EVENT_MAX_TOPIC_SIZE:-5000}
+    maxTopicSize: ${PIPELINE_NODE_START_EVENT_MAX_TOPIC_SIZE:-15000}
   pipelineProgressEvent:
     maxTopicSize: ${PIPELINE_PROGRESS_MAX_TOPIC_SIZE:-5000}
   pipelineNodeAdviseEvent:
     maxTopicSize: ${PIPELINE_NODE_ADVISE_MAX_TOPIC_SIZE:-5000}
   pipelineNodeResumeEvent:
-    maxTopicSize: ${PIPELINE_NODE_RESUME_MAX_TOPIC_SIZE:-5000}
+    maxTopicSize: ${PIPELINE_NODE_RESUME_MAX_TOPIC_SIZE:-15000}
   pipelineStartPartialPlanCreator:
     maxTopicSize: ${START_PARTIAL_PLAN_CREATOR_MAX_TOPIC_SIZE:-5000}
 
