@@ -232,14 +232,17 @@ public class Http {
             }
           });
 
-  public static boolean checkResponseCode(int responseCode) {
+  public static boolean checkResponseCode(int responseCode, boolean ignoreResponseCode) {
+    if (ignoreResponseCode) {
+      return responseCode < 500;
+    }
     return responseCode != 400;
   }
 
-  public static boolean connectableHttpUrl(String url) {
+  public static boolean connectableHttpUrl(String url, boolean ignoreResponseCode) {
     try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
       try {
-        return checkResponseCode(responseCodeForValidation.get(url));
+        return checkResponseCode(responseCodeForValidation.get(url), ignoreResponseCode);
       } catch (Exception e) {
         log.info("Could not connect: {}", e.getMessage());
       }
@@ -247,11 +250,13 @@ public class Http {
     return false;
   }
 
-  public static boolean connectableHttpUrlWithoutFollowingRedirect(String url, List<KeyValuePair> headers) {
+  public static boolean connectableHttpUrlWithoutFollowingRedirect(
+      String url, List<KeyValuePair> headers, boolean ignoreResponseCode) {
     try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
       try {
         return checkResponseCode(responseCodeForValidationWithoutFollowingRedirect.get(
-            HttpURLHeaderInfo.builder().url(url).headers(headers).build()));
+                                     HttpURLHeaderInfo.builder().url(url).headers(headers).build()),
+            ignoreResponseCode);
       } catch (Exception e) {
         log.info("Could not connect: {}", e.getMessage());
       }
@@ -260,14 +265,16 @@ public class Http {
   }
 
   public static boolean connectableHttpUrlWithoutFollowingRedirect(String url) {
-    return connectableHttpUrlWithoutFollowingRedirect(url, null);
+    return connectableHttpUrlWithoutFollowingRedirect(url, null, false);
   }
 
-  public static boolean connectableHttpUrlWithHeaders(String url, List<KeyValuePair> headers) {
+  public static boolean connectableHttpUrlWithHeaders(
+      String url, List<KeyValuePair> headers, boolean ignoreResponseCode) {
     try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
       try {
         return checkResponseCode(
-            responseCodeForValidationWithHeaders.get(HttpURLHeaderInfo.builder().url(url).headers(headers).build()));
+            responseCodeForValidationWithHeaders.get(HttpURLHeaderInfo.builder().url(url).headers(headers).build()),
+            ignoreResponseCode);
       } catch (Exception e) {
         log.info("Could not connect: {}", e.getMessage());
       }
@@ -278,7 +285,7 @@ public class Http {
   public static boolean connectableJenkinsHttpUrl(String url) {
     try (UrlLogContext ignore = new UrlLogContext(url, OVERRIDE_ERROR)) {
       try {
-        return checkResponseCode(jenkinsResponseCodeForValidation.get(url));
+        return checkResponseCode(jenkinsResponseCodeForValidation.get(url), false);
       } catch (Exception e) {
         log.info("Could not connect: {}", e.getMessage());
       }
