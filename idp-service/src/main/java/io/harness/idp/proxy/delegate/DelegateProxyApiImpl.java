@@ -15,8 +15,10 @@ import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.idp.annotations.IdpServiceAuthIfHasApiKey;
 import io.harness.idp.gitintegration.utils.delegateselectors.DelegateSelectorsCache;
 import io.harness.idp.proxy.delegate.beans.BackstageProxyRequest;
+import io.harness.security.annotations.NextGenManagerAuth;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +37,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(IDP)
+@NextGenManagerAuth
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DelegateProxyApiImpl implements DelegateProxyApi {
@@ -42,6 +45,8 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
   private final DelegateProxyRequestForwarder delegateProxyRequestForwarder;
   private final DelegateSelectorsCache delegateSelectorsCache;
 
+  @IdpServiceAuthIfHasApiKey
+  @Override
   @POST
   public Response forwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers,
       @PathParam("url") String urlString, String body) throws JsonProcessingException, ExecutionException {
