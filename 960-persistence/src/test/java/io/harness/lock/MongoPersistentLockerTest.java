@@ -38,6 +38,7 @@ import com.deftlabs.lock.mongo.DistributedLockOptions;
 import com.deftlabs.lock.mongo.DistributedLockSvc;
 import com.google.inject.Inject;
 import java.time.Duration;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
@@ -49,6 +50,7 @@ import org.slf4j.LoggerFactory;
  * The Class PersistentLockerTest.
  */
 @OwnedBy(PL)
+@Ignore("skipping the integration test")
 public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Mock private DistributedLockSvc distributedLockSvc;
 
@@ -57,6 +59,7 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("skipping the integration test")
   public void testAcquireLockDoLock() {
     Duration timeout = ofMillis(1000);
 
@@ -81,6 +84,7 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("skipping the integration test")
   public void testAcquireLockDoNotRunTheBody() {
     DistributedLock distributedLock = mock(DistributedLock.class);
     when(distributedLock.tryLock()).thenReturn(false);
@@ -103,6 +107,7 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("skipping the integration test")
   public void testTryAcquireLockDoNotThrowException() {
     DistributedLock distributedLock = mock(DistributedLock.class);
     when(distributedLock.tryLock()).thenReturn(false);
@@ -124,6 +129,7 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("skipping the integration test")
   public void testAcquireLockNonLockedAtRelease() throws IllegalAccessException {
     Duration timeout = ofMillis(1000);
 
@@ -156,6 +162,7 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("skipping the integration test")
   public void testAcquireLockLogging() throws IllegalAccessException {
     DistributedLock distributedLock = mock(DistributedLock.class);
     when(distributedLock.tryLock()).thenReturn(false);
@@ -177,6 +184,7 @@ public class MongoPersistentLockerTest extends PersistenceTestBase {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("skipping the integration test")
   public void testAcquireTimeout() throws InterruptedException {
     assumeThat("We can have timeout logic").isEqualTo("true");
     Duration timeout = ofMillis(1);

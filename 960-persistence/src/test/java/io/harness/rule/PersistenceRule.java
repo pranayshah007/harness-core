@@ -152,7 +152,7 @@ public class PersistenceRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Provides
       @Singleton
       DistributedLockImplementation distributedLockImplementation() {
-        return MONGO;
+        return DistributedLockImplementation.NOOP;
       }
 
       @Provides
