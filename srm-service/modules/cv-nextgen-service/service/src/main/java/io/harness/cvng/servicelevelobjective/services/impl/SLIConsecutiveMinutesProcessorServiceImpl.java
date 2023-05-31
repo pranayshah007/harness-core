@@ -7,6 +7,7 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.beans.SLIEvaluationType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -53,8 +54,10 @@ public class SLIConsecutiveMinutesProcessorServiceImpl implements SLIConsecutive
     Instant startTime = sliRecordParams.get(0).getTimeStamp();
     Instant evaluationTimeStartForConsecutiveErrorBudget =
         startTime.minus(considerConsecutiveMinutes, ChronoUnit.MINUTES);
+    evaluationTimeStartForConsecutiveErrorBudget =
+        DateTimeUtils.roundDownTo5MinBoundary(evaluationTimeStartForConsecutiveErrorBudget);
     List<SLIRecord> prevSliRecords = sliRecordService.getSLIRecordsWithSLIVersion(serviceLevelIndicator.getUuid(),
-        evaluationTimeStartForConsecutiveErrorBudget, startTime.minus(1, ChronoUnit.MINUTES),
+        evaluationTimeStartForConsecutiveErrorBudget.minus(1, ChronoUnit.MINUTES), startTime,
         serviceLevelIndicator.getVersion());
     Map<Instant, SLIRecordParam> instantSLIRecordMap = getInstantSLIRecordMap(prevSliRecords);
 
