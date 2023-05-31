@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -28,11 +29,15 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
+import io.harness.engine.executions.retry.RetryGroup;
+import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.execution.PlanExecution;
+import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -452,6 +457,145 @@ public class PlanExecutionResourceTest extends CategoryTest {
             "originalExecutionId", yaml, false, true, null);
     planExecutionResource.debugPipelineWithInputSetPipelineYaml(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, null, false, yaml);
+    assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testDebugPipelineWithInputSetPipelineYamlV2() {
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    doReturn(
+        PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
+        .when(pipelineExecutor)
+        .rerunPipelineWithInputSetPipelineYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
+            "originalExecutionId", yaml, true, true, null);
+    ResponseDTO<PlanExecutionResponseDto> response =
+        planExecutionResource.debugPipelineWithInputSetPipelineYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+            "originalExecutionId", PIPELINE_IDENTIFIER, null, false, yaml);
+    assertEquals(Status.SUCCESS, response.getStatus());
+    assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testDebugPipelineWithInputSetPipelineYamlV2WithoutUserFlowContext() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    doReturn(
+        PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
+        .when(pipelineExecutor)
+        .rerunPipelineWithInputSetPipelineYaml(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
+            "originalExecutionId", yaml, true, true, null);
+    ResponseDTO<PlanExecutionResponseDto> response =
+        planExecutionResource.debugPipelineWithInputSetPipelineYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+            "originalExecutionId", PIPELINE_IDENTIFIER, null, false, yaml);
+    assertEquals(Status.SUCCESS, response.getStatus());
+    assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetRetryStages() {
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    doReturn(
+        RetryInfo.builder().isResumable(true).groups(Collections.singletonList(RetryGroup.builder().build())).build())
+        .when(retryExecutionHelper)
+        .validateRetry(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId");
+    ResponseDTO<RetryInfo> response = planExecutionResource.getRetryStages(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null);
+    assertTrue(response.getData().isResumable());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testGetRetryStagesWithoutUserFlowContext() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    doReturn(
+        RetryInfo.builder().isResumable(true).groups(Collections.singletonList(RetryGroup.builder().build())).build())
+        .when(retryExecutionHelper)
+        .validateRetry(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId");
+    ResponseDTO<RetryInfo> response = planExecutionResource.getRetryStages(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "PlanExecutionId", null);
+    assertTrue(response.getData().isResumable());
+    assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testRunPipelineWithInputSetIdentifierList() {
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    MergeInputSetRequestDTOPMS mergeInputSetRequest = MergeInputSetRequestDTOPMS.builder().build();
+    doReturn(
+        PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
+        .when(pipelineExecutor)
+        .runPipelineWithInputSetReferencesList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
+            mergeInputSetRequest, "main", "repoId", null);
+    ResponseDTO<PlanExecutionResponseDto> response =
+        planExecutionResource.runPipelineWithInputSetIdentifierList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+            PIPELINE_IDENTIFIER, GitEntityFindInfoDTO.builder().branch("main").yamlGitConfigId("repoId").build(), false,
+            mergeInputSetRequest, null);
+    assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
+    assertEquals(USER_FLOW.EXECUTION, ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testRunPipelineWithInputSetIdentifierListWithoutUserFlowContext() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    MergeInputSetRequestDTOPMS mergeInputSetRequest = MergeInputSetRequestDTOPMS.builder().build();
+    doReturn(
+        PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
+        .when(pipelineExecutor)
+        .runPipelineWithInputSetReferencesList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
+            mergeInputSetRequest, "main", "repoId", null);
+    ResponseDTO<PlanExecutionResponseDto> response =
+        planExecutionResource.runPipelineWithInputSetIdentifierList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd",
+            PIPELINE_IDENTIFIER, GitEntityFindInfoDTO.builder().branch("main").yamlGitConfigId("repoId").build(), false,
+            mergeInputSetRequest, null);
+    assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
+    assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testRerunPipelineWithInputSetIdentifierList() {
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    MergeInputSetRequestDTOPMS mergeInputSetRequest = MergeInputSetRequestDTOPMS.builder().build();
+    doReturn(
+        PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
+        .when(pipelineExecutor)
+        .rerunPipelineWithInputSetReferencesList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
+            "originalExecutionId", mergeInputSetRequest, "main", "repoId", false, null);
+    ResponseDTO<PlanExecutionResponseDto> response = planExecutionResource.rerunPipelineWithInputSetIdentifierList(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", "originalExecutionId", PIPELINE_IDENTIFIER,
+        GitEntityFindInfoDTO.builder().branch("main").yamlGitConfigId("repoId").build(), false, mergeInputSetRequest,
+        null);
+    assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
+    assertEquals(USER_FLOW.EXECUTION, ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testRerunPipelineWithInputSetIdentifierListWithoutUserFlowContext() {
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(ACCOUNT_ID, PIE_GET_FILE_CONTENT_ONLY);
+    MergeInputSetRequestDTOPMS mergeInputSetRequest = MergeInputSetRequestDTOPMS.builder().build();
+    doReturn(
+        PlanExecutionResponseDto.builder().planExecution(PlanExecution.builder().planId("planId123").build()).build())
+        .when(pipelineExecutor)
+        .rerunPipelineWithInputSetReferencesList(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, "cd",
+            "originalExecutionId", mergeInputSetRequest, "main", "repoId", false, null);
+    ResponseDTO<PlanExecutionResponseDto> response = planExecutionResource.rerunPipelineWithInputSetIdentifierList(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", "originalExecutionId", PIPELINE_IDENTIFIER,
+        GitEntityFindInfoDTO.builder().branch("main").yamlGitConfigId("repoId").build(), false, mergeInputSetRequest,
+        null);
+    assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
     assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
   }
 }
