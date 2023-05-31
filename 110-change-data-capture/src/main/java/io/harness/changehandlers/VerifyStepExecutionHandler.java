@@ -21,10 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CV)
-@Slf4j
 public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
   @Override
   public Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields) {
@@ -34,10 +32,10 @@ public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
     Map<String, String> columnValueMapping = new HashMap<>();
     DBObject dbObject = changeEvent.getFullDocument();
     String verificationJonInstanceId = dbObject.get("_id").toString();
-    log.info("Handling change event: {} for VerificationJonInstance _id: {}", changeEvent.getUuid(),
-        verificationJonInstanceId);
     columnValueMapping.put("id", verificationJonInstanceId);
-    columnValueMapping.put("accountId", dbObject.get(VerificationJobInstanceKeys.accountId).toString());
+    if (dbObject.get(VerificationJobInstanceKeys.accountId) != null) {
+      columnValueMapping.put("accountId", dbObject.get(VerificationJobInstanceKeys.accountId).toString());
+    }
     if (dbObject.get(VerificationJobInstanceKeys.planExecutionId) != null) {
       columnValueMapping.put("planExecutionId", dbObject.get(VerificationJobInstanceKeys.planExecutionId).toString());
     }
@@ -47,17 +45,25 @@ public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
     if (dbObject.get(VerificationJobInstanceKeys.nodeExecutionId) != null) {
       columnValueMapping.put("nodeExecutionId", dbObject.get(VerificationJobInstanceKeys.nodeExecutionId).toString());
     }
-    columnValueMapping.put(
-        "startedAtTimestamp", String.valueOf(((Date) dbObject.get(VerificationJobInstanceKeys.startTime)).getTime()));
-    columnValueMapping.put("deploymentStartedAtTimestamp",
-        String.valueOf(((Date) dbObject.get(VerificationJobInstanceKeys.deploymentStartTime)).getTime()));
-    columnValueMapping.put(
-        "lastUpdatedAtTimestamp", dbObject.get(VerificationJobInstanceKeys.lastUpdatedAt).toString());
+    if (dbObject.get(VerificationJobInstanceKeys.startTime) != null) {
+      columnValueMapping.put(
+          "startedAtTimestamp", String.valueOf(((Date) dbObject.get(VerificationJobInstanceKeys.startTime)).getTime()));
+    }
+    if (dbObject.get(VerificationJobInstanceKeys.deploymentStartTime) != null) {
+      columnValueMapping.put("deploymentStartedAtTimestamp",
+          String.valueOf(((Date) dbObject.get(VerificationJobInstanceKeys.deploymentStartTime)).getTime()));
+    }
+    if (dbObject.get(VerificationJobInstanceKeys.lastUpdatedAt) != null) {
+      columnValueMapping.put(
+          "lastUpdatedAtTimestamp", dbObject.get(VerificationJobInstanceKeys.lastUpdatedAt).toString());
+    }
     if (dbObject.get(VerificationJobInstanceKeys.verificationStatus) != null) {
       columnValueMapping.put(
           "verificationStatus", dbObject.get(VerificationJobInstanceKeys.verificationStatus).toString());
     }
-    columnValueMapping.put("executionStatus", dbObject.get(VerificationJobInstanceKeys.executionStatus).toString());
+    if (dbObject.get(VerificationJobInstanceKeys.executionStatus) != null) {
+      columnValueMapping.put("executionnStatus", dbObject.get(VerificationJobInstanceKeys.executionStatus).toString());
+    }
     if (dbObject.get(VerificationJobInstanceKeys.monitoredServiceType) != null) {
       columnValueMapping.put(
           "monitoredServiceType", dbObject.get(VerificationJobInstanceKeys.monitoredServiceType).toString());
@@ -68,28 +74,45 @@ public class VerifyStepExecutionHandler extends AbstractChangeDataHandler {
     }
 
     populateVerificationJobDetails(columnValueMapping, dbObject);
-    log.info("Handled change event: {} for VerificationJonInstance _id: {}", changeEvent.getUuid(),
-        verificationJonInstanceId);
     return columnValueMapping;
   }
 
   private static void populateVerificationJobDetails(Map<String, String> columnValueMapping, DBObject dbObject) {
-    BasicDBObject verificationJob = (BasicDBObject) dbObject.get(VerificationJobInstanceKeys.resolvedJob);
-    columnValueMapping.put("selectedVerificationType", verificationJob.getString("type"));
-    columnValueMapping.put("orgIdentifier", verificationJob.getString(VerificationJobKeys.orgIdentifier));
-    columnValueMapping.put("projectIdentifier", verificationJob.getString(VerificationJobKeys.projectIdentifier));
-    columnValueMapping.put(
-        "monitoredServiceIdentifier", verificationJob.getString(VerificationJobKeys.monitoredServiceIdentifier));
-    columnValueMapping.put("serviceRef",
-        ((BasicDBObject) verificationJob.get(VerificationJobKeys.serviceIdentifier))
-            .getString(RuntimeParameterKeys.value));
-    columnValueMapping.put("envRef",
-        ((BasicDBObject) verificationJob.get(VerificationJobKeys.envIdentifier)).getString(RuntimeParameterKeys.value));
-    columnValueMapping.put(
-        "sensitivity", ((BasicDBObject) verificationJob.get("sensitivity")).getString(RuntimeParameterKeys.value));
-    columnValueMapping.put("durationInMinutes",
-        parseDuration(
-            ((BasicDBObject) verificationJob.get(VerificationJobKeys.duration)).getString(RuntimeParameterKeys.value)));
+    if (dbObject.get(VerificationJobInstanceKeys.resolvedJob) != null) {
+      BasicDBObject verificationJob = (BasicDBObject) dbObject.get(VerificationJobInstanceKeys.resolvedJob);
+      if (verificationJob.get("type") != null) {
+        columnValueMapping.put("selectedVerificationType", verificationJob.getString("type"));
+      }
+      if (verificationJob.get(VerificationJobKeys.orgIdentifier) != null) {
+        columnValueMapping.put("orgIdentifier", verificationJob.getString(VerificationJobKeys.orgIdentifier));
+      }
+      if (verificationJob.get(VerificationJobKeys.projectIdentifier) != null) {
+        columnValueMapping.put("projectIdentifier", verificationJob.getString(VerificationJobKeys.projectIdentifier));
+      }
+      if (verificationJob.get(VerificationJobKeys.monitoredServiceIdentifier) != null) {
+        columnValueMapping.put(
+            "monitoredServiceIdentifier", verificationJob.getString(VerificationJobKeys.monitoredServiceIdentifier));
+      }
+      if (verificationJob.get(VerificationJobKeys.serviceIdentifier) != null) {
+        columnValueMapping.put("serviceRef",
+            ((BasicDBObject) verificationJob.get(VerificationJobKeys.serviceIdentifier))
+                .getString(RuntimeParameterKeys.value));
+      }
+      if (verificationJob.get(VerificationJobKeys.envIdentifier) != null) {
+        columnValueMapping.put("envRef",
+            ((BasicDBObject) verificationJob.get(VerificationJobKeys.envIdentifier))
+                .getString(RuntimeParameterKeys.value));
+      }
+      if (verificationJob.get("sensitivity") != null) {
+        columnValueMapping.put(
+            "sensitivity", ((BasicDBObject) verificationJob.get("sensitivity")).getString(RuntimeParameterKeys.value));
+      }
+      if (verificationJob.get(VerificationJobKeys.duration) != null) {
+        columnValueMapping.put("durationInMinutes",
+            parseDuration(((BasicDBObject) verificationJob.get(VerificationJobKeys.duration))
+                              .getString(RuntimeParameterKeys.value)));
+      }
+    }
   }
 
   @Override

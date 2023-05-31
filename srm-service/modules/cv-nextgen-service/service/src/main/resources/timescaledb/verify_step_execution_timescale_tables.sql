@@ -86,4 +86,8 @@ BEGIN;
     CREATE INDEX IF NOT EXISTS nodeExecutionId_idx ON verify_step_interrupt_cvng USING btree (nodeExecutionId);
 COMMIT;
 
+BEGIN;
+ALTER TABLE verify_step_interrupt_cvng ADD COLUMN issuerType TEXT NULL;
+COMMIT;
+
 -- End of table [verify_step_interrupt_cvng] commands
