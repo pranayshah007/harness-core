@@ -804,9 +804,13 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     }
 
     if (EmptyPredicate.isEmpty(filteredArtifactSourcesNode)) {
-      throw new InvalidRequestException(
-          String.format("Primary artifact ref value %s provided does not exist in sources in service %s",
-              primaryArtifactRefValue, serviceIdentifier));
+      if (artifactSources.size() == 1) {
+        filteredArtifactSourcesNode.add(artifactSources.get(0).getCurrJsonNode());
+      } else {
+        throw new InvalidRequestException(
+            String.format("Primary artifact ref value %s provided does not exist in sources in service %s",
+                primaryArtifactRefValue, serviceIdentifier));
+      }
     }
     primaryArtifactObjectNode.set(YamlTypes.ARTIFACT_SOURCES, filteredArtifactSourcesNode);
   }
