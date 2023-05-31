@@ -10,7 +10,8 @@ set -ex
 
 mkdir -p dist/ng-manager
 cd dist/ng-manager
-
+pwd 
+ls
 curl https://storage.googleapis.com/harness-prod-public/public/shared/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar  --output alpn-boot-8.1.13.v20181017.jar
 
 echo ${JDK} > jdk.txt
