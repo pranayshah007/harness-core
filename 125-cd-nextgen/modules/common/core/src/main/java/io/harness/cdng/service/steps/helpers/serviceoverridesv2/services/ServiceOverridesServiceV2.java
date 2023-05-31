@@ -7,9 +7,12 @@
 
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 
+import io.harness.encryption.Scope;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.validation.Valid;
 import lombok.NonNull;
@@ -33,4 +36,21 @@ public interface ServiceOverridesServiceV2 {
 
   List<NGServiceOverridesEntity> findAll(Criteria criteria);
   Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride);
+
+  Map<Scope, NGServiceOverridesEntity> getEnvOverride(@NonNull String accountId, String orgId, String projectId,@NonNull String envRef);
+
+  Map<Scope, NGServiceOverridesEntity> getEnvServiceOverride(
+          @NonNull   String accountId, String orgId, String projectId,@NonNull String envRef,@NonNull String serviceRef);
+
+  Map<Scope, NGServiceOverridesEntity> getInfraOverride(
+      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, @NonNull String infraId);
+
+  Map<Scope, NGServiceOverridesEntity> getInfraServiceOverride(@NonNull String accountId, String orgId,
+      String projectId, @NonNull String envRef, @NonNull String serviceRef, @NonNull String infraId);
+
+  String createServiceOverrideInputsYaml(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
+      @NonNull String environmentRef, @NonNull String serviceRef);
+
+  Optional<NGServiceOverrideConfigV2> mergeOverridesGroupedByType(
+      @NonNull List<NGServiceOverridesEntity> overridesEntities);
 }

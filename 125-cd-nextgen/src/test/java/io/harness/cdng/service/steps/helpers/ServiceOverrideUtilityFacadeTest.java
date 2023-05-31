@@ -11,7 +11,9 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.category.element.UnitTests;
@@ -25,7 +27,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
-import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -66,7 +68,7 @@ import retrofit2.Response;
 
 public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
   @Mock private ServiceOverrideService serviceOverrideService;
-  @Mock private ServiceOverridesServiceV2 serviceOverridesServiceV2;
+  @Mock private ServiceOverridesServiceV2Impl serviceOverridesServiceV2;
   @Mock private NGSettingsClient ngSettingsClient;
   @Mock private Call<ResponseDTO<SettingValueResponseDTO>> request;
   @InjectMocks @Inject private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
@@ -193,6 +195,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         .doReturn(null)
         .when(serviceOverridesServiceV2)
         .findAll(any(Criteria.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setServiceOverrideInputs(ParameterField.createValueField(overrideInputs));
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
@@ -331,6 +334,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         .doReturn(null)
         .when(serviceOverridesServiceV2)
         .findAll(any(Criteria.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setEnvInputs(null);
     stepParameters.setServiceOverrideInputs(null);
@@ -393,6 +397,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         .doReturn(null)
         .when(serviceOverridesServiceV2)
         .findAll(any(Criteria.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
@@ -471,6 +476,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         .doReturn(null)
         .when(serviceOverridesServiceV2)
         .findAll(any(Criteria.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
@@ -599,6 +605,8 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         .doReturn(null)
         .when(serviceOverridesServiceV2)
         .findAll(any(Criteria.class));
+    doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
+
     stepParameters.setEnvInputs(null);
     stepParameters.setServiceOverrideInputs(null);
 

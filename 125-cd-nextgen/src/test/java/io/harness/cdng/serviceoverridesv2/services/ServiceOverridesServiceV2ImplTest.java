@@ -19,8 +19,12 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
+import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
@@ -414,6 +418,78 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                    .map(ConfigFile::getIdentifier)
                    .collect(Collectors.toList()))
         .containsExactlyInAnyOrder("configFile1", "configFile2");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverrideInputsYaml() {
+    NGServiceOverridesEntity testOverrideEntity = getTestOverrideEntityForRuntimeInput();
+    serviceOverridesServiceV2.create(testOverrideEntity);
+    String serviceOverrideInputsYaml = serviceOverridesServiceV2.createServiceOverrideInputsYaml(ACCOUNT_IDENTIFIER,
+        ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef(), testOverrideEntity.getServiceRef());
+    String expectedInputString = "serviceOverrideInputs:\n"
+        + "  variables:\n"
+        + "  - name: \"varA\"\n"
+        + "    type: \"String\"\n"
+        + "    value: \"<+input>\"\n"
+        + "  - name: \"varB\"\n"
+        + "    type: \"String\"\n"
+        + "    value: \"<+input>\"\n"
+        + "  manifests:\n"
+        + "  - manifest:\n"
+        + "      identifier: \"manifest1\"\n"
+        + "      type: \"Values\"\n"
+        + "      spec:\n"
+        + "        store:\n"
+        + "          type: \"Github\"\n"
+        + "          spec:\n"
+        + "            connectorRef: \"<+input>\"\n"
+        + "            branch: \"<+input>\"\n";
+    assertThat(expectedInputString).isEqualTo(serviceOverrideInputsYaml);
+  }
+
+  private NGServiceOverridesEntity getTestOverrideEntityForRuntimeInput() {
+    return NGServiceOverridesEntity.builder()
+        .accountId(ACCOUNT_IDENTIFIER)
+        .orgIdentifier(ORG_IDENTIFIER)
+        .projectIdentifier(PROJECT_IDENTIFIER)
+        .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+        .environmentRef(ENVIRONMENT_REF)
+        .serviceRef(SERVICE_REF)
+        .spec(ServiceOverridesSpec.builder()
+                  .variables(List.of(StringNGVariable.builder()
+                                         .name("varA")
+                                         .value(ParameterField.createExpressionField(true, "<+input>", null, true))
+                                         .build(),
+                      StringNGVariable.builder()
+                          .name("varB")
+                          .value(ParameterField.createExpressionField(true, "<+input>", null, true))
+                          .build()))
+                  .manifests(List.of(
+                      ManifestConfigWrapper.builder()
+                          .manifest(
+                              ManifestConfig.builder()
+                                  .type(ManifestConfigType.VALUES)
+                                  .identifier("manifest1")
+                                  .spec(ValuesManifest.builder()
+                                            .identifier("manifest1")
+                                            .store(ParameterField.createValueField(
+                                                StoreConfigWrapper.builder()
+                                                    .type(StoreConfigType.GITHUB)
+                                                    .spec(GithubStore.builder()
+                                                              .branch(ParameterField.createExpressionField(
+                                                                  true, "<+input>", null, true))
+                                                              .connectorRef(ParameterField.createExpressionField(
+                                                                  true, "<+input>", null, true))
+                                                              .paths(ParameterField.createValueField(List.of("file1")))
+                                                              .build())
+                                                    .build()))
+                                            .build())
+                                  .build())
+                          .build()))
+                  .build())
+        .build();
   }
 
   private static void assertBasicOverrideEntityProperties(NGServiceOverridesEntity ngServiceOverridesEntity) {
