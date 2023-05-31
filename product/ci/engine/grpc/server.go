@@ -61,6 +61,7 @@ func (s *engineServer) Start() error {
 	pb.RegisterLiteEngineServer(s.grpcServer, NewEngineHandler(s.log, s.procWriter))
 	pb.RegisterLogProxyServer(s.grpcServer, NewLogProxyHandler(s.log))
 	pb.RegisterTiProxyServer(s.grpcServer, NewTiProxyHandler(s.log))
+	s.log.Infow(" Started GRPC server in LE ")
 	err := s.grpcServer.Serve(s.listener)
 	if err != nil {
 		s.log.Errorw("error starting gRPC server", "error_msg", zap.Error(err))

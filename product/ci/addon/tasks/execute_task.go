@@ -47,19 +47,22 @@ func NewExecuteStep(step *pb.UnitStep, log *zap.SugaredLogger,
 // Run method
 func (e *executeTask) Run(ctx context.Context) bool {
     // 1. Write the task parameters to the path where it is expected.
-    err := ioutil.WriteFile("/etc/config/taskfile", e.taskParams, 0644)
+    e.addonLogger.Infow(" Run method for execute task")
+    err := ioutil.WriteFile("/harness/taskfile", e.taskParams, 0644)
     if err != nil {
         e.log.Errorw("unable to write task parameters to file")
         return false
     }
 
     // 2. Run the task script
-    cmd := exec.Command("sh", "/opt/harness/start.sh")
+    e.addonLogger.Infow(" Task params written in /harness/taskfile, executing task command now", e.command[0])
+    cmd := exec.Command(e.command[0])
     _, err = cmd.CombinedOutput()
     if err != nil {
-        e.log.Errorw("unable to run the task script")
+        e.log.Errorw("unable to run the task script", zap.Error(err))
         return false
     }
+    e.addonLogger.Infow(" Shell Task Process started ")
 
     return true
 }

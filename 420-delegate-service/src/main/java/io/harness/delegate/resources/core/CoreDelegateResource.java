@@ -29,6 +29,7 @@ import io.harness.delegate.core.beans.Secret;
 import io.harness.delegate.core.beans.SecretConfig;
 import io.harness.delegate.core.beans.StepRuntime;
 import io.harness.delegate.core.beans.TaskPayload;
+import io.harness.delegate.executor.bundle.BootstrapBundle;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -36,22 +37,36 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
+import io.harness.taskapps.common.kryo.CommonTaskKryoRegistrar;
+import io.harness.taskapps.shell.kryo.ShellScriptNgTaskKryoRegistrars;
 
+import software.wings.beans.TaskType;
+import software.wings.delegatetasks.bash.BashScriptTask;
 import software.wings.security.annotations.Scope;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
+import com.esotericsoftware.kryo.Kryo;
+import com.google.inject.Guice;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
 import io.dropwizard.jersey.protobuf.ProtocolBufferMediaType;
 import io.swagger.annotations.Api;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotEmpty;
 import javax.ws.rs.Consumes;
@@ -62,6 +77,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.xml.bind.DatatypeConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -93,8 +109,37 @@ public class CoreDelegateResource {
 
       final var logPrefix = generateLogBaseKey(delegateTaskPackage.getLogStreamingAbstractions());
 
+      KryoSerializer serializer = handleContainerizedTasks(delegateTaskPackage.getData().getTaskType());
+      byte[] taskDataBytes;
+
       // Wrap DelegateTaskPackage with AcquireTaskResponse for Kryo tasks
-      final var taskDataBytes = kryoSerializer.asBytes(delegateTaskPackage);
+      if (serializer != null) {
+        taskDataBytes = serializer.asDeflatedBytes(delegateTaskPackage);
+      } else {
+        taskDataBytes = kryoSerializer.asDeflatedBytes(delegateTaskPackage);
+      }
+
+      try {
+        Files.write(Paths.get("/tmp/ShellTaskFile"), taskDataBytes);
+      } catch (IOException ex) {
+      }
+
+      /*
+      var data = Files.readAllBytes(java.nio.file.Path.of("/tmp/ShellTaskFile"));
+      try {
+        var readObj = (DelegateTaskPackage) kryoSerializer.asInflatedObject(data);
+      } catch (RuntimeException ex) {
+        System.out.println("Exception ");
+      }
+       */
+
+      MessageDigest md = MessageDigest.getInstance("MD5");
+      md.update(taskDataBytes);
+      byte[] digest = md.digest();
+      String myHash = DatatypeConverter.printHexBinary(digest).toUpperCase();
+      log.info(" MD5 hash for taskDataBytes is {} ", myHash);
+      log.info(" Raw taskDataBytes {} ", taskDataBytes);
+
       final List<Secret> protoSecrets = createProtoSecrets(delegateTaskPackage);
 
       final var resources = ResourceRequirements.newBuilder()
@@ -145,6 +190,19 @@ public class CoreDelegateResource {
     }
   }
 
+  private KryoSerializer handleContainerizedTasks(String taskType) {
+    if (taskType.equals("SHELL_SCRIPT_TASK_NG")) {
+      BootstrapBundle bundle = new BootstrapBundle();
+      bundle.registerTask(TaskType.SHELL_SCRIPT_TASK_NG, BashScriptTask.class);
+      bundle.registerKryos(Set.of(CommonTaskKryoRegistrar.class, ShellScriptNgTaskKryoRegistrars.class));
+      final Injector injector = Guice.createInjector(bundle);
+      final KryoSerializer serializer =
+          injector.getInstance(Key.get(KryoSerializer.class, Names.named("referenceFalseKryoSerializer")));
+      return serializer;
+    }
+    return null;
+  }
+
   private List<Secret> createProtoSecrets(final DelegateTaskPackage delegateTaskPackage) {
     final Map<EncryptionConfig, List<EncryptedRecord>> kryoSecrets =
         delegateTaskPackage.getSecretDetails().values().stream().collect(Collectors.groupingBy(secret
@@ -172,7 +230,9 @@ public class CoreDelegateResource {
       case "K8S_COMMAND_TASK_NG":
         return "us.gcr.io/gcr-play/delegate-plugin:k8s";
       case "SHELL_SCRIPT_TASK_NG":
-        return "us.gcr.io/gcr-play/delegate-plugin:shell";
+        return "raghavendramurali/shell-task-ng:1.0";
+        // return "harnessdev/delegate-runner:shell";
+        // return "us.gcr.io/gcr-play/delegate-plugin:shell";
       default:
         throw new UnsupportedOperationException("Unsupported task type " + taskType);
     }

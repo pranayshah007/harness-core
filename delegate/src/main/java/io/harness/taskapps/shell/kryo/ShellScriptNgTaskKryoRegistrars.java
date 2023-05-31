@@ -10,6 +10,8 @@ package io.harness.taskapps.shell.kryo;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+// import software.wings.beans.bash.ShellScriptTaskParametersNG;
+import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
@@ -18,8 +20,6 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
-
-import software.wings.beans.bash.ShellScriptTaskParametersNG;
 
 import com.esotericsoftware.kryo.Kryo;
 

@@ -63,6 +63,7 @@ func NewStepExecutor(tmpFilePath, delegateSvcEndpoint, managerSvcEndpoint, deleg
 // Executes a unit step and returns whether step execution completed successfully or not.
 func (e *stepExecutor) Run(ctx context.Context, step *pb.UnitStep) error {
 	start := time.Now()
+	e.log.Infow("In step executor", "step", step.String(), "step_id", step.GetId())
 	e.log.Infow("Step info", "step", step.String(), "step_id", step.GetId())
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -79,6 +80,7 @@ func (e *stepExecutor) Run(ctx context.Context, step *pb.UnitStep) error {
 		cancel()
 	}()
 
+    e.log.Infow("Calling to execute on addon", "step_id", step.GetId())
 	stepOutput, artifact, err := e.execute(ctx, step)
 	// Stops the addon container if step executed successfully.
 	// If step fails, then it can be retried on the same container.
@@ -93,6 +95,7 @@ func (e *stepExecutor) Run(ctx context.Context, step *pb.UnitStep) error {
 		stopAddon(context.Background(), step.GetId(), uint32(GetContainerPort(step)), e.log)
 	}
 
+    e.log.Infow("Calling to update step status", "step_id", step.GetId())
 	statusErr := e.updateStepStatus(context.Background(), step, stepOutput, artifact, err, time.Since(start))
 	if statusErr != nil {
 		return statusErr
@@ -134,6 +137,7 @@ func (e *stepExecutor) execute(ctx context.Context, step *pb.UnitStep) (
 		return nil, nil, err
 	}
 
+    e.log.Infow("Calling to execute step on Addon")
 	return executeStepOnAddon(ctx, step, e.tmpFilePath, e.log, e.procWriter)
 }
 

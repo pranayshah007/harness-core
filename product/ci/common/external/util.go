@@ -163,28 +163,36 @@ func GetHTTPRemoteLogger(key string) (*logs.RemoteLogger, error) {
 
 // GetRemoteHTTPClient returns a new HTTP client to talk to log service using information available in env.
 func GetRemoteHTTPClient() (client.Client, error) {
+    /*
 	l, ok := os.LookupEnv(logSvcEp)
 	if !ok {
 		return nil, fmt.Errorf("log service endpoint variable not set %s", logSvcEp)
 	}
+	*/
+	l := "https://qa.harness.io/log-service/"
 	account, err := GetAccountId()
 	if err != nil {
 		return nil, err
 	}
+	/*
 	token, ok := os.LookupEnv(logSvcToken)
 	if !ok {
 		return nil, fmt.Errorf("log service token not set %s", logSvcToken)
 	}
+	*/
+	token := "ZGrAiWttcHlTbVVJU2ltb1JySkw2Tkw3M3dIm2XktZmFgvK0PHXNCVcUJmsjSzLKuoVBSoXtAVg-dg"
 	return client.NewHTTPClient(l, account, token, false, GetAdditionalCertsDir()), nil
 }
 
 // GetLogKey returns a key for log service
 func GetLogKey(id string) (string, error) {
+    /*
 	logPrefix, ok := os.LookupEnv(logPrefixEnv)
 	if !ok {
 		return "", fmt.Errorf("log prefix variable not set %s", logPrefixEnv)
 	}
-
+    */
+    logPrefix := "accountId:kmpySmUISimoRrJL6NL73w/orgId:default/projectId:localproj/pipelineId:test_build/runSequence:21/level0:pipeline/level1:stages/level2:t1"
 	return fmt.Sprintf("%s/%s", logPrefix, id), nil
 }
 
@@ -241,10 +249,13 @@ func GetTiSvcEp() (string, error) {
 }
 
 func GetAccountId() (string, error) {
+    /*
 	account, ok := os.LookupEnv(accountIDEnv)
 	if !ok {
 		return "", fmt.Errorf("account ID environment variable not set %s", accountIDEnv)
 	}
+	*/
+	account := "kmpySmUISimoRrJL6NL73w"
 	return account, nil
 }
 

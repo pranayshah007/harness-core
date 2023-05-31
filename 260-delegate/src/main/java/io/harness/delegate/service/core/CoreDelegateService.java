@@ -7,6 +7,8 @@
 
 package io.harness.delegate.service.core;
 
+import static io.harness.threading.Morpheus.sleep;
+
 import static software.wings.beans.TaskType.CI_CLEANUP;
 import static software.wings.beans.TaskType.CI_EXECUTE_STEP;
 import static software.wings.beans.TaskType.INITIALIZATION_PHASE;
@@ -22,6 +24,7 @@ import io.harness.delegate.service.core.runner.TaskRunner;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +53,7 @@ public class CoreDelegateService extends SimpleDelegateAgent {
       taskRunner.cleanup(groupId);
     } else { // Task which doesn't have separate infra step (e.g. CD)
       taskRunner.init(groupId, task.getInfraData());
+      sleep(Duration.ofSeconds(30));
       taskRunner.execute(groupId, task.getTaskData());
       taskRunner.cleanup(groupId);
     }

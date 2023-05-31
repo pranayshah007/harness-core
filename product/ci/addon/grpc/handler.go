@@ -64,7 +64,7 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 	lc := external.LogCloser()
 	lc.Add(rl)
 
-	h.log.Infow("Executing step", "arg", in)
+	h.log.Infow("In addon handler - Executing step", "arg", in)
 
 	switch x := in.GetStep().GetStep().(type) {
 	case *enginepb.UnitStep_Run:
@@ -98,6 +98,7 @@ func (h *handler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*
 		err = close(rl.Writer, err)
 		return response, err
 	case *enginepb.UnitStep_ExecuteTask:
+	    h.log.Infow("In addon handler - Received execute task event")
 	    _ = newExecuteStepTask(in.GetStep(), rl.BaseLogger, rl.Writer, false, h.log).Run(ctx)
 	    response := &pb.ExecuteStepResponse{
 	        Output:     nil,

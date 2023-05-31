@@ -48,20 +48,39 @@ public class ContainerBuilder {
   private static final String DELEGATE_SERVICE_ENDPOINT_VARIABLE = "DELEGATE_SERVICE_ENDPOINT";
   private static final String DELEGATE_SERVICE_ID_VARIABLE = "DELEGATE_SERVICE_ID";
   private static final String HARNESS_ACCOUNT_ID_VARIABLE = "HARNESS_ACCOUNT_ID";
+  private static final String HARNESS_LOG_PREFIX = "HARNESS_LOG_PREFIX";
+  private static final String HARNESS_LOG_SERVICE_ENDPOINT = "HARNESS_LOG_SERVICE_ENDPOINT";
+  private static final String HARNESS_ACCOUNT_ID = "HARNESS_ACCOUNT_ID";
+  private static final String HARNESS_LOG_SERVICE_TOKEN = "HARNESS_LOG_SERVICE_TOKEN";
+  private static final String TASK_DATA_PATH = "TASK_DATA_PATH";
+  private static final String DELEGATE_TOKEN = "DELEGATE_TOKEN";
+  private static final String TASK_ID = "TASK_ID";
 
-  private static final String WORKING_DIR = "/harness";
+  private static final String WORKING_DIR = "/opt/harness";
   private static final String ADDON_RUN_COMMAND = "/addon/bin/ci-addon";
   private static final String ADDON_RUN_ARGS_FORMAT = "--port";
   public static final int RESERVED_LE_PORT = 20001;
 
   public V1ContainerBuilder createContainer(final String taskId, final StepRuntime containerRuntime, final int port) {
+    var envVars = ImmutableMap.<String, String>builder();
+    envVars.put(
+        HARNESS_ACCOUNT_ID_VARIABLE, "kmpySmUISimoRrJL6NL73w"); // TODO: How do we get these mandatory fields to runner
+    envVars.put(HARNESS_LOG_PREFIX,
+        "accountId:kmpySmUISimoRrJL6NL73w/orgId:default/projectId:localproj/pipelineId:test_build/runSequence:21/level0:pipeline/level1:stages/level2:t1");
+    envVars.put(HARNESS_LOG_SERVICE_ENDPOINT, "https://qa.harness.io/log-service/");
+    envVars.put(
+        HARNESS_LOG_SERVICE_TOKEN, "ZGrAiWttcHlTbVVJU2ltb1JySkw2Tkw3M3dIm2XktZmFgvK0PHXNCVcUJmsjSzLKuoVBSoXtAVg-dg");
+    envVars.put(TASK_DATA_PATH, "/harness/taskfile");
+    envVars.put(DELEGATE_TOKEN, "2f6b0988b6fb3370073c3d0505baee59");
+    envVars.put(TASK_ID, taskId);
+
     final V1ContainerBuilder containerBuilder = new V1ContainerBuilder()
                                                     .withName(K8SResourceHelper.getContainerName(taskId))
                                                     .withImage(containerRuntime.getUses())
                                                     .withCommand(ADDON_RUN_COMMAND)
                                                     .withArgs(List.of(ADDON_RUN_ARGS_FORMAT, String.valueOf(port)))
                                                     .withPorts(getPort(port))
-                                                    .withEnv(K8SEnvVar.fromMap(containerRuntime.getEnvMap()))
+                                                    .withEnv(K8SEnvVar.fromMap(envVars.build()))
                                                     .withResources(getResources("100m", "100Mi"))
                                                     .withImagePullPolicy("Always");
 
@@ -87,11 +106,12 @@ public class ContainerBuilder {
     return new V1ContainerBuilder()
         .withName(SETUP_ADDON_CONTAINER_NAME)
         .withImage(getAddonImage())
+        .withEnv(K8SEnvVar.fromMap(getAddonEnvVars()))
         .withCommand(getAddonCmd()) // TODO: Why defining here, should be part of image
         .withArgs(getAddonArgs()) // TODO: Why defining here, should be part of image
-        .withEnv(new V1EnvVar().name(HARNESS_WORKSPACE).value(WORKING_DIR))
         .withImagePullPolicy("Always")
-        .withResources(getResources("100m", "100Mi"));
+        .withResources(getResources("100m", "100Mi"))
+        .withWorkingDir(WORKING_DIR);
   }
 
   public V1ContainerBuilder createLEContainer(final ResourceRequirements resource) {
@@ -115,12 +135,28 @@ public class ContainerBuilder {
     envVars.put(DELEGATE_SERVICE_ID_VARIABLE, "delegate-grpc-service"); // fixme: What's this for?
     envVars.put(
         HARNESS_ACCOUNT_ID_VARIABLE, "kmpySmUISimoRrJL6NL73w"); // TODO: How do we get these mandatory fields to runner
+    envVars.put(HARNESS_LOG_PREFIX,
+        "accountId:kmpySmUISimoRrJL6NL73w/orgId:default/projectId:localproj/pipelineId:test_build/runSequence:21/level0:pipeline/level1:stages/level2:t1");
+    envVars.put(HARNESS_LOG_SERVICE_ENDPOINT, "https://qa.harness.io/log-service/");
+    envVars.put(
+        HARNESS_LOG_SERVICE_TOKEN, "ZGrAiWttcHlTbVVJU2ltb1JySkw2Tkw3M3dIm2XktZmFgvK0PHXNCVcUJmsjSzLKuoVBSoXtAVg-dg");
     //    envVars.put(HARNESS_PROJECT_ID_VARIABLE, projectID);
     //    envVars.put(HARNESS_ORG_ID_VARIABLE, orgID);
     //    envVars.put(HARNESS_PIPELINE_ID_VARIABLE, pipelineID);
     //    envVars.put(HARNESS_BUILD_ID_VARIABLE, String.valueOf(buildNumber));
     //    envVars.put(HARNESS_STAGE_ID_VARIABLE, stageID);
     //    envVars.put(HARNESS_EXECUTION_ID_VARIABLE, executionID);
+    return envVars.build();
+  }
+
+  private Map<String, String> getAddonEnvVars() {
+    final var envVars = ImmutableMap.<String, String>builder();
+    envVars.put(HARNESS_LOG_PREFIX,
+        "accountId:kmpySmUISimoRrJL6NL73w/orgId:default/projectId:localproj/pipelineId:test_build/runSequence:21/level0:pipeline/level1:stages/level2:t1");
+    envVars.put(HARNESS_LOG_SERVICE_ENDPOINT, "https://qa.harness.io/log-service/");
+    envVars.put(HARNESS_ACCOUNT_ID, "kmpySmUISimoRrJL6NL73w");
+    envVars.put(
+        HARNESS_LOG_SERVICE_TOKEN, "ZGrAiWttcHlTbVVJU2ltb1JySkw2Tkw3M3dIm2XktZmFgvK0PHXNCVcUJmsjSzLKuoVBSoXtAVg-dg");
     return envVars.build();
   }
 
@@ -132,7 +168,7 @@ public class ContainerBuilder {
   @NonNull
   private List<String> getAddonArgs() {
     return List.of(
-        "mkdir -p /addon/bin; mkdir -p /addon/tmp; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/tmate /addon/bin/tmate; chmod +x /addon/bin/tmate; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;");
+        "mkdir -p /addon/bin; mkdir -p /addon/tmp; mkdir -p /etc/config; chmod -R 776 /addon/tmp; if [ -e /usr/local/bin/ci-addon-linux-amd64 ];then cp /usr/local/bin/ci-addon-linux-amd64 /addon/bin/ci-addon;else cp /usr/local/bin/ci-addon-linux /addon/bin/ci-addon;fi; chmod +x /addon/bin/ci-addon; cp /usr/local/bin/tmate /addon/bin/tmate; chmod +x /addon/bin/tmate; cp /usr/local/bin/java-agent.jar /addon/bin/java-agent.jar; chmod +x /addon/bin/java-agent.jar; if [ -e /usr/local/bin/split_tests ];then cp /usr/local/bin/split_tests /addon/bin/split_tests; chmod +x /addon/bin/split_tests; export PATH=$PATH:/addon/bin; fi;");
   }
 
   @NonNull
@@ -141,12 +177,13 @@ public class ContainerBuilder {
   // means you need to reconfigure runner to upgrade. Maybe through upgrade (e.g. put in config map that upgrader
   // updates)? Extra considerations for imagePullSecrets for private repos
   private String getAddonImage() {
-    return "harness/ci-addon:1.16.7";
+    // return "harness/ci-addon:1.16.7";
+    return "raghavendramurali/ci-addon:tag1.6";
   }
 
   @NonNull
   private String getLeImage() {
-    return "harness/ci-lite-engine:1.16.7"; // TODO: Same as for Addon image
+    return "raghavendramurali/ci-lite-engine:tag1.6"; // TODO: Same as for Addon image
   }
 
   @NonNull

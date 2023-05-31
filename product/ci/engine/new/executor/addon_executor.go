@@ -32,6 +32,7 @@ var (
 // ExecuteStepOnAddon executes customer provided step on addon
 func ExecuteStepOnAddon(ctx context.Context, step *pb.UnitStep, tmpFilePath string,
 	log *zap.SugaredLogger, procWriter io.Writer) (*output.StepOutput, *pb.Artifact, error) {
+	log.Infow("In ExecuteStepOnAddon - about to execute step request")
 	// execute runtest step
 	if _, ok := step.GetStep().(*pb.UnitStep_RunTests); ok {
 		stepOutput, _, err := runtests.NewRunTestsStep(step, tmpFilePath, nil, log, procWriter).Run(ctx)
@@ -42,7 +43,7 @@ func ExecuteStepOnAddon(ctx context.Context, step *pb.UnitStep, tmpFilePath stri
 
 	stepID := step.GetId()
 
-	addonClient, err := newAddonClient(GetContainerPort(step), log)
+	addonClient, err := newAddonClient(20002/*GetContainerPort(step)*/, log)
 	if err != nil {
 		log.Errorw("Unable to create CI addon client", "step_id", stepID,
 			"elapsed_time_ms", utils.TimeSince(st), zap.Error(err))
@@ -51,10 +52,12 @@ func ExecuteStepOnAddon(ctx context.Context, step *pb.UnitStep, tmpFilePath stri
 	defer addonClient.CloseConn()
 
 	c := addonClient.Client()
+
 	arg := &addonpb.ExecuteStepRequest{
 		Step:        step,
 		TmpFilePath: tmpFilePath,
 	}
+	log.Infow("In ExecuteStepOnAddon - sending the execute step request to addon client")
 	ret, err := c.ExecuteStep(ctx, arg, grpc_retry.WithMax(maxAddonRetries))
 	if err != nil {
 		log.Errorw("Execute step RPC failed", "step_id", stepID,

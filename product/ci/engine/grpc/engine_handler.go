@@ -117,6 +117,7 @@ func (h *engineHandler) Ping(ctx context.Context, in *pb.PingRequest) (*pb.PingR
 
 // Asynchronous RPC that starts execution of a step.
 func (h *engineHandler) ExecuteStep(ctx context.Context, in *pb.ExecuteStepRequest) (*pb.ExecuteStepResponse, error) {
+    h.log.Infow(" In ExecuteStep of LE ")
 	executeStepInAsync(ctx, in, h.log, h.procWriter)
 	return &pb.ExecuteStepResponse{}, nil
 }

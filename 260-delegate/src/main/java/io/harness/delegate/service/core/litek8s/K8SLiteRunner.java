@@ -43,11 +43,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1EnvFromSource;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.Yaml;
 import java.time.Duration;
 import java.util.Hashtable;
@@ -73,7 +69,7 @@ public class K8SLiteRunner implements TaskRunner {
       "http://localhost:8079"; // FixMe: This needs to come from delegate or runner config
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
-  @Inject private DelegateConfiguration delegateConfiguration;
+  private final DelegateConfiguration delegateConfiguration;
 
   private final CoreV1Api coreApi;
   private final ContainerBuilder containerBuilder;
@@ -128,12 +124,11 @@ public class K8SLiteRunner implements TaskRunner {
                             .buildPod(containerBuilder, k8sInfra.getResource(), volumes, loggingSecret, portMap);
 
       final var namespace = K8SResourceHelper.getRunnerNamespace();
-      K8SService k8SService =
-          (K8SService) K8SService
-              .clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
+      V1Service v1Service =
+          K8SService.clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT)
               .create(coreApi);
+      taskGroupMapping.put(taskGroupId, v1Service.getSpec().getClusterIP());
 
-      taskGroupMapping.put(taskGroupId, k8SService.getSpec().getClusterIP());
       log.info("Creating Task Pod with YAML:\n{}", Yaml.dump(pod));
       coreApi.createNamespacedPod(namespace, pod, null, null, DELEGATE_FIELD_MANAGER, "Warn");
 
@@ -169,9 +164,16 @@ public class K8SLiteRunner implements TaskRunner {
   public void execute(final String taskGroupId, final InputData tasks) {
     ExecuteStep executeStep = ExecuteStep.newBuilder()
                                   .setTaskParameters(tasks.getBinaryData())
-                                  .addAllExecuteCommand(List.of("sh", "/opt/harness/start.sh"))
+                                  .addAllExecuteCommand(List.of("./start.sh"))
                                   .build();
-    UnitStep unitStep = UnitStep.newBuilder().setExecuteTask(executeStep).build();
+    UnitStep unitStep = UnitStep.newBuilder()
+                            .setId("asdasd")
+                            .setContainerPort(CONTAINER_START_PORT)
+                            .setCallbackToken("aasdasdasd")
+                            .setTaskId("asdasfsgddfs")
+                            .setAccountId("kmpySmUISimoRrJL6NL73w")
+                            .setExecuteTask(executeStep)
+                            .build();
     ExecuteStepRequest executeStepRequest = ExecuteStepRequest.newBuilder().setStep(unitStep).build();
 
     String accountKey = delegateConfiguration.getDelegateToken();
@@ -189,16 +191,23 @@ public class K8SLiteRunner implements TaskRunner {
       executeStepRequest = executeStepRequest.toBuilder().setDelegateId(delegateID).build();
     }
 
-    String target = format("%s:%d", taskGroupMapping.get(taskGroupId), RESERVED_LE_PORT);
+    final var namespace = K8SResourceHelper.getRunnerNamespace();
+    K8SService k8SService =
+        K8SService.clusterIp(taskGroupId, namespace, K8SResourceHelper.getPodName(taskGroupId), RESERVED_LE_PORT);
+    /*
+    String service_name = K8SService.normalizeName(taskGroupId);
+    String target = service_name + "." + namespace + ".svc.cluster.local";
+     */
+    String target = format("%s:%d", "127.0.0.1" /*taskGroupMapping.get(taskGroupId)*/, RESERVED_LE_PORT);
     ManagedChannelBuilder managedChannelBuilder = ManagedChannelBuilder.forTarget(target).usePlaintext();
     ManagedChannel channel = managedChannelBuilder.build();
 
     final ExecuteStepRequest finalExecuteStepRequest = executeStepRequest;
     try {
       try {
-        RetryPolicy<Object> retryPolicy = getRetryPolicy(
-            format("[Retrying failed call to send execution call to pod %s: {}", taskGroupMapping.get(taskGroupId)),
-            format("Failed to send execution to pod %s after retrying {} times", RESERVED_LE_PORT));
+        RetryPolicy<Object> retryPolicy =
+            getRetryPolicy(format("[Retrying failed call to send execution call to pod %s: {}", target),
+                format("Failed to send execution to pod %s after retrying {} times", RESERVED_LE_PORT));
 
         Failsafe.with(retryPolicy).get(() -> {
           LiteEngineGrpc.LiteEngineBlockingStub liteEngineBlockingStub = LiteEngineGrpc.newBlockingStub(channel);
