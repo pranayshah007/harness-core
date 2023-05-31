@@ -14,8 +14,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//120-ng-manager/contracts/openapi/v1:ng-manager-server-spec-module",
-        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/remote:module",
         "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/entities:module",
+        "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/remote:module",
         "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/services:module",
         "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/utils:module",
         "//980-commons/src/main/java/io/harness/exception:module",

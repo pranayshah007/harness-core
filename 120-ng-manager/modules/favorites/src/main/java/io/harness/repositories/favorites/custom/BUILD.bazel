@@ -11,9 +11,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/entities:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "//:lombok",
         "@maven//:com_google_inject_guice",
         "@maven//:org_mongodb_mongo_java_driver",
         "@maven//:org_springframework_data_spring_data_mongodb",
