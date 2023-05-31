@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
+import static java.lang.Math.max;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.stoserviceclient.STOServiceUtils;
@@ -29,8 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class STOTelemetryPublisher {
   @Inject TelemetryReporter telemetryReporter;
   @Inject private STOServiceUtils stoServiceUtils;
-  String COUNT_ACTIVE_DEVELOPERS = "sto_license_developers_used";
-  String COUNT_SCANS = "sto_license_scans_used";
+  String LICENSE_USAGE = "sto_license_usage";
   String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
   private static final String ACCOUNT = "Account";
   private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
@@ -51,8 +52,7 @@ public class STOTelemetryPublisher {
           map.put(GROUP_TYPE, ACCOUNT);
           map.put(GROUP_ID, usage.accountId);
           map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
-          map.put(COUNT_ACTIVE_DEVELOPERS, usage.developerCount);
-          map.put(COUNT_SCANS, usage.scanCount);
+          map.put(LICENSE_USAGE, max(usage.scanCount / 100, usage.developerCount));
           telemetryReporter.sendGroupEvent(usage.accountId, null, map, Collections.singletonMap(ALL, true),
               TelemetryOption.builder().sendForCommunity(false).build());
           log.info("Scheduled STOTelemetryPublisher event sent! for account {}", usage.accountId);
