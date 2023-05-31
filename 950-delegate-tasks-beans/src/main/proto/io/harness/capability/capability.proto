@@ -71,6 +71,7 @@ message HttpConnectionParameters {
   }
 
   repeated Header headers = 2;
+  bool ignore_response_code = 3;
 }
 
 // Testing whether the delegate can execute a given command -- a quick catch all for
