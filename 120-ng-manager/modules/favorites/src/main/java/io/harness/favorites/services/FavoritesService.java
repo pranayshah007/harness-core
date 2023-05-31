@@ -7,7 +7,6 @@
 
 package io.harness.favorites.services;
 
-import io.harness.exception.InvalidRequestException;
 import io.harness.favorites.entities.Favorite;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
@@ -57,5 +56,5 @@ public interface FavoritesService {
    */
 
   void deleteFavorite(String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId,
-      FavoritesResourceType resourceType, String resourceId) throws InvalidRequestException;
+      FavoritesResourceType resourceType, String resourceId);
 }
