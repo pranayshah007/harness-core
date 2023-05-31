@@ -25,6 +25,7 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -39,10 +40,13 @@ import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.constants.ServiceStepV3Constants;
+import io.harness.cdng.service.steps.helpers.ServiceOverrideUtilityFacade;
 import io.harness.cdng.service.steps.helpers.ServiceStepsHelper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.freeze.beans.FreezeEntityType;
@@ -66,6 +70,9 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec;
+import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
@@ -86,12 +93,17 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NumberNGVariable;
+import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.core.variables.StringNGVariable;
 
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,6 +138,8 @@ public class ServiceStepV3Test extends CategoryTest {
 
   @Mock private ServiceEntityYamlSchemaHelper serviceEntityYamlSchemaHelper;
   @Mock private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
+
+  @Mock private ServiceOverrideUtilityFacade serviceOverrideUtilityFacade;
   private AutoCloseable mocks;
   @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
 
@@ -328,6 +342,8 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testEnvEntity();
 
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
     mockService(serviceEntity);
     mockEnv(environment);
 
@@ -360,6 +376,8 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testOrgEnvEntity();
 
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
     mockService(serviceEntity);
     mockEnv(environment);
 
@@ -392,6 +410,7 @@ public class ServiceStepV3Test extends CategoryTest {
     final Environment environment = testAccountEnvEntity();
 
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    doReturn(false).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
     mockService(serviceEntity);
     mockEnv(environment);
 
@@ -663,6 +682,143 @@ public class ServiceStepV3Test extends CategoryTest {
     assertThat(gitOpsEnvOutCome).isNotNull();
 
     assertThat(variablesSweepingOutput.keySet()).containsExactly("numbervar1", "secretvar", "numbervar", "stringvar");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void testExecuteWithEnvironmentV2_SecretVariables() throws IOException {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntity();
+    mockService(serviceEntity);
+    mockEnv(environment);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesConfigsTestData =
+        getOverridesConfigsV2MapTestData(serviceEntity, environment);
+    doReturn(overridesConfigsTestData)
+        .when(serviceOverrideUtilityFacade)
+        .getMergedServiceOverrideConfigs(
+            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class));
+
+    ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .infraId(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        null);
+
+    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    ArgumentCaptor<List> secretVariablesCaptor = ArgumentCaptor.forClass(List.class);
+    verify(serviceStepsHelper).checkForAccessOrThrow(any(Ambiance.class), secretVariablesCaptor.capture());
+    List<NGVariable> variables = secretVariablesCaptor.getValue();
+    assertThat(variables).hasSize(2);
+    assertThat(variables.stream().map(NGVariable::getName).collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("envSecretVar", "envSecretVar");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void testExecuteWithEnvironmentV2_EnvironmentOutcome() throws IOException {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntity();
+    mockService(serviceEntity);
+    mockEnv(environment);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesConfigsTestData =
+        getOverridesConfigsV2MapTestData(serviceEntity, environment);
+    doReturn(overridesConfigsTestData)
+        .when(serviceOverrideUtilityFacade)
+        .getMergedServiceOverrideConfigs(
+            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class));
+
+    ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .infraId(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        null);
+
+    assertThat(response.getLogKeysCount()).isEqualTo(1);
+    ArgumentCaptor<EnvironmentOutcome> envOutcomeCaptor = ArgumentCaptor.forClass(EnvironmentOutcome.class);
+    verify(sweepingOutputService).consume(any(Ambiance.class), anyString(), envOutcomeCaptor.capture(), anyString());
+    EnvironmentOutcome envOutcome = envOutcomeCaptor.getValue();
+    Map<String, Object> variables = envOutcome.getVariables();
+    assertThat(variables.keySet())
+        .containsExactlyInAnyOrder(
+            "envServiceStringVar", "envStringVar", "infraStringVar", "envSecretVar", "numbervar1", "stringvar");
+    assertThat(variables).isNotEmpty();
+    assertThat(variables.values()
+                   .stream()
+                   .filter(value -> value instanceof ParameterField)
+                   .map(value -> (ParameterField) value)
+                   .map(ParameterField::getValue)
+                   .filter(fieldValue -> fieldValue instanceof String)
+                   .map(fieldValue -> (String) fieldValue)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(
+            "envServiceStringVal", "infraOverrideStringVal", "infraStringVal", "stringVarFromEnv");
+    assertThat(variables.get("envSecretVar")).isEqualTo("<+secrets.getValue(\"secretFromInfraService\")>");
+    assertThat(((ParameterField) variables.get("numbervar1")).getValue()).isEqualTo(123D);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.TATHAGAT)
+  @Category(UnitTests.class)
+  public void testExecuteWithEnvironmentV2_ServiceVariables() throws IOException {
+    final ServiceEntity serviceEntity = testServiceEntity();
+    final Environment environment = testEnvEntity();
+    mockService(serviceEntity);
+    mockEnv(environment);
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), eq(FeatureName.CDS_SERVICE_OVERRIDES_2_0));
+
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesConfigsTestData =
+        getOverridesConfigsV2MapTestData(serviceEntity, environment);
+    doReturn(overridesConfigsTestData)
+        .when(serviceOverrideUtilityFacade)
+        .getMergedServiceOverrideConfigs(
+            anyString(), anyString(), anyString(), any(ServiceStepV3Parameters.class), any(Environment.class));
+
+    ChildrenExecutableResponse response = step.obtainChildren(buildAmbiance(),
+        ServiceStepV3Parameters.builder()
+            .serviceRef(ParameterField.createValueField(serviceEntity.getIdentifier()))
+            .envRef(ParameterField.createValueField(environment.getIdentifier()))
+            .infraId(ParameterField.createValueField(environment.getIdentifier()))
+            .childrenNodeIds(new ArrayList<>())
+            .build(),
+        null);
+
+    assertThat(response.getLogKeysCount()).isEqualTo(1);
+
+    ArgumentCaptor<VariablesSweepingOutput> varOutputCaptor = ArgumentCaptor.forClass(VariablesSweepingOutput.class);
+    verify(sweepingOutputService).consume(any(Ambiance.class), anyString(), varOutputCaptor.capture(), anyString());
+    VariablesSweepingOutput varOutput = varOutputCaptor.getValue();
+
+    assertThat(varOutput.keySet())
+        .containsExactlyInAnyOrder("envServiceStringVar", "numbervar", "envStringVar", "infraStringVar", "envSecretVar",
+            "numbervar1", "secretvar", "stringvar");
+
+    assertThat(varOutput.values()
+                   .stream()
+                   .filter(value -> value instanceof ParameterField)
+                   .map(value -> (ParameterField) value)
+                   .map(ParameterField::getValue)
+                   .filter(fieldValue -> fieldValue instanceof String)
+                   .map(fieldValue -> (String) fieldValue)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(
+            "envServiceStringVal", "infraOverrideStringVal", "infraStringVal", "stringVarFromEnv");
+
+    assertThat(varOutput.get("envSecretVar")).isEqualTo("<+secrets.getValue(\"secretFromInfraService\")>");
+    assertThat(((ParameterField) varOutput.get("numbervar1")).getValue()).isEqualTo(123D);
+    assertThat(varOutput.get("secretvar")).isEqualTo("<+secrets.getValue(\"org.secret\")>");
+    assertThat(((ParameterField) varOutput.get("numbervar")).getValue()).isEqualTo(1D);
   }
 
   @Test
@@ -1216,5 +1372,84 @@ public class ServiceStepV3Test extends CategoryTest {
     FreezeConfigEntity freezeConfigEntity = NGFreezeDtoMapper.toFreezeConfigEntity(
         "accountId", "orgIdentifier", "projectIdentifier", yaml, FreezeType.GLOBAL);
     return NGFreezeDtoMapper.prepareFreezeResponseSummaryDto(freezeConfigEntity);
+  }
+
+  private static EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getOverridesConfigsV2MapTestData(
+      ServiceEntity serviceEntity, Environment environment) {
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> mergedOverrideV2Configs =
+        new EnumMap<>(ServiceOverridesType.class);
+    mergedOverrideV2Configs.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE,
+        NGServiceOverrideConfigV2.builder()
+            .identifier("id0")
+            .environmentRef(environment.getIdentifier())
+            .serviceRef(serviceEntity.getIdentifier())
+            .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(StringNGVariable.builder()
+                                             .name("stringvar")
+                                             .value(ParameterField.createValueField("stringVarFromEnv"))
+                                             .build(),
+                          SecretNGVariable.builder()
+                              .name("envSecretVar")
+                              .value(ParameterField.createValueField(
+                                  SecretRefData.builder()
+                                      .scope(Scope.PROJECT)
+                                      .identifier("secretFromEnv")
+                                      .decryptedValue("secretValueFromEnv".toCharArray())
+                                      .build()))
+                              .build(),
+                          StringNGVariable.builder()
+                              .name("envStringVar")
+                              .value(ParameterField.createValueField("envStringVal"))
+                              .build()))
+                      .build())
+            .build());
+
+    mergedOverrideV2Configs.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE,
+        NGServiceOverrideConfigV2.builder()
+            .identifier("id1")
+            .environmentRef(environment.getIdentifier())
+            .serviceRef(serviceEntity.getIdentifier())
+            .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(NumberNGVariable.builder()
+                                             .name("numbervar1")
+                                             .value(ParameterField.createValueField(123D))
+                                             .build(),
+                          StringNGVariable.builder()
+                              .name("envServiceStringVar")
+                              .value(ParameterField.createValueField("envServiceStringVal"))
+                              .build()))
+                      .build())
+            .build());
+
+    mergedOverrideV2Configs.put(ServiceOverridesType.INFRA_SERVICE_OVERRIDE,
+        NGServiceOverrideConfigV2.builder()
+            .identifier("id2")
+            .environmentRef(environment.getIdentifier())
+            .serviceRef(serviceEntity.getIdentifier())
+            .type(ServiceOverridesType.INFRA_SERVICE_OVERRIDE)
+            .spec(ServiceOverridesSpec.builder()
+                      .variables(List.of(SecretNGVariable.builder()
+                                             .name("envSecretVar")
+                                             .value(ParameterField.createValueField(
+                                                 SecretRefData.builder()
+                                                     .scope(Scope.PROJECT)
+                                                     .identifier("secretFromInfraService")
+                                                     .decryptedValue("secretValueFromInfra".toCharArray())
+                                                     .build()))
+                                             .build(),
+                          StringNGVariable.builder()
+                              .name("envStringVar")
+                              .value(ParameterField.createValueField("infraOverrideStringVal"))
+                              .build(),
+                          StringNGVariable.builder()
+                              .name("infraStringVar")
+                              .value(ParameterField.createValueField("infraStringVal"))
+                              .build()))
+                      .build())
+            .build());
+
+    return mergedOverrideV2Configs;
   }
 }
