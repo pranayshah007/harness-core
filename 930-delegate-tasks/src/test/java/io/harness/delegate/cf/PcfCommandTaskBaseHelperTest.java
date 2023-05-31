@@ -231,7 +231,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
                                    .build();
 
     doReturn(detail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any(), any());
 
     List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
     List<CfServiceData> cfServiceDataList = new ArrayList<>();
@@ -265,7 +265,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
                                    .build();
 
     doReturn(detail).when(pcfDeploymentManager).getApplicationByName(any());
-    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(detail).when(pcfDeploymentManager).resizeApplication(any(), any());
 
     List<CfServiceData> cfServiceDataListToBeUpdated = new ArrayList<>();
     List<CfServiceData> cfServiceDataList = new ArrayList<>();
@@ -369,7 +369,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     assertThat(cfServiceDataList.get(0).getName()).isEqualTo("app");
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any(), any());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
     pcfCommandTaskHelper.downsizePreviousReleases(request, cfRequestConfig, executionLogCallback, cfServiceDataList, 1,
@@ -448,7 +448,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any(), any());
     doReturn(true).when(pcfDeploymentManager).changeAutoscalarState(any(), any(), anyBoolean());
     pcfInstanceElements.clear();
     cfServiceDataList.clear();
@@ -534,7 +534,7 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
 
     // Downsize application from 2 to 1
-    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any());
+    doReturn(applicationDetailAfterDownsize).when(pcfDeploymentManager).resizeApplication(any(), any());
     doThrow(new PivotalClientApiException("Throwing exception to test if flow stops or not"))
         .when(pcfCommandTaskHelper)
         .disableAutoscalar(any(), any());

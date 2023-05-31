@@ -42,8 +42,6 @@ import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalConfig;
 import io.harness.delegate.cf.PcfCommandTaskHandler;
 import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
-import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.pcf.CfCommandRequest;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
@@ -795,7 +793,6 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
                                               .append(encodeColor(applicationSummary.getName()))
                                               .toString());
 
-    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
     if (cfCommandSetupRequest.isUseAppAutoscalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -806,30 +803,19 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     cfRequestConfig.setApplicationName(applicationSummary.getName());
     cfRequestConfig.setDesiredCount(0);
 
-    unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
+    unMapRoutes(cfRequestConfig, executionLogCallback);
     unsetEnvVariables(cfRequestConfig, cfCommandSetupRequest, executionLogCallback);
-    downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
+    downsizeApplication(cfRequestConfig, executionLogCallback);
   }
 
   private void unMapRoutes(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       ApplicationDetail applicationDetail = pcfDeploymentManager.getApplicationByName(cfRequestConfig);
       // Unmap routes from application having 0 instances
       if (isNotEmpty(applicationDetail.getUrls())) {
-        RetryPolicy retryPolicy =
-            RetryPolicy.builder()
-                .userMessageOnFailure(String.format(
-                    "Failed to un map routes from application - %s", encodeColor(cfRequestConfig.getApplicationName())))
-                .finalErrorMessage(String.format("Please manually unmap the routes for application : %s ",
-                    encodeColor(cfRequestConfig.getApplicationName())))
-                .retry(3)
-                .build();
-
-        retryAbleTaskExecutor.execute(()
-                                          -> pcfDeploymentManager.unmapRouteMapForApplication(
-                                              cfRequestConfig, applicationDetail.getUrls(), executionLogCallback),
-            executionLogCallback, log, retryPolicy);
+          pcfDeploymentManager.unmapRouteMapForApplication(
+                                              cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
       }
     } catch (PivotalClientApiException exception) {
       log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
@@ -846,17 +832,8 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
   }
 
-  private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(
-                String.format("Failed while Downsizing application: %s", encodeColor(applicationSummary.getName())))
-            .finalErrorMessage(String.format("Failed to downsize application: %s. Please downsize it manually",
-                encodeColor(applicationSummary.getName())))
-            .retry(3)
-            .build();
-    retryAbleTaskExecutor.execute(
-        () -> pcfDeploymentManager.resizeApplication(cfRequestConfig), executionLogCallback, log, retryPolicy);
+  private void downsizeApplication(CfRequestConfig cfRequestConfig,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+   pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
   }
 }

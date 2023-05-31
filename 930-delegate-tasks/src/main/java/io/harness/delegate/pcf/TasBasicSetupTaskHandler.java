@@ -48,8 +48,6 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
-import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
-import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.cf.TasArtifactDownloadContext;
 import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
@@ -443,7 +441,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBasicSetupRequestNG cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback logCallback, TasApplicationInfo currentProdInfo) {
+      LogCallback logCallback, TasApplicationInfo currentProdInfo) throws PivotalClientApiException {
     if (EmptyPredicate.isEmpty(previousReleases) || previousReleases.size() == 1) {
       return;
     }
@@ -496,11 +494,10 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   }
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       CfBasicSetupRequestNG cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback executionLogCallback) {
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog(
         "# Application Being Downsized To 0: " + encodeColor(applicationSummary.getName()));
 
-    RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
     if (cfCommandSetupRequest.isUseAppAutoScalar()) {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
@@ -511,48 +508,28 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     cfRequestConfig.setApplicationName(applicationSummary.getName());
     cfRequestConfig.setDesiredCount(0);
 
-    unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
-    downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
+    unMapRoutes(cfRequestConfig, executionLogCallback);
+    downsizeApplication(cfRequestConfig, executionLogCallback);
   }
 
   private void unMapRoutes(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
       // Unmap routes from application having 0 instances
       if (isNotEmpty(applicationDetail.getUrls())) {
         cfRequestConfig.setLoggedin(false);
-        RetryPolicy retryPolicy =
-            RetryPolicy.builder()
-                .userMessageOnFailure(String.format(
-                    "Failed to un map routes from application - %s", encodeColor(cfRequestConfig.getApplicationName())))
-                .finalErrorMessage(String.format("Please manually unmap the routes for application : %s ",
-                    encodeColor(cfRequestConfig.getApplicationName())))
-                .retry(3)
-                .build();
-
-        retryAbleTaskExecutor.execute(()
-                                          -> cfDeploymentManager.unmapRouteMapForApplication(
-                                              cfRequestConfig, applicationDetail.getUrls(), executionLogCallback),
-            executionLogCallback, log, retryPolicy);
+        cfDeploymentManager.unmapRouteMapForApplication(
+                                              cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
       }
     } catch (PivotalClientApiException exception) {
       log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
     }
   }
 
-  private void downsizeApplication(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback, RetryAbleTaskExecutor retryAbleTaskExecutor) {
-    RetryPolicy retryPolicy =
-        RetryPolicy.builder()
-            .userMessageOnFailure(
-                String.format("Failed while Downsizing application: %s", encodeColor(applicationSummary.getName())))
-            .finalErrorMessage(String.format("Failed to downsize application: %s. Please downsize it manually",
-                encodeColor(applicationSummary.getName())))
-            .retry(3)
-            .build();
-    retryAbleTaskExecutor.execute(
-        () -> cfDeploymentManager.resizeApplication(cfRequestConfig), executionLogCallback, log, retryPolicy);
+  private void downsizeApplication(CfRequestConfig cfRequestConfig,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
+    cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
   }
 
   boolean checkIfVarsFilePresent(CfBasicSetupRequestNG setupRequest) {

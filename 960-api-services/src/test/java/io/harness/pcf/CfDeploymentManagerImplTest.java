@@ -554,12 +554,12 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
                                               .runningInstances(2)
                                               .build();
     when(sdkClient.getApplicationByName(eq(cfRequestConfig))).thenReturn(applicationDetail);
-    ApplicationDetail application = deploymentManager.resizeApplication(cfRequestConfig);
+    ApplicationDetail application = deploymentManager.resizeApplication(cfRequestConfig, logCallback);
     assertThat(application).isNotNull();
     assertThat(application.getName()).isEqualTo(appName);
 
     cfRequestConfig.setDesiredCount(0);
-    application = deploymentManager.resizeApplication(cfRequestConfig);
+    application = deploymentManager.resizeApplication(cfRequestConfig, logCallback);
     assertThat(application).isNotNull();
     assertThat(application.getName()).isEqualTo(appName);
   }
@@ -569,7 +569,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResizeApplicationFail() throws Exception {
     doAnswer(invocation -> { throw new Exception(); }).when(sdkClient).scaleApplications(any());
-    assertThatThrownBy(() -> deploymentManager.resizeApplication(CfRequestConfig.builder().build()))
+    assertThatThrownBy(() -> deploymentManager.resizeApplication(CfRequestConfig.builder().build(), logCallback))
         .isInstanceOf(PivotalClientApiException.class);
   }
 
@@ -892,7 +892,7 @@ public class CfDeploymentManagerImplTest extends CategoryTest {
                                          .state("RUNNING")
                                          .build();
     ApplicationDetail applicationDetail = generateApplicationDetail(1, new InstanceDetail[] {instanceDetail1});
-    doReturn(applicationDetail).when(deploymentManager).resizeApplication(eq(cfRequestConfig));
+    doReturn(applicationDetail).when(deploymentManager).resizeApplication(cfRequestConfig, logCallback);
     doAnswer(invocation -> { throw new InterruptedException(); })
         .when(sdkClient)
         .getApplicationByName(eq(cfRequestConfig));

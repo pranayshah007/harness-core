@@ -417,7 +417,7 @@ public class PcfCommandTaskBaseHelper {
     cfRequestConfig.setApplicationName(cfServiceData.getName());
     cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
 
-    ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig);
+    ApplicationDetail applicationDetail = pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
 
     executionLogCallback.saveExecutionLog("# Downsizing successful");
     executionLogCallback.saveExecutionLog("\n# App details after downsize:");
