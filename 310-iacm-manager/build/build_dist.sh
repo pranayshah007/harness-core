@@ -42,6 +42,7 @@ cp -r ../../310-iacm-manager/build/container/scripts/ .
 
 pwd
 ls
+chmod +x iacm-manager-capsule.jar
 java -jar iacm-manager-capsule scan-classpath-metadata
 
 cd ../..
