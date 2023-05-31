@@ -379,6 +379,7 @@ import io.harness.delegate.task.pagerduty.PagerDutySenderDelegateTask;
 import io.harness.delegate.task.pcf.CfCommandRequest.PcfCommandType;
 import io.harness.delegate.task.pcf.TasConnectorValidationTask;
 import io.harness.delegate.task.pdc.HostConnectivityValidationDelegateTask;
+import io.harness.delegate.task.rancher.RancherListClustersDelegateTask;
 import io.harness.delegate.task.rancher.RancherTestConnectionDelegateTask;
 import io.harness.delegate.task.scm.ScmBatchGetFileTask;
 import io.harness.delegate.task.scm.ScmDelegateClientImpl;
@@ -2246,6 +2247,7 @@ public class DelegateModule extends AbstractModule {
 
     // RANCHER NG
     mapBinder.addBinding(TaskType.RANCHER_TEST_CONNECTION_TASK_NG).toInstance(RancherTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.RANCHER_LIST_CLUSTERS_TASK_NG).toInstance(RancherListClustersDelegateTask.class);
   }
 
   private void registerSecretManagementBindings() {

@@ -11,7 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorValidationResult;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.CDP)
 public interface RancherConnectionHelperService {
   ConnectorValidationResult testRancherConnection(String rancherUrl, String bearerToken);
+  List<String> listClusters(String rancherUrl, String bearerToken);
 }
