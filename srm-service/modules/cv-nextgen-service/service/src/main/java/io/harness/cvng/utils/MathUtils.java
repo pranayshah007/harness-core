@@ -5,19 +5,15 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.beans.change;
+package io.harness.cvng.utils;
 
-import io.harness.cvng.beans.MSHealthReport;
-
-import lombok.Builder;
-import lombok.Data;
-
-@Data
-@Builder
-public class CustomChangeEvent {
-  String description;
-  String changeEventDetailsLink;
-  String externalLinkToEntity;
-  String channelUrl;
-  MSHealthReport msHealthReport;
+public class MathUtils {
+  public static double getPercentageChange(long current, long previous) {
+    if (previous == 0 && current > 0) {
+      return 100;
+    } else if (previous == 0 && current == 0) {
+      return 0;
+    }
+    return ((double) (current - previous) * 100) / previous;
+  }
 }
