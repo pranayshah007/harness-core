@@ -7,8 +7,10 @@
 
 package io.harness.beans;
 
+import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.SPG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,8 +25,12 @@ import lombok.Getter;
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
   SPG_UI_ALLOW_ENCODING_FOR_JENKINS_ARTIFACT("Enables correct encoding for jenkins artifact", HarnessTeam.SPG),
+  SPG_CG_SEGMENT_EVENT_FIRST_DEPLOYMENT(
+      "Disable evaluation of first deployment condition to avoid unoptimized query execution on each completed deployment",
+      HarnessTeam.SPG),
   SPG_CG_LIST_RESUMED_PIPELINES(
       "Allows resumed workflow/pipelines to be listed on the deployment history page", HarnessTeam.SPG),
+  SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW("Enable timeout failure strategy at workflow level", HarnessTeam.SPG),
   SPG_CG_STATS_INSTANCE_CONSUMER("Optimize stats collector for instance collection", HarnessTeam.SPG),
   SPG_HTTP_STEP_CERTIFICATE("Allow enforce SSL/TLS certificate in HTTP step", HarnessTeam.SPG),
   SPG_ENABLE_GIT_SYNC_YAML_VALIDATE("Enable yaml validate in git sync", HarnessTeam.SPG),
@@ -32,6 +38,8 @@ public enum FeatureName {
       "Verify if application references from a user group still exist", HarnessTeam.SPG),
   SPG_ALLOW_GET_BUILD_SYNC("Allow get builds sync from gcs", HarnessTeam.SPG),
   SPG_ALLOW_FILTER_BY_PATHS_GCS("Enables filtering by path on database GCS-type stream artifacts.", HarnessTeam.SPG),
+  SPG_GENERATE_CURL_WITHOUT_ARTIFACT(
+      "Enable curl generation to trigger when last collected without artifacts.", HarnessTeam.SPG),
   SPG_ENABLE_SHARING_FILTERS("Enables account admin share deployments filter using usergroups", HarnessTeam.SPG),
   SPG_ENABLE_STATUS_OF_DEPLOYMENTS("Enables a way to see deployments status by env", HarnessTeam.SPG),
   SPG_REMOVE_REDUNDANT_UPDATE_IN_AUDIT("It removes a redudant update on the audit", HarnessTeam.SPG),
@@ -122,6 +130,7 @@ public enum FeatureName {
   FFM_7127_FF_MFE_ONBOARDING_DETAIL("Enable Feature Flag MFE Onboarding Detail page", HarnessTeam.CF),
   FFM_6683_ALL_ENVIRONMENTS_FLAGS,
   FFM_4737_JIRA_INTEGRATION("Enable the Jira Integration feature", HarnessTeam.CF),
+  FFM_7921_ARCHIVING_FEATURE_FLAGS("Enable archiving feature flags instead of permanent deletion", HarnessTeam.CF),
   WINRM_COPY_CONFIG_OPTIMIZE,
   ECS_MULTI_LBS,
   ENTITY_AUDIT_RECORD,
@@ -142,6 +151,7 @@ public enum FeatureName {
   OPA_FF_GOVERNANCE,
   OPA_GIT_GOVERNANCE,
   OPA_PIPELINE_GOVERNANCE,
+  OPA_TEMPLATE_GOVERNANCE("Added OPA support for template service ", HarnessTeam.CDC),
   PCF_OLD_APP_RESIZE,
   LOCAL_DELEGATE_CONFIG_OVERRIDE,
   LOGS_V2_247,
@@ -381,6 +391,9 @@ public enum FeatureName {
   STO_STEP_PALETTE_BURP_ENTERPRISE("Enable Burp Enterpise step for STO", HarnessTeam.STO),
 
   STO_STEP_PALETTE_CODEQL("Enable CodeQL step for STO", HarnessTeam.STO),
+
+  STO_STEP_PALETTE_SYSDIG("Enable Sysdig step for STO", HarnessTeam.STO),
+
   STO_STEP_PALETTE_GIT_LEAKS("Enable Gitleaks step for STO", HarnessTeam.STO),
 
   STO_STEP_PALETTE_SEMGREP("Enable Semgrep step for STO", HarnessTeam.STO),
@@ -389,6 +402,8 @@ public enum FeatureName {
 
   STO_JIRA_INTEGRATION("Enable Jira integration for STO", HarnessTeam.STO),
   STO_BASELINE_REGEX("Enable selection of baselines by RegEx from Test Targets page", HarnessTeam.STO),
+  STO_AI_ENHANCED_REMEDIATIONS(
+      "Enable STO to enhance security issues with remediation information using generative AI", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
   ATTRIBUTE_TYPE_ACL_ENABLED("Enable attribute filter on NG UI for ACL", HarnessTeam.PL),
@@ -413,6 +428,7 @@ public enum FeatureName {
   ENABLE_CHECK_STATE_EXECUTION_STARTING(
       "Used to allow create retry state execution when event is status equals to STARTING", HarnessTeam.SPG),
   CI_TI_DASHBOARDS_ENABLED,
+  CDB_MFE_ENABLED("Feature flag is needed to test/control the microfrontend architecture for CDB UI", HarnessTeam.CDB),
   SERVICE_ID_FILTER_FOR_TRIGGERS(
       "Filter last deployed artifacts for triggers using serviceId as well", HarnessTeam.SPG),
   PERSIST_MONITORED_SERVICE_TEMPLATE_STEP(
@@ -427,6 +443,8 @@ public enum FeatureName {
   UPDATE_EMAILS_VIA_SCIM("Will enable updating emails in Harness via SCIM", HarnessTeam.PL),
   SRM_DOWNTIME("Flag to start creating downtime", HarnessTeam.CV),
   SRM_SLO_ANNOTATIONS("Flag to start creating SLO annotations", HarnessTeam.CV),
+  SRM_COMMON_MONITORED_SERVICE(
+      "Flag to be used in UI for controlling common monitored service listing", HarnessTeam.CV),
   CDP_USE_K8S_DECLARATIVE_ROLLBACK(
       "CG: Enable declarative rollback instead of imperative rollback for K8s, along with a new release history implementation. Release history is stored in individual secrets, instead of being consolidated and stored in a single configmap/secret. Old manifests are re-applied using `kubectl apply` (declarative rollback) instead of performing `kubectl rollout undo` (imperative rollback). See Jira ticket for more details: https://harness.atlassian.net/browse/CDS-2993",
       HarnessTeam.CDP),
@@ -657,6 +675,7 @@ public enum FeatureName {
   PIE_DEPRECATE_PAUSE_INTERRUPT_NG("Deprecate Pause and Resume interrupts in NG", HarnessTeam.PIPELINE),
   CDS_NG_TRIGGER_SELECTIVE_STAGE_EXECUTION(
       "Allows triggers to execute selective stages for the underlying pipeline in NG", HarnessTeam.SPG),
+  CDS_NG_TRIGGER_MULTI_ARTIFACTS("Allows creation of multi-region artifact triggers", HarnessTeam.CDC),
   PLG_ENABLE_CROSS_GENERATION_ACCESS("Enables cross generation access", GTM),
   CDS_SERVICE_OVERRIDES_2_0("Revamped experience service and environment overrides in NG", HarnessTeam.CDC),
   CDS_USE_OLD_SERVICE_V1("Feature flag to use service v1. NG_SVC_ENV_REDESIGN will be deprecated", HarnessTeam.CDC),
@@ -750,10 +769,32 @@ public enum FeatureName {
   CI_ENABLE_DLC("Enable docker layer caching", HarnessTeam.CI),
   SRM_TELEMETRY("Will enable telemetry for verify step result", HarnessTeam.CV),
   CI_USE_S3_FOR_DLC("Use S3 bucket for DLC cache", HarnessTeam.CI),
+  SPG_SEND_TRIGGER_PIPELINE_FOR_WEBHOOKS_ASYNC(
+      "Will fire the all the triggers to be fired by a single webhook event asyncrounouly", HarnessTeam.SPG),
   PL_CG_SHOW_MEMBER_ID_COUNT(
       "Shows memberId count instead of member names on CG UserGroupListing page", HarnessTeam.PL),
   CDS_ENCODE_HTTP_STEP_URL("Enables the encoding of HTTP Step URL if it is not already encoded", HarnessTeam.CDP),
-  CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE);
+  CCM_MSP("To enable margin obfuscation for CCM MSP accounts", HarnessTeam.CE),
+  PL_REGENERATE_ACL_FOR_DEFAULT_VIEWER_ROLE(
+      "This is to regenerate acls for default account viewer roles", HarnessTeam.PL),
+  SRM_ENABLE_GRAFANA_LOKI_LOGS("This is used to enable Grafana Loki logs health source.", HarnessTeam.CV),
+  CDS_TEMPLATE_ERROR_HANDLING("Enabling new Schema validation UI for template studio", PIPELINE),
+  CDS_SUPPORT_HPA_AND_PDB_NG(
+      "Enabling support for HPA and PDB kind resources in k8s deployments in NG", HarnessTeam.CDP),
+  SRM_ENABLE_BASELINE_BASED_VERIFICATION("This is used to enable baseline based verification.", HarnessTeam.CV),
+  SPG_DISABLE_CUSTOM_WEBHOOK_V3_URL("This is used to disable customer webhook authentication.", SPG),
+  SRM_MICRO_FRONTEND("This FF is used to enable the micro-frontend for SRM", CV),
+  IDP_ENABLE_EDIT_HARNESS_CI_CD_PLUGIN(
+      "This FF is for allowing user to edit config for harness-ci-cd plugin from UI", HarnessTeam.IDP),
+  CCM_ENABLE_AZURE_CLOUD_ASSET_GOVERNANCE_UI("Enable Azure Cloud Asset Governance UI", HarnessTeam.CE),
+  CDS_PIPELINE_STUDIO_UPGRADES("Enables upgraded one canvas pipeline studio with usability fixes", HarnessTeam.CDP),
+  CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC),
+  PL_DISCOVERY_ENABLE(
+      "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
+  GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
+  CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
+      "This is to diable checking for the HTTP status code and instead just check for a valid response",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
