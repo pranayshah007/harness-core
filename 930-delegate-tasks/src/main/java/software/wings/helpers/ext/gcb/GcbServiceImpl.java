@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.artifacts.gcr.exceptions.GcbClientException;
 import io.harness.delegate.task.gcp.helpers.GcpHelperService;
 import io.harness.network.Http;
+import io.harness.retry.RetryHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.JsonUtils;
 
@@ -32,20 +33,23 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
-import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.ConnectException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.ResponseBody;
+import okhttp3.internal.http2.ConnectionShutdownException;
+import okhttp3.internal.http2.StreamResetException;
 import org.jetbrains.annotations.NotNull;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -55,25 +59,19 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @Singleton
 @Slf4j
 public class GcbServiceImpl implements GcbService {
-  private static final long RETRY_INITIAL_INTERVAL = 2500;
   private static final String GCP_CREDENTIALS_ERROR_MESSAGE = "Invalid Google Cloud Platform credentials.";
   private static final String GCP_ERROR_MESSAGE = "Invalid Google Cloud Platform integration.";
   public static final String GCB_BASE_URL = "https://cloudbuild.googleapis.com/";
   public static final String GCS_BASE_URL = "https://storage.googleapis.com/storage/";
   private final GcpHelperService gcpHelperService;
   private final EncryptionService encryptionService;
-  private final Retry retry;
+  private final Retry exponentialRetry;
 
   @Inject
   public GcbServiceImpl(GcpHelperService gcpHelperService, EncryptionService encryptionService) {
     this.gcpHelperService = gcpHelperService;
     this.encryptionService = encryptionService;
-    final RetryConfig config = RetryConfig.custom()
-                                   .maxAttempts(5)
-                                   .retryExceptions(SocketException.class)
-                                   .intervalFunction(IntervalFunction.ofExponentialBackoff(RETRY_INITIAL_INTERVAL))
-                                   .build();
-    this.retry = Retry.of("GcbService", config);
+    this.exponentialRetry = buildRetryAndRegisterListeners();
   }
 
   @Override
@@ -88,7 +86,7 @@ public class GcbServiceImpl implements GcbService {
         throw new GcbClientException(extractErrorMessage(response));
       }
       return response.body();
-    } catch (InterruptedIOException e) {
+    } catch (InterruptedIOException | InterruptedException e) {
       log.error("Failed to create GCB build due to: ", e);
       throw new RuntimeException(e);
     } catch (IOException e) {
@@ -129,7 +127,7 @@ public class GcbServiceImpl implements GcbService {
         return response.body();
       }
       throw new GcbClientException(extractErrorMessage(response));
-    } catch (InterruptedIOException e) {
+    } catch (InterruptedIOException | InterruptedException e) {
       log.error("Failed to run GCB trigger due to: ", e);
       throw new RuntimeException(e);
     } catch (IOException e) {
@@ -164,7 +162,7 @@ public class GcbServiceImpl implements GcbService {
   @VisibleForTesting
   <T> T retry(Callable<T> action) throws InterruptedException, IOException {
     try {
-      return Retry.decorateCallable(retry, action).call();
+      return Retry.decorateCallable(exponentialRetry, action).call();
 
     } catch (Exception e) {
       // RETRY OPERATION GIVE TO US THE ORIGINAL EXCEPTION AND WE HANDLE IT AND RE-THROW TO THE CALLER.
@@ -173,6 +171,14 @@ public class GcbServiceImpl implements GcbService {
       // WHEN HANDLE CANNOT TAKE CARE OF THE EXCEPTION WE THROW A SPECIFIC ONE
       throw new GcbClientException(GCP_ERROR_MESSAGE, e);
     }
+  }
+
+  private Retry buildRetryAndRegisterListeners() {
+    final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
+        new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
+            StreamResetException.class, SocketTimeoutException.class, GcbClientException.class, SocketException.class});
+    RetryHelper.registerEventListeners(exponentialRetry);
+    return exponentialRetry;
   }
 
   /**
@@ -202,7 +208,7 @@ public class GcbServiceImpl implements GcbService {
       }
       log.info("GCB_TASK - triggers have been fetched");
       return response.body().getTriggers();
-    } catch (IOException e) {
+    } catch (IOException | InterruptedException e) {
       throw new GcbClientException(GCP_CREDENTIALS_ERROR_MESSAGE, e);
     }
   }
@@ -218,7 +224,7 @@ public class GcbServiceImpl implements GcbService {
         throw new GcbClientException(response.errorBody().string());
       }
       return response.body();
-    } catch (IOException e) {
+    } catch (IOException | InterruptedException e) {
       throw new GcbClientException(GCP_CREDENTIALS_ERROR_MESSAGE, e);
     }
   }
@@ -226,7 +232,7 @@ public class GcbServiceImpl implements GcbService {
   @VisibleForTesting
   <T> T getRestClient(final Class<T> client, String baseUrl) {
     OkHttpClient okHttpClient = getOkHttpClientBuilder()
-                                    .connectTimeout(5, TimeUnit.SECONDS)
+                                    .connectTimeout(10, TimeUnit.SECONDS)
                                     .proxy(Http.checkAndGetNonProxyIfApplicable(baseUrl))
                                     .build();
     Retrofit retrofit = new Retrofit.Builder()
@@ -238,34 +244,37 @@ public class GcbServiceImpl implements GcbService {
   }
 
   @VisibleForTesting
-  String getBasicAuthHeader(GcpConfig gcpConfig, List<EncryptedDataDetail> encryptionDetails) throws IOException {
+  String getBasicAuthHeader(GcpConfig gcpConfig, List<EncryptedDataDetail> encryptionDetails)
+      throws IOException, InterruptedException {
     if (gcpConfig.isUseDelegateSelectors()) {
       return gcpHelperService.getDefaultCredentialsAccessToken(TaskType.GCB.name());
     }
     encryptionService.decrypt(gcpConfig, encryptionDetails, false);
     GoogleCredential gc = gcpHelperService.getGoogleCredential(
         gcpConfig.getServiceAccountKeyFileContent(), gcpConfig.isUseDelegateSelectors());
-
-    try {
-      if (gc.refreshToken()) {
-        return String.join(" ", "Bearer", gc.getAccessToken());
-      } else {
-        String msg = "Could not refresh token for google cloud provider";
-        log.warn(msg);
-        throw new GcbClientException(msg);
-      }
-    } catch (TokenResponseException e) {
-      if (e.getDetails() != null) {
-        if (e.getDetails().getErrorDescription() != null) {
-          throw new GcbClientException("GCB_TASK - GCB task failed due to: " + e.getDetails().getErrorDescription(), e);
+    return retry(() -> {
+      try {
+        if (gc.refreshToken()) {
+          return String.join(" ", "Bearer", gc.getAccessToken());
+        } else {
+          String msg = "Could not refresh token for google cloud provider";
+          log.warn(msg);
+          throw new GcbClientException(msg);
         }
-        if (e.getDetails().getError() != null) {
-          throw new GcbClientException("GCB_TASK - GCB task failed due to: " + e.getDetails().getError(), e);
+      } catch (TokenResponseException e) {
+        if (e.getDetails() != null) {
+          if (e.getDetails().getErrorDescription() != null) {
+            throw new GcbClientException(
+                "GCB_TASK - GCB task failed due to: " + e.getDetails().getErrorDescription(), e);
+          }
+          if (e.getDetails().getError() != null) {
+            throw new GcbClientException("GCB_TASK - GCB task failed due to: " + e.getDetails().getError(), e);
+          }
         }
-      }
 
-      throw new GcbClientException("GCB_TASK - GCB task failed due to: " + e.getMessage(), e);
-    }
+        throw new GcbClientException("GCB_TASK - GCB task failed due to: " + e.getMessage(), e);
+      }
+    });
   }
 
   @Override
