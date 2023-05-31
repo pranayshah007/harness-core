@@ -807,8 +807,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     cfRequestConfig.setDesiredCount(0);
 
     unMapRoutes(cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
-    unsetEnvVariables(
-        cfRequestConfig, cfCommandSetupRequest, executionLogCallback);
+    unsetEnvVariables(cfRequestConfig, cfCommandSetupRequest, executionLogCallback);
     downsizeApplication(applicationSummary, cfRequestConfig, executionLogCallback, retryAbleTaskExecutor);
   }
 

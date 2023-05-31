@@ -569,7 +569,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       String appName, boolean isActiveApplication) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(appName);
     cfDeploymentManager.setEnvironmentVariableForAppStatusNG(
-                                          cfRequestConfig, isActiveApplication, executionLogCallback);
+        cfRequestConfig, isActiveApplication, executionLogCallback);
   }
 
   private CfInBuiltVariablesUpdateValues performAppRenaming(NamingTransition transition,

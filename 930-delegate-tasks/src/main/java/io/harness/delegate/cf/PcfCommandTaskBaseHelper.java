@@ -7,6 +7,60 @@
 
 package io.harness.delegate.cf;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.beans.pcf.CfAppRenameInfo;
+import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
+import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails.CfAppSetupTimeDetailsBuilder;
+import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
+import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfServiceData;
+import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
+import io.harness.delegate.task.pcf.exception.InvalidPcfStateException;
+import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
+import io.harness.delegate.task.pcf.request.CfCommandRollbackRequest;
+import io.harness.delegate.utils.CFLogCallbackFormatter;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.exception.FileCreationException;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
+import io.harness.logging.LogCallback;
+import io.harness.pcf.CfCliDelegateResolver;
+import io.harness.pcf.CfDeploymentManager;
+import io.harness.pcf.PcfUtils;
+import io.harness.pcf.PivotalClientApiException;
+import io.harness.pcf.model.CfAppAutoscalarRequestData;
+import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCreateApplicationRequestData;
+import io.harness.pcf.model.CfRenameRequest;
+import io.harness.pcf.model.CfRequestConfig;
+import io.harness.pcf.model.PcfConstants;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.cloudfoundry.operations.applications.ApplicationDetail;
+import org.cloudfoundry.operations.applications.ApplicationSummary;
+import org.cloudfoundry.operations.applications.InstanceDetail;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -49,70 +103,14 @@ import static io.harness.pcf.model.PcfConstants.SERVICES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.SIDE_CARS_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.STACK_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.TIMEOUT_MANIFEST_YML_ELEMENT;
-
-import static software.wings.beans.LogColor.Gray;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
-
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.data.structure.UUIDGenerator;
-import io.harness.delegate.beans.pcf.CfAppRenameInfo;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails.CfAppSetupTimeDetailsBuilder;
-import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
-import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
-import io.harness.delegate.beans.pcf.CfServiceData;
-import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
-import io.harness.delegate.task.pcf.exception.InvalidPcfStateException;
-import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
-import io.harness.delegate.task.pcf.request.CfCommandRollbackRequest;
-import io.harness.delegate.utils.CFLogCallbackFormatter;
-import io.harness.eraro.ErrorCode;
-import io.harness.eraro.Level;
-import io.harness.exception.FileCreationException;
-import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedException;
-import io.harness.logging.LogCallback;
-import io.harness.pcf.CfCliDelegateResolver;
-import io.harness.pcf.CfDeploymentManager;
-import io.harness.pcf.PcfUtils;
-import io.harness.pcf.PivotalClientApiException;
-import io.harness.pcf.model.CfAppAutoscalarRequestData;
-import io.harness.pcf.model.CfCliVersion;
-import io.harness.pcf.model.CfCreateApplicationRequestData;
-import io.harness.pcf.model.CfRenameRequest;
-import io.harness.pcf.model.CfRequestConfig;
-import io.harness.pcf.model.PcfConstants;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.cloudfoundry.operations.applications.ApplicationDetail;
-import org.cloudfoundry.operations.applications.ApplicationSummary;
-import org.cloudfoundry.operations.applications.InstanceDetail;
-import org.jetbrains.annotations.NotNull;
+import static software.wings.beans.LogColor.Gray;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 /**
  * Stateles helper class
@@ -528,10 +526,12 @@ public class PcfCommandTaskBaseHelper {
     List<ApplicationSummary> activeVersions = new ArrayList<>();
 
     ApplicationSummary activeApplication = null;
-    activeApplication = findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback, activeVersions);
+    activeApplication =
+        findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback, activeVersions);
 
     if (isEmpty(activeVersions)) {
-      activeApplication = findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback, activeVersions);
+      activeApplication =
+          findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback, activeVersions);
     }
 
     if (isNotEmpty(activeVersions) && activeVersions.size() > 1) {
@@ -548,11 +548,11 @@ public class PcfCommandTaskBaseHelper {
 
     if (isEmpty(activeVersions)) {
       StringBuilder msgBuilder =
-              new StringBuilder(256)
-                      .append("Invalid PCF Deployment State. No applications were found having Env variable as ")
-                      .append(HARNESS__STATUS__IDENTIFIER)
-                      .append(
-                              ": ACTIVE' identifier and no applications were found having same name as release name as specified by customer.");
+          new StringBuilder(256)
+              .append("Invalid PCF Deployment State. No applications were found having Env variable as ")
+              .append(HARNESS__STATUS__IDENTIFIER)
+              .append(
+                  ": ACTIVE' identifier and no applications were found having same name as release name as specified by customer.");
       executionLogCallback.saveExecutionLog(msgBuilder.toString(), ERROR);
       throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
     }
@@ -561,26 +561,28 @@ public class PcfCommandTaskBaseHelper {
   }
 
   private ApplicationSummary findActiveBasedOnEnvironmentVariable(List<ApplicationSummary> previousReleases,
-                                                         CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions) throws PivotalClientApiException {
-  // For existing
-  ApplicationSummary activeApplication = null;
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions)
+      throws PivotalClientApiException {
+    // For existing
+    ApplicationSummary activeApplication = null;
     for (int i = previousReleases.size() - 1; i >= 0; i--) {
-    ApplicationSummary applicationSummary = previousReleases.get(i);
-    cfRequestConfig.setApplicationName(applicationSummary.getName());
+      ApplicationSummary applicationSummary = previousReleases.get(i);
+      cfRequestConfig.setApplicationName(applicationSummary.getName());
 
-    if (pcfDeploymentManager.isActiveApplication(cfRequestConfig, executionLogCallback)) {
-      activeApplication = applicationSummary;
-      activeVersions.add(applicationSummary);
-      executionLogCallback.saveExecutionLog(
-              String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
-                      PcfUtils.encodeColor(applicationSummary.getName())));
+      if (pcfDeploymentManager.isActiveApplication(cfRequestConfig, executionLogCallback)) {
+        activeApplication = applicationSummary;
+        activeVersions.add(applicationSummary);
+        executionLogCallback.saveExecutionLog(
+            String.format("Found current Active App: [%s], as it has HARNESS__STATUS__IDENTIFIER set as ACTIVE",
+                PcfUtils.encodeColor(applicationSummary.getName())));
+      }
     }
-  }
     return activeApplication;
   }
 
   public ApplicationSummary findActiveBasedOnServiceName(List<ApplicationSummary> previousReleases,
-                                                                 String releaseNamePrefix, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions) throws PivotalClientApiException {
+      String releaseNamePrefix, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions)
+      throws PivotalClientApiException {
     ApplicationSummary activeApplication = null;
     for (int i = previousReleases.size() - 1; i >= 0; i--) {
       ApplicationSummary applicationSummary = previousReleases.get(i);
@@ -589,8 +591,8 @@ public class PcfCommandTaskBaseHelper {
         activeApplication = applicationSummary;
         activeVersions.add(applicationSummary);
         executionLogCallback.saveExecutionLog(
-                String.format("Found current Active App: [%s], as it has same name as release name specified by user",
-                        PcfUtils.encodeColor(activeApplication.getName())));
+            String.format("Found current Active App: [%s], as it has same name as release name specified by user",
+                PcfUtils.encodeColor(activeApplication.getName())));
       }
     }
     return activeApplication;

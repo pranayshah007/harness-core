@@ -452,7 +452,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) throws PivotalClientApiException {
+      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo)
+      throws PivotalClientApiException {
     if (isEmpty(previousReleases) || previousReleases.size() == 1) {
       return;
     }
@@ -552,7 +553,8 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
     // TODO this only for BG
     // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
     cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);

@@ -474,8 +474,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
   private void updateEnvVariableForApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
       String appName, boolean isActiveApplication) throws PivotalClientApiException {
     cfRequestConfig.setApplicationName(appName);
-    pcfDeploymentManager.setEnvironmentVariableForAppStatus(
-                                          cfRequestConfig, isActiveApplication, executionLogCallback);
+    pcfDeploymentManager.setEnvironmentVariableForAppStatus(cfRequestConfig, isActiveApplication, executionLogCallback);
   }
 
   private void updateRoutesForNewApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

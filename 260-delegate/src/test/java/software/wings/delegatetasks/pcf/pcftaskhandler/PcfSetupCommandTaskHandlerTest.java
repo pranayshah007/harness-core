@@ -1053,8 +1053,7 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
 
     doReturn(activeApplication)
         .when(pcfCommandTaskBaseHelper)
-        .findActiveApplication(
-            eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), anyList());
+        .findActiveApplication(eq(executionLogCallback), anyBoolean(), any(CfRequestConfig.class), anyList());
 
     doReturn(null)
         .when(pcfCommandTaskBaseHelper)

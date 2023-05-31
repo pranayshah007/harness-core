@@ -7,8 +7,6 @@
 
 package io.harness.pcf;
 
-import io.harness.pcf.PivotalClientApiException;
-
 public interface RetryAbleTask {
   void execute() throws PivotalClientApiException;
 }
