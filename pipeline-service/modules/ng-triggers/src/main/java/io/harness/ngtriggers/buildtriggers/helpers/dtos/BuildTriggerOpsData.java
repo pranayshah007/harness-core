@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.entity.metadata.BuildMetadata;
 
 import com.google.inject.Inject;
 import java.util.Map;
@@ -26,4 +27,5 @@ public class BuildTriggerOpsData {
   Map<String, Object> triggerSpecMap;
   Map<String, Object> pipelineBuildSpecMap;
   TriggerDetails triggerDetails;
+  BuildMetadata buildMetadata;
 }

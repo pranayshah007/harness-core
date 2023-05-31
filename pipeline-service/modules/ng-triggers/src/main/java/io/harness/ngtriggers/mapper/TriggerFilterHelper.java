@@ -91,7 +91,15 @@ public class TriggerFilterHelper {
     criteria.and("metadata.buildMetadata.pollingConfig.signature").in(signatures);
     criteria.and(NGTriggerEntityKeys.deleted).is(false);
     criteria.and(NGTriggerEntityKeys.enabled).is(true);
-    return criteria;
+
+    // Criteria for multi-artifact Trigger should query in `multiBuildMetadata` instead of `buildMetadata`.
+    Criteria criteriaForMultiArtifact = new Criteria();
+    criteriaForMultiArtifact.and(NGTriggerEntityKeys.accountId).is(accountId);
+    criteriaForMultiArtifact.and("metadata.multiBuildMetadata")
+        .elemMatch(Criteria.where("pollingConfig.signature").in(signatures));
+    criteriaForMultiArtifact.and(NGTriggerEntityKeys.deleted).is(false);
+    criteriaForMultiArtifact.and(NGTriggerEntityKeys.enabled).is(true);
+    return new Criteria().orOperator(criteria, criteriaForMultiArtifact);
   }
 
   public Criteria createCriteriaForWebhookTriggerGetList(String accountIdentifier, String orgIdentifier,

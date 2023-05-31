@@ -24,6 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(PIPELINE)
 public class NGTriggerMetadata {
   BuildMetadata buildMetadata;
+  List<String> signatures;
   List<BuildMetadata> multiBuildMetadata;
   WebhookMetadata webhook;
   CronMetadata cron;

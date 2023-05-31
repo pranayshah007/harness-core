@@ -62,6 +62,7 @@ import io.harness.yaml.core.variables.NGVariableTrigger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -240,6 +241,29 @@ public class BuildTriggerHelper {
         .triggerSpecMap(manifestTriggerSpecMap)
         .triggerDetails(triggerDetails)
         .build();
+  }
+
+  public List<BuildTriggerOpsData> generateBuildTriggerOpsDataForMultiArtifact(TriggerDetails triggerDetails)
+      throws IOException {
+    List<BuildTriggerOpsData> buildTriggerOpsData = new ArrayList<>();
+    JsonNode jsonNode = YamlUtils.readTree(triggerDetails.getNgTriggerEntity().getYaml()).getNode().getCurrJsonNode();
+    ArrayNode sources = (ArrayNode) jsonNode.get("trigger").get("source").get("spec").get("sources");
+    int buildMetadataIndex = 0;
+    for (JsonNode source : sources) {
+      Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
+      triggerArtifactSpecMap.put("type", source.get("type"));
+      triggerArtifactSpecMap.put("spec", source);
+      buildTriggerOpsData.add(
+          BuildTriggerOpsData.builder()
+              .pipelineBuildSpecMap(Collections.emptyMap())
+              .triggerSpecMap(triggerArtifactSpecMap)
+              .triggerDetails(triggerDetails)
+              .buildMetadata(
+                  triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata().get(buildMetadataIndex))
+              .build());
+      buildMetadataIndex++;
+    }
+    return buildTriggerOpsData;
   }
 
   public BuildTriggerOpsData generateBuildTriggerOpsDataForGitPolling(TriggerDetails triggerDetails) throws Exception {

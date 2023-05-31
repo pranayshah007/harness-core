@@ -17,6 +17,7 @@ import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATI
 import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.YamlFields.PIPELINE_BRANCH_NAME;
@@ -130,6 +131,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -141,6 +143,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
@@ -241,7 +244,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     // Polling not required for other trigger types
-    if (ngTriggerEntity.getType() != ARTIFACT && ngTriggerEntity.getType() != MANIFEST) {
+    if (ngTriggerEntity.getType() != ARTIFACT && ngTriggerEntity.getType() != MULTI_ARTIFACT
+        && ngTriggerEntity.getType() != MANIFEST) {
       return;
     }
 
@@ -249,9 +253,18 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
-    PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
+    if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+      executePollingSubscriptionChanges(ngTriggerEntity, isUpdate);
+      return;
+    }
+
+    List<PollingItem> pollingItems = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity);
 
     try {
+      if (isEmpty(pollingItems)) {
+        throw new InvalidRequestException("Cannot subscribe polling for empty pollingItems");
+      }
+      PollingItem pollingItem = pollingItems.get(0);
       byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
 
       if (!ngTriggerEntity.getEnabled()
@@ -277,7 +290,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
                 ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
           log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
               ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
-          updatePollingRegistrationStatus(ngTriggerEntity, pollingDocument, StatusResult.SUCCESS);
+          updatePollingRegistrationStatus(
+              ngTriggerEntity, Collections.singletonList(pollingDocument), StatusResult.SUCCESS);
         }
       }
     } catch (Exception exception) {
@@ -287,6 +301,89 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
       throw new InvalidRequestException(exception.getMessage());
     }
+  }
+
+  private void executePollingSubscriptionChanges(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+    // This method is a generalization of `subscribePolling` that we created for handling MultiRegionArtifact Triggers.
+    // We intend to replace `subscribePolling` by this method once we are confident it will introduce no issues.
+    List<PollingItem> pollingItems = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity);
+
+    try {
+      if (isEmpty(pollingItems)) {
+        throw new InvalidRequestException("Cannot subscribe polling for empty pollingItems");
+      }
+      boolean shouldSubscribe = ngTriggerEntity.getEnabled()
+          && !(isWebhookGitPollingEnabled(ngTriggerEntity)
+              && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
+                  == WEBHOOK_POLLING_UNSUBSCRIBE);
+      boolean shouldUnsubscribe = !shouldSubscribe || isUpdate;
+      boolean unsubscribeSuccess = true;
+
+      if (shouldUnsubscribe) {
+        List<PollingItem> pollingItemsToUnsubscribe;
+        if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+          pollingItemsToUnsubscribe =
+              pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(ngTriggerEntity);
+        } else {
+          pollingItemsToUnsubscribe = pollingItems;
+        }
+        unsubscribeSuccess = unsubscribePolling(ngTriggerEntity, pollingItemsToUnsubscribe);
+      }
+
+      if (shouldSubscribe) {
+        List<PollingDocument> pollingDocuments = subscribePollingV2(ngTriggerEntity, pollingItems);
+        updatePollingRegistrationStatus(ngTriggerEntity, pollingDocuments, StatusResult.SUCCESS);
+      } else if (unsubscribeSuccess) {
+        // no subscription done, check if unsubscription worked.
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
+      } else {
+        // unsubscription failed for at least one of the polling items.
+        updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+      }
+
+    } catch (Exception exception) {
+      log.error(String.format("Polling Subscription Request failed for Trigger: %s with error",
+                    TriggerHelper.getTriggerRef(ngTriggerEntity)),
+          exception);
+      updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.FAILED);
+      throw new InvalidRequestException(exception.getMessage());
+    }
+  }
+
+  private List<PollingDocument> subscribePollingV2(NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
+    List<PollingDocument> pollingDocuments = new ArrayList<>();
+    if (isEmpty(pollingItems)) {
+      return pollingDocuments;
+    }
+    for (PollingItem pollingItem : pollingItems) {
+      byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
+      ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
+      PollingDocument pollingDocument =
+          (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
+      pollingDocuments.add(pollingDocument);
+      try (AutoLogContext ignore0 = new NgTriggerAutoLogContext("pollingDocumentId", pollingDocument.getPollingDocId(),
+               ngTriggerEntity.getIdentifier(), ngTriggerEntity.getTargetIdentifier(),
+               ngTriggerEntity.getProjectIdentifier(), ngTriggerEntity.getOrgIdentifier(),
+               ngTriggerEntity.getAccountId(), AutoLogContext.OverrideBehavior.OVERRIDE_ERROR)) {
+        log.info("Polling Subscription successful for Trigger {} with pollingDocumentId {}",
+            ngTriggerEntity.getIdentifier(), pollingDocument.getPollingDocId());
+      }
+    }
+    return pollingDocuments;
+  }
+
+  private boolean unsubscribePolling(NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
+    if (isEmpty(pollingItems)) {
+      // nothing to do here.
+      return true;
+    }
+    boolean unsubscribeSuccess = true;
+    for (PollingItem pollingItem : pollingItems) {
+      byte[] pollingItemBytes = kryoSerializer.asBytes(pollingItem);
+      unsubscribeSuccess =
+          unsubscribeSuccess && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE);
+    }
+    return unsubscribeSuccess;
   }
 
   private ResponseDTO<PollingResponseDTO> executePollingSubscription(
@@ -324,10 +421,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void updatePollingRegistrationStatus(
-      NGTriggerEntity ngTriggerEntity, PollingDocument pollingDocument, StatusResult statusResult) {
+      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     Criteria criteria = getTriggerEqualityCriteriaWithoutDbVersion(ngTriggerEntity, false);
 
-    stampPollingStatusInfo(ngTriggerEntity, pollingDocument, statusResult);
+    stampPollingStatusInfo(ngTriggerEntity, pollingDocuments, statusResult);
     NGTriggerEntity updatedEntity = ngTriggerRepository.updateValidationStatusAndMetadata(criteria, ngTriggerEntity);
 
     if (updatedEntity == null) {
@@ -337,12 +434,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   private void stampPollingStatusInfo(
-      NGTriggerEntity ngTriggerEntity, PollingDocument pollingDocument, StatusResult statusResult) {
+      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments, StatusResult statusResult) {
     // change pollingDocId only if request was successful. Else, we dont know what happened.
     // In next trigger upsert, we will try again
     if (statusResult == StatusResult.SUCCESS) {
-      String pollingDocId = null == pollingDocument ? null : pollingDocument.getPollingDocId();
-      ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(pollingDocId);
+      if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+        stampPollingInfoForMultiArtifactTrigger(ngTriggerEntity, pollingDocuments);
+      } else {
+        String pollingDocId = isEmpty(pollingDocuments) ? null : pollingDocuments.get(0).getPollingDocId();
+        ngTriggerEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(pollingDocId);
+      }
     }
 
     if (ngTriggerEntity.getTriggerStatus() == null) {
@@ -352,6 +453,25 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       ngTriggerEntity.getTriggerStatus().setPollingSubscriptionStatus(PollingSubscriptionStatus.builder().build());
     }
     ngTriggerEntity.getTriggerStatus().getPollingSubscriptionStatus().setStatusResult(statusResult);
+  }
+
+  private void stampPollingInfoForMultiArtifactTrigger(
+      NGTriggerEntity ngTriggerEntity, List<PollingDocument> pollingDocuments) {
+    if (pollingDocuments == null) {
+      ngTriggerEntity.getMetadata().setMultiBuildMetadata(Collections.emptyList());
+      ngTriggerEntity.getMetadata().setSignatures(Collections.emptyList());
+    } else {
+      IntStream.range(0, pollingDocuments.size())
+          .forEach(index
+              -> ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(index).getPollingConfig().setPollingDocId(
+                  pollingDocuments.get(index).getPollingDocId()));
+      ngTriggerEntity.getMetadata().setSignatures(
+          ngTriggerEntity.getMetadata()
+              .getMultiBuildMetadata()
+              .stream()
+              .map(buildMetadata -> buildMetadata.getPollingConfig().getSignature())
+              .collect(Collectors.toList()));
+    }
   }
 
   private void registerWebhookAsync(NGTriggerEntity ngTriggerEntity) {
@@ -364,6 +484,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       });
     }
   }
+
   private void checkAndEnableWebhookPolling(NGTriggerEntity ngTriggerEntity) {
     if (pmsFeatureFlagService.isEnabled(ngTriggerEntity.getAccountId(), FeatureName.CD_GIT_WEBHOOK_POLLING)
         && GITHUB.getEntityMetadataName().equalsIgnoreCase(ngTriggerEntity.getMetadata().getWebhook().getType())) {
@@ -464,7 +585,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
       boolean isWebhookGitPollingEnabled = isWebhookGitPollingEnabled(foundTriggerEntity);
       if (foundTriggerEntity.getType() == MANIFEST || foundTriggerEntity.getType() == ARTIFACT
-          || isWebhookGitPollingEnabled) {
+          || foundTriggerEntity.getType() == MULTI_ARTIFACT || isWebhookGitPollingEnabled) {
         log.info("Submitting unsubscribe request after delete for Trigger :"
             + TriggerHelper.getTriggerRef(foundTriggerEntity));
         submitUnsubscribeAsync(foundTriggerEntity);
@@ -499,9 +620,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     if (ngTriggerEntity != null) {
       executorService.submit(() -> {
         try {
-          PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
-          if (!executePollingUnSubscription(ngTriggerEntity, kryoSerializer.asBytes(pollingItem))) {
-            log.warn(String.format("Trigger %s failed to unsubsribe from Polling", ngTriggerEntity.getIdentifier()));
+          List<PollingItem> pollingItems = pollingSubscriptionHelper.generatePollingItems(ngTriggerEntity);
+          for (PollingItem pollingItem : pollingItems) {
+            if (!executePollingUnSubscription(ngTriggerEntity, kryoSerializer.asBytes(pollingItem))) {
+              log.warn(String.format("Trigger %s failed to unsubscribe from Polling", ngTriggerEntity.getIdentifier()));
+            }
           }
         } catch (Exception exception) {
           log.error(exception.getMessage());

@@ -22,6 +22,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AWS_CODECOMMIT;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
@@ -228,6 +229,10 @@ public class NGTriggerElementMapper {
       return;
     }
 
+    if (newEntity.getType() == MULTI_ARTIFACT) {
+      copyFieldsForMultiArtifactTrigger(existingEntity, newEntity);
+    }
+
     // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
       if (!GITHUB.getEntityMetadataName().equalsIgnoreCase(existingEntity.getMetadata().getWebhook().getType())) {
@@ -267,6 +272,18 @@ public class NGTriggerElementMapper {
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
       newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
           existingPollingConfig.getPollingDocId());
+    }
+  }
+
+  private void copyFieldsForMultiArtifactTrigger(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getSignatures() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
+    List<String> previousSignatures = existingEntity.getMetadata().getSignatures();
+
+    if (isNotEmpty(previousSignatures)) {
+      newEntity.getMetadata().setSignatures(existingEntity.getMetadata().getSignatures());
     }
   }
 
