@@ -34,4 +34,5 @@ public class HelmCollectChartResponse implements DelegateTaskNotifyResponseData 
   private CommandExecutionStatus commandExecutionStatus;
 
   private List<HelmChart> helmCharts;
+  private boolean isTimeoutError;
 }

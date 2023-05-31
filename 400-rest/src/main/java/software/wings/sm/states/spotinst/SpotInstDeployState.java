@@ -8,6 +8,7 @@
 package software.wings.sm.states.spotinst;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
 import static io.harness.spotinst.model.SpotInstConstants.DEPLOYMENT_ERROR;
@@ -36,6 +37,7 @@ import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstDeployTaskResponse;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.spotinst.model.ElastiGroup;
@@ -276,6 +278,15 @@ public class SpotInstDeployState extends State {
         existingInstanceElements.forEach(instanceElement -> instanceElement.setNewInstance(false));
         instanceElements.addAll(existingInstanceElements);
       }
+    }
+
+    if (FAILED == executionStatus && executionResponse.isTimeoutError()) {
+      return ExecutionResponse.builder()
+          .executionStatus(executionStatus)
+          .failureTypes(FailureType.TIMEOUT)
+          .errorMessage(executionResponse.getErrorMessage())
+          .stateExecutionData(stateExecutionData)
+          .build();
     }
 
     spotInstStateHelper.saveInstanceInfoToSweepingOutput(context, instanceElements);

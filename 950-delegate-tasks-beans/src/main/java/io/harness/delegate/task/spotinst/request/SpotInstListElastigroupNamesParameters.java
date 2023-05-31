@@ -18,8 +18,8 @@ import lombok.EqualsAndHashCode;
 public class SpotInstListElastigroupNamesParameters extends SpotInstTaskParameters {
   @Builder
   public SpotInstListElastigroupNamesParameters(String appId, String accountId, String activityId, String commandName,
-      String workflowExecutionId, Integer timeoutIntervalInMin) {
+      String workflowExecutionId, Integer timeoutIntervalInMin, boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin,
-        SPOT_INST_LIST_ELASTI_GROUPS, "us-east-1");
+        SPOT_INST_LIST_ELASTI_GROUPS, "us-east-1", timeoutSupported);
   }
 }
