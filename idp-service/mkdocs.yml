@@ -1,0 +1,7 @@
+site_name: 'idp-service'
+
+nav:
+  - Home: index.md
+
+plugins:
+  - techdocs-core
