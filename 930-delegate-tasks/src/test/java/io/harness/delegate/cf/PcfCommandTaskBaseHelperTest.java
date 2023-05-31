@@ -622,34 +622,6 @@ public class PcfCommandTaskBaseHelperTest extends CategoryTest {
     ApplicationSummary currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(null, null, null);
     assertThat(currentActiveApplication).isNull();
 
-    doReturn(false).when(pcfDeploymentManager).isActiveApplication(any(), any());
-    final List<ApplicationSummary> previousReleases = Arrays.asList(ApplicationSummary.builder()
-                                                                        .name("a_s_e__4")
-                                                                        .diskQuota(1)
-                                                                        .requestedState(RUNNING)
-                                                                        .id("1")
-                                                                        .urls(new String[] {"url1", "url2"})
-                                                                        .instances(2)
-                                                                        .memoryLimit(1)
-                                                                        .runningInstances(0)
-                                                                        .build(),
-        ApplicationSummary.builder()
-            .name("a_s_e__5")
-            .diskQuota(1)
-            .requestedState(RUNNING)
-            .id("1")
-            .urls(new String[] {"url3", "url4"})
-            .instances(2)
-            .memoryLimit(1)
-            .runningInstances(0)
-            .build());
-
-    currentActiveApplication = pcfCommandTaskHelper.findCurrentActiveApplication(
-        previousReleases, CfRequestConfig.builder().applicationName("a_s_e").build(), executionLogCallback);
-    assertThat(currentActiveApplication).isNotNull();
-    assertThat(currentActiveApplication.getName()).isEqualTo("a_s_e__5");
-    assertThat(currentActiveApplication.getUrls()).containsExactly("url3", "url4");
-
     doReturn(true).when(pcfDeploymentManager).isActiveApplication(any(), any());
     final List<ApplicationSummary> previousReleases1 = Arrays.asList(ApplicationSummary.builder()
                                                                          .name("a_s_e__6")

@@ -23,7 +23,7 @@ import lombok.experimental.NonFinal;
 public class ServerlessAwsLambdaManifestConfig implements ServerlessManifestConfig, NestedAnnotationResolver {
   @NonFinal @Expression(ALLOW_SECRETS) String manifestPath;
   @NonFinal @Expression(ALLOW_SECRETS) String configOverridePath;
-    GitStoreDelegateConfig gitStoreDelegateConfig;
+  GitStoreDelegateConfig gitStoreDelegateConfig;
   S3StoreDelegateConfig s3StoreDelegateConfig;
 
   @Override
