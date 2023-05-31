@@ -523,7 +523,8 @@ public class NGTriggerServiceImplTest extends CategoryTest {
         .thenReturn(optionalNGTrigger);
     when(ngTriggerRepository.hardDelete(any(Criteria.class))).thenReturn(DeleteResult.acknowledged(1));
     when(executorService.submit(runnableCaptor.capture())).then(executeRunnable(runnableCaptor));
-    when(pollingSubscriptionHelper.generatePollingItem(eq(ngTrigger))).thenReturn(pollingItem);
+    when(pollingSubscriptionHelper.generatePollingItems(eq(ngTrigger)))
+        .thenReturn(Collections.singletonList(pollingItem));
     when(pollingResourceClient.unsubscribe(any())).thenReturn(call);
     when(call.execute()).thenReturn(Response.success(Boolean.TRUE));
     when(kryoSerializer.asBytes(any(PollingItem.class))).thenReturn(bytes);

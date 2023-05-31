@@ -86,13 +86,15 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   @Override
   public PollingDocument removeDocumentIfOnlySubscriber(
       String accountId, String pollingDocId, List<String> signatures) {
-    Query query = new Query().addCriteria(new Criteria()
-                                              .and(PollingDocumentKeys.accountId)
-                                              .is(accountId)
-                                              .and(PollingDocumentKeys.uuid)
-                                              .is(pollingDocId)
-                                              .and(PollingDocumentKeys.signatures)
-                                              .is(signatures));
+    Criteria criteria = new Criteria()
+                            .and(PollingDocumentKeys.accountId)
+                            .is(accountId)
+                            .and(PollingDocumentKeys.signatures)
+                            .is(signatures);
+    if (pollingDocId != null) {
+      criteria.and(PollingDocumentKeys.uuid).is(pollingDocId);
+    }
+    Query query = new Query().addCriteria(criteria);
     return mongoTemplate.findAndRemove(query, PollingDocument.class);
   }
 
@@ -109,7 +111,17 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
   public PollingDocument removeSubscribersFromExistingPollingDoc(
       String accountId, String uuId, List<String> signatures) {
     Object[] signatureList = signatures.toArray();
-    Query query = getQuery(accountId, uuId);
+    Query query;
+    if (uuId == null) {
+      Criteria criteria = new Criteria()
+                              .and(PollingDocumentKeys.accountId)
+                              .is(accountId)
+                              .and(PollingDocumentKeys.signatures)
+                              .all(signatures);
+      query = new Query().addCriteria(criteria);
+    } else {
+      query = getQuery(accountId, uuId);
+    }
     Update update = new Update().pullAll(PollingDocumentKeys.signatures, signatureList);
     return mongoTemplate.findAndModify(query, update, PollingDocument.class);
   }

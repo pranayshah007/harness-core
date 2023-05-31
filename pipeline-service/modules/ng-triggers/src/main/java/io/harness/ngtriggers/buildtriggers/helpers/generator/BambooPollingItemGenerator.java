@@ -34,7 +34,7 @@ public class BambooPollingItemGenerator implements PollingItemGenerator {
   @Override
   public PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
-    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
+    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity, buildTriggerOpsData);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String planKey = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.planKey");
     List<String> artifactPath =

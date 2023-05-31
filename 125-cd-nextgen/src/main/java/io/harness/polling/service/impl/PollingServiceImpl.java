@@ -131,7 +131,7 @@ public class PollingServiceImpl implements PollingService {
 
   @Override
   public boolean unsubscribe(PollingItem pollingItem) {
-    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocument(pollingItem);
+    PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem);
     delete(pollingDocument);
     return true;
   }

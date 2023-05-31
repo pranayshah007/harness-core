@@ -134,13 +134,13 @@ public class PollingServiceTest extends CategoryTest {
   public void testUnsubscribeIfOnlySubscriber() {
     PollingItem pollingItem = PollingItem.newBuilder().build();
     PollingDocument newPollingDocument = getArtifactPollingDocument("id1");
-    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(newPollingDocument);
+    when(pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem)).thenReturn(newPollingDocument);
     when(pollingRepository.removeDocumentIfOnlySubscriber(
              newPollingDocument.getAccountId(), newPollingDocument.getUuid(), newPollingDocument.getSignatures()))
         .thenReturn(newPollingDocument);
 
     assertThat(pollingService.unsubscribe(pollingItem)).isTrue();
-    verify(pollingDocumentMapper).toPollingDocument(pollingItem);
+    verify(pollingDocumentMapper).toPollingDocumentWithoutPollingInfo(pollingItem);
     verify(pollingRepository).removeDocumentIfOnlySubscriber(anyString(), anyString(), any());
     verify(pollingRepository, never())
         .removeSubscribersFromExistingPollingDoc(
@@ -153,10 +153,10 @@ public class PollingServiceTest extends CategoryTest {
   public void testUnsubscribeWithMultipleSubscribers() {
     PollingItem pollingItem = PollingItem.newBuilder().build();
     PollingDocument newPollingDocument = getArtifactPollingDocument("id1");
-    when(pollingDocumentMapper.toPollingDocument(pollingItem)).thenReturn(newPollingDocument);
+    when(pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem)).thenReturn(newPollingDocument);
 
     assertThat(pollingService.unsubscribe(pollingItem)).isTrue();
-    verify(pollingDocumentMapper).toPollingDocument(pollingItem);
+    verify(pollingDocumentMapper).toPollingDocumentWithoutPollingInfo(pollingItem);
     verify(pollingRepository).removeDocumentIfOnlySubscriber(anyString(), anyString(), any());
     verify(pollingRepository)
         .removeSubscribersFromExistingPollingDoc(

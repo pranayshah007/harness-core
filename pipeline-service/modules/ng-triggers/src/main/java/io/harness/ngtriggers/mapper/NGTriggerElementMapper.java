@@ -231,6 +231,10 @@ public class NGTriggerElementMapper {
       return;
     }
 
+    if (newEntity.getType() == MULTI_ARTIFACT) {
+      copyFieldsForMultiArtifactTrigger(existingEntity, newEntity);
+    }
+
     // Currently, enabled only for GITHUB
     if (newEntity.getType() == WEBHOOK) {
       if (!GITHUB.getEntityMetadataName().equalsIgnoreCase(existingEntity.getMetadata().getWebhook().getType())) {
@@ -270,6 +274,18 @@ public class NGTriggerElementMapper {
     if (existingPollingConfig != null && isNotEmpty(existingPollingConfig.getPollingDocId())) {
       newEntity.getMetadata().getBuildMetadata().getPollingConfig().setPollingDocId(
           existingPollingConfig.getPollingDocId());
+    }
+  }
+
+  private void copyFieldsForMultiArtifactTrigger(NGTriggerEntity existingEntity, NGTriggerEntity newEntity) {
+    if (existingEntity.getMetadata().getSignatures() == null) {
+      log.info("Previously polling was not enabled. Trigger {} updated with polling", newEntity.getIdentifier());
+      return;
+    }
+    List<String> previousSignatures = existingEntity.getMetadata().getSignatures();
+
+    if (isNotEmpty(previousSignatures)) {
+      newEntity.getMetadata().setSignatures(existingEntity.getMetadata().getSignatures());
     }
   }
 

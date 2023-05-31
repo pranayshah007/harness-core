@@ -31,7 +31,7 @@ public class S3PollingItemGenerator implements PollingItemGenerator {
   @Override
   public PollingItem generatePollingItem(BuildTriggerOpsData buildTriggerOpsData) {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
-    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
+    PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity, buildTriggerOpsData);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
     String bucketName = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.bucketName");
     String filePathRegex = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.filePathRegex");
