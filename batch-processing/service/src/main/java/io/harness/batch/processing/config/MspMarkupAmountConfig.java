@@ -36,7 +36,7 @@ public class MspMarkupAmountConfig {
   @Bean
   @Autowired
   @Qualifier(value = "mspMarkupAmountJob")
-  public Job recommendationJiraStatusJob(JobBuilderFactory jobBuilderFactory, Step mspMarkupAmountStep) {
+  public Job mspMarkupAmountJob(JobBuilderFactory jobBuilderFactory, Step mspMarkupAmountStep) {
     return jobBuilderFactory.get(BatchJobType.MSP_MARKUP_AMOUNT.name())
         .incrementer(new RunIdIncrementer())
         .listener(batchJobExecutionListener)
