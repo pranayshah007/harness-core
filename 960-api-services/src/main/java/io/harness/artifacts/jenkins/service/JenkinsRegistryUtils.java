@@ -395,8 +395,15 @@ public class JenkinsRegistryUtils {
         while (!jobs.empty()) {
           Job job = jobs.pop();
           if (isFolderJob(job)) {
-            futures.add(executorService.submit(
-                () -> jobs.addAll(jenkinsServer.getJobs(new FolderJob(job.getName(), job.getUrl())).values())));
+            futures.add(executorService.submit(() -> {
+              try {
+                jobs.addAll(jenkinsServer.getJobs(new FolderJob(job.getName(), job.getUrl())).values());
+              } catch (Exception e) {
+                log.error(String.format(
+                              "Error in fetching jobs for job with name - %s & url - %s", job.getName(), job.getUrl()),
+                    e);
+              }
+            }));
           } else {
             String jobName = getJobNameFromUrl(job.getUrl());
             result.add(new JobDetails(jobName, job.getUrl(), false));
