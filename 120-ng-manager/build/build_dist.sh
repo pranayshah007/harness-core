@@ -34,8 +34,8 @@ cp ../../120-ng-manager/src/main/resources/enterprise-redisson-jcache.yaml .
 cp ../../120-ng-manager/src/main/resources/jfr/default.jfc .
 cp ../../120-ng-manager/src/main/resources/jfr/profile.jfc .
 
-
 ls ../../dockerization
+ls ../../dockerization/ng-manager
 cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
