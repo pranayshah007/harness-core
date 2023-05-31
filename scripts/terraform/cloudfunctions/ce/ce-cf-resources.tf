@@ -270,6 +270,10 @@ data "archive_file" "ce-aws-billing-gcs" {
     filename = "requirements.txt"
   }
   source {
+    content  = "${file("${path.module}/src/python/bq_schema.py")}"
+    filename = "bq_schema.py"
+  }
+  source {
     content  = "${file("${path.module}/src/python/util.py")}"
     filename = "util.py"
    }

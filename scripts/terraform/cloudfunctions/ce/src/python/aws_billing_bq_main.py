@@ -60,8 +60,6 @@ def main(request):
 
     # Set accountid for GCP logging
     util.ACCOUNTID_LOG = jsonData.get("accountId")
-    print_(jsonData.get("accountId"))
-    return "CF executed successfully."
     jsonData["cloudProvider"] = "AWS"
     ps = jsonData["path"].split("/")
     if len(ps) == 4:
@@ -84,7 +82,7 @@ def main(request):
     jsonData["tableId"] = "%s.%s.%s" % (PROJECTID, jsonData["datasetName"], jsonData["tableName"])
 
     if not create_dataset_and_tables(jsonData):
-        return
+        return "CF completed execution."
     ingest_data_from_csv(jsonData)
     set_available_columns(jsonData)
     get_unique_accountids(jsonData)
@@ -117,6 +115,7 @@ def main(request):
     })
 
     print_("Completed")
+    return "CF executed successfully."
 
 
 def trigger_historical_cost_update_in_preferred_currency(jsonData):
