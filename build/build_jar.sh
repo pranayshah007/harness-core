@@ -23,9 +23,6 @@ modify_service_name() {
     ["iacm-manager"]="310-iacm-manager"
     ["sto-manager"]="315-sto-manager"
     ["ci-manager"]="332-ci-manager"
-    ["iacm-manager"]="310-iacm-manager"
-    ["sto-manager"]="315-sto-manager"
-    ["ci-manager"]="332-ci-manager"
   )
   declare -A modified_service_name_with_app=(
     ["310-iacm-manager"]=1
