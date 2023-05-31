@@ -31,7 +31,6 @@ import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewPreferences;
 
 import com.google.inject.Inject;
-import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
