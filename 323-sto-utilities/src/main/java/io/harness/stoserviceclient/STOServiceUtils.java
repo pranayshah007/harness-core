@@ -150,11 +150,13 @@ public class STOServiceUtils {
   }
 
   @NotNull
-  public String getUsageAllAcounts(String accountId) {
+  public String getUsageAllAcounts(String accountId, long timestamp) {
     String token = getSTOServiceToken(accountId);
     String accessToken = "ApiKey " + token;
 
-    return makeAPICall(stoServiceClient.getUsageAllAccounts(accessToken)).get("usage").getAsString();
+    return makeAPICall(stoServiceClient.getUsageAllAccounts(accessToken, accountId, String.valueOf(timestamp)))
+        .get("usage")
+        .getAsString();
   }
 
   private JsonObject makeAPICall(Call<JsonObject> apiCall) {

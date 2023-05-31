@@ -22,6 +22,8 @@ import io.harness.telemetry.TelemetryReporter;
 
 import com.google.gson.Gson;
 import com.google.inject.Inject;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -42,9 +44,10 @@ public class STOTelemetryPublisher {
   public void recordTelemetry() {
     log.info("STOTelemetryPublisher recordTelemetry execute started.");
     try {
+      long timestamp = Instant.now().minus(3, ChronoUnit.MINUTES).toEpochMilli();
       final Gson gson = new Gson();
       STOUsageReport allUsage =
-          gson.fromJson(stoServiceUtils.getUsageAllAcounts(GLOBAL_ACCOUNT_ID), STOUsageReport.class);
+          gson.fromJson(stoServiceUtils.getUsageAllAcounts(GLOBAL_ACCOUNT_ID, timestamp), STOUsageReport.class);
       log.info("Size of the account list is {} ", allUsage.usage.size());
 
       for (STOUsage usage : allUsage.usage) {
