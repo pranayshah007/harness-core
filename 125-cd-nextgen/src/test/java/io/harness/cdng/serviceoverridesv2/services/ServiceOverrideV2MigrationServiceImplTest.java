@@ -7,6 +7,7 @@
 
 package io.harness.cdng.serviceoverridesv2.services;
 
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +78,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
   public void testProjectScopeMigration() {
     createOverrideTestData();
     ServiceOverrideMigrationResponseDTO responseDTO =
-        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, projectIds.get(0), false);
+        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, projectIds.get(0), false, false);
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isSuccessful()).isTrue();
     assertProjectLevelResponseDTO(responseDTO.getProjectLevelMigrationInfo(), 1);
@@ -89,7 +90,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
   public void testOrgScopeMigration() {
     createOverrideTestData();
     ServiceOverrideMigrationResponseDTO responseDTO =
-        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, false);
+        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, false, false);
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isSuccessful()).isTrue();
     List<ProjectLevelOverrideMigrationResponseDTO> projectLevelInfoList = responseDTO.getProjectLevelMigrationInfo();
@@ -103,7 +104,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
   public void testAccountScopeMigration() {
     createOverrideTestData();
     ServiceOverrideMigrationResponseDTO responseDTO =
-        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, false);
+        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, false, false);
 
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isSuccessful()).isTrue();
@@ -120,7 +121,7 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
   public void testAccountLevelWithChildScopes() {
     createOverrideTestData();
     ServiceOverrideMigrationResponseDTO responseDTO =
-        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, true);
+        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, true, false);
 
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isSuccessful()).isTrue();
@@ -130,6 +131,20 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
     assertAccountResponseDTO(responseDTO.getAccountLevelMigrationInfo());
     assertOrgLevelResponseDTO(responseDTO.getOrgLevelMigrationInfo());
     assertProjectLevelResponseDTO(responseDTO.getProjectLevelMigrationInfo(), 2);
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testOrgScopeMigrationRevert() {
+    createOverrideTestDataForMigrationRevert();
+    ServiceOverrideMigrationResponseDTO responseDTO =
+        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null, false, true);
+    assertThat(responseDTO).isNotNull();
+    assertThat(responseDTO.isSuccessful()).isTrue();
+    List<ProjectLevelOverrideMigrationResponseDTO> projectLevelInfoList = responseDTO.getProjectLevelMigrationInfo();
+    assertThat(projectLevelInfoList).isEmpty();
+    assertOrgLevelMigrationRevertResponseDTO(responseDTO.getOrgLevelMigrationInfo());
   }
 
   private void assertAccountResponseDTO(AccountLevelOverrideMigrationResponseDTO accountResponseDto) {
@@ -305,10 +320,59 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
         .containsExactlyInAnyOrder("var1");
   }
 
+  private static void assertOrgLevelMigrationRevertResponseDTO(
+      List<OrgLevelOverrideMigrationResponseDTO> orgLevelInfoList) {
+    assertThat(orgLevelInfoList).isNotEmpty();
+    assertThat(orgLevelInfoList).hasSize(1);
+    OrgLevelOverrideMigrationResponseDTO orgResponseDTO = orgLevelInfoList.get(0);
+    assertThat(orgResponseDTO.isOverridesMigrationSuccessFul()).isTrue();
+    assertThat(orgResponseDTO.isEnvsMigrationSuccessful()).isTrue();
+
+    assertThat(orgResponseDTO.getTotalServiceOverridesCount()).isEqualTo(2L);
+    assertThat(orgResponseDTO.getMigratedServiceOverridesCount()).isEqualTo(2L);
+
+    assertThat(orgResponseDTO.getServiceOverridesInfo().get(0).getProjectId()).isBlank();
+
+    assertThat(orgResponseDTO.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getOrgId)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(ORG_IDENTIFIER, ORG_IDENTIFIER);
+    assertThat(orgResponseDTO.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getAccountId)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(ACCOUNT_IDENTIFIER, ACCOUNT_IDENTIFIER);
+    assertThat(orgResponseDTO.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getServiceRef)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(orgSvcRefs.get(0), orgSvcRefs.get(1));
+    assertThat(orgResponseDTO.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::getEnvRef)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(orgEnvRefs.get(0), orgEnvRefs.get(1));
+    assertThat(orgResponseDTO.getServiceOverridesInfo()
+                   .stream()
+                   .map(SingleServiceOverrideMigrationResponse::isSuccessful)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(true, true);
+    assertThat(orgResponseDTO.getMigratedEnvironmentCount()).isEqualTo(0L);
+    assertThat(orgResponseDTO.getEnvironmentsInfo()).isEmpty();
+  }
+
   private void createOverrideTestData() {
     createTestOrgAndProject();
     createTestOverrideInProject();
     createTestOverrideInOrg();
+    createTestOverrideInAccount();
+  }
+
+  private void createOverrideTestDataForMigrationRevert() {
+    createTestOrgAndProject();
+    createTestOverrideInProject();
+    createTestOverrideInOrgForMigrationRevert();
     createTestOverrideInAccount();
   }
 
@@ -389,13 +453,31 @@ public class ServiceOverrideV2MigrationServiceImplTest extends CDNGTestBase {
     }
   }
 
+  private void createTestOverrideInOrgForMigrationRevert() {
+    for (int i = 0; i < 2; i++) {
+      mongoTemplate.save(
+          NGServiceOverridesEntity.builder()
+              .identifier(generateEnvSvcBasedIdentifier(orgEnvRefs.get(i), orgSvcRefs.get(i)))
+              .environmentRef(orgEnvRefs.get(i))
+              .serviceRef(orgSvcRefs.get(i))
+              .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+              .isV2(true)
+              .orgIdentifier(ORG_IDENTIFIER)
+              .accountId(ACCOUNT_IDENTIFIER)
+              .yaml(String.format(
+                  "serviceOverrides:\n  environmentRef: %s\n  serviceRef: %s\n  variables:\n    - name: var1\n      type: String\n      value: \"val1\"\n",
+                  orgEnvRefs.get(i), orgSvcRefs.get(i)))
+              .build());
+    }
+  }
+
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testAccountLevelWithChildScopesForEnv() {
     createEnvTestData();
     ServiceOverrideMigrationResponseDTO responseDTO =
-        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, true);
+        v2MigrationService.migrateToV2(ACCOUNT_IDENTIFIER, null, null, true, false);
 
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.isSuccessful()).isTrue();

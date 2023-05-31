@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.AzureArtifactsSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -97,6 +98,8 @@ public class AzureArtifactsOutcome implements ArtifactOutcome {
    * imagePullSecret for Azure Artifacts Registry credentials base encoded.
    * */
   String imagePullSecret;
+
+  Map<String, String> metadata;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

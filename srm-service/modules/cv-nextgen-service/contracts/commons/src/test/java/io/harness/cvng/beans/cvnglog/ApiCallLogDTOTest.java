@@ -7,7 +7,9 @@
 
 package io.harness.cvng.beans.cvnglog;
 
+import static io.harness.cvng.beans.cvnglog.ApiCallLogDTO.FieldType.TEXT;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +20,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.rule.Owner;
 
+import okhttp3.FormBody;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -54,6 +60,43 @@ public class ApiCallLogDTOTest extends CategoryTest {
     assertThat(apiCallLogDTO.getRequests()).hasSize(1);
     assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
     assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testAddFieldToRequest_WithTextBody() {
+    ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
+    ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();
+    apiCallLogDTO.addFieldToRequest(field);
+    RequestBody formBody = new FormBody.Builder().add("message", "YourMessage").build();
+    Request request = new Request.Builder().url("https://www.example.com/").post(formBody).build();
+    apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
+    assertThat(apiCallLogDTO.getRequests()).hasSize(2);
+    assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
+    assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
+    assertThat(apiCallLogDTO.getRequests().get(1).getName()).isEqualTo("Request Body");
+    assertThat(apiCallLogDTO.getRequests().get(1).getValue()).isEqualTo("message=YourMessage");
+    assertThat(apiCallLogDTO.getRequests().get(1).getType()).isEqualTo(TEXT);
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testAddFieldToRequest_WithJSONBody() {
+    ApiCallLogDTO apiCallLogDTO = ApiCallLogDTO.builder().accountId(accountId).build();
+    ApiCallLogDTOField field = ApiCallLogDTOField.builder().name(name).value(value).build();
+    apiCallLogDTO.addFieldToRequest(field);
+    MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    RequestBody body = RequestBody.create(JSON, "{\"jsonExample\":\"value\"}");
+    Request request = new Request.Builder().url("https://www.example.com/").post(body).build();
+    apiCallLogDTO.addCallDetailsBodyFieldToRequest(request);
+    assertThat(apiCallLogDTO.getRequests()).hasSize(2);
+    assertThat(apiCallLogDTO.getRequests().get(0).getName()).isEqualTo(name);
+    assertThat(apiCallLogDTO.getRequests().get(0).getValue()).isEqualTo(value);
+    assertThat(apiCallLogDTO.getRequests().get(1).getName()).isEqualTo("Request Body");
+    assertThat(apiCallLogDTO.getRequests().get(1).getValue()).isEqualTo("{\"jsonExample\":\"value\"}");
+    assertThat(apiCallLogDTO.getRequests().get(1).getType()).isEqualTo(ApiCallLogDTO.FieldType.JSON);
   }
 
   @Test

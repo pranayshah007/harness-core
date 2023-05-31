@@ -297,7 +297,7 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
         }
       }
 
-      StepArtifacts stepArtifacts = handleArtifact(artifactMetadata, stepParameters);
+      StepArtifacts stepArtifacts = handleArtifactForVm(artifactMetadata, stepParameters, ambiance);
       buildArtifacts(ambiance, stepIdentifier, stepArtifacts, stepResponseBuilder);
       return stepResponseBuilder.build();
     } else if (taskResponse.getCommandExecutionStatus() == CommandExecutionStatus.SKIPPED) {
@@ -324,6 +324,11 @@ public abstract class AbstractStepExecutable extends CommonAbstractStepExecutabl
 
   protected StepArtifacts handleArtifact(ArtifactMetadata artifactMetadata, StepElementParameters stepParameters) {
     return null;
+  }
+
+  protected StepArtifacts handleArtifactForVm(
+      ArtifactMetadata artifactMetadata, StepElementParameters stepParameters, Ambiance ambiance) {
+    return handleArtifact(artifactMetadata, stepParameters);
   }
 
   @Override

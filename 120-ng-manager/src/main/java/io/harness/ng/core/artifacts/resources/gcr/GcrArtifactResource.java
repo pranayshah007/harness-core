@@ -200,8 +200,8 @@ public class GcrArtifactResource {
       @NotNull @QueryParam("registryHostname") String registryHostname,
       @NotNull @QueryParam("connectorRef") String gcrConnectorIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, GcrRequestDTO requestDTO) {
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, GcrRequestDTO requestDTO) {
     if (NGExpressionUtils.isRuntimeOrExpressionField(gcrConnectorIdentifier)) {
       throw new InvalidRequestException("ConnectorRef is an expression/runtime input, please send fixed value.");
     }

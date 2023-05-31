@@ -143,7 +143,7 @@ public class K8sApplyTaskHandlerTest extends WingsBaseTest {
     when(k8sTaskHelperBase.readManifests(any(), any())).thenReturn(Collections.emptyList());
 
     k8sApplyTaskHandler.init(k8sApplyTaskParameters, delegateTaskParams, executionLogCallback);
-    verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any(), anyBoolean());
+    verify(k8sTaskHelperBase, times(1)).dryRunManifests(any(), any(), any(), any());
     verify(k8sTaskHelper, times(1))
         .getResourcesFromManifests(any(), any(), any(), any(), any(), any(), any(), any(), any(), anyBoolean());
     verify(containerDeploymentDelegateHelper, times(1))

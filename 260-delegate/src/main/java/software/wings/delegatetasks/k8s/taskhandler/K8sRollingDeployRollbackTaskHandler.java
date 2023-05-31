@@ -30,7 +30,7 @@ import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler;
 import io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus;
 import io.harness.delegate.k8s.beans.K8sRollingRollbackHandlerConfig;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesResourceId;
@@ -133,8 +133,8 @@ public class K8sRollingDeployRollbackTaskHandler extends K8sTaskHandler {
 
     rollbackHandlerConfig.setKubernetesConfig(containerDeploymentDelegateHelper.getKubernetesConfig(
         k8sRollingDeployRollbackTaskParameters.getK8sClusterConfig(), false));
-    rollbackHandlerConfig.setClient(
-        Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    rollbackHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
     rollbackHandlerConfig.setUseDeclarativeRollback(k8sRollingDeployRollbackTaskParameters.isUseDeclarativeRollback());
     rollbackHandlerConfig.setK8sDelegateTaskParams(k8sDelegateTaskParams);
     rollbackHandlerConfig.setCurrentReleaseNumber(k8sRollingDeployRollbackTaskParameters.getReleaseNumber());

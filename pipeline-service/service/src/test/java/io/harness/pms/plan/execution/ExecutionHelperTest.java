@@ -76,12 +76,12 @@ import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.ProcessStageExecutionInfoResult;
 import io.harness.pms.rbac.validator.PipelineRbacService;
+import io.harness.pms.utils.NGPipelineSettingsConstant;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.executions.PmsExecutionSummaryRepository;
 import io.harness.rule.Owner;
-import io.harness.utils.NGPipelineSettingsConstant;
 import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.common.collect.ImmutableMap;
@@ -828,8 +828,6 @@ public class ExecutionHelperTest extends CategoryTest {
     PlanExecution createdPlanExecution = executionHelper.startExecution(
         accountId, orgId, projectId, executionMetadata, planExecutionMetadata, false, null, "prevId", null);
     assertThat(createdPlanExecution).isEqualTo(planExecution);
-    verify(planService, times(1)).fetchPlan(planId);
-    verify(planService, times(1)).fetchNodes(planId);
     verify(orchestrationService, times(1)).startExecution(plan, abstractions, executionMetadata, planExecutionMetadata);
     verify(rollbackModeExecutionHelper, times(1))
         .transformPlanForRollbackMode(plan, "prevId", Collections.singletonList("n1"),
@@ -949,11 +947,10 @@ public class ExecutionHelperTest extends CategoryTest {
     executionHelper.updateSettingsInExecutionMetadataBuilder(
         PipelineEntity.builder().accountId(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
         builder);
-    assertThat(builder.build().getSettingToValueMapCount()).isEqualTo(1);
+    assertThat(builder.build().getSettingToValueMapCount()).isEqualTo(2);
     assertThat(builder.build().getSettingToValueMapOrThrow(
                    NGPipelineSettingsConstant.DEFAULT_IMAGE_PULL_POLICY_ADD_ON_CONTANER.getName()))
         .isEqualTo("true");
-    assertThat(builder.build().getUseMatrixFieldName()).isTrue();
   }
 
   private String readFile(String filename) {

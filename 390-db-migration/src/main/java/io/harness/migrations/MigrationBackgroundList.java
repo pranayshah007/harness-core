@@ -135,7 +135,6 @@ import io.harness.migrations.all.RemoveDeprecatedFieldsFromHarnessUserGroup;
 import io.harness.migrations.all.RemoveDuplicateUserGroupNameMigration;
 import io.harness.migrations.all.RemoveSupportEmailFromSalesContacts;
 import io.harness.migrations.all.RemoveUsageRestrictionForApplicationDefaultsMigration;
-import io.harness.migrations.all.SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration;
 import io.harness.migrations.all.ScheduleSegmentPublishJob;
 import io.harness.migrations.all.SendInviteUrlForAllUserInvites;
 import io.harness.migrations.all.SetAccountIdProvisioners;
@@ -427,7 +426,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(247, BackFillingKeywordsOnWorkflowExecutionCollection.class))
         .add(Pair.of(248, UpdateK8sWatchInvalidStatePerpetualTaskMigration.class))
         .add(Pair.of(249, EncryptDelegateTokenMigration.class))
-        .add(Pair.of(250, SamlSSOSettingsConfiguredFromNGAuthenticationEnabledMigration.class))
+        .add(Pair.of(250, NoOpMigration.class))
         .add(Pair.of(251, EncryptDelegateTokenMigration.class))
         .build();
   }

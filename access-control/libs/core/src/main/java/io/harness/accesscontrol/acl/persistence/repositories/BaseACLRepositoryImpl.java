@@ -147,6 +147,9 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
 
   @Override
   public long deleteByRoleAssignmentIdAndPermissions(String roleAssignmentId, Set<String> permissions) {
+    if (isEmpty(permissions)) {
+      return 0;
+    }
     return mongoTemplate
         .remove(new Query(Criteria.where(ACLKeys.roleAssignmentId)
                               .is(roleAssignmentId)
@@ -158,6 +161,9 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
 
   @Override
   public long deleteByRoleAssignmentIdAndPrincipals(String roleAssignmentId, Set<String> principals) {
+    if (isEmpty(principals)) {
+      return 0;
+    }
     return mongoTemplate
         .remove(new Query(Criteria.where(ACLKeys.roleAssignmentId)
                               .is(roleAssignmentId)

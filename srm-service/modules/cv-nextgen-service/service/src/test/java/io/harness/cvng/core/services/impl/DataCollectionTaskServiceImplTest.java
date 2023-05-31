@@ -931,7 +931,7 @@ public class DataCollectionTaskServiceImplTest extends CvNextGenTestBase {
             fakeNow.minus(Duration.ofMinutes(7)), fakeNow.minus(Duration.ofMinutes(2)), serviceLevelIndicator);
     verify(serviceLevelIndicatorServiceMock)
         .enqueueDataCollectionFailureInstanceAndTriggerAnalysis(sliVerificationTaskId,
-            fakeNow.minus(Duration.ofMinutes(1)), fakeNow.plus(Duration.ofMinutes(299)), serviceLevelIndicator);
+            fakeNow.minus(Duration.ofMinutes(2)), fakeNow.plus(Duration.ofMinutes(300)), serviceLevelIndicator);
     assertThat(updated.getStatus()).isEqualTo(DataCollectionExecutionStatus.FAILED);
     assertThat(updated.getRetryCount()).isEqualTo(1);
     assertThat(updated.getException()).isEqualTo("exception msg");

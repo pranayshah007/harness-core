@@ -14,5 +14,5 @@ import lombok.NonNull;
 public interface ServiceOverrideV2MigrationService {
   @NonNull
   ServiceOverrideMigrationResponseDTO migrateToV2(
-      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren);
+      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren, boolean isRevert);
 }

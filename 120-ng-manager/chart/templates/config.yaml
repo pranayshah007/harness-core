@@ -72,6 +72,7 @@ data:
   CI_MANAGER_SERVICE_CLIENT_BASEURL: http://ci-manager:7090/
   CVNG_SERVICE_CLIENT_BASEURL: http://cv-nextgen:6060/cv/api/
   STACK_DRIVER_LOGGING_ENABLED: {{ .Values.global.stackDriverLoggingEnabled | quote }}
+  ALLOWED_ORIGINS: '{{ .Values.allowedOrigins | default .Values.global.loadbalancerURL }}'
   {{- if .Values.additionalConfigs }}
   {{- toYaml .Values.additionalConfigs | nindent 2 }}
   {{- end }}

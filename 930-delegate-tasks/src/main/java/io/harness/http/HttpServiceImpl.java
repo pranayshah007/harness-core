@@ -297,7 +297,7 @@ public class HttpServiceImpl implements HttpService {
 
     } catch (CertificateException | KeyStoreException | NoSuchAlgorithmException | IOException | RuntimeException
         | InvalidKeySpecException | UnrecoverableKeyException e) {
-      log.warn("Unable to prepare ssl/tls authentication", e);
+      log.error("Unable to prepare ssl/tls authentication", e);
     }
   }
 

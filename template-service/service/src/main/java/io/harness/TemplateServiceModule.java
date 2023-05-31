@@ -35,8 +35,12 @@ import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
 import io.harness.enforcement.client.EnforcementClientModule;
+import io.harness.engine.GovernanceService;
+import io.harness.engine.GovernanceServiceImpl;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.exception.exceptionmanager.ExceptionModule;
+import io.harness.ff.FeatureFlagService;
+import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.filter.FilterType;
 import io.harness.filter.FiltersModule;
 import io.harness.filter.mapper.FilterPropertiesMapper;
@@ -51,6 +55,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
 import io.harness.ngsettings.client.remote.NGSettingsClientModule;
+import io.harness.opaclient.OpaClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -97,6 +102,8 @@ import io.harness.template.services.TemplateRefreshService;
 import io.harness.template.services.TemplateRefreshServiceImpl;
 import io.harness.time.TimeModule;
 import io.harness.token.TokenClientModule;
+import io.harness.utils.PmsFeatureFlagHelper;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.WaiterConfiguration;
 import io.harness.yaml.YamlSdkModule;
@@ -211,6 +218,8 @@ public class TemplateServiceModule extends AbstractModule {
     install(YamlSchemaClientModule.getInstance(
         YamlSchemaClientConfig.builder().yamlSchemaHttpClientMap(yamlSchemaHttpClientConfigMap).build(),
         TEMPLATE_SERVICE.getServiceId()));
+    install(new OpaClientModule(templateServiceConfiguration.getOpaClientConfig(),
+        templateServiceConfiguration.getPolicyManagerSecret(), TEMPLATE_SERVICE.getServiceId()));
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -221,6 +230,7 @@ public class TemplateServiceModule extends AbstractModule {
     bind(OutboxEventHandler.class).to(TemplateOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(NGTemplateService.class).to(NGTemplateServiceImpl.class);
+    bind(GovernanceService.class).to(GovernanceServiceImpl.class);
     bind(NGTemplateSchemaService.class).to(NGTemplateSchemaServiceImpl.class);
     bind(TemplateRefreshService.class).to(TemplateRefreshServiceImpl.class);
     bind(NGTemplateResource.class).to(NGTemplateResourceImpl.class);
@@ -229,6 +239,8 @@ public class TemplateServiceModule extends AbstractModule {
     bind(HealthResource.class).to(HealthResourceImpl.class);
     bind(TemplateMergeService.class).to(TemplateMergeServiceImpl.class).in(Singleton.class);
     bind(TemplateGitXService.class).to(TemplateGitXServiceImpl.class).in(Singleton.class);
+    bind(PmsFeatureFlagService.class).to(PmsFeatureFlagHelper.class);
+    bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(EnforcementClientModule.getInstance(templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),

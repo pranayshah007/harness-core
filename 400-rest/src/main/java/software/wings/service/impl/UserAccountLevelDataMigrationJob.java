@@ -162,7 +162,7 @@ public class UserAccountLevelDataMigrationJob implements Managed {
   private void processCGUsersForSCIMAndManual(String accountId) {
     long totalUserCount = 0;
     try {
-      totalUserCount = userService.getTotalUserCount(accountId, true);
+      totalUserCount = userService.getTotalUserCount(accountId, true, false, false);
     } catch (Exception exception) {
       log.error(DEBUG_MESSAGE + "Skipping Account! Call to get total count of Users for account {} failed.", accountId,
           exception);
@@ -173,7 +173,8 @@ public class UserAccountLevelDataMigrationJob implements Managed {
         Integer offset = i * pageSize;
         PageRequest pageRequest =
             aPageRequest().withOffset(String.valueOf(offset)).withLimit(String.valueOf(pageSize)).build();
-        List<User> allUsers = userService.listUsers(pageRequest, accountId, null, offset, pageSize, false, true, true);
+        List<User> allUsers =
+            userService.listUsers(pageRequest, accountId, null, offset, pageSize, false, true, true, false);
         List<User> scimUsers = allUsers.stream().filter(user -> user.isImported()).collect(Collectors.toList());
         scimUsers = scimUsers.stream()
                         .filter(user -> !isAlreadyProcessedForThisGenAndUserSource(accountId, user, CG, SCIM))
@@ -207,7 +208,7 @@ public class UserAccountLevelDataMigrationJob implements Managed {
     if (accountService.isNextGenEnabled(accountId)) {
       long totalUserCount = 0;
       try {
-        totalUserCount = userService.getTotalUserCount(accountId, true);
+        totalUserCount = userService.getTotalUserCount(accountId, true, false, false);
       } catch (Exception exception) {
         log.error(DEBUG_MESSAGE + "NG: Skipping Account! Call to get total count of Users for account {} failed.",
             accountId, exception);
@@ -219,7 +220,7 @@ public class UserAccountLevelDataMigrationJob implements Managed {
           PageRequest pageRequest =
               aPageRequest().withOffset(String.valueOf(offset)).withLimit(String.valueOf(pageSize)).build();
           List<User> allUsers =
-              userService.listUsers(pageRequest, accountId, null, offset, pageSize, false, true, true);
+              userService.listUsers(pageRequest, accountId, null, offset, pageSize, false, true, true, false);
           List<User> scimUsers = allUsers.stream().filter(user -> user.isImported()).collect(Collectors.toList());
           scimUsers = scimUsers.stream()
                           .filter(user -> !isAlreadyProcessedForThisGenAndUserSource(accountId, user, NG, SCIM))

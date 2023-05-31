@@ -32,12 +32,12 @@ import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisTag;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.AnomaliesSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
@@ -124,6 +124,7 @@ import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.licensing.LicenseStatus;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
@@ -311,7 +312,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     templateResolvedYaml = sanitizeTemplateYaml(templateResolvedYaml);
     MonitoredServiceDTO monitoredServiceDTO =
         YamlUtils.read(templateResolvedYaml, MonitoredServiceYamlDTO.class).getMonitoredServiceDTO();
-    monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(monitoredServiceDTO, false);
+    monitoredServiceDTO = (MonitoredServiceDTO) yamlExpressionEvaluator.resolve(
+        monitoredServiceDTO, ExpressionMode.THROW_EXCEPTION_IF_UNRESOLVED);
     monitoredServiceDTO.setProjectIdentifier(projectParams.getProjectIdentifier());
     monitoredServiceDTO.setOrgIdentifier(projectParams.getOrgIdentifier());
     MonitoredServiceValidator.validateMSDTO(monitoredServiceDTO);
@@ -885,7 +887,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         hPersistence.createQuery(MonitoredService.class)
             .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
             .filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
+            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier())
+            .order(Sort.descending(MonitoredServiceKeys.lastUpdatedAt));
     if (!Lists.isNullOrEmpty(environmentIdentifiers)) {
       query = query.field(MonitoredServiceKeys.environmentIdentifierList).hasAnyOf(environmentIdentifiers);
     }

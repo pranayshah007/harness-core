@@ -70,8 +70,12 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
@@ -96,6 +100,27 @@ import lombok.extern.slf4j.Slf4j;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Tag(name = "Service Dashboard", description = "This contains APIs related to Service Dashboard")
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
+    description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
+    content =
+    {
+      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
+          schema = @Schema(implementation = FailureDTO.class))
+      ,
+          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
+              schema = @Schema(implementation = FailureDTO.class))
+    })
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_CODE,
+    description = NGCommonEntityConstants.INTERNAL_SERVER_ERROR_MESSAGE,
+    content =
+    {
+      @Content(mediaType = NGCommonEntityConstants.APPLICATION_JSON_MEDIA_TYPE,
+          schema = @Schema(implementation = ErrorDTO.class))
+      ,
+          @Content(mediaType = NGCommonEntityConstants.APPLICATION_YAML_MEDIA_TYPE,
+              schema = @Schema(implementation = ErrorDTO.class))
+    })
 @Slf4j
 public class CDDashboardOverviewResource {
   private final CDOverviewDashboardService cdOverviewDashboardService;
@@ -109,6 +134,7 @@ public class CDDashboardOverviewResource {
   @Path("/deploymentHealth")
   @ApiOperation(value = "Get deployment health", nickname = "getDeploymentHealth")
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
+  @Hidden
   public ResponseDTO<HealthDeploymentDashboard> getDeploymentHealth(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
@@ -145,10 +171,11 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/serviceDeployments")
   @ApiOperation(value = "Get service deployment", nickname = "getServiceDeployments")
+  @Hidden
   public ResponseDTO<ServiceDeploymentInfoDTO> getServiceDeployment(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGServiceConstants.START_TIME) long startTime,
       @NotNull @QueryParam(NGServiceConstants.END_TIME) long endTime,
       @QueryParam(NGServiceConstants.SERVICE_IDENTIFIER) String serviceIdentifier,
@@ -161,6 +188,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/serviceDeploymentsInfo")
   @ApiOperation(value = "Get service deployments info", nickname = "getServiceDeploymentsInfo")
+  @Hidden
   public ResponseDTO<ServiceDeploymentListInfo> getDeploymentExecutionInfo(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @OrgIdentifier @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -193,6 +221,7 @@ public class CDDashboardOverviewResource {
   @Path("/deploymentExecution")
   @ApiOperation(value = "Get deployment execution", nickname = "getDeploymentExecution")
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
+  @Hidden
   public ResponseDTO<ExecutionDeploymentInfo> getDeploymentExecution(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
@@ -208,6 +237,7 @@ public class CDDashboardOverviewResource {
   @Path("/getDeployments")
   @ApiOperation(value = "Get deployments", nickname = "getDeployments")
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
+  @Hidden
   public ResponseDTO<DashboardExecutionStatusInfo> getDeployments(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
@@ -224,6 +254,7 @@ public class CDDashboardOverviewResource {
   @Path("/getWorkloads")
   @ApiOperation(value = "Get workloads", nickname = "getWorkloads")
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
+  @Hidden
   public ResponseDTO<DashboardWorkloadDeployment> getWorkloads(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
@@ -262,6 +293,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/serviceDetails")
   @ApiOperation(value = "Get service details list", nickname = "getServiceDetails")
+  @Hidden
   public ResponseDTO<ServiceDetailsInfoDTO> getServiceDeployments(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -280,8 +312,8 @@ public class CDDashboardOverviewResource {
   @Hidden
   public ResponseDTO<ServiceDetailsInfoDTOV2> getServiceDeploymentsV2(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startTime,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endTime,
       @Parameter(description = "Specifies the sorting criteria of the list") @QueryParam("sort") List<String> sort)
@@ -293,6 +325,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getServicesGrowthTrend")
   @ApiOperation(value = "Get service growth trend", nickname = "getServicesGrowthTrend")
+  @Hidden
   public ResponseDTO<io.harness.ng.overview.dto.TimeValuePairListDTO<Integer>> getServicesGrowthTrend(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -308,11 +341,12 @@ public class CDDashboardOverviewResource {
   @Path("/getInstanceCountDetailsByService")
   @ApiOperation(value = "Get active service instance count breakdown by env type",
       nickname = "getActiveServiceInstanceCountBreakdown")
+  @Hidden
   public ResponseDTO<InstanceCountDetailsByEnvTypeAndServiceId>
   getActiveServiceInstanceCountBreakdown(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) List<String> serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceInstanceCountBreakdown(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
@@ -321,6 +355,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getActiveServiceInstanceSummary")
   @ApiOperation(value = "Get active service instance summary", nickname = "getActiveServiceInstanceSummary")
+  @Hidden
   public ResponseDTO<ActiveServiceInstanceSummary> getActiveServiceInstanceSummary(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -337,8 +372,8 @@ public class CDDashboardOverviewResource {
   @Hidden
   public ResponseDTO<ActiveServiceInstanceSummaryV2> getActiveServiceInstanceSummaryV2(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.TIMESTAMP) long timestampInMs) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveServiceInstanceSummaryV2(
@@ -349,6 +384,7 @@ public class CDDashboardOverviewResource {
   @Path("/getEnvBuildInstanceCountByService")
   @ApiOperation(
       value = "Get list of unique environment and build ids with instance count", nickname = "getEnvBuildInstanceCount")
+  @Hidden
   public ResponseDTO<EnvBuildIdAndInstanceCountInfoList>
   getEnvBuildInstanceCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -363,6 +399,7 @@ public class CDDashboardOverviewResource {
   @ApiOperation(
       value = "Get list of artifact version, last pipeline execution, environment, infrastructure with instance count",
       nickname = "getActiveServiceInstances")
+  @Hidden
   public ResponseDTO<InstanceGroupedByServiceList.InstanceGroupedByService>
   getEnvBuildInstanceCountV2(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -376,11 +413,12 @@ public class CDDashboardOverviewResource {
   @Path("/getActiveInstanceGroupedByEnvironment")
   @ApiOperation(value = "Get active instance count for a service grouped on environment, infrastructure, artifact",
       nickname = "getActiveInstanceGroupedByEnvironment")
+  @Hidden
   public ResponseDTO<InstanceGroupedByEnvironmentList>
   getActiveInstanceGroupedByEnvironment(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) String envGrpId) {
@@ -392,11 +430,12 @@ public class CDDashboardOverviewResource {
   @Path("/getActiveInstanceGroupedByArtifact")
   @ApiOperation(value = "Get active instance count for a service grouped on artifact, environment, infrastructure",
       nickname = "getActiveInstanceGroupedByArtifact")
+  @Hidden
   public ResponseDTO<InstanceGroupedOnArtifactList>
   getActiveInstanceGroupedByEnvironment(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_GROUP_KEY) String envGrpId,
@@ -409,6 +448,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getInstancesByServiceEnvAndBuilds")
   @ApiOperation(value = "Get list of buildId and instances", nickname = "getActiveInstancesByServiceIdEnvIdAndBuildIds")
+  @Hidden
   public ResponseDTO<InstancesByBuildIdList> getActiveInstancesByServiceIdEnvIdAndBuildIds(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -452,8 +492,8 @@ public class CDDashboardOverviewResource {
   public ResponseDTO<InstanceDetailGroupedByPipelineExecutionList>
   getInstanceDetailGroupedByPipelineExecutionList(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @QueryParam(NGCommonEntityConstants.ENVIRONMENT_TYPE_KEY) EnvironmentType environmentType,
@@ -468,10 +508,11 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getInstanceGrowthTrend")
   @ApiOperation(value = "Get instance growth trend", nickname = "getInstanceGrowthTrend")
+  @Hidden
   public ResponseDTO<io.harness.ng.overview.dto.TimeValuePairListDTO<Integer>> getInstanceGrowthTrend(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
@@ -482,6 +523,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getInstanceCountHistory")
   @ApiOperation(value = "Get instance count history", nickname = "getInstanceCountHistory")
+  @Hidden
   public ResponseDTO<TimeValuePairListDTO<EnvIdCountPair>> getInstanceCountHistory(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -496,6 +538,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getDeploymentsByServiceId")
   @ApiOperation(value = "Get deployments by serviceId", nickname = "getDeploymentsByServiceId")
+  @Hidden
   public ResponseDTO<DeploymentsInfo> getDeploymentsByServiceId(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -510,6 +553,7 @@ public class CDDashboardOverviewResource {
   @GET
   @Path("/getServiceHeaderInfo")
   @ApiOperation(value = "Get service header info", nickname = "getServiceHeaderInfo")
+  @Hidden
   public ResponseDTO<ServiceHeaderInfo> getServiceHeaderInfo(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -523,6 +567,7 @@ public class CDDashboardOverviewResource {
   @Path("/getEnvArtifactDetailsByServiceId")
   @ApiOperation(value = "Get list of unique environment and Artifact version filter by service_id",
       nickname = "getEnvArtifactDetailsByServiceId")
+  @Hidden
   public ResponseDTO<EnvironmentDeploymentInfo>
   getEnvArtifactDetailsByServiceId(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -536,6 +581,7 @@ public class CDDashboardOverviewResource {
   @Path("/getActiveServiceDeployments")
   @ApiOperation(value = "Get Information about artifacts for a particular service, deployed to different environments",
       nickname = "getActiveServiceDeployments")
+  @Hidden
   public ResponseDTO<InstanceGroupedByServiceList.InstanceGroupedByService>
   getActiveServiceDeployments(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -553,8 +599,8 @@ public class CDDashboardOverviewResource {
   @Hidden
   public ResponseDTO<EnvironmentGroupInstanceDetails>
   getEnvironmentInstanceDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @RequestBody(description = "This is the body for the filter properties for listing environments.")
       EnvironmentFilterPropertiesDTO filterProperties) {
@@ -570,8 +616,8 @@ public class CDDashboardOverviewResource {
   @Hidden
   public ResponseDTO<ArtifactInstanceDetails>
   getArtifactInstanceDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getArtifactInstanceDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId));
@@ -583,8 +629,8 @@ public class CDDashboardOverviewResource {
   @Hidden
   public ResponseDTO<OpenTaskDetails> getOpenTasks(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getOpenTasks(
@@ -593,19 +639,36 @@ public class CDDashboardOverviewResource {
 
   @GET
   @Path("/getPipelineExecutionCount")
-  @ApiOperation(value = "Get pipeline execution count for a service grouped on artifact and status",
-      nickname = "getPipelineExecutionCount")
+  @ApiOperation(value = "Get pipeline execution count info", nickname = "getPipelineExecutionCount")
+  @Operation(operationId = "pipelineExecutionCount",
+      summary = "Get pipeline execution count for a service with grouping support on artifact and deployment status",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description =
+                "Returns pipeline execution count for a service with grouping support on artifact and deployment status")
+      })
   public ResponseDTO<PipelineExecutionCountInfo>
-  getPipelineExecutionCount(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
-      @QueryParam(NGResourceFilterConstants.START_TIME) Long startInterval,
-      @QueryParam(NGResourceFilterConstants.END_TIME) Long endInterval,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT_VERSION) String artifactVersion,
-      @QueryParam(NGCommonEntityConstants.ARTIFACT) String artifact,
-      @QueryParam(NGCommonEntityConstants.STATUS) String status) {
+  getPipelineExecutionCount(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
+                            @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @Parameter(description = NGCommonEntityConstants.START_TIME_PARAM_MESSAGE) @QueryParam(
+          NGResourceFilterConstants.START_TIME) Long startInterval,
+      @Parameter(description = NGCommonEntityConstants.END_TIME_PARAM_MESSAGE) @QueryParam(
+          NGResourceFilterConstants.END_TIME) Long endInterval,
+      @Parameter(description = NGCommonEntityConstants.ARTIFACT_PATH_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ARTIFACT_PATH) String artifactPath,
+      @Parameter(description = NGCommonEntityConstants.ARTIFACT_VERSION_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ARTIFACT_VERSION) String artifactVersion,
+      @Parameter(description = NGCommonEntityConstants.ARTIFACT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ARTIFACT) String artifact,
+      @Parameter(description = NGCommonEntityConstants.STATUS_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.STATUS) String status) {
     return ResponseDTO.newResponse(
         cdOverviewDashboardService.getPipelineExecutionCountInfo(accountIdentifier, orgIdentifier, projectIdentifier,
             serviceId, startInterval, endInterval, artifactPath, artifactVersion, artifact, status));

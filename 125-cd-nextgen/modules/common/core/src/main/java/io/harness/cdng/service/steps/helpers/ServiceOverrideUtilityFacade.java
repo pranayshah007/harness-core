@@ -13,8 +13,14 @@ import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvir
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
+import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
+import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
@@ -22,8 +28,10 @@ import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaH
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.serviceoverride.mapper.NGServiceOverrideEntityConfigMapper;
 import io.harness.ng.core.serviceoverride.mapper.ServiceOverridesMapper;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
@@ -34,8 +42,11 @@ import io.harness.ng.core.yaml.CDYamlUtils;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.helpers.MergeHelper;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -50,8 +61,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
 @Slf4j
@@ -60,9 +74,13 @@ public class ServiceOverrideUtilityFacade {
   @Inject private ServiceOverridesServiceV2 serviceOverridesServiceV2;
   @Inject private EnvironmentEntityYamlSchemaHelper environmentEntityYamlSchemaHelper;
 
+  @Inject private ServiceOverrideService serviceOverrideService;
+
   private static final ObjectMapper mapper = new ObjectMapper();
   private static final String VARIABLES_NODE = "variables";
   private static final String ENV_OVERRIDES_NODE = "overrides";
+
+  private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   public List<NGVariable> getOverrideVariables(@NonNull NGServiceOverridesEntity entity) {
     // Todo: integrate this with DeploymentStageVariableCreator
@@ -74,15 +92,257 @@ public class ServiceOverrideUtilityFacade {
     return serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
   }
 
-  public NGServiceOverrideConfigV2 mergeServiceOverridesInputs(
-      NGServiceOverridesEntity entity, Map<String, Object> serviceOverrideInputs) {
-    if (isEmpty(serviceOverrideInputs)) {
-      return getOverrideConfigV2ForNoInputs(entity);
+  public Map<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedServiceOverrideConfigs(String accountId,
+      String orgId, String projectId, @NonNull ServiceStepV3Parameters parameters, @NonNull Environment envEntity)
+      throws IOException {
+    if (ParameterField.isNull(parameters.getEnvRef()) || isEmpty(parameters.getEnvRef().getValue())
+        || ParameterField.isNull(parameters.getServiceRef()) || isEmpty(parameters.getServiceRef().getValue())) {
+      throw new InvalidRequestException("Environment Ref or Service Ref given for overrides has not been resolved");
     }
-    if (Boolean.TRUE.equals(entity.getIsV2())) {
-      return mergeOverrideV2Inputs(entity, serviceOverrideInputs);
+    if (ParameterField.isNull(parameters.getInfraId()) || isEmpty(parameters.getInfraId().getValue())) {
+      log.warn("Infra Identifier has not been resolved to get service overrides");
     }
-    return mergeOverrideV1Inputs(entity, serviceOverrideInputs);
+
+    if ((!ParameterField.isNull(parameters.getServiceOverrideInputs())
+            && parameters.getServiceOverrideInputs().isExpression())
+        || (!ParameterField.isNull(parameters.getEnvInputs()) && parameters.getEnvInputs().isExpression())) {
+      throw new InvalidRequestException(String.format(
+          "Service Override inputs [%s] or Environment inputs [%s] are not resolved",
+          parameters.getServiceOverrideInputs().getExpressionValue(), parameters.getEnvInputs().getExpressionValue()));
+    }
+
+    Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesMap = new HashMap<>();
+    String isOverrideV2EnabledValue =
+        NGRestUtils
+            .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
+            .getValue();
+
+    if (isOverrideV2EnabledValue.equals("true")) {
+      Map<ServiceOverridesType, List<NGServiceOverridesEntity>> allTypesOverridesV2 =
+          getAllOverridesWithSpecExists(parameters, accountId);
+      Map<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
+          getMergedOverridesAcrossScope(allTypesOverridesV2);
+
+      if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+          && !ParameterField.isNull(parameters.getServiceOverrideInputs())) {
+        NGServiceOverrideConfigV2 envServiceOverrideWithMergedInputs =
+            mergeOverrideV2Inputs(acrossScopeMergedOverrides.get(ServiceOverridesType.ENV_SERVICE_OVERRIDE),
+                parameters.getServiceOverrideInputs().getValue());
+        acrossScopeMergedOverrides.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, envServiceOverrideWithMergedInputs);
+      }
+
+      if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+          && !ParameterField.isNull(parameters.getEnvInputs())) {
+        NGServiceOverrideConfigV2 envGlobalOverrideWithMergedInputs =
+            getOverrideConfigMergingEnvInputs(acrossScopeMergedOverrides.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE),
+                parameters.getEnvInputs().getValue());
+        acrossScopeMergedOverrides.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, envGlobalOverrideWithMergedInputs);
+      }
+      overridesMap = acrossScopeMergedOverrides;
+    } else {
+      Optional<NGServiceOverridesEntity> ngServiceOverridesEntity = serviceOverrideService.get(
+          accountId, orgId, projectId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue());
+      if (ngServiceOverridesEntity.isPresent() && isNotEmpty(ngServiceOverridesEntity.get().getYaml())) {
+        // Only ENV_SERVICE_OVERRIDE with non-empty yaml are being considered
+        // Also safe assumption is that only one override will be present for one env-service mapping
+        if (ParameterField.isNull(parameters.getServiceOverrideInputs())) {
+          NGServiceOverrideConfigV2 overrideConfig = getOverrideConfigForNoInputsV1(ngServiceOverridesEntity.get());
+          overridesMap.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, overrideConfig);
+        } else {
+          NGServiceOverrideConfigV2 mergedInputsOverrideConfig =
+              mergeOverrideV1Inputs(ngServiceOverridesEntity.get(), parameters.getServiceOverrideInputs().getValue());
+          overridesMap.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, mergedInputsOverrideConfig);
+        }
+      }
+
+      // For environment global override, environment yaml is being considered
+      if (isEmpty(envEntity.getYaml())) {
+        setYamlInEnvironment(envEntity);
+      }
+      if (ParameterField.isNull(parameters.getEnvInputs())) {
+        NGServiceOverrideConfigV2 envGlobalOverride = getOverrideConfigForNoInputsV1(envEntity);
+        overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, envGlobalOverride);
+      } else {
+        NGServiceOverrideConfigV2 mergedInputsEnvGlobalOverride =
+            getOverrideConfigV2FromEnvYaml(envEntity, parameters.getEnvInputs().getValue());
+        overridesMap.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, mergedInputsEnvGlobalOverride);
+      }
+    }
+
+    return overridesMap;
+  }
+
+  private Map<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedOverridesAcrossScope(
+      Map<ServiceOverridesType, List<NGServiceOverridesEntity>> overridesV2Map) {
+    Map<ServiceOverridesType, NGServiceOverrideConfigV2> finalMergedOverridesMap = new HashMap<>();
+    overridesV2Map.forEach((type, entities) -> {
+      if (isNotEmpty(entities)) {
+        Optional<NGServiceOverrideConfigV2> finalOverrideConfig = mergeOverridesGroupedByType(entities);
+        finalOverrideConfig.ifPresent(
+            ngServiceOverrideConfigV2 -> finalMergedOverridesMap.put(type, ngServiceOverrideConfigV2));
+      }
+    });
+
+    return finalMergedOverridesMap;
+  }
+
+  private Optional<NGServiceOverrideConfigV2> mergeOverridesGroupedByType(
+      @NonNull List<NGServiceOverridesEntity> overridesEntities) {
+    if (overridesEntities.size() > 3) {
+      throw new InvalidRequestException(
+          "Found more than 3 overrides, at one scope (project, org, account) only one override is supported");
+    }
+
+    if (isEmpty(overridesEntities)) {
+      return Optional.empty();
+    }
+
+    if (overridesEntities.size() == 1) {
+      NGServiceOverridesEntity overridesEntity = overridesEntities.get(0);
+      return Optional.of(NGServiceOverrideConfigV2.builder()
+                             .identifier(overridesEntity.getIdentifier())
+                             .serviceRef(overridesEntity.getServiceRef())
+                             .environmentRef(overridesEntity.getEnvironmentRef())
+                             .infraId(overridesEntity.getInfraIdentifier())
+                             .spec(overridesEntity.getSpec())
+                             .type(overridesEntity.getType())
+                             .build());
+    }
+
+    ServiceOverridesSpec finalSpec = getFinalMergedSpecFromOverridesGroupedByType(overridesEntities);
+
+    return Optional.of(NGServiceOverrideConfigV2.builder()
+                           .identifier(overridesEntities.get(0).getIdentifier())
+                           .serviceRef(overridesEntities.get(0).getServiceRef())
+                           .environmentRef(overridesEntities.get(0).getEnvironmentRef())
+                           .infraId(overridesEntities.get(0).getInfraIdentifier())
+                           .type(overridesEntities.get(0).getType())
+                           .spec(finalSpec)
+                           .build());
+  }
+
+  private static ServiceOverridesSpec getFinalMergedSpecFromOverridesGroupedByType(
+      @NonNull List<NGServiceOverridesEntity> overridesEntities) {
+    Map<String, NGVariable> finalNGVariables = new HashMap<>();
+    Map<String, ManifestConfigWrapper> finalManifests = new HashMap<>();
+    Map<String, ConfigFileWrapper> finalConfigFiles = new HashMap<>();
+    ApplicationSettingsConfiguration finalApplicationSetting = ApplicationSettingsConfiguration.builder().build();
+    ConnectionStringsConfiguration finalConnectionStrings = ConnectionStringsConfiguration.builder().build();
+
+    Map<Scope, NGServiceOverridesEntity> overridesGroupByScope = getOverridesGroupByType(overridesEntities);
+    if (overridesGroupByScope.containsKey(Scope.ACCOUNT)) {
+      ServiceOverridesSpec accOverridesSpec = overridesGroupByScope.get(Scope.ACCOUNT).getSpec();
+      updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, accOverridesSpec);
+      finalApplicationSetting = accOverridesSpec.getApplicationSettings();
+      finalConnectionStrings = accOverridesSpec.getConnectionStrings();
+    }
+    if (overridesGroupByScope.containsKey(Scope.ORG)) {
+      ServiceOverridesSpec orgOverridesSpec = overridesGroupByScope.get(Scope.ORG).getSpec();
+      updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, orgOverridesSpec);
+      finalApplicationSetting = orgOverridesSpec.getApplicationSettings();
+      finalConnectionStrings = orgOverridesSpec.getConnectionStrings();
+    }
+    if (overridesGroupByScope.containsKey(Scope.PROJECT)) {
+      ServiceOverridesSpec projectOverridesSpec = overridesGroupByScope.get(Scope.PROJECT).getSpec();
+      updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, projectOverridesSpec);
+      finalApplicationSetting = projectOverridesSpec.getApplicationSettings();
+      finalConnectionStrings = projectOverridesSpec.getConnectionStrings();
+    }
+
+    return ServiceOverridesSpec.builder()
+        .variables((List<NGVariable>) finalNGVariables.values())
+        .manifests((List<ManifestConfigWrapper>) finalManifests.values())
+        .configFiles((List<ConfigFileWrapper>) finalConfigFiles.values())
+        .connectionStrings(finalConnectionStrings)
+        .applicationSettings(finalApplicationSetting)
+        .build();
+  }
+
+  private static void updateSpecFieldsByEntityFields(Map<String, NGVariable> finalNGVariables,
+      Map<String, ManifestConfigWrapper> finalManifests, Map<String, ConfigFileWrapper> finalConfigFiles,
+      ServiceOverridesSpec overridesSpec) {
+    if (isNotEmpty(overridesSpec.getVariables())) {
+      overridesSpec.getVariables().forEach(ngVar -> finalNGVariables.put(ngVar.getName(), ngVar));
+    }
+    if (isNotEmpty(overridesSpec.getManifests())) {
+      overridesSpec.getManifests().forEach(
+          manifest -> finalManifests.put(manifest.getManifest().getIdentifier(), manifest));
+    }
+    if (isNotEmpty(overridesSpec.getConfigFiles())) {
+      overridesSpec.getConfigFiles().forEach(
+          configFile -> finalConfigFiles.put(configFile.getConfigFile().getIdentifier(), configFile));
+    }
+  }
+
+  private static Map<Scope, NGServiceOverridesEntity> getOverridesGroupByType(
+      @NotNull List<NGServiceOverridesEntity> overridesEntities) {
+    Map<Scope, NGServiceOverridesEntity> overrideGroupByScope = new HashMap<>();
+    overridesEntities.forEach(entity
+        -> overrideGroupByScope.put(
+            ScopeHelper.getScope(entity.getAccountId(), entity.getOrgIdentifier(), entity.getProjectIdentifier()),
+            entity));
+    return overrideGroupByScope;
+  }
+
+  private Map<ServiceOverridesType, List<NGServiceOverridesEntity>> getAllOverridesWithSpecExists(
+      ServiceStepV3Parameters parameters, String accountId) {
+    Map<ServiceOverridesType, List<NGServiceOverridesEntity>> overridesForStep = new HashMap<>();
+    overridesForStep.put(
+        ServiceOverridesType.ENV_GLOBAL_OVERRIDE, getEnvOverride(accountId, parameters.getEnvRef().getValue()));
+    overridesForStep.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE,
+        getEnvServiceOverride(accountId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue()));
+    overridesForStep.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE,
+        getInfraOverride(accountId, parameters.getEnvRef().getValue(), parameters.getInfraId().getValue()));
+    overridesForStep.put(ServiceOverridesType.INFRA_SERVICE_OVERRIDE,
+        getInfraServiceOverride(accountId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue(),
+            parameters.getInfraId().getValue()));
+    return overridesForStep;
+  }
+
+  private List<NGServiceOverridesEntity> getInfraServiceOverride(
+      String accountId, String environmentRef, String serviceRef, String infraId) {
+    Criteria criteria = getBasicCriteriaForOverridesV2(accountId, environmentRef)
+                            .and(NGServiceOverridesEntityKeys.serviceRef)
+                            .is(serviceRef)
+                            .and(NGServiceOverridesEntityKeys.infraIdentifier)
+                            .is(infraId);
+
+    return serviceOverridesServiceV2.findAll(criteria);
+  }
+
+  @NotNull
+  private static Criteria getBasicCriteriaForOverridesV2(String accountId, String environmentRef) {
+    return new Criteria()
+        .and(NGServiceOverridesEntityKeys.accountId)
+        .is(accountId)
+        .and(NGServiceOverridesEntityKeys.environmentRef)
+        .is(environmentRef)
+        .and(NGServiceOverridesEntityKeys.spec)
+        .exists(true)
+        .ne(null);
+  }
+
+  private List<NGServiceOverridesEntity> getInfraOverride(String accountId, String environmentRef, String infraId) {
+    Criteria criteria = getBasicCriteriaForOverridesV2(accountId, environmentRef)
+                            .and(NGServiceOverridesEntityKeys.infraIdentifier)
+                            .is(infraId);
+
+    return serviceOverridesServiceV2.findAll(criteria);
+  }
+
+  private List<NGServiceOverridesEntity> getEnvServiceOverride(
+      String accountId, String environmentRef, String serviceRef) {
+    Criteria criteria = getBasicCriteriaForOverridesV2(accountId, environmentRef)
+                            .and(NGServiceOverridesEntityKeys.serviceRef)
+                            .is(serviceRef);
+
+    return serviceOverridesServiceV2.findAll(criteria);
+  }
+
+  private List<NGServiceOverridesEntity> getEnvOverride(String accountId, String environmentRef) {
+    Criteria criteria = getBasicCriteriaForOverridesV2(accountId, environmentRef);
+
+    return serviceOverridesServiceV2.findAll(criteria);
   }
 
   private NGServiceOverrideConfigV2 mergeOverrideV1Inputs(
@@ -99,40 +359,34 @@ public class ServiceOverrideUtilityFacade {
   }
 
   private NGServiceOverrideConfigV2 mergeOverrideV2Inputs(
-      NGServiceOverridesEntity entity, Map<String, Object> serviceOverrideInputs) {
+      NGServiceOverrideConfigV2 overrideConfig, Map<String, Object> serviceOverrideInputs) {
     try {
-      String specYamlDummyNodeAdded = getSpecYamlForMerging(entity);
+      String specYamlDummyNodeAdded = getSpecYamlForMerging(overrideConfig);
       Map<String, Object> inputsDummyNodeAdded = addDummyNodeToOverrideInputs(serviceOverrideInputs);
       String mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
           specYamlDummyNodeAdded, YamlPipelineUtils.writeYamlString(inputsDummyNodeAdded), true, true);
 
       String yamlForSpec = isNotBlank(mergedYaml) ? removeDummyNodeFromYaml(mergedYaml) : null;
       ServiceOverridesSpec specWithMergedInput =
-          (isNotBlank(yamlForSpec)) ? toServiceOverrideSpec(yamlForSpec) : entity.getSpec();
+          (isNotBlank(yamlForSpec)) ? toServiceOverrideSpec(yamlForSpec) : overrideConfig.getSpec();
       return NGServiceOverrideConfigV2.builder()
-          .identifier(entity.getIdentifier())
-          .type(entity.getType())
-          .spec(specWithMergedInput == null ? entity.getSpec() : specWithMergedInput)
-          .serviceRef(entity.getServiceRef())
-          .environmentRef(entity.getEnvironmentRef())
-          .infraId(entity.getInfraIdentifier())
+          .identifier(overrideConfig.getIdentifier())
+          .type(overrideConfig.getType())
+          .spec(specWithMergedInput == null ? overrideConfig.getSpec() : specWithMergedInput)
+          .serviceRef(overrideConfig.getServiceRef())
+          .environmentRef(overrideConfig.getEnvironmentRef())
+          .infraId(overrideConfig.getInfraId())
           .build();
     } catch (Exception e) {
       throw new InvalidRequestException("Unable to process service override spec", e);
     }
   }
 
-  private NGServiceOverrideConfigV2 getOverrideConfigV2ForNoInputs(NGServiceOverridesEntity entity) {
-    boolean isV2 = Boolean.TRUE.equals(entity.getIsV2());
-    ServiceOverridesSpec specFromYaml = null;
-    if (!isV2) {
-      specFromYaml = toServiceOverrideSpec(ServiceOverridesMapper.toNGServiceOverrideConfig(entity.getYaml()));
-    }
-
+  private NGServiceOverrideConfigV2 getOverrideConfigForNoInputsV1(NGServiceOverridesEntity entity) {
     return NGServiceOverrideConfigV2.builder()
         .identifier(entity.getIdentifier())
         .type(entity.getType())
-        .spec(isV2 ? entity.getSpec() : specFromYaml)
+        .spec(toServiceOverrideSpec(ServiceOverridesMapper.toNGServiceOverrideConfig(entity.getYaml())))
         .serviceRef(entity.getServiceRef())
         .environmentRef(entity.getEnvironmentRef())
         .infraId(entity.getInfraIdentifier())
@@ -198,6 +452,28 @@ public class ServiceOverrideUtilityFacade {
     return ngServiceOverrideConfigV2;
   }
 
+  private NGServiceOverrideConfigV2 getOverrideConfigMergingEnvInputs(
+      NGServiceOverrideConfigV2 overrideConfig, Map<String, Object> envInputs) throws IOException {
+    NGServiceOverrideConfigV2 ngServiceOverrideConfigV2;
+
+    String inputStringToMerge = updateInputsAndGetForMerging(envInputs);
+    String specYamlToMerge = getSpecYamlForMerging(overrideConfig);
+
+    String mergedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
+        specYamlToMerge, inputStringToMerge, true, true);
+
+    String yamlForSpec = isNotBlank(mergedYaml) ? removeDummyNodeFromYaml(mergedYaml) : null;
+    ServiceOverridesSpec specWithMergedInput =
+        (isNotBlank(yamlForSpec)) ? toServiceOverrideSpec(yamlForSpec) : overrideConfig.getSpec();
+    ngServiceOverrideConfigV2 = NGServiceOverrideConfigV2.builder()
+                                    .identifier(overrideConfig.getIdentifier())
+                                    .environmentRef(overrideConfig.getEnvironmentRef())
+                                    .type(overrideConfig.getType())
+                                    .spec(specWithMergedInput)
+                                    .build();
+    return ngServiceOverrideConfigV2;
+  }
+
   private NGServiceOverrideConfigV2 getOverrideConfigV2ForNoInputs(
       NGServiceOverridesEntity envGlobalOverrideEntity, @NonNull Environment envEntity) throws IOException {
     NGServiceOverrideConfigV2 ngServiceOverrideConfigV2;
@@ -217,7 +493,7 @@ public class ServiceOverrideUtilityFacade {
 
     } else {
       NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
-          getNgEnvironmentConfig(envEntity.getAccountId(), envEntity.getIdentifier(), envEntity.getYaml())
+          getNGEnvironmentConfig(envEntity.getAccountId(), envEntity.getIdentifier(), envEntity.getYaml())
               .getNgEnvironmentInfoConfig();
       ngServiceOverrideConfigV2 = NGServiceOverrideConfigV2.builder()
                                       .identifier(ngEnvironmentInfoConfig.getIdentifier())
@@ -227,6 +503,18 @@ public class ServiceOverrideUtilityFacade {
                                       .build();
     }
     return ngServiceOverrideConfigV2;
+  }
+
+  private NGServiceOverrideConfigV2 getOverrideConfigForNoInputsV1(@NonNull Environment envEntity) throws IOException {
+    NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
+        getNGEnvironmentConfig(envEntity.getAccountId(), envEntity.getIdentifier(), envEntity.getYaml())
+            .getNgEnvironmentInfoConfig();
+    return NGServiceOverrideConfigV2.builder()
+        .identifier(ngEnvironmentInfoConfig.getIdentifier())
+        .type(ServiceOverridesType.ENV_GLOBAL_OVERRIDE)
+        .spec(toServiceOverrideSpec(ngEnvironmentInfoConfig))
+        .environmentRef(getEnvironmentRef(envEntity))
+        .build();
   }
 
   private String updateInputsAndGetForMerging(Map<String, Object> envInputsValue) {
@@ -246,7 +534,7 @@ public class ServiceOverrideUtilityFacade {
     return YamlPipelineUtils.writeYamlString(inputsMapToMerge);
   }
 
-  private NGEnvironmentConfig getNgEnvironmentConfig(String accountId, String identifier, String yaml)
+  private NGEnvironmentConfig getNGEnvironmentConfig(String accountId, String identifier, String yaml)
       throws IOException {
     try {
       return YamlUtils.read(yaml, NGEnvironmentConfig.class);
@@ -293,6 +581,16 @@ public class ServiceOverrideUtilityFacade {
     return yamlConfig.getYaml();
   }
 
+  private String getSpecYamlForMerging(NGServiceOverrideConfigV2 overrideConfig) throws IOException {
+    String specYaml = CDYamlUtils.getYamlString(overrideConfig.getSpec());
+    YamlField yamlField = YamlUtils.readTree(specYaml);
+    JsonNode currJsonNode = yamlField.getNode().getCurrJsonNode();
+    ObjectNode dummyObjectNode = mapper.createObjectNode();
+    dummyObjectNode.set(YamlTypes.SERVICE_OVERRIDE, currJsonNode);
+    YamlConfig yamlConfig = new YamlConfig(dummyObjectNode);
+    return yamlConfig.getYaml();
+  }
+
   private JsonNode readTree(String yaml) {
     try {
       YamlField yamlField = YamlUtils.readTree(yaml);
@@ -300,14 +598,6 @@ public class ServiceOverrideUtilityFacade {
     } catch (IOException e) {
       log.error(String.format("Exception occurred while converting yaml to jsonNode, [%s]", yaml));
       throw new InvalidRequestException("Exception occurred while converting yaml to jsonNode");
-    }
-  }
-
-  public ServiceOverridesSpec toServiceOverrideSpec(String entityYaml) {
-    try {
-      return YamlPipelineUtils.read(entityYaml, ServiceOverridesSpec.class);
-    } catch (IOException e) {
-      throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
     }
   }
 
@@ -351,6 +641,14 @@ public class ServiceOverrideUtilityFacade {
     return builder.build();
   }
 
+  private ServiceOverridesSpec toServiceOverrideSpec(String entityYaml) {
+    try {
+      return YamlPipelineUtils.read(entityYaml, ServiceOverridesSpec.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
+    }
+  }
+
   private void setYamlInEnvironment(Environment environment) {
     NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
     environment.setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
@@ -359,14 +657,14 @@ public class ServiceOverrideUtilityFacade {
   private NGEnvironmentConfig mergeEnvironmentInputsV1(
       String accountId, String identifier, String yaml, Map<String, Object> environmentInputs) throws IOException {
     if (isEmpty(environmentInputs)) {
-      return getNgEnvironmentConfig(accountId, identifier, yaml);
+      return getNGEnvironmentConfig(accountId, identifier, yaml);
     }
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
     String resolvedYaml = MergeHelper.mergeRuntimeInputValuesAndCheckForRuntimeInOriginalYaml(
         yaml, YamlPipelineUtils.writeYamlString(environmentInputYaml), true, true);
 
-    return getNgEnvironmentConfig(accountId, identifier, resolvedYaml);
+    return getNGEnvironmentConfig(accountId, identifier, resolvedYaml);
   }
 
   private String getEnvironmentRef(Environment environment) {

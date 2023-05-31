@@ -182,9 +182,9 @@ public class ContainerDeploymentDelegateHelper {
     return kubernetesConfig;
   }
 
-  public boolean useK8sSteadyStateCheck(
-      boolean isK8sSteadyStateCheckEnabled, ContainerServiceParams containerServiceParams, LogCallback logCallback) {
-    if (!isK8sSteadyStateCheckEnabled) {
+  public boolean useK8sSteadyStateCheck(boolean isK8sSteadyStateCheckEnabled, boolean useRefactorSteadyStateCheck,
+      ContainerServiceParams containerServiceParams, LogCallback logCallback) {
+    if (!isK8sSteadyStateCheckEnabled && !useRefactorSteadyStateCheck) {
       return false;
     }
 

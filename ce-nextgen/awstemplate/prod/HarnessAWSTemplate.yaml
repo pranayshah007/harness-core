@@ -277,12 +277,6 @@ Resources:
                   - ec2:Get*
                   - ec2:ListImagesInRecycleBin
                   - ec2:ListSnapshotsInRecycleBin
-                  - elasticbeanstalk:Check*
-                  - elasticbeanstalk:Describe*
-                  - elasticbeanstalk:List*
-                  - elasticbeanstalk:Request*
-                  - elasticbeanstalk:Retrieve*
-                  - elasticbeanstalk:Validate*
                   - elasticloadbalancing:Describe*
                   - rds:Describe*
                   - rds:List*
@@ -292,7 +286,9 @@ Resources:
                   - autoscaling:GetPredictiveScalingForecast
                   - s3:DescribeJob
                   - s3:Get*
-                  - s3:List* 
+                  - s3:List*
+                  - cloudwatch:GetMetricStatistics
+                  - tag:GetResources
                 Resource: "*"
       Roles:
         - !Ref HarnessCloudFormationRole

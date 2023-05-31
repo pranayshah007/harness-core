@@ -593,15 +593,36 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   }
 
   @Override
-  public boolean validateSecretRef(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String secretManagerIdentifier, String secretRefPath) {
-    SecretManagerConfigDTO secretManager =
-        getSecretManagerOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, secretManagerIdentifier, false);
-    boolean isValidationSuccess;
-    isValidationSuccess =
-        vaultEncryptorsRegistry.getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
-            .validateReference(accountIdentifier, secretRefPath, SecretManagerConfigMapper.fromDTO(secretManager));
-    return isValidationSuccess;
+  public boolean validateSecretRef(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, SecretDTOV2 secretDTO) {
+    if (!(secretDTO.getSpec() instanceof SecretTextSpecDTO)) {
+      throw new InvalidRequestException("Validating referenced secrets is only supported for type Secret Text");
+    }
+    SecretTextSpecDTO specDTO = (SecretTextSpecDTO) secretDTO.getSpec();
+    if (((SecretTextSpecDTO) secretDTO.getSpec()).getValueType().equals(Inline)) {
+      throw new InvalidRequestException(
+          "Path of referenced secrets stored in secret managers can only can be validated, Inline secrets are not applicable");
+    }
+    SecretManagerConfigDTO secretManager = getSecretManagerOrThrow(
+        accountIdentifier, orgIdentifier, projectIdentifier, specDTO.getSecretManagerIdentifier(), false);
+    io.harness.beans.SecretText secretText = io.harness.beans.SecretText.builder()
+                                                 .name(secretDTO.getName())
+                                                 .path(specDTO.getValue())
+                                                 .additionalMetadata(specDTO.getAdditionalMetadata())
+                                                 .build();
+    switch (secretManager.getEncryptionType()) {
+      case CUSTOM_NG:
+        throw new InvalidRequestException("Validating referenced secrets for Custom Secret Manager is not supported.");
+      case GCP_KMS:
+      case KMS:
+        throw new InvalidRequestException(
+            "Validating referenced secrets for Key Management Systems such as GCP_KMS and AWS KMS is not supported since they do not store secrets.");
+      default:
+        break;
+    }
+    return vaultEncryptorsRegistry
+        .getVaultEncryptor(SecretManagerConfigMapper.fromDTO(secretManager).getEncryptionType())
+        .validateReference(accountIdentifier, secretText, SecretManagerConfigMapper.fromDTO(secretManager));
   }
 
   @Override

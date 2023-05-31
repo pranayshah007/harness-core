@@ -31,6 +31,6 @@ exports:
           - component: EntitySwitch
             specs:
               cases:
-                if: isCircleCIAvailable
-                content:
-                  component: EntityCircleCIContent
+                - if: isCircleCIAvailable
+                  content:
+                    component: EntityCircleCIContent

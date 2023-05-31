@@ -28,11 +28,13 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.timeout.TimeoutParameters;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -70,11 +72,10 @@ public class WaitForExecutionInputHelper {
       Long currentTime = System.currentTimeMillis();
       String inputInstanceId = UUIDGenerator.generateUuid();
       EngineExpressionEvaluator evaluator = pmsEngineExpressionService.prepareExpressionEvaluator(ambiance);
-      String fieldYaml =
-          YamlNode.getNodeYaml(planExecutionMetadataOptional.get().getYaml(), ambiance).replaceAll("\"", "");
+      JsonNode fieldJsonNode = YamlNode.getNodeYaml(planExecutionMetadataOptional.get().getYaml(), ambiance);
       // Resolve any expression in fieldYaml that can be resolved so far.
-      fieldYaml = pmsEngineExpressionService.renderExpression(
-          ambiance, fieldYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+      fieldJsonNode = (JsonNode) pmsEngineExpressionService.resolve(
+          ambiance, fieldJsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
       long timeout = 0;
       if (EmptyPredicate.isNotEmpty(node.getTimeoutObtainments())) {
         // We take the last timeout added as timeout for the step.
@@ -93,7 +94,7 @@ public class WaitForExecutionInputHelper {
       executionInputService.save(ExecutionInputInstance.builder()
                                      .inputInstanceId(inputInstanceId)
                                      .nodeExecutionId(nodeExecutionId)
-                                     .fieldYaml(fieldYaml)
+                                     .fieldYaml(YamlUtils.writeYamlString(fieldJsonNode))
                                      .template(node.getExecutionInputTemplate())
                                      .createdAt(currentTime)
                                      .validUntil(currentTime + MILLIS_IN_SIX_MONTHS)

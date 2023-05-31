@@ -309,8 +309,8 @@ if [[ "" != "$STO_SERVICE_GLOBAL_TOKEN" ]]; then
   export STO_SERVICE_GLOBAL_TOKEN; yq -i '.stoServiceConfig.globalToken=env(STO_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
 fi
 
-if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
-  export SSCA_SERVICE_GLOBAL_TOKEN; yq -i '.sscaServiceConfig.globalToken=env(SSCA_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "" != "$IACM_SERVICE_GLOBAL_TOKEN" ]]; then

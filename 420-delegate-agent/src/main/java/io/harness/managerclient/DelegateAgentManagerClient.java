@@ -163,8 +163,8 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body InstanceSyncResponseV2 instanceSyncResponseV2);
 
   @GET("instancesync/instance-sync-ng-v2/task/{perpetualTaskId}/details")
-  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(
-      @Path("perpetualTaskId") String perpetualTaskId, @Query("accountId") String accountId);
+  Call<InstanceSyncTaskDetails> fetchInstanceSyncV2TaskDetails(@Path("perpetualTaskId") String perpetualTaskId,
+      @Query("page") int page, @Query("page_size") int pageSize, @Query("accountId") String accountId);
   // Query for a specific set of delegate properties for a given account.
   // Request: GetDelegatePropertiesRequest
   // Response: GetDelegatePropertiesResponse

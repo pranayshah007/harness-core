@@ -54,6 +54,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -349,7 +350,8 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
     KubernetesConfig kubernetesConfig =
         containerDeploymentDelegateHelper.getKubernetesConfig(request.getK8sClusterConfig(), false);
     k8sRollingHandlerConfig.setKubernetesConfig(kubernetesConfig);
-    Kubectl client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    Kubectl client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
     k8sRollingHandlerConfig.setClient(client);
     try {
       k8sTaskHelperBase.deleteSkippedManifestFiles(
@@ -381,8 +383,7 @@ public class K8sRollingDeployTaskHandler extends K8sTaskHandler {
         return true;
       }
 
-      return k8sTaskHelperBase.dryRunManifests(
-          client, resources, k8sDelegateTaskParams, executionLogCallback, request.isUseNewKubectlVersion());
+      return k8sTaskHelperBase.dryRunManifests(client, resources, k8sDelegateTaskParams, executionLogCallback);
     } catch (Exception e) {
       log.error("Exception:", e);
       executionLogCallback.saveExecutionLog(getMessage(e), ERROR);

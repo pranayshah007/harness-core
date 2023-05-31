@@ -135,7 +135,7 @@ public class SCMGitSyncHelper {
               .setPrincipal(getPrincipal())
               .setGetOnlyFileContent(getOnlyFileContent)
               .build();
-      final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::getFile, getFileRequest);
 
       ScmGitMetaData scmGitMetaData = getScmGitMetaData(getFileResponse);
@@ -147,6 +147,7 @@ public class SCMGitSyncHelper {
         scmErrorHandler.processAndThrowException(getFileResponse.getStatusCode(),
             getScmErrorDetailsFromGitProtoResponse(getFileResponse.getError()), scmGitMetaData);
       }
+      log.info("Git SDK file content {} and scmGetMetadata : {}", getFileResponse.getFileContent(), scmGitMetaData);
       return ScmGetFileResponse.builder()
           .fileContent(getFileResponse.getFileContent())
           .gitMetaData(scmGitMetaData)
@@ -175,7 +176,7 @@ public class SCMGitSyncHelper {
               .setPrincipal(getPrincipal())
               .build();
 
-      final CreateFileResponse createFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final CreateFileResponse createFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::createFile, createFileRequest);
 
       if (isFailureResponse(createFileResponse.getStatusCode())) {
@@ -214,7 +215,7 @@ public class SCMGitSyncHelper {
               .setPrincipal(getPrincipal())
               .build();
 
-      final UpdateFileResponse updateFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final UpdateFileResponse updateFileResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::updateFile, updateFileRequest);
 
       if (isFailureResponse(updateFileResponse.getStatusCode())) {
@@ -244,7 +245,7 @@ public class SCMGitSyncHelper {
             .setPrincipal(getPrincipal())
             .build();
 
-    final CreatePRResponse createPRResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+    final CreatePRResponse createPRResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
         harnessToGitPushInfoServiceBlockingStub::createPullRequest, createPRRequest);
 
     if (isFailureResponse(createPRResponse.getStatusCode())) {
@@ -270,7 +271,7 @@ public class SCMGitSyncHelper {
               .putAllContextMap(contextMap)
               .build();
 
-      final GetRepoUrlResponse getRepoUrlResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+      final GetRepoUrlResponse getRepoUrlResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
           harnessToGitPushInfoServiceBlockingStub::getRepoUrl, getRepoUrlRequest);
 
       if (isFailureResponse(getRepoUrlResponse.getStatusCode())) {
@@ -314,7 +315,7 @@ public class SCMGitSyncHelper {
                                                           .putAllGetFileRequestMap(sdkRequestMap)
                                                           .build();
 
-    final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessException(
+    final GetBatchFilesResponse getBatchFilesResponse = GitSyncGrpcClientUtils.retryAndProcessExceptionV2(
         harnessToGitPushInfoServiceBlockingStub::getBatchFiles, getBatchFilesRequest);
 
     if (isFailureResponse(getBatchFilesResponse.getStatusCode())) {

@@ -14,6 +14,7 @@ import io.harness.idp.common.Constants;
 import io.harness.idp.common.FileUtils;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
+import io.harness.idp.configmanager.utils.ConfigManagerUtils;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.plugin.beans.PluginInfoEntity;
 import io.harness.idp.plugin.beans.PluginRequestEntity;
@@ -31,6 +32,7 @@ import io.harness.spec.server.idp.v1.model.RequestPlugin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,7 @@ public class PluginInfoServiceImpl implements PluginInfoService {
   private ConfigManagerService configManagerService;
   private ConfigEnvVariablesService configEnvVariablesService;
   private BackstageEnvVariableService backstageEnvVariableService;
+  @Inject @Named("env") private String env;
   @Override
   public List<PluginInfo> getAllPluginsInfo(String accountId) {
     List<PluginInfoEntity> plugins = pluginInfoRepository.findByIdentifierIn(Constants.pluginIds);
@@ -92,6 +95,9 @@ public class PluginInfoServiceImpl implements PluginInfoService {
         backstageEnvSecretVariable.setHarnessSecretIdentifier(null);
         backstageEnvSecretVariables.add(backstageEnvSecretVariable);
       }
+    }
+    if (pluginEntity.getIdentifier().equals("harness-ci-cd") && appConfig == null) {
+      pluginEntity.setConfig(ConfigManagerUtils.getHarnessCiCdAppConfig(env));
     }
     return PluginDetailedInfoMapper.toDTO(pluginEntity, appConfig, backstageEnvSecretVariables);
   }

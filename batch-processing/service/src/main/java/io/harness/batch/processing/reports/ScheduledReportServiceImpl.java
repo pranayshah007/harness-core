@@ -26,7 +26,6 @@ import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.inject.Singleton;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -51,9 +50,7 @@ public class ScheduledReportServiceImpl {
   @Autowired private CloudBillingHelper cloudBillingHelper;
 
   // TODO: CE_VIEW_URL, MAIL_SUBJECT to be finalized
-  private static final String CE_VIEW_URL = "PERSPECTIVE_URL";
-  private static final String MAIL_SUBJECT = "Your Continous Efficiency scheduled report is here";
-  private static final String URL = "url";
+  private static final String MAIL_SUBJECT = "Your Continuous Efficiency scheduled report is here";
   private int scheduleCount;
 
   public void generateAndSendScheduledReport() {
@@ -89,18 +86,10 @@ public class ScheduledReportServiceImpl {
   }
 
   private void sendMail(String accountId, String[] recipients, String viewId, String reportId) {
-    Map<String, String> templateModel =
-        ceReportTemplateBuilderService.getTemplatePlaceholders(accountId, viewId, reportId, bigQueryService.get(),
-            cloudBillingHelper.getCloudProviderTableName(
-                config.getBillingDataPipelineConfig().getGcpProjectId(), accountId, unified));
-    String viewUrl = "";
-    try {
-      viewUrl = emailNotificationService.buildAbsoluteUrl(templateModel.get(CE_VIEW_URL));
-      viewUrl = viewUrl.replace("%25", "%");
-    } catch (URISyntaxException e) {
-      log.error("Error in forming View URL for Scheduled Report", e);
-    }
-    templateModel.put(URL, viewUrl);
+    String cloudProviderTableName = cloudBillingHelper.getCloudProviderTableName(
+        config.getBillingDataPipelineConfig().getGcpProjectId(), accountId, unified);
+    Map<String, String> templateModel = ceReportTemplateBuilderService.getTemplatePlaceholders(
+        accountId, viewId, reportId, bigQueryService.get(), cloudProviderTableName, config.getBaseUrl());
     EmailData emailData = EmailData.builder()
                               .to(Arrays.asList(recipients))
                               .templateName(config.getReportScheduleConfig().getTemplateName())

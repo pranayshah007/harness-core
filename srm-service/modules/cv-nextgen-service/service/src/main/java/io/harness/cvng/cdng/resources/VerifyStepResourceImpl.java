@@ -17,6 +17,7 @@ import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
+import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.v2.AbstractAnalysedNode;
 import io.harness.cvng.cdng.beans.v2.AnalysedDeploymentNode;
@@ -167,7 +168,7 @@ public class VerifyStepResourceImpl implements VerifyStepResource {
                 .build());
     boolean isExpired = false;
     BaselineOverview baselineOverview = null;
-    if (appliedDeploymentAnalysisType == AppliedDeploymentAnalysisType.TEST) {
+    if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
       String baselineVerificationJobInstanceId = null;
       long baselineExpiry = 1L;
       String planExecutionId = "";

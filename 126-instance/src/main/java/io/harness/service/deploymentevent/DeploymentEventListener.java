@@ -52,6 +52,7 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
@@ -77,7 +78,8 @@ public class DeploymentEventListener implements OrchestrationEventHandler {
          AutoLogContext ignore2 = InstanceSyncLogContext.builder()
                                       .instanceSyncFlow(InstanceSyncFlow.NEW_DEPLOYMENT.name())
                                       .build(OVERRIDE_ERROR)) {
-      if (!StatusUtils.isFinalStatus(event.getStatus())) {
+      if (!StatusUtils.isFinalStatus(event.getStatus())
+          || Objects.equals(AmbianceUtils.obtainNodeType(ambiance), "IDENTITY_PLAN_NODE")) {
         return;
       }
 

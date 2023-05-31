@@ -149,7 +149,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
 
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .dryRunManifests(any(Kubectl.class), anyList(), eq(k8sDelegateTaskParams), eq(logCallback), anyBoolean());
+        .dryRunManifests(any(Kubectl.class), anyList(), eq(k8sDelegateTaskParams), eq(logCallback));
 
     doReturn(kubernetesConfig)
         .when(containerDeploymentDelegateBaseHelper)
@@ -539,8 +539,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     if (!throwException) {
       verify(k8sTaskHelperBase).setNamespaceToKubernetesResourcesIfRequired(resources, "default");
       verify(k8sTaskHelperBase, skipDryRun ? never() : times(1))
-          .dryRunManifests(
-              any(Kubectl.class), eq(resources), eq(k8sDelegateTaskParams), eq(logCallback), eq(true), anyBoolean());
+          .dryRunManifests(any(Kubectl.class), eq(resources), eq(k8sDelegateTaskParams), eq(logCallback), eq(true));
     }
   }
 

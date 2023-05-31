@@ -1037,6 +1037,11 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     VerificationJobInstance unpinnedBaselineVerificationJobInstance =
         verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
     assertThat(unpinnedBaselineVerificationJobInstance.getIsBaseline()).isFalse();
+    Instant baselineVerificationCreatedAt = Instant.ofEpochMilli(baselineVerificationJobInstance.getCreatedAt());
+    Instant expectedBaselineVerificationValidUntil =
+        baselineVerificationCreatedAt.plus(CVConstants.MAX_DATA_RETENTION_DURATION);
+    assertThat(unpinnedBaselineVerificationJobInstance.getValidUntil())
+        .isEqualTo(Date.from(expectedBaselineVerificationValidUntil));
   }
 
   private CVConfig newCVConfig() {

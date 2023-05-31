@@ -48,6 +48,7 @@ const (
 	logUploadFf        = "HARNESS_CI_INDIRECT_LOG_UPLOAD_FF"
 	gitBin             = "git"
 	diffFilesCmd       = "%s diff --name-status --diff-filter=MADR HEAD@{1} HEAD -1"
+	safeDirCommand     = "%s config --global --add safe.directory '*'"
 	harnessStepIndex   = "HARNESS_STEP_INDEX"
 	harnessStepTotal   = "HARNESS_STEP_TOTAL"
 	harnessStageIndex  = "HARNESS_STAGE_INDEX"
@@ -58,9 +59,16 @@ const (
 // along with their corresponding status
 func GetChangedFiles(ctx context.Context, workspace string, log *zap.SugaredLogger, procWriter io.Writer) ([]types.File, error) {
 	cmdContextFactory := exec.OsCommandContextGracefulWithLog(log)
-	cmd := cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(diffFilesCmd, gitBin)).
+	cmd := cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(safeDirCommand, gitBin)).
 		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
 	out, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd = cmdContextFactory.CmdContext(ctx, "sh", "-c", fmt.Sprintf(diffFilesCmd, gitBin)).
+		WithDir(workspace).WithStdout(procWriter).WithStderr(procWriter)
+	out, err = cmd.Output()
 	if err != nil {
 		return nil, err
 	}

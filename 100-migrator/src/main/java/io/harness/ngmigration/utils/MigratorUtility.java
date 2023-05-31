@@ -327,6 +327,7 @@ public class MigratorUtility {
     }
     String name = variable.getName();
     name = name.replace('-', '_');
+    name = name.replaceAll("\\W", "");
     return StringNGVariable.builder()
         .type(NGVariableType.STRING)
         .name(name)

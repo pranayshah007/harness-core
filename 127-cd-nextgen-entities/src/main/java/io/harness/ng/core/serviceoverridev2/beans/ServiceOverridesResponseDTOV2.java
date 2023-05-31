@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -30,11 +31,11 @@ public class ServiceOverridesResponseDTOV2 {
   String accountId;
   String orgIdentifier;
   String projectIdentifier;
-  String environmentRef;
+  @NonNull String environmentRef;
   String serviceRef;
   String infraIdentifier;
   String clusterIdentifier;
-  ServiceOverridesType type;
-  ServiceOverridesSpec spec;
+  @NonNull ServiceOverridesType type;
+  @NonNull ServiceOverridesSpec spec;
   boolean isNewlyCreated;
 }

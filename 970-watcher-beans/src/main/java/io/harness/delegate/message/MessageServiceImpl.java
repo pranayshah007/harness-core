@@ -150,33 +150,39 @@ public class MessageServiceImpl implements MessageService {
               List<String> components = Arrays.asList(line.split(Pattern.quote(PRIMARY_DELIMITER)));
               long timestamp = Long.parseLong(components.get(1));
               if (timestamp > lastReadTimestamp) {
-                MessengerType fromType = MessengerType.valueOf(components.get(2));
-                String fromProcess = components.get(3);
-                String messageName = components.get(4);
-                List<String> msgParams = new ArrayList<>();
-                if (components.size() == 6) {
-                  String params = components.get(5);
-                  if (!params.contains(SECONDARY_DELIMITER)) {
-                    msgParams.add(params);
-                  } else {
-                    msgParams.addAll(Arrays.asList(params.split(Pattern.quote(SECONDARY_DELIMITER))));
+                try {
+                  MessengerType fromType = MessengerType.valueOf(components.get(2));
+                  String fromProcess = components.get(3);
+                  String messageName = components.get(4);
+                  List<String> msgParams = new ArrayList<>();
+                  if (components.size() == 6) {
+                    String params = components.get(5);
+                    if (!params.contains(SECONDARY_DELIMITER)) {
+                      msgParams.add(params);
+                    } else {
+                      msgParams.addAll(Arrays.asList(params.split(Pattern.quote(SECONDARY_DELIMITER))));
+                    }
                   }
+                  Message message = Message.builder()
+                                        .message(messageName)
+                                        .params(msgParams)
+                                        .timestamp(timestamp)
+                                        .fromType(fromType)
+                                        .fromProcess(fromProcess)
+                                        .build();
+                  if (log.isDebugEnabled()) {
+                    String input =
+                        isInput ? "Read message" : "Retrieved message from " + sourceType + " " + sourceProcessId;
+                    log.debug("{}: {}", input, message);
+                  }
+                  messageTimestamps.put(channel, timestamp);
+                  reader.close();
+                  return message;
+                } catch (IllegalArgumentException e) {
+                  log.error(
+                      "Error parsing message from channel {} {}. Original line {}", sourceType, sourceProcessId, line);
+                  return null; // So we keep the old behavior and don't skip the message even if invalid.
                 }
-                Message message = Message.builder()
-                                      .message(messageName)
-                                      .params(msgParams)
-                                      .timestamp(timestamp)
-                                      .fromType(fromType)
-                                      .fromProcess(fromProcess)
-                                      .build();
-                if (log.isDebugEnabled()) {
-                  String input =
-                      isInput ? "Read message" : "Retrieved message from " + sourceType + " " + sourceProcessId;
-                  log.debug("{}: {}", input, message);
-                }
-                messageTimestamps.put(channel, timestamp);
-                reader.close();
-                return message;
               }
             }
           }

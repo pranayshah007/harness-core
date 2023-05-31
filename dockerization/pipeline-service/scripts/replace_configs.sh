@@ -274,8 +274,8 @@ if [[ "" != "$SSCA_SERVICE_ENDPOINT" ]]; then
   export SSCA_SERVICE_ENDPOINT; yq -i '.sscaServiceConfig.httpClientConfig.baseUrl=env(SSCA_SERVICE_ENDPOINT)' $CONFIG_FILE
 fi
 
-if [[ "" != "$SSCA_SERVICE_GLOBAL_TOKEN" ]]; then
-  export SSCA_SERVICE_GLOBAL_TOKEN; yq -i '.sscaServiceConfig.globalToken=env(SSCA_SERVICE_GLOBAL_TOKEN)' $CONFIG_FILE
+if [[ "" != "$SSCA_SERVICE_SECRET" ]]; then
+  export SSCA_SERVICE_SECRET; yq -i '.sscaServiceConfig.serviceSecret=env(SSCA_SERVICE_SECRET)' $CONFIG_FILE
 fi
 
 if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then

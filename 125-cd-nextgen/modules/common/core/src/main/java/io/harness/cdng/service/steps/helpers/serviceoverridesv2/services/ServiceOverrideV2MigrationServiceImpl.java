@@ -9,6 +9,8 @@ package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_GLOBAL_OVERRIDE;
+import static io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType.ENV_SERVICE_OVERRIDE;
 
 import io.harness.beans.IdentifierRef;
 import io.harness.ng.core.entities.Organization;
@@ -34,6 +36,7 @@ import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesSpec.ServiceOv
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
 import io.harness.ng.core.serviceoverridev2.beans.SingleEnvMigrationResponse;
 import io.harness.ng.core.serviceoverridev2.beans.SingleServiceOverrideMigrationResponse;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -56,12 +59,13 @@ import org.springframework.data.util.CloseableIterator;
 @Slf4j
 public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2MigrationService {
   @Inject MongoTemplate mongoTemplate;
+  @Inject NGSettingsClient settingsClient;
   private static final String DEBUG_LINE = "[ServiceOverrideV2MigrationServiceImpl]: ";
 
   @Override
   @NonNull
   public ServiceOverrideMigrationResponseDTO migrateToV2(
-      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren) {
+      @NonNull String accountId, String orgId, String projectId, boolean migrateChildren, boolean isRevert) {
     ServiceOverrideMigrationResponseDTOBuilder responseDTOBuilder =
         ServiceOverrideMigrationResponseDTO.builder().accountId(accountId);
     List<ProjectLevelOverrideMigrationResponseDTO> projectLevelResponseDTOs = new ArrayList<>();
@@ -69,7 +73,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     if (isNotEmpty(projectId)) {
       log.info(String.format(
           DEBUG_LINE + "Starting project level migration for orgId: [%s], project :[%s]", orgId, projectId));
-      projectLevelResponseDTOs = List.of(doProjectLevelMigration(accountId, orgId, projectId));
+      projectLevelResponseDTOs = List.of(doProjectLevelMigration(accountId, orgId, projectId, isRevert));
       log.info(
           String.format(DEBUG_LINE + "Successfully finished project level migration for orgId: [%s], project :[%s]",
               orgId, projectId));
@@ -81,9 +85,9 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
 
     if (isNotEmpty(orgId)) {
       log.info(String.format(DEBUG_LINE + "Starting org level migration for orgId: [%s]", orgId));
-      OrgLevelOverrideMigrationResponseDTO orgLevelResponseDTO = doOrgLevelMigration(accountId, orgId);
+      OrgLevelOverrideMigrationResponseDTO orgLevelResponseDTO = doOrgLevelMigration(accountId, orgId, isRevert);
       if (migrateChildren) {
-        projectLevelResponseDTOs = doChildProjectsMigration(accountId, orgId);
+        projectLevelResponseDTOs = doChildProjectsMigration(accountId, orgId, isRevert);
       }
       log.info(String.format(DEBUG_LINE + "Successfully finished org level migration for orgId: [%s]", orgId));
 
@@ -98,14 +102,14 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
 
     log.info(String.format(DEBUG_LINE + "Starting account level migration for orgId: [%s]", accountId));
 
-    AccountLevelOverrideMigrationResponseDTO accountLevelResponseDTO = doAccountLevelMigration(accountId);
+    AccountLevelOverrideMigrationResponseDTO accountLevelResponseDTO = doAccountLevelMigration(accountId, isRevert);
     if (migrateChildren) {
-      orgLevelResponseDTOs = doChildLevelOrgMigration(accountId);
+      orgLevelResponseDTOs = doChildLevelOrgMigration(accountId, isRevert);
       List<String> orgIdsInAccount = orgLevelResponseDTOs.stream()
                                          .map(OrgLevelOverrideMigrationResponseDTO::getOrgIdentifier)
                                          .collect(Collectors.toList());
       for (String localOrgId : orgIdsInAccount) {
-        projectLevelResponseDTOs.addAll(doChildProjectsMigration(accountId, localOrgId));
+        projectLevelResponseDTOs.addAll(doChildProjectsMigration(accountId, localOrgId, isRevert));
       }
     }
     log.info(String.format(DEBUG_LINE + "Successfully finished account level migration for account: [%s]", accountId));
@@ -120,13 +124,13 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
 
   @NonNull
   private ProjectLevelOverrideMigrationResponseDTO doProjectLevelMigration(
-      String accountId, String orgId, String projectId) {
+      String accountId, String orgId, String projectId, boolean isRevert) {
     boolean isOverrideMigrationSuccessFul = true;
     OverridesGroupMigrationResult overrideResult = OverridesGroupMigrationResult.builder().build();
 
     try {
-      Criteria criteria = getCriteriaForProjectServiceOverrides(accountId, orgId, projectId);
-      overrideResult = doLevelScopedOverridesMigration(accountId, orgId, projectId, criteria);
+      Criteria criteria = getCriteriaForProjectServiceOverrides(accountId, orgId, projectId, isRevert);
+      overrideResult = doLevelScopedOverridesMigration(accountId, orgId, projectId, criteria, isRevert);
       isOverrideMigrationSuccessFul = overrideResult.isSuccessFul();
     } catch (Exception e) {
       log.error(String.format(DEBUG_LINE + "Override Migration failed for project with orgId: [%s], project :[%s]",
@@ -138,8 +142,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     boolean isEnvMigrationSuccessful = true;
     EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
     try {
-      Criteria criteria = getCriteriaForProjectEnvironments(accountId, orgId, projectId);
-      envResult = doLevelScopedEnvMigration(accountId, orgId, projectId, criteria);
+      Criteria criteria = getCriteriaForProjectEnvironments(accountId, orgId, projectId, isRevert);
+      envResult = doLevelScopedEnvMigration(accountId, orgId, projectId, criteria, isRevert);
       isEnvMigrationSuccessful = envResult.isSuccessFul();
     } catch (Exception e) {
       log.error(String.format(
@@ -164,7 +168,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   private EnvsMigrationResult doLevelScopedEnvMigration(
-      String accountId, String orgId, String projectId, Criteria criteria) {
+      String accountId, String orgId, String projectId, Criteria criteria, boolean isRevert) {
     long migratedEnvCount = 0L;
     long totalEnvCount = 0L;
     boolean isSuccessFul = true;
@@ -178,7 +182,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         try (CloseableIterator<Environment> iterator = mongoTemplate.stream(queryForTargetedEnvs, Environment.class)) {
           while (iterator.hasNext()) {
             Environment envEntity = iterator.next();
-            Optional<SingleEnvMigrationResponse> singleMigrationResponseOp = doMigrationForSingleEnvironment(envEntity);
+            Optional<SingleEnvMigrationResponse> singleMigrationResponseOp =
+                doMigrationForSingleEnvironment(envEntity, isRevert);
             if (singleMigrationResponseOp.isEmpty()) {
               migratedEnvCount++;
               migratedEnvInfos.add(SingleEnvMigrationResponse.builder()
@@ -220,31 +225,36 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         .build();
   }
 
-  private Criteria getCriteriaForProjectEnvironments(String accountId, String orgId, String projectId) {
+  private Criteria getCriteriaForProjectEnvironments(
+      String accountId, String orgId, String projectId, boolean isRevert) {
     Criteria criteria = new Criteria()
                             .and(EnvironmentKeys.accountId)
                             .is(accountId)
                             .and(EnvironmentKeys.orgIdentifier)
                             .is(orgId)
                             .and(EnvironmentKeys.projectIdentifier)
-                            .is(projectId)
-                            .and(EnvironmentKeys.isMigratedToOverride)
-                            .is(false);
+                            .is(projectId);
 
-    return criteria.andOperator(
-        new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
-            Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false)),
-        new Criteria().and(EnvironmentKeys.yaml).exists(true).ne(null));
+    Criteria additionalCriteria;
+
+    if (isRevert) {
+      additionalCriteria = Criteria.where(EnvironmentKeys.isMigratedToOverride).is(true);
+    } else {
+      additionalCriteria = new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
+          Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false));
+    }
+
+    return criteria.andOperator(additionalCriteria, new Criteria().and(EnvironmentKeys.yaml).exists(true).ne(null));
   }
 
   @NonNull
-  private OrgLevelOverrideMigrationResponseDTO doOrgLevelMigration(String accountId, String orgId) {
+  private OrgLevelOverrideMigrationResponseDTO doOrgLevelMigration(String accountId, String orgId, boolean isRevert) {
     boolean isSuccessFul = true;
     OverridesGroupMigrationResult result = OverridesGroupMigrationResult.builder().build();
 
     try {
-      Criteria criteria = getCriteriaForOrgServiceOverrides(accountId, orgId);
-      result = doLevelScopedOverridesMigration(accountId, orgId, null, criteria);
+      Criteria criteria = getCriteriaForOrgServiceOverrides(accountId, orgId, isRevert);
+      result = doLevelScopedOverridesMigration(accountId, orgId, null, criteria, isRevert);
       isSuccessFul = result.isSuccessFul();
     } catch (Exception e) {
       log.error(String.format(DEBUG_LINE + "Override Migration failed for project with orgId: [%s]", orgId), e);
@@ -254,8 +264,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     boolean isEnvMigrationSuccessful = true;
     EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
     try {
-      Criteria criteria = getCriteriaForOrgEnvs(accountId, orgId);
-      envResult = doLevelScopedEnvMigration(accountId, orgId, null, criteria);
+      Criteria criteria = getCriteriaForOrgEnvs(accountId, orgId, isRevert);
+      envResult = doLevelScopedEnvMigration(accountId, orgId, null, criteria, isRevert);
       isEnvMigrationSuccessful = envResult.isSuccessFul();
     } catch (Exception e) {
       log.error(String.format(DEBUG_LINE + "Env Migration failed for project with orgId: [%s]", orgId), e);
@@ -277,13 +287,13 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private AccountLevelOverrideMigrationResponseDTO doAccountLevelMigration(String accountId) {
+  private AccountLevelOverrideMigrationResponseDTO doAccountLevelMigration(String accountId, boolean isRevert) {
     boolean isSuccessFul = true;
     OverridesGroupMigrationResult result = OverridesGroupMigrationResult.builder().build();
 
     try {
-      Criteria criteria = getCriteriaForAccountServiceOverrides(accountId);
-      result = doLevelScopedOverridesMigration(accountId, null, null, criteria);
+      Criteria criteria = getCriteriaForAccountServiceOverrides(accountId, isRevert);
+      result = doLevelScopedOverridesMigration(accountId, null, null, criteria, isRevert);
       isSuccessFul = result.isSuccessFul();
     } catch (Exception e) {
       isSuccessFul = false;
@@ -293,8 +303,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     boolean isEnvMigrationSuccessful = true;
     EnvsMigrationResult envResult = EnvsMigrationResult.builder().build();
     try {
-      Criteria criteria = getCriteriaForAccountEnvs(accountId);
-      envResult = doLevelScopedEnvMigration(accountId, null, null, criteria);
+      Criteria criteria = getCriteriaForAccountEnvs(accountId, isRevert);
+      envResult = doLevelScopedEnvMigration(accountId, null, null, criteria, isRevert);
       isEnvMigrationSuccessful = envResult.isSuccessFul();
     } catch (Exception e) {
       log.error(String.format(DEBUG_LINE + "Env Migration failed for project with accountId: [%s]", accountId), e);
@@ -315,7 +325,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private List<ProjectLevelOverrideMigrationResponseDTO> doChildProjectsMigration(String accountId, String orgId) {
+  private List<ProjectLevelOverrideMigrationResponseDTO> doChildProjectsMigration(
+      String accountId, String orgId, boolean isRevert) {
     List<ProjectLevelOverrideMigrationResponseDTO> projectLevelResponseDTOS = new ArrayList<>();
 
     try {
@@ -333,7 +344,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
           mongoTemplate.find(query, Project.class).stream().map(Project::getIdentifier).collect(Collectors.toList());
       for (String projectId : projectIds) {
         ProjectLevelOverrideMigrationResponseDTO projectLevelResponseDTO =
-            doProjectLevelMigration(accountId, orgId, projectId);
+            doProjectLevelMigration(accountId, orgId, projectId, isRevert);
         projectLevelResponseDTOS.add(projectLevelResponseDTO);
       }
     } catch (Exception e) {
@@ -344,7 +355,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private List<OrgLevelOverrideMigrationResponseDTO> doChildLevelOrgMigration(String accountId) {
+  private List<OrgLevelOverrideMigrationResponseDTO> doChildLevelOrgMigration(String accountId, boolean isRevert) {
     List<OrgLevelOverrideMigrationResponseDTO> orgLevelResponseDTOS = new ArrayList<>();
 
     try {
@@ -359,7 +370,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
                                 .collect(Collectors.toList());
 
       for (String orgId : orgIds) {
-        OrgLevelOverrideMigrationResponseDTO orgLevelResponseDTO = doOrgLevelMigration(accountId, orgId);
+        OrgLevelOverrideMigrationResponseDTO orgLevelResponseDTO = doOrgLevelMigration(accountId, orgId, isRevert);
         orgLevelResponseDTOS.add(orgLevelResponseDTO);
       }
     } catch (Exception e) {
@@ -371,23 +382,27 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
 
   @NonNull
   private SingleServiceOverrideMigrationResponse doMigrationForSingleOverrideEntity(
-      NGServiceOverridesEntity overridesEntity) {
+      NGServiceOverridesEntity overridesEntity, boolean isRevert) {
     try {
-      NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
-          ServiceOverridesMapper.toNGServiceOverrideConfig(overridesEntity.getYaml()).getServiceOverrideInfoConfig();
-      ServiceOverridesSpec spec = ServiceOverridesSpec.builder()
-                                      .variables(serviceOverrideInfoConfig.getVariables())
-                                      .manifests(serviceOverrideInfoConfig.getManifests())
-                                      .configFiles(serviceOverrideInfoConfig.getConfigFiles())
-                                      .applicationSettings(serviceOverrideInfoConfig.getApplicationSettings())
-                                      .connectionStrings(serviceOverrideInfoConfig.getConnectionStrings())
-                                      .build();
-
       Criteria criteria = new Criteria().and(NGServiceOverridesEntityKeys.id).is(overridesEntity.getId());
       Query query = new org.springframework.data.mongodb.core.query.Query(criteria);
       Update update = new Update();
-      update.set(NGServiceOverridesEntityKeys.spec, spec);
-      update.set(NGServiceOverridesEntityKeys.isV2, Boolean.TRUE);
+      if (isRevert) {
+        update.set(NGServiceOverridesEntityKeys.isV2, Boolean.FALSE);
+      } else {
+        NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
+            ServiceOverridesMapper.toNGServiceOverrideConfig(overridesEntity.getYaml()).getServiceOverrideInfoConfig();
+        ServiceOverridesSpec spec = ServiceOverridesSpec.builder()
+                                        .variables(serviceOverrideInfoConfig.getVariables())
+                                        .manifests(serviceOverrideInfoConfig.getManifests())
+                                        .configFiles(serviceOverrideInfoConfig.getConfigFiles())
+                                        .applicationSettings(serviceOverrideInfoConfig.getApplicationSettings())
+                                        .connectionStrings(serviceOverrideInfoConfig.getConnectionStrings())
+                                        .build();
+
+        update.set(NGServiceOverridesEntityKeys.spec, spec);
+        update.set(NGServiceOverridesEntityKeys.isV2, Boolean.TRUE);
+      }
       mongoTemplate.updateFirst(query, update, NGServiceOverridesEntity.class);
       return SingleServiceOverrideMigrationResponse.builder()
           .isSuccessful(true)
@@ -417,7 +432,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private static Criteria getCriteriaForProjectServiceOverrides(String accountId, String orgId, String projectId) {
+  private static Criteria getCriteriaForProjectServiceOverrides(
+      String accountId, String orgId, String projectId, boolean isRevert) {
     Criteria criteria = new Criteria()
                             .and(NGServiceOverridesEntityKeys.accountId)
                             .is(accountId)
@@ -425,61 +441,101 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
                             .is(orgId)
                             .and(NGServiceOverridesEntityKeys.projectIdentifier)
                             .is(projectId);
-    return criteria.andOperator(
-        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE)));
+
+    Criteria additionalCriteria;
+    if (isRevert) {
+      additionalCriteria =
+          new Criteria().andOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.TRUE),
+              Criteria.where(NGServiceOverridesEntityKeys.type).is(ENV_SERVICE_OVERRIDE));
+    } else {
+      additionalCriteria = new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
+          Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE));
+    }
+
+    return criteria.andOperator(additionalCriteria);
   }
 
   @NonNull
-  private static Criteria getCriteriaForOrgServiceOverrides(String accountId, String orgId) {
+  private static Criteria getCriteriaForOrgServiceOverrides(String accountId, String orgId, boolean isRevert) {
     Criteria criteria = new Criteria()
                             .and(NGServiceOverridesEntityKeys.accountId)
                             .is(accountId)
                             .and(NGServiceOverridesEntityKeys.orgIdentifier)
                             .is(orgId);
 
+    Criteria additionalCriteria;
+    if (isRevert) {
+      additionalCriteria =
+          new Criteria().andOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.TRUE),
+              Criteria.where(NGServiceOverridesEntityKeys.type).is(ENV_SERVICE_OVERRIDE));
+    } else {
+      additionalCriteria = new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
+          Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE));
+    }
+
     return criteria.andOperator(
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).is(null)),
-        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE)));
+        additionalCriteria);
   }
 
   @NonNull
-  private static Criteria getCriteriaForAccountServiceOverrides(String accountId) {
+  private static Criteria getCriteriaForAccountServiceOverrides(String accountId, boolean isRevert) {
     Criteria criteria = new Criteria().and(NGServiceOverridesEntityKeys.accountId).is(accountId);
+
+    Criteria additionalCriteria;
+    if (isRevert) {
+      additionalCriteria =
+          new Criteria().andOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.TRUE),
+              Criteria.where(NGServiceOverridesEntityKeys.type).is(ENV_SERVICE_OVERRIDE));
+    } else {
+      additionalCriteria = new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
+          Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE));
+    }
+
     return criteria.andOperator(
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.orgIdentifier).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.orgIdentifier).is(null)),
         new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).exists(false),
             Criteria.where(NGServiceOverridesEntityKeys.projectIdentifier).is(null)),
-        new Criteria().orOperator(Criteria.where(NGServiceOverridesEntityKeys.isV2).exists(false),
-            Criteria.where(NGServiceOverridesEntityKeys.isV2).is(Boolean.FALSE)));
+        additionalCriteria);
   }
 
   @NonNull
-  private static Criteria getCriteriaForOrgEnvs(String accountId, String orgId) {
+  private static Criteria getCriteriaForOrgEnvs(String accountId, String orgId, boolean isRevert) {
     Criteria criteria =
         new Criteria().and(EnvironmentKeys.accountId).is(accountId).and(EnvironmentKeys.orgIdentifier).is(orgId);
+    Criteria additionalCriteria;
+
+    if (isRevert) {
+      additionalCriteria = Criteria.where(EnvironmentKeys.isMigratedToOverride).is(true);
+    } else {
+      additionalCriteria = new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
+          Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false));
+    }
 
     return criteria.andOperator(
         new Criteria().orOperator(Criteria.where(EnvironmentKeys.projectIdentifier).exists(false),
             Criteria.where(EnvironmentKeys.projectIdentifier).is(null)),
-        new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
-            Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false)),
-        new Criteria().and(EnvironmentKeys.yaml).exists(true).ne(null));
+        additionalCriteria, new Criteria().and(EnvironmentKeys.yaml).exists(true).ne(null));
   }
 
   @NonNull
-  private static Criteria getCriteriaForAccountEnvs(String accountId) {
+  private static Criteria getCriteriaForAccountEnvs(String accountId, boolean isRevert) {
     Criteria criteria = new Criteria().and(EnvironmentKeys.accountId).is(accountId);
+    Criteria additionalCriteria;
+    if (isRevert) {
+      additionalCriteria = Criteria.where(EnvironmentKeys.isMigratedToOverride).is(true);
+    } else {
+      additionalCriteria = new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
+          Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false));
+    }
+
     return criteria.andOperator(new Criteria().orOperator(Criteria.where(EnvironmentKeys.orgIdentifier).exists(false),
                                     Criteria.where(EnvironmentKeys.orgIdentifier).is(null)),
         new Criteria().orOperator(Criteria.where(EnvironmentKeys.projectIdentifier).exists(false),
             Criteria.where(EnvironmentKeys.projectIdentifier).is(null)),
-        new Criteria().orOperator(Criteria.where(EnvironmentKeys.isMigratedToOverride).exists(false),
-            Criteria.where(EnvironmentKeys.isMigratedToOverride).is(false)),
-        new Criteria().and(EnvironmentKeys.yaml).exists(true).ne(null));
+        additionalCriteria, new Criteria().and(EnvironmentKeys.yaml).exists(true).ne(null));
   }
 
   @Data
@@ -503,7 +559,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
     List<SingleEnvMigrationResponse> migratedEnvInfos;
   }
   private OverridesGroupMigrationResult doLevelScopedOverridesMigration(
-      String accountId, String orgId, String projectId, Criteria criteria) {
+      String accountId, String orgId, String projectId, Criteria criteria, boolean isRevert) {
     long migratedServiceOverridesCount = 0L;
     long totalServiceOverride = 0L;
     boolean isSuccessFul = true;
@@ -518,7 +574,7 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
           while (iterator.hasNext()) {
             NGServiceOverridesEntity overridesEntity = iterator.next();
             SingleServiceOverrideMigrationResponse singleMigrationResponse =
-                doMigrationForSingleOverrideEntity(overridesEntity);
+                doMigrationForSingleOverrideEntity(overridesEntity, isRevert);
             migratedServiceOverridesInfos.add(singleMigrationResponse);
             if (!singleMigrationResponse.isSuccessful()) {
               isSuccessFul = false;
@@ -552,7 +608,8 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
   }
 
   @NonNull
-  private Optional<SingleEnvMigrationResponse> doMigrationForSingleEnvironment(Environment envEntity) {
+  private Optional<SingleEnvMigrationResponse> doMigrationForSingleEnvironment(
+      Environment envEntity, boolean isRevert) {
     try {
       NGEnvironmentInfoConfig envNGConfig =
           EnvironmentMapper.toNGEnvironmentConfig(envEntity.getYaml()).getNgEnvironmentInfoConfig();
@@ -561,8 +618,20 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
       }
 
       NGServiceOverridesEntity overridesEntity = convertEnvToOverrideEntity(envEntity, envNGConfig);
-      mongoTemplate.save(overridesEntity);
-      boolean isEnvUpdateSuccessful = updateEnvironmentForMigration(envEntity);
+      if (isRevert) {
+        Criteria criteria = new Criteria()
+                                .and(NGServiceOverridesEntityKeys.type)
+                                .is(ENV_GLOBAL_OVERRIDE)
+                                .and(NGServiceOverridesEntityKeys.identifier)
+                                .is(overridesEntity.getIdentifier())
+                                .and(NGServiceOverridesEntityKeys.accountId)
+                                .is(overridesEntity.getAccountId());
+        Query query = new Query(criteria);
+        mongoTemplate.remove(query, NGServiceOverridesEntity.class);
+      } else {
+        mongoTemplate.save(overridesEntity);
+      }
+      boolean isEnvUpdateSuccessful = updateEnvironmentForMigration(envEntity, isRevert);
 
       return Optional.of(SingleEnvMigrationResponse.builder()
                              .isSuccessful(isEnvUpdateSuccessful)
@@ -617,12 +686,12 @@ public class ServiceOverrideV2MigrationServiceImpl implements ServiceOverrideV2M
         .build();
   }
 
-  private boolean updateEnvironmentForMigration(Environment envEntity) {
+  private boolean updateEnvironmentForMigration(Environment envEntity, boolean isRevert) {
     try {
       Criteria criteria = new Criteria().and(EnvironmentKeys.id).is(envEntity.getId());
       Query query = new Query(criteria);
       Update update = new Update();
-      update.set(EnvironmentKeys.isMigratedToOverride, true);
+      update.set(EnvironmentKeys.isMigratedToOverride, !isRevert);
       mongoTemplate.updateFirst(query, update, Environment.class);
       return true;
     } catch (Exception e) {

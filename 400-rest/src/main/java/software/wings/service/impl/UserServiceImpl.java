@@ -131,6 +131,7 @@ import io.harness.ng.core.switchaccount.SamlIdentificationInfo;
 import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.PasswordChangeDTO;
 import io.harness.ng.core.user.PasswordChangeResponse;
+import io.harness.ng.core.user.UserAccountLevelData.UserAccountLevelDataKeys;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.persistence.HIterator;
@@ -278,6 +279,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1517,8 +1519,7 @@ public class UserServiceImpl implements UserService {
 
     List<UserGroup> userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     boolean isPLNoEmailForSamlAccountInvitesEnabled = accountService.isPLNoEmailForSamlAccountInvitesEnabled(accountId);
-
-    if (isUserAssignedToAccount(user, accountId)) {
+    if (isUserAssignedToAccountInGeneration(user, accountId, CG)) {
       updateUserGroupsOfUser(user.getUuid(), userGroups, accountId, true);
       return USER_ALREADY_ADDED;
     } else if (isUserInvitedToAccount(user, accountId)) {
@@ -1530,6 +1531,9 @@ public class UserServiceImpl implements UserService {
       user.getAccounts().add(account);
     } else {
       userInvite.setUuid(wingsPersistence.save(userInvite));
+      if (isUserAssignedToAccount(user, accountId)) {
+        isInviteAcceptanceRequired = false;
+      }
       if (isInviteAcceptanceRequired && !isPLNoEmailForSamlAccountInvitesEnabled) {
         user.getPendingAccounts().add(account);
       } else {
@@ -3000,6 +3004,9 @@ public class UserServiceImpl implements UserService {
     if (loadUserGroups) {
       loadUserGroupsForUsers(pageResponse.getResponse(), accountId);
     }
+    if (isNotEmpty(pageResponse)) {
+      userServiceHelper.processForSCIMUsers(accountId, pageResponse.getResponse(), CG);
+    }
     return pageResponse;
   }
   private List<UserGroup> getUserGroupsOfAccount(String accountId) {
@@ -3758,6 +3765,18 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)
+        && userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)) {
+      if (user.getUserAccountLevelDataMap().get(accountId).getUserProvisionedTo().contains(generation)) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return isUserAssignedToAccount(user, accountId);
+  }
+  @Override
   public boolean isUserAssignedToAccount(User user, String accountId) {
     return user != null && isNotEmpty(user.getAccounts())
         && user.getAccounts().stream().anyMatch(account -> account.getUuid().equals(accountId));
@@ -4091,7 +4110,8 @@ public class UserServiceImpl implements UserService {
   }
 
   public List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset,
-      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled) {
+      Integer pageSize, boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled,
+      boolean filterForGeneration) {
     Query<User> query;
     if (isNotEmpty(searchTerm)) {
       query = getSearchUserQuery(accountId, searchTerm, includeUsersPendingInviteAcceptance);
@@ -4104,6 +4124,10 @@ public class UserServiceImpl implements UserService {
     applySortFilter(pageRequest, query);
     FindOptions findOptions = new FindOptions().skip(offset).limit(pageSize);
     List<User> userList = query.asList(findOptions);
+    if (filterForGeneration) {
+      filterListForGeneration(accountId, userList, CG);
+      userServiceHelper.processForSCIMUsers(accountId, userList, CG);
+    }
     if (loadUserGroups) {
       loadUserGroupsForUsers(userList, accountId);
     }
@@ -4126,9 +4150,15 @@ public class UserServiceImpl implements UserService {
     }
   }
 
-  public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance) {
+  public long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
+      boolean filterForGeneration) {
     Query<User> query = getListUserQuery(accountId, includeUsersPendingInviteAcceptance);
-    query.criteria(UserKeys.disabled).notEqual(true);
+    if (excludeDisabled) {
+      query.criteria(UserKeys.disabled).notEqual(true);
+    }
+    if (filterForGeneration) {
+      queryFilterOnlyCGUsers(accountId, query);
+    }
     return query.count();
   }
 
@@ -4508,5 +4538,24 @@ public class UserServiceImpl implements UserService {
       }
     }
     return updated;
+  }
+
+  private void queryFilterOnlyCGUsers(String accountId, Query<User> query) {
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      query.and(query
+                    .criteria(UserKeys.userAccountLevelDataMap + "." + accountId + "."
+                        + UserAccountLevelDataKeys.userProvisionedTo)
+                    .equal(CG.name()));
+    }
+  }
+  private void filterListForGeneration(String accountId, List<User> userList, Generation generation) {
+    Iterator<User> i = userList.iterator();
+    while (i.hasNext()) {
+      User user = i.next();
+      if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
+          && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
+        i.remove();
+      }
+    }
   }
 }

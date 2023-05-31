@@ -391,6 +391,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       } else {
         startTime = endTime;
       }
+      startTime = DateTimeUtils.roundDownTo5MinBoundary(startTime);
       for (Instant intervalStartTime = startTime; intervalStartTime.isBefore(endTime);) {
         Instant intervalEndTime = intervalStartTime.plus(INTERVAL_HOURS, ChronoUnit.HOURS);
         if (intervalEndTime.isAfter(endTime)) {

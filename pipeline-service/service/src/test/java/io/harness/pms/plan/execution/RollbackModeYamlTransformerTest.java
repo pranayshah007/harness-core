@@ -12,12 +12,14 @@ import static io.harness.pms.contracts.plan.ExecutionMode.POST_EXECUTION_ROLLBAC
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.retry.RetryStageInfo;
+import io.harness.execution.NodeExecution;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -42,19 +44,20 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testTransformProcessedYaml() {
+  public void testTransformProcessedYamlForPostExecutionRollback() {
+    doReturn(Collections.singletonList(NodeExecution.builder().identifier("s1").build()))
+        .when(nodeExecutionService)
+        .getAllWithFieldIncluded(anySet(), anySet());
     String original = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
         + "      identifier: \"s1\"\n"
         + "  - stage:\n"
         + "      identifier: \"s2\"\n";
-    String transformedYaml =
-        rollbackModeYamlTransformer.transformProcessedYaml(original, POST_EXECUTION_ROLLBACK, null);
+    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(
+        original, POST_EXECUTION_ROLLBACK, null, Collections.singletonList("s1"));
     String expected = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s2\"\n"
         + "  - stage:\n"
         + "      identifier: \"s1\"\n";
     assertThat(transformedYaml).isEqualTo(expected);
@@ -73,7 +76,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     doReturn(Collections.singletonList(RetryStageInfo.builder().identifier("s1").name("s1").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -104,7 +108,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
                  RetryStageInfo.builder().identifier("s3").name("s3").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"
@@ -131,7 +136,8 @@ public class RollbackModeYamlTransformerTest extends CategoryTest {
     doReturn(List.of(RetryStageInfo.builder().identifier("s2").name("s2").build()))
         .when(nodeExecutionService)
         .getStageDetailFromPlanExecutionId("ogId");
-    String transformedYaml = rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId");
+    String transformedYaml =
+        rollbackModeYamlTransformer.transformProcessedYaml(original, PIPELINE_ROLLBACK, "ogId", null);
     String expected = "pipeline:\n"
         + "  stages:\n"
         + "  - parallel:\n"

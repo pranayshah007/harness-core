@@ -54,10 +54,6 @@ public abstract class VerificationJobSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, value = "Possible values: [Low, Medium, High]")
   ParameterField<String> sensitivity;
 
-  @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, value = "Possible values: [LAST, PINNED]")
-  ParameterField<String> baseline;
-
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH, value = "Possible values: [true, false]")
   ParameterField<Boolean> failOnNoAnalysis;
 
@@ -95,4 +91,6 @@ public abstract class VerificationJobSpec {
     }
   }
   protected abstract void validateParams();
+
+  protected abstract ParameterField<String> getBaseline();
 }

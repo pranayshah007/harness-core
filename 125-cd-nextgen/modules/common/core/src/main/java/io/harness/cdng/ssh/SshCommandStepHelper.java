@@ -218,13 +218,16 @@ public class SshCommandStepHelper extends CDStepHelper {
     }
   }
 
-  private Map<String, String> getMergedEnvVariablesMap(
+  Map<String, String> getMergedEnvVariablesMap(
       Ambiance ambiance, CommandStepParameters commandStepParameters, InfrastructureOutcome infrastructure) {
     LinkedHashMap<String, Object> evaluatedStageVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+stage.variables>", LinkedHashMap.class);
+    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+        cdExpressionResolver.evaluateExpression(ambiance, "<+pipeline.variables>", LinkedHashMap.class);
 
     Map<String, String> finalEnvVariables = new HashMap<>();
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
+    finalEnvVariables = mergeEnvironmentVariables(evaluatedPipelineVariables, finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(getServiceVariables(ambiance), finalEnvVariables);
     finalEnvVariables = mergeEnvironmentVariables(infrastructure.getEnvironment().getVariables(), finalEnvVariables);
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
