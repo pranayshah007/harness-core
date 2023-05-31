@@ -7,6 +7,7 @@
 
 package io.harness.idp.proxy.delegate;
 
+import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
@@ -57,8 +58,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
   private static final String DELEGATE_SELECTOR2 = "d2";
   private static final String REQUEST_URL =
       "https://api.github.com/repos/harness/harness-core/contents/idp-service/.sample-catalog-entities/three.yaml";
-  private static final String REQUEST_BODY =
-      "{\"url\":\"https://github.com/harness/harness-core/blob/develop/idp-service/.sample-catalog-entities/three.yaml\",\"method\":\"GET\",\"headers\":{\"Accept\":\"application/vnd.github.v3.raw\",\"User-Agent\":\"node-fetch/1.0 (+https://github.com/bitinn/node-fetch)\",\"Accept-Encoding\":\"gzip,deflate\",\"Connection\":\"close\"}}";
+  private static final String REQUEST_BODY = "";
   private static final String REQUEST_METHOD = "GET";
   private static final String TEST_RESPONSE_BODY = "Response body";
   AutoCloseable openMocks;
@@ -85,7 +85,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
     ObjectMapper mapper = new ObjectMapper();
     String backstageProxyRequestString = mapper.writeValueAsString(backstageProxyRequest);
 
-    when(httpHeaders.getHeaderString("accountId")).thenReturn(ACCOUNT_IDENTIFIER);
+    when(httpHeaders.getHeaderString("Harness-Account")).thenReturn(ACCOUNT_IDENTIFIER);
     when(delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders())).thenReturn(headers);
     when(delegateSelectorsCache.get(ACCOUNT_IDENTIFIER, GITHUB_HOST)).thenReturn(delegateSelectors);
 
@@ -113,7 +113,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
     ObjectMapper mapper = new ObjectMapper();
     String backstageProxyRequestString = mapper.writeValueAsString(backstageProxyRequest);
 
-    when(httpHeaders.getHeaderString("accountId")).thenReturn(ACCOUNT_IDENTIFIER);
+    when(httpHeaders.getHeaderString("Harness-Account")).thenReturn(ACCOUNT_IDENTIFIER);
     when(delegateProxyRequestForwarder.createHeaderConfig(backstageProxyRequest.getHeaders())).thenReturn(headers);
     when(delegateProxyRequestForwarder.forwardRequestToDelegate(ACCOUNT_IDENTIFIER, backstageProxyRequest.getUrl(),
              headers, backstageProxyRequest.getBody(), backstageProxyRequest.getMethod(), delegateSelectors))
@@ -130,7 +130,7 @@ public class DelegateProxyApiImplTest extends CategoryTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testForwardProxyWithInvalidBody() throws JsonProcessingException, ExecutionException {
-    when(httpHeaders.getHeaderString("accountId")).thenReturn(ACCOUNT_IDENTIFIER);
+    when(httpHeaders.getHeaderString("Harness-Account")).thenReturn(ACCOUNT_IDENTIFIER);
     delegateProxyApi.forwardProxy(uriInfo, httpHeaders, "", "");
   }
 
@@ -142,13 +142,16 @@ public class DelegateProxyApiImplTest extends CategoryTest {
     backstageProxyRequest.setUrl("Invalid Url");
     ObjectMapper mapper = new ObjectMapper();
     String backstageProxyRequestString = mapper.writeValueAsString(backstageProxyRequest);
-    when(httpHeaders.getHeaderString("accountId")).thenReturn(ACCOUNT_IDENTIFIER);
+    when(httpHeaders.getHeaderString("Harness-Account")).thenReturn(ACCOUNT_IDENTIFIER);
     delegateProxyApi.forwardProxy(uriInfo, httpHeaders, "", backstageProxyRequestString);
   }
 
   private BackstageProxyRequest getProxyRequest() {
     Map<String, String> headersMap = new HashMap<>();
-    headersMap.put("accountId", ACCOUNT_IDENTIFIER);
+    headersMap.put("Harness-Account", ACCOUNT_IDENTIFIER);
+    headersMap.put(AUTHORIZATION, "testString");
+    headersMap.put("Accept", "application/vnd.github.v3.raw");
+    headersMap.put("Accept-Encoding", "gzip,deflate");
     BackstageProxyRequest backstageProxyRequest = new BackstageProxyRequest();
     backstageProxyRequest.setUrl(REQUEST_URL);
     backstageProxyRequest.setBody(REQUEST_BODY);

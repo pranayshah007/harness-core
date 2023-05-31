@@ -8,6 +8,7 @@
 package io.harness.idp.proxy.delegate;
 
 import static io.harness.annotations.dev.HarnessTeam.IDP;
+import static io.harness.idp.proxy.ngmanager.IdpAuthInterceptor.AUTHORIZATION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.http.HttpStepResponse;
@@ -37,13 +38,14 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class DelegateProxyApiImpl implements DelegateProxyApi {
+  private static final String HEADER_STRING_PATTERN = "%s:%s; ";
   private final DelegateProxyRequestForwarder delegateProxyRequestForwarder;
   private final DelegateSelectorsCache delegateSelectorsCache;
 
   @POST
   public Response forwardProxy(@Context UriInfo info, @Context javax.ws.rs.core.HttpHeaders headers,
       @PathParam("url") String urlString, String body) throws JsonProcessingException, ExecutionException {
-    var accountIdentifier = headers.getHeaderString("accountId");
+    var accountIdentifier = headers.getHeaderString("Harness-Account");
     BackstageProxyRequest backstageProxyRequest;
     try {
       ObjectMapper mapper = new ObjectMapper();
@@ -52,7 +54,17 @@ public class DelegateProxyApiImpl implements DelegateProxyApi {
       log.info("Error parsing backstageProxyRequest. Request: {}", body, err);
       throw err;
     }
-    log.info("Parsed request body: {}", backstageProxyRequest);
+    log.info("Parsed request body url: {}", backstageProxyRequest.getUrl());
+    log.info("Parsed request body method: {}", backstageProxyRequest.getMethod());
+    StringBuilder headerString = new StringBuilder();
+    backstageProxyRequest.getHeaders().forEach((key, value) -> {
+      if (!key.equals(AUTHORIZATION)) {
+        headerString.append(String.format(HEADER_STRING_PATTERN, key, value));
+      } else {
+        log.debug("Skipped logging {} header", AUTHORIZATION);
+      }
+    });
+    log.info("Parsed request body headers: {}", headerString);
 
     Set<String> delegateSelectors = getDelegateSelectors(backstageProxyRequest.getUrl(), accountIdentifier);
     List<HttpHeaderConfig> headerList =
