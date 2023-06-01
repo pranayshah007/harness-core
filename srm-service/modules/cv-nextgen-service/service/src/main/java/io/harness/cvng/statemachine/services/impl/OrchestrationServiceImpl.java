@@ -8,6 +8,8 @@
 package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_LIMIT;
+import static io.harness.cvng.metrics.CVNGMetricsUtils.ORCHESTRATION_TIME;
+import static io.harness.cvng.metrics.CVNGMetricsUtils.STATE_MACHINE_EXECUTION_TIME;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_LOCK;
@@ -19,6 +21,8 @@ import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.jobs.StateMachineEventPublisherService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
+import io.harness.cvng.metrics.beans.AnalysisStateMachineContext;
+import io.harness.cvng.metrics.beans.OrchestratorContext;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisOrchestratorStatus;
@@ -122,7 +126,18 @@ public class OrchestrationServiceImpl implements OrchestrationService {
     try (AcquiredLock acquiredLock =
              persistentLocker.waitToAcquireLock(lockString, Duration.ofSeconds(SRM_STATEMACHINE_LOCK_TIMEOUT),
                  Duration.ofSeconds(SRM_STATEMACHINE_LOCK_WAIT_TIMEOUT))) {
-      orchestrateAtRunningState(orchestrator);
+      OrchestratorContext context = null;
+      try {
+        context = new OrchestratorContext(orchestrator);
+        orchestrateAtRunningState(orchestrator);
+      } finally {
+        long endTime = System.currentTimeMillis();
+        if (context != null) {
+          Duration duration = Duration.ofMillis(endTime - context.getStartTime());
+          metricService.recordDuration(ORCHESTRATION_TIME, duration);
+        }
+      }
+
     } catch (Exception e) {
       // TODO: these errors needs to go to execution log so that we can connect it with the right context and show them
       // in the UI.
@@ -201,7 +216,17 @@ public class OrchestrationServiceImpl implements OrchestrationService {
           log.info("For {}, state machine is currently RUNNING. "
                   + "We will call executeStateMachine() to handover execution to state machine.",
               orchestrator.getVerificationTaskId());
-          stateMachineStatus = stateMachineService.executeStateMachine(currentlyExecutingStateMachine);
+          AnalysisStateMachineContext context = null;
+          try {
+            context = new AnalysisStateMachineContext(currentlyExecutingStateMachine);
+            stateMachineStatus = stateMachineService.executeStateMachine(currentlyExecutingStateMachine);
+          } finally {
+            long endTime = System.currentTimeMillis();
+            if (context != null) {
+              Duration duration = Duration.ofMillis(endTime - context.getStartTime());
+              metricService.recordDuration(STATE_MACHINE_EXECUTION_TIME, duration);
+            }
+          }
           break;
         case FAILED:
           markCompleted(orchestrator.getVerificationTaskId());
