@@ -14,6 +14,7 @@ import static io.harness.beans.FeatureName.NG_SETTINGS;
 import static io.harness.beans.FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
+import static io.harness.connector.accesscontrol.ConnectorsAccessControlPermissions.VIEW_CONNECTOR_PERMISSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.errorhandling.NGErrorHelper.DEFAULT_ERROR_SUMMARY;
@@ -31,6 +32,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.EntityType;
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -50,6 +54,7 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.ConnectorValidationResult.ConnectorValidationResultBuilder;
 import io.harness.connector.ManagerExecutable;
+import io.harness.connector.accesscontrol.ResourceTypes;
 import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.events.ConnectorCreateEvent;
@@ -57,6 +62,7 @@ import io.harness.connector.events.ConnectorDeleteEvent;
 import io.harness.connector.events.ConnectorForceDeleteEvent;
 import io.harness.connector.events.ConnectorUpdateEvent;
 import io.harness.connector.helper.CatalogueHelper;
+import io.harness.connector.helper.ConnectorRbacHelper;
 import io.harness.connector.helper.HarnessManagedConnectorHelper;
 import io.harness.connector.mappers.ConnectorMapper;
 import io.harness.connector.services.ConnectorFilterService;
@@ -149,6 +155,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
+import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
+
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -175,6 +183,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
   OutboxService outboxService;
   YamlGitConfigClient yamlGitConfigClient;
   EntitySetupUsageService entitySetupUsageService;
+  private final ConnectorRbacHelper connectorRbacHelper;
+  private AccessControlClient accessControlClient;
+
   private static final String CONNECTOR = "connector";
 
   @Override
@@ -247,19 +258,36 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     Boolean isBuiltInSMDisabled = isBuiltInSMDisabled(accountIdentifier);
 
     Criteria criteria = filterService.createCriteriaFromConnectorListQueryParams(accountIdentifier, orgIdentifier,
-        projectIdentifier, filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope,
-        isBuiltInSMDisabled, version);
-    Page<Connector> connectors;
-    if (Boolean.TRUE.equals(getDistinctFromBranches)
-        && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      connectors = connectorRepository.findAll(criteria, pageable, true);
-    } else if (Boolean.FALSE.equals(getDistinctFromBranches)
-        && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      connectors = connectorRepository.findAll(criteria, pageable, false);
+            projectIdentifier, filterIdentifier, searchTerm, filterProperties, includeAllConnectorsAccessibleAtScope,
+            isBuiltInSMDisabled, version);
+
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      return getConnectors(
+              accountIdentifier, orgIdentifier, projectIdentifier, getDistinctFromBranches, Pageable.unpaged(), criteria);
     } else {
-      connectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
+      List<Connector> connectors = getConnectors(
+              accountIdentifier, orgIdentifier, projectIdentifier, getDistinctFromBranches, Pageable.unpaged(), criteria)
+              .getContent();
+      connectors = connectorRbacHelper.getPermitted(connectors);
+      if (isEmpty(connectors)) {
+        return Page.empty();
+      }
+
+      Criteria[] criteriaWithIdentifiers = connectors.stream()
+              .map(connector
+                      -> Criteria.where(ConnectorKeys.accountIdentifier)
+
+                      .is(connector.getAccountIdentifier())
+                      .and(ConnectorKeys.orgIdentifier)
+                      .is(connector.getOrgIdentifier())
+                      .and(ConnectorKeys.projectIdentifier)
+                      .is(connector.getProjectIdentifier())
+                      .and(ConnectorKeys.identifier)
+                      .is(connector.getIdentifier()))
+              .toArray(Criteria[]::new);
+      return connectorRepository.findAll(new Criteria().orOperator(criteriaWithIdentifiers), pageable);
     }
-    return connectors;
   }
 
   private ConnectorResponseDTO getResponse(
@@ -369,11 +397,25 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
         PageRequest.builder()
             .pageIndex(page)
             .pageSize(size)
-            .sortOrders(Collections.singletonList(
+            .sortOrders(singletonList(
                 SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
             .build());
-    Page<Connector> connectors =
-        connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
+    Page<Connector> connectors;
+    if (accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(ResourceTypes.CONNECTOR, null), VIEW_CONNECTOR_PERMISSION)) {
+      connectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
+    } else {
+      List<Connector> connectorsList =
+              connectorRepository.findAll(criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier)
+                      .getContent();
+      connectorsList = connectorRbacHelper.getPermitted(connectorsList);
+      if (isEmpty(connectorsList)) {
+        return Page.empty();
+      }
+      populateInFilter(
+              criteria, ConnectorKeys.identifier, connectorsList.stream().map(Connector::getIdentifier).collect(toList()));
+      connectors = connectorRepository.findAll(criteria, pageable);
+    }
     return getResponseList(accountIdentifier, orgIdentifier, projectIdentifier, connectors);
   }
 
@@ -518,6 +560,20 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     return connectorRepository.findAll(
         criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+  }
+
+  private Page<Connector> getConnectors(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+                                        Boolean getDistinctFromBranches, Pageable pageable, Criteria criteria) {
+    if (Boolean.TRUE.equals(getDistinctFromBranches)
+            && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      return connectorRepository.findAll(criteria, pageable, true);
+    } else if (Boolean.FALSE.equals(getDistinctFromBranches)
+            && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      return connectorRepository.findAll(criteria, Pageable.unpaged(), false);
+    } else {
+      return connectorRepository.findAll(
+              criteria, Pageable.unpaged(), projectIdentifier, orgIdentifier, accountIdentifier);
+    }
   }
 
   private List<Connector> getConnectors(
