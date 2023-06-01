@@ -82,6 +82,7 @@ if [ "${PLATFORM}" == "jenkins" ] && [ "${SERVICE_NAME}" == "ci-manager" ]; then
   rm module-deps.sh /tmp/ProtoDeps.text /tmp/KryoDeps.text
 fi
 
+
 service=$(echo "$modified_service_name" | cut -d'/' -f1)
 if [[ $SERVICE_NAME == "manager" || $SERVICE_NAME == "migrator" || $SERVICE_NAME == "change-data-capture" || $SERVICE_NAME == "verification-service" ]]; then
     chmod +x build/build_dist.sh
