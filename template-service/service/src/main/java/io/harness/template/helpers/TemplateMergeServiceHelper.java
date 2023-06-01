@@ -35,6 +35,7 @@ import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErro
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
 import io.harness.gitaware.dto.GetFileGitContextRequestParams;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
@@ -101,9 +102,10 @@ public class TemplateMergeServiceHelper {
              new NgAutoLogContextForMethod(projectId, orgId, accountId, "getLinkedTemplateEntity", OVERRIDE_NESTS)) {
       log.info("[TemplateService] Fetching Template {} from project {}, org {}, account {}",
           templateUniqueIdentifier.getTemplateIdentifier(), projectId, orgId, accountId);
-      TemplateEntity template = getLinkedTemplateEntityHelper(accountId, orgId, projectId,
-          templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getVersionLabel(),
-          templateCacheMap, templateUniqueIdentifier.getVersionMaker(), loadFromCache);
+      TemplateEntity template =
+          getLinkedTemplateEntityHelper(accountId, orgId, projectId, templateUniqueIdentifier.getTemplateIdentifier(),
+              templateUniqueIdentifier.getVersionLabel(), templateCacheMap, templateUniqueIdentifier.getVersionMaker(),
+              loadFromCache, templateUniqueIdentifier.getGitBranch());
       return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
     } finally {
       log.debug("[TemplateService] Finished fetching Template {} from project {}, org {}, account {} took {}ms ",
@@ -123,17 +125,20 @@ public class TemplateMergeServiceHelper {
     return getLinkedTemplateEntityHelper(
         accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, false);
   }
+
   public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
       String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
-      boolean loadFromCache) {
-    IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier);
+      boolean loadFromCache, String branch) {
+    IdentifierRef templateIdentifierRef =
+        TemplateUtils.getIdentifierRef(accountId, orgId, projectId, identifier, branch);
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-        templateIdentifierRef.getIdentifier(), versionMarker);
+        templateIdentifierRef.getIdentifier(), versionMarker, branch);
     if (templateCacheMap.containsKey(templateUniqueIdentifier)) {
       return templateCacheMap.get(templateUniqueIdentifier);
     }
 
+    GitAwareContextHelper.updateGitEntityContextWithBranch(branch);
     Optional<TemplateEntity> templateEntity =
         templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(templateIdentifierRef.getAccountIdentifier(),
             templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
@@ -148,6 +153,13 @@ public class TemplateMergeServiceHelper {
     return template;
   }
 
+  public TemplateEntity getLinkedTemplateEntityHelper(String accountId, String orgId, String projectId,
+      String identifier, String versionLabel, Map<String, TemplateEntity> templateCacheMap, String versionMarker,
+      boolean loadFromCache) {
+    return getLinkedTemplateEntityHelper(
+        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker, loadFromCache, null);
+  }
+
   // Checks if the current Json node is a Template node with fieldName as TEMPLATE and Non-null Value
   public boolean isTemplatePresent(String fieldName, JsonNode templateValue) {
     return TEMPLATE.equals(fieldName) && templateValue.isObject() && templateValue.get(TEMPLATE_REF) != null;
@@ -155,7 +167,7 @@ public class TemplateMergeServiceHelper {
 
   // Generates a unique Template Identifier
   private String generateUniqueTemplateIdentifier(
-      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel, String branch) {
     List<String> fqnList = new LinkedList<>();
     fqnList.add(accountId);
     if (EmptyPredicate.isNotEmpty(orgId)) {
@@ -166,23 +178,8 @@ public class TemplateMergeServiceHelper {
     }
     fqnList.add(templateIdentifier);
     fqnList.add(versionLabel);
-
-    return EntityReferenceHelper.createFQN(fqnList);
-  }
-
-  private String generateUniqueTemplateIdentifier(IdentifierRef templateIdentifierRef, String versionLabel) {
-    List<String> fqnList = new LinkedList<>();
-    fqnList.add(templateIdentifierRef.getAccountIdentifier());
-    if (EmptyPredicate.isNotEmpty(templateIdentifierRef.getOrgIdentifier())) {
-      fqnList.add(templateIdentifierRef.getOrgIdentifier());
-    }
-    if (EmptyPredicate.isNotEmpty(templateIdentifierRef.getProjectIdentifier())) {
-      fqnList.add(templateIdentifierRef.getProjectIdentifier());
-    }
-    fqnList.add(templateIdentifierRef.getIdentifier());
-    fqnList.add(versionLabel);
-    if (isNotEmpty(templateIdentifierRef.getBranch())) {
-      fqnList.add(templateIdentifierRef.getBranch());
+    if (isNotEmpty(branch)) {
+      fqnList.add(branch);
     }
 
     return EntityReferenceHelper.createFQN(fqnList);
@@ -346,11 +343,12 @@ public class TemplateMergeServiceHelper {
     TemplateUniqueIdentifier templateUniqueIdentification = parseYamlAndGetTemplateIdentifierAndVersion(value);
 
     IdentifierRef templateIdentifierRef =
-        TemplateUtils.getGitBranchAwareIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
+        TemplateUtils.getIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
             templateUniqueIdentification.getTemplateIdentifier(), templateUniqueIdentification.getGitBranch());
     String templateUniqueIdentifier = generateUniqueTemplateIdentifier(templateIdentifierRef.getAccountIdentifier(),
         templateIdentifierRef.getOrgIdentifier(), templateIdentifierRef.getProjectIdentifier(),
-        templateIdentifierRef.getIdentifier(), templateUniqueIdentification.getVersionMaker());
+        templateIdentifierRef.getIdentifier(), templateUniqueIdentification.getVersionMaker(),
+        templateIdentifierRef.getBranch());
     log.info("Unique template identifier: {}", templateUniqueIdentifier);
     return templateUniqueIdentifier;
   }
@@ -362,9 +360,8 @@ public class TemplateMergeServiceHelper {
     for (Map.Entry<String, YamlNode> entry : templatesToGet.entrySet()) {
       JsonNode yaml = entry.getValue().getCurrJsonNode();
       TemplateUniqueIdentifier templateUniqueIdentifier = parseYamlAndGetTemplateIdentifierAndVersion(yaml);
-      IdentifierRef templateIdentifierRef =
-          TemplateUtils.getGitBranchAwareIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier,
-              templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getGitBranch());
+      IdentifierRef templateIdentifierRef = TemplateUtils.getIdentifierRef(accountIdentifier, orgIdentifier,
+          projectIdentifier, templateUniqueIdentifier.getTemplateIdentifier(), templateUniqueIdentifier.getGitBranch());
 
       Scope templateScope = Scope.builder()
                                 .projectIdentifier(templateIdentifierRef.getProjectIdentifier())

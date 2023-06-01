@@ -57,6 +57,7 @@ public class InputsValidator {
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject private NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Inject private NgManagerReconcileClient ngManagerReconcileClient;
+
   public ValidateInputsResponseDTO validateInputsForTemplate(
       String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
