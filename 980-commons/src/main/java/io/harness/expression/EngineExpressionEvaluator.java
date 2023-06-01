@@ -49,7 +49,6 @@ import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.impl.NoOpLog;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -256,12 +255,22 @@ public class EngineExpressionEvaluator {
     try {
       if (ctx.isFeatureFlagEnabled(PIE_EXPRESSION_CONCATENATION)) {
         StringReplacerResponse replacerResponse = runStringReplacerWithResponse(expression, resolver);
-        return evaluateInternalV2(replacerResponse, ctx);
+        Object evaluatedExpression = evaluateInternalV2(replacerResponse, ctx);
+
+        // If the evaluated expression has nested expressions again, then evaluate else return
+        if (evaluatedExpression instanceof String && hasExpressions((String) evaluatedExpression)) {
+          return evaluateExpressionInternal((String) evaluatedExpression, ctx, depth - 1, expressionMode);
+        }
+        return evaluatedExpression;
       } else {
         String finalExpression = runStringReplacer(expression, resolver);
         return evaluateInternal(finalExpression, ctx);
       }
     } catch (JexlException ex) {
+      log.error(format("Failed to evaluate final expression: %s", expression), ex);
+      if (expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
+        return expression;
+      }
       if (ex.getCause() instanceof EngineFunctorException) {
         throw new EngineExpressionEvaluationException(
             (EngineFunctorException) ex.getCause(), createExpression(expression));
@@ -269,7 +278,6 @@ public class EngineExpressionEvaluator {
         // For backwards compatibility.
         throw new EngineExpressionEvaluationException((FunctorException) ex.getCause(), createExpression(expression));
       }
-      log.error(format("Failed to evaluate final expression: %s", expression), ex);
       throw NestedExceptionUtils.hintWithExplanationException(
           JexlRuntimeExceptionHandler.getHintMessage(ex, expression),
           JexlRuntimeExceptionHandler.getExplanationMessage(ex),
@@ -566,34 +574,24 @@ public class EngineExpressionEvaluator {
     String expression = response.getFinalExpressionValue();
 
     if (ctx.isFeatureFlagEnabled(PIE_EXECUTION_JSON_SUPPORT)) {
-      Script script = (Script) engine.createScript(expression);
-      if (shouldRenderAndNotEvaluate(response, script, ctx)) {
+      try {
+        return engine.createScript(expression).execute(ctx);
+      } catch (Exception e) {
+        if (response.isOnlyRenderedExpressions()) {
+          return expression;
+        }
+        throw e;
+      }
+    }
+    try {
+      JexlExpression jexlExpression = engine.createExpression(expression);
+      return jexlExpression.evaluate(ctx);
+    } catch (Exception e) {
+      if (response.isOnlyRenderedExpressions()) {
         return expression;
       }
-      return script.execute(ctx);
+      throw e;
     }
-    JexlExpression jexlExpression = engine.createExpression(expression);
-    Script script = (Script) jexlExpression;
-    if (shouldRenderAndNotEvaluate(response, script, ctx)) {
-      return expression;
-    }
-    return jexlExpression.evaluate(ctx);
-  }
-
-  private boolean shouldRenderAndNotEvaluate(StringReplacerResponse response, Script script, EngineJexlContext ctx) {
-    if (!response.isOnlyRenderedExpressions()) {
-      return false;
-    }
-
-    Set<List<String>> variables = script.getVariables();
-    for (List<String> variableList : variables) {
-      for (String s : variableList) {
-        if (ctx.has(s)) {
-          return false;
-        }
-      }
-    }
-    return true;
   }
 
   protected Object evaluateByCreatingScript(@NotNull String expression, @NotNull EngineJexlContext ctx) {
