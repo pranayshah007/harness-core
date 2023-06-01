@@ -52,6 +52,7 @@ public class UpdateVersionInfoTask {
   private static final String VERSION = "version";
   private static final String JOB_INTERRUPTED = "UpdateVersionInfoTask Sync job was interrupted due to: ";
   public static final String CHAOS_MANAGER_API = "manager/api/";
+  private static final String PLATFORM = "Platform";
   @Inject private MongoTemplate mongoTemplate;
   @Inject NextGenConfiguration nextGenConfiguration;
   List<ModuleVersionInfo> moduleVersionInfos;
@@ -88,7 +89,7 @@ public class UpdateVersionInfoTask {
   }
 
   private String getBaseUrl(String moduleName) {
-    if (ModuleType.CD.name().equals(moduleName)) {
+    if (ModuleType.CD.name().equals(moduleName) || PLATFORM.equals(moduleName)) {
       return nextGenConfiguration.getNgManagerClientConfig().getBaseUrl();
     } else if (ModuleType.CE.name().equals(moduleName)) {
       return nextGenConfiguration.getCeNextGenClientConfig().getBaseUrl();
