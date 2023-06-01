@@ -15,17 +15,21 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
@@ -42,6 +46,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.stages.StageExecutionResponse;
@@ -56,6 +61,7 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -67,6 +73,7 @@ public class PlanExecutionResourceTest extends CategoryTest {
   @Mock PipelineExecutor pipelineExecutor;
   @Mock PMSExecutionService pmsExecutionService;
   @Mock RetryExecutionHelper retryExecutionHelper;
+  @Mock AccessControlClient accessControlClient;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
@@ -74,6 +81,7 @@ public class PlanExecutionResourceTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "p1";
+  private final String PLAN_EXECUTION_ID = "planExecutionId";
 
   String yaml = "pipeline:\n"
       + "  identifier: p1\n"
@@ -235,6 +243,42 @@ public class PlanExecutionResourceTest extends CategoryTest {
     planExecutionResource.runPipelineWithInputSetPipelineYaml(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "cd", PIPELINE_IDENTIFIER, null, false, false, yaml, null);
     assertEquals(USER_FLOW.EXECUTION, ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void testHandleStageAndPipelineInterrupt() {
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    doReturn(PipelineExecutionSummaryEntity.builder().pipelineIdentifier(PIPELINE_IDENTIFIER).build())
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false);
+    doReturn(InterruptDTO.builder()
+                 .id("interruptUuid")
+                 .planExecutionId(PLAN_EXECUTION_ID)
+                 .type(PlanExecutionInterruptType.ABORTALL)
+                 .build())
+        .when(pmsExecutionService)
+        .registerInterrupt(PlanExecutionInterruptType.ABORTALL, PLAN_EXECUTION_ID, null);
+    ArgumentCaptor<PlanExecutionInterruptType> interruptTypeArgumentCaptor1 =
+        ArgumentCaptor.forClass(PlanExecutionInterruptType.class);
+    planExecutionResource.handleInterrupt(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PlanExecutionInterruptTypePipeline.ABORTALL, PLAN_EXECUTION_ID);
+    verify(pmsExecutionService, times(1)).registerInterrupt(interruptTypeArgumentCaptor1.capture(), any(), any());
+    assertThat(interruptTypeArgumentCaptor1.getValue()).isEqualTo(PlanExecutionInterruptType.ABORTALL);
+    doReturn(InterruptDTO.builder()
+                 .id("interruptUuid")
+                 .planExecutionId(PLAN_EXECUTION_ID)
+                 .type(PlanExecutionInterruptType.ABORTALL)
+                 .build())
+        .when(pmsExecutionService)
+        .registerInterrupt(PlanExecutionInterruptType.ABORTALL, PLAN_EXECUTION_ID, "nodeExecutionId");
+    ArgumentCaptor<PlanExecutionInterruptType> interruptTypeArgumentCaptor2 =
+        ArgumentCaptor.forClass(PlanExecutionInterruptType.class);
+    planExecutionResource.handleStageInterrupt(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        PlanExecutionInterruptTypeStage.ABORTALL, PLAN_EXECUTION_ID, "nodeExecutionId");
+    verify(pmsExecutionService, times(2)).registerInterrupt(interruptTypeArgumentCaptor2.capture(), any(), any());
+    assertThat(interruptTypeArgumentCaptor2.getValue()).isEqualTo(PlanExecutionInterruptType.ABORTALL);
   }
 
   @Test
