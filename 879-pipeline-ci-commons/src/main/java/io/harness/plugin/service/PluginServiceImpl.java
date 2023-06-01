@@ -21,8 +21,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUA
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.PLUGIN_ENV_PREFIX;
-import static io.harness.ci.commonconstants.ContainerExecutionConstants.STEP_MOUNT_PATH;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.*;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -49,10 +48,12 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
 import com.google.inject.Inject;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.cxf.common.util.CollectionUtils;
 
 public class PluginServiceImpl implements PluginService {
   public static final String TAG_BUILD_EVENT = "tag";
@@ -112,6 +113,7 @@ public class PluginServiceImpl implements PluginService {
     map.putAll(getBuildEnvVars(ambiance, gitConnector, stepInfo));
     map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
     map.putAll(getPluginDepthEnvVars(stepInfo.getDepth()));
+    map.putAll(getPluginOutputFilePathsContent(stepInfo.getOutputFilePathsContent()));
 
     return map;
   }
@@ -255,6 +257,15 @@ public class PluginServiceImpl implements PluginService {
     if (depth != null && depth != 0) {
       String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase(Locale.ROOT);
       map.put(pluginDepthKey, depth.toString());
+    }
+    return map;
+  }
+
+  private static Map<String, String> getPluginOutputFilePathsContent(ParameterField<List<String>> outputFilePathsContent) {
+    Map<String, String> map = new HashMap<>();
+
+    if (outputFilePathsContent != null && outputFilePathsContent.getValue() != null  && !CollectionUtils.isEmpty(outputFilePathsContent.getValue())) {
+      map.put(PLUGIN_OUTPUT_FILE_PATHS_CONTENT, String.join(",", outputFilePathsContent.getValue()));
     }
     return map;
   }

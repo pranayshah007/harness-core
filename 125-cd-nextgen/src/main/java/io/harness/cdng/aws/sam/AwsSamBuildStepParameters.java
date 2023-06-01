@@ -7,6 +7,7 @@
 
 package io.harness.cdng.aws.sam;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +36,9 @@ public class AwsSamBuildStepParameters extends AwsSamBaseStepInfo implements Aws
   ParameterField<List<String>> deployCommandOptions;
   ParameterField<String> samBuildDockerRegistryConnectorRef;
 
+  @JsonIgnore
+  String downloadManifestsFqn;
+
   @Builder(builderMethodName = "infoBuilder")
   public AwsSamBuildStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
@@ -42,10 +46,11 @@ public class AwsSamBuildStepParameters extends AwsSamBaseStepInfo implements Aws
       ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
 
       ParameterField<List<String>> deployCommandOptions, ParameterField<String> samBuildDockerRegistryConnectorRef,
-      ParameterField<String> samVersion) {
+      ParameterField<String> samVersion, String downloadManifestsFqn) {
     super(delegateSelectors, settings, image, connectorRef, resources, envVariables, privileged, runAsUser,
         imagePullPolicy, samVersion);
     this.deployCommandOptions = deployCommandOptions;
     this.samBuildDockerRegistryConnectorRef = samBuildDockerRegistryConnectorRef;
+    this.downloadManifestsFqn = downloadManifestsFqn;
   }
 }

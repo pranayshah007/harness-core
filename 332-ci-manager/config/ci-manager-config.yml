@@ -179,7 +179,7 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:15760"
+  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:17984"
   addonImage: harness/ci-addon:1.16.14
   liteEngineImage: harness/ci-lite-engine:1.16.14
   #isLocal: false

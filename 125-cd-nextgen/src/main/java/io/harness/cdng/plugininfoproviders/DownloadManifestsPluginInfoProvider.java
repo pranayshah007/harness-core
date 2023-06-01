@@ -130,7 +130,7 @@ public class DownloadManifestsPluginInfoProvider implements CDPluginInfoProvider
               .connectorRef(valuesGitStoreConfig.getConnectorRef())
               .repoName(valuesGitStoreConfig.getRepoName())
               .build(ParameterField.<Build>builder().value(valuesBuild).build())
-//              .outputFilePathsContent(ParameterField.<List<String>>builder().value(Arrays.asList(awsSamPluginInfoProviderHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome))).build())
+              .outputFilePathsContent(ParameterField.<List<String>>builder().value(Arrays.asList(awsSamPluginInfoProviderHelper.getValuesPathFromValuesManifestOutcome(valuesManifestOutcome))).build())
               .build();
 
       GitCloneStepNode valuesGitCloneStepNode = GitCloneStepNode.builder()

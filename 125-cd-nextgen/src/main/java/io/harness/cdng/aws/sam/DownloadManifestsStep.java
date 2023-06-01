@@ -10,6 +10,8 @@ package io.harness.cdng.aws.sam;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 
 import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
+import io.harness.cdng.aws.sam.beans.AwsSamValuesYamlDataOutcome;
+import io.harness.cdng.ecs.beans.EcsRollingRollbackDataOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.outcome.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.AwsSamDirectoryManifestOutcome;
@@ -19,6 +21,10 @@ import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.task.stepstatus.StepExecutionStatus;
+import io.harness.delegate.task.stepstatus.StepMapOutput;
+import io.harness.delegate.task.stepstatus.StepOutput;
+import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -30,8 +36,11 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -43,6 +52,8 @@ import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 
 import com.google.inject.Inject;
 import graphql.execution.AsyncExecutionStrategy;
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,6 +66,10 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
   @Inject GitCloneStep gitCloneStep;
 
   @Inject private OutcomeService outcomeService;
+
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+
+  @Inject private EngineExpressionService engineExpressionService;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -123,7 +138,7 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
               .connectorRef(valuesGitStoreConfig.getConnectorRef())
               .repoName(valuesGitStoreConfig.getRepoName())
               .build(ParameterField.<Build>builder().value(valuesBuild).build())
-              //                .outputFilePathsContent(ParameterField.<List<String>>builder().value(Arrays.asList(getValuesPathFromValuesManifestOutcome(valuesManifestOutcome))).build())
+              .outputFilePathsContent(ParameterField.<List<String>>builder().value(Arrays.asList(getValuesPathFromValuesManifestOutcome(valuesManifestOutcome))).build())
               .build();
 
       StepElementParameters valuesStepElementParameters =
@@ -167,6 +182,49 @@ public class DownloadManifestsStep implements AsyncExecutableWithRbac<StepElemen
   @Override
   public StepResponse handleAsyncResponse(
       Ambiance ambiance, StepElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
+    ManifestsOutcome manifestsOutcome =
+            (ManifestsOutcome) outcomeService
+                    .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.MANIFESTS))
+                    .getOutcome();
+    ValuesManifestOutcome valuesManifestOutcome =
+            (ValuesManifestOutcome) getAwsSamValuesManifestOutcome(manifestsOutcome.values());
+
+    if (valuesManifestOutcome != null) {
+      AwsSamValuesYamlDataOutcome.AwsSamValuesYamlDataOutcomeBuilder awsSamValuesYamlDataOutcomeBuilder = AwsSamValuesYamlDataOutcome.builder();
+
+      for (Map.Entry<String, ResponseData> entry : responseDataMap.entrySet()) {
+        ResponseData responseData = entry.getValue();
+        if (responseData instanceof StepStatusTaskResponseData) {
+          StepStatusTaskResponseData stepStatusTaskResponseData = (StepStatusTaskResponseData) responseData;
+          if (stepStatusTaskResponseData != null
+                  && stepStatusTaskResponseData.getStepStatus().getStepExecutionStatus() == StepExecutionStatus.SUCCESS) {
+            StepOutput stepOutput = stepStatusTaskResponseData.getStepStatus().getOutput();
+
+            if (stepOutput instanceof StepMapOutput) {
+
+              String valuesYamlPath = getValuesPathFromValuesManifestOutcome(valuesManifestOutcome);
+
+              StepMapOutput stepMapOutput = (StepMapOutput) stepOutput;
+              if (stepMapOutput.getMap() != null && stepMapOutput.getMap().size() > 0) {
+                String valuesYamlContentBase64 = stepMapOutput.getMap().get(valuesYamlPath);
+                String valuesYamlContent = new String(Base64.getDecoder().decode(valuesYamlContentBase64));
+                valuesYamlContent = engineExpressionService.renderExpression(ambiance, valuesYamlContent);
+
+                if (!StringUtils.isEmpty(valuesYamlPath) && !StringUtils.isEmpty(valuesYamlContent)) {
+                  awsSamValuesYamlDataOutcomeBuilder.valuesYamlPath(valuesYamlPath);
+                  awsSamValuesYamlDataOutcomeBuilder.valuesYamlContent(valuesYamlContent);
+                  executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.AWS_SAM_VALUES_YAML_DATA_OUTCOME,
+                          awsSamValuesYamlDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
+                }
+              }
+            }
+
+          }
+        }
+      }
+
+    }
+
     return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 
