@@ -179,7 +179,7 @@ function copy_verification_service_jars(){
   cp ../../270-verification/keystore.jks .
   cp ../../270-verification/verification-config.yml .
   cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
-  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/baverification-servicese-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -R ../../dockerization/verification/scripts/ .
   copy_common_files
@@ -200,6 +200,6 @@ elif [ "${SERVICE_NAME}" == "change-data-capture" ]; then
     copy_change_data_capture_jars
 elif [ "${SERVICE_NAME}" == "idp-service" ]; then
     copy_change_data_capture_jars
-elif [ "${SERVICE_NAME}" == "verification-svc" ]; then
+elif [ "${SERVICE_NAME}" == "verification-service" ]; then
     copy_verification_service_jars
 fi
