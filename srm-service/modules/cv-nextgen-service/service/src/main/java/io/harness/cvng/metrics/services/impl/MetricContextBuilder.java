@@ -46,10 +46,8 @@ public class MetricContextBuilder {
             learningEngineTask.getType().toString().toLowerCase(),
             learningEngineTask.getTaskStatus().name().toLowerCase(),
             Duration.between(learningEngineTask.getAnalysisStartTime(), learningEngineTask.getAnalysisEndTime())));
-    addToObjContextMap(AnalysisStateMachine.class,
-        analysisStateMachine
-        -> new AnalysisStateMachineContext(
-            analysisStateMachine.getAccountId(), analysisStateMachine.getCurrentState().getType()));
+    addToObjContextMap(
+        AnalysisStateMachine.class, analysisStateMachine -> new AnalysisStateMachineContext(analysisStateMachine));
     addToObjContextMap(AnalysisOrchestrator.class,
         analysisOrchestrator -> new AccountMetricContext(analysisOrchestrator.getAccountId()));
     addToObjContextMap(VerificationTask.class, VerificationTaskMetricContext::new);
