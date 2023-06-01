@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.PIE_DEPRECATE_PAUSE_INTERRUPT_NG;
 import static io.harness.beans.FeatureName.PIE_GET_FILE_CONTENT_ONLY;
 import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ADITHYA;
@@ -20,32 +21,46 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.engine.executions.retry.RetryGroup;
 import io.harness.engine.executions.retry.RetryInfo;
+import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitx.USER_FLOW;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.InterruptDTO;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.stages.StageExecutionResponse;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.ThreadOperationContextHelper;
 
@@ -58,6 +73,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PIPELINE)
@@ -68,12 +84,18 @@ public class PlanExecutionResourceTest extends CategoryTest {
   @Mock PMSExecutionService pmsExecutionService;
   @Mock RetryExecutionHelper retryExecutionHelper;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
-
+  @Mock AccessControlClient accessControlClient;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock PmsFeatureFlagHelper pmsFeatureFlagHelper;
+  @Mock NGSettingsClient settingsClient;
+  @Mock PlanExecutionService planExecutionService;
+
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private final String PIPELINE_IDENTIFIER = "p1";
+  private final String PLAN_EXECUTION_ID = "planExecutionId";
+  private final String NODE_EXECUTION_ID = "nodeExecutionId";
 
   String yaml = "pipeline:\n"
       + "  identifier: p1\n"
@@ -598,5 +620,155 @@ public class PlanExecutionResourceTest extends CategoryTest {
         null);
     assertEquals("planId123", response.getData().getPlanExecution().getPlanId());
     assertNull(ThreadOperationContextHelper.getThreadOperationContextUserFlow());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testHandleInterruptWithDeprecatedInterrupt() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .accountId(ACCOUNT_ID)
+                                                                        .orgIdentifier(ORG_IDENTIFIER)
+                                                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                                                        .planExecutionId(PLAN_EXECUTION_ID)
+                                                                        .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                                                        .build();
+    doReturn(pipelineExecutionSummaryEntity)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, PIE_DEPRECATE_PAUSE_INTERRUPT_NG);
+    assertThatThrownBy(()
+                           -> planExecutionResource.handleInterrupt(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PlanExecutionInterruptType.PAUSE, PLAN_EXECUTION_ID))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("The given interrupt type is deprecated. Please contact Harness for further support.");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testHandleInterruptInterruptIsBehindSetting() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .accountId(ACCOUNT_ID)
+                                                                        .orgIdentifier(ORG_IDENTIFIER)
+                                                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                                                        .planExecutionId(PLAN_EXECUTION_ID)
+                                                                        .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                                                        .build();
+    doReturn(pipelineExecutionSummaryEntity)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    doThrow(new InvalidRequestException("exception"))
+        .when(settingsClient)
+        .getSetting("allow_user_to_mark_step_as_failed_explicitly", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
+    assertThatThrownBy(()
+                           -> planExecutionResource.handleInterrupt(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PlanExecutionInterruptType.UserMarkedFailure, PLAN_EXECUTION_ID))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Could not fetch [Allow user to mark the step as failed explicitly] Settings, Please contact Harness for further support.");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testHandleInterruptInterruptIsBehindSettingWithFalseValue() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .accountId(ACCOUNT_ID)
+                                                                        .orgIdentifier(ORG_IDENTIFIER)
+                                                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                                                        .planExecutionId(PLAN_EXECUTION_ID)
+                                                                        .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                                                        .build();
+    doReturn(pipelineExecutionSummaryEntity)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+
+    SettingValueResponseDTO response = SettingValueResponseDTO.builder().value("false").build();
+    MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(response);
+    assertThatThrownBy(()
+                           -> planExecutionResource.handleInterrupt(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               PlanExecutionInterruptType.UserMarkedFailure, PLAN_EXECUTION_ID))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "[Allow user to mark the step as failed explicitly] Settings is not enabled, Please enable this setting if you want to use this product.");
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testHandleInterrupt() {
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                        .accountId(ACCOUNT_ID)
+                                                                        .orgIdentifier(ORG_IDENTIFIER)
+                                                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                                                        .planExecutionId(PLAN_EXECUTION_ID)
+                                                                        .pipelineIdentifier(PIPELINE_IDENTIFIER)
+                                                                        .build();
+    InterruptDTO interrupt =
+        InterruptDTO.builder().planExecutionId(PLAN_EXECUTION_ID).type(PlanExecutionInterruptType.ABORTALL).build();
+
+    doReturn(pipelineExecutionSummaryEntity)
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, PIE_DEPRECATE_PAUSE_INTERRUPT_NG);
+    SettingValueResponseDTO response = SettingValueResponseDTO.builder().value("true").build();
+    MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(response);
+    doReturn(interrupt)
+        .when(pmsExecutionService)
+        .registerInterrupt(PlanExecutionInterruptType.ABORTALL, PLAN_EXECUTION_ID, null);
+
+    ResponseDTO<InterruptDTO> responseDTO = planExecutionResource.handleInterrupt(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PlanExecutionInterruptType.ABORTALL, PLAN_EXECUTION_ID);
+    assertEquals(PLAN_EXECUTION_ID, responseDTO.getData().getPlanExecutionId());
+    assertEquals(PlanExecutionInterruptType.ABORTALL, responseDTO.getData().getType());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testHandleStageInterrupt() {
+    InterruptDTO interrupt =
+        InterruptDTO.builder().planExecutionId(PLAN_EXECUTION_ID).type(PlanExecutionInterruptType.ABORTALL).build();
+
+    doReturn(true).when(pmsFeatureFlagHelper).isEnabled(ACCOUNT_ID, PIE_DEPRECATE_PAUSE_INTERRUPT_NG);
+    SettingValueResponseDTO response = SettingValueResponseDTO.builder().value("true").build();
+    MockedStatic<NGRestUtils> ngRestUtilsMockedStatic = mockStatic(NGRestUtils.class);
+    ngRestUtilsMockedStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(response);
+    doReturn(interrupt)
+        .when(pmsExecutionService)
+        .registerInterrupt(PlanExecutionInterruptType.ABORTALL, PLAN_EXECUTION_ID, NODE_EXECUTION_ID);
+
+    ResponseDTO<InterruptDTO> responseDTO = planExecutionResource.handleStageInterrupt(ACCOUNT_ID, ORG_IDENTIFIER,
+        PROJ_IDENTIFIER, PlanExecutionInterruptType.ABORTALL, PLAN_EXECUTION_ID, NODE_EXECUTION_ID);
+    assertEquals(PLAN_EXECUTION_ID, responseDTO.getData().getPlanExecutionId());
+    assertEquals(PlanExecutionInterruptType.ABORTALL, responseDTO.getData().getType());
+  }
+
+  @Test
+  @Owner(developers = VIVEK_DIXIT)
+  @Category(UnitTests.class)
+  public void testHandleManualInterventionInterrupt() {
+    InterruptDTO interrupt =
+        InterruptDTO.builder().planExecutionId(PLAN_EXECUTION_ID).type(PlanExecutionInterruptType.ABORT).build();
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setPipelineIdentifier(PIPELINE_IDENTIFIER).build();
+    doReturn(executionMetadata).when(planExecutionService).getExecutionMetadataFromPlanExecution(PLAN_EXECUTION_ID);
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
+    doReturn(interrupt)
+        .when(pmsExecutionService)
+        .registerInterrupt(PlanExecutionInterruptType.ABORT, PLAN_EXECUTION_ID, NODE_EXECUTION_ID);
+
+    ResponseDTO<InterruptDTO> responseDTO = planExecutionResource.handleManualInterventionInterrupt(ACCOUNT_ID,
+        ORG_IDENTIFIER, PROJ_IDENTIFIER, PlanExecutionInterruptType.ABORT, PLAN_EXECUTION_ID, NODE_EXECUTION_ID);
+    assertEquals(PLAN_EXECUTION_ID, responseDTO.getData().getPlanExecutionId());
+    assertEquals(PlanExecutionInterruptType.ABORT, responseDTO.getData().getType());
   }
 }
