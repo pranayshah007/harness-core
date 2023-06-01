@@ -424,7 +424,8 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
   public void testCreateServiceOverrideInputsYaml() {
-    NGServiceOverridesEntity testOverrideEntity = getTestOverrideEntityForRuntimeInput();
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_SERVICE_OVERRIDE, true);
     serviceOverridesServiceV2.create(testOverrideEntity);
     String serviceOverrideInputsYaml = serviceOverridesServiceV2.createServiceOverrideInputsYaml(ACCOUNT_IDENTIFIER,
         ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef(), testOverrideEntity.getServiceRef());
@@ -449,22 +450,131 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     assertThat(expectedInputString).isEqualTo(serviceOverrideInputsYaml);
   }
 
-  private NGServiceOverridesEntity getTestOverrideEntityForRuntimeInput() {
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverrideInputsYamlNoInputs() {
+    NGServiceOverridesEntity testOverrideEntity =
+            getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_SERVICE_OVERRIDE, false);
+    serviceOverridesServiceV2.create(testOverrideEntity);
+    String serviceOverrideInputsYaml = serviceOverridesServiceV2.createServiceOverrideInputsYaml(ACCOUNT_IDENTIFIER,
+            ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef(), testOverrideEntity.getServiceRef());
+
+    assertThat(serviceOverrideInputsYaml).isNull();
+  }
+
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreateEnvOverrideInputsYaml() {
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, true);
+    serviceOverridesServiceV2.create(testOverrideEntity);
+    String envOverrideInputsYaml = serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef());
+    String expectedInputString = "environmentInputs:\n"
+        + "  overrides:\n"
+        + "    manifests:\n"
+        + "    - manifest:\n"
+        + "        identifier: \"manifest1\"\n"
+        + "        type: \"Values\"\n"
+        + "        spec:\n"
+        + "          store:\n"
+        + "            type: \"Github\"\n"
+        + "            spec:\n"
+        + "              connectorRef: \"<+input>\"\n"
+        + "              branch: \"<+input>\"\n"
+        + "  variables:\n"
+        + "  - name: \"varA\"\n"
+        + "    type: \"String\"\n"
+        + "    value: \"<+input>\"\n"
+        + "  - name: \"varB\"\n"
+        + "    type: \"String\"\n"
+        + "    value: \"<+input>\"\n";
+    assertThat(expectedInputString).isEqualTo(envOverrideInputsYaml);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreateEnvOverrideInputsYamlNoVars() {
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, true);
+    testOverrideEntity.getSpec().setVariables(Collections.EMPTY_LIST);
+
+    serviceOverridesServiceV2.create(testOverrideEntity);
+    String envOverrideInputsYaml = serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef());
+    String expectedInputString = "environmentInputs:\n"
+        + "  overrides:\n"
+        + "    manifests:\n"
+        + "    - manifest:\n"
+        + "        identifier: \"manifest1\"\n"
+        + "        type: \"Values\"\n"
+        + "        spec:\n"
+        + "          store:\n"
+        + "            type: \"Github\"\n"
+        + "            spec:\n"
+        + "              connectorRef: \"<+input>\"\n"
+        + "              branch: \"<+input>\"\n";
+
+    assertThat(expectedInputString).isEqualTo(envOverrideInputsYaml);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreateEnvOverrideInputsYamlNoManifests() {
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, true);
+    testOverrideEntity.getSpec().setManifests(Collections.EMPTY_LIST);
+    serviceOverridesServiceV2.create(testOverrideEntity);
+    String envOverrideInputsYaml = serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef());
+    String expectedInputString = "environmentInputs:\n"
+        + "  variables:\n"
+        + "  - name: \"varA\"\n"
+        + "    type: \"String\"\n"
+        + "    value: \"<+input>\"\n"
+        + "  - name: \"varB\"\n"
+        + "    type: \"String\"\n"
+        + "    value: \"<+input>\"\n";
+    assertThat(expectedInputString).isEqualTo(envOverrideInputsYaml);
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testCreateEnvOverrideInputsYamlNoInputs() {
+    NGServiceOverridesEntity testOverrideEntity =
+        getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, false);
+    serviceOverridesServiceV2.create(testOverrideEntity);
+    String envOverrideInputsYaml = serviceOverridesServiceV2.createEnvOverrideInputsYaml(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef());
+    assertThat(envOverrideInputsYaml).isNull();
+  }
+
+  private NGServiceOverridesEntity getTestOverrideEntityForRuntimeInput(
+      ServiceOverridesType overridesType, boolean isInputsPresent) {
     return NGServiceOverridesEntity.builder()
         .accountId(ACCOUNT_IDENTIFIER)
         .orgIdentifier(ORG_IDENTIFIER)
         .projectIdentifier(PROJECT_IDENTIFIER)
-        .type(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
+        .type(overridesType)
         .environmentRef(ENVIRONMENT_REF)
         .serviceRef(SERVICE_REF)
         .spec(ServiceOverridesSpec.builder()
-                  .variables(List.of(StringNGVariable.builder()
-                                         .name("varA")
-                                         .value(ParameterField.createExpressionField(true, "<+input>", null, true))
-                                         .build(),
+                  .variables(List.of(
+                      StringNGVariable.builder()
+                          .name("varA")
+                          .value(isInputsPresent ? ParameterField.createExpressionField(true, "<+input>", null, true)
+                                                 : ParameterField.createValueField("randomValue"))
+                          .build(),
                       StringNGVariable.builder()
                           .name("varB")
-                          .value(ParameterField.createExpressionField(true, "<+input>", null, true))
+                          .value(isInputsPresent ? ParameterField.createExpressionField(true, "<+input>", null, true)
+                                                 : ParameterField.createValueField("randomValue"))
                           .build()))
                   .manifests(List.of(
                       ManifestConfigWrapper.builder()
@@ -478,10 +588,14 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                                                 StoreConfigWrapper.builder()
                                                     .type(StoreConfigType.GITHUB)
                                                     .spec(GithubStore.builder()
-                                                              .branch(ParameterField.createExpressionField(
-                                                                  true, "<+input>", null, true))
-                                                              .connectorRef(ParameterField.createExpressionField(
-                                                                  true, "<+input>", null, true))
+                                                              .branch(isInputsPresent
+                                                                      ? ParameterField.createExpressionField(true,
+                                                                          "<+input>", null, true)
+                                                                      : ParameterField.createValueField("randomValue"))
+                                                              .connectorRef(isInputsPresent
+                                                                      ? ParameterField.createExpressionField(
+                                                                          true, "<+input>", null, true)
+                                                                      : ParameterField.createValueField("randomValue"))
                                                               .paths(ParameterField.createValueField(List.of("file1")))
                                                               .build())
                                                     .build()))

@@ -37,10 +37,11 @@ public interface ServiceOverridesServiceV2 {
   List<NGServiceOverridesEntity> findAll(Criteria criteria);
   Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride);
 
-  Map<Scope, NGServiceOverridesEntity> getEnvOverride(@NonNull String accountId, String orgId, String projectId,@NonNull String envRef);
+  Map<Scope, NGServiceOverridesEntity> getEnvOverride(
+      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef);
 
   Map<Scope, NGServiceOverridesEntity> getEnvServiceOverride(
-          @NonNull   String accountId, String orgId, String projectId,@NonNull String envRef,@NonNull String serviceRef);
+      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, @NonNull String serviceRef);
 
   Map<Scope, NGServiceOverridesEntity> getInfraOverride(
       @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, @NonNull String infraId);
@@ -50,6 +51,9 @@ public interface ServiceOverridesServiceV2 {
 
   String createServiceOverrideInputsYaml(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
       @NonNull String environmentRef, @NonNull String serviceRef);
+
+  String createEnvOverrideInputsYaml(
+      @NonNull String accountId, String orgIdentifier, String projectIdentifier, @NonNull String environmentRef);
 
   Optional<NGServiceOverrideConfigV2> mergeOverridesGroupedByType(
       @NonNull List<NGServiceOverridesEntity> overridesEntities);

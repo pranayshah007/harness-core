@@ -305,6 +305,65 @@ public class ServiceOverridesServiceV2Impl implements ServiceOverridesServiceV2 
     return YamlPipelineUtils.writeYamlString(yamlInputs);
   }
 
+  @Override
+  public String createEnvOverrideInputsYaml(
+      @NonNull String accountId, String orgIdentifier, String projectIdentifier, @NonNull String environmentRef) {
+    Map<String, Object> yamlInputs =
+        createEnvOverrideInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, environmentRef);
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  private Map<String, Object> createEnvOverrideInputsYamlInternal(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+
+    Map<Scope, NGServiceOverridesEntity> envOverrideAtAllScopes =
+        getEnvOverride(accountId, orgIdentifier, projectIdentifier, environmentRef);
+    Optional<NGServiceOverrideConfigV2> ngServiceOverrideConfigV2 = Optional.empty();
+    if (isNotEmpty(envOverrideAtAllScopes)) {
+      ngServiceOverrideConfigV2 = mergeOverridesGroupedByType(new ArrayList<>(envOverrideAtAllScopes.values()));
+    }
+
+    if (ngServiceOverrideConfigV2.isPresent()) {
+      try {
+        String yaml = getSpecYamlForMerging(ngServiceOverrideConfigV2.get().getSpec());
+        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputFormWithDefaultValues(yaml);
+        if (isEmpty(serviceOverrideInputs)) {
+          return null;
+        }
+
+        YamlField serviceOverridesYamlField =
+            YamlUtils.readTree(serviceOverrideInputs).getNode().getField(YamlTypes.SERVICE_OVERRIDE);
+
+        JsonNode variableJsonNode = serviceOverridesYamlField.getNode().getCurrJsonNode().get(YamlTypes.VARIABLES);
+        if (variableJsonNode != null) {
+          ((ObjectNode) serviceOverridesYamlField.getNode().getCurrJsonNode()).remove(YamlTypes.VARIABLES);
+        }
+
+        ObjectNode overridesNode = mapper.createObjectNode();
+        if (!serviceOverridesYamlField.getNode().getCurrJsonNode().isEmpty()) {
+          overridesNode.set(YamlTypes.OVERRIDE, serviceOverridesYamlField.getNode().getCurrJsonNode());
+        }
+
+        ObjectNode dummyNode = mapper.createObjectNode();
+        dummyNode.set("Dummy", overridesNode);
+
+        if (variableJsonNode != null) {
+          ((ObjectNode) dummyNode.get("Dummy")).set(YamlTypes.VARIABLES, variableJsonNode);
+        }
+
+        yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, dummyNode.get("Dummy"));
+      } catch (IOException e) {
+        throw new InvalidRequestException("Error occurred while creating Service Override inputs ", e);
+      }
+    }
+
+    return yamlInputs;
+  }
+
   private Map<String, Object> createServiceOverrideInputsYamlInternal(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
     Map<String, Object> yamlInputs = new HashMap<>();
