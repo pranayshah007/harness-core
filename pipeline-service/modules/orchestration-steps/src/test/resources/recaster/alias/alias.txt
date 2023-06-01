@@ -28,6 +28,7 @@ io.harness.beans.steps.stepinfo.SaveCacheGCSStepInfo
 io.harness.beans.steps.stepinfo.SecurityStepInfo
 io.harness.beans.steps.stepinfo.SaveCacheS3StepInfo
 io.harness.ssca.cd.beans.stepnode.SscaOrchestrationStepNode
+io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepNode
 io.harness.steps.barriers.beans.BarrierOutcome
 io.harness.steps.http.HttpStepParameters
 io.harness.beans.yaml.extended.volumes.EmptyDirYaml
@@ -65,6 +66,7 @@ io.harness.steps.policy.PolicyStepSpecParameters
 io.harness.steps.jira.create.JiraCreateStepNode
 io.harness.beans.yaml.extended.TIBuildTool
 io.harness.ssca.cd.beans.orchestration.CdSscaOrchestrationStepInfo
+io.harness.ssca.cd.beans.enforcement.CdSscaEnforcementStepInfo
 io.harness.steps.approval.step.servicenow.ServiceNowApprovalOutcome
 io.harness.beans.steps.stepinfo.RunTestsStepInfo
 io.harness.beans.yaml.extended.ImagePullPolicy

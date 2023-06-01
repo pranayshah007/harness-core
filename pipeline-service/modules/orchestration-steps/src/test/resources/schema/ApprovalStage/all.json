@@ -1302,6 +1302,41 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CdSscaEnforcementStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "infrastructure",
+            "policy",
+            "source",
+            "verifyAttestation"
+          ],
+          "properties": {
+            "infrastructure": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ContainerK8sInfra"
+                }
+              ]
+            },
+            "policy": {
+              "$ref": "#/definitions/EnforcementPolicy"
+            },
+            "source": {
+              "$ref": "#/definitions/SbomSource"
+            },
+            "verifyAttestation": {
+              "$ref": "#/definitions/VerifyAttestation"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CdSscaOrchestrationStepInfo": {
       "allOf": [
         {
@@ -1787,6 +1822,22 @@
               "type": "string"
             },
             "privateKey": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CosignVerifyAttestation": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/VerifyAttestationSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "publicKey": {
               "type": "string"
             }
           }
@@ -2390,6 +2441,15 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "EnforcementPolicy": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/PolicyStore"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ExecutionElementConfig": {
       "type": "object",
       "required": [
@@ -2894,6 +2954,22 @@
           ]
         }
       ]
+    },
+    "HarnessStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HostPathYaml": {
       "allOf": [
@@ -4394,6 +4470,39 @@
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PolicyStore": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "harness"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessStore"
+              }
+            }
+          }
+        }
+      ]
     },
     "ProceedWithDefaultValuesFailureActionConfig": {
       "allOf": [
@@ -6664,6 +6773,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "CdSscaEnforcement"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CdSscaEnforcementStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "CdSscaOrchestration"
               }
             }
@@ -7397,6 +7522,10 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "StoreSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StrategyConfig": {
       "type": "object",
       "properties": {
@@ -7995,6 +8124,40 @@
           "format": "int32"
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "VerifyAttestation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "cosign"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cosign"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CosignVerifyAttestation"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "VerifyAttestationSpec": {
+      "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "WaitStepInfo": {
