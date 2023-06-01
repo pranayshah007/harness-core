@@ -179,7 +179,7 @@ ciExecutionServiceConfig:
     overrideConfig:
       - "kmpySmUISimoRrJL6NL73w:1:1"
   pvcDefaultStorageSize: 25600
-  delegateServiceEndpointVariableValue: "0.tcp.in.ngrok.io:17984"
+  delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:1.16.14
   liteEngineImage: harness/ci-lite-engine:1.16.14
   #isLocal: false
@@ -413,7 +413,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-true}
+shouldConfigureWithPMS: ${SHOULD_CONFIGURE_WITH_PMS:-false}
 
 enableDashboardTimescale: false
 
