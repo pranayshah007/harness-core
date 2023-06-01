@@ -73,7 +73,7 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
   private String orgIdentifier;
   private String projectIdentifier;
   @NotNull private List<String> signatures;
-  private Map<String, List<String>> signaturesLock;
+  private Map<String, List<String>> signaturesLock;   // Used for MultiRegionArtifact triggers.
 
   @JsonProperty("type") private PollingType pollingType;
 

@@ -257,6 +257,9 @@ public class BuildTriggerHelper {
       List<BuildMetadata> multiBuildMetadata =
           triggerDetails.getNgTriggerEntity().getMetadata().getMultiBuildMetadata();
       String thisSourceSignature = multiBuildMetadata.get(buildMetadataIndex).getPollingConfig().getSignature();
+      /* signaturesToLock is a list of the signatures from the other BuildMetadata present in this same trigger.
+         This list will be used to decide whether all this trigger's pollingDocs contain the same versions
+         before firing the trigger. */
       List<String> signaturesToLock =
           multiBuildMetadata.stream()
               .filter(metadata -> !metadata.getPollingConfig().getSignature().equals(thisSourceSignature))

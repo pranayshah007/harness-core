@@ -205,19 +205,20 @@ public class PollingResponseHandler {
       }
     }
 
-    // Populate newArtifactsMetadata with metadata only for filtered newArtifactKeys
-    List<Metadata> newArtifactsMetadata =
-        newArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
-
     PolledResponseResult polledResponseResult =
         getPolledResponseResultForArtifact((ArtifactInfo) pollingDocument.getPollingInfo());
     List<String> signaturesToPublishWithoutLock = getSignaturesWithNoLock(pollingDocument);
     if (isNotEmpty(newArtifactKeys) && isNotEmpty(signaturesToPublishWithoutLock)) {
+      /* Publish polled versions for the signatures of all triggers which are not of type MultiRegionArtifact
+      since locking logic does not apply for them. */
       log.info("Publishing artifact versions {} for unlocked signatures {} to topic.", newArtifactKeys,
           signaturesToPublishWithoutLock);
+      List<Metadata> newArtifactsMetadata =
+              newArtifactKeys.stream().map(newArtifactsMetadataMap::get).collect(Collectors.toList());
       publishPolledItemToTopic(
           pollingDocument, newArtifactKeys, polledResponseResult, newArtifactsMetadata, signaturesToPublishWithoutLock);
     }
+    // Handle publishing for MultiRegionArtifact Triggers and update pollingDocuments.
     handleLockedSignaturesAndUpdatePollingDoc(response, savedArtifactKeys, unpublishedArtifactKeys, pollingDocument,
         newArtifactKeys, polledResponseResult, newArtifactsMetadataMap);
   }
@@ -482,6 +483,7 @@ public class PollingResponseHandler {
   }
 
   private List<String> getSignaturesWithNoLock(PollingDocument pollingDocument) {
+    // Returns signatures for triggers which are NOT of type MultiRegionArtifact.
     List<String> signatures = pollingDocument.getSignatures();
     Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
@@ -491,6 +493,7 @@ public class PollingResponseHandler {
   }
 
   private List<String> getSignaturesWithLock(List<String> signatures, Map<String, List<String>> signaturesLock) {
+    // Returns signatures for triggers of type MultiRegionArtifact, which require locking logic to be carried out.
     List<String> signaturesWithLock;
     if (isEmpty(signaturesLock) || isEmpty(signatures)) {
       signaturesWithLock = null;
@@ -556,6 +559,7 @@ public class PollingResponseHandler {
     String pollDocId = pollingDocument.getUuid();
     List<String> signatures = pollingDocument.getSignatures();
     Map<String, List<String>> signaturesLock = pollingDocument.getSignaturesLock();
+    // Get signatures of MultiRegionArtifact triggers.
     List<String> signaturesWithLock = getSignaturesWithLock(signatures, signaturesLock);
     List<AcquiredLock<?>> acquiredLocks = new ArrayList<>();
     boolean shouldCheckLockedSignatures = isNotEmpty(newArtifactKeys) && isNotEmpty(signaturesWithLock)
@@ -574,7 +578,7 @@ public class PollingResponseHandler {
       try {
         for (String pollingDocIdToLock : allPollingDocIdsToLock) {
           acquiredLocks.add(
-              persistentLocker.waitToAcquireLock(pollingDocIdToLock, Duration.ofMinutes(2), Duration.ofSeconds(10)));
+              persistentLocker.waitToAcquireLock(pollingDocIdToLock, Duration.ofMinutes(1), Duration.ofSeconds(10)));
         }
         locksAcquiredSuccess = true;
       } catch (Exception e) {
@@ -587,7 +591,7 @@ public class PollingResponseHandler {
             newArtifactsMetadataMap, signaturesLock, signaturesWithLock, allOtherPollingDocIdsToLock);
       }
     }
-    // after publishing event, update database as well.
+    // After publishing event, update database as well.
     // if delegate rebalancing happened, unpublishedArtifactKeys are now the new versions. We might have to delete few
     // key from db.
     Set<String> toBeDeletedKeys = response.getToBeDeletedKeys();
