@@ -10,6 +10,7 @@ package io.harness.pcf.cfsdk;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.metrics.impl.CfApiMetricsServiceImpl.CF_API_ERROR;
 import static io.harness.pcf.PcfUtils.logSdkCommand;
 import static io.harness.pcf.PcfUtils.logSdkCommandFailure;
 import static io.harness.pcf.model.PcfConstants.PCF_ROUTE_PATH_SEPARATOR;
@@ -25,6 +26,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.logging.LogCallback;
+import io.harness.metrics.impl.CfApiMetricsServiceImpl;
 import io.harness.pcf.CfSdkClient;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfRenameRequest;
@@ -86,6 +88,7 @@ public class CfSdkClientImpl implements CfSdkClient {
   public static final String PCF_PROXY_PROPERTY = "https_proxy";
 
   @Inject private CloudFoundryOperationsProvider cloudFoundryOperationsProvider;
+  @Inject private CfApiMetricsServiceImpl cfApiMetricsService;
 
   @Override
   public List<OrganizationSummary> getOrganizations(CfRequestConfig pcfRequestConfig)
@@ -122,8 +125,7 @@ public class CfSdkClientImpl implements CfSdkClient {
   }
 
   private void handleExceptionForGetOrganizationsAPI(Throwable t, String apiName, StringBuilder errorBuilder) {
-    log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception Occurred while executing PCF api: " + apiName
-        + " EXCEPTION: " + t.toString());
+    cfApiMetricsService.recordCfApiErrorMetric(apiName, CF_API_ERROR);
     errorBuilder.append(t.getMessage());
   }
 
@@ -1028,7 +1030,7 @@ public class CfSdkClientImpl implements CfSdkClient {
   }
 
   private void handleException(Throwable t, String apiName, StringBuilder errorBuilder) {
-    log.error(PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX + "Exception occurred while executing PCF api: " + apiName, t);
+    cfApiMetricsService.recordCfApiErrorMetric(apiName, CF_API_ERROR);
     errorBuilder.append(t.getMessage());
   }
 

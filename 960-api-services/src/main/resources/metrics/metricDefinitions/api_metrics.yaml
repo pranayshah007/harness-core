@@ -1,0 +1,8 @@
+name: CF API Metrics
+identifier: cf_api_metrics
+metricGroup: cf_api
+metrics:
+  - metricName: cf_api_exceptions
+    metricDefinition: Exception occurred while processing CF API
+    type: Count
+    unit: "1"

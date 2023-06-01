@@ -18,12 +18,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.metrics.impl.CfApiMetricsServiceImpl;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfRenameRequest;
 import io.harness.pcf.model.CfRequestConfig;
@@ -34,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
 import org.cloudfoundry.operations.routes.Route;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,7 +50,13 @@ public class CfSdkClientImplTest extends CategoryTest {
   @Spy private ConnectionContextProvider connectionContextProvider;
   @Spy private CloudFoundryClientProvider cloudFoundryClientProvider;
   @InjectMocks @Spy private CloudFoundryOperationsProvider cloudFoundryOperationsProvider;
+  @InjectMocks @Spy private CfApiMetricsServiceImpl cfApiMetricsService;
   @InjectMocks @Spy private CfSdkClientImpl cfSdkClient;
+
+  @Before
+  public void setUp() {
+    doNothing().when(cfApiMetricsService).recordCfApiErrorMetric(any(), any());
+  }
 
   private static ApplicationSummary getApplicationSummary(String name, String id, int instanceCount) {
     return ApplicationSummary.builder()
