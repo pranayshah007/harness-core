@@ -177,7 +177,7 @@ function copy_verification_service_jars(){
   cp ../../270-verification/keystore.jks .
   cp ../../270-verification/verification-config.yml .
   cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
-  cp ../../dockerization/verification-servicese-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+  cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
   cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
   cp -R ../../dockerization/verification/scripts/ .
   copy_common_files
