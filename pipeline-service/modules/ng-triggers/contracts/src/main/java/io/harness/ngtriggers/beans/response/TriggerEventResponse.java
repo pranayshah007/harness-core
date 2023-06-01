@@ -27,38 +27,47 @@ import lombok.Data;
 @OwnedBy(PIPELINE)
 public class TriggerEventResponse {
   public enum FinalStatus {
-    SCM_SERVICE_CONNECTION_FAILED,
-    INVALID_PAYLOAD,
-    NO_MATCHING_TRIGGER_FOR_REPO,
-    NO_MATCHING_TRIGGER_FOR_EVENT_ACTION,
-    NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS,
-    NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS,
-    NO_MATCHING_TRIGGER_FOR_JEXL_CONDITIONS,
-    NO_MATCHING_TRIGGER_FOR_HEADER_CONDITIONS,
-    INVALID_RUNTIME_INPUT_YAML,
-    TARGET_DID_NOT_EXECUTE,
-    TARGET_EXECUTION_REQUESTED,
-    NO_ENABLED_CUSTOM_TRIGGER_FOUND,
-    NO_ENABLED_CUSTOM_TRIGGER_FOUND_FOR_ACCOUNT,
-    NO_ENABLED_TRIGGER_FOR_PROJECT,
-    NO_ENABLED_TRIGGER_FOR_ACCOUNT,
-    NO_ENABLED_TRIGGER_FOR_SOURCEREPO_TYPE,
-    NO_ENABLED_TRIGGER_FOR_ACCOUNT_SOURCE_REPO,
-    NO_MATCHING_TRIGGER_FOR_FILEPATH_CONDITIONS,
-    FAILED_TO_FETCH_PR_DETAILS,
-    EXCEPTION_WHILE_PROCESSING,
-    TRIGGER_CONFIRMATION_SUCCESSFUL,
-    TRIGGER_CONFIRMATION_FAILED,
-    TRIGGER_AUTHENTICATION_FAILED,
+    SCM_SERVICE_CONNECTION_FAILED("Scm service connection failed"),
+    INVALID_PAYLOAD("Invalid payload"),
+    NO_MATCHING_TRIGGER_FOR_REPO("No matching trigger for repo"),
+    NO_MATCHING_TRIGGER_FOR_EVENT_ACTION("No matching trigger for event action"),
+    NO_MATCHING_TRIGGER_FOR_METADATA_CONDITIONS("No matching trigger for metadata conditions"),
+    NO_MATCHING_TRIGGER_FOR_PAYLOAD_CONDITIONS("No matching trigger for payload conditions"),
+    NO_MATCHING_TRIGGER_FOR_JEXL_CONDITIONS("No matching trigger for jexl conditions"),
+    NO_MATCHING_TRIGGER_FOR_HEADER_CONDITIONS("No matching trigger for header conditions"),
+    INVALID_RUNTIME_INPUT_YAML("Invalid runtime input yaml"),
+    TARGET_DID_NOT_EXECUTE("Target did not execute"),
+    TARGET_EXECUTION_REQUESTED("Target execution requested"),
+    NO_ENABLED_CUSTOM_TRIGGER_FOUND("No enabled custom trigger found"),
+    NO_ENABLED_CUSTOM_TRIGGER_FOUND_FOR_ACCOUNT("No enabled custom trigger found for account"),
+    NO_ENABLED_TRIGGER_FOR_PROJECT("No enabled trigger for project"),
+    NO_ENABLED_TRIGGER_FOR_ACCOUNT("No enabled trigger for account"),
+    NO_ENABLED_TRIGGER_FOR_SOURCEREPO_TYPE("No enabled trigger for source repo type"),
+    NO_ENABLED_TRIGGER_FOR_ACCOUNT_SOURCE_REPO("No enabled trigger for account source repo"),
+    NO_MATCHING_TRIGGER_FOR_FILEPATH_CONDITIONS("No matching trigger for filepath conditions"),
+    FAILED_TO_FETCH_PR_DETAILS("Failed to fetch pr details"),
+    EXCEPTION_WHILE_PROCESSING("Exception while processing"),
+    TRIGGER_CONFIRMATION_SUCCESSFUL("Trigger confirmation successful"),
+    TRIGGER_CONFIRMATION_FAILED("Trigger confirmation failed"),
+    TRIGGER_AUTHENTICATION_FAILED("Trigger authentication failed"),
 
-    VALIDATION_FAILED_FOR_TRIGGER,
-    ALL_MAPPED_TRIGGER_FAILED_VALIDATION_FOR_POLLING_EVENT,
-    NO_MATCHING_TRIGGER_FOR_FOR_EVENT_SIGNATURES,
-    NO_MATCHING_TRIGGER_FOR_FOR_EVENT_CONDITION,
-    POLLING_EVENT_WITH_NO_VERSIONS,
+    VALIDATION_FAILED_FOR_TRIGGER("Validation failed for trigger"),
+    ALL_MAPPED_TRIGGER_FAILED_VALIDATION_FOR_POLLING_EVENT("All mapped trigger failed validation for polling event"),
+    NO_MATCHING_TRIGGER_FOR_FOR_EVENT_SIGNATURES("No matching trigger for event signatures"),
+    NO_MATCHING_TRIGGER_FOR_FOR_EVENT_CONDITION("No matching trigger for event condition"),
+    POLLING_EVENT_WITH_NO_VERSIONS("Polling event with no versions"),
     // Build Trigger events
-    NEW_ARTIFACT_EVENT_PROCESSED,
-    NEW_MANIFEST_EVENT_PROCESSED,
+    NEW_ARTIFACT_EVENT_PROCESSED("New artifact event processed"),
+    NEW_MANIFEST_EVENT_PROCESSED("New manifest event processed"),
+    ;
+    String message;
+    FinalStatus(String message) {
+      this.message = message;
+    }
+
+    public String getMessage() {
+      return message;
+    }
   }
 
   private String accountId;
