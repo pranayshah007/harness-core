@@ -49,6 +49,8 @@ public final class CVNGSchema
   private CVNGMigrationStatus cvngMigrationStatus;
   private Long cvngNextIteration;
 
+  private Object object;
+
   @Override
   public String getUuid() {
     return SCHEMA_ID;
