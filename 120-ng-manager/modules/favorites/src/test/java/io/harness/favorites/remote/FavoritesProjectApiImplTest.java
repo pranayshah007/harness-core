@@ -43,8 +43,6 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PL)
 public class FavoritesProjectApiImplTest extends CategoryTest {
-  private AccountFavoritesApiImpl accountFavoriteApi;
-  private OrgFavoritesApiImpl orgFavoriteApi;
   private ProjectFavoritesApiImpl projectFavoriteApi;
   private FavoritesResourceUtils favoritesResourceUtils;
   @Mock private FavoritesService favoriteService;
@@ -62,8 +60,6 @@ public class FavoritesProjectApiImplTest extends CategoryTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     favoritesResourceUtils = new FavoritesResourceUtils();
-    accountFavoriteApi = new AccountFavoritesApiImpl(favoriteService, favoritesResourceUtils);
-    orgFavoriteApi = new OrgFavoritesApiImpl(favoriteService, favoritesResourceUtils);
     projectFavoriteApi = new ProjectFavoritesApiImpl(favoriteService, favoritesResourceUtils);
     favoriteDTO = favoriteDTO.module(io.harness.spec.server.ng.v1.model.ModuleType.fromValue(moduleType))
                       .userId(userId)
