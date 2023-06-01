@@ -801,6 +801,15 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     Map<String, Long> tasksCount =
         delegateTasks.stream().collect(groupingBy(DelegateTask::getDelegateId, Collectors.counting()));
     eligibleListOfDelegates.forEach(delegate -> tasksCount.computeIfAbsent(delegate, key -> 0L));
+    Optional<Map.Entry<String, Long>> minCount = tasksCount.entrySet().stream().min(delegateTaskCountComparator);
+    if (minCount.isPresent() && minCount.get().getValue() == 0) {
+      return tasksCount.entrySet()
+          .stream()
+          .sorted(delegateTaskCountComparator)
+          .map(Map.Entry::getKey)
+          .unordered()
+          .collect(toList());
+    }
     return tasksCount.entrySet().stream().sorted(delegateTaskCountComparator).map(Map.Entry::getKey).collect(toList());
   }
 
