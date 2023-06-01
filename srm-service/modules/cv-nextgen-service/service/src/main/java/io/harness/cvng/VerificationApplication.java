@@ -1201,7 +1201,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(3))
             .handler(cvngSchemaMigrationHandler)
             .schedulingType(REGULAR)
-            .filterExpander(query -> query.criteria(CVNGSchemaKeys.cvngMigrationStatus).notEqual(RUNNING))
+            .filterExpander(query
+                -> query.or(query.criteria(CVNGSchemaKeys.cvngMigrationStatus).notEqual(RUNNING),
+                    query.and(query.criteria(CVNGSchemaKeys.cvngMigrationStatus).equal(RUNNING)),
+                    query.criteria(CVNGSchemaKeys.lastUpdatedAt)
+                        .lessThan(
+                            injector.getInstance(Clock.class).instant().minus(4, ChronoUnit.HOURS).toEpochMilli())))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();
