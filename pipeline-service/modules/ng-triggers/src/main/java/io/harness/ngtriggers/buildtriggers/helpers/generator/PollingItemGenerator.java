@@ -53,6 +53,9 @@ public interface PollingItemGenerator {
 
     String pollingDocId;
     if (type == MULTI_ARTIFACT) {
+      /* For MultiRegionArtifact triggers, we need to fetch signature and pollingDocId from `buildTriggerOpsData`,
+      because the trigger's metadata itself contains a list of BuildMetadata, so we don't know which element of the
+      list corresponds to the pollingItem we are generating here. */
       pollingItem.setSignature(buildTriggerOpsData.getBuildMetadata().getPollingConfig().getSignature());
       pollingDocId = buildTriggerOpsData.getBuildMetadata().getPollingConfig().getPollingDocId();
     } else {

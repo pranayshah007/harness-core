@@ -131,6 +131,8 @@ public class PollingServiceImpl implements PollingService {
 
   @Override
   public boolean unsubscribe(PollingItem pollingItem) {
+    /* Here we create the PollingDocument without PollingInfo, since MultiRegionArtifact triggers don't send
+     this data when making an `unsubscribe` request - and this data is not needed anyway for unsubscription. */
     PollingDocument pollingDocument = pollingDocumentMapper.toPollingDocumentWithoutPollingInfo(pollingItem);
     delete(pollingDocument);
     return true;

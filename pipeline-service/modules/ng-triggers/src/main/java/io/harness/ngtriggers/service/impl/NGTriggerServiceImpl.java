@@ -310,23 +310,14 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
     try {
       if (isEmpty(pollingItems)) {
-        throw new InvalidRequestException("Cannot subscribe polling for empty pollingItems");
+        throw new InvalidRequestException("Cannot make polling subscription changes for empty pollingItems");
       }
-      boolean shouldSubscribe = ngTriggerEntity.getEnabled()
-          && !(isWebhookGitPollingEnabled(ngTriggerEntity)
-              && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
-                  == WEBHOOK_POLLING_UNSUBSCRIBE);
-      boolean shouldUnsubscribe = !shouldSubscribe || isUpdate;
+      boolean shouldSubscribe = checkIfShouldSubscribePolling(ngTriggerEntity);
+      boolean shouldUnsubscribe = checkIfShouldUnsubscribePolling(ngTriggerEntity, isUpdate);
       boolean unsubscribeSuccess = true;
 
       if (shouldUnsubscribe) {
-        List<PollingItem> pollingItemsToUnsubscribe;
-        if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
-          pollingItemsToUnsubscribe =
-              pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(ngTriggerEntity);
-        } else {
-          pollingItemsToUnsubscribe = pollingItems;
-        }
+        List<PollingItem> pollingItemsToUnsubscribe = getPollingItemsToUnsubscribe(ngTriggerEntity, pollingItems);
         unsubscribeSuccess = unsubscribePolling(ngTriggerEntity, pollingItemsToUnsubscribe);
       }
 
@@ -461,10 +452,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       ngTriggerEntity.getMetadata().setMultiBuildMetadata(Collections.emptyList());
       ngTriggerEntity.getMetadata().setSignatures(Collections.emptyList());
     } else {
+      // Copy each pollingDocId to the corresponding BuildMetadata in Triggers metadata.
       IntStream.range(0, pollingDocuments.size())
           .forEach(index
               -> ngTriggerEntity.getMetadata().getMultiBuildMetadata().get(index).getPollingConfig().setPollingDocId(
                   pollingDocuments.get(index).getPollingDocId()));
+      // Copy the new trigger's signatures to `ngTriggerEntity.metadata.signatures` list.
       ngTriggerEntity.getMetadata().setSignatures(
           ngTriggerEntity.getMetadata()
               .getMultiBuildMetadata()
@@ -1351,5 +1344,55 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       log.info("No non-deleted Trigger found to update pipelineBranchName");
       return TriggerUpdateCount.builder().successCount(0).failureCount(0).build();
     }
+  }
+
+  private boolean checkIfShouldSubscribePolling(NGTriggerEntity ngTriggerEntity) {
+    switch (ngTriggerEntity.getType()) {
+      case MANIFEST:
+      case ARTIFACT:
+      case MULTI_ARTIFACT:
+        return ngTriggerEntity.getEnabled();
+      case WEBHOOK:
+        if (!ngTriggerEntity.getEnabled()) {
+          return false;
+        }
+        if (isWebhookGitPollingEnabled(ngTriggerEntity)
+            && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
+                == WEBHOOK_POLLING_UNSUBSCRIBE) {
+          return false;
+        }
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private boolean checkIfShouldUnsubscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
+    switch (ngTriggerEntity.getType()) {
+      case MANIFEST:
+      case ARTIFACT:
+      case MULTI_ARTIFACT:
+        return !ngTriggerEntity.getEnabled() || isUpdate;
+      case WEBHOOK:
+        if (!ngTriggerEntity.getEnabled() || isUpdate) {
+          return true;
+        }
+        return isWebhookGitPollingEnabled(ngTriggerEntity)
+            && NGTimeConversionHelper.convertTimeStringToMinutesZeroAllowed(ngTriggerEntity.getPollInterval())
+            == WEBHOOK_POLLING_UNSUBSCRIBE;
+      default:
+        return false;
+    }
+  }
+
+  private List<PollingItem> getPollingItemsToUnsubscribe(
+      NGTriggerEntity ngTriggerEntity, List<PollingItem> pollingItems) {
+    if (ngTriggerEntity.getType() == MULTI_ARTIFACT) {
+      /* MultiRegionArtifact triggers need different handling. Because the number of artifacts we are listening to
+      could have changed during an update, we generate pollingItems to unsubscribe
+      from the `ngTriggerEntity.metadata.signatures` list. */
+      return pollingSubscriptionHelper.generateMultiArtifactPollingItemsToUnsubscribe(ngTriggerEntity);
+    }
+    return pollingItems;
   }
 }
