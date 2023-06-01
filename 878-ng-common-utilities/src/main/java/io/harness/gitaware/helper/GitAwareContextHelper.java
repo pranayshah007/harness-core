@@ -44,6 +44,16 @@ public class GitAwareContextHelper {
     return gitSyncBranchContext.getGitBranchInfo();
   }
 
+  public void initDefaultScmGitMetaDataAndRequestParams() {
+    if (!GlobalContextManager.isAvailable()) {
+      GlobalContextManager.set(new GlobalContext());
+    }
+    GlobalContextManager.upsertGlobalContextRecord(
+        GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().build()).build());
+    GlobalContextManager.upsertGlobalContextRecord(
+        ScmGitMetaDataContext.builder().scmGitMetaData(ScmGitMetaData.builder().build()).build());
+  }
+
   public void initDefaultScmGitMetaData() {
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());
