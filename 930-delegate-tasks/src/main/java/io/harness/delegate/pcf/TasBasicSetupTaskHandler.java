@@ -7,39 +7,9 @@
 
 package io.harness.delegate.pcf;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
-import static io.harness.pcf.PcfUtils.encodeColor;
-import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.CREATE_SERVICE_MANIFEST_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.DELIMITER;
-import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.IMAGE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
-import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.USERNAME_MANIFEST_YML_ELEMENT;
-import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
-
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
-
-import static java.lang.String.format;
-import static java.util.Objects.isNull;
-import static java.util.stream.Collectors.toList;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.tas.TasNgConfigMapper;
@@ -81,12 +51,14 @@ import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CfRequestConfig.CfRequestConfigBuilder;
 import io.harness.pcf.model.CloudFoundryConfig;
 import io.harness.pcf.model.PcfConstants;
-
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.cloudfoundry.operations.applications.ApplicationDetail;
+import org.cloudfoundry.operations.applications.ApplicationSummary;
 import software.wings.delegatetasks.pcf.PcfCommandTaskHelper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -96,12 +68,37 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.cloudfoundry.operations.applications.ApplicationDetail;
-import org.cloudfoundry.operations.applications.ApplicationSummary;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
+import static io.harness.pcf.PcfUtils.encodeColor;
+import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.CREATE_SERVICE_MANIFEST_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.DELIMITER;
+import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.IMAGE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.USERNAME_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.toList;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 @NoArgsConstructor
 @Slf4j
@@ -526,8 +523,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void downsizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
-      throws PivotalClientApiException {
+  private void downsizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
     } catch (PivotalClientApiException exception) {

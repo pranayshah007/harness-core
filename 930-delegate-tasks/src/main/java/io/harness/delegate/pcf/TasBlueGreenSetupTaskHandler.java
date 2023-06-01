@@ -538,8 +538,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
-      throws PivotalClientApiException {
+  private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       // TODO this only for BG
       // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
@@ -549,8 +548,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     }
   }
 
-  private void downsizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
-      throws PivotalClientApiException {
+  private void downsizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
     } catch (PivotalClientApiException exception) {
