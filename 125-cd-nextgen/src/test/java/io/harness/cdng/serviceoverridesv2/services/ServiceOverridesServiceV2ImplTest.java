@@ -431,22 +431,22 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
         ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef(), testOverrideEntity.getServiceRef());
     String expectedInputString = "serviceOverrideInputs:\n"
         + "  variables:\n"
-        + "  - name: \"varA\"\n"
-        + "    type: \"String\"\n"
-        + "    value: \"<+input>\"\n"
-        + "  - name: \"varB\"\n"
-        + "    type: \"String\"\n"
-        + "    value: \"<+input>\"\n"
+        + "    - name: varA\n"
+        + "      type: String\n"
+        + "      value: <+input>\n"
+        + "    - name: varB\n"
+        + "      type: String\n"
+        + "      value: <+input>\n"
         + "  manifests:\n"
-        + "  - manifest:\n"
-        + "      identifier: \"manifest1\"\n"
-        + "      type: \"Values\"\n"
-        + "      spec:\n"
-        + "        store:\n"
-        + "          type: \"Github\"\n"
-        + "          spec:\n"
-        + "            connectorRef: \"<+input>\"\n"
-        + "            branch: \"<+input>\"\n";
+        + "    - manifest:\n"
+        + "        identifier: manifest1\n"
+        + "        type: Values\n"
+        + "        spec:\n"
+        + "          store:\n"
+        + "            type: Github\n"
+        + "            spec:\n"
+        + "              connectorRef: <+input>\n"
+        + "              branch: <+input>\n";
     assertThat(expectedInputString).isEqualTo(serviceOverrideInputsYaml);
   }
 
@@ -475,22 +475,22 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     String expectedInputString = "environmentInputs:\n"
         + "  overrides:\n"
         + "    manifests:\n"
-        + "    - manifest:\n"
-        + "        identifier: \"manifest1\"\n"
-        + "        type: \"Values\"\n"
-        + "        spec:\n"
-        + "          store:\n"
-        + "            type: \"Github\"\n"
-        + "            spec:\n"
-        + "              connectorRef: \"<+input>\"\n"
-        + "              branch: \"<+input>\"\n"
+        + "      - manifest:\n"
+        + "          identifier: manifest1\n"
+        + "          type: Values\n"
+        + "          spec:\n"
+        + "            store:\n"
+        + "              type: Github\n"
+        + "              spec:\n"
+        + "                connectorRef: <+input>\n"
+        + "                branch: <+input>\n"
         + "  variables:\n"
-        + "  - name: \"varA\"\n"
-        + "    type: \"String\"\n"
-        + "    value: \"<+input>\"\n"
-        + "  - name: \"varB\"\n"
-        + "    type: \"String\"\n"
-        + "    value: \"<+input>\"\n";
+        + "    - name: varA\n"
+        + "      type: String\n"
+        + "      value: <+input>\n"
+        + "    - name: varB\n"
+        + "      type: String\n"
+        + "      value: <+input>\n";
     assertThat(expectedInputString).isEqualTo(envOverrideInputsYaml);
   }
 
@@ -508,15 +508,15 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
     String expectedInputString = "environmentInputs:\n"
         + "  overrides:\n"
         + "    manifests:\n"
-        + "    - manifest:\n"
-        + "        identifier: \"manifest1\"\n"
-        + "        type: \"Values\"\n"
-        + "        spec:\n"
-        + "          store:\n"
-        + "            type: \"Github\"\n"
-        + "            spec:\n"
-        + "              connectorRef: \"<+input>\"\n"
-        + "              branch: \"<+input>\"\n";
+        + "      - manifest:\n"
+        + "          identifier: manifest1\n"
+        + "          type: Values\n"
+        + "          spec:\n"
+        + "            store:\n"
+        + "              type: Github\n"
+        + "              spec:\n"
+        + "                connectorRef: <+input>\n"
+        + "                branch: <+input>\n";
 
     assertThat(expectedInputString).isEqualTo(envOverrideInputsYaml);
   }
@@ -533,12 +533,12 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
         ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef());
     String expectedInputString = "environmentInputs:\n"
         + "  variables:\n"
-        + "  - name: \"varA\"\n"
-        + "    type: \"String\"\n"
-        + "    value: \"<+input>\"\n"
-        + "  - name: \"varB\"\n"
-        + "    type: \"String\"\n"
-        + "    value: \"<+input>\"\n";
+        + "    - name: varA\n"
+        + "      type: String\n"
+        + "      value: <+input>\n"
+        + "    - name: varB\n"
+        + "      type: String\n"
+        + "      value: <+input>\n";
     assertThat(expectedInputString).isEqualTo(envOverrideInputsYaml);
   }
 
