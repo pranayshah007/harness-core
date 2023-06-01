@@ -11,12 +11,12 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        "//120-ng-manager/modules/favorites/contracts/src/main/java/io/harness/favorites:module",
+        "//:lombok",
         "//120-ng-manager/modules/favorites/src/main/java/io/harness/favorites/entities:module",
-        "//120-ng-manager/modules/favorites/src/main/java/io/harness/repositories/favorites/custom:module",
-        "//960-persistence/src/main/java/io/harness/annotation:module",
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
-        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_mongodb_mongo_java_driver",
+        "@maven//:org_springframework_data_spring_data_mongodb",
     ],
 )
 
