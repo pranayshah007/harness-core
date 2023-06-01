@@ -35,9 +35,5 @@ public class CVNGSchemaHandler implements Handler<CVNGSchema> {
 
     log.info("Enqueuing CVNGSchema {}", entity.getUuid());
     cvngMigrationService.runMigrations();
-    log.info("Done enqueuing CVNGSchema {}", entity.getUuid());
-
-    updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGMigrationStatus.SUCCESS);
-    hPersistence.update(entity, updateOperations);
   }
 }
