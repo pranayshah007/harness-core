@@ -7,6 +7,7 @@
 
 package io.harness.cdng.jenkins.jenkinsstep;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -138,7 +139,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                               .build();
       return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
           TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, taskName,
-          params.getDelegateSelectors()
+          emptyIfNull(params.getDelegateSelectors())
               .stream()
               .map(s -> TaskSelector.newBuilder().setSelector(s).build())
               .collect(Collectors.toList()),
@@ -232,7 +233,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                             .build();
     return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
         TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, jenkinsPollTaskName,
-        params.getDelegateSelectors()
+        emptyIfNull(params.getDelegateSelectors())
             .stream()
             .map(s -> TaskSelector.newBuilder().setSelector(s).build())
             .collect(Collectors.toList()),
