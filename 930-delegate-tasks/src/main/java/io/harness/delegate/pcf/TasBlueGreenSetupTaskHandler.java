@@ -450,8 +450,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo)
-      throws PivotalClientApiException {
+      LogCallback logCallback, TasApplicationInfo currentProdInfo, TasApplicationInfo inActiveApplicationInfo) {
     if (isEmpty(previousReleases) || previousReleases.size() == 1) {
       return;
     }
@@ -505,7 +504,7 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
   }
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       CfBlueGreenSetupRequestNG setupRequestNG, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback) {
     executionLogCallback.saveExecutionLog(
         "# Application Being Downsized To 0: " + encodeColor(applicationSummary.getName()));
 
