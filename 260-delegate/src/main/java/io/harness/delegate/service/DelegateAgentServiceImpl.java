@@ -2690,6 +2690,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       secretDetails.forEach((key, value) -> {
         char[] secretValue = decryptedRecords.get(value.getEncryptedRecord().getUuid());
+        if (secretValue == null) {
+          throw new UnexpectedException(format("Value for secret [%s] (uuid: [%s]) found null.",
+              value.getEncryptedRecord().getName(), value.getEncryptedRecord().getUuid()));
+        }
         secretUuidToValues.put(key, secretValue);
 
         // Adds secret values from the 3 phase decryption to the list of task secrets to be masked
