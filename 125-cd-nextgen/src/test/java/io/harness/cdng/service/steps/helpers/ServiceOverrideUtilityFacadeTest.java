@@ -192,14 +192,14 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .getEnvServiceOverride(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getEnvServiceOverride(anyString(), anyString(), anyString(), anyString(), anyString(), null);
 
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setServiceOverrideInputs(ParameterField.createValueField(overrideInputs));
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     assertThat(mergedServiceOverrideConfigs).hasSize(1);
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
@@ -247,7 +247,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     stepParameters.setServiceOverrideInputs(ParameterField.createValueField(overrideInputs));
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
 
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     // 2 overrideConfig are coming, one is env-svc override, other is env-global override created from envEntity
@@ -292,7 +292,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
 
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     // 2 overrideConfig are coming, one is env-svc override, other is env-global override created from envEntity
@@ -329,7 +329,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .getEnvServiceOverride(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getEnvServiceOverride(anyString(), anyString(), anyString(), anyString(), anyString(), null);
 
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
@@ -338,7 +338,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_SERVICE_OVERRIDE);
 
@@ -390,7 +390,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .getEnvOverride(anyString(), anyString(), anyString(), anyString());
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString(), null);
     doReturn(List.of(basicOverrideEntity))
         .doReturn(null)
         .doReturn(Collections.emptyList())
@@ -401,7 +401,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -472,13 +472,13 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .getEnvOverride(anyString(), anyString(), anyString(), anyString());
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString(), null);
 
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -544,7 +544,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -599,7 +599,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
     doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .getEnvOverride(anyString(), anyString(), anyString(), anyString());
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString(), null);
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setEnvInputs(null);
@@ -607,7 +607,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 
@@ -656,7 +656,7 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
         serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity);
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, stepParameters, envEntity, null);
     assertThat(mergedServiceOverrideConfigs).isNotEmpty();
     NGServiceOverrideConfigV2 configV2 = mergedServiceOverrideConfigs.get(ServiceOverridesType.ENV_GLOBAL_OVERRIDE);
 

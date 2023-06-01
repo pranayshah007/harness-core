@@ -494,7 +494,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
           resolve(ambiance, parameters.getInfraId());
         }
         mergedOverrideV2Configs = serviceOverrideUtilityFacade.getMergedServiceOverrideConfigs(
-            accountId, orgIdentifier, projectIdentifier, parameters, environment.get());
+            accountId, orgIdentifier, projectIdentifier, parameters, environment.get(), logCallback);
       }
 
       NGEnvironmentConfig ngEnvironmentConfig;

@@ -8,6 +8,7 @@
 package io.harness.cdng.service.steps.helpers.serviceoverridesv2.services;
 
 import io.harness.encryption.Scope;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverridev2.beans.NGServiceOverrideConfigV2;
 
@@ -38,16 +39,17 @@ public interface ServiceOverridesServiceV2 {
   Pair<NGServiceOverridesEntity, Boolean> upsert(@NonNull NGServiceOverridesEntity requestedServiceOverride);
 
   Map<Scope, NGServiceOverridesEntity> getEnvOverride(
-      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef);
+      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, NGLogCallback logCallback);
 
-  Map<Scope, NGServiceOverridesEntity> getEnvServiceOverride(
-      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, @NonNull String serviceRef);
+  Map<Scope, NGServiceOverridesEntity> getEnvServiceOverride(@NonNull String accountId, String orgId, String projectId,
+      @NonNull String envRef, @NonNull String serviceRef, NGLogCallback logCallback);
 
-  Map<Scope, NGServiceOverridesEntity> getInfraOverride(
-      @NonNull String accountId, String orgId, String projectId, @NonNull String envRef, @NonNull String infraId);
+  Map<Scope, NGServiceOverridesEntity> getInfraOverride(@NonNull String accountId, String orgId, String projectId,
+      @NonNull String envRef, @NonNull String infraId, NGLogCallback logCallback);
 
   Map<Scope, NGServiceOverridesEntity> getInfraServiceOverride(@NonNull String accountId, String orgId,
-      String projectId, @NonNull String envRef, @NonNull String serviceRef, @NonNull String infraId);
+      String projectId, @NonNull String envRef, @NonNull String serviceRef, @NonNull String infraId,
+      NGLogCallback logCallback);
 
   String createServiceOverrideInputsYaml(@NonNull String accountId, String orgIdentifier, String projectIdentifier,
       @NonNull String environmentRef, @NonNull String serviceRef);
