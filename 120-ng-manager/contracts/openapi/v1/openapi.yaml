@@ -3482,5 +3482,11 @@ components:
       in: query
       required: false
       schema:
-        $ref: '#/components/schemas/FavoritesResourceType'
+        type: string
+        enum:
+          - CONNECTOR
+          - DELEGATE
+          - PIPELINE
+          - SECRET
+          - PROJECT
       description: Determines the type of favorite entity requested.
