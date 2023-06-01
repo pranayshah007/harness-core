@@ -8,7 +8,6 @@
 package io.harness.iacm.execution;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.WORKSPACE_ID;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.entities.Workspace;
 import io.harness.beans.entities.WorkspaceVariables;
@@ -54,28 +53,36 @@ public class IACMStepsUtils {
 
   private Map<String, String> getWorkspaceVariables(Ambiance ambiance, String org, String projectId, String accountId,
       String workspaceID, String command, Workspace workspaceInfo) {
-    String pluginEnvPrefix = "PLUGIN_";
-
     WorkspaceVariables[] variables = getIACMWorkspaceVariables(org, projectId, accountId, workspaceID);
     HashMap<String, String> pluginEnvs = new HashMap<>();
 
-    HashMap<String, String> env = new HashMap<>();
-    HashMap<String, String> tfInputEnvs = new HashMap<>();
+    // Plugin system env variables
+    pluginEnvs.put("PLUGIN_ROOT_DIR", workspaceInfo.getRepository_path());
+    pluginEnvs.put("PLUGIN_TF_VERSION", workspaceInfo.getProvisioner_version());
+    pluginEnvs.put("PLUGIN_ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, workspaceID));
+
+    if (!Objects.equals(command, "")) {
+      pluginEnvs.put("PLUGIN_COMMAND", command);
+    }
 
     for (WorkspaceVariables variable : variables) {
       switch (variable.getKind()) {
         case "env":
           if (Objects.equals(variable.getValue_type(), "secret")) {
-            env.put(variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getKey() + "\", -871314908)}");
+            pluginEnvs.put("PLUGIN_WS_ENV_VAR_" + variable.getKey(),
+                "${ngSecretManager.obtain(\"" + variable.getValue() + "\", " + ambiance.getExpressionFunctorToken()
+                    + ")}");
           } else {
-            env.put(variable.getKey(), variable.getValue());
+            pluginEnvs.put("PLUGIN_WS_ENV_VAR_" + variable.getKey(), variable.getValue());
           }
           break;
         case "tf":
           if (Objects.equals(variable.getValue_type(), "secret")) {
-            tfInputEnvs.put(variable.getKey(), "${ngSecretManager.obtain(\"" + variable.getKey() + "\", -871314908)}");
+            pluginEnvs.put("PLUGIN_WS_TF_VAR_" + variable.getKey(),
+                "${ngSecretManager.obtain(\"" + variable.getValue() + "\", " + ambiance.getExpressionFunctorToken()
+                    + ")}");
           } else {
-            tfInputEnvs.put(variable.getKey(), variable.getValue());
+            pluginEnvs.put("PLUGIN_WS_TF_VAR_" + variable.getKey(), variable.getValue());
           }
           break;
         default:
@@ -83,28 +90,7 @@ public class IACMStepsUtils {
       }
     }
 
-    // Plugin system env variables
-    pluginEnvs.put("ROOT_DIR", workspaceInfo.getRepository_path());
-    pluginEnvs.put("TF_VERSION", workspaceInfo.getProvisioner_version());
-    pluginEnvs.put("ENDPOINT_VARIABLES", getTerraformEndpointsInfo(ambiance, workspaceID));
-    pluginEnvs.put("VARS", transformMapToString(tfInputEnvs));
-    pluginEnvs.put("ENV_VARS", transformMapToString(env));
-
-    if (!Objects.equals(command, "")) {
-      pluginEnvs.put("COMMAND", command);
-    }
-    return prepareEnvsMaps(pluginEnvs, pluginEnvPrefix);
-  }
-
-  private Map<String, String> prepareEnvsMaps(Map<String, String> envs, String prefix) {
-    Map<String, String> envVars = new HashMap<>();
-    if (!isEmpty(envs)) {
-      for (Map.Entry<String, String> entry : envs.entrySet()) {
-        String key = prefix + entry.getKey();
-        envVars.put(key, entry.getValue());
-      }
-    }
-    return envVars;
+    return pluginEnvs;
   }
 
   private WorkspaceVariables[] getIACMWorkspaceVariables(
@@ -128,6 +114,7 @@ public class IACMStepsUtils {
     String command = extractOperation(stepInfo);
     return buildIACMEnvVariables(ambiance, workspaceId, command);
   }
+
   private Map<String, String> buildIACMEnvVariables(Ambiance ambiance, String workspaceId, String command) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
