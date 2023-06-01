@@ -725,8 +725,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
       log.info("Kubernetes version : {}.{}", version.getMajor(), version.getMinor());
       return Integer.parseInt(majorMinorVersion) >= 116;
     } catch (Exception e) {
-      log.info("Failed to get kubernetes server version using fabric8 client.");
-      return false;
+      log.info("Failed to get kubernetes server version using fabric8 client. {}", e.getMessage());
+      return true;
     }
   }
 
