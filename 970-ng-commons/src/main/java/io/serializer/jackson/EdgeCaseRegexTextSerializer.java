@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 @OwnedBy(HarnessTeam.PIPELINE)
 // This serializer handles the edge cases when we need a string to be surrounded by quotes in the compiled yaml.
 // UnitTests for these cases are added in TemplateYamlUtilsTest.java
-public class EdgeCaseRegexSerializer extends StdSerializer<TextNode> {
+public class EdgeCaseRegexTextSerializer extends StdSerializer<TextNode> {
   // The string is an SHA digest. If it's something like 97e0087, it matches the scientific notation and hence without
   // quotes, it gets converted to a number 9.7E88, to avoid this, we are adding quotes around the string which matches
   // following regex
@@ -30,7 +30,7 @@ public class EdgeCaseRegexSerializer extends StdSerializer<TextNode> {
   // user won't be able to save a string variable with this value
   private Pattern positiveNumberRegex = Pattern.compile("[+][0-9]*(\\.[0-9]*)?");
 
-  public EdgeCaseRegexSerializer() {
+  public EdgeCaseRegexTextSerializer() {
     super(TextNode.class);
   }
 
