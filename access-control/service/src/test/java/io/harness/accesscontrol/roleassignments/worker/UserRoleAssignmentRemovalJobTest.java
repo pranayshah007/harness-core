@@ -16,7 +16,6 @@ import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
 import static io.harness.beans.FeatureName.PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS;
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
 
@@ -83,7 +82,6 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
 
     Set<String> accounts = new HashSet<>();
     accounts.add(accountIdentifier);
-    when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
     when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
     when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
@@ -181,7 +179,6 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     Set<String> accounts = new HashSet<>();
     accounts.add(accountIdentifier);
 
-    when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
     when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
     when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
@@ -219,7 +216,6 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
     Set<String> accounts = new HashSet<>();
     accounts.add(accountIdentifier);
 
-    when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
     when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
 
     when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
@@ -250,51 +246,11 @@ public class UserRoleAssignmentRemovalJobTest extends AccessControlTestBase {
   @Owner(developers = JIMIT_GANDHI)
   @Category(UnitTests.class)
   public void
-  testMigrateAccounts_WhenAccountScopeUserGroupRoleAssignmentExistsButAccountBasicRoleOnlyFFIsOn_ThenSkipsDeletingAccountScopeUserRoleAssignment() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    Set<String> accounts = new HashSet<>();
-    accounts.add(accountIdentifier);
-
-    when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(true);
-    when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(true);
-
-    when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
-    String principalIdentifier = randomAlphabetic(10);
-    RoleAssignmentDBO accountScopeUserRoleAssignment = createAccountScopeRoleAssignment(
-        accountIdentifier, PrincipalType.USER, principalIdentifier, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    roleAssignmentRepository.save(accountScopeUserRoleAssignment);
-    RoleAssignmentDBO orgScopeUserRoleAssignment =
-        createOrganizationScopeUserRoleAssignment(accountIdentifier, orgIdentifier);
-    roleAssignmentRepository.save(orgScopeUserRoleAssignment);
-    RoleAssignmentDBO projectScopeUserRoleAssignment =
-        createProjectScopeUserRoleAssignment(accountIdentifier, orgIdentifier, projectIdentifier);
-    roleAssignmentRepository.save(projectScopeUserRoleAssignment);
-
-    RoleAssignmentDBO accountScopeUserGroupRoleAssignment =
-        createAccountScopeRoleAssignment(accountIdentifier, PrincipalType.USER_GROUP,
-            DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    roleAssignmentRepository.save(accountScopeUserGroupRoleAssignment);
-
-    userRoleAssignmentRemovalJob.execute();
-
-    Page<RoleAssignmentDBO> postMigrationRoleAssignments = roleAssignmentRepository.findAll(Pageable.unpaged());
-    assertEquals(2, postMigrationRoleAssignments.getTotalElements());
-    assertPostMigration(accountScopeUserRoleAssignment, postMigrationRoleAssignments.getContent().get(0));
-    assertPostMigration(accountScopeUserGroupRoleAssignment, postMigrationRoleAssignments.getContent().get(1));
-  }
-
-  @Test
-  @Owner(developers = JIMIT_GANDHI)
-  @Category(UnitTests.class)
-  public void
   testMigrateAccounts_When_PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS_FF_IS_OFF_ThenSkipsDeletingAllScopesUserRoleAssignment() {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
 
-    when(featureFlagService.isEnabled(ACCOUNT_BASIC_ROLE_ONLY, accountIdentifier)).thenReturn(false);
     when(featureFlagService.isEnabled(PL_REMOVE_USER_VIEWER_ROLE_ASSIGNMENTS, accountIdentifier)).thenReturn(false);
 
     when(accountUtils.getAllAccountIds()).thenReturn(Arrays.asList(accountIdentifier));
