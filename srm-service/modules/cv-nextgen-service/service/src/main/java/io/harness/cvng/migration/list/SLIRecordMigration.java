@@ -8,26 +8,21 @@
 package io.harness.cvng.migration.list;
 
 import io.harness.SRMPersistence;
-import io.harness.cvng.core.utils.CVNGObjectUtils;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
-import io.harness.persistence.UuidAware;
 
 import com.google.inject.Inject;
-import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SLIBucketCleanupAndSLIRecordMigration implements CVNGMigration {
+public class SLIRecordMigration implements CVNGMigration {
   @Inject SRMPersistence hPersistence;
 
   private static final int BATCH_SIZE = 1000;
@@ -36,25 +31,6 @@ public class SLIBucketCleanupAndSLIRecordMigration implements CVNGMigration {
 
   @Override
   public void migrate() {
-    log.info("Starting cleanup for sli Bucket records");
-    Query<SLIRecordBucket> queryToDeleteOlderBucketRecords =
-        hPersistence.createQuery(SLIRecordBucket.class).project(UuidAware.UUID_KEY, true);
-    while (true) {
-      List<SLIRecordBucket> recordsToBeDeleted =
-          queryToDeleteOlderBucketRecords.find(new FindOptions().limit(BATCH_SIZE)).toList();
-      Set<?> recordIdsTobeDeleted = recordsToBeDeleted.stream()
-                                        .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
-                                        .map(CVNGObjectUtils::convertToObjectIdIfRequired)
-                                        .collect(Collectors.toSet());
-      if (recordIdsTobeDeleted.size() == 0) {
-        break;
-      }
-      hPersistence.delete(
-          hPersistence.createQuery(SLIRecordBucket.class).field(UuidAware.UUID_KEY).in(recordIdsTobeDeleted));
-      log.info("[SLI Bucket Migration] Deleted {} sliBucket records", recordsToBeDeleted.size());
-    }
-    log.info("[SLI Bucket Migration] Deleted all sli bucket records");
-
     Query<SLIRecord> queryToAddToBucket =
         hPersistence.createQuery(SLIRecord.class)
             .order(Sort.ascending(SLIRecordKeys.sliId), Sort.ascending(SLIRecordKeys.timestamp));

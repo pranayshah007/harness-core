@@ -15,6 +15,7 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.migration.CVNGBackgroundMigrationList;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.CVNGSchema;
+import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.persistence.HPersistence;
 
@@ -62,12 +63,14 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                   injector.getInstance(migration).migrate();
                 } catch (Exception ex) {
                   log.error("Error while running migration {}", migration.getSimpleName(), ex);
-                  break;
+                  onFailure();
                 }
                 final UpdateOperations<CVNGSchema> updateOperations =
                     hPersistence.createUpdateOperations(CVNGSchema.class);
                 updateOperations.set(CVNGSchema.VERSION, i);
+                updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
                 hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+                log.info("Done enqueuing CVNGSchema {}");
               }
             }
             log.info("[Migration] - Migration complete");
@@ -75,9 +78,17 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
           });
         } catch (Exception ex) {
           log.warn("background work", ex);
+          onFailure();
         }
       });
     }
+  }
+
+  private void onFailure() {
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.ERROR);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+    log.info("Done enqueuing CVNGSchema {}");
   }
 
   private int initializeGlobalDbEntriesIfNeededAndGetVersion() {
