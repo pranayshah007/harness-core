@@ -70,7 +70,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                 updateOperations.set(CVNGSchema.VERSION, i);
                 updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
                 hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
-                log.info("Done enqueuing CVNGSchema {}");
+                log.info("Done enqueuing CVNGSchema");
               }
             }
             log.info("[Migration] - Migration complete");
@@ -88,7 +88,7 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
     final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
     updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.ERROR);
     hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
-    log.info("Done enqueuing CVNGSchema {}");
+    log.info("Done enqueuing CVNGSchema");
   }
 
   private int initializeGlobalDbEntriesIfNeededAndGetVersion() {

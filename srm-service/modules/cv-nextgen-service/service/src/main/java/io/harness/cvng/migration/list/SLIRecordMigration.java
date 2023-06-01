@@ -9,16 +9,24 @@ package io.harness.cvng.migration.list;
 
 import io.harness.SRMPersistence;
 import io.harness.cvng.migration.CVNGMigration;
+import io.harness.cvng.migration.beans.CVNGSchema;
+import io.harness.cvng.migration.beans.CVNGSchema.CVNGSchemaKeys;
 import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import dev.morphia.query.Sort;
+import dev.morphia.query.UpdateOperations;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,30 +37,72 @@ public class SLIRecordMigration implements CVNGMigration {
 
   List<SLIRecordBucket> sliRecordBucketsToSave;
 
+  ObjectMapper objectMapper = new ObjectMapper();
+
   @Override
   public void migrate() {
-    Query<SLIRecord> queryToAddToBucket =
-        hPersistence.createQuery(SLIRecord.class)
-            .order(Sort.ascending(SLIRecordKeys.sliId), Sort.ascending(SLIRecordKeys.timestamp));
-    List<SLIRecord> currentBucket = new ArrayList<>();
-    sliRecordBucketsToSave = new ArrayList<>();
-    int offset = 0;
-    while (true) {
-      Query<SLIRecord> query = queryToAddToBucket.offset(offset).limit(BATCH_SIZE);
-      List<SLIRecord> records = query.find().toList();
-      if (records.isEmpty()) {
-        break;
+    try {
+      CVNGSchema cvngSchema = hPersistence.createQuery(CVNGSchema.class).get();
+      if (cvngSchema.getObject() == null) {
+        addSLIIdsInCVNGSchemaObject();
       }
-      for (SLIRecord sliRecord : records) {
-        currentBucket = processRecord(currentBucket, sliRecord);
-        currentBucket = processBucket(currentBucket);
+      List<String> sliIds = getSLIIdsFromSchemaObject();
+      while (!sliIds.isEmpty()) {
+        Query<SLIRecord> queryToAddToBucket = hPersistence.createQuery(SLIRecord.class)
+                                                  .filter(SLIRecordKeys.sliId, sliIds.get(0))
+                                                  .order(Sort.ascending(SLIRecordKeys.timestamp));
+        List<SLIRecord> currentBucket = new ArrayList<>();
+        sliRecordBucketsToSave = new ArrayList<>();
+        int offset = 0;
+        while (true) {
+          Query<SLIRecord> query = queryToAddToBucket.offset(offset).limit(BATCH_SIZE);
+          List<SLIRecord> records = query.find().toList();
+          if (records.isEmpty()) {
+            break;
+          }
+          for (SLIRecord sliRecord : records) {
+            currentBucket = processRecord(currentBucket, sliRecord);
+            currentBucket = processBucket(currentBucket);
+          }
+          offset += BATCH_SIZE;
+        }
+        saveBuckets();
+        sliIds.remove(0);
+        updateSLIIdsInSchemaObject(sliIds);
       }
-      offset += BATCH_SIZE;
+      log.info("[SLI Bucket Migration] Saved all sli bucket records");
+    } catch (Exception exception) {
+      log.error("[SLI Bucket Migration] Failed to migrate SLI Records {}", exception);
     }
-    saveBuckets();
-    log.info("[SLI Bucket Migration] Saved all sli bucket records");
   }
 
+  private void addSLIIdsInCVNGSchemaObject() throws JsonProcessingException {
+    List<String> sliIds = fetchAllSLIIds();
+    String jsonString = objectMapper.writeValueAsString(sliIds);
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.object, jsonString);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+  }
+
+  private List<String> getSLIIdsFromSchemaObject() throws JsonProcessingException {
+    CVNGSchema cvngSchema = hPersistence.createQuery(CVNGSchema.class).get();
+    String retrievedJsonString = (String) cvngSchema.getObject();
+    return objectMapper.readValue(retrievedJsonString, new TypeReference<List<String>>() {});
+  }
+
+  private void updateSLIIdsInSchemaObject(List<String> sliIds) throws JsonProcessingException {
+    String jsonString = objectMapper.writeValueAsString(sliIds);
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.object, jsonString);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+  }
+
+  private List<String> fetchAllSLIIds() {
+    List<ServiceLevelIndicator> serviceLevelIndicators = hPersistence.createQuery(ServiceLevelIndicator.class).asList();
+    return serviceLevelIndicators.stream()
+        .map(serviceLevelIndicator -> serviceLevelIndicator.getUuid())
+        .collect(Collectors.toList());
+  }
   private List<SLIRecord> processRecord(List<SLIRecord> currentBucket, SLIRecord sliRecord) {
     if (!currentBucket.isEmpty()
         && (currentBucket.get(currentBucket.size() - 1).getEpochMinute() + 1 == sliRecord.getEpochMinute())
