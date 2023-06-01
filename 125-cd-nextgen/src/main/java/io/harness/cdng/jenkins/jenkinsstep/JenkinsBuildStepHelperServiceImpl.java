@@ -7,6 +7,7 @@
 
 package io.harness.cdng.jenkins.jenkinsstep;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -42,12 +43,15 @@ import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.serializer.KryoSerializer;
@@ -55,6 +59,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.StepUtils;
 import io.harness.steps.TaskRequestsUtils;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -71,6 +76,9 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
   private final KryoSerializer referenceFalseKryoSerializer;
   private final LogStreamingStepClientFactory logStreamingStepClientFactory;
   public static final String COMMAND_UNIT = "Execute";
+  public static final String IF_FAIL_MESSAGE = "Jenkins Get Job task failure due to error";
+  public static final String JENKINS_QUEUE_TASK_NAME = "Jenkins Task: Queue Jenkins Build Task";
+  public static final String JENKINS_POLL_TASK_NAME = "Jenkins Task: Poll Jenkins Build Task";
   @VisibleForTesting static final int TIMEOUT_IN_SECS = 120;
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
@@ -98,7 +106,6 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }
-
     ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
     if (!(configDTO instanceof JenkinsConnectorDTO)) {
       throw new InvalidRequestException(
@@ -144,11 +151,127 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     }
   }
 
+  private static ArtifactTaskResponse getArtifactTaskResponse(ResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new ArtifactServerException(IF_FAIL_MESSAGE + " - " + errorNotifyResponseData.getErrorMessage());
+    } else if (responseData instanceof RemoteMethodReturnValueData) {
+      RemoteMethodReturnValueData remoteMethodReturnValueData = (RemoteMethodReturnValueData) responseData;
+      if (remoteMethodReturnValueData.getException() instanceof InvalidRequestException) {
+        throw(InvalidRequestException)(remoteMethodReturnValueData.getException());
+      } else {
+        throw new ArtifactServerException(
+            "Unexpected error during authentication to jenkins server " + remoteMethodReturnValueData.getReturnValue(),
+            USER);
+      }
+    }
+    return (ArtifactTaskResponse) responseData;
+  }
+
+  @Override
+  public TaskChainResponse queueJenkinsBuildTask(JenkinsArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
+      StepElementParameters stepElementParameters) {
+    TaskRequest taskRequest = queueDelegateTask(
+        ambiance, stepElementParameters, paramsBuilder, ArtifactTaskType.JENKINS_BUILD, JENKINS_QUEUE_TASK_NAME);
+    return TaskChainResponse.builder()
+        .taskRequest(taskRequest)
+        .passThroughData(JenkinsStepPassThoughData.builder().initStepStartTime(System.currentTimeMillis()).build())
+        .chainEnd(false)
+        .build();
+  }
+
+  @Override
+  public TaskChainResponse pollJenkinsJob(JenkinsArtifactDelegateRequestBuilder paramsBuilder, Ambiance ambiance,
+      StepElementParameters stepElementParameters, ResponseData responseData) {
+    ArtifactTaskResponse artifactTaskResponse = getArtifactTaskResponse(responseData);
+    if (artifactTaskResponse.getCommandExecutionStatus() != SUCCESS) {
+      throw new ArtifactServerException(IF_FAIL_MESSAGE + " - " + artifactTaskResponse.getErrorMessage()
+          + " with error code: " + artifactTaskResponse.getErrorCode());
+    }
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        artifactTaskResponse.getArtifactTaskExecutionResponse();
+
+    if (isEmpty(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getQueuedBuildUrl())) {
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.closeStream(COMMAND_UNIT);
+      throw new ArtifactServerException("Jenkins Queued Build URL is empty and could not start POLL_TASK");
+    }
+    paramsBuilder.queuedBuildUrl(artifactTaskExecutionResponse.getJenkinsBuildTaskNGResponse().getQueuedBuildUrl());
+    TaskRequest taskRequest = queueDelegateTask(
+        ambiance, stepElementParameters, paramsBuilder, ArtifactTaskType.JENKINS_POLL_TASK, JENKINS_POLL_TASK_NAME);
+    return TaskChainResponse.builder()
+        .taskRequest(taskRequest)
+        .passThroughData(JenkinsStepPassThoughData.builder().initStepStartTime(System.currentTimeMillis()).build())
+        .chainEnd(true)
+        .build();
+  }
+
+  private TaskRequest queueDelegateTask(Ambiance ambiance, StepElementParameters stepParameters,
+      JenkinsArtifactDelegateRequestBuilder paramsBuilder, ArtifactTaskType taskType, String jenkinsPollTaskName) {
+    JenkinsBuildSpecParameters specParameters = (JenkinsBuildSpecParameters) stepParameters.getSpec();
+    String connectorRef = specParameters.getConnectorRef().getValue();
+    String timeStr = stepParameters.getTimeout().getValue();
+
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    JenkinsConnectorDTO connectorDTO = getConnectorDTO(ambiance, connectorRef);
+    paramsBuilder.jenkinsConnectorDTO(connectorDTO);
+    paramsBuilder.encryptedDataDetails(
+        secretManagerClientService.getEncryptionDetails(ngAccess, connectorDTO.getAuth().getCredentials()));
+    JenkinsArtifactDelegateRequest params = paramsBuilder.build();
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .accountId(ngAccess.getAccountIdentifier())
+                                                        .artifactTaskType(taskType)
+                                                        .attributes(params)
+                                                        .build();
+    TaskData taskData = TaskData.builder()
+                            .async(true)
+                            .timeout(NGTimeConversionHelper.convertTimeStringToMilliseconds(timeStr))
+                            .taskType(NGTaskType.JENKINS_ARTIFACT_TASK_NG.name())
+                            .parameters(new Object[] {artifactTaskParameters})
+                            .build();
+    return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
+        TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, jenkinsPollTaskName,
+        params.getDelegateSelectors()
+            .stream()
+            .map(s -> TaskSelector.newBuilder().setSelector(s).build())
+            .collect(Collectors.toList()),
+        Scope.PROJECT, EnvironmentType.ALL, false, Collections.emptyList(), false, null);
+  }
+
+  private JenkinsConnectorDTO getConnectorDTO(Ambiance ambiance, String connectorRef) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
+        connectorRef, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
+        connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
+            identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
+    if (!connectorDTOOptional.isPresent()) {
+      throw new InvalidRequestException(
+          String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
+    }
+
+    ConnectorConfigDTO configDTO = connectorDTOOptional.get().getConnectorInfo().getConnectorConfig();
+    if (!(configDTO instanceof JenkinsConnectorDTO)) {
+      throw new InvalidRequestException(
+          String.format("Connector [%s] is not a jenkins connector", connectorRef), WingsException.USER);
+    }
+    return (JenkinsConnectorDTO) configDTO;
+  }
+
+  @Override
+  public StepResponse prepareStepResponseV2(ThrowingSupplier<ResponseData> responseSupplier) throws Exception {
+    return getStepResponse((ArtifactTaskResponse) responseSupplier.get());
+  }
+
   @Override
   public StepResponse prepareStepResponse(ThrowingSupplier<ArtifactTaskResponse> responseSupplier) throws Exception {
-    ArtifactTaskResponse taskResponse = responseSupplier.get();
+    return getStepResponse(responseSupplier.get());
+  }
+
+  private StepResponse getStepResponse(ArtifactTaskResponse artifactTaskResponse) {
     JenkinsBuildTaskNGResponse jenkinsBuildTaskNGResponse =
-        taskResponse.getArtifactTaskExecutionResponse().getJenkinsBuildTaskNGResponse();
+        artifactTaskResponse.getArtifactTaskExecutionResponse().getJenkinsBuildTaskNGResponse();
     JenkinsBuildOutcomeBuilder jenkinsBuildOutcomeBuilder =
         JenkinsBuildOutcome.builder()
             .buildDisplayName(jenkinsBuildTaskNGResponse.getBuildDisplayName())
@@ -165,8 +288,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     }
     return StepResponse.builder()
         .status(status)
-        .stepOutcome(
-            StepResponse.StepOutcome.builder().name("build").outcome(jenkinsBuildOutcomeBuilder.build()).build())
+        .stepOutcome(StepOutcome.builder().name("build").outcome(jenkinsBuildOutcomeBuilder.build()).build())
         .build();
   }
 
@@ -183,9 +305,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
-    boolean withLogs = true;
-    LinkedHashMap<String, String> logAbstractionMap =
-        withLogs ? StepUtils.generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+    LinkedHashMap<String, String> logAbstractionMap = StepUtils.generateLogAbstractions(ambiance);
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
