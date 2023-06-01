@@ -26,7 +26,9 @@ public class TaskPackageReader {
   public static DelegateTaskPackage readTask(String taskDataPath, KryoSerializer kryoSerializer) {
     try {
       var data = Files.readAllBytes(Path.of(taskDataPath));
-      return (DelegateTaskPackage) kryoSerializer.asObject(data);
+      // With the new delegate runner architecture, kryo data will be produced by module services and directly
+      // consumed by task container. Hence we will use de/in-flated serializer
+      return (DelegateTaskPackage) kryoSerializer.asInflatedObject(data);
     } catch (IOException e) {
       log.error("Deserialize task package error", e);
       // TODO: define exceptions

@@ -13,7 +13,7 @@ import lombok.Value;
 @Value
 @Builder
 public class Configuration {
-  @Builder.Default private String taskInputPath = "/etc/config/taskfile";
+  @Builder.Default private String taskInputPath = "/tmp/harness/taskfile";
   @Builder.Default private String delegateToken = System.getenv(Env.DELEGATE_TOKEN.name());
   /**
    * set to false when testing locally without delegate core

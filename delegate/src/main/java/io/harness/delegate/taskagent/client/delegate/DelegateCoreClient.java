@@ -16,9 +16,12 @@ import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
 
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
 public interface DelegateCoreClient {
   @Headers({"Content-Type: application/x-kryo-v2"})
-  @POST("task/{taskId}/execution-response")
   @KryoRequest
-  Call<Void> taskResponse(@Path("taskId") String taskId, @Body DelegateTaskResponse delegateTaskResponse);
+  @POST("execution/{executionId}/execution-response")
+  Call<Void> taskResponse(@Path("executionId") String taskId, @Body DelegateTaskResponse delegateTaskResponse);
 }

@@ -11,7 +11,7 @@ import io.harness.delegate.executor.DelegateTaskExecutor;
 import io.harness.delegate.executor.bundle.BootstrapBundle;
 import io.harness.delegate.task.k8s.K8sTaskNG;
 import io.harness.delegate.task.k8s.modules.KubernetesNgTasksModule;
-import io.harness.kryo.registrars.K8sNgTaskRegistrar;
+import io.harness.delegate.task.k8s.kryo.K8sNgTaskRegistars;
 
 import software.wings.beans.TaskType;
 
@@ -19,7 +19,7 @@ public class K8sNgApplication extends DelegateTaskExecutor {
   @Override
   public void init(BootstrapBundle taskBundle) {
     taskBundle.registerTask(TaskType.K8S_COMMAND_TASK_NG, K8sTaskNG.class);
-    taskBundle.registerKryos(K8sNgTaskRegistrar.kryoRegistrars);
+    taskBundle.registerKryos(K8sNgTaskRegistars.kryoRegistrars);
     taskBundle.addModule(new KubernetesNgTasksModule());
   }
 

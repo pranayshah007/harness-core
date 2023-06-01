@@ -10,6 +10,7 @@ package software.wings.delegatetasks.bash;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
@@ -30,6 +31,12 @@ public class BashScriptTask extends AbstractDelegateRunnableTask {
   public BashScriptTask(final DelegateTaskPackage delegateTaskPackage, final BooleanSupplier preExecute,
       final Consumer<DelegateTaskResponse> postExecute) {
     super(delegateTaskPackage, null, postExecute, preExecute);
+  }
+
+  // Required, reflection rely on this constructor to start the task
+  public BashScriptTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
+                        Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+    super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
   }
 
   @Override

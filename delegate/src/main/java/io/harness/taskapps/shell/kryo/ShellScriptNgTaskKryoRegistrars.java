@@ -19,6 +19,8 @@ import io.harness.shell.CommandExecutionData;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptType;
 
+import io.harness.shell.ShellExecutionData;
+import software.wings.beans.TaskType;
 import software.wings.beans.bash.ShellScriptTaskParametersNG;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -41,5 +43,7 @@ public class ShellScriptNgTaskKryoRegistrars implements KryoRegistrar {
 
     kryo.register(DelegateTaskNotifyResponseData.class, 5373);
     kryo.register(DelegateMetaInfo.class, 5372);
+    kryo.register(ShellExecutionData.class, 5528);
+    kryo.register(TaskType.class, 5005);
   }
 }

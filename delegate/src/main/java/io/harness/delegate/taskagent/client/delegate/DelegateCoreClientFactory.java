@@ -36,8 +36,6 @@ public class DelegateCoreClientFactory {
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().registerModules(new Jdk8Module(), new GuavaModule(), new JavaTimeModule());
 
-  private final TokenGenerator tokenGenerator;
-
   public DelegateCoreClient createDelegateCoreClient(final ServiceEndpoint serviceEndpoint) {
     final Retrofit retrofit =
         new Retrofit.Builder()

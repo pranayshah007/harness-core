@@ -13,6 +13,7 @@ import io.harness.taskapps.common.kryo.CommonTaskKryoRegistrar;
 import io.harness.taskapps.shell.kryo.ShellScriptNgTaskKryoRegistrars;
 
 import software.wings.beans.TaskType;
+import software.wings.delegatetasks.bash.BashScriptModule;
 import software.wings.delegatetasks.bash.BashScriptTask;
 
 import java.util.Set;
@@ -22,6 +23,7 @@ public class ShellNgApplication extends DelegateTaskExecutor {
   public void init(final BootstrapBundle taskBundle) {
     taskBundle.registerTask(TaskType.SHELL_SCRIPT_TASK_NG, BashScriptTask.class);
     taskBundle.registerKryos(Set.of(CommonTaskKryoRegistrar.class, ShellScriptNgTaskKryoRegistrars.class));
+    taskBundle.addModule(new BashScriptModule());
   }
 
   public static void main(String[] args) {

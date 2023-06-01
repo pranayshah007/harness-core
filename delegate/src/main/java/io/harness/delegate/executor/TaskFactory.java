@@ -37,16 +37,13 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.DEL)
 public class TaskFactory {
-  private final TokenGenerator tokenGenerator;
   private final Configuration configuration;
   private final DelegateTaskAgent taskAgent;
 
   public TaskFactory(final String accountId, final Configuration configuration, final KryoSerializer serializer) {
     this.configuration = configuration;
-    tokenGenerator =
-        new TokenGenerator(accountId, DelegateTokenUtils.getDecodedTokenString(configuration.getDelegateToken()));
     DelegateKryoConverterFactory delegateKryoConverterFactory = new DelegateKryoConverterFactory(serializer);
-    taskAgent = new DelegateTaskAgent(new DelegateCoreClientFactory(delegateKryoConverterFactory, tokenGenerator));
+    taskAgent = new DelegateTaskAgent(new DelegateCoreClientFactory(delegateKryoConverterFactory));
   }
 
   public DelegateRunnableTask getDelegateRunnableTask(
@@ -67,7 +64,6 @@ public class TaskFactory {
       if (!configuration.isShouldSendResponse()) {
         return;
       }
-
       try {
         taskAgent.sendResponse(taskResponse);
       } catch (IOException e) {
