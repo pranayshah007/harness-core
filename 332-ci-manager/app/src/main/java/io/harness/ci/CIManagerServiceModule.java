@@ -29,6 +29,7 @@ import io.harness.cache.CICacheManagementServiceImpl;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
+import io.harness.cdng.plugininfoproviders.CIPluginInfoProvider;
 import io.harness.ci.CIExecutionServiceModule;
 import io.harness.ci.app.intfc.CIYamlSchemaService;
 import io.harness.ci.buildstate.SecretDecryptorViaNg;
@@ -41,7 +42,6 @@ import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.ff.impl.CIFeatureFlagServiceImpl;
 import io.harness.ci.license.impl.CILicenseServiceImpl;
 import io.harness.ci.logserviceclient.CILogServiceClientModule;
-import io.harness.ci.plugin.CiPluginStepInfoProvider;
 import io.harness.ci.tiserviceclient.TIServiceClientModule;
 import io.harness.ci.validation.CIAccountValidationService;
 import io.harness.ci.validation.CIAccountValidationServiceImpl;
@@ -279,7 +279,7 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     Multibinder<PluginInfoProvider> pluginInfoProviderMultibinder =
         Multibinder.newSetBinder(binder(), new TypeLiteral<PluginInfoProvider>() {});
-    pluginInfoProviderMultibinder.addBinding().to(CiPluginStepInfoProvider.class);
+    pluginInfoProviderMultibinder.addBinding().to(CIPluginInfoProvider.class);
     registerEventListeners();
     try {
       bind(TimeScaleDBService.class)

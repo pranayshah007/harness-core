@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ci.plugin;
+package io.harness.cdng.plugininfoproviders;
 
 import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_STARTING_RANGE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -14,10 +14,12 @@ import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIAbstractStepNode;
+import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.utils.PortFinder;
+import io.harness.plugin.service.K8sInitializeService;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConnectorDetails;
 import io.harness.pms.contracts.plan.ImageDetails;
 import io.harness.pms.contracts.plan.PluginContainerResources;
@@ -34,6 +36,7 @@ import io.harness.pms.sdk.core.plugin.ImageDetailsUtils;
 import io.harness.pms.sdk.core.plugin.PluginInfoProvider;
 import io.harness.pms.sdk.core.plugin.SecretNgVariableUtils;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.utils.TimeoutUtils;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -41,14 +44,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-public class CiPluginStepInfoProvider implements PluginInfoProvider {
-  @Inject K8InitializeStepUtils k8InitializeStepUtils;
+public class CIPluginInfoProvider implements PluginInfoProvider {
+  @Inject K8sInitializeService k8InitializeStepUtils;
 
   @Override
-  public PluginCreationResponseWrapper getPluginInfo(PluginCreationRequest request, Set<Integer> usedPorts) {
+  public PluginCreationResponseWrapper getPluginInfo(
+      PluginCreationRequest request, Set<Integer> usedPorts, Ambiance ambiance) {
     String stepJsonNode = request.getStepJsonNode();
     PluginCompatibleStep pluginCompatibleStep;
     CIAbstractStepNode ciAbstractStepNode;
@@ -59,9 +61,14 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
           String.format("Error in parsing CI step for step type [%s]", request.getType()), e);
     }
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
+    CIStepInfo ciStepInfo = (CIStepInfo) ciAbstractStepNode.getStepSpecType();
+    long timeout = TimeoutUtils.getTimeoutInSeconds(ciAbstractStepNode.getTimeout(), ciStepInfo.getDefaultTimeout());
+
     ContainerDefinitionInfo containerDefinitionInfo =
-        k8InitializeStepUtils.createStepContainerDefinition(ciAbstractStepNode, null, null, portFinder, 0,
-            request.getAccountId(), OSType.fromString(request.getOsType()), request.getAmbiance(), 0, 0);
+        k8InitializeStepUtils.createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, null,
+            null, portFinder, 0, ciAbstractStepNode.getIdentifier(), ciAbstractStepNode.getName(),
+            ciAbstractStepNode.getType(), timeout, request.getAccountId(), OSType.fromString(request.getOsType()),
+            ambiance, 0, 0);
     List<SecretVariable> secretVariables = containerDefinitionInfo.getSecretVariables()
                                                .stream()
                                                .map(SecretNgVariableUtils::getSecretVariable)
@@ -124,8 +131,6 @@ public class CiPluginStepInfoProvider implements PluginInfoProvider {
 
   @Override
   public boolean isSupported(String stepType) {
-    return CIStepInfoType.BACKGROUND.getDisplayName().equals(stepType)
-        || CIStepInfoType.BACKGROUND_V1.getDisplayName().equals(stepType)
-        || CIStepInfoType.GIT_CLONE.getDisplayName().equals(stepType);
+    return CIStepInfoType.GIT_CLONE.getDisplayName().equals(stepType);
   }
 }
