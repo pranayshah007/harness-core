@@ -771,6 +771,7 @@ public enum FeatureName {
   CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC),
   PL_DISCOVERY_ENABLE(
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
+  CDS_AUTO_APPROVAL("This FF is for allowing scheduled approval in Harness approval step", HarnessTeam.CDP),
   GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
   CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
       "This is to diable checking for the HTTP status code and instead just check for a valid response",

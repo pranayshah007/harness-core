@@ -284,3 +284,7 @@ io.harness.beans.yaml.extended.volumes.V1.TempVolume
 io.harness.plancreator.execution.StepsExecutionConfig
 io.harness.beans.yaml.extended.runtime.CloudRuntime
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
+io.harness.steps.approval.step.harness.beans.ScheduledDeadline
+io.harness.steps.approval.step.harness.beans.AutoApprovalParams
+io.harness.steps.approval.step.harness.outcomes.HarnessApprovalStepOutcome
+io.harness.steps.approval.step.harness.beans.AutoApprovalAction

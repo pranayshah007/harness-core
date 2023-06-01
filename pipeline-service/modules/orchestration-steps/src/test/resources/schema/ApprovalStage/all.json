@@ -733,6 +733,28 @@
       "type": "object",
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AutoApprovalParams": {
+      "type": "object",
+      "required": [
+        "action",
+        "scheduledDeadline"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "APPROVE"
+          ]
+        },
+        "comments": {
+          "type": "string"
+        },
+        "scheduledDeadline": {
+          "$ref": "#/definitions/ScheduledDeadline"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BackgroundStepInfo": {
       "allOf": [
         {
@@ -2714,6 +2736,9 @@
             },
             "approvers": {
               "$ref": "#/definitions/Approvers"
+            },
+            "autoApproval": {
+              "$ref": "#/definitions/AutoApprovalParams"
             },
             "includePipelineExecutionHistory": {
               "oneOf": [
@@ -5423,6 +5448,18 @@
     },
     "SbomSourceSpec": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ScheduledDeadline": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string"
+        },
+        "timeZone": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ScriptStepInfo": {
