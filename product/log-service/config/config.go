@@ -55,6 +55,7 @@ type Config struct {
 		DisableExpiryWatcher bool     `envconfig:"LOG_SERVICE_REDIS_DISABLE_EXPIRY_WATCHER"`
 		MasterName           string   `envconfig:"LOG_SERVICE_REDIS_MASTER_NAME"`
 		SentinelAddrs        []string `envconfig:"LOG_SERVICE_REDIS_SENTINEL_ADDRS"`
+		connectionPool       int      `envconfig:"LOG_SERVICE_REDIS_CONNECTION_POOL" default:"10"`
 	}
 
 	// Whether to use secret env variables as they are, or talk to GCP secret

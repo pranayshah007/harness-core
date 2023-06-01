@@ -20,7 +20,6 @@ import (
 	"github.com/harness/harness-core/product/log-service/store"
 	"github.com/harness/harness-core/product/log-service/store/bolt"
 	"github.com/harness/harness-core/product/log-service/store/s3"
-	"github.com/harness/harness-core/product/log-service/stream"
 	"github.com/harness/harness-core/product/log-service/stream/memory"
 	"github.com/harness/harness-core/product/log-service/stream/redis"
 	"github.com/harness/harness-core/product/platform/client"
@@ -93,20 +92,58 @@ func (c *serverCommand) run(*kingpin.ParseContext) error {
 	}
 
 	// create the stream server.
-	var stream stream.Stream
-	if config.Redis.Endpoint != "" {
-		stream = redis.NewFailoverClient(&redis.FailoverOptions{
+	var redisClient *redis.Client
+	if config.Redis.MasterName != "" {
+		// create a Redis Sentinel client
+		sentinelOpt := &redis.FailoverOptions{
 			MasterName:    config.Redis.MasterName,
 			SentinelAddrs: config.Redis.SentinelAddrs,
 			Password:      config.Redis.Password,
-			DB:            0, // use default DB
-		})
-		logrus.Infof("configuring log stream to use Redis Sentinel: %s", config.Redis.Endpoint)
+			DB:            0,
+			PoolSize:      config.Redis.connectionPool,
+		}
+
+		if config.Redis.SSLEnabled {
+			newTlSConfig, err := newTlSConfig(config.Redis.CertPath)
+			if err != nil {
+				logrus.Fatalf("could not get TLS config: %s", err)
+				return err
+			}
+			sentinelOpt.TLSConfig = newTlSConfig
+		}
+
+		redisClient = redis.NewFailoverClient(sentinelOpt)
+		logrus.Infof("configuring log stream to use Redis Sentinel: %v", config.Redis.SentinelAddresses)
+	} else if config.Redis.Endpoint != "" {
+		// create a regular Redis client
+		redisOpt := &redis.Options{
+			Addr:     config.Redis.Endpoint,
+			Password: config.Redis.Password,
+			DB:       0,
+			PoolSize: config.Redis.connectionPool,
+		}
+
+		if config.Redis.SSLEnabled {
+			newTlSConfig, err := newTlSConfig(config.Redis.CertPath)
+			if err != nil {
+				logrus.Fatalf("could not get TLS config: %s", err)
+				return err
+			}
+			redisOpt.TLSConfig = newTlSConfig
+		}
+
+		redisClient = redis.NewClient(redisOpt)
+		logrus.Infof("configuring log stream to use Redis: %s", config.Redis.Endpoint)
 	} else {
 		// create the in-memory stream
 		stream = memory.New()
 		logrus.Infoln("configuring log stream to use in-memory stream")
+		return
 	}
+
+	// create the Redis stream
+	stream = redis.New(redisClient, config.Redis.DisableExpiryWatcher)
+
 	ngClient := client.NewHTTPClient(config.Platform.BaseURL, false, "")
 
 	// create the http server.

@@ -49,7 +49,7 @@ const (
 )
 
 type Redis struct {
-	Client redis.Cmdable
+	Client *redis.Client
 }
 
 func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
@@ -67,6 +67,22 @@ func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
 	return &tls.Config{RootCAs: roots}, nil
 }
 
+func New(client *redis.Client, disableExpiryWatcher bool) *Redis {
+	rc := &Redis{
+		Client: client,
+	}
+
+	if !disableExpiryWatcher {
+		logrus.Infof("starting expiry watcher thread on Redis instance")
+		s := gocron.NewScheduler(time.UTC)
+		s.Every(defaultKeyExpiryTimeSeconds).Seconds().Do(rc.expiryWatcher, defaultKeyExpiryTimeSeconds*time.Second)
+		s.StartAsync()
+	}
+
+	return rc
+}
+
+/*
 func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathForTLS string) *Redis {
 	opt := &redis.Options{
 		Addr:     endpoint,
@@ -95,7 +111,7 @@ func New(endpoint, password string, useTLS, disableExpiryWatcher bool, certPathF
 	}
 	return rc
 }
-
+*/
 // Create creates a redis stream and sets an expiry on it.
 func (r *Redis) Create(ctx context.Context, key string) error {
 	// Delete if a stream already exists with the same key
