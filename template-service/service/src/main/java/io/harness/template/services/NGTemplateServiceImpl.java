@@ -350,6 +350,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Override
   public TemplateEntity updateTemplateEntity(
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments) {
+    log.info("updateTemplateEntity");
+    GitAwareContextHelper.logGitContext();
     enforcementClientService.checkAvailability(
         FeatureRestrictionName.TEMPLATE_SERVICE, templateEntity.getAccountIdentifier());
     TemplateUtils.setupGitParentEntityDetails(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
@@ -420,6 +422,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private TemplateEntity updateTemplateHelper(String oldOrgIdentifier, String oldProjectIdentifier,
       TemplateEntity templateEntity, ChangeType changeType, boolean setStableTemplate,
       boolean updateLastUpdatedTemplateFlag, String comments, TemplateUpdateEventType eventType) {
+    log.info("updateTemplateHelper");
+    GitAwareContextHelper.logGitContext();
     try {
       NGTemplateServiceHelper.validatePresenceOfRequiredFields(
           templateEntity.getAccountId(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 
@@ -26,6 +27,7 @@ import lombok.experimental.Wither;
 @FieldNameConstants(innerTypeName = "GitEntityInfoKeys")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(DX)
+@ToString
 public class GitEntityInfo {
   @Setter String branch;
   String yamlGitConfigId;

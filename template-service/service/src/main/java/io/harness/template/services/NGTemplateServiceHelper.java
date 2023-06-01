@@ -32,6 +32,7 @@ import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.FetchRemoteEntityRequest;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitaware.helper.TemplateMoveConfigOperationDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -521,6 +522,8 @@ public class NGTemplateServiceHelper {
   private TemplateEntity makeUpdateCall(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits,
       boolean makeOnlyDbUpdate) {
+    log.info("makeUpdateCall");
+    GitAwareContextHelper.logGitContext();
     try {
       TemplateEntity updatedTemplate;
       if (isOldGitSync(templateToUpdate)) {

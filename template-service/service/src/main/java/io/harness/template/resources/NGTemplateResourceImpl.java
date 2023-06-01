@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
 import io.harness.gitaware.helper.TemplateMoveConfigRequestDTO;
 import io.harness.gitsync.beans.StoreType;
@@ -196,6 +197,8 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
       @NotNull @AccountIdentifier String accountId, @OrgIdentifier String orgId, @ProjectIdentifier String projectId,
       @ResourceIdentifier String templateIdentifier, String versionLabel, GitEntityUpdateInfoDTO gitEntityInfo,
       @NotNull String templateYaml, boolean setDefaultTemplate, String comments) {
+    log.info("updateExistingTemplateLabel");
+    GitAwareContextHelper.logGitContext();
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(

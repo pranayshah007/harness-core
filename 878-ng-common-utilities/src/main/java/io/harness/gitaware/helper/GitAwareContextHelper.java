@@ -29,9 +29,11 @@ import io.harness.persistence.gitaware.GitAware;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @UtilityClass
 @OwnedBy(DX)
+@Slf4j
 public class GitAwareContextHelper {
   public static final String DEFAULT = "__default__";
 
@@ -195,5 +197,10 @@ public class GitAwareContextHelper {
 
   public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
     return gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
+  }
+
+  public void logGitContext() {
+    GitEntityInfo gitEntityInfo = getGitRequestParamsInfo();
+    log.info(gitEntityInfo.toString());
   }
 }

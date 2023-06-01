@@ -338,6 +338,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public TemplateEntity updateTemplateYaml(TemplateEntity templateToUpdate, TemplateEntity oldTemplateEntity,
       ChangeType changeType, String comments, TemplateUpdateEventType templateUpdateEventType, boolean skipAudits) {
     GitAwareContextHelper.initDefaultScmGitMetaData();
+    log.info("updateTemplateYaml");
+    GitAwareContextHelper.logGitContext();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     if (templateGitXService.isNewGitXEnabledAndIsRemoteEntity(templateToUpdate, gitEntityInfo)) {
       Scope scope = TemplateUtils.buildScope(templateToUpdate);

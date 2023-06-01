@@ -39,9 +39,11 @@ import groovy.lang.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PL)
 @Singleton
+@Slf4j
 public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
   public static final String DEFAULT = "__default__";
@@ -182,6 +184,8 @@ public class GitAwareEntityHelper {
 
   ScmUpdateFileGitResponse updateEntityOnGit(
       GitAware gitAwareEntity, String yaml, Scope scope, String oldFileSHA, String oldCommitID) {
+    log.info("updateEntityOnGit");
+    GitAwareContextHelper.logGitContext();
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String repoName = gitAwareEntity.getRepo();
     if (isNullOrDefault(repoName)) {
@@ -200,6 +204,8 @@ public class GitAwareEntityHelper {
       throw new InvalidRequestException("No base branch provided for committing to new branch");
     }
     // if branch is empty, then git sdk will figure out the default branch for the repo by itself
+    log.info("updateEntityOnGit");
+    GitAwareContextHelper.logGitContext();
     String branch = gitEntityInfo.getBranch();
     if (isNullOrDefault(branch)) {
       throw new InvalidRequestException("No branch provided for updating the file.");
