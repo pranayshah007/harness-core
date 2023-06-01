@@ -253,6 +253,9 @@ public class BuildTriggerHelper {
       Map<String, Object> triggerArtifactSpecMap = new HashMap<>();
       triggerArtifactSpecMap.put("type", source.get("type"));
       triggerArtifactSpecMap.put("spec", source);
+      /* Here we need to explicitly add `buildMetadata` to BuildTriggerOpsData. This is because MultiRegionArtifact
+      triggers have a list of BuildMetadata, so PollingItemGenerator:getBaseInitializedPollingItem needs a way to
+      explicitly get the BuildMetadata for each PollingItem it will generate. */
       buildTriggerOpsData.add(
           BuildTriggerOpsData.builder()
               .pipelineBuildSpecMap(Collections.emptyMap())

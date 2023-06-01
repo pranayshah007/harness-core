@@ -92,6 +92,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
                             .and(PollingDocumentKeys.signatures)
                             .is(signatures);
     if (pollingDocId != null) {
+      /* pollingDocId may be empty in the case of unsubscription for MultiRegionArtifact triggers.
+       So we add pollingDocId to the query only if it is not null. */
       criteria.and(PollingDocumentKeys.uuid).is(pollingDocId);
     }
     Query query = new Query().addCriteria(criteria);
@@ -113,6 +115,8 @@ public class PollingRepositoryCustomImpl implements PollingRepositoryCustom {
     Object[] signatureList = signatures.toArray();
     Query query;
     if (uuId == null) {
+      /* If uuId is null, we remove based on accountId and signatures only.
+      This case happens for MultiRegionArtifact triggers. */
       Criteria criteria = new Criteria()
                               .and(PollingDocumentKeys.accountId)
                               .is(accountId)
