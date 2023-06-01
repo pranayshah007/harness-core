@@ -455,14 +455,13 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
   @Category(UnitTests.class)
   public void testCreateServiceOverrideInputsYamlNoInputs() {
     NGServiceOverridesEntity testOverrideEntity =
-            getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_SERVICE_OVERRIDE, false);
+        getTestOverrideEntityForRuntimeInput(ServiceOverridesType.ENV_SERVICE_OVERRIDE, false);
     serviceOverridesServiceV2.create(testOverrideEntity);
     String serviceOverrideInputsYaml = serviceOverridesServiceV2.createServiceOverrideInputsYaml(ACCOUNT_IDENTIFIER,
-            ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef(), testOverrideEntity.getServiceRef());
+        ORG_IDENTIFIER, PROJECT_IDENTIFIER, testOverrideEntity.getEnvironmentRef(), testOverrideEntity.getServiceRef());
 
     assertThat(serviceOverrideInputsYaml).isNull();
   }
-
 
   @Test
   @Owner(developers = TATHAGAT)

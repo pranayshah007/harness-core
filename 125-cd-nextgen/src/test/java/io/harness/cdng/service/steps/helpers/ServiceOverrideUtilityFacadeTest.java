@@ -28,6 +28,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
+import io.harness.encryption.Scope;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
@@ -189,12 +190,10 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(null)
-        .doReturn(List.of(basicOverrideEntity))
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvServiceOverride(anyString(), anyString(), anyString(), anyString(), anyString());
+
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setServiceOverrideInputs(ParameterField.createValueField(overrideInputs));
@@ -328,12 +327,10 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(null)
-        .doReturn(List.of(basicOverrideEntity))
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvServiceOverride(anyString(), anyString(), anyString(), anyString(), anyString());
+
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setEnvInputs(null);
@@ -391,6 +388,9 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
+        .when(serviceOverridesServiceV2)
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString());
     doReturn(List.of(basicOverrideEntity))
         .doReturn(null)
         .doReturn(Collections.emptyList())
@@ -470,12 +470,10 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(List.of(basicOverrideEntity))
-        .doReturn(null)
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString());
+
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     Map<ServiceOverridesType, NGServiceOverrideConfigV2> mergedServiceOverrideConfigs =
@@ -599,12 +597,9 @@ public class ServiceOverrideUtilityFacadeTest extends CDNGTestBase {
         SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
     doReturn(request).when(ngSettingsClient).getSetting(anyString(), anyString(), anyString(), anyString());
     doReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO))).when(request).execute();
-    doReturn(List.of(basicOverrideEntity))
-        .doReturn(null)
-        .doReturn(Collections.emptyList())
-        .doReturn(null)
+    doReturn(Map.of(Scope.PROJECT, basicOverrideEntity))
         .when(serviceOverridesServiceV2)
-        .findAll(any(Criteria.class));
+        .getEnvOverride(anyString(), anyString(), anyString(), anyString());
     doCallRealMethod().when(serviceOverridesServiceV2).mergeOverridesGroupedByType(anyList());
 
     stepParameters.setEnvInputs(null);
