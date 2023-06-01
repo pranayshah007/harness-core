@@ -31,7 +31,8 @@ public interface CfDeploymentManager {
   ApplicationDetail createApplication(CfCreateApplicationRequestData requestData, LogCallback logCallback)
       throws PivotalClientApiException;
 
-  ApplicationDetail resizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException;
+  ApplicationDetail resizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException;
 
   ApplicationDetail upsizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
       throws PivotalClientApiException;
@@ -106,8 +107,8 @@ public interface CfDeploymentManager {
   List<ApplicationSummary> getPreviousReleasesForRolling(CfRequestConfig cfRequestConfig, String prefix)
       throws PivotalClientApiException;
 
-  void checkUnsettingEnvironmentVariableForAppStatus(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException;
+  void checkUnsettingEnvironmentVariableForAppStatus(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException;
 
   void checkSettingEnvironmentVariableForAppStatusNG(CfRequestConfig cfRequestConfig, boolean activeStatus,
       LogCallback executionLogCallback) throws PivotalClientApiException;

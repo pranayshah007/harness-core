@@ -808,14 +808,13 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
     downsizeApplication(cfRequestConfig, executionLogCallback);
   }
 
-  private void unMapRoutes(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
+  private void unMapRoutes(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       ApplicationDetail applicationDetail = pcfDeploymentManager.getApplicationByName(cfRequestConfig);
       // Unmap routes from application having 0 instances
       if (isNotEmpty(applicationDetail.getUrls())) {
-          pcfDeploymentManager.unmapRouteMapForApplication(
-                                              cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
+        pcfDeploymentManager.unmapRouteMapForApplication(
+            cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
       }
     } catch (PivotalClientApiException exception) {
       log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
@@ -828,12 +827,20 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
       return;
     }
 
-    // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
-    pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
+    try {
+      // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
+      pcfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
+    } catch (PivotalClientApiException exception) {
+      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+    }
   }
 
-  private void downsizeApplication(CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
-   pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
+  private void downsizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
+    try {
+      pcfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
+    } catch (PivotalClientApiException exception) {
+      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+    }
   }
 }

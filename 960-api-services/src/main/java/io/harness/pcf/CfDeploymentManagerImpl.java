@@ -136,27 +136,27 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
   }
 
   @Override
-  public ApplicationDetail resizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+  public ApplicationDetail resizeApplication(CfRequestConfig pcfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
     try {
       ApplicationDetail applicationDetail = cfSdkClient.getApplicationByName(pcfRequestConfig);
       RetryAbleTaskExecutor retryAbleTaskExecutor = new RetryAbleTaskExecutor();
       RetryPolicy retryPolicy =
-              RetryPolicy.builder()
-                      .userMessageOnFailure(
-                              String.format("Failed while resizing application: %s", encodeColor(pcfRequestConfig.getApplicationName())))
-                      .finalErrorMessage(String.format("Failed to resize application: %s. Please resize it manually",
-                              encodeColor(pcfRequestConfig.getApplicationName())))
-                      .retry(3)
-                      .throwError(true)
-                      .build();
-      retryAbleTaskExecutor.execute(
-              () -> {
-                try {
-                  cfSdkClient.scaleApplications(pcfRequestConfig);
-                } catch (InterruptedException e) {
-                  throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
-                }
-              }, executionLogCallback, log, retryPolicy);
+          RetryPolicy.builder()
+              .userMessageOnFailure(String.format(
+                  "Failed while resizing application: %s", encodeColor(pcfRequestConfig.getApplicationName())))
+              .finalErrorMessage(String.format("Failed to resize application: %s. Please resize it manually",
+                  encodeColor(pcfRequestConfig.getApplicationName())))
+              .retry(3)
+              .throwError(true)
+              .build();
+      retryAbleTaskExecutor.execute(() -> {
+        try {
+          cfSdkClient.scaleApplications(pcfRequestConfig);
+        } catch (InterruptedException e) {
+          throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
+        }
+      }, executionLogCallback, log, retryPolicy);
 
       if (pcfRequestConfig.getDesiredCount() > 0 && applicationDetail.getInstances() == 0) {
         cfSdkClient.startApplication(pcfRequestConfig);
@@ -342,27 +342,25 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
 
   @Override
   public void unmapRouteMapForApplication(CfRequestConfig cfRequestConfig, List<String> paths, LogCallback logCallback)
-          throws PivotalClientApiException {
+      throws PivotalClientApiException {
     try {
       RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
-      RetryPolicy retryPolicy = RetryPolicy.builder()
+      RetryPolicy retryPolicy =
+          RetryPolicy.builder()
               .userMessageOnFailure(String.format(
-                      "Failed to un map routes from application - %s", encodeColor(cfRequestConfig.getApplicationName())))
+                  "Failed to un map routes from application - %s", encodeColor(cfRequestConfig.getApplicationName())))
               .finalErrorMessage(String.format("Failed to un map routes even after retrying for application : %s ",
-                      encodeColor(cfRequestConfig.getApplicationName())))
+                  encodeColor(cfRequestConfig.getApplicationName())))
               .retry(3)
               .throwError(true)
               .build();
 
-      retryAbleTaskExecutor.execute(()
-                      -> unmapRouteMap(
-                      cfRequestConfig, paths, logCallback),
-              logCallback, log, retryPolicy);
+      retryAbleTaskExecutor.execute(
+          () -> unmapRouteMap(cfRequestConfig, paths, logCallback), logCallback, log, retryPolicy);
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }
   }
-
 
   public void unmapRouteMap(CfRequestConfig cfRequestConfig, List<String> paths, LogCallback logCallback)
       throws PivotalClientApiException {
@@ -566,40 +564,36 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
 
   @Override
   public void renameApplication(CfRenameRequest cfRenameRequest, LogCallback logCallback)
-          throws PivotalClientApiException {
+      throws PivotalClientApiException {
     try {
       RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
       RetryPolicy retryPolicy =
-              RetryPolicy.builder()
-                      .userMessageOnFailure(
-                              String.format("Failed to rename application - [%s]", encodeColor(cfRenameRequest.getApplicationName())))
-                      .finalErrorMessage(String.format("Failed to rename application - [%s] even after retrying ",
-                              encodeColor(cfRenameRequest.getApplicationName())))
-                      .retry(3)
-                      .throwError(true)
-                      .build();
+          RetryPolicy.builder()
+              .userMessageOnFailure(String.format(
+                  "Failed to rename application - [%s]", encodeColor(cfRenameRequest.getApplicationName())))
+              .finalErrorMessage(String.format("Failed to rename application - [%s] even after retrying ",
+                  encodeColor(cfRenameRequest.getApplicationName())))
+              .retry(3)
+              .throwError(true)
+              .build();
 
-      retryAbleTaskExecutor.execute(
-              ()
-                      -> renameApp(cfRenameRequest, logCallback),
-              logCallback, log, retryPolicy);
+      retryAbleTaskExecutor.execute(() -> renameApp(cfRenameRequest, logCallback), logCallback, log, retryPolicy);
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }
   }
 
-  private void renameApp(CfRenameRequest cfRenameRequest, LogCallback logCallback)
-          throws PivotalClientApiException {
+  private void renameApp(CfRenameRequest cfRenameRequest, LogCallback logCallback) throws PivotalClientApiException {
     if (cfRenameRequest.getName().equals(cfRenameRequest.getNewName())) {
       return;
     }
     try {
       logCallback.saveExecutionLog(String.format(
-              "Renaming app %s to %s", encodeColor(cfRenameRequest.getName()), encodeColor(cfRenameRequest.getNewName())));
+          "Renaming app %s to %s", encodeColor(cfRenameRequest.getName()), encodeColor(cfRenameRequest.getNewName())));
       cfSdkClient.renameApplication(cfRenameRequest);
     } catch (Exception e) {
       logCallback.saveExecutionLog(String.format("Failed to rename app %s to %s",
-              encodeColor(cfRenameRequest.getName()), encodeColor(cfRenameRequest.getNewName())));
+          encodeColor(cfRenameRequest.getName()), encodeColor(cfRenameRequest.getNewName())));
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }
   }
@@ -770,25 +764,26 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
       // If we want to enable it, its expected to be disabled and vice versa
       removeOldStatusVariableIfExist(cfRequestConfig, executionLogCallback);
       cfCliClient.setEnvVariablesForApplication(
-              Collections.singletonMap(
-                      HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__STAGE__IDENTIFIER),
-              cfRequestConfig, executionLogCallback);
+          Collections.singletonMap(
+              HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__STAGE__IDENTIFIER),
+          cfRequestConfig, executionLogCallback);
 
       RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
       RetryPolicy retryPolicy =
-              RetryPolicy.builder()
-                      .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
-                              encodeColor(cfRequestConfig.getApplicationName())))
-                      .finalErrorMessage(String.format(
-                              "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
-                              encodeColor(cfRequestConfig.getApplicationName())))
-                      .retry(3)
-                      .build();
+          RetryPolicy.builder()
+              .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
+                  encodeColor(cfRequestConfig.getApplicationName())))
+              .finalErrorMessage(String.format(
+                  "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
+                  encodeColor(cfRequestConfig.getApplicationName())))
+              .retry(3)
+              .throwError(true)
+              .build();
 
       retryAbleTaskExecutor.execute(
-              ()
-                      -> checkSettingEnvironmentVariableForAppStatus(cfRequestConfig, activeStatus, executionLogCallback),
-              executionLogCallback, log, retryPolicy);
+          ()
+              -> checkSettingEnvironmentVariableForAppStatus(cfRequestConfig, activeStatus, executionLogCallback),
+          executionLogCallback, log, retryPolicy);
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }
@@ -801,25 +796,26 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
       // If we want to enable it, its expected to be disabled and vice versa
       removeOldStatusVariableIfExist(cfRequestConfig, executionLogCallback);
       cfCliClient.setEnvVariablesForApplication(
-              Collections.singletonMap(
-                      HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__INACTIVE__IDENTIFIER),
-              cfRequestConfig, executionLogCallback);
+          Collections.singletonMap(
+              HARNESS__STATUS__IDENTIFIER, activeStatus ? HARNESS__ACTIVE__IDENTIFIER : HARNESS__INACTIVE__IDENTIFIER),
+          cfRequestConfig, executionLogCallback);
 
       RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
       RetryPolicy retryPolicy =
-              RetryPolicy.builder()
-                      .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
-                              encodeColor(cfRequestConfig.getApplicationName())))
-                      .finalErrorMessage(String.format(
-                              "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
-                              encodeColor(cfRequestConfig.getApplicationName())))
-                      .retry(3)
-                      .build();
+          RetryPolicy.builder()
+              .userMessageOnFailure(String.format("Failed to update env variable for application - %s",
+                  encodeColor(cfRequestConfig.getApplicationName())))
+              .finalErrorMessage(String.format(
+                  "Failed to update env variable for application - %s. Please manually update it to avoid any future issue ",
+                  encodeColor(cfRequestConfig.getApplicationName())))
+              .retry(3)
+              .throwError(true)
+              .build();
 
       retryAbleTaskExecutor.execute(
-              ()
-                      -> checkSettingEnvironmentVariableForAppStatusNG(cfRequestConfig, activeStatus, executionLogCallback),
-              executionLogCallback, log, retryPolicy);
+          ()
+              -> checkSettingEnvironmentVariableForAppStatusNG(cfRequestConfig, activeStatus, executionLogCallback),
+          executionLogCallback, log, retryPolicy);
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }
@@ -831,7 +827,9 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
     if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
       Map<String, Object> userProvided = applicationEnvironments.getUserProvided();
-      if (!userProvided.containsKey(HARNESS__STATUS__IDENTIFIER) || (activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER)) || (!activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__STAGE__IDENTIFIER))) {
+      if (!userProvided.containsKey(HARNESS__STATUS__IDENTIFIER)
+          || (activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER))
+          || (!activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__STAGE__IDENTIFIER))) {
         throw new PivotalClientApiException("Failed to update env variable for the application");
       }
     } else {
@@ -845,9 +843,11 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     ApplicationEnvironments applicationEnvironments = cfSdkClient.getApplicationEnvironmentsByName(cfRequestConfig);
     if (applicationEnvironments != null && EmptyPredicate.isNotEmpty(applicationEnvironments.getUserProvided())) {
       Map<String, Object> userProvided = applicationEnvironments.getUserProvided();
-      if (!userProvided.containsKey(HARNESS__STATUS__IDENTIFIER) || (activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER))  || (!activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__INACTIVE__IDENTIFIER))) {
+      if (!userProvided.containsKey(HARNESS__STATUS__IDENTIFIER)
+          || (activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__ACTIVE__IDENTIFIER))
+          || (!activeStatus && !userProvided.get(HARNESS__STATUS__IDENTIFIER).equals(HARNESS__INACTIVE__IDENTIFIER))) {
         throw new PivotalClientApiException("Failed to update env variable for application");
-        }
+      }
     } else {
       throw new PivotalClientApiException("Failed to update env variable for application");
     }
@@ -876,26 +876,27 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
         for (String statusKey : STATUS_ENV_VARIABLES) {
           if (userProvided.containsKey(statusKey)) {
             cfCliClient.unsetEnvVariablesForApplication(
-                    Collections.singletonList(statusKey), cfRequestConfig, executionLogCallback);
+                Collections.singletonList(statusKey), cfRequestConfig, executionLogCallback);
           }
         }
       }
 
       RetryAbleTaskExecutor retryAbleTaskExecutor = RetryAbleTaskExecutor.getExecutor();
       RetryPolicy retryPolicy =
-              RetryPolicy.builder()
-                      .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
-                              encodeColor(cfRequestConfig.getApplicationName())))
-                      .finalErrorMessage(String.format(
-                              "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
-                              encodeColor(cfRequestConfig.getApplicationName())))
-                      .retry(3)
-                      .build();
+          RetryPolicy.builder()
+              .userMessageOnFailure(String.format("Failed to un set env variable for application - %s",
+                  encodeColor(cfRequestConfig.getApplicationName())))
+              .finalErrorMessage(String.format(
+                  "Failed to un set env variable for application - %s. Please manually un set it to avoid any future issue ",
+                  encodeColor(cfRequestConfig.getApplicationName())))
+              .retry(3)
+              .throwError(true)
+              .build();
 
       retryAbleTaskExecutor.execute(
-              ()
-                      -> checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
-              executionLogCallback, log, retryPolicy);
+          ()
+              -> checkUnsettingEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback),
+          executionLogCallback, log, retryPolicy);
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + ExceptionUtils.getMessage(e), e);
     }

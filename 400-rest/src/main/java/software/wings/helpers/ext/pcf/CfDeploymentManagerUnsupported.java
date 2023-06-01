@@ -47,7 +47,8 @@ public class CfDeploymentManagerUnsupported implements CfDeploymentManager {
   }
 
   @Override
-  public ApplicationDetail resizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+  public ApplicationDetail resizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
     throw new PivotalClientApiException("PCF operations not supported by this API.");
   }
 

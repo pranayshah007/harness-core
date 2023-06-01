@@ -106,13 +106,14 @@ public interface AppRenamingOperator {
   }
 
   default void renameApp(ApplicationSummary app, PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper,
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, @NotNull String newName, Logger log) throws PivotalClientApiException {
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, @NotNull String newName, Logger log)
+      throws PivotalClientApiException {
     pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName);
   }
 
   default void renameApp(ApplicationSummary app, PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper,
       CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, @NotNull String newName,
       @NotNull String oldName, Logger log) throws PivotalClientApiException {
-      pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName, oldName);
+    pcfCommandTaskBaseHelper.renameApp(app, cfRequestConfig, executionLogCallback, newName, oldName);
   }
 }

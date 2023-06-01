@@ -524,15 +524,14 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
     downsizeApplication(cfRequestConfig, executionLogCallback);
   }
 
-  private void unMapRoutes(
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
+  private void unMapRoutes(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) {
     try {
       ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
       // Unmap routes from application having 0 instances
       if (isNotEmpty(applicationDetail.getUrls())) {
         cfRequestConfig.setLoggedin(false);
         cfDeploymentManager.unmapRouteMapForApplication(
-                                              cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
+            cfRequestConfig, applicationDetail.getUrls(), executionLogCallback);
       }
     } catch (PivotalClientApiException exception) {
       log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
@@ -541,14 +540,22 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
   private void unsetEnvVariables(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
       throws PivotalClientApiException {
-    // TODO this only for BG
-    // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
-    cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
+    try {
+      // TODO this only for BG
+      // Remove Env Variable "HARNESS__STATUS__IDENTIFIER"
+      cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
+    } catch (PivotalClientApiException exception) {
+      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+    }
   }
 
-  private void downsizeApplication(CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
-    cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
+  private void downsizeApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback)
+      throws PivotalClientApiException {
+    try {
+      cfDeploymentManager.resizeApplication(cfRequestConfig, executionLogCallback);
+    } catch (PivotalClientApiException exception) {
+      log.warn(ExceptionMessageSanitizer.sanitizeException(exception).getMessage());
+    }
   }
 
   private void removeTempFilesCreated(CfBlueGreenSetupRequestNG setupRequestNG, LogCallback executionLogCallback,
