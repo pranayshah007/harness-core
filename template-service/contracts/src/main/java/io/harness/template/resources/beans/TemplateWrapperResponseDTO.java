@@ -10,6 +10,7 @@ package io.harness.template.resources.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.template.TemplateResponseDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -29,4 +30,5 @@ import lombok.Data;
 public class TemplateWrapperResponseDTO {
   boolean isValid;
   TemplateResponseDTO templateResponseDTO;
+  GovernanceMetadata governanceMetadata;
 }

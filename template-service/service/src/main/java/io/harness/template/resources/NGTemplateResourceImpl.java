@@ -33,6 +33,7 @@ import io.harness.gitsync.interceptor.GitEntityDeleteInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitx.USER_FLOW;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.customDeployment.CustomDeploymentVariableResponseDTO;
 import io.harness.ng.core.customDeployment.CustomDeploymentYamlRequestDTO;
@@ -166,12 +167,20 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
           "created", templateEntity.getIdentifier(), gitEntityCreateInfo.getCommitMsg());
     }
 
+    GovernanceMetadata governanceMetadata = templateService.validateGovernanceRules(templateEntity);
+    if (governanceMetadata.getDeny()) {
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
+      ResponseDTO.newResponse("", templateWrapperResponseDTO);
+    }
+
     TemplateEntity createdTemplate =
         templateService.create(templateEntity, setDefaultTemplate, comments, isNewTemplate);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
             .isValid(true)
             .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
+            .governanceMetadata(governanceMetadata)
             .build();
     return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
   }
@@ -209,11 +218,20 @@ public class NGTemplateResourceImpl implements NGTemplateResource {
       comments =
           templateServiceHelper.getComment("updated", templateEntity.getIdentifier(), gitEntityInfo.getCommitMsg());
     }
+
+    GovernanceMetadata governanceMetadata = templateService.validateGovernanceRules(templateEntity);
+    if (governanceMetadata.getDeny()) {
+      TemplateWrapperResponseDTO templateWrapperResponseDTO =
+          TemplateWrapperResponseDTO.builder().isValid(true).governanceMetadata(governanceMetadata).build();
+      ResponseDTO.newResponse("", templateWrapperResponseDTO);
+    }
+
     TemplateEntity createdTemplate =
         templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
             .isValid(true)
+            .governanceMetadata(governanceMetadata)
             .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
             .build();
     return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
