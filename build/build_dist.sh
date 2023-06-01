@@ -173,6 +173,8 @@ function copy_command_library_server_jars(){
 
 function copy_verification_service_jars(){
 
+  pwd
+  ls
   cp ${HOME}/.bazel-dirs/bin/270-verification/module_deploy.jar verification-capsule.jar
   cp ../../270-verification/keystore.jks .
   cp ../../270-verification/verification-config.yml .
@@ -182,6 +184,9 @@ function copy_verification_service_jars(){
   cp -R ../../dockerization/verification/scripts/ .
   copy_common_files
   cd ../..
+  pwd
+  ls
+  ls /harness/harness-core/dist/verification-service/
 
 }
 
