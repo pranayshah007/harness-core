@@ -3,7 +3,7 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:jre-11.0.19 as base
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 audit-event-streaming-capsule.jar /opt/harness/

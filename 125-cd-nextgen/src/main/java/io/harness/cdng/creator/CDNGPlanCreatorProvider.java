@@ -1107,7 +1107,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Elastigroup Deploy")
             .setType(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
             .build();
 
@@ -1115,7 +1114,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("Elastigroup Rollback")
             .setType(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK)
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory(ELASTIGROUP).addFolderPaths("Elastigroup").build())
             .build();
 
@@ -1124,7 +1122,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Elastigroup Setup")
             .setType(StepSpecTypeConstants.ELASTIGROUP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
     StepInfo terragruntPlan = StepInfo.newBuilder()
@@ -1171,7 +1168,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Elastigroup BG Stage Setup")
             .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
     StepInfo elastigroupSwapRoute =
@@ -1179,7 +1175,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Elastigroup Swap Route")
             .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
     StepInfo asgCanaryDeploy =
@@ -1304,7 +1299,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                           .addCategory("Helm")
                                                           .addFolderPaths("Kubernetes")
                                                           .build())
-                                     .setFeatureFlag(FeatureName.K8S_DRY_RUN_NG.name())
                                      .build();
 
     StepInfo asgBlueGreenSwapService =

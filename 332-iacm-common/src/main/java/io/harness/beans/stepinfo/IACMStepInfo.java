@@ -41,7 +41,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("iacmStepInfo")
 @OwnedBy(IACM)
 @RecasterAlias("io.harness.beans.stepinfo.IACMStepInfo")
-@Deprecated
 public class IACMStepInfo implements CIStepInfo {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

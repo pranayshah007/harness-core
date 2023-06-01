@@ -9,8 +9,12 @@ package io.harness.cvng.core.services.impl.sidekickexecutors;
 
 import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.cvng.core.services.impl.sidekickexecutors.VerificationTaskCleanupSideKickExecutor.RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIState.NO_DATA;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DHRUVX;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,8 +47,15 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
+import io.harness.cvng.servicelevelobjective.entities.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
+import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
@@ -55,6 +66,9 @@ import io.harness.rule.Owner;
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -77,6 +91,8 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
   @Inject private CVConfigService cvConfigService;
   @Inject private CVNGDemoDataIndexService cvngDemoDataIndexService;
 
+  @Inject private SLIRecordService sliRecordService;
+
   @Inject private Clock clock;
   private CVConfig cvConfig;
   private ServiceLevelIndicator sli;
@@ -92,12 +108,12 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
     this.cvConfig = createCVConfig();
     cvConfigService.save(cvConfig);
     this.sli = createSLI();
-
+    this.verificationTaskIdsForSli = sli.getUuid();
+    createSLIRecords(sli.getUuid());
     VerificationTask slitask =
         verificationTaskService.getSLITask(builderFactory.getContext().getAccountId(), sli.getUuid());
     slitask.setCreatedAt(clock.millis());
     hPersistence.save(slitask);
-    this.verificationTaskIdsForSli = slitask.getUuid();
 
     VerificationTask serviceGuardtask =
         verificationTaskService.getLiveMonitoringTask(builderFactory.getContext().getAccountId(), cvConfig.getUuid());
@@ -126,6 +142,23 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
     assertThat(hPersistence.get(VerificationTask.class, verificationTaskIdsForSli)).isNull();
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testExecute_deleteSLIRecordAndSLIRecordBucketForServiceLevelIndicator() {
+    assertThat(hPersistence.createQuery(SLIRecordBucket.class).filter(SLIRecordBucketKeys.sliId, sli.getUuid()).count())
+        .isNotEqualTo(0);
+    assertThat(hPersistence.createQuery(SLIRecord.class).filter(SLIRecordKeys.sliId, sli.getUuid()).count())
+        .isNotEqualTo(0);
+    VerificationTaskCleanupSideKickData sideKickData =
+        VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskIdsForSli).build();
+    sideKickExecutor.execute(sideKickData);
+    assertThat(hPersistence.createQuery(SLIRecordBucket.class).filter(SLIRecordBucketKeys.sliId, sli.getUuid()).count())
+        .isEqualTo(0);
+    assertThat(hPersistence.createQuery(SLIRecord.class).filter(SLIRecordKeys.sliId, sli.getUuid()).count())
+        .isEqualTo(0);
+    assertThat(hPersistence.get(VerificationTask.class, verificationTaskIdsForSli)).isNull();
+  }
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
@@ -406,5 +439,33 @@ public class VerificationTaskCleanupSideKickExecutorTest extends CvNextGenTestBa
                           .build());
     cvngDemoDataIndexService.saveIndexForDemoData(
         builderFactory.getContext().getAccountId(), "123", verificationTaskId, 3);
+  }
+
+  private void createSLIRecords(String sliId) {
+    Instant startTime = clock.instant().minus(Duration.ofMinutes(10));
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
+    sliRecordService.create(sliRecordParams, sliId, verificationTaskIdsForSli, 0);
+  }
+
+  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIState> sliStates) {
+    List<SLIRecordParam> sliRecordParams = new ArrayList<>();
+    for (int i = 0; i < sliStates.size(); i++) {
+      SLIState sliState = sliStates.get(i);
+      long goodCount = 0;
+      long badCount = 0;
+      if (sliState == GOOD) {
+        goodCount++;
+      } else if (sliState == BAD) {
+        badCount++;
+      }
+      sliRecordParams.add(SLIRecordParam.builder()
+                              .sliState(sliState)
+                              .timeStamp(startTime.plus(Duration.ofMinutes(i)))
+                              .goodEventCount(goodCount)
+                              .badEventCount(badCount)
+                              .build());
+    }
+    return sliRecordParams;
   }
 }

@@ -41,7 +41,7 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
   }
 
   @Override
-  public void consumeUpdateEvent(String id, RoleAssignmentDBO updatedRoleAssignmentDBO) {
+  public boolean consumeUpdateEvent(String id, RoleAssignmentDBO updatedRoleAssignmentDBO) {
     if (!StringUtils.isEmpty(updatedRoleAssignmentDBO.getRoleIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getResourceGroupIdentifier())
         || !StringUtils.isEmpty(updatedRoleAssignmentDBO.getPrincipalIdentifier())
@@ -52,11 +52,13 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
         long createdCount = createACLs(roleAssignment.get());
         log.info("Number of ACLs created: {} for roleassignment: {}", createdCount, id);
       }
+      return true;
     }
+    return false;
   }
 
   @Override
-  public void consumeDeleteEvent(String id) {
+  public boolean consumeDeleteEvent(String id) {
     long startTime = System.currentTimeMillis();
     roleAssignmentCRUDEventHandler.handleRoleAssignmentDelete(id);
     long numberOfACLsDeleted = deleteACLs(id);
@@ -65,6 +67,7 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
       log.info("RoleAssignmentChangeConsumerImpl.consumeDeleteEvent: Number of ACLs deleted: {} for {} Time taken: {}",
           numberOfACLsDeleted, id, permissionsChangeTime);
     }
+    return true;
   }
 
   private long deleteACLs(String id) {
@@ -79,13 +82,13 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
   }
 
   @Override
-  public void consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
+  public boolean consumeCreateEvent(String id, RoleAssignmentDBO newRoleAssignmentDBO) {
     long startTime = System.currentTimeMillis();
     Optional<RoleAssignmentDBO> roleAssignmentOptional = roleAssignmentRepository.findByIdentifierAndScopeIdentifier(
         newRoleAssignmentDBO.getIdentifier(), newRoleAssignmentDBO.getScopeIdentifier());
     if (!roleAssignmentOptional.isPresent()) {
       log.info("Role assignment has been deleted, not processing role assignment create event for id: {}", id);
-      return;
+      return true;
     }
     roleAssignmentCRUDEventHandler.handleRoleAssignmentCreate(newRoleAssignmentDBO);
     long numberOfACLsCreated = createACLs(newRoleAssignmentDBO);
@@ -94,5 +97,6 @@ public class RoleAssignmentChangeConsumerImpl implements ChangeConsumer<RoleAssi
       log.info("RoleAssignmentChangeConsumerImpl.consumeCreateEvent: Number of ACLs created: {} for {} Time taken: {}",
           numberOfACLsCreated, id, permissionsChangeTime);
     }
+    return true;
   }
 }

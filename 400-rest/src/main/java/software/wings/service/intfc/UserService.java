@@ -35,6 +35,7 @@ import software.wings.beans.AccountJoinRequest;
 import software.wings.beans.AccountRole;
 import software.wings.beans.ApplicationRole;
 import software.wings.beans.LicenseInfo;
+import software.wings.beans.MarketPlace;
 import software.wings.beans.User;
 import software.wings.beans.UserInvite;
 import software.wings.beans.ZendeskSsoLoginResponse;
@@ -591,6 +592,8 @@ public interface UserService extends OwnedByAccount {
 
   boolean isUserAccountAdmin(@NotNull UserPermissionInfo userPermissionInfo, @NotNull String accountId);
 
+  boolean isUserAssignedToAccountInGeneration(User user, String accountId, Generation generation);
+
   boolean isUserAssignedToAccount(User user, String accountId);
 
   boolean isUserInvitedToAccount(User user, String accountId);
@@ -662,9 +665,11 @@ public interface UserService extends OwnedByAccount {
   String saveUserInvite(UserInvite userInvite);
 
   List<User> listUsers(PageRequest pageRequest, String accountId, String searchTerm, Integer offset, Integer pageSize,
-      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled);
+      boolean loadUserGroups, boolean includeUsersPendingInviteAcceptance, boolean includeDisabled,
+      boolean filterForGeneration);
 
-  long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance);
+  long getTotalUserCount(String accountId, boolean includeUsersPendingInviteAcceptance, boolean excludeDisabled,
+      boolean filterForGeneration);
 
   InviteOperationResponse checkInviteStatus(UserInvite userInvite, Generation gen);
 
@@ -697,6 +702,8 @@ public interface UserService extends OwnedByAccount {
       String userId, int pageIndex, int pageSize, String searchTerm);
 
   boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
+
+  String setupAccountBasedOnProduct(User user, UserInvite userInvite, MarketPlace marketPlace);
 
   void removeAllUserGroupsFromUser(User user, String accountId);
 

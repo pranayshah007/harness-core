@@ -48,7 +48,6 @@ public class DelegateProxyRequestForwarder {
           continue;
         }
         headerList.add(HttpHeaderConfig.builder().key(entry.getKey()).value(entry.getValue()).build());
-        log.info("header {} : {}", entry.getKey(), entry.getValue());
       }
     } catch (Exception ex) {
       log.error("Error while mapping the headers", ex);
@@ -79,7 +78,8 @@ public class DelegateProxyRequestForwarder {
       }
       if (responseData instanceof HttpStepResponse) {
         httpResponse = (HttpStepResponse) responseData;
-        log.info("httpResponse: {}", httpResponse);
+        log.debug("httpResponse: {}", httpResponse);
+        log.info("Delegate response status code: {}", httpResponse.getHttpResponseCode());
       }
     } catch (Exception ex) {
       log.error("Delegate error: ", ex);

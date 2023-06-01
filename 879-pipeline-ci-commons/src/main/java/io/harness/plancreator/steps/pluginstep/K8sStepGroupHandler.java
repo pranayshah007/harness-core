@@ -26,7 +26,7 @@ public class K8sStepGroupHandler implements StepGroupInfraHandler {
   @Inject KryoSerializer kryoSerializer;
 
   @Override
-  public PlanNode handle(StepGroupElementConfigV2 config, PlanCreationContext ctx, YamlField stepsField) {
+  public PlanNode handle(StepGroupElementConfig config, PlanCreationContext ctx, YamlField stepsField) {
     InitContainerV2StepInfo initContainerV2StepInfo =
         InitContainerV2StepInfo.builder()
             .stepGroupIdentifier(config.getIdentifier())

@@ -10,6 +10,7 @@ package software.wings.service.impl.workflow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
@@ -1322,7 +1323,9 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (orchestrationWorkflow instanceof CanaryOrchestrationWorkflow) {
       CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
 
-      validateOrchestrationLevelFailureStrategies(canaryOrchestrationWorkflow);
+      if (featureFlagService.isNotEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, accountId)) {
+        validateOrchestrationLevelFailureStrategies(canaryOrchestrationWorkflow);
+      }
 
       if (featureFlagService.isEnabled(TIMEOUT_FAILURE_SUPPORT, accountId)) {
         Map<List<GraphNode>, List<FailureStrategy>> stepsToStrategiesMap =

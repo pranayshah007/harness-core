@@ -65,6 +65,7 @@ import software.wings.exception.WingsExceptionMapper;
 import software.wings.scheduler.AccountPasswordExpirationJob;
 import software.wings.security.authentication.AuthenticationManager;
 import software.wings.security.authentication.TwoFactorAuthenticationManager;
+import software.wings.service.impl.UserServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AuthService;
 import software.wings.service.intfc.HarnessUserGroupService;
@@ -107,6 +108,8 @@ import org.mockito.Mock;
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public class UserResourceTest extends WingsBaseTest {
   public static final UserService USER_SERVICE = mock(UserService.class);
+
+  public static final UserServiceHelper USER_SERVICE_HELPER = mock(UserServiceHelper.class);
   public static final HarnessUserGroupService HARNESS_USER_GROUP_SERVICE = mock(HarnessUserGroupService.class);
   public static final UserGroupService USER_GROUP_SERVICE = mock(UserGroupService.class);
   public static final Map<String, Cache<?, ?>> CACHES = mock(Map.class);
@@ -136,7 +139,7 @@ public class UserResourceTest extends WingsBaseTest {
           .instance(new UserResource(USER_SERVICE, AUTH_SERVICE, ACCOUNT_SERVICE, ACCOUNT_PERMISSION_UTILS,
               AUTHENTICATION_MANAGER, TWO_FACTOR_AUTHENTICATION_MANAGER, CACHES, HARNESS_USER_GROUP_SERVICE,
               USER_GROUP_SERVICE, MAIN_CONFIGURATION, ACCOUNT_PASSWORD_EXPIRATION_JOB, RE_CAPTCHA_VERIFIER,
-              FEATURE_FLAG_SERVICE))
+              FEATURE_FLAG_SERVICE, USER_SERVICE_HELPER))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {
@@ -164,10 +167,11 @@ public class UserResourceTest extends WingsBaseTest {
     PageRequest pageRequest = mock(PageRequest.class);
     when(pageRequest.getOffset()).thenReturn("0");
     when(pageRequest.getPageSize()).thenReturn(30);
-    when(USER_SERVICE.listUsers(any(), any(), any(), anyInt(), anyInt(), anyBoolean(), anyBoolean(), anyBoolean()))
+    when(USER_SERVICE.listUsers(
+             any(), any(), any(), anyInt(), anyInt(), anyBoolean(), anyBoolean(), anyBoolean(), anyBoolean()))
         .thenReturn(aPageResponse().withResponse(asList(anUser().build())).build());
     userResource.list(pageRequest, UUIDGenerator.generateUuid(), null, false, false);
-    verify(USER_SERVICE).getTotalUserCount(any(), anyBoolean());
+    verify(USER_SERVICE).getTotalUserCount(any(), anyBoolean(), anyBoolean(), anyBoolean());
   }
 
   @Test(expected = BadRequestException.class)

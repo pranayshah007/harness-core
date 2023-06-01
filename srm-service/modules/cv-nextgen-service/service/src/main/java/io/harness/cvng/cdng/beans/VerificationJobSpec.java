@@ -91,4 +91,6 @@ public abstract class VerificationJobSpec {
     }
   }
   protected abstract void validateParams();
+
+  protected abstract ParameterField<String> getBaseline();
 }

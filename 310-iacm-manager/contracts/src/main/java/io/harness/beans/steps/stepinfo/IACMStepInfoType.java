@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 public enum IACMStepInfoType {
-  IACM_TERRAFORM_PLAN(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMTerraformPlan"),
+  IACM_TERRAFORM_PLUGIN(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMTerraformPlugin"),
   IACM_TEMPLATE(IACMStepExecEnvironment.CI_LITE_ENGINE, "IACMTemplate");
 
   @Getter private final IACMStepExecEnvironment ciStepExecEnvironment;

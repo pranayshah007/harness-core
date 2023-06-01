@@ -194,7 +194,7 @@ public class EntityTypeTest extends CategoryTest {
     entityTypeOrdinalMapping.put(160, "IACM_STEPS");
     entityTypeOrdinalMapping.put(161, "IACM");
     entityTypeOrdinalMapping.put(162, "CONTAINER_STEP");
-    entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLAN");
+    entityTypeOrdinalMapping.put(163, "IACM_TERRAFORM_PLUGIN");
     entityTypeOrdinalMapping.put(164, "IACM_TEMPLATE");
     entityTypeOrdinalMapping.put(165, "ELASTIGROUP_BG_STAGE_SETUP_STEP");
     entityTypeOrdinalMapping.put(166, "ELASTIGROUP_SWAP_ROUTE_STEP");

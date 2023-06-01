@@ -96,7 +96,8 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Query(GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(GitSyncApiConstants.REPO_IDENTIFIER_KEY) String yamlGitConfigId,
-      @Query(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo);
+      @Query(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Header("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   /**
    * this is only for non git synced and simplified git experience pipelines/input sets

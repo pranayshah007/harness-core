@@ -29,4 +29,8 @@ public interface ExpressionResolver {
   default ExpressionMode getExpressionMode() {
     return ExpressionMode.RETURN_NULL_IF_UNRESOLVED;
   }
+
+  default Object getContextValue(String key) {
+    return null;
+  }
 }

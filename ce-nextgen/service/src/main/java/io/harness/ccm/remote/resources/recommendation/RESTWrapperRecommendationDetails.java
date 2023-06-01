@@ -21,7 +21,7 @@ import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.WorkloadRecommendationDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsDetailsQuery;
-import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
+import io.harness.ccm.graphql.utils.GraphQLToRESTHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.dto.ErrorDTO;

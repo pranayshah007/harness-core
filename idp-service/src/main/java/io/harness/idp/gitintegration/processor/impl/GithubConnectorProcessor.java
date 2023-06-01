@@ -7,6 +7,8 @@
 
 package io.harness.idp.gitintegration.processor.impl;
 
+import static io.harness.idp.common.Constants.SLASH_DELIMITER;
+import static io.harness.idp.common.Constants.SOURCE_FORMAT;
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_DIRECT;
 import static io.harness.idp.gitintegration.utils.GitIntegrationConstants.CATALOG_INFRA_CONNECTOR_TYPE_PROXY;
 
@@ -126,5 +128,11 @@ public class GithubConnectorProcessor extends ConnectorProcessor {
   @Override
   public GitConfigDTO getGitConfigFromConnectorConfig(ConnectorConfigDTO connectorConfig) {
     return GithubToGitMapper.mapToGitConfigDTO((GithubConnectorDTO) connectorConfig);
+  }
+
+  @Override
+  public String getLocationTarget(CatalogConnectorInfo catalogConnectorInfo, String path) {
+    return catalogConnectorInfo.getRepo() + SLASH_DELIMITER + SOURCE_FORMAT + SLASH_DELIMITER
+        + catalogConnectorInfo.getBranch() + path;
   }
 }

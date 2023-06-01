@@ -11,6 +11,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.ssca.beans.SscaConstants;
@@ -25,6 +26,7 @@ import io.harness.ssca.beans.store.HarnessStore;
 import io.harness.ssca.beans.store.StoreType;
 import io.harness.ssca.execution.enforcement.SscaEnforcementStepPluginUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
+import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +36,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaEnforcementPluginHelper {
   public Map<String, String> getSscaEnforcementStepEnvVariables(
-      SscaEnforcementStepInfo stepInfo, String identifier, Ambiance ambiance) {
+      SscaEnforcementStepInfo stepInfo, String identifier, Ambiance ambiance, Type infraType) {
     String sbomSource = null;
     if (SbomSourceType.IMAGE.equals(stepInfo.getSource().getType())) {
       sbomSource = resolveStringParameter("source", SscaConstants.SSCA_ENFORCEMENT, identifier,
@@ -50,11 +52,31 @@ public class SscaEnforcementPluginHelper {
 
     String runtimeId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
 
-    return SscaEnforcementStepPluginUtils.getSscaEnforcementStepEnvVariables(EnforcementStepEnvVariables.builder()
-                                                                                 .stepExecutionId(runtimeId)
-                                                                                 .sbomSource(sbomSource)
-                                                                                 .harnessPolicyFileId(policyFile)
-                                                                                 .build());
+    Map<String, String> envMap =
+        SscaEnforcementStepPluginUtils.getSscaEnforcementStepEnvVariables(EnforcementStepEnvVariables.builder()
+                                                                              .stepExecutionId(runtimeId)
+                                                                              .sbomSource(sbomSource)
+                                                                              .harnessPolicyFileId(policyFile)
+                                                                              .build());
+    if (infraType == Type.VM) {
+      envMap.putAll(getSscaEnforcementSecretEnvMap(stepInfo, identifier, ambiance.getExpressionFunctorToken()));
+    }
+    return envMap;
+  }
+
+  private Map<String, String> getSscaEnforcementSecretEnvMap(
+      SscaEnforcementStepInfo stepInfo, String identifier, long expressionFunctorToken) {
+    Map<String, String> envMap = new HashMap<>();
+    if (stepInfo.getVerifyAttestation() != null
+        && AttestationType.COSIGN.equals(stepInfo.getVerifyAttestation().getType())) {
+      CosignVerifyAttestation verifyAttestation =
+          (CosignVerifyAttestation) stepInfo.getVerifyAttestation().getVerifyAttestationSpec();
+      String cosignPublicKey = resolveStringParameter(
+          "publicKey", SscaConstants.SSCA_ENFORCEMENT, identifier, verifyAttestation.getPublicKey(), true);
+      envMap.put(SscaEnforcementStepPluginUtils.COSIGN_PUBLIC_KEY,
+          NGVariablesUtils.fetchSecretExpressionWithExpressionToken(cosignPublicKey, expressionFunctorToken));
+    }
+    return envMap;
   }
 
   public Map<String, SecretNGVariable> getSscaEnforcementSecretVariables(

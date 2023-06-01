@@ -286,6 +286,19 @@ public class BackstageEnvVariableServiceImpl implements BackstageEnvVariableServ
     return resultList;
   }
 
+  @Override
+  public List<BackstageEnvVariable> findByEnvNamesAndAccountIdentifier(
+      List<String> envNames, String accountIdentifier) {
+    List<BackstageEnvVariableEntity> entities =
+        backstageEnvVariableRepository.findAllByAccountIdentifierAndMultipleEnvNames(accountIdentifier, envNames);
+    List<BackstageEnvVariable> backstageEnvVariables = new ArrayList<>();
+    entities.forEach(entity -> {
+      BackstageEnvVariableMapper envVariableMapper = getEnvVariableMapper((entity.getType()));
+      backstageEnvVariables.add(envVariableMapper.toDto(entity));
+    });
+    return backstageEnvVariables;
+  }
+
   private String getNamespaceForAccount(String accountIdentifier) {
     NamespaceInfo namespaceInfo = namespaceService.getNamespaceForAccountIdentifier(accountIdentifier);
     return namespaceInfo.getNamespace();

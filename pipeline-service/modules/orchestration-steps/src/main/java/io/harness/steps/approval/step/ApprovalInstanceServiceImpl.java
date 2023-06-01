@@ -118,6 +118,38 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   }
 
   @Override
+  public List<ApprovalInstance> getApprovalInstancesByExecutionId(@NotEmpty String planExecutionId,
+      @Valid ApprovalStatus approvalStatus, @Valid ApprovalType approvalType, String nodeExecutionId) {
+    if (isEmpty(planExecutionId)) {
+      throw new InvalidRequestException("PlanExecutionId can be empty");
+    }
+
+    Criteria criteria = Criteria.where(ApprovalInstanceKeys.planExecutionId).is(planExecutionId);
+
+    if (!isNull(approvalStatus)) {
+      criteria.and(ApprovalInstanceKeys.status).is(approvalStatus);
+    } else {
+      criteria.and(ApprovalInstanceKeys.status).in(Arrays.asList(ApprovalStatus.values()));
+    }
+
+    if (!isNull(approvalType)) {
+      criteria.and(ApprovalInstanceKeys.type).is(approvalType);
+    } else {
+      criteria.and(ApprovalInstanceKeys.type).in(Arrays.asList(ApprovalType.values()));
+    }
+
+    if (EmptyPredicate.isNotEmpty(nodeExecutionId)) {
+      criteria.and(ApprovalInstanceKeys.nodeExecutionId).is(nodeExecutionId);
+    }
+    // uses planExecutionId_status_type_nodeExecutionId if nodeExecutionId is absent
+    // uses nodeExecutionId if nodeExecutionId is present
+    List<ApprovalInstance> approvalInstances = approvalInstanceRepository.findAll(criteria);
+
+    log.info("No. of approval instances fetched in getApprovalInstancesByExecutionId: {}", approvalInstances.size());
+    return approvalInstances;
+  }
+
+  @Override
   public HarnessApprovalInstance getHarnessApprovalInstance(@NotNull String approvalInstanceId) {
     ApprovalInstance instance = get(approvalInstanceId);
     if (instance == null || instance.getType() != ApprovalType.HARNESS_APPROVAL) {

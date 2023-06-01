@@ -45,7 +45,10 @@ public class PolicyCheckData extends Data {
     @Builder
     @lombok.Data
     public static class Result {
-      Sentinel sentinel;
+      @Deprecated Sentinel sentinel_parsed;
+
+      // raw sentinel
+      Map<String, Object> sentinel;
 
       @JsonIgnoreProperties(ignoreUnknown = true)
       @Builder

@@ -9,8 +9,8 @@ package io.harness.perpetualtask.instancesync;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.beans.PageResponse;
 
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +21,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceSyncTaskDetails {
-  List<DeploymentReleaseDetails> details;
+  PageResponse<DeploymentReleaseDetails> details;
   ResponseBatchConfig responseBatchConfig;
 }

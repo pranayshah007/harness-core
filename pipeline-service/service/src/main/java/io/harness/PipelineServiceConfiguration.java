@@ -113,6 +113,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("ciServiceClientConfig") private ServiceHttpClientConfig ciServiceClientConfig;
+  @JsonProperty("containerStepConfigureWithCi") private boolean containerStepConfigureWithCi;
   @JsonProperty("ngManagerServiceSecret") private String ngManagerServiceSecret;
   @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
   @JsonProperty("templateServiceSecret") private String templateServiceSecret;
@@ -167,6 +168,8 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("triggerAuthenticationPoolConfig") private ThreadPoolConfig triggerAuthenticationPoolConfig;
   @JsonProperty("expandedJsonConfig") private ExpandedJsonLockConfig expandedJsonLockConfig;
+  @JsonProperty("pipelineSetupUsageCreationExecutorServiceConfig")
+  private ThreadPoolConfig pipelineSetupUsageCreationPoolConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

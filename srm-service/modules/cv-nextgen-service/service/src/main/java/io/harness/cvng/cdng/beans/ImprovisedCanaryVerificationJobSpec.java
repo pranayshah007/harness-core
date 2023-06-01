@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobBuilder;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Data;
@@ -31,5 +32,10 @@ public class ImprovisedCanaryVerificationJobSpec extends BlueGreenCanaryVerifica
   @Override
   protected VerificationJobBuilder verificationJobBuilder() {
     return addFieldValues(BlueGreenVerificationJob.builder());
+  }
+
+  @Override
+  protected ParameterField<String> getBaseline() {
+    return null;
   }
 }

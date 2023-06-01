@@ -155,6 +155,7 @@ public class NodeStartHelper {
     return timeoutInstanceIds;
   }
 
+  // TODO(archit): Enable all FF for engine here as well, or globally enable them
   private void resolveInputs(Ambiance ambiance, PlanNode planNode) {
     String nodeExecutionId = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
     if (planNode.getStepInputs() != null) {

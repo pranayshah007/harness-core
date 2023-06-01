@@ -25,6 +25,7 @@ import static io.harness.k8s.manifest.ManifestHelper.getServices;
 import static io.harness.k8s.manifest.ManifestHelper.getStageService;
 import static io.harness.k8s.manifest.ManifestHelper.getWorkloadsForCanaryAndBG;
 import static io.harness.k8s.manifest.VersionUtils.markVersionedResources;
+import static io.harness.k8s.model.HarnessLabelValues.bgStageEnv;
 import static io.harness.k8s.model.ServiceHookContext.MANIFEST_FILES_DIRECTORY;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Failed;
 import static io.harness.k8s.releasehistory.IK8sRelease.Status.Succeeded;
@@ -69,6 +70,7 @@ import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
 import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessAnnotations;
 import io.harness.k8s.model.HarnessLabelValues;
@@ -285,7 +287,8 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
 
-    client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
     releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
     currentReleaseNumber = releaseHistory.getAndIncrementLastReleaseNumber();
     if (useDeclarativeRollback && isEmpty(releaseHistory)) {
@@ -334,8 +337,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
       return;
     }
 
-    k8sTaskHelperBase.dryRunManifests(
-        client, resources, k8sDelegateTaskParams, executionLogCallback, true, request.isUseNewKubectlVersion());
+    k8sTaskHelperBase.dryRunManifests(client, resources, k8sDelegateTaskParams, executionLogCallback, true);
   }
 
   @VisibleForTesting
@@ -473,6 +475,7 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
         + color(managedWorkload.getResourceId().kindNameRef(), k8sBGBaseHandler.getLogColor(stageColor), Bold));
 
     release.setReleaseData(resources, isPruningEnabled);
+    release.setBgEnvironment(bgStageEnv);
     if (useDeclarativeRollback) {
       // store color in new release secret's labels
       K8sReleaseSecretHelper.putLabelsItem((K8sRelease) release, RELEASE_SECRET_RELEASE_COLOR_KEY, stageColor);

@@ -41,6 +41,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.HarnessLabelValues;
 import io.harness.k8s.model.K8sDelegateTaskParams;
@@ -248,7 +249,8 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
     KubernetesConfig kubernetesConfig = containerDeploymentDelegateHelper.getKubernetesConfig(
         k8sCanaryDeployTaskParameters.getK8sClusterConfig(), false);
 
-    Kubectl client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    Kubectl client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
     canaryHandlerConfig.setKubernetesConfig(kubernetesConfig);
     canaryHandlerConfig.setClient(client);
@@ -290,8 +292,8 @@ public class K8sCanaryDeployTaskHandler extends K8sTaskHandler {
       return true;
     }
 
-    return k8sTaskHelperBase.dryRunManifests(client, canaryHandlerConfig.getResources(), k8sDelegateTaskParams,
-        executionLogCallback, k8sCanaryDeployTaskParameters.isUseNewKubectlVersion());
+    return k8sTaskHelperBase.dryRunManifests(
+        client, canaryHandlerConfig.getResources(), k8sDelegateTaskParams, executionLogCallback);
   }
 
   @VisibleForTesting

@@ -15,9 +15,12 @@ import java.util.List;
 public class ReservedEnvVariables {
   private ReservedEnvVariables() {}
 
-  public static final List<String> reservedEnvVariables = new ArrayList<>(List.of(Constants.GITHUB_TOKEN,
-      Constants.GITHUB_APP_ID, Constants.GITHUB_APP_PRIVATE_KEY_REF, Constants.GITLAB_TOKEN,
-      Constants.BITBUCKET_USERNAME, Constants.BITBUCKET_TOKEN, Constants.BITBUCKET_USERNAME_API_ACCESS,
-      Constants.BITBUCKET_API_ACCESS_TOKEN, Constants.AZURE_REPO_TOKEN, Constants.BACKEND_SECRET,
-      Constants.PROXY_ENV_NAME, Constants.LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG));
+  public static final List<String> reservedEnvVariables =
+      new ArrayList<>(List.of(Constants.GITHUB_TOKEN, Constants.GITHUB_APP_ID, Constants.GITHUB_APP_PRIVATE_KEY_REF,
+          Constants.GITLAB_TOKEN, Constants.BITBUCKET_USERNAME, Constants.BITBUCKET_TOKEN,
+          Constants.BITBUCKET_USERNAME_API_ACCESS, Constants.BITBUCKET_API_ACCESS_TOKEN, Constants.AZURE_REPO_TOKEN,
+          Constants.BACKEND_SECRET, Constants.PROXY_ENV_NAME,
+          Constants.LAST_UPDATED_TIMESTAMP_FOR_PLUGIN_WITH_NO_CONFIG, Constants.AUTH_GITHUB_CLIENT_ID,
+          Constants.AUTH_GITHUB_CLIENT_SECRET, Constants.AUTH_GITHUB_ENTERPRISE_INSTANCE_URL,
+          Constants.AUTH_GOOGLE_CLIENT_ID, Constants.AUTH_GOOGLE_CLIENT_SECRET));
 }

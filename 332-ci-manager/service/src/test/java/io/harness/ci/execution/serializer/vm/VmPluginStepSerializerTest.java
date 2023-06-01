@@ -125,7 +125,7 @@ public class VmPluginStepSerializerTest extends CategoryTest {
                                             Map.of(WORKSPACE_ID, ParameterField.createValueField("val1"))))
                                         .build();
 
-    when(iacmStepsUtils.getIACMEnvVariables(any(), any())).thenReturn(new HashMap<>() {
+    when(iacmStepsUtils.getIACMEnvVariables(ambiance, pluginStepInfo)).thenReturn(new HashMap<>() {
       { put("KEY", "VALUE"); }
     });
     when(iacmStepsUtils.isIACMStep(any())).thenReturn(true);
@@ -155,7 +155,7 @@ public class VmPluginStepSerializerTest extends CategoryTest {
                                             Map.of(WORKSPACE_ID, ParameterField.createValueField("val1"))))
                                         .build();
 
-    when(iacmStepsUtils.getIACMEnvVariables(any(), any())).thenReturn(new HashMap<>() {
+    when(iacmStepsUtils.getIACMEnvVariables(ambiance, pluginStepInfo)).thenReturn(new HashMap<>() {
       { put("KEY", "VALUE"); }
     });
 

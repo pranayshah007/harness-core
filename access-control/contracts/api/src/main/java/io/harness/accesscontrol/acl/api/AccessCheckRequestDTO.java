@@ -34,7 +34,7 @@ public class AccessCheckRequestDTO {
   @Size(max = 10000, message = "The number of permission checks '${validatedValue.size()}' must be less than {max}")
   @Valid
   List<PermissionCheckDTO> permissions;
-  @Schema(description = "Principal (user/service account) to check the access for", required = true)
+  @Schema(description = "Principal (user/service account) to check the access for")
   @Valid
   @Nullable
   Principal principal;

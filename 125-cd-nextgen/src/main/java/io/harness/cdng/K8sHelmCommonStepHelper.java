@@ -589,6 +589,8 @@ public class K8sHelmCommonStepHelper {
                 cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_CDS_HELM_SUB_CHARTS)
                     ? getParameterFieldValue(helmChartManifestOutcome.getSubChartPath())
                     : "")
+            .ignoreResponseCode(cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance),
+                FeatureName.CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG))
             .build();
 
       case ManifestType.Kustomize:

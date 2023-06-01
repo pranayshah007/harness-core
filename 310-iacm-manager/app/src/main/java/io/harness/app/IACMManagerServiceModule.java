@@ -54,6 +54,7 @@ import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
 import io.harness.iacmserviceclient.IACMServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
+import io.harness.licence.IACMLicenseNoopServiceImpl;
 import io.harness.licence.impl.IACMLicenseServiceImpl;
 import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -219,9 +220,15 @@ public class IACMManagerServiceModule extends AbstractModule {
     bind(AzureRepoService.class).to(AzureRepoServiceImpl.class); // same?
     bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class); // same?
     bind(AwsClient.class).to(AwsClientImpl.class); // same?
-    bind(CILicenseService.class)
-        .to(IACMLicenseServiceImpl.class)
-        .in(Singleton.class); // Do we need our own implementation of this?
+    if (iacmManagerConfiguration.isLocal()) {
+      bind(CILicenseService.class)
+          .to(IACMLicenseNoopServiceImpl.class)
+          .in(Singleton.class); // Do we need our own implementation of this?
+    } else {
+      bind(CILicenseService.class)
+          .to(IACMLicenseServiceImpl.class)
+          .in(Singleton.class); // Do we need our own implementation of this?
+    }
     bind(CIYAMLSanitizationService.class).to(CIYAMLSanitizationServiceImpl.class).in(Singleton.class);
     // Seems that is used to sanitize stuff but dunno what
     // Keeping it to 1 thread to start with. Assuming executor service is used only to

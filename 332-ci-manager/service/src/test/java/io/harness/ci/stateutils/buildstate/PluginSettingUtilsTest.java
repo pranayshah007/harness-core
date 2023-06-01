@@ -11,6 +11,7 @@ import static io.harness.ci.buildstate.PluginSettingUtils.TAG_BUILD_EVENT;
 import static io.harness.ci.buildstate.PluginSettingUtils.getRepoNameFromRepoUrl;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_EVENT;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
+import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_REF;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_SHA;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_NETRC_MACHINE;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_REMOTE_URL;
@@ -602,6 +603,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_COMMIT_BRANCH, "");
     expected.put(DRONE_REMOTE_URL, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
@@ -651,6 +653,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, cloneDir);
     expected.put("PLUGIN_DEPTH", depth.toString());
+    expected.put(DRONE_COMMIT_REF, "");
 
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual =
@@ -696,6 +699,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_TAG, "");
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
     expected.putAll(gitEnvVars);
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
@@ -746,6 +750,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_TAG, "");
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
     expected.putAll(gitEnvVars);
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
@@ -819,6 +824,7 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     expected.put(DRONE_BUILD_EVENT, "");
     expected.put(DRONE_REMOTE_URL, "");
     expected.put(DRONE_COMMIT_SHA, "");
+    expected.put(DRONE_COMMIT_REF, "");
     expected.put(GIT_SSL_NO_VERIFY, String.valueOf(!sslVerify));
     expected.put(DRONE_WORKSPACE, STEP_MOUNT_PATH + PATH_SEPARATOR + repoName);
     expected.put(DRONE_COMMIT_BRANCH, buildValue);
@@ -1086,6 +1092,24 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
         sscaEnforcementStepInfo, "identifier", 100, ambiance, Type.K8, false, true);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testSscaEnforcementStepEnvVariablesForVMInfra() {
+    SscaEnforcementStepInfo sscaEnforcementStepInfo = getSscaEnforcementStep();
+    Ambiance ambiance = Ambiance.newBuilder().setExpressionFunctorToken(12345).build();
+
+    Map<String, String> expected = new HashMap<>();
+    expected.put("STEP_EXECUTION_ID", null);
+    expected.put("PLUGIN_SBOMSOURCE", "image:tag");
+    expected.put("PLUGIN_TYPE", "Enforce");
+    expected.put("POLICY_FILE_IDENTIFIER", "file");
+    expected.put("COSIGN_PUBLIC_KEY", "${ngSecretManager.obtain(\"publicKey\", 12345)}");
+    Map<String, String> actual = pluginSettingUtils.getPluginCompatibleEnvVariables(
+        sscaEnforcementStepInfo, "identifier", 100, ambiance, Type.VM, false, true);
     assertThat(actual).isEqualTo(expected);
   }
 

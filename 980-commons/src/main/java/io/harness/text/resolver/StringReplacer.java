@@ -30,11 +30,21 @@ public class StringReplacer {
     }
 
     StringBuffer buf = new StringBuffer(source);
-    return substitute(buf) ? buf.toString() : source;
+    return substitute(buf, source, false).getFinalExpressionValue();
   }
 
-  private boolean substitute(StringBuffer buf) {
+  public StringReplacerResponse replaceWithRenderCheck(String source) {
+    if (source == null) {
+      return null;
+    }
+
+    StringBuffer buf = new StringBuffer(source);
+    return substitute(buf, source, true);
+  }
+
+  private StringReplacerResponse substitute(StringBuffer buf, String source, boolean checkRenderExpression) {
     boolean altered = false;
+    boolean onlyRenderedExpressions = true;
     int bufEnd = buf.length();
     int pos = 0;
     while (pos < bufEnd) {
@@ -92,7 +102,12 @@ public class StringReplacer {
 
         // Resolve the expression
         String expressionValue = expressionResolver.resolve(expression);
-
+        if (checkRenderExpression
+            && checkIfExpressionValueCanBeConcatenated(expressionValue, expressionStartPos, expressionEndPos, buf)) {
+          expressionValue = (String) expressionResolver.getContextValue(expressionValue);
+        } else {
+          onlyRenderedExpressions = false;
+        }
         buf.replace(expressionStartPos, expressionEndPos, expressionValue);
         pos += expressionValue.length() - expressionWithDelimiters.length();
         bufEnd = buf.length();
@@ -100,7 +115,65 @@ public class StringReplacer {
         break;
       }
     }
-    return altered;
+    return StringReplacerResponse.builder()
+        .finalExpressionValue(altered ? buf.toString() : source)
+        .originalExpressionAltered(altered)
+        // this is added for inputs where there are no expressions, example (true != false)
+        .onlyRenderedExpressions(altered && onlyRenderedExpressions)
+        .build();
+  }
+
+  /**
+   * This method checks if string expression can be rendered (to concatenate or not)
+   * Based on if left substring of expression or right substring of expression has first non-space char other than +
+   * operator.
+   * Note: Both default concatenate and + operator at same level will not work, use either of them
+   * Example: <+f><+g>harness or 'harness' + <+f><+g>
+   * @param expressionValue
+   * @param expressionStartPos
+   * @param expressionEndPos This pointer is one index ahead of actual index of '>'
+   * @param buf
+   * @return
+   */
+  private boolean checkIfExpressionValueCanBeConcatenated(
+      String expressionValue, int expressionStartPos, int expressionEndPos, StringBuffer buf) {
+    Object contextValue = expressionResolver.getContextValue(expressionValue);
+    if (expressionValue == null || contextValue == null) {
+      return false;
+    }
+
+    if (!(contextValue instanceof String)) {
+      return false;
+    }
+    // Complete buf is expression
+    if (expressionStartPos == 0 && expressionEndPos == buf.length()) {
+      return true;
+    }
+
+    // Check on left if any first + operator found or not
+    expressionStartPos--;
+    while (expressionStartPos >= 0) {
+      char c = buf.charAt(expressionStartPos);
+      if (c == '+') {
+        return false;
+      } else if (c != ' ') {
+        return true;
+      }
+      expressionStartPos--;
+    }
+
+    // Check on left if any first + operator found or not
+    while (expressionEndPos <= buf.length() - 1) {
+      char c = buf.charAt(expressionEndPos);
+      if (c == '+') {
+        return false;
+      } else if (c != ' ') {
+        return true;
+      }
+      expressionEndPos++;
+    }
+
+    return true;
   }
 
   private static boolean isMatch(char ch, StringBuffer buf, int bufStart, int bufEnd) {

@@ -73,19 +73,51 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
     Instant startTime = clock.instant();
     List<SLIState> sliStates = Arrays.asList(BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
-    List<SLIState> prevSLIStates = Arrays.asList(GOOD, BAD, BAD, BAD, BAD);
-    doReturn(getPrevSLIRecords(startTime.minus(5, ChronoUnit.MINUTES), startTime.minus(1, ChronoUnit.MINUTES),
-                 prevSLIStates, serviceLevelIndicator.getUuid()))
+    List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, BAD, BAD, BAD, BAD);
+    doReturn(getPrevSLIRecords(
+                 startTime.minus(6, ChronoUnit.MINUTES), startTime, prevSLIStates, serviceLevelIndicator.getUuid()))
         .when(sliRecordService)
-        .getSLIRecordsWithSLIVersion(serviceLevelIndicator.getUuid(), startTime.minus(5, ChronoUnit.MINUTES),
-            startTime.minus(1, ChronoUnit.MINUTES), 0);
+        .getSLIRecordsWithSLIVersion(
+            serviceLevelIndicator.getUuid(), startTime.minus(6, ChronoUnit.MINUTES), startTime, 0);
     List<SLIRecordParam> updatedSliRecordParams =
         sliConsecutiveMinutesProcessorService.process(sliRecordParams, serviceLevelIndicator);
-    assertThat(updatedSliRecordParams.size()).isEqualTo(14);
+    assertThat(updatedSliRecordParams.size()).isEqualTo(15);
     List<SLIState> expectedSliStates =
-        Arrays.asList(BAD, BAD, BAD, BAD, BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
-    List<Long> goodEventCount = Arrays.asList(0L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 1L, 1L, 1L, 1L, 1L, 0L);
-    List<Long> badEventCount = Arrays.asList(1L, 1L, 1L, 1L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+        Arrays.asList(GOOD, BAD, BAD, BAD, BAD, BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
+    List<Long> goodEventCount = Arrays.asList(1L, 0L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 1L, 1L, 1L, 1L, 1L, 0L);
+    List<Long> badEventCount = Arrays.asList(0L, 1L, 1L, 1L, 1L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+    assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getSliState).collect(Collectors.toList()))
+        .isEqualTo(expectedSliStates);
+    assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getGoodEventCount).collect(Collectors.toList()))
+        .isEqualTo(goodEventCount);
+    assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getBadEventCount).collect(Collectors.toList()))
+        .isEqualTo(badEventCount);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testProcess_FourConsecutiveMinutes() {
+    serviceLevelIndicator = builderFactory.ratioServiceLevelIndicatorBuilder()
+                                .considerConsecutiveMinutes(4)
+                                .considerAllConsecutiveMinutesFromStartAsBad(true)
+                                .build();
+    Instant startTime = clock.instant();
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
+    List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, BAD, BAD, BAD, BAD);
+    doReturn(getPrevSLIRecords(
+                 startTime.minus(6, ChronoUnit.MINUTES), startTime, prevSLIStates, serviceLevelIndicator.getUuid()))
+        .when(sliRecordService)
+        .getSLIRecordsWithSLIVersion(
+            serviceLevelIndicator.getUuid(), startTime.minus(6, ChronoUnit.MINUTES), startTime, 0);
+    List<SLIRecordParam> updatedSliRecordParams =
+        sliConsecutiveMinutesProcessorService.process(sliRecordParams, serviceLevelIndicator);
+    assertThat(updatedSliRecordParams.size()).isEqualTo(15);
+    List<SLIState> expectedSliStates =
+        Arrays.asList(GOOD, BAD, BAD, BAD, BAD, BAD, GOOD, SKIP_DATA, NO_DATA, GOOD, GOOD, GOOD, BAD, BAD, SKIP_DATA);
+    List<Long> goodEventCount = Arrays.asList(1L, 1L, 0L, 0L, 0L, 0L, 1L, 0L, 0L, 1L, 1L, 1L, 1L, 1L, 0L);
+    List<Long> badEventCount = Arrays.asList(0L, 0L, 1L, 1L, 1L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getSliState).collect(Collectors.toList()))
         .isEqualTo(expectedSliStates);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getGoodEventCount).collect(Collectors.toList()))
@@ -116,19 +148,19 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
     Instant startTime = clock.instant();
     List<SLIState> sliStates = Arrays.asList(BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
-    List<SLIState> prevSLIStates = Arrays.asList(GOOD, BAD, BAD, BAD, BAD);
-    doReturn(getPrevSLIRecords(startTime.minus(5, ChronoUnit.MINUTES), startTime.minus(1, ChronoUnit.MINUTES),
-                 prevSLIStates, serviceLevelIndicator.getUuid()))
+    List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, BAD, BAD, BAD, BAD);
+    doReturn(getPrevSLIRecords(
+                 startTime.minus(6, ChronoUnit.MINUTES), startTime, prevSLIStates, serviceLevelIndicator.getUuid()))
         .when(sliRecordService)
-        .getSLIRecordsWithSLIVersion(serviceLevelIndicator.getUuid(), startTime.minus(5, ChronoUnit.MINUTES),
-            startTime.minus(1, ChronoUnit.MINUTES), 0);
+        .getSLIRecordsWithSLIVersion(
+            serviceLevelIndicator.getUuid(), startTime.minus(6, ChronoUnit.MINUTES), startTime, 0);
     List<SLIRecordParam> updatedSliRecordParams =
         sliConsecutiveMinutesProcessorService.process(sliRecordParams, serviceLevelIndicator);
-    assertThat(updatedSliRecordParams.size()).isEqualTo(14);
+    assertThat(updatedSliRecordParams.size()).isEqualTo(15);
     List<SLIState> expectedSliStates =
-        Arrays.asList(BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD);
-    List<Long> goodEventCount = Arrays.asList(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
-    List<Long> badEventCount = Arrays.asList(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L);
+        Arrays.asList(GOOD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD, BAD);
+    List<Long> goodEventCount = Arrays.asList(1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+    List<Long> badEventCount = Arrays.asList(0L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getSliState).collect(Collectors.toList()))
         .isEqualTo(expectedSliStates);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getGoodEventCount).collect(Collectors.toList()))
@@ -144,19 +176,19 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
     Instant startTime = clock.instant();
     List<SLIState> sliStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
-    List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD, GOOD);
-    doReturn(getPrevSLIRecords(startTime.minus(5, ChronoUnit.MINUTES), startTime.minus(1, ChronoUnit.MINUTES),
-                 prevSLIStates, serviceLevelIndicator.getUuid()))
+    List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, GOOD, GOOD, GOOD, GOOD);
+    doReturn(getPrevSLIRecords(
+                 startTime.minus(6, ChronoUnit.MINUTES), startTime, prevSLIStates, serviceLevelIndicator.getUuid()))
         .when(sliRecordService)
-        .getSLIRecordsWithSLIVersion(serviceLevelIndicator.getUuid(), startTime.minus(5, ChronoUnit.MINUTES),
-            startTime.minus(1, ChronoUnit.MINUTES), 0);
+        .getSLIRecordsWithSLIVersion(
+            serviceLevelIndicator.getUuid(), startTime.minus(6, ChronoUnit.MINUTES), startTime, 0);
     List<SLIRecordParam> updatedSliRecordParams =
         sliConsecutiveMinutesProcessorService.process(sliRecordParams, serviceLevelIndicator);
-    assertThat(updatedSliRecordParams.size()).isEqualTo(14);
+    assertThat(updatedSliRecordParams.size()).isEqualTo(15);
     List<SLIState> expectedSliStates =
-        Arrays.asList(GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD);
-    List<Long> goodEventCount = Arrays.asList(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L);
-    List<Long> badEventCount = Arrays.asList(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+        Arrays.asList(GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD, GOOD);
+    List<Long> goodEventCount = Arrays.asList(1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L, 1L);
+    List<Long> badEventCount = Arrays.asList(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getSliState).collect(Collectors.toList()))
         .isEqualTo(expectedSliStates);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getGoodEventCount).collect(Collectors.toList()))
@@ -174,8 +206,8 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
     doReturn(new ArrayList<>())
         .when(sliRecordService)
-        .getSLIRecordsWithSLIVersion(serviceLevelIndicator.getUuid(), startTime.minus(5, ChronoUnit.MINUTES),
-            startTime.minus(1, ChronoUnit.MINUTES), 0);
+        .getSLIRecordsWithSLIVersion(
+            serviceLevelIndicator.getUuid(), startTime.minus(6, ChronoUnit.MINUTES), startTime, 0);
     List<SLIRecordParam> updatedSliRecordParams =
         sliConsecutiveMinutesProcessorService.process(sliRecordParams, serviceLevelIndicator);
     assertThat(updatedSliRecordParams.size()).isEqualTo(10);
@@ -200,19 +232,19 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
     Instant startTime = clock.instant();
     List<SLIState> sliStates = Arrays.asList(BAD, BAD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
-    List<SLIState> prevSLIStates = Arrays.asList(GOOD, BAD, BAD, BAD, BAD);
-    doReturn(getPrevSLIRecords(startTime.minus(5, ChronoUnit.MINUTES), startTime.minus(1, ChronoUnit.MINUTES),
-                 prevSLIStates, serviceLevelIndicator.getUuid()))
+    List<SLIState> prevSLIStates = Arrays.asList(GOOD, GOOD, BAD, BAD, BAD, BAD);
+    doReturn(getPrevSLIRecords(
+                 startTime.minus(6, ChronoUnit.MINUTES), startTime, prevSLIStates, serviceLevelIndicator.getUuid()))
         .when(sliRecordService)
-        .getSLIRecordsWithSLIVersion(serviceLevelIndicator.getUuid(), startTime.minus(5, ChronoUnit.MINUTES),
-            startTime.minus(1, ChronoUnit.MINUTES), 0);
+        .getSLIRecordsWithSLIVersion(
+            serviceLevelIndicator.getUuid(), startTime.minus(6, ChronoUnit.MINUTES), startTime, 0);
     List<SLIRecordParam> updatedSliRecordParams =
         sliConsecutiveMinutesProcessorService.process(sliRecordParams, serviceLevelIndicator);
-    assertThat(updatedSliRecordParams.size()).isEqualTo(14);
+    assertThat(updatedSliRecordParams.size()).isEqualTo(15);
     List<SLIState> expectedSliStates =
-        Arrays.asList(GOOD, GOOD, GOOD, GOOD, BAD, BAD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
-    List<Long> goodEventCount = Arrays.asList(1L, 1L, 1L, 1L, 0L, 0L, 0L, 0L, 1L, 1L, 1L, 1L, 1L, 0L);
-    List<Long> badEventCount = Arrays.asList(0L, 0L, 0L, 0L, 1L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+        Arrays.asList(GOOD, GOOD, GOOD, GOOD, GOOD, BAD, BAD, SKIP_DATA, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, SKIP_DATA);
+    List<Long> goodEventCount = Arrays.asList(1L, 1L, 1L, 1L, 1L, 0L, 0L, 0L, 0L, 1L, 1L, 1L, 1L, 1L, 0L);
+    List<Long> badEventCount = Arrays.asList(0L, 0L, 0L, 0L, 0L, 1L, 1L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getSliState).collect(Collectors.toList()))
         .isEqualTo(expectedSliStates);
     assertThat(updatedSliRecordParams.stream().map(SLIRecordParam::getGoodEventCount).collect(Collectors.toList()))
@@ -225,7 +257,7 @@ public class SLIConsecutiveMinutesProcessorServiceImplTest extends CvNextGenTest
       Instant startTime, Instant endTime, List<SLIState> sliStates, String sliId) {
     int index = 0;
     List<SLIRecord> sliRecords = new ArrayList<>();
-    for (Instant instant = startTime; !instant.isAfter(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+    for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
       SLIRecord sliRecord = SLIRecord.builder()
                                 .verificationTaskId(sliId)
                                 .sliId(sliId)

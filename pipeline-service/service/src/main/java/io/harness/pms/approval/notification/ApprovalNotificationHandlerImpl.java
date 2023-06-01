@@ -124,7 +124,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
               approvalInstance, approvalInstance.getValidatedUserGroups(), approvalSummary.toParams(), logCallback);
         } catch (Exception e) {
           logCallback.saveExecutionLog(
-              String.format("Error sending notification to user groups for harness approval Action: %s",
+              String.format("Error sending notification to user groups for Harness approval Action: %s",
                   ExceptionUtils.getMessage(e)));
           log.error("Error while sending notification for harness approval Action", e);
         }

@@ -57,6 +57,7 @@ import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.KubernetesReleaseDetails;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.K8sRequestHandlerContext;
@@ -295,7 +296,8 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
     executionLogCallback.saveExecutionLog(color(String.format("Release Name: [%s]", releaseName), Yellow, Bold));
     kubernetesConfig = containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), executionLogCallback);
-    client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+    client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
     releaseHistory = releaseHandler.getReleaseHistory(kubernetesConfig, request.getReleaseName());
     currentReleaseNumber = releaseHistory.getNextReleaseNumber(request.isInCanaryWorkflow());
@@ -326,8 +328,7 @@ public class K8sRollingRequestHandler extends K8sRequestHandler {
       return;
     }
 
-    k8sTaskHelperBase.dryRunManifests(
-        client, resources, k8sDelegateTaskParams, executionLogCallback, true, request.isUseNewKubectlVersion());
+    k8sTaskHelperBase.dryRunManifests(client, resources, k8sDelegateTaskParams, executionLogCallback, true);
   }
 
   private void prepareForRolling(K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback,

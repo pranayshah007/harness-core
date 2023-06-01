@@ -1,9 +1,9 @@
 dependencies:
 - name: database
   repository: file://./database
-  version: 0.1.0
-- name: secrets
+  version: 0.3.0
+- name: harness-secrets
   repository: file://./secrets
-  version: 0.1.0
-digest: sha256:518276e18af74f38af724ae5f4c050c53965048f986ffbf676b134ea501e9b89
-generated: "2023-05-18T21:15:33.552801+05:30"
+  version: 0.3.0
+digest: sha256:c3b764c3564a90e4c79654d33383e8bf688bd72efed37d3af9f923b4614bf9be
+generated: "2023-05-22T23:20:32.747192+05:30"

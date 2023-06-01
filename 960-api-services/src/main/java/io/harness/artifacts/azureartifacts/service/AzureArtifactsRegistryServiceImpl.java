@@ -8,6 +8,7 @@
 package io.harness.artifacts.azureartifacts.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.azure.utility.AzureUtils.executeRestCall;
 import static io.harness.data.encoding.EncodingUtils.encodeBase64;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
@@ -74,17 +75,8 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     String authHeader = getAuthHeader(azureArtifactsInternalConfig);
 
-    Response<AzureDevopsProjects> projectResponse;
-
-    try {
-      projectResponse = azureArtifactsDevopsRestClient.listProjects(authHeader).execute();
-    } catch (Exception e) {
-      throw new InvalidRequestException("Azure Artifacts Connector test failed");
-    }
-
-    if (projectResponse.code() != 200) {
-      throw new InvalidRequestException("Azure Artifacts Connector test failed");
-    }
+    executeRestCall(azureArtifactsDevopsRestClient.listProjects(authHeader),
+        new InvalidRequestException("Azure Artifacts Connector test failed"));
 
     return true;
   }
@@ -121,20 +113,13 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    Response<AzureArtifactsPackageVersions> packageVersionsList;
+    AzureArtifactsPackageVersions packageVersions =
+        executeRestCall(azureArtifactsRegistryRestClient.listPackageVersions(authHeader, feedId, packageId),
+            new HintException("Failed to get Builds."));
 
-    try {
-      packageVersionsList =
-          azureArtifactsRegistryRestClient.listPackageVersions(authHeader, feedId, packageId).execute();
-    } catch (IOException e) {
-      throw new HintException("Failed to get Builds.");
+    if (packageVersions == null) {
+      return Collections.emptyList();
     }
-
-    if (packageVersionsList == null) {
-      return new ArrayList<>();
-    }
-
-    AzureArtifactsPackageVersions packageVersions = packageVersionsList.body();
 
     List<AzureArtifactsPackageVersion> versions = packageVersions.getValue();
 
@@ -194,24 +179,17 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    Response<AzureArtifactsPackageVersions> packageVersionsList;
-
     if (packageId == null) {
       throw new InvalidRequestException("Please input a valid packageName for the given feed and packageType.");
     }
 
-    try {
-      packageVersionsList =
-          azureArtifactsRegistryRestClient.listPackageVersions(authHeader, feedId, packageId).execute();
-    } catch (IOException e) {
-      throw new HintException("Failed to get the last successful build from regex.");
-    }
+    AzureArtifactsPackageVersions packageVersions =
+        executeRestCall(azureArtifactsRegistryRestClient.listPackageVersions(authHeader, feedId, packageId),
+            new HintException("Failed to get the last successful build from regex."));
 
-    if (packageVersionsList == null) {
+    if (packageVersions == null) {
       return null;
     }
-
-    AzureArtifactsPackageVersions packageVersions = packageVersionsList.body();
 
     List<AzureArtifactsPackageVersion> versions = packageVersions.getValue();
 
@@ -290,23 +268,11 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    Response<AzureArtifactsPackageVersion> packageVersion;
-
-    try {
-      packageVersion =
-          azureArtifactsRegistryRestClient.getPackageVersion(authHeader, feedId, packageId, version).execute();
-    } catch (IOException e) {
-      throw new HintException("Failed to get the Build.");
-    }
-
-    if (packageVersion == null) {
-      return null;
-    }
-
-    AzureArtifactsPackageVersion build = packageVersion.body();
+    AzureArtifactsPackageVersion build =
+        executeRestCall(azureArtifactsRegistryRestClient.getPackageVersion(authHeader, feedId, packageId, version),
+            new HintException("Failed to get the Build."));
 
     List<BuildDetails> buildDetails = new ArrayList<>();
-
     constructBuildDetails(buildDetails, build);
 
     return buildDetails.get(0);
@@ -360,19 +326,9 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
       }
     }
 
-    Response<AzureArtifactsPackages> packagesResponse;
-
-    try {
-      packagesResponse = azureArtifactsRegistryRestClient.listPackages(authHeader, feed, packageType).execute();
-    } catch (IOException e) {
-      throw new HintException("Failed to get the Azure Packages list.");
-    }
-
-    if (packagesResponse == null) {
-      return new ArrayList<>();
-    }
-
-    AzureArtifactsPackages ngAzureArtifactsPackages = packagesResponse.body();
+    AzureArtifactsPackages ngAzureArtifactsPackages =
+        executeRestCall(azureArtifactsRegistryRestClient.listPackages(authHeader, feed, packageType),
+            new HintException("Failed to get the Azure Packages list."));
 
     return ngAzureArtifactsPackages != null ? ngAzureArtifactsPackages.getValue() : Collections.emptyList();
   }
@@ -384,19 +340,8 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     String authHeader = getAuthHeader(azureArtifactsInternalConfig);
 
-    Response<AzureArtifactsFeeds> feedsResponse;
-
-    try {
-      feedsResponse = azureArtifactsRegistryRestClient.listFeeds(authHeader).execute();
-    } catch (IOException e) {
-      throw new HintException("Failed to get the Azure Feeds list.");
-    }
-
-    if (feedsResponse == null) {
-      return new ArrayList<>();
-    }
-
-    AzureArtifactsFeeds azureArtifactsFeeds = feedsResponse.body();
+    AzureArtifactsFeeds azureArtifactsFeeds = executeRestCall(azureArtifactsRegistryRestClient.listFeeds(authHeader),
+        new HintException("Failed to get the Azure Feeds list."));
 
     if (azureArtifactsFeeds == null) {
       return new ArrayList<>();

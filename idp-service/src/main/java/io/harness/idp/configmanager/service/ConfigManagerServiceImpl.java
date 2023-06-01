@@ -190,10 +190,12 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
 
   @Override
   public MergedPluginConfigs mergeEnabledPluginConfigsForAccount(String accountIdentifier) throws Exception {
+    MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
     List<String> allEnabledPluginConfigs = getAllEnabledPluginConfigs(accountIdentifier);
     boolean isAllEnabledPluginsWithNoConfig = allEnabledPluginConfigs.stream().allMatch(config -> config == null);
     if (allEnabledPluginConfigs.isEmpty() || isAllEnabledPluginsWithNoConfig) {
-      throw new InvalidRequestException(String.format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+      log.info(String.format(NO_PLUGIN_ENABLED_FOR_ACCOUNT, accountIdentifier));
+      return mergedPluginConfigs;
     }
     Iterator<String> itr = allEnabledPluginConfigs.iterator();
     String config = itr.next();
@@ -207,7 +209,6 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
         itr.remove();
       }
     }
-    MergedPluginConfigs mergedPluginConfigs = new MergedPluginConfigs();
 
     // fetching the env variables and corresponding secret identifier used while enabling the plugin
     List<String> enabledPluginIdsForAccount = getAllEnabledPluginIds(accountIdentifier);

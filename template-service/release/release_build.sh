@@ -9,9 +9,10 @@ set -ex
 export PLATFORM="jenkins"
 
 export VERSION_FILE=template-service/build.properties
-export BUILD=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
-export PATCH=`cat ${VERSION_FILE} | grep 'build.patch=' | sed -e 's: *build.patch=::g'`
-export VERSION=$BUILD-$PATCH
+export MAJOR=`cat ${VERSION_FILE} | grep 'build.majorVersion=' | sed -e 's: *build.majorVersion=::g'`
+export MINOR=`cat ${VERSION_FILE} | grep 'build.minorVersion=' | sed -e 's: *build.minorVersion=::g'`
+export PATCHVERSION=`cat ${VERSION_FILE} | grep 'build.patchVersion=' | sed -e 's: *build.patchVersion=::g'`
+export VERSION=${MAJOR}.${MINOR}.${PATCHVERSION}
 
 chmod +x template-service/build/feature_build.sh
 template-service/build/feature_build.sh

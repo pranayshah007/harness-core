@@ -37,6 +37,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
 import io.harness.k8s.model.KubernetesConfig;
@@ -157,7 +158,8 @@ public class K8sScaleTaskHandler extends K8sTaskHandler {
     executionLogCallback.saveExecutionLog("Initializing..\n");
 
     try {
-      client = Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath());
+      client = KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+          k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory());
 
       if (StringUtils.isEmpty(k8sScaleTaskParameters.getWorkload())) {
         executionLogCallback.saveExecutionLog("\nNo Workload found to scale.");

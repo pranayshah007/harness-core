@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.ng.core.template.refresh.v2.ValidateTemplateReconcileResponseDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -33,4 +34,5 @@ public class PipelineValidationResponseDTO {
   @Schema(description = "Result of Policy Evaluations on the Pipeline") GovernanceMetadata policyEval;
   @Schema(description = "Template Resolution Validation Status")
   TemplateValidationResponseDTO templateValidationResponse;
+  ValidateTemplateReconcileResponseDTO validateTemplateReconcileResponseDTO;
 }

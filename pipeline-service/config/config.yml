@@ -210,6 +210,7 @@ templateServiceClientConfig:
   connectTimeOutSeconds: 120
   readTimeOutSeconds: 120
 
+containerStepConfigureWithCi: ${SHOULD_CONFIGURE_WITH_CI:-false}
 ciServiceClientConfig:
   baseUrl: http://localhost:4457/api/
   connectTimeOutSeconds: 120
@@ -595,8 +596,6 @@ sscaServiceConfig:
     connectTimeOutSeconds: 40
     readTimeOutSeconds: 40
   serviceSecret: secret
-  baseUrl: http://localhost:8186
-  globalToken: "551715ea-ca71-11ec-9d64-0242ac120002" # this is dummy token
 
 pipelineAsyncValidationPoolConfig:
   corePoolSize: ${PIPELINE_ASYNC_VALIDATION_EXECUTOR_POOL_CORE_SIZE:-2}
@@ -609,6 +608,12 @@ triggerAuthenticationPoolConfig:
   maxPoolSize: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_MAX_SIZE:-25}
   idleTime: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${TRIGGER_AUTHENTICATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+pipelineSetupUsageCreationExecutorServiceConfig:
+  corePoolSize: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_CORE_SIZE:-1}
+  maxPoolSize: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${PIPELINE_SETUP_USAGE_CREATION_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 expandedJsonConfig:
   lockTimeOutInMinutes: 2

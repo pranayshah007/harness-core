@@ -127,7 +127,7 @@ public class YamlNodeTest extends CategoryTest {
                             .addLevels(Level.newBuilder().setOriginalIdentifier("qaStage").buildPartial())
                             .build();
 
-    String yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    String yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
     String stageYaml = readFile("stageyaml.yml");
     assertThat(yaml).isEqualTo(stageYaml);
 
@@ -141,7 +141,7 @@ public class YamlNodeTest extends CategoryTest {
                    .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep1").buildPartial())
                    .build();
 
-    yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
     assertThat(yaml).isEqualTo("step:\n"
         + "  name: \"http step 1\"\n"
         + "  identifier: \"httpStep1\"\n"
@@ -160,7 +160,7 @@ public class YamlNodeTest extends CategoryTest {
                    .addLevels(Level.newBuilder().setOriginalIdentifier("steps").buildPartial())
                    .addLevels(Level.newBuilder().setOriginalIdentifier("httpStep8").buildPartial())
                    .build();
-    yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
     assertThat(yaml).isEqualTo("step:\n"
         + "  name: \"http step 8\"\n"
         + "  identifier: \"httpStep8\"\n"
@@ -205,7 +205,7 @@ public class YamlNodeTest extends CategoryTest {
                                   .setOriginalIdentifier("httpStep8")
                                   .buildPartial())
                    .build();
-    yaml = YamlNode.getNodeYaml(pipelineYaml, ambiance);
+    yaml = YamlUtils.writeYamlString(YamlNode.getNodeYaml(pipelineYaml, ambiance));
     assertThat(yaml).isEqualTo("step:\n"
         + "  name: \"http step 8\"\n"
         + "  identifier: \"httpStep8\"\n"

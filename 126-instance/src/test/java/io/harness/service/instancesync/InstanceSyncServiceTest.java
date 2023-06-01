@@ -61,6 +61,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.deploymentsummary.DeploymentSummaryService;
 import io.harness.service.infrastructuremapping.InfrastructureMappingService;
 import io.harness.service.instance.InstanceService;
@@ -142,6 +143,7 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
   @Mock private InstanceSyncPerpetualTaskMappingService instanceSyncPerpetualTaskMappingService;
   @Mock private AccountClient accountClient;
   @Mock private ConnectorService connectorService;
+  @Mock private KryoSerializer kryoSerializer;
 
   @Before
   public void setUp() throws Exception {
@@ -152,7 +154,8 @@ public class InstanceSyncServiceTest extends InstancesTestBase {
     instanceSyncService = new InstanceSyncServiceImpl(persistentLocker, instanceSyncPerpetualTaskService,
         instanceSyncPerpetualTaskInfoService, instanceSyncPerpetualTaskMappingService,
         instanceSyncHandlerFactoryService, infrastructureMappingService, instanceService, deploymentSummaryService,
-        instanceSyncHelper, connectorService, instanceSyncServiceUtils, instanceSyncMonitoringService, accountClient);
+        instanceSyncHelper, connectorService, instanceSyncServiceUtils, instanceSyncMonitoringService, accountClient,
+        kryoSerializer);
 
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .name(TEST_SERVICE_NAME)

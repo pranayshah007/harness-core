@@ -58,6 +58,9 @@ public class StepGroupElementConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
+  StepGroupInfra stepGroupInfra;
+  ParameterField<List<String>> sharedPaths;
+
   @NotNull
   @EntityIdentifier
   @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)

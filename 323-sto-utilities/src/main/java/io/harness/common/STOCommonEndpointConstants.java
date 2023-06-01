@@ -20,4 +20,6 @@ public class STOCommonEndpointConstants {
   public static final String STO_SERVICE_SCAN_RESULTS_ENDPOINT = "api/v2/scans/{scanId}/issues/counts";
 
   public static final String STO_SERVICE_SCANS_ENDPOINT = "api/v2/scans";
+
+  public static final String STO_SERVICE_USAGE_ALL_ACCOUNTS_ENDPOINT = "api/usage/all-accounts";
 }

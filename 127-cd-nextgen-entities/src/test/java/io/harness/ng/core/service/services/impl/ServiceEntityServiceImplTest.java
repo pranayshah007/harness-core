@@ -1123,6 +1123,47 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     assertThat(resolvedTemplateRefsInService).isEqualTo(givenYaml);
   }
 
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testMergeServiceInputsWithSingleArtifactSource() {
+    String serviceYaml = "service:\n"
+        + "  name: svc\n"
+        + "  identifier: svc\n"
+        + "  tags: {}\n"
+        + "  serviceDefinition:\n"
+        + "    spec:\n"
+        + "      artifacts:\n"
+        + "        primary:\n"
+        + "          primaryArtifactRef: <+input>\n"
+        + "          sources:\n"
+        + "            - spec:\n"
+        + "                connectorRef: dockerpublic\n"
+        + "                imagePath: library/nginx\n"
+        + "                tag: <+input>\n"
+        + "              identifier: updatedValue\n"
+        + "              type: DockerRegistry\n"
+        + "    type: Kubernetes\n";
+
+    String responseYaml =
+        serviceEntityService.createServiceInputsYamlGivenPrimaryArtifactRef(serviceYaml, "svc", "oldValue");
+
+    assertThat(responseYaml).isNotEmpty();
+    assertThat(responseYaml)
+        .isEqualTo("serviceInputs:\n"
+            + "  serviceDefinition:\n"
+            + "    type: \"Kubernetes\"\n"
+            + "    spec:\n"
+            + "      artifacts:\n"
+            + "        primary:\n"
+            + "          primaryArtifactRef: \"<+input>\"\n"
+            + "          sources:\n"
+            + "          - identifier: \"updatedValue\"\n"
+            + "            type: \"DockerRegistry\"\n"
+            + "            spec:\n"
+            + "              tag: \"<+input>\"\n");
+  }
+
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
     try {

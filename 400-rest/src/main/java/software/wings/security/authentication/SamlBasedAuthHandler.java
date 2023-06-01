@@ -165,7 +165,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
             throw new InvalidRequestException("Email is not present in SAML assertion");
           }
           log.info("SAMLFeature: email fetched from response string is {} in accountId {}", email, accountId);
-          userByUserId.setEmail(email);
+          userByUserId.setEmail(email.trim().toLowerCase());
           hPersistence.save(userByUserId);
           user = userByUserId;
           log.info(

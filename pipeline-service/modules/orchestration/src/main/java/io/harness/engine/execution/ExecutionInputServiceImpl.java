@@ -23,10 +23,11 @@ import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.NodeProjectionUtils;
-import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.ExecutionInputRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -118,27 +119,24 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
       if (EmptyPredicate.isEmpty(executionInputYaml)) {
         executionInputYaml = executionInputInstance.getTemplate();
       }
+      JsonNode userInputJsonNode = YamlUtils.readAsJsonNode(executionInputYaml);
       Ambiance ambiance =
           nodeExecutionService.getWithFieldsIncluded(nodeExecutionId, NodeProjectionUtils.withAmbianceAndStatus)
               .getAmbiance();
-      executionInputYaml = (String) pmsEngineExpressionService.resolve(
-          ambiance, executionInputYaml, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
-      executionInputInstance.setUserInput(executionInputYaml);
+      userInputJsonNode = (JsonNode) pmsEngineExpressionService.resolve(
+          ambiance, userInputJsonNode, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
 
-      Map<FQN, String> invalidFQNsInInputSet =
-          getInvalidFQNsInInputSet(executionInputInstance.getTemplate(), executionInputYaml);
+      JsonNode templateJsonNode = YamlUtils.readAsJsonNode(executionInputInstance.getTemplate());
+      Map<FQN, String> invalidFQNsInInputSet = getInvalidFQNsInInputSet(templateJsonNode, userInputJsonNode);
       if (!EmptyPredicate.isEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
-            + invalidFQNsInInputSet.keySet()
-                  .stream()
-                  .map(FQN::getExpressionFqn)
-                  .collect(Collectors.toList())
-                  .toString());
+            + invalidFQNsInInputSet.keySet().stream().map(FQN::getExpressionFqn).collect(Collectors.toList()));
       }
-      JsonNode mergedJsonNode = MergeHelper.mergeExecutionInputIntoOriginalYamlJsonNode(
-          executionInputInstance.getTemplate(), executionInputInstance.getUserInput(), false);
+      JsonNode mergedJsonNode =
+          MergeHelper.mergeExecutionInputIntoOriginalJsonNode(templateJsonNode, userInputJsonNode, false);
       executionInputInstance.setMergedInputTemplate(
-          executionInputServiceHelper.getExecutionInputMap(executionInputInstance.getTemplate(), mergedJsonNode));
+          executionInputServiceHelper.getExecutionInputMap(templateJsonNode, mergedJsonNode));
+      executionInputInstance.setUserInput(YamlUtils.writeYamlString(userInputJsonNode));
       return executionInputRepository.save(executionInputInstance);
     } else {
       throw new InvalidRequestException(
@@ -148,25 +146,24 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
 
   // Using duplicate method of InputSetErrorHelper in pipeline-service. Will refactor the method and use the bring
   // down to 870.
-  public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
+  public Map<FQN, String> getInvalidFQNsInInputSet(JsonNode templateJsonNode, JsonNode inputSetPipelineCompJsonNode) {
     Map<FQN, String> errorMap = new LinkedHashMap<>();
-    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
-    Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
-    if (EmptyPredicate.isEmpty(templateYaml)) {
+    Map<FQN, Object> inputSetFqnToValueMap = FQNMapGenerator.generateFQNMap(inputSetPipelineCompJsonNode);
+    Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetFqnToValueMap.keySet());
+    if (EmptyPredicate.isNull(templateJsonNode)) {
       inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
       return errorMap;
     }
-    YamlConfig templateConfig = new YamlConfig(templateYaml);
-
-    templateConfig.getFqnToValueMap().keySet().forEach(key -> {
+    Map<FQN, Object> templateFqnToValueMap = FQNMapGenerator.generateFQNMap(templateJsonNode);
+    templateFqnToValueMap.keySet().forEach(key -> {
       if (inputSetFQNs.contains(key)) {
-        Object templateValue = templateConfig.getFqnToValueMap().get(key);
-        Object value = inputSetConfig.getFqnToValueMap().get(key);
+        Object templateValue = templateFqnToValueMap.get(key);
+        Object value = inputSetFqnToValueMap.get(key);
         if (key.isType() || key.isIdentifierOrVariableName()) {
           if (!value.toString().equals(templateValue.toString())) {
             errorMap.put(key,
-                "The value for " + key.getExpressionFqn() + " is " + templateValue.toString()
-                    + "in the pipeline yaml, but the input set has it as " + value.toString());
+                "The value for " + key.getExpressionFqn() + " is " + templateValue
+                    + "in the pipeline yaml, but the input set has it as " + value);
           }
         } else {
           String error = validateStaticValues(templateValue, value, key.getExpressionFqn());
@@ -177,7 +174,7 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
 
         inputSetFQNs.remove(key);
       } else {
-        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetConfig.getFqnToValueMap(), key);
+        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetFqnToValueMap, key);
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
     });

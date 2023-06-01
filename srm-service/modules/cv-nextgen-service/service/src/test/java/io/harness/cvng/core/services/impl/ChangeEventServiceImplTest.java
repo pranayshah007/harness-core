@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.CVNGTestConstants.FIXED_TIME_FOR_TESTS;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -29,10 +30,10 @@ import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.change.DeepLink;
 import io.harness.cvng.beans.change.InternalChangeEvent;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
@@ -49,6 +50,7 @@ import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import dev.morphia.query.Query;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -71,15 +73,17 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
   @Inject ChangeEventServiceImpl changeEventService;
   @Inject ChangeSourceService changeSourceService;
   @Inject HPersistence hPersistence;
+  Clock clock;
 
   BuilderFactory builderFactory;
   FeatureFlagService featureFlagService;
 
-  List<String> changeSourceIdentifiers = Arrays.asList("changeSourceID");
+  List<String> changeSourceIdentifiers = List.of("changeSourceID");
 
   @Before
   public void before() throws IllegalAccessException {
     builderFactory = BuilderFactory.getDefault();
+    clock = FIXED_TIME_FOR_TESTS;
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
     MockitoAnnotations.initMocks(this);

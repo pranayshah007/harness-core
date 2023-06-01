@@ -28,4 +28,5 @@ message CustomChangeEventDetails {
   string changeEventDetailsLink = 2;
   string externalLinkToEntity = 3;
   string name = 4;
+  string channelUrl = 5;
 }
