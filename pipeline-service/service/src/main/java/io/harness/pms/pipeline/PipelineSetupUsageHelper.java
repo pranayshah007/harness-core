@@ -39,6 +39,9 @@ import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetup
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.EntityReferredByPipelineDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO.PipelineDetailType;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType;
@@ -52,6 +55,7 @@ import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -72,6 +76,7 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
   @Inject private EntitySetupUsageClient entitySetupUsageClient;
   @Inject private InternalReferredEntityExtractor internalReferredEntityExtractor;
+  @Inject private GitSyncSdkService gitSyncSdkService;
   private static final int PAGE = 0;
   private static final int SIZE = 100;
 
@@ -138,6 +143,9 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
       FilterCreationParams filterCreationParams, List<EntityDetailProtoDTO> referredEntities) {
     PipelineEntity pipelineEntity = filterCreationParams.getPipelineEntity();
     FilterCreationGitMetadata gitMetadata = filterCreationParams.getFilterCreationGitMetadata();
+    if (!shouldPublishSetupUsage(pipelineEntity)) {
+      return;
+    }
     if (EmptyPredicate.isEmpty(referredEntities)) {
       deleteSetupUsagesForGivenPipeline(pipelineEntity);
       return;
@@ -196,6 +204,18 @@ public class PipelineSetupUsageHelper implements PipelineActionObserver {
               pipelineEntity.getIdentifier(), pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier());
         }
       }
+    }
+  }
+
+  @VisibleForTesting
+  boolean shouldPublishSetupUsage(PipelineEntity pipelineEntity) {
+    //    TODO: Once the ticket https://harness.atlassian.net/browse/CDS-70970 is completed, we should be cleaning up
+    //    the second storeType check done from the Git context
+    if (!StoreType.REMOTE.equals(pipelineEntity.getStoreType())
+        && !StoreType.REMOTE.equals(GitAwareContextHelper.getStoreTypeFromGitContext())) {
+      return true;
+    } else {
+      return GitAwareContextHelper.isDefaultBranch();
     }
   }
 
