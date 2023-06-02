@@ -44,6 +44,7 @@ public class CiTelemetryPublisher {
   private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String GROUP_TYPE = "group_type";
   private static final String GROUP_ID = "group_id";
+  private static Integer counter = 0;
 
   public void recordTelemetry() {
     log.info("CiTelemetryPublisher recordTelemetry execute started.");
@@ -54,7 +55,8 @@ public class CiTelemetryPublisher {
 
       for (String accountId : accountIdentifiers) {
         if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
-          if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(
+          if (counter < 1
+              || ciTelemetryStatusRepository.updateTimestampIfOlderThan(
                   accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
             List<ModuleLicense> existing =
                 moduleLicenseRepository.findByAccountIdentifierAndModuleType(accountId, ModuleType.CI);
@@ -64,11 +66,11 @@ public class CiTelemetryPublisher {
             map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
             long developersCount = ciOverviewDashboardService.getActiveCommitterCount(accountId);
             long hostedCreditUsage = ciOverviewDashboardService.getHostedCreditUsage(accountId);
-            if (existing.size() != 0) {
-              if (developersCount != 0) {
+            if (developersCount > 0 || hostedCreditUsage > 0) {
+              if (developersCount > 0) {
                 map.put(COUNT_ACTIVE_DEVELOPERS, developersCount);
               }
-              if (developersCount != 0) {
+              if (hostedCreditUsage > 0) {
                 map.put(COUNT_HOSTED_CREDITS_USED, hostedCreditUsage);
               }
               telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
@@ -86,6 +88,7 @@ public class CiTelemetryPublisher {
           }
         }
       }
+      counter++;
       log.info("Memory after telemetry is {} ", getMemoryUse());
     } catch (Exception e) {
       log.error("CITelemetryPublisher recordTelemetry execute failed.", e);
