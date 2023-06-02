@@ -7,6 +7,7 @@
 
 package io.harness.cdng.jenkins.jenkinsstep;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -94,7 +95,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
     Optional<ConnectorDTO> connectorDTOOptional = NGRestUtils.getResponse(
         connectorResourceClient.get(identifierRef.getIdentifier(), identifierRef.getAccountIdentifier(),
             identifierRef.getOrgIdentifier(), identifierRef.getProjectIdentifier()));
-    if (!connectorDTOOptional.isPresent()) {
+    if (connectorDTOOptional.isEmpty()) {
       throw new InvalidRequestException(
           String.format("Connector not found for identifier: [%s]", connectorRef), WingsException.USER);
     }
@@ -131,7 +132,7 @@ public class JenkinsBuildStepHelperServiceImpl implements JenkinsBuildStepHelper
                               .build();
       return TaskRequestsUtils.prepareTaskRequest(ambiance, taskData, referenceFalseKryoSerializer,
           TaskCategory.DELEGATE_TASK_V2, Collections.singletonList(COMMAND_UNIT), true, taskName,
-          params.getDelegateSelectors()
+          emptyIfNull(params.getDelegateSelectors())
               .stream()
               .map(s -> TaskSelector.newBuilder().setSelector(s).build())
               .collect(Collectors.toList()),
