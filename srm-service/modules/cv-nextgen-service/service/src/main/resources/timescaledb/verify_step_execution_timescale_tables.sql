@@ -36,6 +36,11 @@ BEGIN;
     CREATE INDEX IF NOT EXISTS startedAtTimestamp_idx ON verify_step_execution_cvng USING btree (startedAtTimestamp);
 COMMIT;
 
+BEGIN;
+    alter table verify_step_execution_cvng alter column deploymentstartedattimestamp drop not null;
+    alter table verify_step_execution_cvng alter column sensitivity drop not null;
+COMMIT;
+
 -- End of table [verify_step_execution_cvng] commands
 
 
@@ -84,6 +89,10 @@ COMMIT;
 BEGIN;
     CREATE UNIQUE INDEX IF NOT EXISTS verify_step_interrupt_cvng_pkey ON verify_step_interrupt_cvng USING btree (id);
     CREATE INDEX IF NOT EXISTS nodeExecutionId_idx ON verify_step_interrupt_cvng USING btree (nodeExecutionId);
+COMMIT;
+
+BEGIN;
+ALTER TABLE verify_step_interrupt_cvng ADD COLUMN issuerType TEXT NULL;
 COMMIT;
 
 -- End of table [verify_step_interrupt_cvng] commands

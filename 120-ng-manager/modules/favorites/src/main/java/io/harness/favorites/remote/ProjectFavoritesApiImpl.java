@@ -7,28 +7,29 @@
 
 package io.harness.favorites.remote;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
-import io.harness.favorites.ResourceType;
 import io.harness.favorites.services.FavoritesService;
 import io.harness.favorites.utils.FavoritesResourceUtils;
 import io.harness.spec.server.ng.v1.ProjectFavoritesApi;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 import io.harness.spec.server.ng.v1.model.FavoriteResponse;
+import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.Valid;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.EnumUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
-public class ProjectFavoriteApiImpl implements ProjectFavoritesApi {
+public class ProjectFavoritesApiImpl implements ProjectFavoritesApi {
   @Inject private final FavoritesService favoritesService;
   @Inject private final FavoritesResourceUtils favoritesResourceUtils;
   @Override
@@ -42,23 +43,33 @@ public class ProjectFavoriteApiImpl implements ProjectFavoritesApi {
   }
 
   @Override
-  public Response deleteProjectFavorite(
-      String org, String project, String userId, String harnessAccount, String resourceType, String resourceId) {
-    favoritesService.deleteFavorite(harnessAccount, org, project, userId, resourceType, resourceId);
+  public Response deleteProjectFavorite(String org, String project, String userId, String harnessAccount,
+      FavoritesResourceType resourceType, String resourceId) {
+    try {
+      favoritesService.deleteFavorite(harnessAccount, org, project, userId, resourceType, resourceId);
+    } catch (InvalidRequestException exception) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(ResponseMessage.builder()
+                      .code(ErrorCode.INVALID_REQUEST)
+                      .level(Level.ERROR)
+                      .message(exception.getMessage())
+                      .build())
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
     return Response.status(Response.Status.NO_CONTENT).build();
   }
 
   @Override
   public Response getProjectFavorites(
-      String org, String project, String userId, String harnessAccount, String resourceType) {
-    if (isNotEmpty(resourceType)) {
-      List<FavoriteResponse> favoriteResponses =
-          favoritesResourceUtils.toFavoriteResponse(favoritesService.getFavorites(
-              harnessAccount, org, project, userId, EnumUtils.getEnum(ResourceType.class, resourceType)));
+      String org, String project, String userId, String harnessAccount, FavoritesResourceType resourceType) {
+    if (resourceType != null) {
+      List<FavoriteResponse> favoriteResponses = favoritesResourceUtils.toFavoriteResponse(
+          favoritesService.getFavorites(harnessAccount, org, project, userId, resourceType));
       return Response.ok().entity(favoriteResponses).build();
     }
     List<FavoriteResponse> favoriteResponses =
-        favoritesResourceUtils.toFavoriteResponse(favoritesService.getFavorites(harnessAccount, null, null, userId));
+        favoritesResourceUtils.toFavoriteResponse(favoritesService.getFavorites(harnessAccount, org, project, userId));
     return Response.ok().entity(favoriteResponses).build();
   }
 }

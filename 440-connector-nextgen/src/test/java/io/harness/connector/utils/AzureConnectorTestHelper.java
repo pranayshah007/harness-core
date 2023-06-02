@@ -27,7 +27,8 @@ import lombok.experimental.UtilityClass;
 public class AzureConnectorTestHelper {
   String SUBSCRIPTION_ID = "subscriptionId";
   String TENANT_ID = "tenantId";
-  List<CEFeatures> FEATURES_ENABLED = ImmutableList.of(CEFeatures.OPTIMIZATION, CEFeatures.BILLING);
+  List<CEFeatures> FEATURES_ENABLED =
+      ImmutableList.of(CEFeatures.OPTIMIZATION, CEFeatures.BILLING, CEFeatures.GOVERNANCE);
 
   String CONTAINER_NAME = "containerName";
   String REPORT_NAME = "reportName";
@@ -53,6 +54,14 @@ public class AzureConnectorTestHelper {
         .tenantId(TENANT_ID)
         .featuresEnabled(Collections.singletonList(CEFeatures.BILLING))
         .billingExportDetails(createBillingExportDetails())
+        .build();
+  }
+
+  public CEAzureConfig createCEAzureConfigGovernanceOnly() {
+    return CEAzureConfig.builder()
+        .subscriptionId(SUBSCRIPTION_ID)
+        .tenantId(TENANT_ID)
+        .featuresEnabled(Collections.singletonList(CEFeatures.GOVERNANCE))
         .build();
   }
 
@@ -99,6 +108,14 @@ public class AzureConnectorTestHelper {
         .subscriptionId(SUBSCRIPTION_ID)
         .tenantId(TENANT_ID)
         .billingExportSpec(createBillingExportSpecDTO())
+        .build();
+  }
+
+  public CEAzureConnectorDTO createCEAzureConnectorDTOGovernanceOnly() {
+    return CEAzureConnectorDTO.builder()
+        .featuresEnabled(Collections.singletonList(CEFeatures.GOVERNANCE))
+        .subscriptionId(SUBSCRIPTION_ID)
+        .tenantId(TENANT_ID)
         .build();
   }
 

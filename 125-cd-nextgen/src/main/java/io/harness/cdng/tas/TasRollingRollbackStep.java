@@ -129,8 +129,7 @@ public class TasRollingRollbackStep extends CdTaskExecutable<CfCommandResponseNG
     TasRollingDeployOutcome tasRollingDeployOutcome =
         (TasRollingDeployOutcome) tasRollingDeployOutcomeOptional.getOutput();
 
-    TasStageExecutionDetails tasStageExecutionDetails = tasStepHelper.findLastSuccessfulStageExecutionDetails(
-        ambiance, tasInfraConfig, tasRollingDeployOutcome.getAppName());
+    TasStageExecutionDetails tasStageExecutionDetails = tasRollingDeployOutcome.getTasStageExecutionDetails();
 
     List<ArtifactOutcome> artifactOutcomes =
         tasStageExecutionDetails == null ? Collections.emptyList() : tasStageExecutionDetails.getArtifactsOutcome();

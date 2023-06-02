@@ -83,6 +83,7 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.Annotation;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.CompositeServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIState;
@@ -90,6 +91,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset.SLOErrorBudgetResetKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.AnnotationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
@@ -345,6 +347,77 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
+  public void testGetSloDashboardDetail_SimpleSLO_withDuplicateSLIData() {
+    ServiceLevelIndicator serviceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0).getIdentifier());
+    UpdateOperations updateOperations =
+        hPersistence.createUpdateOperations(ServiceLevelIndicator.class).set(ServiceLevelIndicatorKeys.version, 1);
+    hPersistence.update(serviceLevelIndicator, updateOperations);
+    createData(clock.instant().minus(Duration.ofMinutes(10)), Arrays.asList(GOOD, BAD, BAD, GOOD),
+        serviceLevelIndicator.getUuid(), 1);
+    hPersistence.save(SLIRecord.builder()
+                          .runningBadCount(2)
+                          .runningGoodCount(1)
+                          .sliId(serviceLevelIndicator.getUuid())
+                          .sliVersion(0)
+                          .verificationTaskId(serviceLevelIndicator.getUuid())
+                          .timestamp(clock.instant().minus(Duration.ofMinutes(8)))
+                          .sliState(GOOD)
+                          .build());
+    hPersistence.save(SLIRecord.builder()
+                          .runningBadCount(2)
+                          .runningGoodCount(1)
+                          .sliId(serviceLevelIndicator.getUuid())
+                          .sliVersion(1)
+                          .verificationTaskId(serviceLevelIndicator.getUuid())
+                          .timestamp(clock.instant().minus(Duration.ofMinutes(8)))
+                          .sliState(GOOD)
+                          .build());
+    SLODashboardWidget sloDashboardWidget = sloDashboardService
+                                                .getSloDashboardDetail(builderFactory.getProjectParams(),
+                                                    serviceLevelObjectiveV2DTO.getIdentifier(), null, null)
+                                                .getSloDashboardWidget();
+
+    assertSLIGraphData(clock.instant().minus(Duration.ofMinutes(10)), sloDashboardWidget.getSloPerformanceTrend(),
+        sloDashboardWidget.getErrorBudgetBurndown(), Lists.newArrayList(100.0, 50.0, 33.33, 50.0),
+        Lists.newArrayList(100.0, 99.9884, 99.9768, 99.9768));
+    assertThat(sloDashboardWidget.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO.getIdentifier());
+    assertThat(sloDashboardWidget.getHealthSourceIdentifier()).isEqualTo(healthSource.getIdentifier());
+    assertThat(sloDashboardWidget.getHealthSourceName()).isEqualTo(healthSource.getName());
+    assertThat(sloDashboardWidget.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(sloDashboardWidget.getMonitoredServiceName()).isEqualTo(monitoredServiceDTO.getName());
+    assertThat(sloDashboardWidget.getMonitoredServiceDetails().size()).isEqualTo(1);
+    assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(0).getMonitoredServiceIdentifier())
+        .isEqualTo(monitoredServiceIdentifier);
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
+    assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
+    assertThat(sloDashboardWidget.getType()).isEqualTo(simpleServiceLevelObjectiveSpec.getServiceLevelIndicatorType());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjectiveV2DTO.getSloTarget().getType());
+    assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
+    assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
+        .isEqualTo(Instant.parse("2020-06-27T10:50:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getCurrentPeriodEndTime())
+        .isEqualTo(Instant.parse("2020-07-27T10:50:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getErrorBudgetRemaining())
+        .isEqualTo(8638); // 30 days - 30*24*60 - 20% -> 8640 - (2 bad mins)
+    assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
+    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(99.9768, offset(0.001));
+    assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+    assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
+    assertThat(sloDashboardWidget.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
+    assertThat(sloDashboardWidget.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
+    assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(8640);
+    assertThat(sloDashboardWidget.getServiceName()).isEqualTo("Mocked service name");
+    assertThat(sloDashboardWidget.getEnvironmentName()).isEqualTo("Mocked env name");
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
   public void testGetSloDashboardDetail_SimpleRequestSLO_withSLIDatas() {
     ServiceLevelIndicator serviceLevelIndicator =
         serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
@@ -446,6 +519,115 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords.get(2).getRunningBadCount()).isEqualTo(1.25);
     assertThat(sloRecords.get(2).getRunningGoodCount()).isEqualTo(1.75);
     assertThat(sloRecords.get(0).getSloVersion()).isEqualTo(0);
+
+    SLODashboardWidget sloDashboardWidget =
+        sloDashboardService
+            .getSloDashboardDetail(builderFactory.getProjectParams(), compositeServiceLevelObjective.getIdentifier(),
+                startTime.toEpochMilli(), endTime.toEpochMilli())
+            .getSloDashboardWidget();
+    assertThat(sloDashboardWidget.getSloIdentifier()).isEqualTo(compositeServiceLevelObjective.getIdentifier());
+    assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
+    assertThat(sloDashboardWidget.getMonitoredServiceDetails().size()).isEqualTo(2);
+    assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(0).getMonitoredServiceIdentifier())
+        .isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(sloDashboardWidget.getMonitoredServiceDetails().get(1).getMonitoredServiceIdentifier())
+        .isEqualTo(monitoredServiceDTO2.getIdentifier());
+    assertThat(sloDashboardWidget.getEvaluationType()).isEqualTo(SLIEvaluationType.WINDOW);
+    assertThat(sloDashboardWidget.isTotalErrorBudgetApplicable()).isEqualTo(true);
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(compositeServiceLevelObjective.getTarget().getType());
+    assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
+    assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
+        .isEqualTo(Instant.parse("2020-06-27T10:50:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getCurrentPeriodEndTime())
+        .isEqualTo(Instant.parse("2020-07-27T10:50:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getErrorBudgetRemaining()).isEqualTo(8639); // 8640 - (1.25 bad mins)
+    assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
+    assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(99.9884, offset(0.001));
+    assertThat(sloDashboardWidget.getTotalErrorBudget()).isEqualTo(8640);
+    assertThat(sloDashboardWidget.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
+    assertThat(sloDashboardWidget.isRecalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.isCalculatingSLI()).isFalse();
+    assertThat(sloDashboardWidget.getTimeRemainingDays()).isEqualTo(0);
+    assertCompositeSLOGraphData(clock.instant().minus(Duration.ofMinutes(10)),
+        sloDashboardWidget.getSloPerformanceTrend(), sloDashboardWidget.getErrorBudgetBurndown(), runningGoodCount,
+        runningBadCount, 8640);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetSloDashboardDetail_CompositeSLO_withDuplicateSLIDatas() {
+    MonitoredServiceDTO monitoredServiceDTO2 = builderFactory.monitoredServiceDTOBuilder()
+                                                   .serviceRef("service1")
+                                                   .environmentRef("env1")
+                                                   .identifier("service1_env1")
+                                                   .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(healthSource.getIdentifier());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
+    SimpleServiceLevelObjective simpleServiceLevelObjective2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(serviceLevelObjective.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(serviceLevelObjective.getAccountId())
+                                            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+                                            .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                  .weightagePercentage(25.0)
+                                  .accountId(simpleServiceLevelObjective2.getAccountId())
+                                  .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                  .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+
+    UpdateOperations updateOperations = hPersistence.createUpdateOperations(CompositeServiceLevelObjective.class)
+                                            .set(CompositeServiceLevelObjectiveKeys.version, 1);
+
+    hPersistence.update(compositeServiceLevelObjective, updateOperations);
+
+    verificationTaskId = compositeServiceLevelObjective.getUuid();
+    List<Double> runningGoodCount = Arrays.asList(0.75, 1.75, 1.75);
+    List<Double> runningBadCount = Arrays.asList(0.25, 0.25, 1.25);
+
+    createSLORecords(startTime, endTime.minusSeconds(120), runningGoodCount, runningBadCount, 1);
+    hPersistence.save(CompositeSLORecord.builder()
+                          .verificationTaskId(compositeServiceLevelObjective.getUuid())
+                          .sloId(compositeServiceLevelObjective.getUuid())
+                          .version(0)
+                          .runningBadCount(0.25)
+                          .runningGoodCount(1.75)
+                          .sloVersion(0)
+                          .timestamp(startTime.plus(Duration.ofMinutes(1)))
+                          .build());
+    hPersistence.save(CompositeSLORecord.builder()
+                          .verificationTaskId(compositeServiceLevelObjective.getUuid())
+                          .sloId(compositeServiceLevelObjective.getUuid())
+                          .version(0)
+                          .runningBadCount(0.25)
+                          .runningGoodCount(1.75)
+                          .sloVersion(1)
+                          .timestamp(startTime.plus(Duration.ofMinutes(1)))
+                          .build());
 
     SLODashboardWidget sloDashboardWidget =
         sloDashboardService
@@ -2171,8 +2353,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   }
 
   private void createData(Instant startTime, List<SLIState> sliStates, String sliId) {
+    createData(startTime, sliStates, sliId, 0);
+  }
+
+  private void createData(Instant startTime, List<SLIState> sliStates, String sliId, int sliVersion) {
     List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
-    sliRecordService.create(sliRecordParams, sliId, sliId, 0);
+    sliRecordService.create(sliRecordParams, sliId, sliId, sliVersion);
   }
 
   private void createData(
@@ -2200,6 +2386,11 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
 
   private List<CompositeSLORecord> createSLORecords(
       Instant start, Instant end, List<Double> runningGoodCount, List<Double> runningBadCount) {
+    return createSLORecords(start, end, runningGoodCount, runningBadCount, 0);
+  }
+
+  private List<CompositeSLORecord> createSLORecords(
+      Instant start, Instant end, List<Double> runningGoodCount, List<Double> runningBadCount, int sloVersion) {
     int index = 0;
     List<CompositeSLORecord> sloRecords = new ArrayList<>();
     for (Instant instant = start; instant.isBefore(end); instant = instant.plus(1, ChronoUnit.MINUTES)) {
@@ -2209,7 +2400,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                                          .version(0)
                                          .runningBadCount(runningBadCount.get(index))
                                          .runningGoodCount(runningGoodCount.get(index))
-                                         .sloVersion(0)
+                                         .sloVersion(sloVersion)
                                          .timestamp(instant)
                                          .build();
       sloRecords.add(sloRecord);

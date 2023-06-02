@@ -104,24 +104,6 @@ public class DefaultUserGroupServiceTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testCreateDefaultUserGroup_AccountScope_withAccountBasicFFON() {
-    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, null, null);
-    createAndMockUserGroupDTO(scope, getUserGroupIdentifier(scope));
-    when(ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
-        .thenReturn(true);
-    final UserGroup userGroup = defaultUserGroupService.create(scope, Collections.emptyList());
-    assertThat(userGroup.getIdentifier()).isEqualTo(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER);
-    verify(defaultUserGroupService, times(1))
-        .createRoleAssignment(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER, scope, true, true,
-            NGConstants.ACCOUNT_BASIC_ROLE, NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    verify(defaultUserGroupService, times(0))
-        .createRoleAssignment(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER, scope, false, false,
-            NGConstants.ACCOUNT_VIEWER_ROLE, NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-  }
-
-  @Test
-  @Owner(developers = MEENAKSHI)
-  @Category(UnitTests.class)
   public void testCreateDefaultUserGroup_OrgScope_withFFOn() {
     Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, null);
     createAndMockUserGroupDTO(scope, getUserGroupIdentifier(scope));

@@ -637,6 +637,8 @@ public enum FeatureName {
   PL_DO_NOT_MIGRATE_NON_ADMIN_CG_USERS_TO_NG("FF to disable CG to NG user migration except Admins", HarnessTeam.PL),
   PIE_EXECUTION_JSON_SUPPORT("Support for storing execution json in mongo", HarnessTeam.PIPELINE),
   PIE_EXPRESSION_ENGINE_V2("Support for new model of expression engine", HarnessTeam.PIPELINE),
+  PIE_EXPRESSION_CONCATENATION(
+      "Support for new string concatenation support in expression engine", HarnessTeam.PIPELINE),
   GITOPS_SYNC_STEP("Enable sync step in GitOps", HarnessTeam.GITOPS),
   FETCH_PIPELINE_HEALTH_FROM_NEW_TABLE(
       "We will fetch pipeline health and execution data from the new timescale table if this FF is on",
@@ -769,7 +771,21 @@ public enum FeatureName {
   CDS_ARTIFACTS_PRIMARY_IDENTIFIER("To change the expression value for primary artifact identifier", HarnessTeam.CDC),
   PL_DISCOVERY_ENABLE(
       "To control visibility of Discovery navlink in sidebar under project settings", HarnessTeam.CHAOS),
-  GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS);
+  CDS_AUTO_APPROVAL("This FF is for allowing scheduled approval in Harness approval step", HarnessTeam.CDP),
+  GITOPS_ORG_LEVEL("Support GitOps at Org level", HarnessTeam.GITOPS),
+  CDS_USE_HTTP_CHECK_IGNORE_RESPONSE_INSTEAD_OF_SOCKET_NG(
+      "This is to diable checking for the HTTP status code and instead just check for a valid response",
+      HarnessTeam.CDP),
+  CDS_HELM_STEADY_STATE_CHECK_1_16_V2_CG(
+      "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for CG",
+      HarnessTeam.CDP),
+  CDS_HELM_STEADY_STATE_CHECK_1_16_V2_NG(
+      "This FF will use helm get manifest instead of helm template output to find managed workloads for Native Helm steady state check for NG",
+      HarnessTeam.CDP),
+  GITOPS_IAM("Support for connecting via IAM role in GitOps Clusters", HarnessTeam.GITOPS),
+  PIE_RETRY_STEP_GROUP(
+      "To enable Retry Step Group Failure Strategy, under which if a step fails in a step group, the whole group is retried",
+      PIPELINE);
 
   @Deprecated
   FeatureName() {

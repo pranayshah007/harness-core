@@ -74,6 +74,10 @@ public class ConfigManagerUtils {
   private static final String HARNESS_CI_CD_CONFIG_PATH_COMPLIANCE = "configs/plugins/harness-ci-cd-compliance.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_PRE_QA = "configs/plugins/harness-ci-cd-preqa.yaml";
   private static final String HARNESS_CI_CD_CONFIG_PATH_QA = "configs/plugins/harness-ci-cd-qa.yaml";
+  private static final String GITHUB_AUTH_CONFIG_FILE = "configs/auth/github-auth.yaml";
+  private static final String GITHUB_AUTH_JSON_SCHEMA_FILE = "configs/auth/json-schemas/github-auth-schema.json";
+  private static final String GOOGLE_AUTH_CONFIG_FILE = "configs/auth/google-auth.yaml";
+  private static final String GOOGLE_AUTH_JSON_SCHEMA_FILE = "configs/auth/json-schemas/google-auth-schema.json";
 
   public String asYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
@@ -190,6 +194,28 @@ public class ConfigManagerUtils {
         return readFileFromClassPath(FIREHYDRANT_PLUGIN_JSON_SCHEMA_PATH);
       case "harness-ci-cd":
         return readFileFromClassPath(HARNESS_CI_CD_JSON_SCHEMA_PATH);
+      default:
+        return null;
+    }
+  }
+
+  public String getAuthConfig(String authId) {
+    switch (authId) {
+      case "github-auth":
+        return readFileFromClassPath(GITHUB_AUTH_CONFIG_FILE);
+      case "google-auth":
+        return readFileFromClassPath(GOOGLE_AUTH_CONFIG_FILE);
+      default:
+        return null;
+    }
+  }
+
+  public String getAuthConfigSchema(String authId) {
+    switch (authId) {
+      case "github-auth":
+        return readFileFromClassPath(GITHUB_AUTH_JSON_SCHEMA_FILE);
+      case "google-auth":
+        return readFileFromClassPath(GOOGLE_AUTH_JSON_SCHEMA_FILE);
       default:
         return null;
     }

@@ -11,12 +11,16 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 // This module handles the edge cases when we need a string to be surrounded by quotes in the compiled yaml.
 @OwnedBy(HarnessTeam.PIPELINE)
 public class EdgeCaseRegexModule extends SimpleModule {
   public EdgeCaseRegexModule() {
-    addSerializer(TextNode.class, new EdgeCaseRegexSerializer());
+    addSerializer(TextNode.class, new EdgeCaseRegexTextSerializer());
+    addSerializer(ArrayNode.class, new EdgeCaseRegexArraySerializer());
+    addSerializer(ObjectNode.class, new EdgeCaseRegexObjectSerializer());
   }
 }

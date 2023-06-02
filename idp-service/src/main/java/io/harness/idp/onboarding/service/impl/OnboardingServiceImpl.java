@@ -487,6 +487,10 @@ public class OnboardingServiceImpl implements OnboardingService {
 
   private void processUserRequest(ImportEntitiesBase importHarnessEntitiesRequest) {
     String repo = importHarnessEntitiesRequest.getCatalogConnectorInfo().getRepo();
+    if (repo.endsWith("/")) {
+      importHarnessEntitiesRequest.getCatalogConnectorInfo().setRepo(repo.substring(0, repo.length() - 1));
+    }
+    repo = importHarnessEntitiesRequest.getCatalogConnectorInfo().getRepo();
     if (repo.endsWith(".git")) {
       importHarnessEntitiesRequest.getCatalogConnectorInfo().setRepo(repo.substring(0, repo.length() - 4));
     }

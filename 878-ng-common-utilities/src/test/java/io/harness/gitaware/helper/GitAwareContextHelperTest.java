@@ -9,6 +9,7 @@ package io.harness.gitaware.helper;
 
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.VINICIUS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -54,6 +55,23 @@ public class GitAwareContextHelperTest extends CategoryTest {
     assertThat(scmGitMetaData.getCommitId()).isNull();
     assertThat(scmGitMetaData.getFilePath()).isNull();
     assertThat(scmGitMetaData.getBlobId()).isNull();
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void initDefaultScmGitMetaDataAndRequestParams() {
+    GitAwareContextHelper.initDefaultScmGitMetaDataAndRequestParams();
+    ScmGitMetaData scmGitMetaDataFetched = GitAwareContextHelper.getScmGitMetaData();
+    assertThat(scmGitMetaDataFetched).isNotNull();
+    assertThat(scmGitMetaDataFetched.getFilePath()).isEqualTo(null);
+    assertThat(scmGitMetaDataFetched.getCommitId()).isEqualTo(null);
+    assertThat(scmGitMetaDataFetched.getBlobId()).isEqualTo(null);
+    assertThat(scmGitMetaDataFetched.getBranchName()).isEqualTo(null);
+    assertThat(scmGitMetaDataFetched.getRepoName()).isEqualTo(null);
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    assertThat(gitEntityInfo).isNotNull();
+    assertThat(gitEntityInfo.isNull()).isEqualTo(true);
   }
 
   @Test

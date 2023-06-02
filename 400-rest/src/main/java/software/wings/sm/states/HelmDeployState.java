@@ -1168,6 +1168,8 @@ public class HelmDeployState extends State {
 
     commandRequest.setK8SteadyStateCheckEnabled(
         featureFlagService.isEnabled(FeatureName.HELM_STEADY_STATE_CHECK_1_16, context.getAccountId()));
+    commandRequest.setUseRefactorSteadyStateCheck(
+        featureFlagService.isEnabled(FeatureName.CDS_HELM_STEADY_STATE_CHECK_1_16_V2_CG, context.getAccountId()));
 
     StateExecutionContext stateExecutionContext =
         buildStateExecutionContext(stateExecutionDataBuilder, expressionFunctorToken);

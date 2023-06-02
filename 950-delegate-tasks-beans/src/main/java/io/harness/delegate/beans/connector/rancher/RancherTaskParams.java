@@ -25,7 +25,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class RancherTaskParams extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   private RancherConnectorDTO rancherConnectorDTO;
-  RancherTaskType rancherTaskType;
+  private RancherTaskType rancherTaskType;
   private List<EncryptedDataDetail> encryptionDetails;
 
   @Override

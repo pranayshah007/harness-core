@@ -15,7 +15,7 @@ import static junit.framework.TestCase.assertEquals;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.migration.list.SLIBucketCleanupAndSLIRecordMigration;
+import io.harness.cvng.migration.list.SLIRecordMigration;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
@@ -35,12 +35,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class SLIBucketCleanupAndSLIRecordMigrationTest extends CvNextGenTestBase {
+public class SLIBucketCleanupAndSLIRecordMigrationTestMigration extends CvNextGenTestBase {
   BuilderFactory builderFactory;
 
   @Inject HPersistence hPersistence;
   @Inject Clock clock;
-  @Inject SLIBucketCleanupAndSLIRecordMigration migration;
+  @Inject SLIRecordMigration migration;
 
   @Before
   @SneakyThrows

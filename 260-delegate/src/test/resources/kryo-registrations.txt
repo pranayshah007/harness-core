@@ -2808,6 +2808,7 @@
 20000503:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskParams
 20000504:io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse
 20000505:io.harness.delegate.beans.connector.rancher.RancherTaskType
+20000507:io.harness.delegate.beans.connector.rancher.RancherListClustersTaskResponse
 20000601:io.harness.delegate.beans.connector.rancher.RancherAuthType
 20000602:io.harness.delegate.beans.connector.rancher.RancherConfigType
 20000603:io.harness.delegate.beans.connector.rancher.RancherConnectorBearerTokenAuthenticationDTO

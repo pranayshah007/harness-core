@@ -4,7 +4,7 @@
   "summary": "Pipeline ${status}",
   "sections": [
     {
-      "activityTitle": "Pipeline [${pipelineName}](${pipelineExecutionLink}) ${status}",
+      "activityTitle": "Pipeline [${pipelineName}](${pipelineExecutionLink}) ${status} for stage: ${runningStages}",
       "activitySubtitle": "In Project ${projectName}",
       "facts": [
                {

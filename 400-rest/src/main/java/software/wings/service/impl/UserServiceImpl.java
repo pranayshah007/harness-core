@@ -4549,12 +4549,14 @@ public class UserServiceImpl implements UserService {
     }
   }
   private void filterListForGeneration(String accountId, List<User> userList, Generation generation) {
-    Iterator<User> i = userList.iterator();
-    while (i.hasNext()) {
-      User user = i.next();
-      if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
-          && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
-        i.remove();
+    if (featureFlagService.isEnabled(FeatureName.PL_USER_ACCOUNT_LEVEL_DATA_FLOW, accountId)) {
+      Iterator<User> i = userList.iterator();
+      while (i.hasNext()) {
+        User user = i.next();
+        if (userServiceHelper.validationForUserAccountLevelDataFlow(user, accountId)
+            && !userServiceHelper.isUserProvisionedInThisGenerationInThisAccount(user, accountId, generation)) {
+          i.remove();
+        }
       }
     }
   }
