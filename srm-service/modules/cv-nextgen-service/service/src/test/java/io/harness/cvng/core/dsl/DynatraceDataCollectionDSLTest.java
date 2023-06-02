@@ -50,7 +50,7 @@ public class DynatraceDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
   private List<MetricPack> metricPacks;
   private Instant instant;
   private String code;
-  private static final String BASE_URL = "***";
+  private static final String BASE_URL = "https://qva35651.live.dynatrace.com/";
 
   @Before
   public void setup() throws IOException {
