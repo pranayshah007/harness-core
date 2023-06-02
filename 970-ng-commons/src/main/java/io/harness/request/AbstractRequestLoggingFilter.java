@@ -23,7 +23,7 @@ public abstract class AbstractRequestLoggingFilter implements ContainerRequestFi
 
   @Override
   public void filter(ContainerRequestContext containerRequestContext) throws IOException {
-    log.info("Received request - Method [{}] | URL [{}] | Headers [{}]", containerRequestContext.getMethod(),
+    log.info("Received request - {} {} {}", containerRequestContext.getMethod(),
         containerRequestContext.getUriInfo().getRequestUri(), headers(containerRequestContext));
   }
 
