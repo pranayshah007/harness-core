@@ -68,11 +68,10 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
                 final UpdateOperations<CVNGSchema> updateOperations =
                     hPersistence.createUpdateOperations(CVNGSchema.class);
                 updateOperations.set(CVNGSchema.VERSION, i);
-                updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
                 hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
-                log.info("Done enqueuing CVNGSchema");
               }
             }
+            onCompletion();
             log.info("[Migration] - Migration complete");
             return true;
           });
@@ -82,6 +81,14 @@ public class CVNGMigrationServiceImpl implements CVNGMigrationService {
         }
       });
     }
+    onCompletion();
+  }
+
+  private void onCompletion() {
+    final UpdateOperations<CVNGSchema> updateOperations = hPersistence.createUpdateOperations(CVNGSchema.class);
+    updateOperations.set(CVNGSchemaKeys.cvngMigrationStatus, CVNGSchema.CVNGMigrationStatus.SUCCESS);
+    hPersistence.update(hPersistence.createQuery(CVNGSchema.class), updateOperations);
+    log.info("Done enqueuing CVNGSchema");
   }
 
   private void onFailure() {
