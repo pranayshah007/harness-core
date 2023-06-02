@@ -525,30 +525,15 @@ public class PcfCommandTaskBaseHelper {
       return null;
     }
     String releaseNamePrefix = cfRequestConfig.getApplicationName();
-    List<ApplicationSummary> activeVersions = new ArrayList<>();
 
-    ApplicationSummary activeApplication = null;
-    activeApplication =
-        findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback, activeVersions);
+    ApplicationSummary activeApplication =
+        findActiveBasedOnEnvironmentVariable(previousReleases, cfRequestConfig, executionLogCallback);
 
-    if (isEmpty(activeVersions)) {
-      activeApplication =
-          findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback, activeVersions);
+    if (activeApplication == null) {
+      activeApplication = findActiveBasedOnServiceName(previousReleases, releaseNamePrefix, executionLogCallback);
     }
 
-    if (isNotEmpty(activeVersions) && activeVersions.size() > 1) {
-      StringBuilder msgBuilder =
-          new StringBuilder(256)
-              .append("Invalid PCF Deployment State. Found Multiple applications having Env variable as ")
-              .append(HARNESS__STATUS__IDENTIFIER)
-              .append(
-                  ": ACTIVE' identifier. Cant Determine actual active version.\n Only 1 is expected to have this Status. Active versions found are: \n");
-      activeVersions.forEach(activeVersion -> msgBuilder.append(activeVersion.getName()).append(' '));
-      executionLogCallback.saveExecutionLog(msgBuilder.toString(), ERROR);
-      throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
-    }
-
-    if (isEmpty(activeVersions)) {
+    if (activeApplication == null) {
       StringBuilder msgBuilder =
           new StringBuilder(256)
               .append("Invalid PCF Deployment State. No applications were found having Env variable as ")
@@ -563,9 +548,9 @@ public class PcfCommandTaskBaseHelper {
   }
 
   private ApplicationSummary findActiveBasedOnEnvironmentVariable(List<ApplicationSummary> previousReleases,
-      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions)
-      throws PivotalClientApiException {
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     // For existing
+    List<ApplicationSummary> activeVersions = new ArrayList<>();
     ApplicationSummary activeApplication = null;
     for (int i = previousReleases.size() - 1; i >= 0; i--) {
       ApplicationSummary applicationSummary = previousReleases.get(i);
@@ -579,19 +564,30 @@ public class PcfCommandTaskBaseHelper {
                 PcfUtils.encodeColor(applicationSummary.getName())));
       }
     }
+
+    if (isNotEmpty(activeVersions) && activeVersions.size() > 1) {
+      StringBuilder msgBuilder =
+          new StringBuilder(256)
+              .append("Invalid PCF Deployment State. Found Multiple applications having Env variable as ")
+              .append(HARNESS__STATUS__IDENTIFIER)
+              .append(
+                  ": ACTIVE' identifier. Cant Determine actual active version.\n Only 1 is expected to have this Status. Active versions found are: \n");
+      activeVersions.forEach(activeVersion -> msgBuilder.append(activeVersion.getName()).append(' '));
+      executionLogCallback.saveExecutionLog(msgBuilder.toString(), ERROR);
+      throw new InvalidPcfStateException(msgBuilder.toString(), INVALID_INFRA_STATE, USER_SRE);
+    }
+
     return activeApplication;
   }
 
   public ApplicationSummary findActiveBasedOnServiceName(List<ApplicationSummary> previousReleases,
-      String releaseNamePrefix, LogCallback executionLogCallback, List<ApplicationSummary> activeVersions)
-      throws PivotalClientApiException {
+      String releaseNamePrefix, LogCallback executionLogCallback) throws PivotalClientApiException {
     ApplicationSummary activeApplication = null;
     for (int i = previousReleases.size() - 1; i >= 0; i--) {
       ApplicationSummary applicationSummary = previousReleases.get(i);
 
       if (releaseNamePrefix.equals(applicationSummary.getName())) {
         activeApplication = applicationSummary;
-        activeVersions.add(applicationSummary);
         executionLogCallback.saveExecutionLog(
             String.format("Found current Active App: [%s], as it has same name as release name specified by user",
                 PcfUtils.encodeColor(activeApplication.getName())));
