@@ -27,6 +27,7 @@ import io.harness.rancher.RancherConnectionHelperService;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +74,7 @@ public class RancherListClustersDelegateTask extends AbstractDelegateRunnableTas
         rancherNgConfigMapper.rancherConnectorDTOToConfig(connector, taskParams.getEncryptionDetails());
     String rancherUrl = rancherConfig.getManualConfig().getRancherUrl();
     String bearerToken = rancherConfig.getManualConfig().getPassword().getRancherPassword();
-    return rancherConnectionHelperService.listClusters(rancherUrl, bearerToken);
+    Map<String, String> pageRequestParams = taskParams.getPageRequestParams();
+    return rancherConnectionHelperService.listClusters(rancherUrl, bearerToken, pageRequestParams);
   }
 }
