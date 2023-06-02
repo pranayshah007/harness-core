@@ -529,8 +529,8 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                                .build();
     UserGroup savedUserGroup2 = userGroupService.save(userGroup2);
 
-    PageResponse pageResponse =
-        userGroupService.list(accountId, PageRequestBuilder.aPageRequest().build(), true, null, null);
+    PageResponse pageResponse = userGroupService.list(
+        accountId, PageRequestBuilder.aPageRequest().withLimit("10000").build(), true, null, null);
     assertThat(pageResponse).isNotNull();
     List<UserGroup> userGroupList = pageResponse.getResponse();
     assertThat(userGroupList).isNotNull();
