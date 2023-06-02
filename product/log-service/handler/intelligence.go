@@ -35,25 +35,11 @@ Logs:
 ` + "```"
 
 	genAIJSONPrompt = `
-I have a set of logs. The logs contain error messages. I want you to find the error messages in the logs, and suggest root cause and remediation or fix suggestions. I want you to give me the response in JSON format, no text before or after the JSON. Example of response:
+Provide error message, root cause and remediation from the below logs. Return list of json object with three keys using the following format {"error", "cause", "remediation"}. %s
 
-[
-	{
-		"error": "error_1",
-		"cause": "cause_1",
-		"remediation": "fix line 2 of the command"
-	},
-	{
-		"error": "error_2",
-		"cause": "cause_2",
-		"remediation": "fix line 5 of the command"
-	}
-]
-
-%s
-
-Here is the logs, remember to give the response only in json format like the example provided above, no text before or after the json object:
+Logs:
 ` + "```" + `
+%s
 %s
 ` + "```"
 
@@ -65,6 +51,11 @@ Here is the logs, remember to give the response only in json format like the exa
 	infraParam           = "infra"
 	stepTypeParam        = "step_type"
 	commandParam         = "command"
+
+	azureAIProvider  = "azureopenai"
+	azureAIModel     = "gpt3"
+	vertexAIProvider = "vertexai"
+	vertexAIModel    = "text-bison"
 )
 
 const (
@@ -111,7 +102,10 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 
 		genAISvcURL := cfg.GenAI.Endpoint
 		genAISvcSecret := cfg.GenAI.ServiceSecret
-		report, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret, logs, r)
+		provider := cfg.GenAI.Provider
+		useJSONResponse := cfg.GenAI.UseJSONResponse
+		report, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret,
+			provider, logs, useJSONResponse, r)
 		if err != nil {
 			WriteInternalError(w, err)
 			logger.FromRequest(r).
@@ -131,24 +125,51 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 	}
 }
 
-func retrieveLogRCA(ctx context.Context, endpoint, secret, logs string, r *http.Request) (
+func retrieveLogRCA(ctx context.Context, endpoint, secret, provider,
+	logs string, useJSONResponse bool, r *http.Request) (
 	*RCAReport, error) {
-	prompt := generatePrompt(r, logs)
-
+	promptTmpl := genAIPlainTextPrompt
+	if useJSONResponse {
+		promptTmpl = genAIJSONPrompt
+	}
+	prompt := generatePrompt(r, logs, promptTmpl)
 	client := genAIClient{endpoint: endpoint, secret: secret}
-	response, err := client.Complete(ctx, prompt, genAITemperature,
-		genAITopP, genAITopK, genAIMaxOuptutTokens)
+
+	response, isBlocked, err := predict(ctx, client, provider, prompt)
 	if err != nil {
 		return nil, err
 	}
-	if response.Blocked {
+	if isBlocked {
 		return nil, errors.New("received blocked response from genAI")
 	}
-
-	return &RCAReport{Rca: response.Text}, nil
+	if useJSONResponse {
+		return parseGenAIResponse(response)
+	}
+	return &RCAReport{Rca: response}, nil
 }
 
-func generatePrompt(r *http.Request, logs string) string {
+func predict(ctx context.Context, client genAIClient, provider, prompt string) (string, bool, error) {
+	switch provider {
+	case vertexAIProvider:
+		response, err := client.Complete(ctx, vertexAIProvider, vertexAIModel, prompt,
+			genAITemperature, genAITopP, genAITopK, genAIMaxOuptutTokens)
+		if err != nil {
+			return "", false, err
+		}
+		return response.Text, response.Blocked, nil
+	case azureAIProvider:
+		response, err := client.Chat(ctx, azureAIProvider, azureAIModel, prompt,
+			genAITemperature, -1, -1, genAIMaxOuptutTokens)
+		if err != nil {
+			return "", false, err
+		}
+		return response.Text, response.Blocked, nil
+	default:
+		return "", false, fmt.Errorf("unsupported provider %s", provider)
+	}
+}
+
+func generatePrompt(r *http.Request, logs, promptTempl string) string {
 	stepType := r.FormValue(stepTypeParam)
 	command := r.FormValue(commandParam)
 	infra := r.FormValue(infraParam)
@@ -166,7 +187,7 @@ func generatePrompt(r *http.Request, logs string) string {
 		errSummaryCtx += errSummary
 	}
 
-	prompt := fmt.Sprintf(genAIPlainTextPrompt, stepCtx, logs, errSummaryCtx)
+	prompt := fmt.Sprintf(promptTempl, stepCtx, logs, errSummaryCtx)
 	return prompt
 }
 
