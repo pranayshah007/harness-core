@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.idp.common.Constants;
 import io.harness.idp.common.FileUtils;
+import io.harness.idp.configmanager.ConfigType;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
 import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.utils.ConfigManagerUtils;
@@ -78,7 +79,7 @@ public class PluginInfoServiceImpl implements PluginInfoService {
       throw new InvalidRequestException(String.format("Plugin Info not found for pluginId [%s]", identifier));
     }
     PluginInfoEntity pluginEntity = pluginInfoEntity.get();
-    AppConfig appConfig = configManagerService.getPluginConfig(harnessAccount, identifier);
+    AppConfig appConfig = configManagerService.getAppConfig(harnessAccount, identifier, ConfigType.PLUGIN);
     List<BackstageEnvSecretVariable> backstageEnvSecretVariables = new ArrayList<>();
     if (appConfig != null) {
       List<String> envNames =

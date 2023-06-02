@@ -5,15 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.idp.configmanager;
+package io.harness.idp.allowlist.services;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
+import io.harness.spec.server.idp.v1.model.HostInfo;
 
-@OwnedBy(HarnessTeam.IDP)
-public enum ConfigType {
-  PLUGIN,
-  INTEGRATION,
-  AUTH,
-  BACKEND;
+import java.util.List;
+
+public interface AllowListService {
+  List<HostInfo> getAllowList(String harnessAccount) throws Exception;
+  List<HostInfo> saveAllowList(List<HostInfo> hostInfoList, String harnessAccount) throws Exception;
 }

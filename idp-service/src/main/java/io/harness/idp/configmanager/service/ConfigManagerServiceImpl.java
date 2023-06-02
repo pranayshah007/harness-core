@@ -83,13 +83,13 @@ public class ConfigManagerServiceImpl implements ConfigManagerService {
   }
 
   @Override
-  public AppConfig getPluginConfig(String accountIdentifier, String pluginId) {
-    Optional<AppConfigEntity> pluginConfig = appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
-        accountIdentifier, pluginId, ConfigType.PLUGIN);
-    if (pluginConfig.isEmpty()) {
+  public AppConfig getAppConfig(String accountIdentifier, String configId, ConfigType configType) {
+    Optional<AppConfigEntity> config =
+        appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(accountIdentifier, configId, configType);
+    if (config.isEmpty()) {
       return null;
     }
-    return pluginConfig.map(AppConfigMapper::toDTO).get();
+    return config.map(AppConfigMapper::toDTO).get();
   }
 
   @Override
