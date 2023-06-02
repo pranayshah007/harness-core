@@ -24,4 +24,5 @@ public class CacheConfig {
   String cacheNamespace;
   Set<String> disabledCaches;
   @JsonProperty(defaultValue = "false") boolean enterpriseCacheEnabled;
+  @JsonProperty(defaultValue = "false") boolean resilientCacheEnabled;
 }
