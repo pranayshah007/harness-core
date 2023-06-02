@@ -126,6 +126,10 @@ public abstract class VerificationJob
 
   public abstract Sensitivity getSensitivity();
 
+  public String getBaselineVerificationJobInstanceId() {
+    return null;
+  }
+
   public void validate() {
     Preconditions.checkNotNull(accountId, generateErrorMessageFromParam(VerificationJobKeys.accountId));
     Preconditions.checkNotNull(identifier, generateErrorMessageFromParam(VerificationJobKeys.identifier));

@@ -221,22 +221,14 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
       logFeedbackAnalysisLearningEngineTask.setAnalysisType(LearningEngineTaskType.LOG_FEEDBACK);
       logFeedbackAnalysisLearningEngineTask.setFeedbackUrl(getLogFeedbackForDeploymentLog(input));
     } else {
-      TestVerificationJob testVerificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
-      String baselineVerificationJobInstanceId = testVerificationJob.getBaselineVerificationJobInstanceId();
-      task = TestLogAnalysisLearningEngineTask.builder().build();
-      task.setAnalysisType(LearningEngineTaskType.TEST_LOG_ANALYSIS);
-      if (baselineVerificationJobInstanceId != null) {
-        VerificationJobInstance baselineVerificationJobInstance =
-            verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
-        Optional<String> baselineVerificationTaskId = verificationTaskService.findBaselineVerificationTaskId(
-            input.getVerificationTaskId(), verificationJobInstance);
-        task.setControlDataUrl(baselineVerificationTaskId.isPresent()
-                ? createDeploymentDataUrl(baselineVerificationTaskId.get(),
-                    baselineVerificationJobInstance.getStartTime(), baselineVerificationJobInstance.getEndTime())
-                : null);
-      }
+      LogAnalysisLearningEngineTask logAnalysisLearningEngineTask = createLogCanaryAnalysisLearningEngineTask_v2(input);
+      logFeedbackAnalysisLearningEngineTask =
+          LogFeedbackAnalysisLearningEngineTask.builder().controlHosts(controlHosts).testHosts(testHosts).build();
+      logFeedbackAnalysisLearningEngineTask.setControlDataUrl(logAnalysisLearningEngineTask.getControlDataUrl());
+      logFeedbackAnalysisLearningEngineTask.setAnalysisType(LearningEngineTaskType.LOG_FEEDBACK);
+      logFeedbackAnalysisLearningEngineTask.setFeedbackUrl(getLogFeedbackForDeploymentLog(input));
+      logFeedbackAnalysisLearningEngineTask.setTestDataUrl(logAnalysisLearningEngineTask.getTestDataUrl());
     }
-    assert logFeedbackAnalysisLearningEngineTask != null;
     logFeedbackAnalysisLearningEngineTask.setAnalysisUrl(
         getPreviousAnalysisUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
     logFeedbackAnalysisLearningEngineTask.setTestDataUrl(
@@ -298,8 +290,6 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
     }
     task.setPreviousAnalysisUrl(
         getPreviousAnalysisUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
-    task.setTestDataUrl(
-        createDeploymentDataUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
     task.setTestDataUrl(getTestDataUrlForDeploymentLog(input));
     task.setAnalysisStartTime(input.getStartTime());
     task.setVerificationTaskId(input.getVerificationTaskId());
@@ -349,7 +339,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
 
     if (isNotEmpty(input.getTestHosts())) {
       uriBuilder.addParameter("hosts", String.join(",", input.getTestHosts()));
-    } else {
+    } else if (input.getTestHosts() != null) {
       uriBuilder.addParameter("hosts", "");
     }
     return getUriString(uriBuilder);
