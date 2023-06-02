@@ -319,7 +319,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -528,7 +528,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -736,7 +736,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -944,7 +944,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1153,9 +1153,9 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
-    doThrow(PivotalClientApiException.class).when(cfDeploymentManager).resizeApplication(any());
+    doThrow(PivotalClientApiException.class).when(cfDeploymentManager).resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1363,7 +1363,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);
@@ -1571,7 +1571,7 @@ public class CfSwapRoutesCommandTaskHandlerTest extends CategoryTest {
                  .build())
         .doReturn(applicationDetailDownsize)
         .when(cfDeploymentManager)
-        .resizeApplication(any());
+        .resizeApplication(any(), any());
 
     CfCommandResponseNG cfCommandExecutionResponse = cfSwapRouteCommandTaskHandlerNG.executeTaskInternal(
         cfSwapRoutesRequestNG, logStreamingTaskClient, commandUnitsProgress);

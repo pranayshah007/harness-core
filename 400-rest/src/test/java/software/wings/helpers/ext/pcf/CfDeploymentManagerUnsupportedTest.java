@@ -65,7 +65,7 @@ public class CfDeploymentManagerUnsupportedTest extends WingsBaseTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testResizeApplication() {
-    assertThatThrownBy(() -> deploymentManager.resizeApplication(cfRequestConfig))
+    assertThatThrownBy(() -> deploymentManager.resizeApplication(cfRequestConfig, mockLogCallback))
         .isInstanceOf(PivotalClientApiException.class);
   }
 
