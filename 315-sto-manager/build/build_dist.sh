@@ -31,6 +31,8 @@ cp ../../315-sto-manager/config/key.pem .
 cp ../../315-sto-manager/config/cert.pem .
 cp ../../315-sto-manager/app/src/main/resources/redisson-jcache.yaml .
 cp ../../315-sto-manager/app/src/main/resources/enterprise-redisson-jcache.yaml .
+cp ../../315-sto-manager/app/src/main/resources/jfr/default.jfc .
+cp ../../315-sto-manager/app/src/main/resources/jfr/profile.jfc .
 
 cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-openjdk ./Dockerfile
 cp ../../315-sto-manager/build/container/Dockerfile-stomanager-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
