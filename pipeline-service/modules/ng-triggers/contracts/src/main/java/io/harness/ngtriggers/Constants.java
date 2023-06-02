@@ -125,7 +125,6 @@ public interface Constants {
   String TRIGGER_TYPE_LIST_BY_CATEGORY = "List of Trigger types corresponding to a specific category.";
   String TRIGGER_CATALOGUE_LIST = "List of Trigger category and Trigger types corresponding to a specific category.";
   String TRIGGERS_MANDATE_GITHUB_AUTHENTICATION = "mandate_webhook_secrets_for_github_triggers";
-  String GIT_WEBHOOK_POLLING_FOR_TRIGGERS = "git_webhook_polling_for_triggers";
   String MANDATE_GITHUB_AUTHENTICATION_TRUE_VALUE = "true";
   String PIPELINE_INPUTS_VALIDATION_ERROR = "PipelineInputsErrorMetadataV2";
   String MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION = "mandate_custom_webhook_authorization";
