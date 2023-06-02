@@ -30,6 +30,7 @@ go_library(
         "@com_github_cenkalti_backoff_v4//:backoff",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_go_chi_chi//:chi",
+        "@com_github_golang_jwt_jwt_v5//:jwt",
         "@com_github_pkg_errors//:errors",
         "@org_golang_x_sync//errgroup",
     ],
