@@ -48,6 +48,8 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class BigQueryUpdateMessageReceiver implements MessageReceiver {
   private static final String COST_CATEGORY_FORMAT = "STRUCT('%s' as costCategoryName, %s as costBucketName)";
+  private static final String T_MOBILE_ACCOUNT_ID = "k9c6xngts06yosmv7hpglq";
+
   private final Gson gson = new Gson();
   private final BigQueryHelper bigQueryHelper;
   private final BigQueryHelperService bigQueryHelperService;
@@ -136,12 +138,14 @@ public class BigQueryUpdateMessageReceiver implements MessageReceiver {
         currentMonth = currentMonth.plusMonths(1);
         continue;
       }
+      // TODO: Replace the condition with feature flag
+      boolean shouldUseLabelsColumn = T_MOBILE_ACCOUNT_ID.equalsIgnoreCase(message.getAccountId());
       List<String> sqlCaseStatements =
           businessMappingHistories.stream()
               .map(businessMappingHistory
                   -> String.format(COST_CATEGORY_FORMAT, businessMappingHistory.getName(),
                       viewsQueryBuilder.getSQLCaseStatementBusinessMapping(
-                          BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE)))
+                          BusinessMapping.fromHistory(businessMappingHistory), UNIFIED_TABLE, shouldUseLabelsColumn)))
               .collect(Collectors.toList());
       String costCategoriesStatement = "[" + String.join(", ", sqlCaseStatements) + "]";
 
