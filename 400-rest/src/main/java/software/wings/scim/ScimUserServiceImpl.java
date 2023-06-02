@@ -17,6 +17,7 @@ import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.scim.PatchOperation;
@@ -280,6 +281,9 @@ public class ScimUserServiceImpl implements ScimUserService {
         log.error("SCIM: Failed to update user: {}, patchOperation: {}", userId, patchOperation, ex);
       }
     });
+    if (patchOperationIncludesUserDeletion(patchRequest)) {
+      return null;
+    }
     return getUser(userId, accountId);
   }
 
@@ -471,7 +475,11 @@ public class ScimUserServiceImpl implements ScimUserService {
       }
       log.info("SCIM: user {} was updated {} with updateOperations {} in account: {}", user.getUuid(), userUpdate,
           updateOperations, accountId);
-      return Response.status(Status.OK).entity(getUser(user.getUuid(), accountId)).build();
+      ScimUser updatedUser = null;
+      if (!putOperationIncludesUserDeletion(userResource)) {
+        updatedUser = getUser(user.getUuid(), accountId);
+      }
+      return Response.status(Status.OK).entity(updatedUser).build();
     }
   }
 
@@ -485,5 +493,27 @@ public class ScimUserServiceImpl implements ScimUserService {
       removeUserFromAllScimGroups(accountId, userId);
     }
     return true;
+  }
+
+  private boolean patchOperationIncludesUserDeletion(PatchRequest patchRequest) {
+    for (PatchOperation patchOperation : patchRequest.getOperations()) {
+      try {
+        boolean isActiveFalse = (patchOperation.getValue(ScimUserValuedObject.class) != null
+                                    && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive())
+            || ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+                && !(patchOperation.getValue(Boolean.class)));
+
+        if (isActiveFalse) {
+          return true;
+        }
+      } catch (JsonProcessingException e) {
+        throw new InternalServerErrorException("Failed to parse the SCIM request", e);
+      }
+    }
+    return false;
+  }
+
+  private boolean putOperationIncludesUserDeletion(ScimUser userResource) {
+    return userResource.getActive() != null && !userResource.getActive();
   }
 }
