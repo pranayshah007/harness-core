@@ -154,7 +154,7 @@ public class SSOServiceTest extends WingsBaseTest {
 
     SSOConfig settings = ssoService.uploadSamlConfiguration(account.getUuid(),
         getClass().getResourceAsStream("/okta-IDP-metadata.xml"), "Okta", "group", true, logoutUrl, "app.harness.io",
-        SAMLProviderType.OKTA.name(), anyString(), any(), friendlySamlName, false);
+        SAMLProviderType.OKTA.name(), anyString(), any(), friendlySamlName, false, false, null, null);
     String idpRedirectUrl = ((SamlSettings) settings.getSsoSettings().get(0)).getUrl();
     assertThat(idpRedirectUrl)
         .isEqualTo("https://dev-274703.oktapreview.com/app/harnessiodev274703_testapp_1/exkefa5xlgHhrU1Mc0h7/sso/saml");
@@ -164,7 +164,7 @@ public class SSOServiceTest extends WingsBaseTest {
     try {
       ssoService.uploadSamlConfiguration(account.getUuid(), getClass().getResourceAsStream("/SamlResponse.txt"), "Okta",
           "group", true, logoutUrl, "app.harness.io", SAMLProviderType.OKTA.name(), anyString(), any(),
-          friendlySamlName, false);
+          friendlySamlName, false, false, null, null);
       failBecauseExceptionWasNotThrown(WingsException.class);
     } catch (WingsException e) {
       assertThat(e.getMessage()).isEqualTo(ErrorCode.INVALID_SAML_CONFIGURATION.name());
@@ -380,7 +380,7 @@ public class SSOServiceTest extends WingsBaseTest {
 
     SSOConfig ssoConfig = ssoService.updateSamlConfiguration(ACCOUNT_ID, uuidStr, null, testDisplayName,
         "testGrpMembershipAttr", false, "test_logout_url", "testEntityId", "OKTA", "testClientId",
-        "testClientSecret".toCharArray(), testFriendlySamlName, false);
+        "testClientSecret".toCharArray(), testFriendlySamlName, false, false, null, null);
 
     assertThat(ssoConfig).isNotNull();
     assertThat(ssoConfig.getSsoSettings()).isNotNull();
