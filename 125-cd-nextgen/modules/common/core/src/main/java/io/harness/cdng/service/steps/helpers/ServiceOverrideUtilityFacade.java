@@ -13,15 +13,12 @@ import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvir
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration;
-import io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration;
-import io.harness.cdng.configfile.ConfigFileWrapper;
-import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.steps.helpers.beans.ServiceStepV3Parameters;
 import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.services.impl.EnvironmentEntityYamlSchemaHelper;
@@ -46,7 +43,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.scope.ScopeHelper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
@@ -65,7 +61,6 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @Singleton
@@ -93,10 +88,9 @@ public class ServiceOverrideUtilityFacade {
     return serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
   }
 
-  @NonNull
   public EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedServiceOverrideConfigs(String accountId,
-      String orgId, String projectId, @NonNull ServiceStepV3Parameters parameters, @NonNull Environment envEntity)
-      throws IOException {
+      String orgId, String projectId, @NonNull ServiceStepV3Parameters parameters, @NonNull Environment envEntity,
+      NGLogCallback logCallback) throws IOException {
     if (ParameterField.isNull(parameters.getEnvRef()) || isEmpty(parameters.getEnvRef().getValue())
         || ParameterField.isNull(parameters.getServiceRef()) || isEmpty(parameters.getServiceRef().getValue())) {
       throw new InvalidRequestException("Environment Ref or Service Ref given for overrides has not been resolved");
@@ -121,7 +115,7 @@ public class ServiceOverrideUtilityFacade {
 
     if (isOverrideV2EnabledValue.equals("true")) {
       Map<ServiceOverridesType, List<NGServiceOverridesEntity>> allTypesOverridesV2 =
-          getAllOverridesWithSpecExists(parameters, accountId);
+          getAllOverridesWithSpecExists(parameters, accountId, orgId, projectId, logCallback);
       EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
           getMergedOverridesAcrossScope(allTypesOverridesV2);
 
@@ -180,7 +174,8 @@ public class ServiceOverrideUtilityFacade {
         new EnumMap<>(ServiceOverridesType.class);
     overridesV2Map.forEach((type, entities) -> {
       if (isNotEmpty(entities)) {
-        Optional<NGServiceOverrideConfigV2> finalOverrideConfig = mergeOverridesGroupedByType(entities);
+        Optional<NGServiceOverrideConfigV2> finalOverrideConfig =
+            serviceOverridesServiceV2.mergeOverridesGroupedByType(entities);
         finalOverrideConfig.ifPresent(
             ngServiceOverrideConfigV2 -> finalMergedOverridesMap.put(type, ngServiceOverrideConfigV2));
       }
@@ -189,116 +184,38 @@ public class ServiceOverrideUtilityFacade {
     return finalMergedOverridesMap;
   }
 
-  private Optional<NGServiceOverrideConfigV2> mergeOverridesGroupedByType(
-      @NonNull List<NGServiceOverridesEntity> overridesEntities) {
-    if (overridesEntities.size() > 3) {
-      throw new InvalidRequestException(
-          "Found more than 3 overrides, at one scope (project, org, account) only one override is supported");
-    }
-
-    if (isEmpty(overridesEntities)) {
-      return Optional.empty();
-    }
-
-    if (overridesEntities.size() == 1) {
-      NGServiceOverridesEntity overridesEntity = overridesEntities.get(0);
-      return Optional.of(NGServiceOverrideConfigV2.builder()
-                             .identifier(overridesEntity.getIdentifier())
-                             .serviceRef(overridesEntity.getServiceRef())
-                             .environmentRef(overridesEntity.getEnvironmentRef())
-                             .infraId(overridesEntity.getInfraIdentifier())
-                             .spec(overridesEntity.getSpec())
-                             .type(overridesEntity.getType())
-                             .build());
-    }
-
-    ServiceOverridesSpec finalSpec = getFinalMergedSpecFromOverridesGroupedByType(overridesEntities);
-
-    return Optional.of(NGServiceOverrideConfigV2.builder()
-                           .identifier(overridesEntities.get(0).getIdentifier())
-                           .serviceRef(overridesEntities.get(0).getServiceRef())
-                           .environmentRef(overridesEntities.get(0).getEnvironmentRef())
-                           .infraId(overridesEntities.get(0).getInfraIdentifier())
-                           .type(overridesEntities.get(0).getType())
-                           .spec(finalSpec)
-                           .build());
-  }
-
-  private static ServiceOverridesSpec getFinalMergedSpecFromOverridesGroupedByType(
-      @NonNull List<NGServiceOverridesEntity> overridesEntities) {
-    Map<String, NGVariable> finalNGVariables = new HashMap<>();
-    Map<String, ManifestConfigWrapper> finalManifests = new HashMap<>();
-    Map<String, ConfigFileWrapper> finalConfigFiles = new HashMap<>();
-    ApplicationSettingsConfiguration finalApplicationSetting = ApplicationSettingsConfiguration.builder().build();
-    ConnectionStringsConfiguration finalConnectionStrings = ConnectionStringsConfiguration.builder().build();
-
-    Map<Scope, NGServiceOverridesEntity> overridesGroupByScope = getOverridesGroupByType(overridesEntities);
-    if (overridesGroupByScope.containsKey(Scope.ACCOUNT)) {
-      ServiceOverridesSpec accOverridesSpec = overridesGroupByScope.get(Scope.ACCOUNT).getSpec();
-      updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, accOverridesSpec);
-      finalApplicationSetting = accOverridesSpec.getApplicationSettings();
-      finalConnectionStrings = accOverridesSpec.getConnectionStrings();
-    }
-    if (overridesGroupByScope.containsKey(Scope.ORG)) {
-      ServiceOverridesSpec orgOverridesSpec = overridesGroupByScope.get(Scope.ORG).getSpec();
-      updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, orgOverridesSpec);
-      finalApplicationSetting = orgOverridesSpec.getApplicationSettings();
-      finalConnectionStrings = orgOverridesSpec.getConnectionStrings();
-    }
-    if (overridesGroupByScope.containsKey(Scope.PROJECT)) {
-      ServiceOverridesSpec projectOverridesSpec = overridesGroupByScope.get(Scope.PROJECT).getSpec();
-      updateSpecFieldsByEntityFields(finalNGVariables, finalManifests, finalConfigFiles, projectOverridesSpec);
-      finalApplicationSetting = projectOverridesSpec.getApplicationSettings();
-      finalConnectionStrings = projectOverridesSpec.getConnectionStrings();
-    }
-
-    return ServiceOverridesSpec.builder()
-        .variables((List<NGVariable>) finalNGVariables.values())
-        .manifests((List<ManifestConfigWrapper>) finalManifests.values())
-        .configFiles((List<ConfigFileWrapper>) finalConfigFiles.values())
-        .connectionStrings(finalConnectionStrings)
-        .applicationSettings(finalApplicationSetting)
-        .build();
-  }
-
-  private static void updateSpecFieldsByEntityFields(Map<String, NGVariable> finalNGVariables,
-      Map<String, ManifestConfigWrapper> finalManifests, Map<String, ConfigFileWrapper> finalConfigFiles,
-      ServiceOverridesSpec overridesSpec) {
-    if (isNotEmpty(overridesSpec.getVariables())) {
-      overridesSpec.getVariables().forEach(ngVar -> finalNGVariables.put(ngVar.getName(), ngVar));
-    }
-    if (isNotEmpty(overridesSpec.getManifests())) {
-      overridesSpec.getManifests().forEach(
-          manifest -> finalManifests.put(manifest.getManifest().getIdentifier(), manifest));
-    }
-    if (isNotEmpty(overridesSpec.getConfigFiles())) {
-      overridesSpec.getConfigFiles().forEach(
-          configFile -> finalConfigFiles.put(configFile.getConfigFile().getIdentifier(), configFile));
-    }
-  }
-
-  private static Map<Scope, NGServiceOverridesEntity> getOverridesGroupByType(
-      @NotNull List<NGServiceOverridesEntity> overridesEntities) {
-    Map<Scope, NGServiceOverridesEntity> overrideGroupByScope = new HashMap<>();
-    overridesEntities.forEach(entity
-        -> overrideGroupByScope.put(
-            ScopeHelper.getScope(entity.getAccountId(), entity.getOrgIdentifier(), entity.getProjectIdentifier()),
-            entity));
-    return overrideGroupByScope;
-  }
-
   private Map<ServiceOverridesType, List<NGServiceOverridesEntity>> getAllOverridesWithSpecExists(
-      ServiceStepV3Parameters parameters, String accountId) {
+      ServiceStepV3Parameters parameters, String accountId, String orgId, String projectId, NGLogCallback logCallback) {
     Map<ServiceOverridesType, List<NGServiceOverridesEntity>> overridesForStep = new HashMap<>();
-    overridesForStep.put(
-        ServiceOverridesType.ENV_GLOBAL_OVERRIDE, getEnvOverride(accountId, parameters.getEnvRef().getValue()));
-    overridesForStep.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE,
-        getEnvServiceOverride(accountId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue()));
-    overridesForStep.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE,
-        getInfraOverride(accountId, parameters.getEnvRef().getValue(), parameters.getInfraId().getValue()));
-    overridesForStep.put(ServiceOverridesType.INFRA_SERVICE_OVERRIDE,
-        getInfraServiceOverride(accountId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue(),
-            parameters.getInfraId().getValue()));
+    Map<Scope, NGServiceOverridesEntity> envOverride = serviceOverridesServiceV2.getEnvOverride(
+        accountId, orgId, projectId, parameters.getEnvRef().getValue(), logCallback);
+    if (isNotEmpty(envOverride)) {
+      overridesForStep.put(ServiceOverridesType.ENV_GLOBAL_OVERRIDE, new ArrayList<>(envOverride.values()));
+    }
+
+    Map<Scope, NGServiceOverridesEntity> envServiceOverride = serviceOverridesServiceV2.getEnvServiceOverride(accountId,
+        orgId, projectId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue(), logCallback);
+    if (isNotEmpty(envServiceOverride)) {
+      overridesForStep.put(ServiceOverridesType.ENV_SERVICE_OVERRIDE, new ArrayList<>(envServiceOverride.values()));
+    }
+
+    if (ParameterField.isNotNull(parameters.getInfraId()) && !parameters.getInfraId().isExpression()
+        && isNotBlank(parameters.getInfraId().getValue())) {
+      Map<Scope, NGServiceOverridesEntity> infraOverride = serviceOverridesServiceV2.getInfraOverride(accountId, orgId,
+          projectId, parameters.getEnvRef().getValue(), parameters.getInfraId().getValue(), logCallback);
+      if (isNotEmpty(infraOverride)) {
+        overridesForStep.put(ServiceOverridesType.INFRA_GLOBAL_OVERRIDE, new ArrayList<>(infraOverride.values()));
+      }
+
+      Map<Scope, NGServiceOverridesEntity> infraServiceOverride = serviceOverridesServiceV2.getInfraServiceOverride(
+          accountId, orgId, projectId, parameters.getEnvRef().getValue(), parameters.getServiceRef().getValue(),
+          parameters.getInfraId().getValue(), logCallback);
+      if (isNotEmpty(infraServiceOverride)) {
+        overridesForStep.put(
+            ServiceOverridesType.INFRA_SERVICE_OVERRIDE, new ArrayList<>(infraServiceOverride.values()));
+      }
+    }
+
     return overridesForStep;
   }
 
@@ -313,8 +230,8 @@ public class ServiceOverrideUtilityFacade {
     return serviceOverridesServiceV2.findAll(criteria);
   }
 
-  @NotNull
-  private static Criteria getBasicCriteriaForOverridesV2(String accountId, String environmentRef) {
+  @NonNull
+  private Criteria getBasicCriteriaForOverridesV2(String accountId, String environmentRef) {
     return new Criteria()
         .and(NGServiceOverridesEntityKeys.accountId)
         .is(accountId)
@@ -568,7 +485,7 @@ public class ServiceOverrideUtilityFacade {
     return yamlConfig.getYaml();
   }
 
-  private static Map<String, Object> addDummyNodeToOverrideInputs(Map<String, Object> serviceOverrideInputs) {
+  private Map<String, Object> addDummyNodeToOverrideInputs(Map<String, Object> serviceOverrideInputs) {
     Map<String, Object> inputs = new HashMap<>();
     inputs.put(YamlTypes.SERVICE_OVERRIDE, serviceOverrideInputs);
     return inputs;

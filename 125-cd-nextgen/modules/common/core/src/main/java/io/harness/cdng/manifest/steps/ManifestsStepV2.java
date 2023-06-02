@@ -55,6 +55,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.environment.validator.SvcEnvV2ManifestValidator;
 import io.harness.ng.core.serviceoverridev2.beans.ServiceOverridesType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -69,6 +70,7 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -107,7 +109,11 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private ServiceStepsHelper serviceStepsHelper;
 
+  @Inject private NGSettingsClient ngSettingsClient;
+
   @Inject NGFeatureFlagHelperService featureFlagHelperService;
+
+  private static final String OVERRIDE_PROJECT_SETTING_IDENTIFIER = "service_override_v2";
 
   @Override
   public Class<EmptyStepParameters> getStepParametersClass() {
@@ -120,8 +126,9 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
     final NgManifestsMetadataSweepingOutput ngManifestsMetadataSweepingOutput =
         fetchManifestsMetadataFromSweepingOutput(ambiance);
 
-    boolean isOverridesV2Enabled =
-        featureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_SERVICE_OVERRIDES_2_0);
+    boolean isOverridesV2Enabled = isOverridesV2(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance));
+
     List<ManifestConfigWrapper> manifests = new ArrayList<>();
     Map<String, List<ManifestConfigWrapper>> finalSvcManifestsMapV1 = new HashMap<>();
     Map<ServiceOverridesType, List<ManifestConfigWrapper>> manifestsFromOverride = new HashMap<>();
@@ -423,5 +430,14 @@ public class ManifestsStepV2 implements SyncExecutable<EmptyStepParameters> {
             LogLevel.WARN);
       }
     }
+  }
+
+  private boolean isOverridesV2(String accountId, String orgId, String projectId) {
+    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_SERVICE_OVERRIDES_2_0)
+        && NGRestUtils
+               .getResponse(
+                   ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
+               .getValue()
+               .equals("true");
   }
 }
