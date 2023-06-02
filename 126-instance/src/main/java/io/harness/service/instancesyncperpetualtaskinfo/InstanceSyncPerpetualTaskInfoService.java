@@ -32,6 +32,14 @@ public interface InstanceSyncPerpetualTaskInfoService {
 
   InstanceSyncPerpetualTaskInfoDTO updateDeploymentInfoListAndConnectorId(
       InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO, String connectorIdentifier);
+
+  InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV2(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
+
+  InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO);
+
   List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId);
+
   Page<InstanceSyncPerpetualTaskInfoDTO> findAllInPages(Pageable pageRequest, String accountId, String perpetualTaskId);
 }

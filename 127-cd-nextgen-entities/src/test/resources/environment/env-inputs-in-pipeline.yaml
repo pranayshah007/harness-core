@@ -2,7 +2,7 @@ environmentInputs:
   identifier: ENV_ID
   type: Production
   variables:
-    - name: envV2
+    - name: envV1
       type: String
       value: <+input>
   overrides:
@@ -16,4 +16,3 @@ environmentInputs:
               spec:
                 connectorRef: <+input>
                 repoName: <+input>
-                branch: <+input>

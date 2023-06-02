@@ -2,9 +2,9 @@ pipeline:
   identifier: Test_Pipline11
   name: Test Pipline
   variables:
-  - name: var1
-    type: String
-    value: val1
-  - name: var2
-    type: String
-    value: a.allowedValues(a,b)
+    - name: var1
+      type: String
+      value: val1
+    - name: var2
+      type: String
+      value: a.allowedValues(a,b)

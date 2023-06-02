@@ -16,6 +16,7 @@ import io.harness.delegate.task.stepstatus.StepStatus;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
 import io.harness.delegate.task.stepstatus.artifact.SscaArtifactMetadata;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepType;
@@ -35,6 +36,11 @@ public class SscaEnforcementStep extends AbstractStepExecutable {
 
   @Override
   protected boolean shouldPublishArtifact(StepStatus stepStatus) {
+    return true;
+  }
+
+  @Override
+  protected boolean shouldPublishArtifactForVm(CommandExecutionStatus commandExecutionStatus) {
     return true;
   }
 

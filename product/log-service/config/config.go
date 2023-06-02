@@ -65,6 +65,7 @@ type Config struct {
 
 	GenAI struct {
 		Endpoint          string `envconfig:"LOG_SERVICE_GENAI_ENDPOINT"`
+		ServiceSecret     string `envconfig:"LOG_SERVICE_GENAI_SERVICE_SECRET" secret:"true"`
 		MaxInputPromptLen int    `envconfig:"LOG_SERVICE_GENAI_MAX_INPUT_PROMPT_LEN" default:"10000"`
 	}
 }

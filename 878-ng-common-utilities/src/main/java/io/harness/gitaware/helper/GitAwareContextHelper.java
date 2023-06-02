@@ -196,4 +196,20 @@ public class GitAwareContextHelper {
   public boolean isRemoteEntity(GitEntityInfo gitEntityInfo) {
     return gitEntityInfo != null && StoreType.REMOTE.equals(gitEntityInfo.getStoreType());
   }
+
+  public boolean isDefaultBranch() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null && gitEntityInfo.getIsDefaultBranch() != null) {
+      return gitEntityInfo.getIsDefaultBranch();
+    }
+    return false;
+  }
+
+  public String getBranchFromGitContext() {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    if (gitEntityInfo != null) {
+      return gitEntityInfo.getBranch();
+    }
+    return "";
+  }
 }

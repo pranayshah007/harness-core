@@ -319,6 +319,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       pipelineEntity = getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     }
+    if (pipelineEntity.isPresent() && StoreType.REMOTE.equals(pipelineEntity.get().getStoreType())) {
+      pmsPipelineServiceHelper.computePipelineReferences(pipelineEntity.get(), loadFromCache);
+    }
     return PipelineGetResult.builder().pipelineEntity(pipelineEntity).asyncValidationUUID(validationUUID).build();
   }
 

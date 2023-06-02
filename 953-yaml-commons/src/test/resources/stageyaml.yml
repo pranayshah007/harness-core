@@ -1,93 +1,93 @@
 stage:
-  identifier: "qaStage"
-  name: "qa stage"
-  type: "Deployment"
+  identifier: qaStage
+  name: qa stage
+  type: Deployment
   spec:
     service:
-      identifier: "manager"
-      name: "manager"
+      identifier: manager
+      name: manager
       serviceDefinition:
-        type: "Kubernetes"
+        type: Kubernetes
         spec:
           manifests:
-          - manifest:
-              identifier: "baseValues"
-              type: "K8sManifest"
-              spec:
-                store:
-                  type: "Git"
-                  spec:
-                    connectorRef: "my_git_connector"
-                    gitFetchType: "<+input>"
-                    branch: "master"
-                    paths: "<+input>"
-          - manifest:
-              identifier: "qaOverride"
-              type: "Values"
-              spec:
-                store: "<+input>"
+            - manifest:
+                identifier: baseValues
+                type: K8sManifest
+                spec:
+                  store:
+                    type: Git
+                    spec:
+                      connectorRef: my_git_connector
+                      gitFetchType: <+input>
+                      branch: master
+                      paths: <+input>
+            - manifest:
+                identifier: qaOverride
+                type: Values
+                spec:
+                  store: <+input>
     infrastructure:
       environment:
-        identifier: "stagingInfra"
-        type: "PreProduction"
+        identifier: stagingInfra
+        type: PreProduction
         tags:
-          cloud: "GCP"
-          team: "<+input>"
+          cloud: GCP
+          team: <+input>
       infrastructureDefinition:
-        type: "KubernetesDirect"
+        type: KubernetesDirect
         spec:
-          connectorRef: "<+input>"
-          namespace: "<+input>"
-          releaseName: "<+input>"
+          connectorRef: <+input>
+          namespace: <+input>
+          releaseName: <+input>
     execution:
       steps:
-      - step:
-          name: "http step 1"
-          identifier: "httpStep1"
-          type: "Http"
-          spec:
-            socketTimeoutMillis: 1000
-            method: "GET"
-            url: "<+input>"
-      - parallel:
         - step:
-            name: "http step 2"
-            identifier: "httpStep2"
-            type: "Http"
+            name: http step 1
+            identifier: httpStep1
+            type: Http
             spec:
               socketTimeoutMillis: 1000
-              method: "<+input>"
-              url: "https://google.com"
+              method: GET
+              url: <+input>
+        - parallel:
+            - step:
+                name: http step 2
+                identifier: httpStep2
+                type: Http
+                spec:
+                  socketTimeoutMillis: 1000
+                  method: <+input>
+                  url: https://google.com
+            - step:
+                name: http step 3
+                identifier: httpStep3
+                type: Http
+                spec:
+                  socketTimeoutMillis: 1000
+                  method: GET
+                  url: https://google.com
         - step:
-            name: "http step 3"
-            identifier: "httpStep3"
-            type: "Http"
+            name: http step 11
+            identifier: httpStep11
+            type: Http
             spec:
-              socketTimeoutMillis: 1000
-              method: "GET"
-              url: "https://google.com"
-      - step:
-          name: "http step 11"
-          identifier: "httpStep11"
-          type: "Http"
-          spec:
-            socketTimeoutMillis: "<+input>"
-            method: "GET"
-            url: "https://google.com"
-      - parallel:
-        - step:
-            name: "http step 21"
-            identifier: "httpStep21"
-            type: "Http"
-            spec:
-              socketTimeoutMillis: 1000
-              method: "GET"
-              url: "https://google.com"
-        - step:
-            name: "http step 31"
-            identifier: "httpStep31"
-            type: "Http"
-            spec:
-              socketTimeoutMillis: 1000
-              method: "GET"
-              url: "https://google.com"
+              socketTimeoutMillis: <+input>
+              method: GET
+              url: https://google.com
+        - parallel:
+            - step:
+                name: http step 21
+                identifier: httpStep21
+                type: Http
+                spec:
+                  socketTimeoutMillis: 1000
+                  method: GET
+                  url: https://google.com
+            - step:
+                name: http step 31
+                identifier: httpStep31
+                type: Http
+                spec:
+                  socketTimeoutMillis: 1000
+                  method: GET
+                  url: https://google.com

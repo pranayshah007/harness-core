@@ -70,7 +70,7 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
 
     StepStatusTaskResponseData stepStatusTaskResponseData =
         StepStatusTaskResponseData.builder()
-            .stepStatus(StepStatus.builder().stepExecutionStatus(StepExecutionStatus.SUCCESS).build())
+            .stepStatus(StepStatus.builder().stepExecutionStatus(StepExecutionStatus.FAILURE).build())
             .build();
 
     Map<String, ResponseData> responseDataMap = new HashMap<>();
@@ -101,8 +101,8 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
                                                       .build();
     StepResponse stepResponse =
         sscaEnforcementStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
-    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
-    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(2);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
     List<StepResponse.StepOutcome> stepOutcomeList = new ArrayList<>();
     stepResponse.getStepOutcomes().forEach(stepOutcome -> {
       if (stepOutcome.getOutcome() instanceof CIStepArtifactOutcome) {
@@ -131,7 +131,7 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
     StepElementParameters stepElementParameters = SscaTestsUtility.getStepElementParameters(sscaEnforcementStepInfo);
 
     ResponseData responseData =
-        VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build();
+        VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
 
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     responseDataMap.put("response", responseData);
@@ -159,7 +159,7 @@ public class SscaEnforcementStepTest extends CIExecutionTestBase {
                                                       .build();
     StepResponse stepResponse =
         sscaEnforcementStep.handleAsyncResponseInternal(ambiance, stepElementParameters, responseDataMap);
-    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
     stepResponse.getStepOutcomes().forEach(stepOutcome -> {
       assertThat(stepOutcome.getOutcome()).isInstanceOf(CIStepArtifactOutcome.class);
