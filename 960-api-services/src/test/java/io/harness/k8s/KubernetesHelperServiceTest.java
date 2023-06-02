@@ -11,8 +11,6 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -27,10 +25,8 @@ import io.harness.k8s.oidc.OidcTokenRetriever;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
-import io.fabric8.kubernetes.client.Config;
 import io.fabric8.openshift.client.OpenShiftClient;
 import okhttp3.OkHttpClient;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,11 +47,6 @@ public class KubernetesHelperServiceTest extends CategoryTest {
 
   @InjectMocks private KubernetesHelperService helperService;
   @InjectMocks private KubernetesHelperService kubernetesHelperService = spy(KubernetesHelperService.class);
-
-  @Before
-  public void setup() {
-    doReturn(new OkHttpClient()).when(kubernetesHelperService).createHttpClientWithProxySetting(any(Config.class));
-  }
 
   @Test
   @Owner(developers = OwnerRule.YOGESH)

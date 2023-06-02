@@ -23,6 +23,8 @@ public interface SscaConstants {
 
   String SSCA_ENFORCEMENT_STEP_NODE = "SscaEnforcementStepNode";
   String SSCA_ENFORCEMENT = "SscaEnforcement";
+  String CD_SSCA_ENFORCEMENT = "CdSscaEnforcement";
+  String CD_SSCA_ENFORCEMENT_STEP_NODE = "CdSscaEnforcementStepNode";
 
   StepType SSCA_ORCHESTRATION_STEP_TYPE =
       StepType.newBuilder().setType(SSCA_ORCHESTRATION_STEP).setStepCategory(StepCategory.STEP).build();
@@ -32,4 +34,6 @@ public interface SscaConstants {
 
   StepType SSCA_ENFORCEMENT_STEP_TYPE =
       StepType.newBuilder().setType(SSCA_ENFORCEMENT).setStepCategory(StepCategory.STEP).build();
+  StepType CD_SSCA_ENFORCEMENT_STEP_TYPE =
+      StepType.newBuilder().setType(CD_SSCA_ENFORCEMENT).setStepCategory(StepCategory.STEP).build();
 }

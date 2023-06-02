@@ -10,6 +10,7 @@ package io.harness.rancher;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -18,8 +19,11 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.exception.ngexception.RancherClientRuntimeException;
+import io.harness.rancher.RancherListClustersResponse.RancherClusterItem;
 import io.harness.rule.Owner;
 
+import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,5 +55,27 @@ public class RancherConnectionHelperServiceImplTest extends CategoryTest {
     doReturn(null).when(rancherClusterClient).listClusters(any(), any());
     ConnectorValidationResult result = rancherConnectionHelperService.testRancherConnection("some/url", "some/token");
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testListClustersFailure() {
+    doThrow(RancherClientRuntimeException.class).when(rancherClusterClient).listClusters(any(), any());
+    assertThatThrownBy(() -> rancherConnectionHelperService.listClusters("url", "token"))
+        .isInstanceOf(RancherClientRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testListClusters() {
+    RancherListClustersResponse response = RancherListClustersResponse.builder()
+                                               .resourceType("clusters")
+                                               .data(List.of(RancherClusterItem.builder().name("c1").build(),
+                                                   RancherClusterItem.builder().name("c2").build()))
+                                               .build();
+    doReturn(response).when(rancherClusterClient).listClusters(any(), any());
+    assertThat(rancherConnectionHelperService.listClusters("url", "token")).contains("c1", "c2");
   }
 }

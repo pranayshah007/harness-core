@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.FeatureName.CDP_USE_K8S_DECLARATIVE_ROLLBACK;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
+import static io.harness.beans.FeatureName.SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.sm.StateType.K8S_DELETE;
@@ -26,6 +27,7 @@ import io.harness.context.ContextElementType;
 import io.harness.data.validator.Trimmed;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
@@ -196,6 +198,9 @@ public class K8sDelete extends AbstractK8sState {
     Map<K8sValuesLocation, ApplicationManifest> appManifestMap = fetchApplicationManifests(context);
     ContainerInfrastructureMapping infraMapping = k8sStateHelper.fetchContainerInfrastructureMapping(context);
 
+    boolean isTimeoutFailureSupported =
+        featureFlagService.isEnabled(SPG_CG_TIMEOUT_FAILURE_AT_WORKFLOW, context.getAccountId());
+
     renderStateVariables(context);
     K8sTaskParameters k8sTaskParameters;
     k8sTaskParameters = K8sDeleteTaskParameters.builder()
@@ -207,6 +212,7 @@ public class K8sDelete extends AbstractK8sState {
                             .deleteNamespacesForRelease(deleteNamespacesForRelease)
                             .filePaths(filePaths)
                             .timeoutIntervalInMin(stateTimeoutInMinutes)
+                            .timeoutSupported(isTimeoutFailureSupported)
                             .k8sDelegateManifestConfig(
                                 createDelegateManifestConfig(context, appManifestMap.get(K8sValuesLocation.Service)))
                             .valuesYamlList(fetchRenderedValuesFiles(appManifestMap, context))
@@ -230,6 +236,14 @@ public class K8sDelete extends AbstractK8sState {
 
       K8sStateExecutionData stateExecutionData = (K8sStateExecutionData) context.getStateExecutionData();
       stateExecutionData.setStatus(executionStatus);
+
+      if (executionResponse.isTimeoutError()) {
+        return ExecutionResponse.builder()
+            .executionStatus(executionStatus)
+            .failureTypes(FailureType.TIMEOUT)
+            .errorMessage("Timed out while waiting for k8s task to complete")
+            .build();
+      }
 
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)

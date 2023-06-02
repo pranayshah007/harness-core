@@ -110,7 +110,8 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 		}
 
 		genAISvcURL := cfg.GenAI.Endpoint
-		report, err := retrieveLogRCA(ctx, genAISvcURL, logs, r)
+		genAISvcSecret := cfg.GenAI.ServiceSecret
+		report, err := retrieveLogRCA(ctx, genAISvcURL, genAISvcSecret, logs, r)
 		if err != nil {
 			WriteInternalError(w, err)
 			logger.FromRequest(r).
@@ -130,16 +131,21 @@ func HandleRCA(store store.Store, cfg config.Config) http.HandlerFunc {
 	}
 }
 
-func retrieveLogRCA(ctx context.Context, endpoint, logs string, r *http.Request) (
+func retrieveLogRCA(ctx context.Context, endpoint, secret, logs string, r *http.Request) (
 	*RCAReport, error) {
 	prompt := generatePrompt(r, logs)
-	response, err := genAIPredictWithRetries(ctx, endpoint, prompt, genAITemperature,
+
+	client := genAIClient{endpoint: endpoint, secret: secret}
+	response, err := client.Complete(ctx, prompt, genAITemperature,
 		genAITopP, genAITopK, genAIMaxOuptutTokens)
 	if err != nil {
 		return nil, err
 	}
+	if response.Blocked {
+		return nil, errors.New("received blocked response from genAI")
+	}
 
-	return &RCAReport{Rca: response}, nil
+	return &RCAReport{Rca: response.Text}, nil
 }
 
 func generatePrompt(r *http.Request, logs string) string {

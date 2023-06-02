@@ -11,12 +11,14 @@ import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
+import io.harness.helper.K8sAzureCloudConfigMetadata;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
@@ -34,14 +36,23 @@ public class K8sDeploymentInfoMapperTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testToDTO() {
-    K8sDeploymentInfo entity = K8sDeploymentInfo.builder()
-                                   .blueGreenStageColor(BLUE_GREEN_STAGE_COLOR)
-                                   .namespaces(new LinkedHashSet<>(Collections.singleton(NAMESPACE)))
-                                   .releaseName(RELEASE_NAME)
-                                   .build();
+    K8sDeploymentInfo entity =
+        K8sDeploymentInfo.builder()
+            .blueGreenStageColor(BLUE_GREEN_STAGE_COLOR)
+            .namespaces(new LinkedHashSet<>(Collections.singleton(NAMESPACE)))
+            .releaseName(RELEASE_NAME)
+            .cloudConfigMetadata(
+                K8sAzureCloudConfigMetadata.builder().clusterName("clusterName").subscription("subscription").build())
+            .build();
     K8sDeploymentInfoDTO dto = K8sDeploymentInfoMapper.toDTO(entity);
     assertEquals(BLUE_GREEN_STAGE_COLOR, dto.getBlueGreenStageColor());
     assertTrue(dto.getNamespaces().contains(NAMESPACE));
+    assertThat(dto.getCloudConfigMetadata()).isNotNull();
+    assertThat(dto.getCloudConfigMetadata().getClusterName()).isEqualTo("clusterName");
+    assertThat(dto.getCloudConfigMetadata()).isInstanceOf(K8sAzureCloudConfigMetadata.class);
+    K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata =
+        (K8sAzureCloudConfigMetadata) dto.getCloudConfigMetadata();
+    assertThat(k8sAzureCloudConfigMetadata.getSubscription()).isEqualTo("subscription");
     assertEquals(RELEASE_NAME, dto.getReleaseName());
   }
 
@@ -49,14 +60,23 @@ public class K8sDeploymentInfoMapperTest {
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void testToEntity() {
-    K8sDeploymentInfoDTO dto = K8sDeploymentInfoDTO.builder()
-                                   .blueGreenStageColor(BLUE_GREEN_STAGE_COLOR)
-                                   .namespaces(new LinkedHashSet<>(Collections.singleton(NAMESPACE)))
-                                   .releaseName(RELEASE_NAME)
-                                   .build();
+    K8sDeploymentInfoDTO dto =
+        K8sDeploymentInfoDTO.builder()
+            .blueGreenStageColor(BLUE_GREEN_STAGE_COLOR)
+            .namespaces(new LinkedHashSet<>(Collections.singleton(NAMESPACE)))
+            .releaseName(RELEASE_NAME)
+            .cloudConfigMetadata(
+                K8sAzureCloudConfigMetadata.builder().clusterName("clusterName").subscription("subscription").build())
+            .build();
     K8sDeploymentInfo entity = K8sDeploymentInfoMapper.toEntity(dto);
     assertEquals(BLUE_GREEN_STAGE_COLOR, entity.getBlueGreenStageColor());
     assertTrue(entity.getNamespaces().contains(NAMESPACE));
+    assertThat(entity.getCloudConfigMetadata()).isNotNull();
+    assertThat(entity.getCloudConfigMetadata().getClusterName()).isEqualTo("clusterName");
+    assertThat(entity.getCloudConfigMetadata()).isInstanceOf(K8sAzureCloudConfigMetadata.class);
+    K8sAzureCloudConfigMetadata k8sAzureCloudConfigMetadata =
+        (K8sAzureCloudConfigMetadata) entity.getCloudConfigMetadata();
+    assertThat(k8sAzureCloudConfigMetadata.getSubscription()).isEqualTo("subscription");
     assertEquals(RELEASE_NAME, entity.getReleaseName());
   }
 }

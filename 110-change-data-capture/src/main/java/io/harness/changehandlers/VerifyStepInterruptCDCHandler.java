@@ -17,10 +17,8 @@ import com.mongodb.DBObject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CV)
-@Slf4j
 public class VerifyStepInterruptCDCHandler extends AbstractChangeDataHandler {
   @Override
   public Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields) {
@@ -30,7 +28,6 @@ public class VerifyStepInterruptCDCHandler extends AbstractChangeDataHandler {
     Map<String, String> columnValueMapping = new HashMap<>();
     DBObject dbObject = changeEvent.getFullDocument();
     String interruptId = dbObject.get("_id").toString();
-    log.info("Handling change event: {} for Interrupt _id: {}", changeEvent.getUuid(), interruptId);
     columnValueMapping.put("id", interruptId);
     if (dbObject.get(InterruptKeys.planExecutionId) != null) {
       columnValueMapping.put("planExecutionId", dbObject.get(InterruptKeys.planExecutionId).toString());
@@ -55,12 +52,10 @@ public class VerifyStepInterruptCDCHandler extends AbstractChangeDataHandler {
           columnValueMapping.put("issuerType", "manualIssuer");
         }
       }
-      columnValueMapping.put("type", dbObject.get(InterruptKeys.type).toString());
     }
     if (dbObject.get(InterruptKeys.createdAt) != null) {
       columnValueMapping.put("createdAtTimestamp", String.valueOf(dbObject.get(InterruptKeys.createdAt)));
     }
-    log.info("Handled change event: {} for Interrupt _id: {}", changeEvent.getUuid(), interruptId);
     return columnValueMapping;
   }
 

@@ -57,7 +57,9 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.references.FilterCreationGitMetadata;
 import io.harness.pms.pipeline.references.FilterCreationParams;
+import io.harness.pms.pipeline.references.PipelineSetupUsageCreationHelper;
 import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
@@ -102,6 +104,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final TelemetryReporter telemetryReporter;
   @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
+  @Inject private final PipelineSetupUsageCreationHelper pipelineSetupUsageCreationHelper;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -589,6 +592,18 @@ public class PMSPipelineServiceHelper {
       throw NestedExceptionUtils.hintWithExplanationException(format("Invalid module type [%s]", module),
           format("Please select the correct module type %s", ModuleType.getModules()),
           new InvalidRequestException(format("Invalid module type [%s]", module)));
+    }
+  }
+
+  public void computePipelineReferences(PipelineEntity pipelineEntity, boolean loadFromCache) {
+    if (!loadFromCache && GitAwareContextHelper.isDefaultBranch()) {
+      String branchName = GitAwareContextHelper.getBranchFromGitContext();
+      pipelineSetupUsageCreationHelper.submitTask(
+          FilterCreationParams.builder()
+              .pipelineEntity(pipelineEntity)
+              .filterCreationGitMetadata(
+                  FilterCreationGitMetadata.builder().branch(branchName).repo(pipelineEntity.getRepo()).build())
+              .build());
     }
   }
 }

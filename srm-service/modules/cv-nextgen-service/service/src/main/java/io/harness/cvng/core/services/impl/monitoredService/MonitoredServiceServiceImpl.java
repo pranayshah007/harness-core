@@ -32,12 +32,12 @@ import io.harness.cvng.analysis.entities.LogAnalysisResult.LogAnalysisTag;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.errortracking.ErrorTrackingNotificationData;
 import io.harness.cvng.client.ErrorTrackingService;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.HealthMonitoringFlagResponse;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.AnomaliesSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
@@ -887,7 +887,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         hPersistence.createQuery(MonitoredService.class)
             .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
             .filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier());
+            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier())
+            .order(Sort.descending(MonitoredServiceKeys.lastUpdatedAt));
     if (!Lists.isNullOrEmpty(environmentIdentifiers)) {
       query = query.field(MonitoredServiceKeys.environmentIdentifierList).hasAnyOf(environmentIdentifiers);
     }

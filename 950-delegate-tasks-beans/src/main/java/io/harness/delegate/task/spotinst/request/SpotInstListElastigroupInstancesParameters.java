@@ -21,9 +21,9 @@ public class SpotInstListElastigroupInstancesParameters extends SpotInstTaskPara
   @Builder
   public SpotInstListElastigroupInstancesParameters(String appId, String accountId, String activityId,
       String commandName, String workflowExecutionId, Integer timeoutIntervalInMin, String awsRegion,
-      String elastigroupId) {
+      String elastigroupId, boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin,
-        SPOT_INST_LIST_ELASTI_GROUP_INSTANCES, awsRegion);
+        SPOT_INST_LIST_ELASTI_GROUP_INSTANCES, awsRegion, timeoutSupported);
     this.elastigroupId = elastigroupId;
   }
 }

@@ -718,6 +718,41 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/GenerateYamlRequest'
+  '/v1/auth-info/{auth-id}':
+    get:
+      summary: Get Auth Info
+      tags:
+        - AuthInfo
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthInfoResponse'
+      operationId: get-auth-info-auth-id
+      description: Get auth details for given authId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/AuthId'
+      x-internal: true
+    post:
+      summary: Save Auth Info
+      tags:
+        - AuthInfo
+      operationId: save-auth-info-auth-id
+      responses:
+        '201':
+          $ref: '#/components/responses/BackstageEnvVariableResponseList'
+      description: Save auth details for given authId
+      security:
+        - x-api-key: []
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/AuthId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackstageEnvVariableBatchRequest'
 components:
   schemas:
     BackstageEnvVariable:
@@ -1603,7 +1638,7 @@ components:
     ImportEntitiesBase:
       title: ImportEntitiesBase
       x-stoplight:
-        id: wjxl1hwpwycv4
+        id: 8yii7dwgw6iq4
       type: object
       description: Abstract base for import entities
       discriminator:
@@ -1628,6 +1663,30 @@ components:
       required:
         - type
         - catalog_connector_info
+    AuthInfoResponse:
+      title: AuthInfoResponse
+      x-stoplight:
+        id: zl71x322v2f97
+      type: object
+      properties:
+        authInfo:
+          $ref: '#/components/schemas/AuthInfo'
+    AuthInfo:
+      title: AuthInfo
+      x-stoplight:
+        id: v6t3w7hydbjp3
+      type: object
+      properties:
+        namespace:
+          x-stoplight:
+            id: fp9ttpkqvfppc
+          type: string
+        env_variables:
+          x-stoplight:
+            id: srzbmdfx793md
+          type: array
+          items:
+            $ref: '#/components/schemas/BackstageEnvVariable'
   parameters:
     AccountHeader:
       name: Harness-Account
@@ -1730,6 +1789,16 @@ components:
       required: true
       schema:
         type: string
+    AuthId:
+      name: auth-id
+      in: path
+      description: Auth Identifier
+      required: true
+      schema:
+        type: string
+        enum:
+          - github-auth
+          - google-auth
   requestBodies:
     BackstageEnvVariableRequest:
       content:
@@ -2048,6 +2117,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/GenerateYamlResponse'
+    AuthInfoResponse:
+      description: Response containing auth environment variables and namespace
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthInfoResponse'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/AuthInfoResponse'
   securitySchemes:
     x-api-key:
       name: x-api-key

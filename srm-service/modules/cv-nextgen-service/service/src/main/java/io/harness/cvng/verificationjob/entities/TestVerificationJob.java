@@ -61,6 +61,10 @@ public class TestVerificationJob extends VerificationJob {
         sensitivity == null ? null : RuntimeParameter.builder().isRuntimeParam(false).value(sensitivity.name()).build();
   }
 
+  public String getBaselineVerificationJobInstanceId() {
+    return baselineVerificationJobInstanceId;
+  }
+
   @Override
   protected void validateParams() {
     Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(TestVerificationJobKeys.sensitivity));

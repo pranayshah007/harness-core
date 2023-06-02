@@ -249,8 +249,26 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
   @Override
   public HarnessApprovalInstance addHarnessApprovalActivity(@NotNull String approvalInstanceId,
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
-    HarnessApprovalInstance instance =
-        doTransaction(status -> addHarnessApprovalActivityInTransaction(approvalInstanceId, user, request));
+    final String instanceId = new String(approvalInstanceId);
+    synchronized (instanceId) {
+      HarnessApprovalInstance instance =
+          doTransaction(status -> addHarnessApprovalActivityInTransaction(approvalInstanceId, user, request));
+      return instance;
+    }
+  }
+
+  @Override
+  public HarnessApprovalInstance addHarnessApprovalActivityV2(@NotNull String approvalInstanceId,
+      @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request, boolean shouldCloseStep) {
+    HarnessApprovalInstance instance = addHarnessApprovalActivity(approvalInstanceId, user, request);
+
+    if (request.getAction() == HarnessApprovalAction.APPROVE) {
+      rejectPreviousExecutionsV2(instance, user);
+    }
+
+    if (shouldCloseStep) {
+      closeHarnessApprovalStep(instance);
+    }
     return instance;
   }
 
@@ -347,7 +365,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
       return;
     }
     List<String> nodeExecutionIdsList = new ArrayList<>(nodeExecutionIds);
-    List<List<String> > batchNodeExecutionIdsList = Lists.partition(nodeExecutionIdsList, MAX_BATCH_SIZE);
+    List<List<String>> batchNodeExecutionIdsList = Lists.partition(nodeExecutionIdsList, MAX_BATCH_SIZE);
     batchNodeExecutionIdsList.forEach(
         batchNodeExecutionIds -> deleteByNodeExecutionIdsInternal(new HashSet<>(batchNodeExecutionIds)));
   }
@@ -433,6 +451,19 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
         update);
   }
 
+  public void rejectPreviousExecutionsV2(HarnessApprovalInstance instance, EmbeddedUser user) {
+    if (instance.getIsAutoRejectEnabled() == null || !instance.getIsAutoRejectEnabled()) {
+      return;
+    }
+    List<String> rejectedApprovalIds = findAllPreviousWaitingApprovals(instance.getAccountId(),
+        instance.getOrgIdentifier(), instance.getProjectIdentifier(), instance.getPipelineIdentifier(),
+        instance.getApprovalKey(), instance.getAmbiance());
+    rejectedApprovalIds.forEach(id -> rejectPreviousExecutions(id, user, false, instance.getAmbiance()));
+    NGLogCallback logCallback =
+        new NGLogCallback(logStreamingStepClientFactory, instance.getAmbiance(), COMMAND_UNIT, false);
+    logCallback.saveExecutionLog("Successfully rejected all previous executions waiting for approval on this step");
+  }
+
   @VisibleForTesting
   HarnessApprovalInstance addHarnessApprovalActivityInTransaction(@NotNull String approvalInstanceId,
       @NotNull EmbeddedUser user, @NotNull @Valid HarnessApprovalActivityRequestDTO request) {
@@ -443,7 +474,9 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
       throw new InvalidRequestException("Harness approval instance has already expired");
     }
 
-    if (request.getAction() == HarnessApprovalAction.REJECT) {
+    if (request.isAutoApprove()) {
+      instance.setStatus(ApprovalStatus.APPROVED);
+    } else if (request.getAction() == HarnessApprovalAction.REJECT) {
       instance.setStatus(ApprovalStatus.REJECTED);
     } else {
       int newCount = (instance.getApprovalActivities() == null ? 0 : instance.getApprovalActivities().size()) + 1;

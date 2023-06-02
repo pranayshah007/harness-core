@@ -13,15 +13,12 @@ import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
-import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
 import io.harness.persistence.UuidAware;
 
 import com.google.inject.Inject;
 import dev.morphia.query.FindOptions;
 import dev.morphia.query.Query;
-import dev.morphia.query.Sort;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -34,8 +31,6 @@ public class SLIRecordToSLIRecordBucketMigration implements CVNGMigration {
 
   private static final int BATCH_SIZE = 1000;
 
-  List<SLIRecordBucket> sliRecordBucketsToSave;
-
   @Override
   public void migrate() {
     log.info("Starting cleanup for older sli records and creating bucket for newer sliRecords");
@@ -45,7 +40,7 @@ public class SLIRecordToSLIRecordBucketMigration implements CVNGMigration {
             .lessThan(Date.from(OffsetDateTime.now().minusMonths(3).toInstant()))
             .project(UuidAware.UUID_KEY, true);
     while (true) {
-      List<SLIRecord> recordsToBeDeleted = queryToDeleteOlderRecords.find(new FindOptions().limit(1000)).toList();
+      List<SLIRecord> recordsToBeDeleted = queryToDeleteOlderRecords.find(new FindOptions().limit(BATCH_SIZE)).toList();
       Set<?> recordIdsTobeDeleted = recordsToBeDeleted.stream()
                                         .map(recordToBeDeleted -> ((UuidAware) recordToBeDeleted).getUuid())
                                         .map(CVNGObjectUtils::convertToObjectIdIfRequired)
@@ -57,61 +52,6 @@ public class SLIRecordToSLIRecordBucketMigration implements CVNGMigration {
       log.info("[SLI Bucket Migration] Deleted {} sli records", recordsToBeDeleted.size());
     }
     log.info("[SLI Bucket Migration] Deleted all older sli records");
-
-    Query<SLIRecord> queryToAddToBucket =
-        hPersistence.createQuery(SLIRecord.class)
-            .order(Sort.ascending(SLIRecordKeys.sliId), Sort.ascending(SLIRecordKeys.timestamp));
-    List<SLIRecord> currentBucket = new ArrayList<>();
-    sliRecordBucketsToSave = new ArrayList<>();
-    int offset = 0;
-    while (true) {
-      Query<SLIRecord> query = queryToAddToBucket.offset(offset).limit(BATCH_SIZE);
-      List<SLIRecord> records = query.find().toList();
-      if (records.isEmpty()) {
-        break;
-      }
-      for (SLIRecord sliRecord : records) {
-        currentBucket = processRecord(currentBucket, sliRecord);
-        currentBucket = processBucket(currentBucket);
-      }
-      offset += BATCH_SIZE;
-    }
-    saveBuckets();
-  }
-
-  private List<SLIRecord> processRecord(List<SLIRecord> currentBucket, SLIRecord sliRecord) {
-    if ((currentBucket.isEmpty())
-        || ((currentBucket.get(currentBucket.size() - 1).getEpochMinute() + 1 == sliRecord.getEpochMinute())
-            && (currentBucket.get(currentBucket.size() - 1).getSliId().equals(sliRecord.getSliId())))) {
-      if (sliRecord.getEpochMinute() % 5 == 0) {
-        currentBucket.add(sliRecord);
-      }
-      return currentBucket;
-    }
-    currentBucket = new ArrayList<>();
-    currentBucket.add(sliRecord);
-    return currentBucket;
-  }
-
-  private List<SLIRecord> processBucket(List<SLIRecord> currentBucket) {
-    if (currentBucket.size() == 5) {
-      SLIRecordBucket sliRecordBucket = SLIRecordBucket.getSLIRecordBucketFromSLIRecords(currentBucket);
-      sliRecordBucketsToSave.add(sliRecordBucket);
-      currentBucket = new ArrayList<>();
-    }
-    if (sliRecordBucketsToSave.size() >= BATCH_SIZE) {
-      saveBuckets();
-    }
-    return currentBucket;
-  }
-
-  private void saveBuckets() {
-    try {
-      hPersistence.upsertBatch(SLIRecordBucket.class, sliRecordBucketsToSave, new ArrayList<>());
-      sliRecordBucketsToSave = new ArrayList<>();
-    } catch (IllegalAccessException e) {
-      throw new RuntimeException("[SLI Record Bucketing Error]", e);
-    }
   }
 
   @Override

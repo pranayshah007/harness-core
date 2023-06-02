@@ -181,6 +181,7 @@ import io.harness.cvng.core.services.api.demo.ChangeSourceDemoDataGenerator;
 import io.harness.cvng.core.services.api.demo.ChiDemoService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
+import io.harness.cvng.core.services.api.monitoredService.MSHealthReportService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.AppDynamicsDataCollectionInfoMapper;
@@ -261,6 +262,7 @@ import io.harness.cvng.core.services.impl.demo.changesource.PagerdutyChangeSourc
 import io.harness.cvng.core.services.impl.monitoredService.ChangeSourceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.DatadogLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.monitoredService.HealthSourceServiceImpl;
+import io.harness.cvng.core.services.impl.monitoredService.MSHealthReportServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.RiskCategoryServiceImpl;
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
@@ -977,6 +979,7 @@ public class CVServiceModule extends AbstractModule {
     bind(SumoLogicService.class).to(SumoLogicServiceImpl.class);
     bind(HealthSourceService.class).to(HealthSourceServiceImpl.class);
     bind(MonitoredServiceService.class).to(MonitoredServiceServiceImpl.class);
+    bind(MSHealthReportService.class).to(MSHealthReportServiceImpl.class);
     bind(EntityDisabledTimeService.class).to(EntityDisabledTimeServiceImpl.class);
     bind(ServiceDependencyService.class).to(ServiceDependencyServiceImpl.class);
     bind(ServiceDependencyGraphService.class).to(ServiceDependencyGraphServiceImpl.class);

@@ -92,6 +92,32 @@ public class InstanceSyncPerpetualTaskInfoServiceImpl implements InstanceSyncPer
   }
 
   @Override
+  public InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV2(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
+                            .and(InstanceSyncPerpetualTaskInfoKeys.id)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getId());
+    Update update = new Update();
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.perpetualTaskIdV2, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskIdV2());
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
+  public InstanceSyncPerpetualTaskInfoDTO updatePerpetualTaskIdV1(
+      InstanceSyncPerpetualTaskInfoDTO instanceSyncPerpetualTaskInfoDTO) {
+    Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getAccountIdentifier())
+                            .and(InstanceSyncPerpetualTaskInfoKeys.id)
+                            .is(instanceSyncPerpetualTaskInfoDTO.getId());
+    Update update = new Update();
+    update.set(
+        InstanceSyncPerpetualTaskInfoKeys.perpetualTaskId, instanceSyncPerpetualTaskInfoDTO.getPerpetualTaskId());
+    return InstanceSyncPerpetualTaskInfoMapper.toDTO(instanceSyncPerpetualTaskInfoRepository.update(criteria, update));
+  }
+
+  @Override
   public List<InstanceSyncPerpetualTaskInfoDTO> findAll(String accountId, String perpetualTaskId) {
     Criteria criteria = Criteria.where(InstanceSyncPerpetualTaskInfoKeys.accountIdentifier)
                             .is(accountId)

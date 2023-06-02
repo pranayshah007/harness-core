@@ -139,53 +139,53 @@ public class ExecutionHelperTest extends CategoryTest {
   String moduleType = "cd";
   String runtimeInputYaml = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: s1\n"
-      + "      description: desc\n"
-      + "  - stage:\n"
-      + "      identifier: s2\n"
-      + "      description: desc\n";
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: desc\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: desc\n";
   String pipelineYaml = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: s1\n"
-      + "      description: <+input>\n"
-      + "  - stage:\n"
-      + "      identifier: s2\n"
-      + "      description: <+input>\n"
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: <+input>\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: <+input>\n"
       + "  allowStageExecutions: true\n";
   String pipelineYamlWithExpressions = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s1\"\n"
-      + "      description: \"desc\"\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"<+pipeline.stages.s1.description>\"\n"
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: desc\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: <+pipeline.stages.s1.description>\n"
       + "  allowStageExecutions: true\n";
   Map<String, String> expressionValues = Collections.singletonMap("<+pipeline.stages.s1.description>", "desc");
   String mergedPipelineYaml = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s1\"\n"
-      + "      description: \"desc\"\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"desc\"\n"
+      + "    - stage:\n"
+      + "        identifier: s1\n"
+      + "        description: desc\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: desc\n"
       + "  allowStageExecutions: true\n";
 
   String mergedPipelineYamlForS2 = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"desc\"\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: desc\n"
       + "  allowStageExecutions: true\n";
 
   String mergedPipelineYamlForS2WithExpression = "pipeline:\n"
       + "  stages:\n"
-      + "  - stage:\n"
-      + "      identifier: \"s2\"\n"
-      + "      description: \"<+pipeline.stages.s1.description>\"\n"
+      + "    - stage:\n"
+      + "        identifier: s2\n"
+      + "        description: <+pipeline.stages.s1.description>\n"
       + "  allowStageExecutions: true\n";
   String originalExecutionId = "originalExecutionId";
   String generatedExecutionId = "newExecId";
@@ -612,11 +612,11 @@ public class ExecutionHelperTest extends CategoryTest {
     String mergedRuntimeInputYaml = "pipeline:\n"
         + "  template:\n"
         + "    templateInputs:\n"
-        + "      serviceRef: \"svc_v2\"\n";
+        + "      serviceRef: svc_v2\n";
     String resolvedYaml = "pipeline:\n"
         + "  stage:\n"
         + "    serviceConfig:\n"
-        + "      serviceRef: \"svc_v2\"\n";
+        + "      serviceRef: svc_v2\n";
     doReturn(TemplateMergeResponseDTO.builder().mergedPipelineYaml(resolvedYaml).build())
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipelineAndAppendInputSetValidators(
@@ -641,19 +641,19 @@ public class ExecutionHelperTest extends CategoryTest {
   public void testGetPipelineYamlAndValidateForPipelineWithAllowedValues() throws IOException {
     String pipelineYamlWithAllowedValues = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"<+input>.allowedValues(a, b)\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: <+input>.allowedValues(a, b)\n";
     String runtimeInputYaml = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"a\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: a\n";
     String mergedYamlWithValidators = "pipeline:\n"
         + "  stages:\n"
-        + "  - stage:\n"
-        + "      identifier: \"s1\"\n"
-        + "      description: \"a.allowedValues(a, b)\"\n";
+        + "    - stage:\n"
+        + "        identifier: s1\n"
+        + "        description: \"a.allowedValues(a, b)\"\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -721,10 +721,10 @@ public class ExecutionHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetPipelineYamlAndValidateWhenOPAFFisOff() throws IOException {
     String yamlWithTempRef = "pipeline:\n"
-        + "  name: \"ww\"\n"
+        + "  name: ww\n"
         + "  template:\n"
-        + "    templateRef: \"new_pipeline_template_name\"\n"
-        + "    versionLabel: \"v1\"\n"
+        + "    templateRef: new_pipeline_template_name\n"
+        + "    versionLabel: v1\n"
         + "  tags: {}\n";
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .accountId(accountId)

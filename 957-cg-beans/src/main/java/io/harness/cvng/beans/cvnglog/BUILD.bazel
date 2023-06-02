@@ -16,6 +16,7 @@ java_library(
         "//999-annotations/src/main/java/io/harness/annotations/dev:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:org_apache_commons_commons_collections4",
     ],

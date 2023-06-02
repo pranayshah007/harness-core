@@ -344,14 +344,14 @@ public class EnvironmentMapperTest extends CategoryTest {
                                   .build();
     String yaml = EnvironmentMapper.toYaml(cfg);
     assertThat(yaml).isEqualTo("environment:\n"
-        + "  orgIdentifier: \"orgId\"\n"
-        + "  projectIdentifier: \"projId\"\n"
-        + "  identifier: \"id1\"\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projId\n"
+        + "  identifier: id1\n"
         + "  tags:\n"
-        + "    k1: \"v2\"\n"
-        + "  name: \"name\"\n"
-        + "  description: \"desc\"\n"
-        + "  type: \"PreProduction\"\n");
+        + "    k1: v2\n"
+        + "  name: name\n"
+        + "  description: desc\n"
+        + "  type: PreProduction\n");
   }
 
   @Test

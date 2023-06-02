@@ -5,9 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.beans.change;
-
-import io.harness.cvng.beans.change.ChangeCategory;
+package io.harness.cvng.beans.change;
 
 import java.util.Map;
 import lombok.Builder;

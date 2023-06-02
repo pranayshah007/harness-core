@@ -1,46 +1,46 @@
 pipeline:
   identifier: Vistaar_Pipeline_2
   variables:
-  - name: name2
-    type: type
-    value: <+input>
+    - name: name2
+      type: type
+      value: <+input>
   stages:
-  - stage:
-      identifier: Test_Build_and_Push
-      type: CI
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: Run_Unit_Tests
-              type: Run
+    - stage:
+        identifier: Test_Build_and_Push
+        type: CI
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: Run_Unit_Tests
+                  type: Run
+                  spec:
+                    command: <+input>
+              - step:
+                  identifier: Build_and_push_image_to_DockerHub
+                  type: BuildAndPushDockerRegistry
+                  spec:
+                    repo: <+input>
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              namespace: <+input>
+    - stage:
+        identifier: Run_Integration_Test
+        type: CI
+        spec:
+          execution:
+            steps:
+              - step:
+                  identifier: test_connection_to_server
+                  type: Run
+                  spec:
+                    command: <+input>
+          serviceDependencies:
+            - identifier: runhelloworldserver
+              type: Service
               spec:
-                command: <+input>
-          - step:
-              identifier: Build_and_push_image_to_DockerHub
-              type: BuildAndPushDockerRegistry
-              spec:
-                repo: <+input>
-        infrastructure:
-          type: KubernetesDirect
-          spec:
-            namespace: <+input>
-  - stage:
-      identifier: Run_Integration_Test
-      type: CI
-      spec:
-        execution:
-          steps:
-          - step:
-              identifier: test_connection_to_server
-              type: Run
-              spec:
-                command: <+input>
-        serviceDependencies:
-        - identifier: runhelloworldserver
-          type: Service
-          spec:
-            image: <+input>
+                image: <+input>
   properties:
     ci:
       codebase:

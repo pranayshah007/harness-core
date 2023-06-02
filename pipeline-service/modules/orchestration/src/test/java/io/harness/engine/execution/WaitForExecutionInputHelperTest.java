@@ -79,8 +79,8 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
     String fieldYaml = "pipeline:\n  name: \"pipeline1\"\n  var: \"var/<+pipeline.name>\"\n";
-    String resolvedFieldYaml = "pipeline:\n  name: \"pipeline1\"\n"
-        + "  var: \"var/pipeline1\"\n";
+    String resolvedFieldYaml = "pipeline:\n  name: pipeline1\"\n"
+        + "  var: var/pipeline1\n";
     doReturn(Optional.of(PlanExecutionMetadata.builder().yaml(fieldYaml).build()))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(any());

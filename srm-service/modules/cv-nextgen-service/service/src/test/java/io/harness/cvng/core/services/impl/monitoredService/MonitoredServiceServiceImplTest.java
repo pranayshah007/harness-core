@@ -51,6 +51,7 @@ import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag;
 import io.harness.cvng.beans.cvnglog.CVNGLogTag.TagType;
@@ -65,7 +66,6 @@ import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.Deplo
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.SLIDTO;
 import io.harness.cvng.core.beans.RiskProfile;
-import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.monitoredService.ChangeSourceDTO;
 import io.harness.cvng.core.beans.monitoredService.CountServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
@@ -1130,6 +1130,41 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                    builderFactory.getContext().getMonitoredServiceParams(), Arrays.asList(changeSourceIdentifier)))
         .isEmpty();
     assertThat(cvConfigs.size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testList_sortingOrder() throws IllegalAccessException {
+    clock = Clock.systemDefaultZone();
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    MonitoredServiceDTO monitoredServiceOneDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet("service_2_local"));
+    MonitoredServiceDTO monitoredServiceTwoDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_2_local", "service_2", Sets.newHashSet("service_1_local"));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
+    environmentIdentifier = "new-environment";
+    monitoredServiceIdentifier = "new-monitored-service-identifier";
+    healthSourceIdentifier = "new-health-source-identifier";
+    monitoredServiceOneDTO = createMonitoredServiceDTOWithCustomDependencies(
+        monitoredServiceIdentifier, environmentParams.getServiceIdentifier(), Sets.newHashSet("service_2_local"));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceOneDTO);
+    monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceTwoDTO);
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
+        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
+    List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
+    MonitoredServiceListItemDTO monitoredServiceListItemDTO = monitoredServiceListItemDTOS.get(0);
+    assertThat(monitoredServiceListItemDTO.getName()).isEqualTo("service_2_local");
+    assertThat(monitoredServiceListItemDTO.getIdentifier()).isEqualTo("service_2_local");
+    assertThat(monitoredServiceListItemDTO.getServiceName()).isEqualTo("Mocked service name");
+    assertThat(monitoredServiceListItemDTO.getServiceRef()).isEqualTo("service_2");
+    assertThat(monitoredServiceListItemDTO.getEnvironmentName()).isEqualTo("Mocked env name");
+    assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
+    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+    assertThat(monitoredServiceListItemDTO.getTags()).isEqualTo(tags);
   }
 
   @Test

@@ -220,10 +220,13 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   Map<String, String> getMergedEnvVariablesMap(
       Ambiance ambiance, CommandStepParameters commandStepParameters, InfrastructureOutcome infrastructure) {
-    LinkedHashMap<String, Object> evaluatedStageVariables =
+    Map<String, Object> evaluatedStageVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+stage.variables>", LinkedHashMap.class);
-    LinkedHashMap<String, Object> evaluatedPipelineVariables =
+    evaluatedStageVariables = evaluateVariables(ambiance, evaluatedStageVariables);
+
+    Map<String, Object> evaluatedPipelineVariables =
         cdExpressionResolver.evaluateExpression(ambiance, "<+pipeline.variables>", LinkedHashMap.class);
+    evaluatedPipelineVariables = evaluateVariables(ambiance, evaluatedPipelineVariables);
 
     Map<String, String> finalEnvVariables = new HashMap<>();
     finalEnvVariables = mergeEnvironmentVariables(evaluatedStageVariables, finalEnvVariables);
@@ -233,17 +236,27 @@ public class SshCommandStepHelper extends CDStepHelper {
     return mergeEnvironmentVariables(commandStepParameters.getEnvironmentVariables(), finalEnvVariables);
   }
 
-  private HashMap<String, Object> getServiceVariables(Ambiance ambiance) {
-    HashMap<String, Object> serviceVariablesMap = new HashMap<>();
+  private Map<String, Object> getServiceVariables(Ambiance ambiance) {
     VariablesSweepingOutput serviceVariablesOutput = ServiceOutcomeHelper.getVariablesSweepingOutput(
         ambiance, executionSweepingOutputService, YAMLFieldNameConstants.SERVICE_VARIABLES);
+    return evaluateVariables(ambiance, serviceVariablesOutput);
+  }
 
-    serviceVariablesOutput.entrySet().stream().forEach(entry -> {
+  Map<String, Object> evaluateVariables(Ambiance ambiance, Map<String, Object> variables) {
+    if (isEmpty(variables)) {
+      return Collections.emptyMap();
+    }
+
+    HashMap<String, Object> result = new HashMap<>();
+
+    variables.entrySet().stream().forEach(entry -> {
       String value = null;
       if (entry.getValue() instanceof ParameterField) {
         ParameterField<?> parameterFieldValue = (ParameterField<?>) entry.getValue();
         if (parameterFieldValue.getValue() != null) {
           value = parameterFieldValue.getValue().toString();
+        } else if (parameterFieldValue.getExpressionValue() != null) {
+          value = parameterFieldValue.getExpressionValue();
         }
       } else if (entry.getValue() instanceof String) {
         value = (String) entry.getValue();
@@ -251,13 +264,14 @@ public class SshCommandStepHelper extends CDStepHelper {
 
       if (value != null) {
         if (EngineExpressionEvaluator.hasExpressions(value)) {
-          serviceVariablesMap.putAll(evaluateExpression(ambiance, entry, value));
+          result.putAll(evaluateExpression(ambiance, entry, value));
         } else {
-          serviceVariablesMap.put(entry.getKey(), value);
+          result.put(entry.getKey(), value);
         }
       }
     });
-    return serviceVariablesMap;
+
+    return result;
   }
 
   private HashMap<String, Object> evaluateExpression(Ambiance ambiance, Map.Entry<String, Object> entry, String value) {

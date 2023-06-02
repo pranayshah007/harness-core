@@ -22,17 +22,17 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @OwnedBy(PIPELINE)
-public class MultiArtifactTriggerConfig implements NGTriggerSpecV2, BuildAware {
+public class MultiRegionArtifactTriggerConfig implements NGTriggerSpecV2, BuildAware {
   String stageIdentifier;
   String artifactRef;
   ArtifactType type;
-  List<ArtifactTypeSpec> sources;
+  List<ArtifactTypeSpecWrapper> sources;
   List<TriggerEventDataCondition> eventConditions;
   List<TriggerEventDataCondition> metaDataConditions;
   String jexlCondition;
 
   @Builder
-  public MultiArtifactTriggerConfig(ArtifactType type, List<ArtifactTypeSpec> sources) {
+  public MultiRegionArtifactTriggerConfig(ArtifactType type, List<ArtifactTypeSpecWrapper> sources) {
     this.type = type;
     this.sources = sources;
   }
@@ -52,6 +52,6 @@ public class MultiArtifactTriggerConfig implements NGTriggerSpecV2, BuildAware {
     if (isEmpty(this.sources)) {
       return null;
     }
-    return this.sources.get(0).fetchBuildType();
+    return this.sources.get(0).getSpec().fetchBuildType();
   }
 }

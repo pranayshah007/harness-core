@@ -100,7 +100,7 @@ public class ManifestPerpetualTaskExecutor implements PerpetualTaskExecutor {
         log.info("Published manifest successfully");
       }
     } catch (Exception e) {
-      log.error("Manifest collection failed with the following error: ", e);
+      log.error(String.format("Manifest collection failed with the following error: %s", e.getMessage()));
     }
 
     return PerpetualTaskResponse.builder().responseCode(200).responseMessage("success").build();

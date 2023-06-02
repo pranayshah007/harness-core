@@ -11,7 +11,7 @@ import static io.harness.data.structure.HarnessStringUtils.nullIfEmpty;
 import static io.harness.ngtriggers.beans.source.ManifestType.HELM_MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
-import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_ARTIFACT;
+import static io.harness.ngtriggers.beans.source.NGTriggerType.MULTI_REGION_ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
 
 import io.harness.beans.IdentifierRef;
@@ -23,10 +23,10 @@ import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.artifact.ArtifactTriggerConfig;
-import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpec;
+import io.harness.ngtriggers.beans.source.artifact.ArtifactTypeSpecWrapper;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
-import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.utils.IdentifierRefHelper;
 
@@ -116,11 +116,11 @@ public class TriggerReferenceHelper {
     } else if (ngTriggerConfigV2.getSource().getType() == ARTIFACT) {
       ArtifactTriggerConfig artifactTriggerConfig = (ArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
       connectorRefs.add(artifactTriggerConfig.getSpec().fetchConnectorRef());
-    } else if (ngTriggerConfigV2.getSource().getType() == MULTI_ARTIFACT) {
-      MultiArtifactTriggerConfig artifactTriggerConfig =
-          (MultiArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
-      for (ArtifactTypeSpec artifactSpec : artifactTriggerConfig.getSources()) {
-        connectorRefs.add(artifactSpec.fetchConnectorRef());
+    } else if (ngTriggerConfigV2.getSource().getType() == MULTI_REGION_ARTIFACT) {
+      MultiRegionArtifactTriggerConfig artifactTriggerConfig =
+          (MultiRegionArtifactTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
+      for (ArtifactTypeSpecWrapper artifactSpecWrapper : artifactTriggerConfig.getSources()) {
+        connectorRefs.add(artifactSpecWrapper.getSpec().fetchConnectorRef());
       }
     } else if (ngTriggerConfigV2.getSource().getType() == MANIFEST) {
       ManifestTriggerConfig manifestTriggerConfig = (ManifestTriggerConfig) ngTriggerConfigV2.getSource().getSpec();
