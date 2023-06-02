@@ -239,21 +239,21 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
     String expectedResponse = "---\n"
         + "monitoredService:\n"
         + "  template:\n"
-        + "    templateRef: \"abc\"\n"
+        + "    templateRef: abc\n"
         + "    versionLabel: \"1\"\n"
         + "    templateInputs:\n"
         + "      sources:\n"
         + "        healthSources:\n"
-        + "        - identifier: \"datadog\"\n"
-        + "          type: \"DatadogLog\"\n"
-        + "          spec:\n"
-        + "            queries:\n"
-        + "            - identifier: \"Datadog_Logs_Query\"\n"
-        + "              indexes:\n"
-        + "              - \"abc\"\n"
-        + "              query: \"abc\"\n"
-        + "              serviceInstanceIdentifier: \"Instance\"\n"
-        + "      type: \"Application\"\n";
+        + "          - identifier: datadog\n"
+        + "            type: DatadogLog\n"
+        + "            spec:\n"
+        + "              queries:\n"
+        + "                - identifier: Datadog_Logs_Query\n"
+        + "                  indexes:\n"
+        + "                    - abc\n"
+        + "                  query: abc\n"
+        + "                  serviceInstanceIdentifier: Instance\n"
+        + "      type: Application\n";
     String response = templateVerifyStepMonitoredServiceResolutionService.getTemplateYaml(templateMonitoredServiceSpec);
     assertThat(expectedResponse).isEqualTo(response);
   }

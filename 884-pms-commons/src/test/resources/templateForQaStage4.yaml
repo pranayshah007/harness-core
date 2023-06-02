@@ -1,6 +1,6 @@
 pipeline:
-  identifier: "Test_Pipline11"
+  identifier: Test_Pipline11
   variables:
-  - name: "port2"
-    type: "String"
-    value: "<+input>"
+    - name: port2
+      type: String
+      value: <+input>

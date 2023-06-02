@@ -49,18 +49,18 @@ public class InfrastructureEntityConfigMapperTest {
                     .build())
             .build());
     assertThat(yaml).isEqualTo("infrastructureDefinition:\n"
-        + "  name: \"name\"\n"
-        + "  identifier: \"id\"\n"
-        + "  orgIdentifier: \"orgId\"\n"
-        + "  projectIdentifier: \"projId\"\n"
-        + "  environmentRef: \"env\"\n"
+        + "  name: name\n"
+        + "  identifier: id\n"
+        + "  orgIdentifier: orgId\n"
+        + "  projectIdentifier: projId\n"
+        + "  environmentRef: env\n"
         + "  tags:\n"
-        + "    k1: \"v1\"\n"
+        + "    k1: v1\n"
         + "  allowSimultaneousDeployments: true\n"
-        + "  type: \"KubernetesDirect\"\n"
+        + "  type: KubernetesDirect\n"
         + "  spec:\n"
-        + "    connectorRef: \"infra\"\n"
-        + "    namespace: \"default\"\n");
+        + "    connectorRef: infra\n"
+        + "    namespace: default\n");
   }
 
   @Test
