@@ -47,6 +47,10 @@ public abstract class AbstractInstanceSyncHandler implements IInstanceSyncHandle
    */
   public abstract String getInfrastructureKind();
 
+  public boolean isInstanceSyncV2Enabled() {
+    return false;
+  }
+
   // Used for Dashboarding purposes
   public abstract InfrastructureDetails getInfrastructureDetails(InstanceInfoDTO instanceInfoDTO);
 

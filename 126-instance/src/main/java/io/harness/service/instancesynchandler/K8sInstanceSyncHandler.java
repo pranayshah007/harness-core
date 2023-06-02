@@ -69,6 +69,10 @@ public class K8sInstanceSyncHandler extends AbstractInstanceSyncHandler {
     return InfrastructureKind.KUBERNETES_DIRECT;
   }
 
+  public boolean isInstanceSyncV2Enabled() {
+    return false;
+  }
+
   @Override
   public InfrastructureDetails getInfrastructureDetails(InstanceInfoDTO instanceInfoDTO) {
     if (!(instanceInfoDTO instanceof K8sInstanceInfoDTO)) {
