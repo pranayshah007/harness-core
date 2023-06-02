@@ -175,14 +175,17 @@ public class K8sBlueGreenStageScaleDownRequestHandler extends K8sRequestHandler 
           "\nSkipping scaling down the stage environment as the release has invalid BG color", INFO);
       return Collections.emptyList();
     }
-    String regex = k8sBGBaseHandler.getInverseColor(stageColor) + "$";
+    String primaryColor = k8sBGBaseHandler.getInverseColor(stageColor);
+    String regex = primaryColor + "$";
     return release.getResourceIds()
         .stream()
-        .filter(k8sResourceId -> WORKLOAD_KINDS.contains(k8sResourceId.getKind()))
+        .filter(k8sResourceId
+            -> WORKLOAD_KINDS.contains(k8sResourceId.getKind()) && k8sResourceId.getName().endsWith(primaryColor))
         .peek(k8sResourceId -> k8sResourceId.setName(k8sResourceId.getName().replaceAll(regex, stageColor)))
         .filter(k8sResourceId
             -> k8sTaskHelperBase.checkIfResourceExists(
                 client, k8sDelegateTaskParams, k8sResourceId, executionLogCallback))
+        .distinct()
         .collect(Collectors.toList());
   }
 

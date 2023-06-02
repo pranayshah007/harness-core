@@ -268,9 +268,14 @@ public class EngineExpressionEvaluator {
       }
     } catch (JexlException ex) {
       log.error(format("Failed to evaluate final expression: %s", expression), ex);
+      
+      // In case of expressions inside expressions, if we are unable to resolve an expression, we return the expression
+      // until which the resolution has happened correctly(If expression mode is
+      // RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED).
       if (expressionMode == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED) {
         return expression;
       }
+      
       if (ex.getCause() instanceof EngineFunctorException) {
         throw new EngineExpressionEvaluationException(
             (EngineFunctorException) ex.getCause(), createExpression(expression));

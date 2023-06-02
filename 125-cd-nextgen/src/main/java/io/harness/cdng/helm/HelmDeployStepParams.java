@@ -21,8 +21,8 @@ import lombok.Builder;
 public class HelmDeployStepParams extends HelmDeployBaseStepInfo implements HelmSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public HelmDeployStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String helmDeployFqn,
-      ParameterField<Boolean> ignoreReleaseHistFailStatus) {
-    super(delegateSelectors, helmDeployFqn, ignoreReleaseHistFailStatus);
+      ParameterField<Boolean> ignoreReleaseHistFailStatus, ParameterField<Boolean> skipSteadyStateCheck) {
+    super(delegateSelectors, helmDeployFqn, ignoreReleaseHistFailStatus, skipSteadyStateCheck);
   }
 
   @Nonnull

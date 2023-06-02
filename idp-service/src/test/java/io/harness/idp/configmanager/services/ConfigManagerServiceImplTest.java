@@ -24,7 +24,6 @@ import io.harness.idp.configmanager.beans.entity.MergedAppConfigEntity;
 import io.harness.idp.configmanager.repositories.AppConfigRepository;
 import io.harness.idp.configmanager.repositories.MergedAppConfigRepository;
 import io.harness.idp.configmanager.service.ConfigEnvVariablesService;
-import io.harness.idp.configmanager.service.ConfigManagerService;
 import io.harness.idp.configmanager.service.ConfigManagerServiceImpl;
 import io.harness.idp.envvariable.service.BackstageEnvVariableService;
 import io.harness.idp.k8s.client.K8sClient;
@@ -35,8 +34,6 @@ import io.harness.spec.server.idp.v1.model.BackstageEnvSecretVariable;
 import io.harness.spec.server.idp.v1.model.MergedPluginConfigs;
 import io.harness.spec.server.idp.v1.model.NamespaceInfo;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import java.util.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -128,13 +125,14 @@ public class ConfigManagerServiceImplTest extends CategoryTest {
     when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
              TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, TEST_PLUGIN_CONFIG_TYPE))
         .thenReturn(Optional.empty());
-    AppConfig appConfig = configManagerServiceImpl.getPluginConfig(TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID);
+    AppConfig appConfig =
+        configManagerServiceImpl.getAppConfig(TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, ConfigType.PLUGIN);
     assertNull(appConfig);
 
     when(appConfigRepository.findByAccountIdentifierAndConfigIdAndConfigType(
              TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, TEST_PLUGIN_CONFIG_TYPE))
         .thenReturn(Optional.of(appConfigEntity));
-    appConfig = configManagerServiceImpl.getPluginConfig(TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID);
+    appConfig = configManagerServiceImpl.getAppConfig(TEST_ACCOUNT_IDENTIFIER, TEST_CONFIG_ID, ConfigType.PLUGIN);
     assertNotNull(appConfig);
     assertEquals(appConfig.getConfigId(), TEST_CONFIG_ID);
     assertEquals(appConfig.getConfigName(), TEST_CONFIG_NAME);
