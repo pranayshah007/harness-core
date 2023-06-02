@@ -29,7 +29,6 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
-import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
@@ -555,7 +554,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
           return true;
         }
       } catch (JsonProcessingException e) {
-        throw new InternalServerErrorException("Failed to parse the SCIM request", e);
+        log.error("Failed to parse the SCIM request while checking for user deletion operation", e);
+        return false;
       }
     }
     return false;

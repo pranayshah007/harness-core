@@ -17,7 +17,6 @@ import static io.harness.ng.core.common.beans.UserSource.SCIM;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.scim.PatchOperation;
@@ -507,7 +506,8 @@ public class ScimUserServiceImpl implements ScimUserService {
           return true;
         }
       } catch (JsonProcessingException e) {
-        throw new InternalServerErrorException("Failed to parse the SCIM request", e);
+        log.error("Failed to parse the SCIM request while checking for user deletion operation", e);
+        return false;
       }
     }
     return false;
