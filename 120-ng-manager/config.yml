@@ -438,6 +438,7 @@ cacheConfig:
   cacheNamespace: ""
   disabledCaches: [ ]
   enterpriseCacheEnabled: true
+  resilientCacheEnabled: ${ENABLE_RESILIENT_CACHE:-false}
 
 scopeAccessCheckEnabled: true
 
