@@ -20,9 +20,9 @@ public class SpotInstGetElastigroupJsonParameters extends SpotInstTaskParameters
 
   @Builder
   public SpotInstGetElastigroupJsonParameters(String appId, String accountId, String activityId, String commandName,
-      String workflowExecutionId, Integer timeoutIntervalInMin, String elastigroupId) {
+      String workflowExecutionId, Integer timeoutIntervalInMin, String elastigroupId, boolean timeoutSupported) {
     super(appId, accountId, activityId, commandName, workflowExecutionId, timeoutIntervalInMin,
-        SPOT_INST_GET_ELASTI_GROUP_JSON, "us-east-1");
+        SPOT_INST_GET_ELASTI_GROUP_JSON, "us-east-1", timeoutSupported);
     this.elastigroupId = elastigroupId;
   }
 }

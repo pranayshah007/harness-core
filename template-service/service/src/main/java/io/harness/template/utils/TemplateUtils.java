@@ -168,11 +168,10 @@ public class TemplateUtils {
 
   public static IdentifierRef getIdentifierRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
-    return IdentifierRefHelper.getIdentifierRefOrThrowException(
-        identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);
+    return getIdentifierRef(accountIdentifier, orgIdentifier, projectIdentifier, identifier, null);
   }
 
-  public static IdentifierRef getGitBranchAwareIdentifierRef(
+  public static IdentifierRef getIdentifierRef(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String gitBranch) {
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRefOrThrowException(
         identifier, accountIdentifier, orgIdentifier, projectIdentifier, TEMPLATE_FIELD_NAME);

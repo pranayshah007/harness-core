@@ -7,30 +7,31 @@
 
 package io.harness.favorites.remote;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import static java.util.Objects.nonNull;
 
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
-import io.harness.favorites.ResourceType;
 import io.harness.favorites.services.FavoritesService;
 import io.harness.favorites.utils.FavoritesResourceUtils;
 import io.harness.spec.server.ng.v1.OrgFavoritesApi;
 import io.harness.spec.server.ng.v1.model.FavoriteDTO;
 import io.harness.spec.server.ng.v1.model.FavoriteResponse;
+import io.harness.spec.server.ng.v1.model.FavoritesResourceType;
 
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.Valid;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.EnumUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
-public class OrgFavoriteApiImpl implements OrgFavoritesApi {
+public class OrgFavoritesApiImpl implements OrgFavoritesApi {
   @Inject private final FavoritesService favoritesService;
   @Inject private final FavoritesResourceUtils favoritesResourceUtils;
   @Override
@@ -46,21 +47,32 @@ public class OrgFavoriteApiImpl implements OrgFavoritesApi {
 
   @Override
   public Response deleteOrgFavorite(
-      String org, String userId, String harnessAccount, String resourceType, String resourceId) {
-    favoritesService.deleteFavorite(harnessAccount, org, null, userId, resourceType, resourceId);
+      String org, String userId, String harnessAccount, FavoritesResourceType resourceType, String resourceId) {
+    try {
+      favoritesService.deleteFavorite(harnessAccount, org, null, userId, resourceType, resourceId);
+    } catch (InvalidRequestException exception) {
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(ResponseMessage.builder()
+                      .code(ErrorCode.INVALID_REQUEST)
+                      .level(Level.ERROR)
+                      .message(exception.getMessage())
+                      .build())
+          .type(MediaType.APPLICATION_JSON)
+          .build();
+    }
     return Response.status(Response.Status.NO_CONTENT).build();
   }
 
   @Override
-  public Response getOrgFavorites(String org, String userId, String harnessAccount, String resourceType) {
-    if (isNotEmpty(resourceType)) {
-      List<FavoriteResponse> favoriteResponses =
-          favoritesResourceUtils.toFavoriteResponse(favoritesService.getFavorites(
-              harnessAccount, org, null, userId, EnumUtils.getEnum(ResourceType.class, resourceType)));
+  public Response getOrgFavorites(
+      String org, String userId, String harnessAccount, FavoritesResourceType resourceType) {
+    if (resourceType != null) {
+      List<FavoriteResponse> favoriteResponses = favoritesResourceUtils.toFavoriteResponse(
+          favoritesService.getFavorites(harnessAccount, org, null, userId, resourceType));
       return Response.ok().entity(favoriteResponses).build();
     }
     List<FavoriteResponse> favoriteResponses =
-        favoritesResourceUtils.toFavoriteResponse(favoritesService.getFavorites(harnessAccount, null, null, userId));
+        favoritesResourceUtils.toFavoriteResponse(favoritesService.getFavorites(harnessAccount, org, null, userId));
     return Response.ok().entity(favoriteResponses).build();
   }
 }

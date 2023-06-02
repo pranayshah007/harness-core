@@ -18,7 +18,6 @@ import io.harness.beans.stages.IACMStageNode;
 import io.harness.beans.steps.IACMStepSpecTypeConstants;
 import io.harness.beans.yaml.extended.cache.Caching;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.runtime.Runtime;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -72,13 +71,6 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
     return null;
   }
 
-  private void validateRuntime(IntegrationStageConfig integrationStageConfig) {
-    Runtime runtime = integrationStageConfig.getRuntime();
-    if (runtime != null && (runtime.getType() != Runtime.Type.CLOUD)) {
-      throw new CIStageExecutionException("Runtime only supports field with type Cloud");
-    }
-  }
-
   private void validateInfrastructure(IntegrationStageConfig integrationStageConfig) {
     Infrastructure infrastructure = integrationStageConfig.getInfrastructure();
     if (infrastructure != null) {
@@ -102,8 +94,6 @@ public class IACMStageFilterJsonCreator extends GenericStageFilterJsonCreatorV2<
 
   private void validateStage(IACMStageNode stageNode) {
     IntegrationStageConfig integrationStageConfig = (IntegrationStageConfig) stageNode.getStageInfoConfig();
-
-    validateRuntime(integrationStageConfig);
     validateInfrastructure(integrationStageConfig);
     validateExecution(integrationStageConfig);
     validateCache(integrationStageConfig);

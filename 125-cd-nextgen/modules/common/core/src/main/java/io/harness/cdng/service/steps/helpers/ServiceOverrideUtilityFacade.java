@@ -58,6 +58,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -92,7 +93,8 @@ public class ServiceOverrideUtilityFacade {
     return serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
   }
 
-  public Map<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedServiceOverrideConfigs(String accountId,
+  @NonNull
+  public EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedServiceOverrideConfigs(String accountId,
       String orgId, String projectId, @NonNull ServiceStepV3Parameters parameters, @NonNull Environment envEntity)
       throws IOException {
     if (ParameterField.isNull(parameters.getEnvRef()) || isEmpty(parameters.getEnvRef().getValue())
@@ -111,7 +113,7 @@ public class ServiceOverrideUtilityFacade {
           parameters.getServiceOverrideInputs().getExpressionValue(), parameters.getEnvInputs().getExpressionValue()));
     }
 
-    Map<ServiceOverridesType, NGServiceOverrideConfigV2> overridesMap = new HashMap<>();
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> overridesMap = new EnumMap<>(ServiceOverridesType.class);
     String isOverrideV2EnabledValue =
         NGRestUtils
             .getResponse(ngSettingsClient.getSetting(OVERRIDE_PROJECT_SETTING_IDENTIFIER, accountId, orgId, projectId))
@@ -120,7 +122,7 @@ public class ServiceOverrideUtilityFacade {
     if (isOverrideV2EnabledValue.equals("true")) {
       Map<ServiceOverridesType, List<NGServiceOverridesEntity>> allTypesOverridesV2 =
           getAllOverridesWithSpecExists(parameters, accountId);
-      Map<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
+      EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> acrossScopeMergedOverrides =
           getMergedOverridesAcrossScope(allTypesOverridesV2);
 
       if (acrossScopeMergedOverrides.containsKey(ServiceOverridesType.ENV_SERVICE_OVERRIDE)
@@ -172,9 +174,10 @@ public class ServiceOverrideUtilityFacade {
     return overridesMap;
   }
 
-  private Map<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedOverridesAcrossScope(
+  private EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> getMergedOverridesAcrossScope(
       Map<ServiceOverridesType, List<NGServiceOverridesEntity>> overridesV2Map) {
-    Map<ServiceOverridesType, NGServiceOverrideConfigV2> finalMergedOverridesMap = new HashMap<>();
+    EnumMap<ServiceOverridesType, NGServiceOverrideConfigV2> finalMergedOverridesMap =
+        new EnumMap<>(ServiceOverridesType.class);
     overridesV2Map.forEach((type, entities) -> {
       if (isNotEmpty(entities)) {
         Optional<NGServiceOverrideConfigV2> finalOverrideConfig = mergeOverridesGroupedByType(entities);

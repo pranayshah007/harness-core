@@ -1,16 +1,16 @@
 infrastructureDefinition:
-  name: "sampleInfra"
-  identifier: "sampleInfra"
-  description: "sampleInfra"
+  name: sampleInfra
+  identifier: sampleInfra
+  description: sampleInfra
   tags: {}
-  orgIdentifier: "default"
-  projectIdentifier: "Custom_Deployment"
-  environmentRef: "sampleEnv"
-  deploymentType: "CustomDeployment"
-  type: "CustomDeployment"
+  orgIdentifier: default
+  projectIdentifier: Custom_Deployment
+  environmentRef: sampleEnv
+  deploymentType: CustomDeployment
+  type: CustomDeployment
   spec:
     customDeploymentRef:
-      templateRef: "account.OpenStack"
-      versionLabel: "V1"
+      templateRef: account.OpenStack
+      versionLabel: V1
     variables: []
   allowSimultaneousDeployments: false

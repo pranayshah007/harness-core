@@ -16,6 +16,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.rancher.RancherConnectorDTO;
 import io.harness.delegate.beans.connector.rancher.RancherTaskParams;
+import io.harness.delegate.beans.connector.rancher.RancherTaskType;
 import io.harness.delegate.beans.connector.rancher.RancherTestConnectionTaskResponse;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -35,6 +36,7 @@ public class RancherConnectionValidator extends AbstractKubernetesConnectorValid
 
     return RancherTaskParams.builder()
         .rancherConnectorDTO(rancherConnectorDTO)
+        .rancherTaskType(RancherTaskType.VALIDATE)
         .encryptionDetails(encryptedDataDetails)
         .build();
   }

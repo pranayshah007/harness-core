@@ -134,10 +134,6 @@ public class InstanceSyncPerpetualTaskServiceImpl implements InstanceSyncPerpetu
         abstractInstanceSyncHandler.getPerpetualTaskType());
   }
 
-  public boolean isInstanceSyncV2Enabled() {
-    return false;
-  }
-
   public String createPerpetualTaskV2(AbstractInstanceSyncHandler abstractInstanceSyncHandler,
       InfrastructureMappingDTO infrastructureMappingDTO, ConnectorInfoDTO connectorInfoDTO) {
     PerpetualTaskExecutionBundle perpetualTaskExecutionBundle =

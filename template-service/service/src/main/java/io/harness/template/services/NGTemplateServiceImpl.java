@@ -31,11 +31,13 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
+import io.harness.engine.GovernanceService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eraro.ErrorMessageConstants;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -65,6 +67,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitx.GitXSettingsHelper;
+import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -75,6 +78,7 @@ import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.opaclient.model.OpaConstants;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -103,6 +107,7 @@ import io.harness.template.utils.TemplateUtils;
 import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -154,6 +159,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject NGSettingsClient settingsClient;
   @Inject GitXSettingsHelper gitXSettingsHelper;
   @Inject private TemplateRbacHelper templateRbacHelper;
+
+  @Inject private GovernanceService governanceService;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -1579,5 +1587,19 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     gitXSettingsHelper.setConnectorRefForRemoteEntity(accountIdentifier, orgIdentifier, projIdentifier);
     gitXSettingsHelper.setDefaultStoreTypeForEntities(
         accountIdentifier, orgIdentifier, projIdentifier, EntityType.TEMPLATE);
+  }
+
+  @Override
+  public GovernanceMetadata validateGovernanceRules(TemplateEntity templateEntity) {
+    if (!pmsFeatureFlagService.isEnabled(templateEntity.getAccountId(), FeatureName.OPA_TEMPLATE_GOVERNANCE)) {
+      return GovernanceMetadata.newBuilder()
+          .setDeny(false)
+          .setMessage(String.format("FF: [%s] is disabled for account: [%s]", FeatureName.OPA_TEMPLATE_GOVERNANCE,
+              templateEntity.getAccountId()))
+          .build();
+    }
+    return governanceService.evaluateGovernancePoliciesForTemplate(templateEntity.getYaml(),
+        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+        OpaConstants.OPA_EVALUATION_ACTION_SAVE, OpaConstants.OPA_EVALUATION_TYPE_TEMPLATE);
   }
 }

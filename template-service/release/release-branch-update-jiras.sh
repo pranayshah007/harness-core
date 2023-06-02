@@ -44,7 +44,7 @@ for KEY in ${FINAL_KEYS[@]}
         "update": {
           "fixVersions": [
             {"add":
-              {"name": "" }
+              {"name": "'"$FIX_TEMPLATE_VERSION"'" }
             }
           ]
         }
