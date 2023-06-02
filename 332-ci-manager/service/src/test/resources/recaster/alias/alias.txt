@@ -79,7 +79,6 @@ io.harness.yaml.sto.variables.STOYamlImageType
 io.harness.beans.steps.nodes.security.OpenvasScanNode
 io.harness.ci.states.V1.InitStepV2DelegateTaskInfo
 io.harness.beans.environment.VmBuildJobInfo
-io.harness.beans.steps.stepinfo.IACMTemplateInfo
 io.harness.beans.yaml.extended.TIBuildTool
 io.harness.beans.steps.nodes.security.QualysScanNode
 io.harness.beans.steps.stepinfo.RunTestsStepInfo
@@ -146,7 +145,6 @@ io.harness.pms.sdk.core.plan.MapStepParameters
 io.harness.beans.steps.nodes.security.JfrogXrayScanNode
 io.harness.beans.steps.stepinfo.V1.BackgroundStepInfoV1
 io.harness.beans.environment.pod.PodSetupInfo
-io.harness.beans.steps.nodes.iacm.IACMTemplateStepNode
 io.harness.ci.pipeline.executions.beans.CIBuildPRHook
 io.harness.beans.GCPArtifactUploadInfo
 io.harness.beans.environment.pod.container.ContainerSource
@@ -272,7 +270,7 @@ io.harness.yaml.sto.variables.STOYamlTargetType
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.beans.steps.nodes.V1.BackgroundStepNodeV1
 io.harness.ci.beans.entities.TIServiceConfig
-io.harness.beans.steps.nodes.iacm.IACMTerraformPlanStepNode
+io.harness.beans.steps.nodes.iacm.IACMTerraformPluginStepNode
 io.harness.beans.execution.PRWebhookEvent
 io.harness.beans.steps.stepinfo.security.ZapStepInfo
 io.harness.beans.sweepingoutputs.K8PodDetails
@@ -343,7 +341,7 @@ io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.beans.yaml.extended.TIDotNetVersion
 io.harness.beans.steps.stepinfo.security.DataTheoremStepInfo
-io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo
+io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo
 io.harness.beans.environment.pod.container.ContainerImageDetails
 io.harness.plancreator.steps.TaskSelectorYaml
 io.harness.steps.section.chain.SectionChainPassThroughData

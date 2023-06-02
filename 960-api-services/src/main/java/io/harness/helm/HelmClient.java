@@ -130,5 +130,7 @@ public interface HelmClient {
   HelmCliResponse renderChart(HelmCommandData helmCommandData, String chartLocation, String namespace,
       List<String> valuesOverrides, boolean isErrorFrameworkEnabled) throws Exception;
 
+  HelmCliResponse getManifest(HelmCommandData helmCommandData, String namespace) throws Exception;
+
   String getHelmPath(HelmVersion helmVersion);
 }

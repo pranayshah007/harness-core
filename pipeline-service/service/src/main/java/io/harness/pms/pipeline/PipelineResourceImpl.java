@@ -8,7 +8,6 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -65,6 +64,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBo
 import io.harness.steps.template.TemplateStepNode;
 import io.harness.steps.template.stage.TemplateStageNode;
 import io.harness.utils.PageUtils;
+import io.harness.utils.PipelineGitXHelper;
 import io.harness.utils.PmsFeatureFlagHelper;
 import io.harness.yaml.core.StepSpecType;
 import io.harness.yaml.schema.YamlSchemaResource;
@@ -466,23 +466,29 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<TemplatesResolvedPipelineResponseDTO> getTemplateResolvedPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgId,
       @NotNull @ProjectIdentifier String projectId, @ResourceIdentifier String pipelineId,
-      GitEntityFindInfoDTO gitEntityBasicInfo) {
+      GitEntityFindInfoDTO gitEntityBasicInfo, String loadFromCache) {
     log.info(
         String.format("Retrieving templates resolved pipeline with identifier %s in project %s, org %s, account %s",
             pipelineId, projectId, orgId, accountId));
+    boolean loadFromCacheBool = GitXCacheMapper.parseLoadFromCacheHeaderParam(loadFromCache);
 
     Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
+        pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false, false, loadFromCacheBool);
 
     if (pipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineId));
     }
 
+    // This is required so the remote template references are fetched from correct repo and branch and not from
+    // `default` branch.
+    PipelineGitXHelper.setupGitParentEntityDetails(
+        accountId, orgId, projectId, pipelineEntity.get().getConnectorRef(), pipelineEntity.get().getRepo());
+
     String pipelineYaml = pipelineEntity.get().getYaml();
 
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), BOOLEAN_FALSE_VALUE);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), loadFromCache);
     String templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
     TemplatesResolvedPipelineResponseDTO templatesResolvedPipelineResponseDTO =
         TemplatesResolvedPipelineResponseDTO.builder()

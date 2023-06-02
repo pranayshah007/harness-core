@@ -7,6 +7,7 @@
 
 package io.harness.ngtriggers.beans.response;
 
+import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Data;
 
@@ -17,7 +18,7 @@ public class TargetExecutionSummary {
   String targetId;
   String runtimeInput;
   String planExecutionId;
-  int runSequence;
+  @Nullable Integer runSequence;
   String executionStatus;
   Long startTs;
 }

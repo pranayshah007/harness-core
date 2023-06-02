@@ -34,9 +34,12 @@ import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.buildstate.SecretUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.ci.remote.CiServiceResourceClient;
 import io.harness.ci.utils.ContainerSecretEvaluator;
 import io.harness.ci.utils.PortFinder;
 import io.harness.data.structure.EmptyPredicate;
@@ -53,8 +56,10 @@ import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PodVolume;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
+import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.PluginCreationResponseWrapper;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -65,6 +70,7 @@ import io.harness.steps.container.exception.ContainerStepExecutionException;
 import io.harness.steps.container.execution.ContainerDetailsSweepingOutput;
 import io.harness.steps.container.execution.plugin.PluginExecutionConfigHelper;
 import io.harness.steps.container.utils.ConnectorUtils;
+import io.harness.steps.container.utils.ContainerInfraMapper;
 import io.harness.steps.container.utils.ContainerParamsProvider;
 import io.harness.steps.container.utils.ContainerStepImageUtils;
 import io.harness.steps.container.utils.ContainerStepResolverUtils;
@@ -79,10 +85,13 @@ import io.harness.steps.plugin.infrastructure.ContainerCleanupDetails;
 import io.harness.steps.plugin.infrastructure.ContainerK8sInfra;
 import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.RetryUtils;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -90,23 +99,34 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
+import okhttp3.ResponseBody;
 import org.apache.commons.lang3.tuple.Pair;
+import retrofit2.Response;
 
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ContainerStepInitHelper {
+  private static final String FAILED_TO_FETCH_CI_EXECUTION_CONFIG_MSG =
+      "Failed to fetch execution configuration for container creation";
+  private static final RetryPolicy<Object> RETRY_POLICY_EXECUTION_CONFIGS = RetryUtils.getRetryPolicy(
+      "Error calling CI Manager for fetching execution configs..retrying", FAILED_TO_FETCH_CI_EXECUTION_CONFIG_MSG,
+      Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ContainerStepImageUtils harnessImageUtils;
-  @Inject private ContainerParamsProvider internalContainerParamsProvider;
+  @Inject private ContainerParamsProvider containerParamsProvider;
   @Inject K8sPodInitUtils k8sPodInitUtils;
   @Inject SecretUtils secretUtils;
   @Inject PluginExecutionConfigHelper pluginExecutionConfigHelper;
   @Inject PluginUtils pluginUtils;
+  @Inject CiServiceResourceClient ciServiceResourceClient;
 
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepSpec containerStepInfo, Ambiance ambiance, String logPrefix) {
@@ -130,7 +150,7 @@ public class ContainerStepInitHelper {
   private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(ContainerStepSpec containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra k8sDirectInfraYaml, Ambiance ambiance,
       String logPrefix) {
-    String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
+    String podName = getPodName(containerStepInfo.getIdentifier().toLowerCase());
     Map<String, String> buildLabels = k8sPodInitUtils.getLabels(
         ambiance, ContainerUnitStepUtils.getKubernetesStandardPodName(containerStepInfo.getIdentifier()));
     Map<String, String> annotations = ExpressionResolverUtils.resolveMapParameter(
@@ -207,11 +227,16 @@ public class ContainerStepInitHelper {
     Integer stageMemoryRequest = wrapperRequests.getRight();
     List<CIK8ContainerParams> containerParams = new ArrayList<>();
 
-    CIK8ContainerParams setupAddOnContainerParams =
-        getSetupAddOnContainerParams(infrastructure, volumeToMountPath, os, ngAccess, harnessInternalImageConnector);
+    final CIExecutionImages overridenExecutionConfig =
+        fetchCiExecutionImagesWithRetries(accountId, ContainerInfraMapper.toStageInfraType(infrastructure))
+            .orElse(null);
 
-    CIK8ContainerParams liteEngineContainerParams = getLiteEngineContainerParams(k8PodDetails, infrastructure, ambiance,
-        logPrefix, volumeToMountPath, logEnvVars, harnessInternalImageConnector, stageCpuRequest, stageMemoryRequest);
+    CIK8ContainerParams setupAddOnContainerParams = getSetupAddOnContainerParams(
+        infrastructure, volumeToMountPath, os, ngAccess, harnessInternalImageConnector, overridenExecutionConfig);
+
+    CIK8ContainerParams liteEngineContainerParams =
+        getLiteEngineContainerParams(k8PodDetails, infrastructure, ambiance, logPrefix, volumeToMountPath, logEnvVars,
+            harnessInternalImageConnector, stageCpuRequest, stageMemoryRequest, overridenExecutionConfig);
     List<ContainerDefinitionInfo> stepCtrDefinitions =
         getContainerDefinitionInfos(containerStepInfo, infrastructure, ambiance, logPrefix, volumeToMountPath, os,
             ngAccess, commonEnvVars, harnessInternalImageConnector, secretVariableDetails, containerParams);
@@ -245,7 +270,7 @@ public class ContainerStepInitHelper {
     if (containerStepInfo instanceof PluginStep) {
       PluginStep pluginStep = (PluginStep) containerStepInfo;
       String identifier = containerStepInfo.getIdentifier();
-      if (EmptyPredicate.isNotEmpty(stepGroupIdentifier)) {
+      if (isNotEmpty(stepGroupIdentifier)) {
         identifier = stepGroupIdentifier + "_" + identifier;
       }
       stepConnectorMap.put(identifier, new ArrayList<>());
@@ -278,7 +303,7 @@ public class ContainerStepInitHelper {
                                .build())
                     .collect(toList());
             String identifier = responseV2.getStepInfo().getIdentifier();
-            if (EmptyPredicate.isNotEmpty(stepGroupIdentifier)) {
+            if (isNotEmpty(stepGroupIdentifier)) {
               identifier = stepGroupIdentifier + "_" + identifier;
             }
             stepConnectorMap.put(identifier, connectorConversionInfo);
@@ -292,18 +317,18 @@ public class ContainerStepInitHelper {
   private CIK8ContainerParams getLiteEngineContainerParams(ContainerDetailsSweepingOutput k8PodDetails,
       ContainerK8sInfra infrastructure, Ambiance ambiance, String logPrefix, Map<String, String> volumeToMountPath,
       Map<String, String> logEnvVars, ConnectorDetails harnessInternalImageConnector, Integer stageCpuRequest,
-      Integer stageMemoryRequest) {
-    return internalContainerParamsProvider.getLiteEngineContainerParams(harnessInternalImageConnector, k8PodDetails,
+      Integer stageMemoryRequest, CIExecutionImages ciExecutionImages) {
+    return containerParamsProvider.getLiteEngineContainerParams(harnessInternalImageConnector, k8PodDetails,
         stageCpuRequest, stageMemoryRequest, logEnvVars, volumeToMountPath, k8sPodInitUtils.getWorkDir(),
-        k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance);
+        k8sPodInitUtils.getCtrSecurityContext(infrastructure), logPrefix, ambiance, ciExecutionImages);
   }
 
   private CIK8ContainerParams getSetupAddOnContainerParams(ContainerK8sInfra infrastructure,
       Map<String, String> volumeToMountPath, OSType os, NGAccess ngAccess,
-      ConnectorDetails harnessInternalImageConnector) {
-    return internalContainerParamsProvider.getSetupAddonContainerParams(harnessInternalImageConnector,
-        volumeToMountPath, k8sPodInitUtils.getWorkDir(), k8sPodInitUtils.getCtrSecurityContext(infrastructure),
-        ngAccess.getAccountIdentifier(), os);
+      ConnectorDetails harnessInternalImageConnector, CIExecutionImages overridenExecutionImages) {
+    return containerParamsProvider.getSetupAddonContainerParams(harnessInternalImageConnector, volumeToMountPath,
+        k8sPodInitUtils.getWorkDir(), k8sPodInitUtils.getCtrSecurityContext(infrastructure), os,
+        overridenExecutionImages);
   }
 
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
@@ -319,7 +344,7 @@ public class ContainerStepInitHelper {
     if (isNotEmpty(containerDefinitionInfo.getStepIdentifier()) && isNotEmpty(connectorRefs)) {
       List<ConnectorConversionInfo> connectorConversionInfos =
           connectorRefs.get(containerDefinitionInfo.getStepIdentifier());
-      if (connectorConversionInfos != null && connectorConversionInfos.size() > 0) {
+      if (isNotEmpty(connectorConversionInfos)) {
         for (ConnectorConversionInfo connectorConversionInfo : connectorConversionInfos) {
           ConnectorDetails connectorDetails =
               connectorUtils.getConnectorDetailsWithConversionInfo(ngAccess, connectorConversionInfo);
@@ -371,12 +396,11 @@ public class ContainerStepInitHelper {
             .containerType(containerDefinitionInfo.getContainerType())
             .envVars(envVars)
             .envVarsWithSecretRef(envVarsWithSecretRef)
-            .containerSecrets(
-                ContainerSecrets.builder()
-                    .secretVariableDetails(containerSecretVariableDetails)
-                    .connectorDetailsMap(stepConnectorDetails)
-                    .plainTextSecretsByName(internalContainerParamsProvider.getLiteEngineSecretVars(emptyMap()))
-                    .build())
+            .containerSecrets(ContainerSecrets.builder()
+                                  .secretVariableDetails(containerSecretVariableDetails)
+                                  .connectorDetailsMap(stepConnectorDetails)
+                                  .plainTextSecretsByName(containerParamsProvider.getLiteEngineSecretVars(emptyMap()))
+                                  .build())
             .commands(containerDefinitionInfo.getCommands())
             .ports(containerDefinitionInfo.getPorts())
             .args(containerDefinitionInfo.getArgs())
@@ -428,7 +452,7 @@ public class ContainerStepInitHelper {
         STAGE_INFRA_DETAILS);
   }
 
-  private String getPodName(Ambiance ambiance, String stageId) {
+  private String getPodName(String stageId) {
     return k8sPodInitUtils.generatePodName(stageId);
   }
 
@@ -571,5 +595,36 @@ public class ContainerStepInitHelper {
         .entrySet()
         .stream()
         .collect(Collectors.toMap(e -> EnvVariableEnum.valueOf(e.getKey()), Map.Entry::getValue));
+  }
+
+  private Optional<CIExecutionImages> fetchCiExecutionImagesWithRetries(
+      String accountIdentifier, StageInfraDetails.Type infraType) {
+    try {
+      return Failsafe.with(RETRY_POLICY_EXECUTION_CONFIGS)
+          .get(() -> fetchCiExecutionImagesInternal(accountIdentifier, infraType));
+    } catch (Exception ex) {
+      log.error("Failed to fetch CI execution configs, will use default execution config", ex);
+      return Optional.empty();
+    }
+  }
+
+  private Optional<CIExecutionImages> fetchCiExecutionImagesInternal(
+      String accountIdentifier, StageInfraDetails.Type infraType) throws IOException {
+    final Response<ResponseDTO<CIExecutionImages>> response =
+        ciServiceResourceClient.getCustomersExecutionConfig(infraType, true, accountIdentifier).execute();
+    if (response.isSuccessful()) {
+      if (response.body() != null) {
+        CIExecutionImages data = response.body().getData();
+        return Optional.ofNullable(data);
+      }
+      return Optional.empty();
+    } else {
+      // silently ignore error during reading the error body
+      try (ResponseBody errorBody = response.errorBody()) {
+        String errorBodyString = errorBody != null ? errorBody.string() : null;
+        log.error(FAILED_TO_FETCH_CI_EXECUTION_CONFIG_MSG + ": " + errorBodyString);
+      }
+      throw new InvalidRequestException(FAILED_TO_FETCH_CI_EXECUTION_CONFIG_MSG);
+    }
   }
 }

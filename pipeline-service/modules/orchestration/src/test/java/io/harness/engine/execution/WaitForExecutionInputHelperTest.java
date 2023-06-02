@@ -34,10 +34,13 @@ import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
+import java.io.IOException;
 import java.util.EnumSet;
 import java.util.Optional;
 import org.junit.Before;
@@ -67,7 +70,7 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
-  public void testWaitForExecutionInput() {
+  public void testWaitForExecutionInput() throws IOException {
     String nodeExecutionId = "nodeExecutionId";
     String template = "template";
     NodeExecution nodeExecution = NodeExecution.builder().uuid(nodeExecutionId).build();
@@ -76,8 +79,8 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
     String fieldYaml = "pipeline:\n  name: \"pipeline1\"\n  var: \"var/<+pipeline.name>\"\n";
-    String resolvedFieldYaml = "pipeline:\n  name: pipeline1\n"
-        + "  var: var/pipeline1\n";
+    String resolvedFieldYaml = "pipeline:\n  name: \"pipeline1\"\n"
+        + "  var: \"var/pipeline1\"\n";
     doReturn(Optional.of(PlanExecutionMetadata.builder().yaml(fieldYaml).build()))
         .when(planExecutionMetadataService)
         .findByPlanExecutionId(any());
@@ -85,10 +88,10 @@ public class WaitForExecutionInputHelperTest extends CategoryTest {
                             .addLevels(Level.newBuilder().setOriginalIdentifier("pipeline").buildPartial())
                             .putSetupAbstractions("accountId", "accountId")
                             .build();
-    doReturn(resolvedFieldYaml)
+    doReturn(YamlUtils.readTree(resolvedFieldYaml).getNode().getCurrJsonNode())
         .when(pmsEngineExpressionService)
-        .renderExpression(
-            ambiance, fieldYaml.replaceAll("\"", ""), ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        .resolve(ambiance, YamlNode.getNodeYaml(fieldYaml, ambiance),
+            ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
     waitForExecutionInputHelper.waitForExecutionInput(
         ambiance, nodeExecution.getUuid(), PlanNode.builder().executionInputTemplate(template).build());
     verify(waitNotifyEngine, times(1)).waitForAllOnInList(any(), callbackArgumentCaptor.capture(), any(), any());

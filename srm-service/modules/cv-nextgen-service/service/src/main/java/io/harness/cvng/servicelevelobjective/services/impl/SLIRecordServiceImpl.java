@@ -85,7 +85,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
     try {
       sliRecordBucketService.create(sliRecordParamList, sliId, sliVersion);
     } catch (Exception exception) {
-      log.error("[SLI Record Bucketing Error]", exception);
+      log.error(String.format("[SLI Record Bucketing Error] sliId: %s ", sliId), exception);
     }
   }
 
@@ -114,8 +114,10 @@ public class SLIRecordServiceImpl implements SLIRecordService {
       long runningBadCount, String verificationTaskId) {
     List<SLIRecord> toBeUpdatedSLIRecords = getSLIRecords(
         sliId, firstSLIRecordParam.getTimeStamp(), lastSLIRecordParam.getTimeStamp().plus(1, ChronoUnit.MINUTES));
-    Map<Instant, SLIRecord> sliRecordMap =
-        toBeUpdatedSLIRecords.stream().collect(Collectors.toMap(SLIRecord::getTimestamp, Function.identity()));
+    Map<Instant, SLIRecord> sliRecordMap = toBeUpdatedSLIRecords.stream().collect(Collectors.toMap(
+        SLIRecord::getTimestamp, Function.identity(),
+        (sliRecord1,
+            sliRecord2) -> sliRecord1.getLastUpdatedAt() > sliRecord2.getLastUpdatedAt() ? sliRecord1 : sliRecord2));
     List<SLIRecord> updateOrCreateSLIRecords = new ArrayList<>();
     for (SLIRecordParam sliRecordParam : sliRecordParamList) {
       SLIRecord sliRecord = sliRecordMap.get(sliRecordParam.getTimeStamp());

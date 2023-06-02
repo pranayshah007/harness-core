@@ -8,9 +8,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "handler",
     srcs = [
+        "genai_client.go",
         "handler.go",
         "header.go",
         "helper.go",
+        "intelligence.go",
         "middleware.go",
         "readiness.go",
         "store.go",
@@ -25,8 +27,10 @@ go_library(
         "//product/log-service/store",
         "//product/log-service/stream",
         "//product/platform/client",
+        "@com_github_cenkalti_backoff_v4//:backoff",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_go_chi_chi//:chi",
+        "@com_github_pkg_errors//:errors",
         "@org_golang_x_sync//errgroup",
     ],
 )
@@ -37,6 +41,7 @@ go_test(
     embed = [":handler"],
     deps = [
         "//product/log-service/config",
+        "//product/platform/client",
         "@com_github_dchest_authcookie//:authcookie",
         "@com_github_stretchr_testify//assert",
     ],

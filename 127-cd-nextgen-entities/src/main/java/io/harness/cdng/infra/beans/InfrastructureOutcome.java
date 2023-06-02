@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.Connector;
+import io.harness.helper.K8sCloudConfigMetadata;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -30,4 +31,8 @@ public interface InfrastructureOutcome extends Outcome, PassThroughData, Executi
   String getInfraIdentifier();
   String getInfraName();
   Connector getConnector();
+
+  default K8sCloudConfigMetadata getInfraOutcomeMetadata() {
+    return null;
+  }
 }

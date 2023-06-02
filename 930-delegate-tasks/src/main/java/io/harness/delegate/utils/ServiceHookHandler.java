@@ -17,12 +17,10 @@ import static io.harness.k8s.model.ServiceHookContext.GOOGLE_APPLICATION_CREDENT
 import static io.harness.k8s.model.ServiceHookContext.KUBE_CONFIG;
 import static io.harness.k8s.model.ServiceHookContext.MANAGED_WORKLOADS;
 import static io.harness.k8s.model.ServiceHookContext.WORKLOADS_LIST;
-import static io.harness.logging.CommandExecutionStatus.RUNNING;
 
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.utils.ServiceHookDTO;
@@ -34,7 +32,6 @@ import io.harness.k8s.model.ServiceHookAction;
 import io.harness.k8s.model.ServiceHookType;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.shell.ExecuteCommandResponse;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ScriptType;
@@ -92,15 +89,13 @@ public class ServiceHookHandler {
         color(format("\nExecuting %s for Action: %s \n", type.getName(), action.getActionName()), LogColor.White,
             LogWeight.Bold));
     for (ServiceHookDelegateConfig serviceHook : hooksToApply) {
-      String directory =
-          Paths
-              .get(workingDirectory, HOOKS_FOLDER, format("%s_%s", serviceHook.getIdentifier(), action.getActionName()))
-              .toString();
+      String serviceHookId = format("%s_%s", serviceHook.getIdentifier(), action.getActionName());
+      String directory = Paths.get(workingDirectory, HOOKS_FOLDER, serviceHookId).toString();
       logCallback.saveExecutionLog(format("\033[3mExecuting hook:  %s\033[0m", serviceHook.getIdentifier()));
       StringBuilder errorLog = new StringBuilder();
       ExecuteCommandResponse executeCommandResponse = executeCommand(context, serviceHook.getContent(), directory,
           format(failureMessage, type.getName(), serviceHook.getIdentifier(), action.getActionName(), directory),
-          logCallback);
+          logCallback, serviceHookId);
       if (errorLog.length() > 0) {
         log.error("Error output stream:\n{}", errorLog);
       }
@@ -108,8 +103,7 @@ public class ServiceHookHandler {
       if (CommandExecutionStatus.SUCCESS != executeCommandResponse.getStatus()) {
         throw NestedExceptionUtils.hintWithExplanationException(
             format("Check hook %s script", serviceHook.getIdentifier()),
-            format("Hook %s failed with error: %s\n", serviceHook.getIdentifier(),
-                executeCommandResponse.getCommandExecutionData()),
+            format("Hook %s failed. For more information check execution logs\n", serviceHook.getIdentifier()),
             new KubernetesTaskException(format(
                 failureMessage, type.getName(), serviceHook.getIdentifier(), action.getActionName(), directory)));
       }
@@ -126,9 +120,10 @@ public class ServiceHookHandler {
             LogColor.White, LogWeight.Bold));
   }
 
-  private ExecuteCommandResponse executeCommand(
-      Map<String, String> envVars, String command, String directoryPath, String errorMessage, LogCallback logCallback) {
-    ScriptProcessExecutor scriptProcessExecutor = createProcessExecutor(directoryPath, envVars, logCallback);
+  private ExecuteCommandResponse executeCommand(Map<String, String> envVars, String command, String directoryPath,
+      String errorMessage, LogCallback logCallback, String serviceHookId) {
+    ScriptProcessExecutor scriptProcessExecutor =
+        createProcessExecutor(directoryPath, envVars, logCallback, serviceHookId);
 
     return executeCommand(scriptProcessExecutor, errorMessage, directoryPath, command);
   }
@@ -137,9 +132,8 @@ public class ServiceHookHandler {
       ScriptProcessExecutor processExecutor, String errorMessage, String directoryPath, String script) {
     try {
       createDirectoryIfDoesNotExist(Paths.get(String.valueOf(directoryPath)));
-      final ExecuteCommandResponse executeCommandResponse =
-          processExecutor.executeCommandString(script, emptyList(), Collections.emptyList(), null, false);
-      return executeCommandResponse;
+      return processExecutor.executeCommandString(
+          script, Collections.emptyList(), Collections.emptyList(), null, false);
     } catch (IOException e) {
       // Not setting the cause here because it carries forward the commands which can contain passwords
       throw new KubernetesTaskException(format("[IO exception] %s", errorMessage));
@@ -147,17 +141,16 @@ public class ServiceHookHandler {
   }
 
   private ScriptProcessExecutor createProcessExecutor(
-      String directoryPath, Map<String, String> envVars, LogCallback logCallback) {
+      String directoryPath, Map<String, String> envVars, LogCallback logCallback, String serviceHookId) {
     final ShellExecutorConfig shellExecutorConfig = ShellExecutorConfig.builder()
                                                         .environment(envVars)
                                                         .workingDirectory(directoryPath)
                                                         .scriptType(ScriptType.BASH)
+                                                        .executionId(serviceHookId)
                                                         .closeLogStream(false)
                                                         .build();
 
-    final ScriptProcessExecutor executor = createExecutor(shellExecutorConfig, logCallback);
-
-    return executor;
+    return createExecutor(shellExecutorConfig, logCallback);
   }
 
   @VisibleForTesting
@@ -197,10 +190,6 @@ public class ServiceHookHandler {
     return hooks.stream()
         .filter(hook -> type.equals(hook.getHookType()) && hook.getServiceHookActions().contains(action))
         .collect(Collectors.toList());
-  }
-
-  private void saveExecutionLog(String line, LogLevel level, LogCallback logCallback) {
-    logCallback.saveExecutionLog(line, level, RUNNING, false);
   }
 
   private String generatePath(Set<String> envPathsSet) {

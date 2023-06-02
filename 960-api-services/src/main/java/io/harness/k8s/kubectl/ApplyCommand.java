@@ -23,7 +23,6 @@ public class ApplyCommand extends AbstractExecutable {
   private boolean dryrun;
   private boolean record;
   private String output;
-  private boolean dryRunClient;
   private String commandFlags;
   public ApplyCommand(Kubectl client) {
     this.client = client;
@@ -53,11 +52,6 @@ public class ApplyCommand extends AbstractExecutable {
     return this;
   }
 
-  public ApplyCommand dryRunClient(boolean dryRunClient) {
-    this.dryRunClient = dryRunClient;
-    return this;
-  }
-
   public ApplyCommand commandFlags(String commandFlags) {
     this.commandFlags = commandFlags;
     return this;
@@ -77,15 +71,11 @@ public class ApplyCommand extends AbstractExecutable {
     }
 
     if (this.dryrun) {
-      command.append(Kubectl.flag(Flag.dryrun));
-    }
-
-    if (this.dryRunClient) {
-      command.append(Kubectl.flag(Flag.dryRunClient));
+      command.append(Kubectl.flag(Flag.dryrun.getForVersion(client.getVersion(), client.getClientType())));
     }
 
     if (this.record) {
-      command.append(Kubectl.flag(Flag.record));
+      command.append(Kubectl.flag(Flag.record.getForVersion(client.getVersion(), client.getClientType())));
     }
     if (isNotEmpty(this.commandFlags)) {
       command.append(Kubectl.flag(this.commandFlags));

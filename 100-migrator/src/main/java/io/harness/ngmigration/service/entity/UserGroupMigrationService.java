@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.UserGroupDTO;
@@ -95,7 +96,8 @@ public class UserGroupMigrationService extends NgMigrationService {
     try {
       Response<ResponseDTO<UserGroupDTO>> resp =
           ngClient
-              .createUserGroup(inputDTO.getDestinationAuthToken(), userGroupDTO.getAccountIdentifier(), userGroupDTO)
+              .createUserGroup(inputDTO.getDestinationAuthToken(), userGroupDTO.getAccountIdentifier(),
+                  userGroupDTO.getOrgIdentifier(), userGroupDTO.getProjectIdentifier(), userGroupDTO)
               .execute();
       if (resp.code() >= 200 && resp.code() < 300) {
         return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
@@ -121,11 +123,15 @@ public class UserGroupMigrationService extends NgMigrationService {
 
   @Override
   public YamlGenerationDetails generateYaml(MigrationContext migrationContext, CgEntityId entityId) {
+    MigrationInputDTO inputDTO = migrationContext.getInputDTO();
     UserGroup userGroup = (UserGroup) migrationContext.getEntities().get(entityId).getEntity();
     String name =
         MigratorUtility.generateName(migrationContext.getInputDTO().getOverrides(), entityId, userGroup.getName());
     String identifier = MigratorUtility.generateIdentifierDefaultName(migrationContext.getInputDTO().getOverrides(),
         entityId, name, migrationContext.getInputDTO().getIdentifierCaseFormat());
+    Scope scope = MigratorUtility.getDefaultScope(inputDTO, entityId, Scope.PROJECT);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(scope, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(scope, inputDTO);
 
     UserGroupYamlDTO yamlDTO = UserGroupYamlDTO.builder()
                                    .userGroupDTO(UserGroupDTO.builder()
@@ -134,6 +140,8 @@ public class UserGroupMigrationService extends NgMigrationService {
                                                      .description(userGroup.getDescription())
                                                      .users(userGroup.getMemberIds())
                                                      .accountIdentifier(userGroup.getAccountId())
+                                                     .orgIdentifier(orgIdentifier)
+                                                     .projectIdentifier(projectIdentifier)
                                                      .build())
                                    .build();
 

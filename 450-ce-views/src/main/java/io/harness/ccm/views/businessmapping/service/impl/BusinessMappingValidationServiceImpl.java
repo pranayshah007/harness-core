@@ -9,6 +9,7 @@ package io.harness.ccm.views.businessmapping.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.ccm.views.businessmapping.entities.SharingStrategy.FIXED;
+import static io.harness.ccm.views.entities.ViewFieldIdentifier.BUSINESS_MAPPING;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 public class BusinessMappingValidationServiceImpl implements BusinessMappingValidationService {
   private static final String OTHERS = "Others";
   private static final String UNALLOCATED = "Unallocated";
+  private static final int NESTED_BUSINESS_MAPPING_DEPTH = 20;
 
   @Inject private BusinessMappingDao businessMappingDao;
 
@@ -47,6 +49,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
       throw new InvalidRequestException("Cost Category can't be null");
     }
     validateCostBuckets(businessMapping);
+    validateNestedBusinessMapping(businessMapping);
     validateSharedBuckets(businessMapping);
     validateUnallocatedCostLabel(businessMapping);
   }
@@ -64,7 +67,91 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
     }
   }
 
-  private boolean isNamePresent(String name, String accountId) {
+  private void validateNestedBusinessMapping(final BusinessMapping businessMapping) {
+    validateSharedBucketsInNestedBusinessMapping(businessMapping);
+    validateSameBusinessMappingInCostBucket(businessMapping);
+    validateCyclicDependency(businessMapping.getCostTargets(), 0);
+  }
+
+  private void validateSharedBucketsInNestedBusinessMapping(final BusinessMapping businessMapping) {
+    if (isBusinessMappingPresentInCostBuckets(businessMapping.getCostTargets())
+        && !Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+      throw new InvalidRequestException("Shared cost is not supported in nested cost category");
+    }
+  }
+
+  private boolean isBusinessMappingPresentInCostBuckets(final List<CostTarget> costTargets) {
+    boolean isPresent = false;
+    if (Objects.nonNull(costTargets)) {
+      for (final CostTarget costTarget : costTargets) {
+        isPresent = isBusinessMappingPresentInCostBucket(costTarget);
+        if (isPresent) {
+          break;
+        }
+      }
+    }
+    return isPresent;
+  }
+
+  private boolean isBusinessMappingPresentInCostBucket(final CostTarget costTarget) {
+    for (final ViewRule viewRule : costTarget.getRules()) {
+      for (final ViewCondition viewCondition : viewRule.getViewConditions()) {
+        final ViewIdCondition viewIdCondition = (ViewIdCondition) viewCondition;
+        if (viewIdCondition.getViewField().getIdentifier() == BUSINESS_MAPPING) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private void validateSameBusinessMappingInCostBucket(final BusinessMapping businessMapping) {
+    for (final CostTarget costTarget : businessMapping.getCostTargets()) {
+      for (final ViewRule viewRule : costTarget.getRules()) {
+        for (final ViewCondition viewCondition : viewRule.getViewConditions()) {
+          validateSameBusinessMappingInViewCondition(
+              businessMapping.getUuid(), costTarget.getName(), (ViewIdCondition) viewCondition);
+        }
+      }
+    }
+  }
+
+  private void validateSameBusinessMappingInViewCondition(
+      final String businessMappingUuid, final String bucketName, final ViewIdCondition viewCondition) {
+    final ViewField viewField = viewCondition.getViewField();
+    if (viewField.getIdentifier() == BUSINESS_MAPPING && businessMappingUuid.equals(viewField.getFieldId())) {
+      throw new InvalidRequestException(String.format("Can't add same cost category in cost bucket %s", bucketName));
+    }
+  }
+
+  private void validateCyclicDependency(final List<CostTarget> costTargets, final int nestedBusinessMappingDepth) {
+    if (nestedBusinessMappingDepth > NESTED_BUSINESS_MAPPING_DEPTH) {
+      throw new InvalidRequestException(
+          String.format("Not supported nested cost category with depth above %s", NESTED_BUSINESS_MAPPING_DEPTH));
+    }
+    for (final CostTarget costTarget : costTargets) {
+      for (final ViewRule viewRule : costTarget.getRules()) {
+        for (final ViewCondition viewCondition : viewRule.getViewConditions()) {
+          validateCyclicDependency((ViewIdCondition) viewCondition, nestedBusinessMappingDepth);
+        }
+      }
+    }
+  }
+
+  private void validateCyclicDependency(final ViewIdCondition viewCondition, final int nestedBusinessMappingDepth) {
+    final ViewField viewField = viewCondition.getViewField();
+    if (viewField.getIdentifier() == BUSINESS_MAPPING) {
+      final BusinessMapping businessMapping = businessMappingDao.get(viewField.getFieldId());
+      if (!Lists.isNullOrEmpty(businessMapping.getCostTargets())) {
+        validateCyclicDependency(businessMapping.getCostTargets(), nestedBusinessMappingDepth + 1);
+        if (!Lists.isNullOrEmpty(businessMapping.getSharedCosts())) {
+          throw new InvalidRequestException("Not supported nested cost category which has shared bucket in it");
+        }
+      }
+    }
+  }
+
+  private boolean isNamePresent(final String name, final String accountId) {
     return businessMappingDao.isNamePresent(name, accountId);
   }
 
@@ -84,7 +171,7 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
     if (isEmpty(costTarget.getName())) {
       throw new InvalidRequestException("cost bucket name can't be null or empty");
     }
-    validateRules(costTarget.getRules(), costTarget.getName());
+    validateRules(costTarget.getRules(), costTarget.getName(), false);
   }
 
   private void validateSharedBuckets(final BusinessMapping businessMapping) {
@@ -111,40 +198,47 @@ public class BusinessMappingValidationServiceImpl implements BusinessMappingVali
       throw new InvalidRequestException(
           String.format("Invalid sharing strategy for shared cost bucket %s", sharedCost.getName()));
     }
-    validateRules(sharedCost.getRules(), sharedCost.getName());
+    validateRules(sharedCost.getRules(), sharedCost.getName(), true);
   }
 
-  private void validateRules(final List<ViewRule> rules, final String bucketName) {
+  private void validateRules(final List<ViewRule> rules, final String bucketName, final boolean areSharedCostRules) {
     if (Lists.isNullOrEmpty(rules)) {
       throw new InvalidRequestException(String.format("Rules must exist for bucket %s", bucketName));
     }
     for (final ViewRule viewRule : rules) {
-      validateViewConditions(viewRule.getViewConditions(), bucketName);
+      validateViewConditions(viewRule.getViewConditions(), bucketName, areSharedCostRules);
     }
   }
 
-  private void validateViewConditions(final List<ViewCondition> viewConditions, final String bucketName) {
+  private void validateViewConditions(
+      final List<ViewCondition> viewConditions, final String bucketName, final boolean areSharedCostViewConditions) {
     if (Lists.isNullOrEmpty(viewConditions)) {
       throw new InvalidRequestException(String.format("Conditions must exist for bucket %s", bucketName));
     }
     for (final ViewCondition viewCondition : viewConditions) {
-      validateViewCondition(viewCondition, bucketName);
+      validateViewCondition(viewCondition, bucketName, areSharedCostViewConditions);
     }
   }
 
-  private void validateViewCondition(final ViewCondition viewCondition, final String bucketName) {
+  private void validateViewCondition(
+      final ViewCondition viewCondition, final String bucketName, final boolean isSharedCostViewCondition) {
     final ViewIdCondition viewIdCondition = (ViewIdCondition) viewCondition;
-    validateViewField(viewIdCondition.getViewField(), bucketName);
+    validateViewField(viewIdCondition.getViewField(), bucketName, isSharedCostViewCondition);
     validateViewIdOperator(viewIdCondition.getViewOperator(), bucketName);
     validateViewConditionValues(viewIdCondition.getValues(), bucketName, viewIdCondition.getViewOperator());
   }
 
-  private void validateViewField(final ViewField viewField, final String bucketName) {
+  private void validateViewField(
+      final ViewField viewField, final String bucketName, final boolean isSharedCostViewField) {
     if (isEmpty(viewField.getFieldId())) {
       throw new InvalidRequestException(String.format("ViewFieldId must exist for bucket %s", bucketName));
     }
     if (Objects.isNull(viewField.getIdentifier())) {
       throw new InvalidRequestException(String.format("ViewFieldIdentifier must exist for bucket %s", bucketName));
+    }
+    if (isSharedCostViewField && viewField.getIdentifier() == BUSINESS_MAPPING) {
+      throw new InvalidRequestException(
+          String.format("Cost category rules are not supported in shared cost bucket %s", bucketName));
     }
   }
 

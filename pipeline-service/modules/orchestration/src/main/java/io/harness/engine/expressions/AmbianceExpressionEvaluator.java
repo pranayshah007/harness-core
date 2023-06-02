@@ -97,7 +97,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
   private final Set<NodeExecutionEntityType> entityTypes;
   private final boolean refObjectSpecific;
   private final Map<String, String> groupAliases;
-  private NodeExecutionsCache nodeExecutionsCache;
+  protected NodeExecutionsCache nodeExecutionsCache;
   private final String SECRETS = "secrets";
 
   private boolean contextMapProvided = false;

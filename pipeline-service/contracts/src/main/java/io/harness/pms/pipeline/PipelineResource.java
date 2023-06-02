@@ -586,7 +586,8 @@ public interface PipelineResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @PathParam(
           NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier String pipelineId,
-      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo);
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
 
   @GET
   @Path("/list-repos")
@@ -684,7 +685,7 @@ public interface PipelineResource {
   @Path("/{pipelineIdentifier}/update-git-metadata")
   @ApiOperation(value = "Update git-metadata in remote pipeline Entity", nickname = "updatePipelineGitDetails")
   @Operation(operationId = "updatePipelineGitDetails",
-      description = "Update git-metadata in remote pipeline and returns the identifier of updated pipeline]",
+      description = "Update git-metadata in remote pipeline and returns the identifier of updated pipeline",
       summary = "Update git-metadata in remote pipeline Entity",
       responses =
       {

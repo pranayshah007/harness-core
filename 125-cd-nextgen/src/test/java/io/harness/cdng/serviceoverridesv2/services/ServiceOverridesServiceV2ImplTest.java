@@ -16,10 +16,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.configfile.ConfigFile;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.serviceoverridesv2.validators.ServiceOverrideValidatorService;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverrideCriteriaHelper;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.services.ServiceOverridesServiceV2Impl;
+import io.harness.cdng.service.steps.helpers.serviceoverridesv2.validators.ServiceOverrideValidatorService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
@@ -355,6 +359,8 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
             .variables(
                 List.of(StringNGVariable.builder().name("varA").value(ParameterField.createValueField("valA")).build(),
                     StringNGVariable.builder().name("varB").value(ParameterField.createValueField("valB")).build()))
+            .configFiles(List.of(
+                ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("configFile1").build()).build()))
             .build());
 
     overridesEntity = serviceOverridesServiceV2.update(overridesEntity);
@@ -365,12 +371,11 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                 StringNGVariable.builder().name("varC").value(ParameterField.createValueField("valC")).build()))
             .manifests(List.of(
                 ManifestConfigWrapper.builder()
-                    .manifest(ManifestConfig.builder().identifier("manifest1").type(ManifestConfigType.VALUES).build())
-                    .build(),
-                ManifestConfigWrapper.builder()
                     .manifest(
                         ManifestConfig.builder().identifier("manifest2").type(ManifestConfigType.K8_MANIFEST).build())
                     .build()))
+            .configFiles(List.of(
+                ConfigFileWrapper.builder().configFile(ConfigFile.builder().identifier("configFile2").build()).build()))
             .build());
 
     Pair<NGServiceOverridesEntity, Boolean> upsertResult = serviceOverridesServiceV2.upsert(overridesEntity);
@@ -400,7 +405,15 @@ public class ServiceOverridesServiceV2ImplTest extends CDNGTestBase {
                    .map(ManifestConfigWrapper::getManifest)
                    .map(ManifestConfig::getType)
                    .collect(Collectors.toList()))
-        .containsExactlyInAnyOrder(ManifestConfigType.K8_MANIFEST, ManifestConfigType.VALUES);
+        .containsExactlyInAnyOrder(ManifestConfigType.K8_MANIFEST, ManifestConfigType.KUSTOMIZE);
+
+    assertThat(upsertedOverride.getSpec()
+                   .getConfigFiles()
+                   .stream()
+                   .map(ConfigFileWrapper::getConfigFile)
+                   .map(ConfigFile::getIdentifier)
+                   .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder("configFile1", "configFile2");
   }
 
   private static void assertBasicOverrideEntityProperties(NGServiceOverridesEntity ngServiceOverridesEntity) {

@@ -47,7 +47,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElementConfigV2> {
+public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElementConfig> {
   public static final int DEFAULT_TIMEOUT = 600 * 1000;
 
   @Inject private KryoSerializer kryoSerializer;
@@ -56,13 +56,13 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
 
   @Override
   public PlanNode createPlanForParentNode(
-      PlanCreationContext ctx, StepGroupElementConfigV2 config, List<String> childrenNodeIds) {
+      PlanCreationContext ctx, StepGroupElementConfig config, List<String> childrenNodeIds) {
     return stepGroupPMSPlanCreator.createPlanForParentNode(ctx, config, childrenNodeIds);
   }
 
   @Override
-  public Class<StepGroupElementConfigV2> getFieldClass() {
-    return StepGroupElementConfigV2.class;
+  public Class<StepGroupElementConfig> getFieldClass() {
+    return StepGroupElementConfig.class;
   }
 
   @Override
@@ -72,7 +72,7 @@ public class StepGroupPMSPlanCreatorV2 extends ChildrenPlanCreator<StepGroupElem
 
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
-      PlanCreationContext ctx, StepGroupElementConfigV2 config) {
+      PlanCreationContext ctx, StepGroupElementConfig config) {
     if (config.getStepGroupInfra() == null) {
       return stepGroupPMSPlanCreator.createPlanForChildrenNodes(ctx, config);
     }

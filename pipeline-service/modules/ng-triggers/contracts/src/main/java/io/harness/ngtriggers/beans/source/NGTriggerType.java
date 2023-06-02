@@ -21,5 +21,5 @@ public enum NGTriggerType {
   @JsonProperty("Artifact") ARTIFACT,
   @JsonProperty("Manifest") MANIFEST,
   @JsonProperty("Scheduled") SCHEDULED,
-  @JsonProperty("MultiArtifact") MULTI_ARTIFACT
+  @JsonProperty("MultiRegionArtifact") MULTI_REGION_ARTIFACT
 }

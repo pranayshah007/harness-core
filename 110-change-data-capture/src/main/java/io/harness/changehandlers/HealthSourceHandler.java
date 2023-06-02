@@ -25,10 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CV)
-@Slf4j
 public class HealthSourceHandler extends AbstractChangeDataHandler {
   @Override
   public Map<String, String> getColumnValueMapping(ChangeEvent<?> changeEvent, String[] fields) {
@@ -44,20 +42,20 @@ public class HealthSourceHandler extends AbstractChangeDataHandler {
     DBObject dbObject = changeEvent.getFullDocument();
 
     String verificationJobInstanceId = dbObject.get("_id").toString();
-    log.info("Handling change event: {} for VerificationJobInstance _id: {}", changeEvent.getUuid(),
-        verificationJobInstanceId);
 
-    BasicDBObject verificationJob = (BasicDBObject) dbObject.get(VerificationJobInstanceKeys.resolvedJob);
-    List<BasicDBObject> cvConfigs = (List<BasicDBObject>) verificationJob.get(VerificationJobKeys.cvConfigs);
-    Map<String, List<BasicDBObject>> healthSourceMap =
-        cvConfigs.stream().collect(Collectors.groupingBy(cvConfig -> cvConfig.get(CVConfigKeys.identifier).toString()));
-    for (Map.Entry<String, List<BasicDBObject>> healthSource : healthSourceMap.entrySet()) {
-      Map<String, String> columnValueMapping =
-          getColumnValueMappingForSingleHealthSource(verificationJobInstanceId, healthSource);
-      columnValueMappings.add(columnValueMapping);
+    if (dbObject.get(VerificationJobInstanceKeys.resolvedJob) != null) {
+      BasicDBObject verificationJob = (BasicDBObject) dbObject.get(VerificationJobInstanceKeys.resolvedJob);
+      if (verificationJob.get(VerificationJobKeys.cvConfigs) != null) {
+        List<BasicDBObject> cvConfigs = (List<BasicDBObject>) verificationJob.get(VerificationJobKeys.cvConfigs);
+        Map<String, List<BasicDBObject>> healthSourceMap = cvConfigs.stream().collect(
+            Collectors.groupingBy(cvConfig -> cvConfig.get(CVConfigKeys.identifier).toString()));
+        for (Map.Entry<String, List<BasicDBObject>> healthSource : healthSourceMap.entrySet()) {
+          Map<String, String> columnValueMapping =
+              getColumnValueMappingForSingleHealthSource(verificationJobInstanceId, healthSource);
+          columnValueMappings.add(columnValueMapping);
+        }
+      }
     }
-    log.info("Handled change event: {} for VerificationJobInstance _id: {}", changeEvent.getUuid(),
-        verificationJobInstanceId);
     return columnValueMappings;
   }
 
@@ -65,7 +63,10 @@ public class HealthSourceHandler extends AbstractChangeDataHandler {
       String verificationJobInstanceId, Map.Entry<String, List<BasicDBObject>> healthSource) {
     String healthSourceIdentifier = healthSource.getKey().substring(healthSource.getKey().indexOf("/") + 1);
     BasicDBObject cvConfigAsDBObject = healthSource.getValue().get(0);
-    String healthSourceName = cvConfigAsDBObject.getString(CVConfigKeys.monitoringSourceName);
+    Map<String, String> columnValueMapping = new HashMap<>();
+    if (cvConfigAsDBObject.get(CVConfigKeys.monitoringSourceName) != null) {
+      columnValueMapping.put("name", cvConfigAsDBObject.getString(CVConfigKeys.monitoringSourceName));
+    }
     String type = null;
     if (Objects.nonNull(cvConfigAsDBObject.get(CVConfigKeys.dataSourceName))) {
       type = cvConfigAsDBObject.getString(CVConfigKeys.dataSourceName);
@@ -76,19 +77,21 @@ public class HealthSourceHandler extends AbstractChangeDataHandler {
       providerType = cvConfigAsDBObject.getString(CVConfigKeys.verificationType);
       numberOfManualQueries = getNumberOfManualQueries(healthSource.getValue());
     }
-    String accountId = cvConfigAsDBObject.getString(CVConfigKeys.accountId);
-    String orgIdentifier = cvConfigAsDBObject.getString(CVConfigKeys.orgIdentifier);
-    String projectIdentifier = cvConfigAsDBObject.getString(CVConfigKeys.projectIdentifier);
+    if (cvConfigAsDBObject.get(CVConfigKeys.accountId) != null) {
+      columnValueMapping.put("accountId", cvConfigAsDBObject.getString(CVConfigKeys.accountId));
+    }
+    if (cvConfigAsDBObject.get(CVConfigKeys.orgIdentifier) != null) {
+      columnValueMapping.put("orgIdentifier", cvConfigAsDBObject.getString(CVConfigKeys.orgIdentifier));
+    }
+    if (cvConfigAsDBObject.get(CVConfigKeys.projectIdentifier) != null) {
+      columnValueMapping.put("projectIdentifier", cvConfigAsDBObject.getString(CVConfigKeys.projectIdentifier));
+    }
 
-    Map<String, String> columnValueMapping = new HashMap<>();
     String uniqueHealthSourceIdentifier = verificationJobInstanceId + healthSourceIdentifier;
     columnValueMapping.put(
         "id", UUID.nameUUIDFromBytes(uniqueHealthSourceIdentifier.getBytes(StandardCharsets.UTF_8)).toString());
     columnValueMapping.put("healthSourceIdentifier", healthSourceIdentifier);
-    columnValueMapping.put("accountId", accountId);
-    columnValueMapping.put("orgIdentifier", orgIdentifier);
-    columnValueMapping.put("projectIdentifier", projectIdentifier);
-    columnValueMapping.put("name", healthSourceName);
+
     if (Objects.nonNull(providerType)) {
       columnValueMapping.put("providerType", providerType);
     }
@@ -103,16 +106,19 @@ public class HealthSourceHandler extends AbstractChangeDataHandler {
   private static int getNumberOfManualQueries(List<BasicDBObject> cvConfigs) {
     int numberOfManualQueries = 0;
     for (BasicDBObject cvConfigAsDBObject : cvConfigs) {
-      if (cvConfigAsDBObject.getString(CVConfigKeys.verificationType).equals(VerificationType.TIME_SERIES.toString())) {
-        int numberOfManualQueriesInCurrentCvConfig = 0;
-        if (Objects.nonNull(cvConfigAsDBObject.get("metricInfos"))) {
-          numberOfManualQueriesInCurrentCvConfig = ((List<?>) cvConfigAsDBObject.get("metricInfos")).size();
-        } else if (Objects.nonNull(cvConfigAsDBObject.get("metricInfoList"))) {
-          numberOfManualQueriesInCurrentCvConfig = ((List<?>) cvConfigAsDBObject.get("metricInfoList")).size();
+      if (cvConfigAsDBObject.get(CVConfigKeys.verificationType) != null) {
+        if (cvConfigAsDBObject.getString(CVConfigKeys.verificationType)
+                .equals(VerificationType.TIME_SERIES.toString())) {
+          int numberOfManualQueriesInCurrentCvConfig = 0;
+          if (Objects.nonNull(cvConfigAsDBObject.get("metricInfos"))) {
+            numberOfManualQueriesInCurrentCvConfig = ((List<?>) cvConfigAsDBObject.get("metricInfos")).size();
+          } else if (Objects.nonNull(cvConfigAsDBObject.get("metricInfoList"))) {
+            numberOfManualQueriesInCurrentCvConfig = ((List<?>) cvConfigAsDBObject.get("metricInfoList")).size();
+          }
+          numberOfManualQueries += numberOfManualQueriesInCurrentCvConfig;
+        } else {
+          numberOfManualQueries++;
         }
-        numberOfManualQueries += numberOfManualQueriesInCurrentCvConfig;
-      } else {
-        numberOfManualQueries++;
       }
     }
     return numberOfManualQueries;

@@ -11,23 +11,20 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/core/beans/plugin.
 
 option java_multiple_files = true;
 
-message AcquireTasksResponse {
-  repeated TaskDescriptor tasks = 1;
-}
-
 /*
   Top level request object for acquiring tasks
  */
-message AcquireRequestResponse {
+message AcquireTasksResponse {
+  string id = 1;  // Id for the entire transaction
   // There will be only one payload per request at current stage of implementation.
   // But it's always good to keep API definition plural for future extensibility.
-  repeated RequestPayload payloads = 1;
+  repeated TaskPayload tasks = 2;
 }
 
 /*
  All data that is needed to execute the job
  */
-message RequestPayload {
+message TaskPayload {
   string id = 1;  // Id for the request.
 
   // specifies the resource and method delegate will take actions about
@@ -40,8 +37,7 @@ message RequestPayload {
   // execute the task.
   string resourceUri = 2;
   string resourceMethod = 3;
-
-  string callback_token = 4;  // Token for sending notify event to the service that initiated a task
-  InputData task_data = 5;    // binary data for tasks.
-  InputData infra_data = 6;   // binary data for runner.
+  string callback_token = 6;  // Token for sending notify event to the service that initiated a task
+  InputData task_data = 7;    // binary data for tasks.
+  InputData infra_data = 8;   // binary data for runner.
 }

@@ -19,12 +19,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
-import io.harness.delegate.beans.instancesync.info.K8sServerInstanceInfo;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.managerclient.DelegateAgentManagerClient;
-import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.instancesync.DeploymentReleaseDetails;
+import io.harness.perpetualtask.instancesync.InstanceSyncV2Request;
 import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParamsV2;
 import io.harness.perpetualtask.instancesync.k8s.K8sDeploymentReleaseDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -59,22 +58,26 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
   }
 
   @Override
-  protected String getDeploymentType(ServerInstanceInfo serverInstanceInfos) {
-    if (serverInstanceInfos instanceof K8sServerInstanceInfo) {
-      return ServiceSpecType.KUBERNETES;
-    }
-    throw new UnsupportedOperationException(
-        format("Unsupported serverInstanceInfos of type : [%s]", serverInstanceInfos.getClass()));
+  protected InstanceSyncV2Request createRequest(String perpetualTaskId, PerpetualTaskExecutionParams params) {
+    K8sInstanceSyncPerpetualTaskParamsV2 taskParams =
+        AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class);
+    ConnectorInfoDTO connectorInfoDTO =
+        (ConnectorInfoDTO) kryoSerializer.asObject(taskParams.getConnectorInfoDto().toByteArray());
+    decryptConnector(connectorInfoDTO,
+        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray()));
+    return InstanceSyncV2Request.builder()
+        .accountId(taskParams.getAccountId())
+        .orgId(taskParams.getOrgId())
+        .projectId(taskParams.getProjectId())
+        .connector(connectorInfoDTO)
+        .perpetualTaskId(perpetualTaskId)
+        .build();
   }
 
   @Override
   protected List<ServerInstanceInfo> retrieveServiceInstances(
-      PerpetualTaskId taskId, PerpetualTaskExecutionParams params, DeploymentReleaseDetails details) {
-    K8sInstanceSyncPerpetualTaskParamsV2 taskParams =
-        AnyUtils.unpack(params.getCustomizedParams(), K8sInstanceSyncPerpetualTaskParamsV2.class);
+      InstanceSyncV2Request instanceSyncV2Request, DeploymentReleaseDetails details) {
     List<ServerInstanceInfo> serverInstanceInfos = new ArrayList<>();
-    ConnectorInfoDTO connectorInfoDTO =
-        (ConnectorInfoDTO) kryoSerializer.asObject(taskParams.getConnectorInfoDto().toByteArray());
 
     Set<K8sDeploymentReleaseDetails> k8sDeploymentReleaseDetailsList =
         details.getDeploymentDetails()
@@ -85,12 +88,12 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
 
     if (k8sDeploymentReleaseDetailsList.isEmpty()) {
       log.warn(format("No K8sDeploymentReleaseDetails for Instance Sync perpetual task Id: [%s] and taskInfo Id: [%s]",
-          taskId.getId(), details.getTaskInfoId()));
+          instanceSyncV2Request.getPerpetualTaskId(), details.getTaskInfoId()));
       return emptyList();
     }
     for (K8sDeploymentReleaseDetails k8sDeploymentReleaseDetails : k8sDeploymentReleaseDetailsList) {
       Set<PodDetailsRequest> distinctPodDetailsRequestList =
-          getDistinctPodDetailsRequestList(connectorInfoDTO, k8sDeploymentReleaseDetails, taskParams);
+          getDistinctPodDetailsRequestList(instanceSyncV2Request, k8sDeploymentReleaseDetails);
       serverInstanceInfos.addAll(distinctPodDetailsRequestList.stream()
                                      .map(k8sInstanceSyncV2Helper::getServerInstanceInfoList)
                                      .flatMap(Collection::stream)
@@ -106,26 +109,25 @@ public class K8sInstanceSyncPerpetualTaskV2Executor extends AbstractInstanceSync
     return releaseDetails;
   }
 
-  private Set<PodDetailsRequest> getDistinctPodDetailsRequestList(ConnectorInfoDTO connectorDTO,
-      K8sDeploymentReleaseDetails releaseDetails, K8sInstanceSyncPerpetualTaskParamsV2 taskParams) {
+  private Set<PodDetailsRequest> getDistinctPodDetailsRequestList(
+      InstanceSyncV2Request instanceSyncV2Request, K8sDeploymentReleaseDetails releaseDetails) {
     Set<String> distinctNamespaceReleaseNameKeys = new HashSet<>();
-    List<EncryptedDataDetail> encryptedDataDetails =
-        (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getEncryptedData().toByteArray());
-    return populatePodDetailsRequest(connectorDTO, releaseDetails, encryptedDataDetails)
+
+    return populatePodDetailsRequest(instanceSyncV2Request.getConnector(), releaseDetails)
         .stream()
         .filter(requestData -> distinctNamespaceReleaseNameKeys.add(generateNamespaceReleaseNameKey(requestData)))
         .collect(Collectors.toSet());
   }
 
-  private List<PodDetailsRequest> populatePodDetailsRequest(ConnectorInfoDTO connectorDTO,
-      K8sDeploymentReleaseDetails releaseDetails, List<EncryptedDataDetail> encryptedDataDetails) {
+  private List<PodDetailsRequest> populatePodDetailsRequest(
+      ConnectorInfoDTO connectorDTO, K8sDeploymentReleaseDetails releaseDetails) {
     HashSet<String> namespaces = new HashSet<>(releaseDetails.getNamespaces());
     String releaseName = releaseDetails.getReleaseName();
     return namespaces.stream()
         .map(namespace
             -> PodDetailsRequest.builder()
-                   .kubernetesConfig(k8sInstanceSyncV2Helper.getKubernetesConfig(
-                       connectorDTO, releaseDetails, namespace, encryptedDataDetails))
+                   .kubernetesConfig(
+                       k8sInstanceSyncV2Helper.getKubernetesConfig(connectorDTO, releaseDetails, namespace))
                    .namespace(namespace)
                    .releaseName(releaseName)
                    .build())

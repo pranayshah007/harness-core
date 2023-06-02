@@ -158,4 +158,13 @@ public class CommandStepRollbackHelper extends CDStepHelper {
 
     stageExecutionInfoService.updateOnce(scope, stageExecutionId, updates);
   }
+
+  public void deleteIfExistsCurrentStageExecutionInfo(Ambiance ambiance) {
+    ExecutionInfoKey executionInfoKey = getExecutionInfoKey(ambiance);
+    Optional<StageExecutionInfo> stageExecutionInfo = getLatestSuccessfulStageExecutionInfo(ambiance, executionInfoKey);
+
+    if (stageExecutionInfo.isPresent()) {
+      stageExecutionInfoService.delete(stageExecutionInfo.get().getUuid());
+    }
+  }
 }

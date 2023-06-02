@@ -149,6 +149,14 @@ public class STOServiceUtils {
     return result;
   }
 
+  @NotNull
+  public String getUsageAllAcounts(String accountId) {
+    String token = getSTOServiceToken(accountId);
+    String accessToken = "ApiKey " + token;
+
+    return makeAPICall(stoServiceClient.getUsageAllAccounts(accessToken)).get("usage").getAsString();
+  }
+
   private JsonObject makeAPICall(Call<JsonObject> apiCall) {
     Response<JsonObject> response = null;
     try {

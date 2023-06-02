@@ -81,6 +81,7 @@ java_library(
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm/base:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm/constants:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm/custom:module",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm/steadystate:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/jenkins:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/jira:module",
         "//930-delegate-tasks/src/main/java/io/harness/delegate/task/jira/connection:module",

@@ -100,7 +100,7 @@ public class EntityAuditRecordHandler extends IteratorPumpAndRedisModeHandler im
 
     while (true) {
       List<AuditRecord> auditRecords = auditService.fetchLimitedEntityAuditRecordsOlderThanGivenTime(
-          entity.getAuditHeaderId(), entity.getCreatedAt(), 10000);
+          entity.getAuditHeaderId(), entity.getCreatedAt(), 1000);
 
       if (isEmpty(auditRecords)) {
         return;

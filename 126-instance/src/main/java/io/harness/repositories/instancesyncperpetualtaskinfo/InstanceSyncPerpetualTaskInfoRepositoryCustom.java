@@ -14,6 +14,8 @@ import io.harness.entities.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTa
 import com.mongodb.client.result.DeleteResult;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
@@ -22,5 +24,6 @@ public interface InstanceSyncPerpetualTaskInfoRepositoryCustom {
   InstanceSyncPerpetualTaskInfo update(Criteria criteria, Update update);
 
   List<InstanceSyncPerpetualTaskInfo> findAll(Criteria criteria);
+  Page<InstanceSyncPerpetualTaskInfo> findAllInPages(Criteria criteria, Pageable pageRequest);
   DeleteResult delete(@NotNull Criteria criteria);
 }

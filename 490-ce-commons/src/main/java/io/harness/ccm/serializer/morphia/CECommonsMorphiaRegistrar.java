@@ -41,6 +41,7 @@ import io.harness.ccm.commons.entities.k8s.recommendation.K8sWorkloadRecommendat
 import io.harness.ccm.commons.entities.k8s.recommendation.PartialRecommendationHistogram;
 import io.harness.ccm.commons.entities.notifications.CCMNotificationSetting;
 import io.harness.ccm.commons.entities.recommendations.RecommendationsIgnoreList;
+import io.harness.ccm.msp.dto.ManagedAccount;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -93,6 +94,9 @@ public class CECommonsMorphiaRegistrar implements MorphiaRegistrar {
 
     // commons
     set.add(CCMNotificationSetting.class);
+
+    // msp
+    set.add(ManagedAccount.class);
   }
   @Override
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {

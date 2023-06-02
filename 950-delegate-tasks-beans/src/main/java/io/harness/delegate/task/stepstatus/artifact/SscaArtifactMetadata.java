@@ -16,7 +16,7 @@ import lombok.Value;
 
 @Value
 @Builder
-@JsonTypeName(ArtifactMetadataTypes.DOCKER_ARTIFACT_METADATA)
+@JsonTypeName(ArtifactMetadataTypes.SSCA_ARTIFACT_METADATA)
 @OwnedBy(HarnessTeam.SSCA)
 public class SscaArtifactMetadata implements ArtifactMetadataSpec {
   String id;
@@ -28,4 +28,6 @@ public class SscaArtifactMetadata implements ArtifactMetadataSpec {
   String sbomUrl;
   String stepExecutionId;
   boolean isSbomAttested;
+  int allowListViolationCount;
+  int denyListViolationCount;
 }

@@ -86,7 +86,7 @@ import io.harness.ngtriggers.beans.source.artifact.BuildAware;
 import io.harness.ngtriggers.beans.source.artifact.HelmManifestSpec;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTriggerConfig;
 import io.harness.ngtriggers.beans.source.artifact.ManifestTypeSpec;
-import io.harness.ngtriggers.beans.source.artifact.MultiArtifactTriggerConfig;
+import io.harness.ngtriggers.beans.source.artifact.MultiRegionArtifactTriggerConfig;
 import io.harness.ngtriggers.beans.source.scheduled.CronTriggerSpec;
 import io.harness.ngtriggers.beans.source.scheduled.ScheduledTriggerConfig;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
@@ -364,11 +364,12 @@ public class NGTriggerElementMapper {
                                .pollingConfig(PollingConfig.builder().buildRef(EMPTY).signature(generateUuid()).build())
                                .build())
             .build();
-      case MULTI_ARTIFACT:
-        MultiArtifactTriggerConfig multiArtifactTriggerConfig = (MultiArtifactTriggerConfig) triggerSource.getSpec();
+      case MULTI_REGION_ARTIFACT:
+        MultiRegionArtifactTriggerConfig multiRegionArtifactTriggerConfig =
+            (MultiRegionArtifactTriggerConfig) triggerSource.getSpec();
         return NGTriggerMetadata.builder()
             .multiBuildMetadata(
-                multiArtifactTriggerConfig.getSources()
+                multiRegionArtifactTriggerConfig.getSources()
                     .stream()
                     .map(source
                         -> BuildMetadata.builder()

@@ -24,8 +24,7 @@ import com.google.inject.Inject;
 public class CICreditExpiryIteratorHandler extends CreditExpiryIteratorHandler<CICredit> {
   @Inject
   public CICreditExpiryIteratorHandler(PersistenceIteratorFactory persistenceIteratorFactory,
-      MorphiaPersistenceProvider<CICredit> persistenceProvider, CreditService creditService,
-      PersistenceIteratorFactory persistenceIteratorFactory1) {
+      MorphiaPersistenceProvider<CICredit> persistenceProvider, CreditService creditService) {
     super(persistenceIteratorFactory, persistenceProvider, creditService);
   }
 

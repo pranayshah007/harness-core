@@ -46,9 +46,15 @@ public class GitlabSCMOAuthTokenRefresher extends AbstractSCMOAuthTokenRefresher
   }
 
   public void registerIterators(int threadPoolSize) {
-    log.info("Register Enabled:{}, Frequency:{}, clientID:{}, clientSecret:{}", configuration.isOauthRefreshEnabled(),
-        configuration.getOauthRefreshFrequency(), configuration.getGitlabConfig().getClientId(),
-        configuration.getGitlabConfig().getClientSecret());
+    String clientId = configuration.getGitlabConfig().getClientId();
+    String clientSecret = configuration.getGitlabConfig().getClientSecret();
+
+    String clientIdShort = clientId.substring(0, Math.min(clientId.length(), 3));
+    String clientSecretShort = clientSecret.substring(0, Math.min(clientSecret.length(), 3));
+
+    log.info("Register Enabled:{}, Frequency:{}, clientID short:{}, clientSecret short:{}",
+        configuration.isOauthRefreshEnabled(), configuration.getOauthRefreshFrequency(), clientIdShort,
+        clientSecretShort);
 
     if (configuration.isOauthRefreshEnabled()) {
       SpringFilterExpander springFilterExpander = getFilterQuery();

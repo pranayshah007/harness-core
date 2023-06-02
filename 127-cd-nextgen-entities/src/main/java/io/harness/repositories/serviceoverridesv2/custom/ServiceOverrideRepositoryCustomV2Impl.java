@@ -61,6 +61,12 @@ public class ServiceOverrideRepositoryCustomV2Impl implements ServiceOverrideRep
         () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), NGServiceOverridesEntity.class));
   }
 
+  @Override
+  public List<NGServiceOverridesEntity> findAll(Criteria criteria) {
+    Query query = new Query(criteria);
+    return mongoTemplate.find(query, NGServiceOverridesEntity.class);
+  }
+
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
   }

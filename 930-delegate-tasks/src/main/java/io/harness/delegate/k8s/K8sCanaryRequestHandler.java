@@ -48,7 +48,7 @@ import io.harness.helpers.k8s.releasehistory.K8sReleaseHandler;
 import io.harness.k8s.K8sCliCommandType;
 import io.harness.k8s.K8sCommandFlagsUtils;
 import io.harness.k8s.KubernetesReleaseDetails;
-import io.harness.k8s.kubectl.Kubectl;
+import io.harness.k8s.kubectl.KubectlFactory;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
 import io.harness.k8s.model.K8sPod;
@@ -239,8 +239,8 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     logCallback.saveExecutionLog(color(String.format("Release Name: [%s]", request.getReleaseName()), Yellow, Bold));
     k8sCanaryHandlerConfig.setKubernetesConfig(containerDeploymentDelegateBaseHelper.createKubernetesConfig(
         request.getK8sInfraDelegateConfig(), k8sDelegateTaskParams.getWorkingDirectory(), logCallback));
-    k8sCanaryHandlerConfig.setClient(
-        Kubectl.client(k8sDelegateTaskParams.getKubectlPath(), k8sDelegateTaskParams.getKubeconfigPath()));
+    k8sCanaryHandlerConfig.setClient(KubectlFactory.getKubectlClient(k8sDelegateTaskParams.getKubectlPath(),
+        k8sDelegateTaskParams.getKubeconfigPath(), k8sDelegateTaskParams.getWorkingDirectory()));
 
     IK8sReleaseHistory releaseHistory =
         releaseHandler.getReleaseHistory(k8sCanaryHandlerConfig.getKubernetesConfig(), request.getReleaseName());
@@ -293,7 +293,7 @@ public class K8sCanaryRequestHandler extends K8sRequestHandler {
     }
 
     k8sTaskHelperBase.dryRunManifests(k8sCanaryHandlerConfig.getClient(), k8sCanaryHandlerConfig.getResources(),
-        k8sDelegateTaskParams, logCallback, true, request.isUseNewKubectlVersion());
+        k8sDelegateTaskParams, logCallback, true);
   }
 
   @VisibleForTesting

@@ -21,7 +21,6 @@ import lombok.Data;
 @Data
 @Builder
 public class Attestation {
-  @Deprecated private String privateKey;
   private AttestationType type;
 
   @JsonProperty("spec")

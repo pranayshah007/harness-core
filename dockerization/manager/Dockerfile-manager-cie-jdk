@@ -5,7 +5,7 @@
 
 # To be used when building in CIE
 
-FROM us.gcr.io/platform-205701/ubi/ubi-java:jre-11.0.19 as base
+FROM us.gcr.io/platform-205701/ubi/ubi-java:8.7 as base
 
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 rest-capsule.jar /opt/harness/

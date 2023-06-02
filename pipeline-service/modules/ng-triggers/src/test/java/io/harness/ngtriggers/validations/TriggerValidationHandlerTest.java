@@ -160,7 +160,7 @@ public class TriggerValidationHandlerTest extends CategoryTest {
     Call<ResponseDTO<TemplatesResolvedPipelineResponseDTO>> templatesResolvedPipelineDTO = mock(Call.class);
     when(pipelineServiceClient.getResolvedTemplatesPipelineByIdentifier(
              artifactTriggerDetails.getNgTriggerEntity().getTargetIdentifier(), "accountId", "orgId", "projectId",
-             artifactTriggerDetails.getNgTriggerConfigV2().getPipelineBranchName(), null, false))
+             artifactTriggerDetails.getNgTriggerConfigV2().getPipelineBranchName(), null, false, "true"))
         .thenReturn(templatesResolvedPipelineDTO);
     when(templatesResolvedPipelineDTO.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(

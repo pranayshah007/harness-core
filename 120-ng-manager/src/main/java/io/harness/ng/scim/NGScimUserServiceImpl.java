@@ -29,11 +29,13 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
+import io.harness.exception.InternalServerErrorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
 import io.harness.ng.core.invites.api.InviteService;
 import io.harness.ng.core.invites.entities.Invite;
+import io.harness.ng.core.user.NGRemoveUserFilter;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.UserMembershipUpdateSource;
 import io.harness.ng.core.user.entities.UserGroup;
@@ -218,6 +220,8 @@ public class NGScimUserServiceImpl implements ScimUserService {
   @Override
   public void deleteUser(String userId, String accountId) {
     log.info("NGSCIM: deleting for accountId {} the user {}", accountId, userId);
+    ngUserService.removeUserFromScope(userId, Scope.builder().accountIdentifier(accountId).build(),
+        UserMembershipUpdateSource.USER, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
     ngUserService.removeUser(userId, accountId);
     log.info("NGSCIM: deleting the user completed for accountId {} the user {}", accountId, userId);
   }
@@ -249,6 +253,10 @@ public class NGScimUserServiceImpl implements ScimUserService {
           log.error("NGSCIM: Failed to update user: {}, patchOperation: {}", userId, patchOperation, ex);
         }
       });
+    }
+
+    if (patchOperationIncludesUserDeletion(patchRequest)) {
+      return null;
     }
     return getUserInternal(userId, accountId);
   }
@@ -318,8 +326,13 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
       log.info("NGSCIM: Updating user completed - userId: {}, accountId: {}", userId, accountId);
 
+      ScimUser updatedUser = null;
+      if (!putOperationIncludesUserDeletion(scimUser)) {
+        updatedUser = getUserInternal(userId, accountId);
+      }
+
       // @Todo: Not handling GIVEN_NAME AND FAMILY_NAME. Add if we need to persist them
-      return Response.status(Response.Status.OK).entity(getUserInternal(userId, accountId)).build();
+      return Response.status(Response.Status.OK).entity(updatedUser).build();
     }
   }
 
@@ -333,7 +346,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
         // OKTA doesn't send an explicit delete user request but only makes active true/false.
         // We need to remove the user completely if active=false as we do not have any first
         // class support for a disabled user vs a deleted user
-        ngUserService.removeUser(userId, accountId);
+        deleteUser(userId, accountId);
       } else {
         // This is to keep CG implementation working as it is.
         ngUserService.updateUserDisabled(accountId, userId, disabled);
@@ -528,5 +541,27 @@ public class NGScimUserServiceImpl implements ScimUserService {
       groupsNode.add(JsonUtils.asTree(userGroupMap));
     }
     return groupsNode;
+  }
+
+  private boolean patchOperationIncludesUserDeletion(PatchRequest patchRequest) {
+    for (PatchOperation patchOperation : patchRequest.getOperations()) {
+      try {
+        boolean isActiveFalse = (patchOperation.getValue(ScimUserValuedObject.class) != null
+                                    && !(patchOperation.getValue(ScimUserValuedObject.class)).isActive())
+            || ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null
+                && !(patchOperation.getValue(Boolean.class)));
+
+        if (isActiveFalse) {
+          return true;
+        }
+      } catch (JsonProcessingException e) {
+        throw new InternalServerErrorException("Failed to parse the SCIM request", e);
+      }
+    }
+    return false;
+  }
+
+  private boolean putOperationIncludesUserDeletion(ScimUser userResource) {
+    return userResource.getActive() != null && !userResource.getActive();
   }
 }

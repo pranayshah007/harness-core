@@ -897,12 +897,16 @@ def ingest_data_to_unified(jsonData):
 
     insert_columns = """product, startTime, fxRateSrcToDest, ccmPreferredCurrency, 
                     awsBlendedRate, awsBlendedCost,awsUnblendedRate, 
+                    awsEffectiveCost, awsAmortisedCost, 
+                    awsNetAmortisedCost, awsLineItemType,
                     awsUnblendedCost, cost, awsServicecode, region, 
                     awsAvailabilityzone, awsUsageaccountid, 
                     cloudProvider, awsBillingEntity, labels"""
 
     select_columns = """productname AS product, TIMESTAMP_TRUNC(usagestartdate, DAY) as startTime, fxRateSrcToDest, ccmPreferredCurrency, 
                     blendedrate AS awsBlendedRate, blendedcost AS awsBlendedCost, unblendedrate AS awsUnblendedRate, 
+                    effectivecost as awsEffectiveCost, amortisedCost as awsAmortisedCost, 
+                    netAmortisedCost as awsNetAmortisedCost, lineitemtype as awsLineItemType,
                     unblendedcost AS awsUnblendedCost, unblendedcost AS cost, servicename AS awsServicecode, region, 
                     availabilityzone AS awsAvailabilityzone, usageaccountid AS awsUsageaccountid, 
                     "AWS" AS cloudProvider, billingentity as awsBillingEntity, tags AS labels"""

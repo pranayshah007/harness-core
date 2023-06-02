@@ -14,7 +14,7 @@ import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.BitriseStepInfo;
-import io.harness.beans.steps.stepinfo.IACMTerraformPlanInfo;
+import io.harness.beans.steps.stepinfo.IACMTerraformPluginInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -83,9 +83,9 @@ public class VmStepSerializer {
       case SSCA_ENFORCEMENT:
         return vmPluginCompatibleStepSerializer.serialize(
             ambiance, (PluginCompatibleStep) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName);
-      case IACM_TERRAFORM:
+      case IACM_TERRAFORM_PLUGIN:
         return vmIACMPluginCompatibleStepSerializer.serialize(
-            ambiance, (IACMTerraformPlanInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout);
+            ambiance, (IACMTerraformPluginInfo) stepInfo, stageInfraDetails, parameterFieldTimeout);
       case ACTION:
         return vmActionStepSerializer.serialize((ActionStepInfo) stepInfo, identifier, stageInfraDetails);
       case BITRISE:

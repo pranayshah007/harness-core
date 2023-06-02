@@ -7,7 +7,6 @@
 
 package io.harness.decryption.delegate.module;
 
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.decryption.delegate.module.kryo.SecretsKryoModule;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.Encryptors;
@@ -33,7 +32,6 @@ import software.wings.service.impl.security.EncryptionServiceImpl;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -60,7 +58,7 @@ public class DelegateDecryptionModule extends AbstractModule {
     bind(SecretsDelegateCacheService.class).to(SecretsDelegateCacheServiceImpl.class);
     bind(SecretsDelegateCacheHelperService.class).to(NoopSecretsDelegateCacheHelperService.class);
 
-    bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
+    //    bind(TimeLimiter.class).toInstance(HTimeLimiter.create());
 
     bindSecretEncryptors();
   }

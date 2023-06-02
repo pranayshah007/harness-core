@@ -33,6 +33,8 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.CVNGObjectUtils;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecordBucket.SLIRecordBucketKeys;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.persistence.HPersistence;
@@ -50,6 +52,7 @@ import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,6 +74,10 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
           HostRecord.class, LogAnalysisRecord.class, LogAnalysisResult.class, LogAnalysisCluster.class,
           TimeSeriesRiskSummary.class, TimeSeriesAnomalousPatterns.class, DataCollectionTask.class,
           TimeSeriesCumulativeSums.class, CVNGDemoDataIndex.class, SLIRecord.class, CompositeSLORecord.class);
+
+  @VisibleForTesting
+  static final Map<Class<? extends PersistentEntity>, String> ENTITIES_TO_DELETE_BY_ID_MAP =
+      Map.of(SLIRecordBucket.class, SLIRecordBucketKeys.sliId);
   @Inject private Clock clock;
   @Inject private HPersistence hPersistence;
   @Inject private VerificationTaskService verificationTaskService;
@@ -107,15 +114,18 @@ public class VerificationTaskCleanupSideKickExecutor implements SideKickExecutor
 
   private void cleanUpData(String verificationTaskId) {
     for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_VERIFICATION_ID) {
-      cleanUpDataForSingleEntity(verificationTaskId, clazz);
+      cleanUpDataForSingleEntity(verificationTaskId, clazz, VerificationTask.VERIFICATION_TASK_ID_KEY);
+    }
+    for (Class<? extends PersistentEntity> clazz : ENTITIES_TO_DELETE_BY_ID_MAP.keySet()) {
+      cleanUpDataForSingleEntity(verificationTaskId, clazz, ENTITIES_TO_DELETE_BY_ID_MAP.get(clazz));
     }
   }
 
-  private void cleanUpDataForSingleEntity(String verificationTaskId, Class<? extends PersistentEntity> entity) {
+  private void cleanUpDataForSingleEntity(
+      String verificationTaskId, Class<? extends PersistentEntity> entity, String field) {
     int numberOfRecordsDeleted;
-    Query<? extends PersistentEntity> query = hPersistence.createQuery(entity)
-                                                  .filter(VerificationTask.VERIFICATION_TASK_ID_KEY, verificationTaskId)
-                                                  .project(UuidAware.UUID_KEY, true);
+    Query<? extends PersistentEntity> query =
+        hPersistence.createQuery(entity).filter(field, verificationTaskId).project(UuidAware.UUID_KEY, true);
     FindOptions findOptions = new FindOptions().limit(RECORDS_TO_BE_DELETED_IN_SINGLE_BATCH);
     do {
       numberOfRecordsDeleted = deleteSingleBatch(entity, query, findOptions, verificationTaskId);

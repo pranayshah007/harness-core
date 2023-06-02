@@ -34,6 +34,7 @@ import io.harness.pms.contracts.plan.ExecutionMode;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStageInfo;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -83,10 +84,13 @@ public class PipelineExecutor {
   }
 
   public PlanExecutionResponseDto runPipelineWithInputSetReferencesList(String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String moduleType, List<String> inputSetReferences,
-      String pipelineBranch, String pipelineRepoID, String notes) {
-    String mergedRuntimeInputYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId,
-        orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, null);
+      String projectIdentifier, String pipelineIdentifier, String moduleType,
+      MergeInputSetRequestDTOPMS mergeInputSetRequestDTOPMS, String pipelineBranch, String pipelineRepoID,
+      String notes) {
+    String mergedRuntimeInputYaml =
+        validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, mergeInputSetRequestDTOPMS.getInputSetReferences(), pipelineBranch,
+            pipelineRepoID, null, mergeInputSetRequestDTOPMS.getLastYamlToMerge(), false, false);
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, null, moduleType,
         mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false, false, notes);
   }
@@ -124,9 +128,12 @@ public class PipelineExecutor {
 
   public PlanExecutionResponseDto rerunPipelineWithInputSetReferencesList(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, String moduleType, String originalExecutionId,
-      List<String> inputSetReferences, String pipelineBranch, String pipelineRepoID, boolean isDebug, String notes) {
-    String mergedRuntimeInputYaml = validateAndMergeHelper.getMergeInputSetFromPipelineTemplate(accountId,
-        orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetReferences, pipelineBranch, pipelineRepoID, null);
+      MergeInputSetRequestDTOPMS mergeInputSetRequestDTOPMS, String pipelineBranch, String pipelineRepoID,
+      boolean isDebug, String notes) {
+    String mergedRuntimeInputYaml =
+        validateAndMergeHelper.getMergedYamlFromInputSetReferencesAndRuntimeInputYaml(accountId, orgIdentifier,
+            projectIdentifier, pipelineIdentifier, mergeInputSetRequestDTOPMS.getInputSetReferences(), pipelineBranch,
+            pipelineRepoID, null, mergeInputSetRequestDTOPMS.getLastYamlToMerge(), false, false);
     return startPlanExecution(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, originalExecutionId,
         moduleType, mergedRuntimeInputYaml, Collections.emptyList(), Collections.emptyMap(), false, false, notes);
   }

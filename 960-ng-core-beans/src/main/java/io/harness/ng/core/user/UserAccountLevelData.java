@@ -20,11 +20,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldNameConstants(innerTypeName = "UserAccountLevelDataKeys")
 @OwnedBy(PL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserAccountLevelData {

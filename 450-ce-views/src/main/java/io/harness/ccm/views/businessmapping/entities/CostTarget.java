@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.entities.ViewRule;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,5 +27,6 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(CE)
 public class CostTarget {
   String name;
+  @Hidden Double marginPercentage;
   List<ViewRule> rules;
 }

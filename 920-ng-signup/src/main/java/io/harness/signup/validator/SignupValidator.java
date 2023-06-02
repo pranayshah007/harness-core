@@ -111,7 +111,6 @@ public class SignupValidator {
          MdcContextSetter ignore1 = new MdcContextSetter(Map.of(SIGNUP_DOMAIN_VALIDATION_LOGS_KEY, generateUuid()));) {
       String domainName = getDomain(email);
       Set<String> signupDomainDenylist = getSignupDomainDenylist();
-      log.info("Size of signupDomainDenylist: {}", signupDomainDenylist.size());
       if (signupDomainDenylist.contains(domainName)) {
         String errorMessage = "Please use work email for signing up";
         log.error(errorMessage);
