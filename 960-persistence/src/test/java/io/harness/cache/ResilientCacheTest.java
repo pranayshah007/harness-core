@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 
 import static java.util.Set.of;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anySet;
@@ -54,21 +55,15 @@ import org.mockito.ArgumentCaptor;
 import org.redisson.client.RedisOutOfMemoryException;
 
 public class ResilientCacheTest extends PersistenceTestBase {
-  public static final String KEY = "key1";
-  public static CacheableEntity VALUE = mock(CacheableEntity.class);
-  private RedisOutOfMemoryException exception = new RedisOutOfMemoryException("Redis OOM");
-  ;
-
-  private static class CacheableEntity {
-    private String id;
-    private String name;
-  }
-
-  @Inject HarnessCacheManager harnessCacheManager;
+  private static final String KEY = "key1";
+  private static final CacheableEntity VALUE = mock(CacheableEntity.class);
   private static final String CACHE_NAME = "testResilientCache";
-
+  @Inject HarnessCacheManager harnessCacheManager;
+  private RedisOutOfMemoryException exception = new RedisOutOfMemoryException("Redis OOM");
   private Cache<String, CacheableEntity> internalJCache;
   private ResilientCache<String, CacheableEntity> resilientCache;
+
+  private static class CacheableEntity {}
 
   @Before
   public void setup() {
@@ -461,7 +456,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   public void testPutShouldHandleExceptionGracefully() {
     CacheableEntity cacheableEntity = mock(CacheableEntity.class);
     doThrow(exception).when(internalJCache).put(any(), any());
-    resilientCache.put(KEY, cacheableEntity);
+    assertThatCode(() -> resilientCache.put(KEY, cacheableEntity)).doesNotThrowAnyException();
   }
 
   @Test
@@ -489,7 +484,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   public void testLoadAllShouldHandleExceptionGracefully() {
     doThrow(exception).when(internalJCache).loadAll(anySet(), anyBoolean(), any());
     CompletionListener completionListener = mock(CompletionListener.class);
-    resilientCache.loadAll(of(KEY), true, completionListener);
+    assertThatCode(() -> resilientCache.loadAll(of(KEY), true, completionListener)).doesNotThrowAnyException();
   }
 
   @Test
@@ -507,7 +502,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   @Category(UnitTests.class)
   public void testPutAllShouldHandleExceptionGracefully() {
     doThrow(exception).when(internalJCache).putAll(any());
-    resilientCache.putAll(new HashMap<>());
+    assertThatCode(() -> resilientCache.putAll(new HashMap<>())).doesNotThrowAnyException();
   }
 
   @Test
@@ -570,7 +565,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   @Category(UnitTests.class)
   public void testRemoveAllByKeysShouldHandleExceptionGracefully() {
     doThrow(exception).when(internalJCache).removeAll(anySet());
-    resilientCache.removeAll(of(KEY));
+    assertThatCode(() -> resilientCache.removeAll(of(KEY))).doesNotThrowAnyException();
   }
 
   @Test
@@ -588,7 +583,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   @Category(UnitTests.class)
   public void testClearShouldHandleExceptionGracefully() {
     doThrow(exception).when(internalJCache).clear();
-    resilientCache.clear();
+    assertThatCode(() -> resilientCache.clear()).doesNotThrowAnyException();
   }
 
   @Test
@@ -617,7 +612,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   @Category(UnitTests.class)
   public void testCloseShouldHandleExceptionGracefully() {
     doThrow(exception).when(internalJCache).close();
-    resilientCache.close();
+    assertThatCode(() -> resilientCache.close()).doesNotThrowAnyException();
   }
 
   @Test
@@ -644,7 +639,7 @@ public class ResilientCacheTest extends PersistenceTestBase {
   @Category(UnitTests.class)
   public void testRegisterCacheEntryListenerShouldHandleExceptionGracefully() {
     doThrow(exception).when(internalJCache).registerCacheEntryListener(any());
-    resilientCache.unwrap(CacheProxy.class);
+    assertThatCode(() -> resilientCache.unwrap(CacheProxy.class)).doesNotThrowAnyException();
   }
 
   @Test
@@ -655,7 +650,8 @@ public class ResilientCacheTest extends PersistenceTestBase {
     doThrow(exception).when(internalJCache).deregisterCacheEntryListener(any());
     CacheEntryListenerConfiguration<String, CacheableEntity> cacheEntryListenerConfiguration =
         mock(CacheEntryListenerConfiguration.class);
-    resilientCache.deregisterCacheEntryListener(cacheEntryListenerConfiguration);
+    assertThatCode(() -> resilientCache.deregisterCacheEntryListener(cacheEntryListenerConfiguration))
+        .doesNotThrowAnyException();
   }
 
   @Test
