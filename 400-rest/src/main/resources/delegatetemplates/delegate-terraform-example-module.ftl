@@ -5,6 +5,7 @@ module "delegate" {
   account_id = "${account_id}"
   delegate_token = "${token}"
   delegate_name = "terraform-delegate"
+  deployMode = "${deployMode}"
   namespace = "harness-delegate-ng"
   manager_endpoint = "${manager_url}"
   delegate_image = "${image}"

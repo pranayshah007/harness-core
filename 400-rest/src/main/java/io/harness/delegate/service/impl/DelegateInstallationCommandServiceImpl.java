@@ -15,6 +15,8 @@ import io.harness.delegate.service.intfc.DelegateInstallationCommandService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.exception.DelegateInstallationCommandNotSupportedException;
 
+import software.wings.app.MainConfiguration;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -29,10 +31,13 @@ import org.apache.commons.text.StringSubstitutor;
 public class DelegateInstallationCommandServiceImpl implements DelegateInstallationCommandService {
   private final DelegateNgTokenService delegateNgTokenService;
   private final DelegateVersionService delegateVersionService;
+
+  private final MainConfiguration mainConfiguration;
   private static final String TERRAFORM_TEMPLATE_FLE = "/delegatetemplates/delegate-terraform-example-module.ftl";
 
   private static final String DOCKER_COMMAND = "docker run --cpus=1 --memory=2g \\\n"
       + "  -e DELEGATE_NAME=docker-delegate \\\n"
+      + "  -e DEPLOY_MODE=${deployMode} \\\n"
       + "  -e NEXT_GEN=\"true\" \\\n"
       + "  -e DELEGATE_TYPE=\"DOCKER\" \\\n"
       + "  -e ACCOUNT_ID=${account_id} \\\n"
@@ -44,6 +49,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       "helm upgrade -i helm-delegate --namespace harness-delegate-ng --create-namespace \\\n"
       + "  harness-delegate/harness-delegate-ng \\\n"
       + "  --set delegateName=helm-delegate \\\n"
+      + "  --set deployMode=${deployMode} \\\n"
       + "  --set accountId=${account_id} \\\n"
       + "  --set delegateToken=${token} \\\n"
       + "  --set managerEndpoint=${manager_url} \\\n"
@@ -57,10 +63,11 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
       + "\"PUT_YOUR_DELEGATE_IMAGE\" with ${image}";
 
   @Inject
-  public DelegateInstallationCommandServiceImpl(
-      DelegateNgTokenService delegateNgTokenService, DelegateVersionService delegateVersionService) {
+  public DelegateInstallationCommandServiceImpl(DelegateNgTokenService delegateNgTokenService,
+      DelegateVersionService delegateVersionService, MainConfiguration mainConfiguration) {
     this.delegateNgTokenService = delegateNgTokenService;
     this.delegateVersionService = delegateVersionService;
+    this.mainConfiguration = mainConfiguration;
   }
 
   @Override
@@ -104,6 +111,7 @@ public class DelegateInstallationCommandServiceImpl implements DelegateInstallat
         .put("token", tokenValue)
         .put("manager_url", managerUrl)
         .put("image", image)
+        .put("deployMode", mainConfiguration.getDeployMode().name())
         .build();
   }
 
